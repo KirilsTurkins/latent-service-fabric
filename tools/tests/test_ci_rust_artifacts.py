@@ -15,6 +15,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from tools import ci_rust_artifacts as artifacts
+from tools.owned_test_process import ProcessFailure, Result
 
 
 def listing(suite: artifacts.Suite) -> bytes:
@@ -86,11 +87,63 @@ class InventoryTests(unittest.TestCase):
         with self.assertRaises(artifacts.ArtifactError):
             self.read()
 
+    def test_integration_inventory_selects_exact_target_among_workspace_siblings(self) -> None:
+        self.suite = artifacts.Suite(
+            self.suite.manifest, "angular_renderer", self.suite.source, "",
+            frozenset({"renderer_case"}), False, "test")
+        self.message["target"].update(kind=["test"], name=self.suite.target)
+        sibling = copy.deepcopy(self.message)
+        sibling["target"].update(name="admission", src_path=str(self.repo / "other.rs"))
+        sibling["executable"] = str(self.repo / "target/debug/deps/admission-other")
+        # The workspace JSON contains every integration target in this package;
+        # unrelated sibling paths need not even be opened to select our target.
+        for records in ([sibling, self.message], [self.message, sibling]):
+            with self.subTest(order=records[0]["target"]["name"]):
+                self.save(records)
+                self.assertEqual(self.read().executable, self.executable)
+
+    def test_integration_sibling_cannot_replace_or_hide_an_invalid_selected_target(self) -> None:
+        self.suite = artifacts.Suite(
+            self.suite.manifest, "angular_renderer", self.suite.source, "",
+            frozenset({"renderer_case"}), False, "test")
+        self.message["target"].update(kind=["test"], name=self.suite.target)
+        sibling = copy.deepcopy(self.message)
+        sibling["target"]["name"] = "admission"
+        wrong_source = copy.deepcopy(self.message)
+        wrong_source["target"]["src_path"] = str(self.manifest)
+        for records in ([sibling], [sibling, wrong_source],
+                        [sibling, self.message, self.message]):
+            with self.subTest(records=records):
+                self.save(records)
+                with self.assertRaises(artifacts.ArtifactError):
+                    self.read()
+
     def test_successful_terminal_build_record_is_mandatory(self) -> None:
         for suffix in ("", '\n{"reason":"build-finished","success":false}',
                        '\n{"reason":"build-finished","success":true}\n{}'):
             self.inventory.write_text(json.dumps(self.message) + suffix, encoding="utf-8")
             with self.subTest(suffix=suffix), self.assertRaises(artifacts.ArtifactError):
+                self.read()
+
+    def test_angular_integration_fixture_requires_its_exact_cargo_owner(self) -> None:
+        self.suite = artifacts.SUITES["angular-t1-fixture"]
+        self.manifest = self.repo / self.suite.manifest
+        self.manifest.parent.mkdir(parents=True)
+        self.manifest.write_text("[package]\n", encoding="utf-8")
+        self.source = self.manifest.parent / self.suite.source
+        self.source.parent.mkdir()
+        self.source.write_text("", encoding="utf-8")
+        self.message.update(manifest_path=str(self.manifest), target={
+            "kind": ["test"], "name": self.suite.target, "src_path": str(self.source)})
+        unrelated = copy.deepcopy(self.message)
+        unrelated["target"]["name"] = "catalog_scale"
+        self.save([unrelated, self.message])
+        self.assertEqual(self.read().executable, self.executable)
+        for change in ({"kind": ["lib"]}, {"src_path": str(self.manifest)}):
+            wrong = copy.deepcopy(self.message)
+            wrong["target"].update(change)
+            self.save([wrong])
+            with self.subTest(change=change), self.assertRaises(artifacts.ArtifactError):
                 self.read()
 
     def test_inventory_decode_and_allocation_bounds_fail_closed(self) -> None:
@@ -138,26 +191,13 @@ class InventoryTests(unittest.TestCase):
 
 
 class SelectionTests(unittest.TestCase):
-    def test_success_retires_timer_before_reap_and_never_signals_a_reaped_pid(self) -> None:
-        cwd = Path.cwd()
-        timer = Mock()
-        process = Mock(returncode=None, pid=42, stdout=io.BytesIO(b"done"))
-
-        def reap(*, timeout: int) -> int:
-            self.assertTrue(timer.cancel.called)
-            self.assertTrue(timer.join.called)
-            process.returncode = 0
-            return 0
-
-        process.wait.side_effect = reap
-        with patch.object(artifacts.subprocess, "Popen", return_value=process), \
-                patch.object(artifacts.threading, "Timer", return_value=timer), \
-                patch.object(artifacts.os, "name", "posix"), \
-                patch.object(artifacts.os, "killpg", create=True) as kill:
-            self.assertEqual(artifacts.run_owned(["fixture"], cwd=cwd, env={}, timeout=5, maximum=16),
+    def test_common_owner_receives_the_same_limits_and_command(self) -> None:
+        with patch.object(artifacts, "supervise", return_value=Result(0, b"done", cleaned=True)) as owner:
+            self.assertEqual(artifacts.run_owned(["fixture"], cwd=Path.cwd(), env={}, timeout=5, maximum=16),
                              (0, b"done"))
-        kill.assert_not_called()
-        process.kill.assert_not_called()
+        owner.assert_called_once_with(["fixture"], cwd=Path.cwd(), env={}, timeout=5, maximum=16)
+        # PID-pinning, inherited writers and actual reap are covered by the
+        # shared native ownership suite, not a mock of the retired Timer.
 
     def test_expected_exact_lists_cover_both_exporters_and_three_currentness_cases(self) -> None:
         for suite in artifacts.SUITES.values():
@@ -168,7 +208,7 @@ class SelectionTests(unittest.TestCase):
                     continue
                 with self.subTest(value=value), self.assertRaises(artifacts.ArtifactError):
                     artifacts.validate_listing(value, suite)
-        self.assertEqual(len(artifacts.SUITES["trust-currentness"].names), 3)
+        self.assertEqual(len(artifacts.SUITES["trust-currentness"].names), 4)
 
     def test_source_identity_is_checked_without_running_tests_on_mismatch(self) -> None:
         commit = "a" * 40
@@ -192,15 +232,14 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(env["CARGO_MANIFEST_DIR"], str(artifact.package))
         self.assertEqual(base[key], "existing")
 
-    def test_owned_process_rejects_excess_output_and_reaps(self) -> None:
-        with self.assertRaisesRegex(artifacts.ArtifactError, "output-limit"):
-            artifacts.run_owned([sys.executable, "-c", "print('x' * 1000)"], cwd=Path.cwd(),
-                                env=dict(os.environ), timeout=5, maximum=16)
-
-    def test_owned_process_times_out_and_reaps(self) -> None:
-        with self.assertRaisesRegex(artifacts.ArtifactError, "timeout"):
-            artifacts.run_owned([sys.executable, "-c", "import time; time.sleep(30)"], cwd=Path.cwd(),
-                                env=dict(os.environ), timeout=0.1, maximum=16)
+    def test_shared_overflow_timeout_and_cancellation_remain_failures(self) -> None:
+        for category, expected in (("output-overflow", "output-limit"),
+                                   ("infrastructure-timeout", "timeout"),
+                                   ("cancelled", "interrupted"),
+                                   ("unavailable-environment", "prerequisite-unavailable")):
+            with patch.object(artifacts, "supervise", side_effect=ProcessFailure(category, "detail")), \
+                    self.assertRaisesRegex(artifacts.ArtifactError, expected):
+                artifacts.run_owned(["unused"], cwd=Path.cwd(), env={}, timeout=5, maximum=16)
 
 
 if __name__ == "__main__":

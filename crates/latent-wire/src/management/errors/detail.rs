@@ -8,8 +8,10 @@ const MAX_SOURCE_FIELDS: usize = 32;
 const DIAGNOSTIC_STRING_FLOOR: usize = 64;
 
 pub(super) enum PublicDetail {
+    PublicationAmbiguous,
     Release(release::ReleaseDetail),
     Catalog(&'static str),
+    Currentness(&'static str),
     Mutation {
         object_generation: u64,
         catalog_generation: u64,
@@ -39,7 +41,21 @@ impl PublicDetail {
             return None;
         }
         match source.kind.as_str() {
+            "publication-selector"
+                if source.fields.get("reason").map(String::as_str)
+                    == Some("publication-selector-ambiguous") =>
+            {
+                Some(Self::PublicationAmbiguous)
+            }
             "release-operation" => release::ReleaseDetail::parse(source).map(Self::Release),
+            "admission.currentness" => {
+                let reason = source.fields.get("reason")?;
+                latent_core::error::ADMISSION_CURRENTNESS_REASONS
+                    .iter()
+                    .copied()
+                    .find(|candidate| *candidate == reason.as_str())
+                    .map(Self::Currentness)
+            }
             "deployment-catalog" => {
                 let reason = source.fields.get("reason")?;
                 CATALOG_REASONS
@@ -71,9 +87,13 @@ impl PublicDetail {
     /// Source strings and their spare capacities are never moved into the result.
     pub(super) fn retained_cost(&self) -> usize {
         match self {
+            Self::PublicationAmbiguous => 4 * 128 + 64,
             Self::Release(value) => value.retained_cost(),
             Self::Catalog(reason) => {
                 4 * 128 + "deployment-catalog".len() + "reason".len() + reason.len()
+            }
+            Self::Currentness(reason) => {
+                4 * 128 + "admission.currentness".len() + "reason".len() + reason.len()
             }
             Self::Mutation { .. } => {
                 8 * 128
@@ -89,7 +109,19 @@ impl PublicDetail {
 
     pub(super) fn into_proto(self) -> proto::ErrorDetail {
         match self {
+            Self::PublicationAmbiguous => proto::ErrorDetail {
+                kind: "publication-selector".to_owned(),
+                fields: [(
+                    "reason".to_owned(),
+                    "publication-selector-ambiguous".to_owned(),
+                )]
+                .into(),
+            },
             Self::Release(value) => value.into_proto(),
+            Self::Currentness(reason) => proto::ErrorDetail {
+                kind: "admission.currentness".into(),
+                fields: [("reason".into(), reason.into())].into(),
+            },
             Self::Catalog(reason) => proto::ErrorDetail {
                 kind: "deployment-catalog".to_owned(),
                 fields: [("reason".to_owned(), reason.to_owned())]
@@ -131,6 +163,8 @@ fn generation(value: &str) -> Option<u64> {
 // Exact public reasons emitted by the current DirectoryDeploymentRepository.
 const CATALOG_REASONS: &[&str] = &[
     "deployment-generation-conflict",
+    "deployment-state-version-conflict",
+    "deployment-operation-conflict",
     "deployment-scope-conflict",
     "deployment-not-found",
     "deployment-count-limit",

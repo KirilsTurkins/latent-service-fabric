@@ -9,9 +9,9 @@ struct Blob {
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct Revision {
+pub(super) struct Revision {
     format_version: u32,
-    identity: LifecycleIdentity,
+    pub(super) identity: LifecycleIdentity,
     files: Vec<Blob>,
     signatures: usize,
     provenance: usize,
@@ -102,7 +102,7 @@ impl LifecycleEvidence {
 #[derive(Default)]
 pub(super) struct EvidenceState {
     total: usize,
-    revisions: BTreeMap<ArtifactBlobDigest, (ReleaseDigest, usize)>,
+    revisions: BTreeMap<ArtifactBlobDigest, (PublicationId, usize)>,
     unreferenced: Option<ArtifactBlobDigest>,
 }
 
@@ -112,7 +112,7 @@ impl LifecycleStore {
         let state = self.state.try_read().map_err(lock_error)?;
         let entry = state
             .entries
-            .get(&prepared.revision.identity.release)
+            .get(&prepared.revision.identity.publication()?.id)
             .ok_or_else(invalid)?;
         if entry.stored.identity != prepared.revision.identity {
             return Err(invalid());
@@ -160,14 +160,24 @@ impl LifecycleStore {
         evidence.total = total;
         evidence.revisions.insert(
             prepared.digest.clone(),
-            (prepared.revision.identity.release.clone(), prepared.total),
+            (prepared.revision.identity.publication()?.id, prepared.total),
         );
         evidence.unreferenced = Some(prepared.digest.clone());
         Ok(())
     }
+    #[cfg(test)]
     pub(crate) fn read_evidence(
         &self,
         release: &ReleaseDigest,
+    ) -> Result<Option<(AdmissionBinding, ReleaseEvidenceUpload)>, PlatformError> {
+        match self.fixture_publication(None, release)? {
+            Some(id) => self.read_publication_evidence(&id),
+            None => Ok(None),
+        }
+    }
+    pub(crate) fn read_publication_evidence(
+        &self,
+        release: &PublicationId,
     ) -> Result<Option<(AdmissionBinding, ReleaseEvidenceUpload)>, PlatformError> {
         self.owner.check()?;
         let state = self.state.try_read().map_err(lock_error)?;
@@ -273,7 +283,7 @@ impl LifecycleStore {
             let (revision, _, size) = read_revision(&base.join(&name), self.limits, !referenced)?;
             let row = state
                 .entries
-                .get(&revision.identity.release)
+                .get(&revision.identity.publication()?.id)
                 .ok_or_else(corrupt)?;
             if row.stored.identity != revision.identity {
                 return Err(corrupt());
@@ -289,12 +299,12 @@ impl LifecycleStore {
             }
             evidence
                 .revisions
-                .insert(digest, (revision.identity.release, size));
+                .insert(digest, (revision.identity.publication()?.id, size));
         }
         for entry in state.entries.values() {
             if let Some(digest) = &entry.stored.record.evidence_revision_digest {
                 if evidence.revisions.get(digest).map(|(release, _)| release)
-                    != Some(&entry.stored.identity.release)
+                    != Some(&entry.stored.identity.publication()?.id)
                 {
                     return Err(corrupt());
                 }
@@ -326,7 +336,7 @@ impl LifecycleStore {
     }
     pub(super) fn check_evidence_cutover(
         &self,
-        release: Option<&ReleaseDigest>,
+        release: Option<&PublicationId>,
         old: Option<&ArtifactBlobDigest>,
         new: Option<&ArtifactBlobDigest>,
     ) -> Result<(), PlatformError> {
@@ -349,7 +359,7 @@ fn file_name(index: usize) -> String {
 fn revision_path(root: &Path, digest: &ArtifactBlobDigest) -> PathBuf {
     root.join("evidence").join(&digest.as_str()[7..])
 }
-fn read_revision(
+pub(super) fn read_revision(
     path: &Path,
     limits: LifecycleLimits,
     partial: bool,

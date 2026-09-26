@@ -1,6 +1,7 @@
 mod admission;
 pub(super) mod fixtures;
 mod golden;
+mod http;
 mod lifecycle;
 #[cfg(unix)]
 mod lock_release;
@@ -8,6 +9,7 @@ mod lock_release;
 mod observation;
 mod operations;
 mod pagination;
+mod publications;
 mod recovery;
 #[cfg(target_os = "linux")]
 mod resources;
@@ -518,3 +520,5 @@ fn concurrent_snapshot_replacement_never_exposes_half_a_batch() {
     .unwrap()
     .is_some());
 }
+#[cfg(target_os = "linux")]
+mod bindings;

@@ -1,0 +1,148 @@
+name: Developer platform preflight
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/559-hosted-qualification, feat/559-preflight-ready]
+    paths: [.github/workflows/developer-platform-preflight.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: developer-platform-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-wsl:
+    name: Observe actual WSL2 on a fresh Windows runner
+    runs-on: windows-2025
+    timeout-minutes: 8
+    steps:
+      - name: Observe the host and an exactly owned pinned Ubuntu WSL2 environment
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+          $Output = Join-Path $env:RUNNER_TEMP 'developer-platform-preflight'
+          New-Item -ItemType Directory -Path $Output | Out-Null
+          function Observe-Wsl([string[]]$CommandArguments, [int]$TimeoutMillis = 30000) {
+              if ($TimeoutMillis -lt 1 -or $TimeoutMillis -gt 120000) { throw 'Invalid observer deadline.' }
+              $Start = [Diagnostics.ProcessStartInfo]::new()
+              $Start.FileName = Join-Path $env:SystemRoot 'System32/wsl.exe'
+              $Start.UseShellExecute = $false
+              $Start.CreateNoWindow = $true
+              $Start.RedirectStandardOutput = $true
+              $Start.RedirectStandardError = $true
+              foreach ($Argument in $CommandArguments) { $Start.ArgumentList.Add($Argument) }
+              $Process = [Diagnostics.Process]::new()
+              $Process.StartInfo = $Start
+              $Timer = [Diagnostics.Stopwatch]::StartNew()
+              try {
+                  if (-not $Process.Start()) { throw 'WSL observer did not start.' }
+                  $Stdout = $Process.StandardOutput.ReadToEndAsync()
+                  $Stderr = $Process.StandardError.ReadToEndAsync()
+                  $Completed = $Process.WaitForExit($TimeoutMillis)
+                  if (-not $Completed) {
+                      $Process.Kill($true)
+                      if (-not $Process.WaitForExit(5000)) { throw 'Owned observer cleanup unconfirmed.' }
+                  }
+                  $Text = $Stdout.GetAwaiter().GetResult().Replace([string][char]0, '').Trim()
+                  $ErrorText = $Stderr.GetAwaiter().GetResult().Replace([string][char]0, '').Trim()
+                  if ($Text.Length -gt 32768 -or $ErrorText.Length -gt 32768) { throw 'Observer output bound exceeded.' }
+                  return [ordered]@{ arguments=$CommandArguments; exitCode=$Process.ExitCode;
+                      deadlineExceeded=(-not $Completed); seconds=[math]::Round($Timer.Elapsed.TotalSeconds,3);
+                      stdout=$Text; stderr=$ErrorText; observerReaped=$true }
+              } finally { $Process.Dispose() }
+          }
+          $Os = Get-CimInstance Win32_OperatingSystem
+          $Computer = Get-CimInstance Win32_ComputerSystem
+          $Report = [ordered]@{
+              schemaVersion='latent.dev.hosted-platform-preflight.v1'; passed=$false;
+              observedUtc=[DateTime]::UtcNow.ToString('o'); sourceCommit=$env:GITHUB_SHA;
+              runnerImage=$env:ImageOS; runnerImageVersion=$env:ImageVersion;
+              osVersion=$Os.Version; osBuild=$Os.BuildNumber; architecture=$Os.OSArchitecture;
+              hypervisorPresent=$Computer.HypervisorPresent;
+              freeDiskBytes=(Get-PSDrive -Name C).Free;
+              sourceCheckoutUsed=$false; runtimeCompiled=$false; candidateInstalled=$false;
+              qualificationComplete=$false; observations=[ordered]@{};
+              cleanup='no-owned-distribution-created'
+          }
+          $Name = 'LSF-Preflight-' + $env:GITHUB_RUN_ID + '-' + $env:GITHUB_RUN_ATTEMPT
+          if ($Name -notmatch '^LSF-Preflight-[0-9]+-[0-9]+$') { throw 'Ephemeral runner identity required.' }
+          $Install = [IO.Path]::GetFullPath((Join-Path $Output 'owned-ubuntu'))
+          if (-not $Install.StartsWith([IO.Path]::GetFullPath($Output) + [IO.Path]::DirectorySeparatorChar,
+              [StringComparison]::OrdinalIgnoreCase) -or (Test-Path -LiteralPath $Install)) { throw 'New owned path required.' }
+          $Imported = $false
+          $RegistryId = $null
+          try {
+              $Report.observations.version = Observe-Wsl @('--version')
+              $Report.observations.status = Observe-Wsl @('--status')
+              $Report.observations.distributions = Observe-Wsl @('--list','--verbose')
+              $Existing = @(Get-ChildItem -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' -ErrorAction SilentlyContinue |
+                  ForEach-Object { Get-ItemProperty -LiteralPath $_.PSPath })
+              if (@($Existing | Where-Object DistributionName -eq $Name).Count) { throw 'Existing distribution will not be adopted.' }
+              $Url = 'https://releases.ubuntu.com/noble/ubuntu-24.04.5-wsl-amd64.wsl'
+              # Reviewed from Canonical's HTTPS SHA256SUMS, not from this download.
+              $ExpectedHash = 'bb415d824822c4b878125729af451a5d18fb13d1cf5cbed9a7393ad64ac6039e'
+              $Archive = Join-Path $Output 'ubuntu.wsl'
+              & curl.exe --fail --silent --show-error --location --max-time 120 --max-filesize 536870912 --output $Archive $Url
+              if ($LASTEXITCODE -ne 0 -or (Get-FileHash -LiteralPath $Archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedHash) {
+                  throw 'Pinned Ubuntu preflight input verification failed.'
+              }
+              $Report.rootfs = [ordered]@{ url=$Url; sha256=$ExpectedHash; distribution=$Name;
+                  checksumAuthority='https://releases.ubuntu.com/noble/SHA256SUMS'; purpose='host-availability-only' }
+              $Report.cleanup = 'import-intent-recorded-unconfirmed-state-left-to-runner-disposal'
+              $Report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $Output 'observation.json') -Encoding utf8
+              $Import = Observe-Wsl -CommandArguments @('--import',$Name,$Install,$Archive,'--version','2') -TimeoutMillis 120000
+              $Report.observations.import = $Import
+              if ($Import.deadlineExceeded -or $Import.exitCode -ne 0) { throw 'Original owned WSL import unconfirmed; no retry.' }
+              $Registration = @(Get-ChildItem -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' |
+                  ForEach-Object { Get-ItemProperty -LiteralPath $_.PSPath } | Where-Object DistributionName -eq $Name)
+              if ($Registration.Count -ne 1 -or $Registration[0].Version -ne 2 -or
+                  [IO.Path]::GetFullPath($Registration[0].BasePath.Replace('\\?\','')).TrimEnd('\') -ne $Install.TrimEnd('\')) {
+                  throw 'New distribution ownership could not be confirmed.'
+              }
+              $RegistryId = $Registration[0].PSPath
+              $Imported = $true
+              $Guest = Observe-Wsl @('--distribution',$Name,'--user','root','--exec','uname','-s','-r','-m')
+              $Report.observations.guest = $Guest
+              if ($Guest.deadlineExceeded -or $Guest.exitCode -ne 0 -or
+                  $Guest.stdout -notmatch '^Linux (\d+)\.(\d+)\.[^ ]+ x86_64$') {
+                  throw 'Actual x86-64 WSL2 environment was not observed.'
+              }
+              if ([int]$Matches[1] -lt 6 -or ([int]$Matches[1] -eq 6 -and [int]$Matches[2] -lt 8)) {
+                  throw 'Observed WSL2 kernel is below the runtime minimum.'
+              }
+              $Report.passed = $true
+          } finally {
+              if ($Imported) {
+                  $Current = Get-ItemProperty -LiteralPath $RegistryId
+                  if ($Current.DistributionName -ne $Name -or $Current.Version -ne 2 -or
+                      [IO.Path]::GetFullPath($Current.BasePath.Replace('\\?\','')).TrimEnd('\') -ne $Install.TrimEnd('\')) {
+                      $Report.passed = $false
+                      $Report.cleanup = 'ownership-changed-no-destructive-cleanup'
+                  } else {
+                      $Report.observations.stop = Observe-Wsl @('--terminate',$Name)
+                      $Removed = Observe-Wsl @('--unregister',$Name)
+                      $Report.observations.purge = $Removed
+                      if ($Removed.exitCode -eq 0 -and -not $Removed.deadlineExceeded -and -not (Test-Path -LiteralPath $RegistryId)) {
+                          $Report.cleanup = 'exact-owned-distribution-stopped-and-unregistered'
+                      } else {
+                          $Report.passed = $false
+                          $Report.cleanup = 'owned-purge-unconfirmed-no-retry'
+                      }
+                  }
+              }
+              $Report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $Output 'observation.json') -Encoding utf8
+          }
+          if (-not $Report.passed) { throw 'Hosted WSL2 preflight or exact-owner cleanup failed.' }
+          Write-Output 'Actual hosted WSL2 preflight passed; packaged workflow qualification remains separate.'
+      - name: Retain the bounded host observation including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: developer-platform-preflight-${{ github.sha }}
+          path: ${{ runner.temp }}/developer-platform-preflight/observation.json
+          if-no-files-found: error
+          retention-days: 7

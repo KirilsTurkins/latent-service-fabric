@@ -57,6 +57,7 @@ impl DirectoryArtifactRepository {
         self.lifecycle
             .set(store)
             .map_err(|_| corrupt("catalog-lifecycle-already-initialized"))?;
+        self.web.epoch.bind_catalog(self.lifecycle_authority())?;
         if !marker_exists {
             let temporary = self.root.join("LIFECYCLE_MODE.next");
             if fs::symlink_metadata(&temporary).is_ok() {
@@ -72,21 +73,24 @@ impl DirectoryArtifactRepository {
         // COMPLETE proves content integrity. Only durable lifecycle membership
         // proves that the publication transaction committed.
         for identity in baseline {
-            match self.life_store().record(&identity.release)? {
+            match self
+                .life_store()
+                .record_publication(&identity.publication()?.id)?
+            {
                 None => self
                     .index
                     .write()
                     .map_err(lock_error)?
-                    .remove_pending(&identity.release),
+                    .remove_pending(&identity.publication()?.id),
                 Some(record) if record.evidence_revision_digest.is_some() => {
-                    let destination = self.entry_path(&identity.release)?;
+                    let destination = self.publication_path(&identity.publication()?.id);
                     let verified = self.load_complete_entry(&destination, Retention::Metadata)?;
                     let proof = self.recover_selected_evidence(&destination, &verified)?;
                     self.index
                         .write()
                         .map_err(lock_error)?
                         .install_selected_eligibility(
-                            &identity.release,
+                            &identity.publication()?.id,
                             proof,
                             identity.completion,
                             self.config,
@@ -102,72 +106,27 @@ impl DirectoryArtifactRepository {
         &self,
         release: &ReleaseDigest,
     ) -> Result<ReleaseUseEligibility, PlatformError> {
-        let mut result = None;
-        self.life_store().with_current(&mut |fence| {
-            let proof = {
-                let index = self.index.read().map_err(lock_error)?;
-                let entry = index.by_digest.get(release).ok_or_else(|| {
-                    error(PlatformErrorCode::NotFound, "release digest not found")
-                })?;
-                entry.eligibility.clone()
-            };
-            if self.admission.is_some() && proof.is_none() {
-                return Err(error(
-                    PlatformErrorCode::PermissionDenied,
-                    "release-is-not-currently-eligible",
-                ));
-            }
-            let token = fence.eligibility(release, proof)?;
-            token.check_current()?;
-            result = Some(token);
-            Ok(())
-        })?;
-        result.ok_or_else(|| corrupt("missing-catalog-execution-snapshot"))
+        self.publication_execution_eligibility(&self.require_legacy_publication(None, release)?)
     }
 
     pub(super) fn historical_snapshot(
         &self,
         release: &ReleaseDigest,
     ) -> Result<HistoricalExecutionSnapshot, PlatformError> {
-        if !self
-            .index
-            .read()
-            .map_err(lock_error)?
-            .by_digest
-            .contains_key(release)
-        {
-            return Err(error(
-                PlatformErrorCode::NotFound,
-                "release digest not found",
-            ));
-        }
-        let verified = self.load_complete_entry(&self.entry_path(release)?, Retention::Metadata)?;
-        verified.metadata.verify_requested(release)?;
-        self.verify_admission_index(release, &verified)?;
-        let identity = self
-            .life_store()
-            .identity(release)?
-            .ok_or_else(|| corrupt("lifecycle-membership-missing"))?;
-        if identity.completion != verified.completion.identity()? {
-            return Err(corrupt("lifecycle-content-changed"));
-        }
-        HistoricalExecutionSnapshot::directory(
-            verified.metadata,
-            self.lifecycle_authority(),
-            self.current_execution_eligibility(release),
-        )
+        self.selected_historical_snapshot(release, None)
     }
 
-    pub(super) fn lifecycle_status(
+    pub fn publication_lifecycle_status(
         &self,
-        scope: &LifecycleScope,
-        release: &ReleaseDigest,
+        reference: &crate::PublicationRef,
     ) -> Result<Option<ReleaseLifecycleStatus>, PlatformError> {
-        scope.validate()?;
+        if self.publication_catalog_entry(reference)?.is_none() {
+            return Ok(None);
+        }
         let Some(record) = self
             .life_store()
-            .record(release)?
-            .filter(|value| &value.scope == scope)
+            .record_publication(&reference.id)?
+            .filter(|r| r.scope == reference.scope)
         else {
             return Ok(None);
         };
@@ -180,36 +139,39 @@ impl DirectoryArtifactRepository {
                 ReleaseLiveEligibility::Denied,
                 ReleaseEligibilityReason::Retired,
             ),
-            ReleaseLifecycleState::Admitted => match self.current_execution_eligibility(release) {
-                Ok(_) => (
-                    ReleaseLiveEligibility::Eligible,
-                    if self.admission.is_some() {
-                        ReleaseEligibilityReason::Verified
-                    } else {
-                        ReleaseEligibilityReason::LocalEligible
+            ReleaseLifecycleState::Admitted => {
+                match self.publication_execution_eligibility(reference) {
+                    Ok(_) => (
+                        ReleaseLiveEligibility::Eligible,
+                        if self.admission.is_some() {
+                            ReleaseEligibilityReason::Verified
+                        } else {
+                            ReleaseEligibilityReason::LocalEligible
+                        },
+                    ),
+                    Err(failure) => match failure.code {
+                        PlatformErrorCode::Unavailable | PlatformErrorCode::StateConflict => (
+                            ReleaseLiveEligibility::Unknown,
+                            ReleaseEligibilityReason::AuthorityUnavailable,
+                        ),
+                        PlatformErrorCode::IncompatibleContract => (
+                            ReleaseLiveEligibility::Denied,
+                            ReleaseEligibilityReason::RuntimeIncompatible,
+                        ),
+                        PlatformErrorCode::CorruptArtifact => (
+                            ReleaseLiveEligibility::Denied,
+                            ReleaseEligibilityReason::CorruptContent,
+                        ),
+                        _ => (
+                            ReleaseLiveEligibility::Denied,
+                            ReleaseEligibilityReason::PolicyDenied,
+                        ),
                     },
-                ),
-                Err(failure) => match failure.code {
-                    PlatformErrorCode::Unavailable | PlatformErrorCode::StateConflict => (
-                        ReleaseLiveEligibility::Unknown,
-                        ReleaseEligibilityReason::AuthorityUnavailable,
-                    ),
-                    PlatformErrorCode::IncompatibleContract => (
-                        ReleaseLiveEligibility::Denied,
-                        ReleaseEligibilityReason::RuntimeIncompatible,
-                    ),
-                    PlatformErrorCode::CorruptArtifact => (
-                        ReleaseLiveEligibility::Denied,
-                        ReleaseEligibilityReason::CorruptContent,
-                    ),
-                    _ => (
-                        ReleaseLiveEligibility::Denied,
-                        ReleaseEligibilityReason::PolicyDenied,
-                    ),
-                },
-            },
+                }
+            }
         };
         Ok(Some(ReleaseLifecycleStatus {
+            publication: Some(reference.id.clone()),
             record,
             eligibility,
             eligibility_reason,

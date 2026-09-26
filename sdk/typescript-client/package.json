@@ -1,15 +1,22 @@
 {
   "name": "@latent/sdk",
   "version": "0.1.0-alpha.3",
-  "description": "Interface-only TypeScript SDK surface for Latent Service Fabric",
+  "description": "Typed LSF interfaces and an explicitly bounded Node.js RPC client",
   "type": "module",
-  "exports": "./dist/index.js",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./node": { "types": "./dist/node/index.d.ts", "node": "./dist/node/index.js" }
+  },
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test:semantic": "tsc -p tsconfig.tests.json && node dist/semantic-tests/tests/invocation-identity.js"
+    "test:semantic": "tsc -p tsconfig.tests.json && node dist/semantic-tests/tests/invocation-identity.js",
+    "test:transport": "npm run build && node --test tests/network/*.test.mjs"
   },
+  "engines": { "node": ">=24.19.0 <25" },
+  "dependencies": { "@bufbuild/protobuf": "2.15.0" },
   "devDependencies": {
-    "typescript": "5.8.3"
+    "@types/node": "26.5.1",
+    "typescript": "7.0.2"
   }
 }

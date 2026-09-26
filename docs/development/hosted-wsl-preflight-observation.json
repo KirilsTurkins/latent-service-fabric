@@ -1,0 +1,209 @@
+{
+  "schemaVersion": "latent.dev.hosted-platform-observation.v1",
+  "qualificationComplete": false,
+  "scope": "actual-Windows-x86-64-host-availability-no-LSF-candidate-installed",
+  "failedAttempts": [
+    {
+      "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36109350451",
+      "cause": "No user distribution existed, so the WSL system environment could not start.",
+      "observation": {
+        "schemaVersion": "latent.dev.hosted-platform-preflight.v1",
+        "passed": false,
+        "observedUtc": "2026-09-25T07:46:28.5263548Z",
+        "sourceCommit": "2218573546aa73a215e783413f668a624c3b7ea6",
+        "runnerImage": "win25-vs2026",
+        "runnerImageVersion": "20260907.229.1",
+        "osVersion": "10.0.26100",
+        "osBuild": "26100",
+        "architecture": "64-bit",
+        "hypervisorPresent": true,
+        "freeDiskBytes": 34387132416,
+        "sourceCheckoutUsed": false,
+        "runtimeCompiled": false,
+        "candidateInstalled": false,
+        "qualificationComplete": false,
+        "observations": {
+          "version": {
+            "arguments": [
+              "--version"
+            ],
+            "exitCode": 0,
+            "deadlineExceeded": false,
+            "seconds": 0.288,
+            "stdout": "WSL version: 2.7.13.0\r\nKernel version: 6.18.33.2-2\r\nWSLg version: 1.0.73.2\r\nMSRDC version: 1.2.7214\r\nDirect3D version: 1.611.1-81528511\r\nDXCore version: 10.0.26100.1-240331-1435.ge-release\r\nWindows version: 10.0.26100.33296",
+            "stderr": "",
+            "observerReaped": true
+          },
+          "status": {
+            "arguments": [
+              "--status"
+            ],
+            "exitCode": 0,
+            "deadlineExceeded": false,
+            "seconds": 0.082,
+            "stdout": "Default Version: 2",
+            "stderr": "",
+            "observerReaped": true
+          },
+          "distributions": {
+            "arguments": [
+              "--list",
+              "--verbose"
+            ],
+            "exitCode": -1,
+            "deadlineExceeded": false,
+            "seconds": 0.217,
+            "stdout": "Windows Subsystem for Linux has no installed distributions.\r\nYou can resolve this by installing a distribution with the instructions below:\r\n\r\nUse 'wsl.exe --list --online' to list available distributions\r\nand 'wsl.exe --install <Distro>' to install.",
+            "stderr": "",
+            "observerReaped": true
+          },
+          "systemGuest": {
+            "arguments": [
+              "--system",
+              "--exec",
+              "uname",
+              "-s",
+              "-r",
+              "-m"
+            ],
+            "exitCode": -1,
+            "deadlineExceeded": false,
+            "seconds": 0.058,
+            "stdout": "Windows Subsystem for Linux has no installed distributions.\r\nYou can resolve this by installing a distribution with the instructions below:\r\n\r\nUse 'wsl.exe --list --online' to list available distributions\r\nand 'wsl.exe --install <Distro>' to install.",
+            "stderr": "",
+            "observerReaped": true
+          }
+        },
+        "cleanup": "observers-reaped-system-environment-left-to-ephemeral-runner-disposal"
+      }
+    }
+  ],
+  "passedAttempt": {
+    "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36109760242",
+    "observation": {
+      "schemaVersion": "latent.dev.hosted-platform-preflight.v1",
+      "passed": true,
+      "observedUtc": "2026-09-25T07:51:05.6556712Z",
+      "sourceCommit": "d711064ddc236c7442601bed89502395f7246275",
+      "runnerImage": "win25-vs2026",
+      "runnerImageVersion": "20260907.229.1",
+      "osVersion": "10.0.26100",
+      "osBuild": "26100",
+      "architecture": "64-bit",
+      "hypervisorPresent": true,
+      "freeDiskBytes": 34190032896,
+      "sourceCheckoutUsed": false,
+      "runtimeCompiled": false,
+      "candidateInstalled": false,
+      "qualificationComplete": false,
+      "observations": {
+        "version": {
+          "arguments": [
+            "--version"
+          ],
+          "exitCode": 0,
+          "deadlineExceeded": false,
+          "seconds": 0.066,
+          "stdout": "WSL version: 2.7.13.0\r\nKernel version: 6.18.33.2-2\r\nWSLg version: 1.0.73.2\r\nMSRDC version: 1.2.7214\r\nDirect3D version: 1.611.1-81528511\r\nDXCore version: 10.0.26100.1-240331-1435.ge-release\r\nWindows version: 10.0.26100.33296",
+          "stderr": "",
+          "observerReaped": true
+        },
+        "status": {
+          "arguments": [
+            "--status"
+          ],
+          "exitCode": 0,
+          "deadlineExceeded": false,
+          "seconds": 0.045,
+          "stdout": "Default Version: 2",
+          "stderr": "",
+          "observerReaped": true
+        },
+        "distributions": {
+          "arguments": [
+            "--list",
+            "--verbose"
+          ],
+          "exitCode": -1,
+          "deadlineExceeded": false,
+          "seconds": 0.051,
+          "stdout": "Windows Subsystem for Linux has no installed distributions.\r\nYou can resolve this by installing a distribution with the instructions below:\r\n\r\nUse 'wsl.exe --list --online' to list available distributions\r\nand 'wsl.exe --install <Distro>' to install.",
+          "stderr": "",
+          "observerReaped": true
+        },
+        "import": {
+          "arguments": [
+            "--import",
+            "LSF-Preflight-36109760242-1",
+            "D:\\a\\_temp\\developer-platform-preflight\\owned-ubuntu",
+            "D:\\a\\_temp\\developer-platform-preflight\\ubuntu.wsl",
+            "--version",
+            "2"
+          ],
+          "exitCode": 0,
+          "deadlineExceeded": false,
+          "seconds": 15.924,
+          "stdout": "The operation completed successfully.",
+          "stderr": "",
+          "observerReaped": true
+        },
+        "guest": {
+          "arguments": [
+            "--distribution",
+            "LSF-Preflight-36109760242-1",
+            "--user",
+            "root",
+            "--exec",
+            "uname",
+            "-s",
+            "-r",
+            "-m"
+          ],
+          "exitCode": 0,
+          "deadlineExceeded": false,
+          "seconds": 10.282,
+          "stdout": "Linux 6.18.33.2-microsoft-standard-WSL2 x86_64",
+          "stderr": "",
+          "observerReaped": true
+        },
+        "stop": {
+          "arguments": [
+            "--terminate",
+            "LSF-Preflight-36109760242-1"
+          ],
+          "exitCode": 0,
+          "deadlineExceeded": false,
+          "seconds": 0.092,
+          "stdout": "The operation completed successfully.",
+          "stderr": "",
+          "observerReaped": true
+        },
+        "purge": {
+          "arguments": [
+            "--unregister",
+            "LSF-Preflight-36109760242-1"
+          ],
+          "exitCode": 0,
+          "deadlineExceeded": false,
+          "seconds": 0.258,
+          "stdout": "The operation completed successfully.",
+          "stderr": "",
+          "observerReaped": true
+        }
+      },
+      "cleanup": "exact-owned-distribution-stopped-and-unregistered",
+      "rootfs": {
+        "url": "https://releases.ubuntu.com/noble/ubuntu-24.04.5-wsl-amd64.wsl",
+        "sha256": "bb415d824822c4b878125729af451a5d18fb13d1cf5cbed9a7393ad64ac6039e",
+        "distribution": "LSF-Preflight-36109760242-1",
+        "checksumAuthority": "https://releases.ubuntu.com/noble/SHA256SUMS",
+        "purpose": "host-availability-only"
+      }
+    }
+  },
+  "limitations": [
+    "One GitHub Windows 2025 runner observation; nested virtualization is experimental.",
+    "No LSF artifact was installed, so this does not satisfy the packaged clean-host schedule.",
+    "The separate exact-source publisher policies must be independently approved before LSF candidate installation."
+  ]
+}

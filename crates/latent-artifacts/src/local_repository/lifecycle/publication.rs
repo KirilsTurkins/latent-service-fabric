@@ -8,6 +8,7 @@ use crate::{
 };
 
 struct Candidate {
+    reference: crate::PublicationRef,
     publication: PreparedPublication,
     files: Option<PreparedAdmissionFiles>,
     proof: Option<ReleaseEligibility>,
@@ -37,19 +38,15 @@ impl DirectoryArtifactRepository {
             .map_err(|_| resource_exhausted("admission-work-busy"))?;
         let mut request = self.publication_request(context, &upload)?;
         if let Some(operation) = self.replay(&request, preflight)? {
-            let release = operation
-                .component_digest
-                .as_ref()
-                .and_then(|release| {
-                    self.index
-                        .read()
-                        .ok()?
-                        .by_digest
-                        .get(release)
-                        .map(|value| value.value.clone())
-                })
+            let publication = self.operation_publication_ref(&operation)?;
+            let release = self
+                .publication_catalog_entry(&publication)?
                 .ok_or_else(|| corrupt("committed-publication-history-missing"))?;
-            return Ok(ManagedPublicationReceipt { release, operation });
+            return Ok(ManagedPublicationReceipt {
+                publication,
+                release,
+                operation,
+            });
         }
         let candidate = match self.publication_candidate(&mut request, upload) {
             Ok(candidate) => candidate,
@@ -61,13 +58,13 @@ impl DirectoryArtifactRepository {
         };
         // The exact success DTO must fit before staging, receipts or payload I/O.
         preflight(ReleaseOperationPreview {
+            publication: Some(&candidate.reference.id),
             replay: false,
             receipt: candidate.lifecycle.receipt(),
             release: Some(&candidate.summary),
             failure: None,
         })?;
-        let destination =
-            self.entry_path(&candidate.publication.artifact.descriptor.release_digest)?;
+        let destination = self.publication_path(&candidate.reference.id);
         let staged = if destination.exists() {
             None
         } else {
@@ -77,6 +74,7 @@ impl DirectoryArtifactRepository {
             )?))
         };
         let Candidate {
+            reference,
             publication,
             files,
             proof,
@@ -127,6 +125,7 @@ impl DirectoryArtifactRepository {
             ));
         }
         Ok(ManagedPublicationReceipt {
+            publication: reference,
             release: summary,
             operation: lifecycle.receipt().clone(),
         })
@@ -204,7 +203,17 @@ impl DirectoryArtifactRepository {
         let mut publication = self.prepare_publication(artifact)?;
         let release = publication.artifact.descriptor.release_digest.clone();
         request.component = Some(release.clone());
-        let old = self.life_store().record(&release)?;
+        let reference = match proof.as_ref() {
+            Some(proof) => {
+                crate::PublicationRef::package(request.context.scope.clone(), proof.package())?
+            }
+            None => crate::PublicationRef::trusted_local(
+                request.context.scope.clone(),
+                &publication.completion.identity()?,
+            )?,
+        };
+        request.publication = Some(reference.id.clone());
+        let old = self.life_store().record_publication(&reference.id)?;
         request.check_generation(old.as_ref())?;
         if old
             .as_ref()
@@ -224,7 +233,7 @@ impl DirectoryArtifactRepository {
                 "release-lifecycle-ineligible",
             ));
         }
-        let destination = self.entry_path(&release)?;
+        let destination = self.publication_path(&reference.id);
         if destination.exists() {
             let existing = self.load_complete_entry(&destination, Retention::Metadata)?;
             if !publication.completion.same_artifact(&existing.completion)
@@ -275,7 +284,7 @@ impl DirectoryArtifactRepository {
             if publication_state
                 .pending
                 .as_ref()
-                .is_some_and(|pending| pending != &release)
+                .is_some_and(|pending| pending != &reference.id)
             {
                 return Err(error(PlatformErrorCode::Unavailable, "catalog needs publication recovery: retry the pending release or reopen the root"));
             }
@@ -300,6 +309,7 @@ impl DirectoryArtifactRepository {
                 proof.binding().clone()
             };
             self.index.read().map_err(lock_error)?.preflight_admission(
+                &reference,
                 &publication.artifact.descriptor,
                 &publication.artifact.manifest,
                 &original,
@@ -308,6 +318,21 @@ impl DirectoryArtifactRepository {
                 self.config,
             )?;
         }
+        if proof.is_none() {
+            self.index.read().map_err(lock_error)?.preflight(
+                &reference,
+                &publication.artifact.descriptor,
+                &publication.artifact.manifest,
+                self.config,
+            )?;
+        }
+        let completion_bytes = publication.completion.encode()?;
+        let content_files =
+            self.publication_content_files(&publication, files.as_ref(), &completion_bytes)?;
+        self.content
+            .lock()
+            .map_err(lock_error)?
+            .preflight(&reference.id, &content_files)?;
         let record = old.unwrap_or_else(|| ReleaseLifecycleRecord {
             scope: request.context.scope.clone(),
             release,
@@ -328,16 +353,27 @@ impl DirectoryArtifactRepository {
             ReleaseOperationDisposition::Committed,
             ReleaseLifecycleReason::Admitted,
         );
-        let lifecycle = self.life_store().prepare(receipt, Some(identity))?;
+        let lifecycle = self.life_store().prepare_publication(
+            Some(reference.id.clone()),
+            receipt,
+            Some(identity),
+        )?;
         let artifact = &publication.artifact;
         let summary = ArtifactCatalogEntry {
+            publication: Some(reference.id.clone()),
+            package: lifecycle
+                .receipt()
+                .record
+                .as_ref()
+                .and_then(|record| record.package.clone()),
             descriptor: artifact.descriptor.clone(),
-            tenant: artifact.manifest.metadata.tenant.clone(),
+            tenant: reference.scope.tenant().cloned(),
             service: latent_core::ServiceId(artifact.manifest.metadata.name.clone()),
             semantic_version: artifact.manifest.semantic_version.clone(),
             world: artifact.manifest.world.clone(),
         };
         Ok(Candidate {
+            reference,
             publication,
             files,
             proof,
@@ -357,16 +393,14 @@ impl DirectoryArtifactRepository {
         fence: &crate::lifecycle::LifecycleFence<'_>,
         check: &mut dyn FnMut() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        let release = prepared
-            .receipt()
-            .component_digest
-            .as_ref()
-            .ok_or_else(|| corrupt("publication-release-missing"))?;
+        let publication_id = prepared
+            .publication()
+            .ok_or_else(|| corrupt("publication-identity-missing"))?;
         let mut publication = self.publish_lock.lock().map_err(lock_error)?;
         if publication
             .pending
             .as_ref()
-            .is_some_and(|pending| pending != release)
+            .is_some_and(|pending| pending != publication_id)
         {
             return Err(error(
                 PlatformErrorCode::Unavailable,
@@ -388,13 +422,13 @@ impl DirectoryArtifactRepository {
             }
             fs::rename(staged, destination).map_err(io_error)?;
             publication.release_directories += 1;
-            publication.pending = Some(release.clone());
+            publication.pending = Some(publication_id.clone());
             #[cfg(test)]
             integrity::faults::after_rename(destination);
         }
-        publication.pending = Some(release.clone());
+        publication.pending = Some(publication_id.clone());
         let verified = self.load_complete_entry(destination, Retention::Metadata)?;
-        if &verified.completion != expected {
+        if &verified.publication.id != publication_id || &verified.completion != expected {
             return Err(corrupt("publication-completion-changed"));
         }
         #[cfg(test)]
@@ -422,6 +456,7 @@ impl DirectoryArtifactRepository {
         let index = self.index.read().map_err(lock_error)?;
         if let Some(binding) = &original_binding {
             index.preflight_admission(
+                &verified.publication,
                 verified.metadata.descriptor(),
                 verified.metadata.manifest(),
                 binding,
@@ -431,18 +466,24 @@ impl DirectoryArtifactRepository {
             )?;
         } else {
             index.preflight(
+                &verified.publication,
                 verified.metadata.descriptor(),
                 verified.metadata.manifest(),
                 self.config,
             )?;
         }
         drop(index);
+        self.content
+            .lock()
+            .map_err(lock_error)?
+            .register_directory(publication_id, destination)?;
         check()?;
         fence.commit(prepared)?;
         let mut index = self.index.write().map_err(lock_error)?;
         check()?;
         if let Some(binding) = original_binding {
             index.insert_admitted(
+                verified.publication,
                 verified.metadata,
                 stamp,
                 binding,
@@ -451,13 +492,13 @@ impl DirectoryArtifactRepository {
                 self.config,
             )?;
             index.install_selected_eligibility(
-                release,
+                publication_id,
                 proof.cloned(),
                 expected.identity()?,
                 self.config,
             )?;
         } else {
-            index.insert_verified(verified.metadata, stamp, self.config)?;
+            index.insert_verified(verified.publication, verified.metadata, stamp, self.config)?;
         }
         publication.pending = None;
         Ok(())

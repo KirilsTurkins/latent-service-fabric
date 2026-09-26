@@ -8,7 +8,7 @@ use super::super::compiler::CompiledCatalog;
 use super::super::observation::{count, Work};
 use super::{hashing::Hashing, projection::Snapshot, LimitedBytes};
 
-const PREFIX: &[u8] = b"{\"format_version\":2,\"checksum\":\"sha256:";
+const PREFIX: &[u8] = b"{\"format_version\":5,\"checksum\":\"sha256:";
 
 pub(super) fn write(
     output: &mut LimitedBytes,
@@ -24,12 +24,12 @@ pub(super) fn write_with_control(
     control: Option<&super::ControlPayloadRef<'_>>,
     work: &mut Work,
 ) -> io::Result<()> {
-    if control.is_some_and(|value| value.deployment_operations.is_some()) {
-        output.write_all(b"{\"format_version\":4,\"checksum\":\"sha256:")?;
-    } else if control.is_some() {
-        output.write_all(b"{\"format_version\":3,\"checksum\":\"sha256:")?;
-    } else {
+    if control.is_some_and(|v| v.http_routes.is_some()) {
+        output.write_all(b"{\"format_version\":7,\"checksum\":\"sha256:")?;
+    } else if catalog.bindings.data.is_empty() {
         output.write_all(PREFIX)?;
+    } else {
+        output.write_all(b"{\"format_version\":6,\"checksum\":\"sha256:")?;
     }
     let checksum_start = output.bytes.len();
     output.write_all(&[b'0'; 64])?;
@@ -93,7 +93,36 @@ fn write_payload(
         output.write_all(b",\"control\":")?;
         value(output, control)?;
     }
+    output.write_all(b",\"publication_pins\":[")?;
+    let mut first = true;
+    for record in catalog.records.iter() {
+        if let Some(publication) = &record.publication {
+            if !first {
+                output.write_all(b",")?;
+            }
+            first = false;
+            value(
+                output,
+                &Pin {
+                    id: &record.deployment.id.0,
+                    publication: publication.as_str(),
+                },
+            )?;
+        }
+    }
+    output.write_all(b"]")?;
+    if !catalog.bindings.data.is_empty() {
+        output.write_all(b",\"capability_bindings\":")?;
+        value(output, catalog.bindings.data.as_ref())?;
+    }
     output.write_all(b"}")
+}
+
+#[derive(Serialize)]
+#[serde(crate = "latent_manifest::__serde")]
+struct Pin<'a> {
+    id: &'a str,
+    publication: &'a str,
 }
 
 #[derive(Serialize)]

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "latent.wiki-retirement-observation.v1",
+  "observedAt": "2026-09-26T17:52:07.478940+00:00",
+  "repository": "KirilsTurkins/latent-service-fabric",
+  "hasWiki": false,
+  "sourceRetirement": {
+    "pullRequest": "https://github.com/KirilsTurkins/latent-service-fabric/pull/507",
+    "mergedAt": "2026-09-23T13:12:14Z",
+    "mergeCommit": "34c4798e99893b0a6becb2ff7760ad664c08bdfb",
+    "removedPath": ".github/workflows/publish-wiki.yml"
+  },
+  "workflows": [
+    {
+      "id": 339975394,
+      "name": "Bootstrap and verify LSF Wiki",
+      "path": ".github/workflows/bootstrap-wiki.yml",
+      "state": "disabled_manually",
+      "html_url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/.github/workflows/bootstrap-wiki.yml",
+      "activeRuns": {
+        "in_progress": 0,
+        "queued": 0,
+        "waiting": 0
+      }
+    },
+    {
+      "id": 339974175,
+      "name": "Publish LSF Wiki",
+      "path": ".github/workflows/publish-wiki.yml",
+      "state": "disabled_manually",
+      "html_url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/release/.github/workflows/publish-wiki.yml",
+      "activeRuns": {
+        "in_progress": 0,
+        "queued": 0,
+        "waiting": 0
+      }
+    }
+  ],
+  "scope": "The Wiki setting and source retirement predate this observation. This run disabled the remaining workflow registrations. Complete-site publication and replacement-route verification remain separate gate work."
+}

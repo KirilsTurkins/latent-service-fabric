@@ -81,7 +81,7 @@ fn requirement_shapes_and_typed_spare_capacities_fail_closed() {
     let codec = JsonManifestCodec::default();
     let original: serde_json::Value =
         serde_json::from_slice(&codec.encode_capsule(&capsule()).unwrap()).unwrap();
-    for field in ["runtime", "targetTriples", "cpuFeatures"] {
+    for field in ["runtime", "renderer", "targetTriples", "cpuFeatures"] {
         let mut value = original.clone();
         value["compatibility"][field] = serde_json::Value::Null;
         assert!(codec
@@ -107,6 +107,69 @@ fn requirement_shapes_and_typed_spare_capacities_fail_closed() {
     manifest.runtime_requirements.target_triples.clear();
     manifest.runtime_requirements.cpu_features = vec![String::with_capacity(1024)];
     assert!(codec.encode_capsule(&manifest).is_err());
+}
+
+#[test]
+fn renderer_requirements_are_explicit_immutable_and_separate_from_host_capacity() {
+    use crate::{RendererProfile, RendererRequirement};
+    let mut manifest = capsule();
+    let required = RendererRequirement::angular();
+    manifest.runtime_requirements.renderer = Some(required.clone());
+    manifest.execution.threading = crate::ThreadingModel::SingleThreaded;
+    manifest.execution.snapshot_eligible = false;
+    manifest.execution.fusion_eligible = false;
+    manifest
+        .execution
+        .resource_budget_ceiling
+        .wall_time_limit_millis = Some(5000);
+    let codec = JsonManifestCodec::default();
+    assert_eq!(
+        codec
+            .decode_capsule(&codec.encode_capsule(&manifest).unwrap())
+            .unwrap(),
+        manifest
+    );
+    assert!(host().check_capsule(&manifest).is_err());
+    assert!(
+        host().with_renderer(required.clone()).is_err(),
+        "the renderer pins its engine version"
+    );
+    let installed = RuntimeCompatibilityProfile::new(
+        "wasmtime",
+        "47.0.4",
+        "x86_64-unknown-linux-gnu",
+        &["x86_64.sse2"],
+        u64::MAX,
+        u64::MAX,
+    )
+    .unwrap()
+    .with_renderer(required)
+    .unwrap();
+    assert_ne!(installed.digest(), host().digest());
+    installed.check_capsule(&manifest).unwrap();
+    manifest
+        .runtime_requirements
+        .renderer
+        .as_mut()
+        .unwrap()
+        .profile_digest = format!("sha256:{}", "0".repeat(64));
+    assert!(installed.check_capsule(&manifest).is_err());
+    manifest.runtime_requirements.renderer = Some(RendererRequirement::angular());
+    manifest
+        .runtime_requirements
+        .renderer
+        .as_mut()
+        .unwrap()
+        .profile = RendererProfile::WasmWebBufferedV1;
+    assert!(installed.check_capsule(&manifest).is_err());
+    manifest.runtime_requirements.renderer = Some(RendererRequirement::angular());
+    for wall in [None, Some(0), Some(5001)] {
+        manifest
+            .execution
+            .resource_budget_ceiling
+            .wall_time_limit_millis = wall;
+        assert!(installed.check_capsule(&manifest).is_err());
+    }
 }
 
 #[test]

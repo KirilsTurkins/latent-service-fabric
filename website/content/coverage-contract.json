@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "gate": 345,
+  "umbrella": 237,
+  "requiredIds": [
+    "evaluate-boundary",
+    "install-auth-readiness",
+    "contributor-checks",
+    "author-capsule",
+    "package-sign-publish",
+    "rollout-uncertain-recovery",
+    "client-rust",
+    "client-typescript",
+    "client-go",
+    "client-c",
+    "client-java",
+    "client-dotnet",
+    "grants-bindings",
+    "http-streaming",
+    "local-s3-blobs",
+    "local-vault-secrets",
+    "nats-events-triggers",
+    "local-calls-descendants",
+    "randomness-metrics",
+    "operator-security-recovery",
+    "angular-build-profile",
+    "angular-publication-routing",
+    "angular-browser-workflow",
+    "reference-contracts",
+    "trust-resource-architecture",
+    "retained-performance-evidence",
+    "later-phase-boundary"
+  ],
+  "areas": [
+    "evaluate-install-contribute",
+    "capsule-delivery-recovery",
+    "executable-clients",
+    "capabilities-operators",
+    "angular-browser",
+    "reference-evidence"
+  ],
+  "authoringCriteria": [
+    "outcome",
+    "version-profile",
+    "prerequisites",
+    "full-source",
+    "commands",
+    "expected-observations",
+    "failure-cases",
+    "cleanup",
+    "deeper-reference",
+    "validation-level"
+  ],
+  "guideIssues": [
+    237,
+    357,
+    358,
+    359,
+    361
+  ]
+}

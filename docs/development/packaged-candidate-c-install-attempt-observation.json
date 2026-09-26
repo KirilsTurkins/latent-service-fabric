@@ -1,0 +1,46 @@
+{
+  "conductorSourceCommit": "eeba7ef8e746aa0806cdc44d37aa6423a7b0e6a1",
+  "independentPolicyApproved": true,
+  "publiclyPublished": false,
+  "qualificationComplete": false,
+  "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36163957528",
+  "schemaVersion": "latent.dev.packaged-attempt-observation.v1",
+  "sourceCommit": "f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+  "windows": {
+    "cToolInstallOutcome": "uncertain-private-runner-state-retained-until-teardown",
+    "cause": "not-yet-established",
+    "cleanup": "failed-attempt-private-workspaces-retained-inspect-cleanup-receipts",
+    "completed": [
+      "offline-frontend-authentication",
+      "wrong-target-rejection",
+      "archive-tamper-rejection",
+      "wrong-publisher-identity-rejection",
+      "owned-wsl-provisioning",
+      "rust-runtime-and-tool-installation",
+      "rust-build-and-signed-tests",
+      "original-release-deployment-invocation-recovery",
+      "separate-c-workspace-user",
+      "c-runtime-installation"
+    ],
+    "failure": "frontend-command-failed-install-tools",
+    "frontendCode": "backend-transport-lost-status-required",
+    "host": {
+      "architecture": "AMD64",
+      "osVersion": "10.0.26100"
+    },
+    "language": "c",
+    "operation": "install-tools",
+    "operationSeconds": 36.49,
+    "originalMutationReplayed": false,
+    "passed": false,
+    "receipt": {
+      "artifact": "packaged-windows-observation-36163957528-1",
+      "file": "packaged-observation/observation.json",
+      "sha256": "sha256:6e76136859c634c258682aceb5c6c98a272d337b07e92ea0c749d101e1bccd17"
+    },
+    "rustNodeCleanShutdown": true,
+    "rustNodeReaped": true,
+    "seconds": 340.836,
+    "uncertain": true
+  }
+}

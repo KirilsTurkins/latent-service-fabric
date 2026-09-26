@@ -7,11 +7,21 @@ use latent_core::{
 use wasmtime::{ResourceLimiter, StoreLimits, StoreLimitsBuilder};
 
 pub(crate) mod accounting;
-mod clock;
+pub(crate) mod blob;
+pub(crate) mod capabilities;
+pub(crate) mod clock;
 mod context;
+pub(crate) mod events;
+pub(crate) mod http;
 mod logging;
+pub(crate) mod metrics;
 mod owned_context;
 pub(crate) mod policy;
+pub(crate) mod random;
+pub(crate) mod secrets;
+pub(crate) mod service;
+pub(crate) mod streaming_http;
+mod web_identity;
 pub(crate) use logging::InvocationLogBuffer;
 pub use logging::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
 
@@ -26,6 +36,7 @@ pub(crate) use request_context::validate_request_context;
 struct PendingMemoryGrowth {
     bytes: usize,
     previous_peak_memory_bytes: usize,
+    reservation: Option<latent_core::RuntimeMemoryReservation>,
 }
 
 #[derive(Debug)]
@@ -35,6 +46,7 @@ pub(crate) struct TrackingLimiter {
     current_memory_bytes: usize,
     peak_memory_bytes: usize,
     pending_memory_growth: Option<PendingMemoryGrowth>,
+    budget: Option<latent_core::ActivationBudget>,
 }
 
 impl TrackingLimiter {
@@ -57,11 +69,41 @@ impl TrackingLimiter {
             current_memory_bytes: 0,
             peak_memory_bytes: 0,
             pending_memory_growth: None,
+            budget: None,
         }
     }
 
     pub(crate) fn peak_memory_bytes(&self) -> u64 {
         u64::try_from(self.peak_memory_bytes).unwrap_or(u64::MAX)
+    }
+    /// Wasmtime 47 does not expose GC growth to `ResourceLimiter`. Charge the
+    /// complete fixed, nonmoving exception reservation before creating a Store;
+    /// subsequent linear memories share the same aggregate activation budget.
+    pub(crate) fn reserve_exception_heap(&mut self) -> Result<(), latent_core::PlatformError> {
+        let bytes = crate::config::JAVA_EXCEPTION_HEAP_BYTES;
+        if self.current_memory_bytes != 0 || bytes >= self.maximum_memory_bytes {
+            return Err(crate::containment::platform_error(
+                latent_core::PlatformErrorCode::ResourceExhausted,
+                "Java exception reservation exceeds the effective activation memory budget",
+                false,
+            ));
+        }
+        if let Some(budget) = &self.budget {
+            budget
+                .reserve_runtime_memory(bytes as u64)
+                .map_err(|error| error.to_platform_error())?
+                .confirm();
+        }
+        self.current_memory_bytes = bytes;
+        self.peak_memory_bytes = bytes;
+        Ok(())
+    }
+    pub(crate) fn confirm_memory_growth(&mut self) {
+        if let Some(pending) = self.pending_memory_growth.take() {
+            if let Some(reservation) = pending.reservation {
+                reservation.confirm();
+            }
+        }
     }
 
     #[cfg(test)]
@@ -78,7 +120,7 @@ impl ResourceLimiter for TrackingLimiter {
         maximum: Option<usize>,
     ) -> wasmtime::Result<bool> {
         // A later limiter callback means the previous permitted growth completed.
-        self.pending_memory_growth = None;
+        self.confirm_memory_growth();
 
         let growth = desired.saturating_sub(current);
         let aggregate = self
@@ -94,12 +136,22 @@ impl ResourceLimiter for TrackingLimiter {
 
         let allowed = self.limits.memory_growing(current, desired, maximum)?;
         if allowed {
+            let reservation = self
+                .budget
+                .as_ref()
+                .map(|budget| {
+                    budget
+                        .reserve_runtime_memory(aggregate as u64)
+                        .map_err(|error| wasmtime::Error::msg(error.to_platform_error().message))
+                })
+                .transpose()?;
             let previous_peak_memory_bytes = self.peak_memory_bytes;
             self.current_memory_bytes = aggregate;
             self.peak_memory_bytes = self.peak_memory_bytes.max(aggregate);
             self.pending_memory_growth = Some(PendingMemoryGrowth {
                 bytes: growth,
                 previous_peak_memory_bytes,
+                reservation,
             });
         }
         Ok(allowed)
@@ -190,9 +242,13 @@ pub(crate) struct HostState {
     pub(crate) accounting: InvocationAccounting,
     context_policy: Arc<ContextExposurePolicy>,
     clock: Arc<dyn ActivationClock>,
+    pub(crate) currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
     clock_origin: Instant,
     last_monotonic_nanos: u64,
+    #[cfg(feature = "development-clock-fixture")]
+    development_clock_readings: Option<crate::config::DevelopmentClockReadings>,
     host_call_timing: HostCallTiming,
+    pub(crate) capabilities: capabilities::HostCapabilities,
 }
 
 /// In-guest host-import time. This is intentionally reported separately from
@@ -222,16 +278,24 @@ impl HostState {
             accounting.budget().clone(),
             sink,
         );
+        let mut limiter = TrackingLimiter::with_config(maximum_memory_bytes, config);
+        if accounting.budget().profile() == latent_core::BudgetProfile::Phase3 {
+            limiter.budget = Some(accounting.budget().clone());
+        }
         Self {
             context,
-            limiter: TrackingLimiter::with_config(maximum_memory_bytes, config),
+            limiter,
             logs,
             accounting,
             context_policy,
             clock,
+            currentness_read_wait: None,
             clock_origin,
             last_monotonic_nanos: 0,
+            #[cfg(feature = "development-clock-fixture")]
+            development_clock_readings: config.development_clock_readings,
             host_call_timing: HostCallTiming::default(),
+            capabilities: capabilities::HostCapabilities::default(),
         }
     }
 
@@ -239,6 +303,7 @@ impl HostState {
         &mut self,
         fuel: u64,
     ) -> wasmtime::Result<crate::bindings::latent::context::context::ResourceBudget> {
+        self.limiter.confirm_memory_growth();
         self.accounting
             .observe_runtime(fuel, self.limiter.peak_memory_bytes())
             .map_err(|error| wasmtime::Error::msg(error.message))?;
@@ -282,6 +347,27 @@ mod tests {
     use super::*;
 
     const WASM_PAGE_BYTES: usize = 64 * 1024;
+
+    #[test]
+    fn java_exception_reservation_and_linear_memories_share_one_budget() {
+        let reserved = crate::config::JAVA_EXCEPTION_HEAP_BYTES;
+        let mut limiter = TrackingLimiter::new(reserved + 2 * WASM_PAGE_BYTES);
+        limiter.reserve_exception_heap().unwrap();
+        assert_eq!(limiter.peak_memory_bytes(), reserved as u64);
+        assert!(limiter.memory_growing(0, WASM_PAGE_BYTES, None).unwrap());
+        assert!(limiter.memory_growing(0, WASM_PAGE_BYTES, None).unwrap());
+        assert!(limiter
+            .memory_growing(WASM_PAGE_BYTES, 2 * WASM_PAGE_BYTES, None)
+            .is_err());
+        assert_eq!(
+            limiter.peak_memory_bytes(),
+            (reserved + 2 * WASM_PAGE_BYTES) as u64
+        );
+        assert!(limiter.reserve_exception_heap().is_err());
+        let mut insufficient = TrackingLimiter::new(reserved);
+        assert!(insufficient.reserve_exception_heap().is_err());
+        assert_eq!(insufficient.peak_memory_bytes(), 0);
+    }
 
     #[test]
     fn aggregate_memory_budget_counts_all_linear_memories() {

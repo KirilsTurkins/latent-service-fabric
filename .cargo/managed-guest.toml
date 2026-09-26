@@ -1,0 +1,8 @@
+# Opt-in managed-guest correctness profile. Keep host debug assertions and
+# overflow checks; optimize only the compiler's hot implementation libraries.
+# This does not change Wasmtime's guest optimization or weaken guest budgets.
+[profile.dev.package.cranelift-codegen]
+opt-level = 3
+
+[profile.dev.package.regalloc2]
+opt-level = 3

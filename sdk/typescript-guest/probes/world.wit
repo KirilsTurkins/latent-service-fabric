@@ -1,0 +1,21 @@
+package lsf:typescript-probe@1.0.0;
+
+interface host {
+    echo: async func(value: string) -> string;
+    roundtrip: async func(value: u64, minimum: s64, maximum: s64) -> tuple<u64, s64, s64>;
+}
+
+interface probe {
+    record item { text: string, amount: u64 }
+    record payload {
+        value: u64, minimum: s64, maximum: s64, text: string,
+        bytes: list<u8>, maybe: option<u64>, items: list<item>
+    }
+    run: async func(input: payload) -> result<payload, string>;
+    echo-signed: async func(value: s64) -> s64;
+}
+
+world capsule {
+    import host;
+    export probe;
+}

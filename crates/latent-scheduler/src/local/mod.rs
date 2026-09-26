@@ -1,6 +1,7 @@
 //! One node's fair queue above the fixed cell-pool ownership seam.
 
 mod assignment;
+mod immediate;
 #[cfg(test)]
 mod lifetime_tests;
 #[cfg(test)]
@@ -325,6 +326,13 @@ impl LocalScheduler {
 }
 
 impl ActivationScheduler for LocalScheduler {
+    fn try_enqueue(
+        &self,
+        request: AdmittedSchedulingRequest,
+    ) -> Result<ScheduledActivation, PlatformError> {
+        self.try_enqueue_owned(request)
+    }
+
     fn enqueue(
         &self,
         request: AdmittedSchedulingRequest,

@@ -1,12 +1,10 @@
 //! Closed exact-byte side material, bound by the version-2 completion record.
-mod read;
-
-use std::path::Path;
+pub(super) mod read;
 
 use latent_core::PlatformError;
 use serde::{Deserialize, Serialize};
 
-use super::{corrupt, resource_exhausted, write_synced, COMPONENT_FILE};
+use super::{corrupt, resource_exhausted, COMPONENT_FILE};
 use crate::package::{inspect_package, verify_layer_bytes, LayerRole, PackageKind, PackageLimits};
 use crate::{
     content_digest, AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits, CapsuleArtifact,
@@ -17,23 +15,23 @@ pub(super) const RECORD_FILE: &str = "admission.json";
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Blob {
-    file: String,
-    digest: String,
-    size: u64,
+pub(super) struct Blob {
+    pub(super) file: String,
+    pub(super) digest: String,
+    pub(super) size: u64,
 }
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Layer {
-    path: String,
-    blob: Blob,
+pub(super) struct Layer {
+    pub(super) path: String,
+    pub(super) blob: Blob,
 }
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Evidence {
-    manifest: Blob,
-    configuration: Blob,
-    payload: Blob,
+pub(super) struct Evidence {
+    pub(super) manifest: Blob,
+    pub(super) configuration: Blob,
+    pub(super) payload: Blob,
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -73,7 +71,12 @@ impl PreparedAdmissionFiles {
         )?;
         if layout.digest() != &binding.package
             || layout.config().kind != PackageKind::Capsule
-            || artifact.manifest.metadata.tenant.as_ref() != Some(&binding.tenant)
+            || artifact
+                .manifest
+                .metadata
+                .tenant
+                .as_ref()
+                .is_some_and(|embedded| embedded != &binding.tenant)
             || artifact.descriptor.release_digest != binding.release
             || artifact.manifest.component_digest != binding.release
             || upload.layers.len() != layout.config().layers.len()
@@ -152,11 +155,14 @@ impl PreparedAdmissionFiles {
         })
     }
 
-    pub(super) fn write(&self, directory: &Path) -> Result<(), PlatformError> {
+    pub(super) fn content_file_count(&self) -> usize {
+        self.files.len() + 1
+    }
+    pub(super) fn append_content_files<'a>(&'a self, files: &mut Vec<(&'a str, &'a [u8])>) {
         for (name, bytes) in &self.files {
-            write_synced(&directory.join(name), bytes)?;
+            files.push((name, bytes));
         }
-        write_synced(&directory.join(RECORD_FILE), &self.record_bytes)
+        files.push((RECORD_FILE, &self.record_bytes));
     }
 
     pub(super) fn same_upload(&self, stored: &StoredAdmission) -> bool {
@@ -173,7 +179,7 @@ impl PreparedAdmissionFiles {
     }
 }
 
-fn add(files: &mut Vec<(String, Vec<u8>)>, bytes: Vec<u8>) -> Blob {
+pub(super) fn add(files: &mut Vec<(String, Vec<u8>)>, bytes: Vec<u8>) -> Blob {
     let file = format!("admission-{:04}.bin", files.len());
     let blob = Blob {
         file: file.clone(),
@@ -183,7 +189,10 @@ fn add(files: &mut Vec<(String, Vec<u8>)>, bytes: Vec<u8>) -> Blob {
     files.push((file, bytes));
     blob
 }
-fn evidence(files: &mut Vec<(String, Vec<u8>)>, entries: Vec<AdmissionEvidence>) -> Vec<Evidence> {
+pub(super) fn evidence(
+    files: &mut Vec<(String, Vec<u8>)>,
+    entries: Vec<AdmissionEvidence>,
+) -> Vec<Evidence> {
     entries
         .into_iter()
         .map(|value| Evidence {

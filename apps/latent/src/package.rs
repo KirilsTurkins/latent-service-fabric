@@ -18,6 +18,12 @@ pub fn execute(cli: &Cli, command: &PackageCommand) -> Outcome {
 
 fn execute_inner(cli: &Cli, command: &PackageCommand) -> Result<Outcome, Failure> {
     match command {
+        PackageCommand::RendererProfile => Ok(Outcome::success(json!({
+            "profile": "angular-ssr-component-v1",
+            "profileDigest": latent_artifacts::web::renderer_profile_digest(
+                latent_artifacts::web::WebRendererProfile::AngularSsrComponentV1).to_string(),
+            "maximumRendererBytes": latent_artifacts::web::MAX_WEB_RENDERER_BYTES.to_string(),
+        }))),
         PackageCommand::Build(args) => {
             let source = input::read(&args.source, 256 * 1024, "package-source")?;
             let source =
@@ -33,6 +39,10 @@ fn execute_inner(cli: &Cli, command: &PackageCommand) -> Result<Outcome, Failure
                 latent_packaging::build_package(input, limits())
             }
             .map_err(failure)?;
+            if args.validate_web {
+                latent_packaging::inspect_web_bundle(&package, limits().semantics)
+                    .map_err(failure)?;
+            }
             latent_packaging::write_package_directory(&package, &args.output_dir)
                 .map_err(failure)?;
             Ok(Outcome::success(summary(&package)))
@@ -60,17 +70,24 @@ fn execute_inner(cli: &Cli, command: &PackageCommand) -> Result<Outcome, Failure
             let tenant = TenantId(cli.tenant.clone().ok_or_else(|| {
                 Failure::local("tenant-required", "Package verification requires --tenant.")
             })?);
-            let report = latent_policy::supply_chain::verify_package_once(
-                &policy,
-                latent_policy::supply_chain::PackageVerificationRequest {
-                    tenant: &tenant,
-                    package: &package,
-                    evidence: &evidence,
-                    unix_seconds: now,
-                },
-            )
-            .map_err(failure)?;
-            let mut document = serde_json::to_value(report).map_err(|_| {
+            let request = latent_policy::supply_chain::PackageVerificationRequest {
+                tenant: &tenant,
+                package: &package,
+                evidence: &evidence,
+                unix_seconds: now,
+            };
+            let report = match package.layout().config().kind {
+                latent_artifacts::package::PackageKind::BrowserAssets
+                | latent_artifacts::package::PackageKind::SsrPackage => serde_json::to_value(
+                    latent_policy::supply_chain::verify_web_package_once(&policy, request)
+                        .map_err(failure)?,
+                ),
+                latent_artifacts::package::PackageKind::Capsule => serde_json::to_value(
+                    latent_policy::supply_chain::verify_package_once(&policy, request)
+                        .map_err(failure)?,
+                ),
+            };
+            let mut document = report.map_err(|_| {
                 Failure::local(
                     "report-limit",
                     "Could not encode the bounded verification report.",
@@ -85,8 +102,10 @@ fn execute_inner(cli: &Cli, command: &PackageCommand) -> Result<Outcome, Failure
 
 pub(super) fn limits() -> PackagingLimits {
     let mut limits = PackagingLimits::default();
-    limits.package.max_layer_bytes = 16 * 1024 * 1024;
-    limits.package.max_total_layer_bytes = 32 * 1024 * 1024;
+    // The qualified renderer is about 24 MiB. These finite developer-plane
+    // package limits remain independent of node admission and execution limits.
+    limits.package.max_layer_bytes = 32 * 1024 * 1024;
+    limits.package.max_total_layer_bytes = 64 * 1024 * 1024;
     limits
 }
 
@@ -104,12 +123,15 @@ pub(crate) fn evidence(
 }
 
 pub(super) fn summary(package: &PackageBundle) -> serde_json::Value {
+    let web_outputs = latent_artifacts::web::web_build_outputs(package.layout()).ok();
     json!({"packageDigest":package.layout().digest().to_string(),
         "componentDigest":package.layout().config().component_digest.as_ref().map(ToString::to_string),
         "kind":package.layout().config().kind,"name":package.layout().config().name,
         "version":package.layout().config().version,"layers":package.layers().len(),
         "layerBytes":package.layers().iter().map(|blob|blob.bytes().len()).sum::<usize>().to_string(),
         "sbomInventoryDigest":package.sbom().map(|sbom|sbom.inventory_digest().to_string()),
+        "webBuildOutputs": web_outputs.map(|outputs| json!({"digest": outputs.digest().to_string(),
+            "count": outputs.count(), "bytes": outputs.bytes().to_string()})),
         "trustEvaluated":false,"executionAuthorized":false})
 }
 

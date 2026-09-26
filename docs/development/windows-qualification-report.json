@@ -1,0 +1,262 @@
+{
+  "schemaVersion": "latent.dev.qualification.v1",
+  "scope": "windows-only",
+  "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+  "receipts": [
+    {
+      "entry": "windows-wsl2",
+      "execution": "actual-packaged-clean-host",
+      "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "artifactSha256": "sha256:02df3699102c0a856037758dd64e3d0ebb334bd214725f9cd5fba4b393db6bb6",
+      "host": {
+        "architecture": "AMD64",
+        "osVersion": "10.0.26100"
+      },
+      "guest": {
+        "os": "linux",
+        "kernel": "6.18.33.2-microsoft-standard-WSL2",
+        "architecture": "x86_64",
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n"
+      },
+      "environment": "node",
+      "profile": "local-experimental-v1",
+      "scenarios": {
+        "build": "passed",
+        "cancel": "passed",
+        "compile-failure-last-good": "passed",
+        "create": "passed",
+        "declared-error": "passed",
+        "denied-capability": "passed",
+        "down": "passed",
+        "invoke": "passed",
+        "lost-response-recovery": "passed",
+        "owned-purge": "passed",
+        "readiness": "passed",
+        "restart-retained": "passed",
+        "tamper-rejection": "passed",
+        "verify-offline": "passed",
+        "watch-revision": "passed",
+        "workspace-isolation": "passed"
+      },
+      "languages": {
+        "c": "passed",
+        "dotnet": "passed",
+        "go": "passed",
+        "java": "passed",
+        "rust": "passed",
+        "typescript": "passed"
+      },
+      "cleanup": "owned-resources-reaped",
+      "sourceCheckout": false,
+      "runtimeCompiler": false
+    },
+    {
+      "entry": "linux-direct",
+      "execution": "actual-packaged-clean-host",
+      "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "artifactSha256": "sha256:e1e449ef75140f233680537bc525f41b479dd62591ea6313d32b8d170a14af97",
+      "host": {
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+        "kernel": "6.17.0-1022-azure",
+        "architecture": "x86_64"
+      },
+      "guest": {
+        "os": "linux",
+        "kernel": "6.17.0-1022-azure",
+        "architecture": "x86_64",
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n"
+      },
+      "environment": "node",
+      "profile": "local-experimental-v1",
+      "scenarios": {
+        "build": "passed",
+        "cancel": "passed",
+        "compile-failure-last-good": "passed",
+        "create": "passed",
+        "declared-error": "passed",
+        "denied-capability": "passed",
+        "down": "passed",
+        "invoke": "passed",
+        "lost-response-recovery": "passed",
+        "owned-purge": "passed",
+        "readiness": "passed",
+        "restart-retained": "passed",
+        "tamper-rejection": "passed",
+        "verify-offline": "passed",
+        "watch-revision": "passed",
+        "workspace-isolation": "passed"
+      },
+      "languages": {
+        "rust": "passed"
+      },
+      "cleanup": "owned-resources-reaped",
+      "sourceCheckout": false,
+      "runtimeCompiler": false
+    },
+    {
+      "entry": "linux-ssh",
+      "execution": "actual-packaged-clean-host",
+      "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "artifactSha256": "sha256:e1e449ef75140f233680537bc525f41b479dd62591ea6313d32b8d170a14af97",
+      "host": {
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+        "kernel": "6.17.0-1022-azure",
+        "architecture": "x86_64"
+      },
+      "guest": {
+        "os": "linux",
+        "kernel": "6.17.0-1022-azure",
+        "architecture": "x86_64",
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n"
+      },
+      "environment": "node",
+      "profile": "local-experimental-v1",
+      "scenarios": {
+        "build": "passed",
+        "cancel": "passed",
+        "compile-failure-last-good": "passed",
+        "create": "passed",
+        "declared-error": "passed",
+        "denied-capability": "passed",
+        "down": "passed",
+        "invoke": "passed",
+        "lost-response-recovery": "passed",
+        "owned-purge": "passed",
+        "readiness": "passed",
+        "restart-retained": "passed",
+        "tamper-rejection": "passed",
+        "verify-offline": "passed",
+        "watch-revision": "passed",
+        "workspace-isolation": "passed"
+      },
+      "languages": {
+        "rust": "passed"
+      },
+      "cleanup": "owned-resources-reaped",
+      "sourceCheckout": false,
+      "runtimeCompiler": false
+    },
+    {
+      "entry": "devcontainer",
+      "execution": "actual-packaged-clean-host",
+      "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "artifactSha256": "sha256:e1e449ef75140f233680537bc525f41b479dd62591ea6313d32b8d170a14af97",
+      "host": {
+        "architecture": "x86_64",
+        "kernel": "6.17.0-1022-azure",
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+        "uid": 10001
+      },
+      "guest": {
+        "os": "linux",
+        "kernel": "6.17.0-1022-azure",
+        "architecture": "x86_64",
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n"
+      },
+      "environment": "node",
+      "profile": "local-experimental-v1",
+      "scenarios": {
+        "build": "passed",
+        "cancel": "passed",
+        "compile-failure-last-good": "passed",
+        "create": "passed",
+        "declared-error": "passed",
+        "denied-capability": "passed",
+        "down": "passed",
+        "invoke": "passed",
+        "lost-response-recovery": "passed",
+        "owned-purge": "passed",
+        "readiness": "passed",
+        "restart-retained": "passed",
+        "tamper-rejection": "passed",
+        "verify-offline": "passed",
+        "watch-revision": "passed",
+        "workspace-isolation": "passed"
+      },
+      "languages": {
+        "rust": "passed"
+      },
+      "cleanup": "owned-resources-reaped",
+      "sourceCheckout": false,
+      "runtimeCompiler": false
+    },
+    {
+      "entry": "windows-portable",
+      "execution": "actual-packaged-clean-host",
+      "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "artifactSha256": "sha256:02df3699102c0a856037758dd64e3d0ebb334bd214725f9cd5fba4b393db6bb6",
+      "host": {
+        "architecture": "AMD64",
+        "osVersion": "10.0.26100"
+      },
+      "guest": null,
+      "environment": "portable",
+      "profile": "controlled-development-test",
+      "scenarios": {
+        "invoke": "passed",
+        "declared-error": "passed",
+        "denied-capability": "passed",
+        "cancel": "passed"
+      },
+      "languages": {
+        "c": "passed",
+        "dotnet": "passed",
+        "go": "passed",
+        "java": "passed",
+        "rust": "passed",
+        "typescript": "passed"
+      },
+      "cleanup": "owned-resources-reaped",
+      "sourceCheckout": false,
+      "runtimeCompiler": false
+    }
+  ],
+  "failedAttempts": [
+    {
+      "run": 36227800146,
+      "sourceCommit": "d8bf53383fea87d9f43c9e9a8921d8ec045e22ea",
+      "sha256": "sha256:bddc318c9f1a91a8764d3027c7a54dafed85a16a09a70d1577d0df3b9ae078fc",
+      "failure": "foreground-shutdown-failed",
+      "supersededBy": 603
+    },
+    {
+      "retainedReport": "packaged-candidate-attempt-observation.json",
+      "sha256": "sha256:01c0623a913a64510dd591dee2b527cdba119b3bbb213a2596df816c2e1e2932"
+    },
+    {
+      "retainedReport": "packaged-candidate-c-install-attempt-observation.json",
+      "sha256": "sha256:3ac2a91b6daffbac2dff870f02a6d7ae549db8d19990c30f3c1d773162303856"
+    },
+    {
+      "retainedReport": "packaged-monitor-candidate-attempt-observation.json",
+      "sha256": "sha256:fd81dc05f4bbde95a8762743c388364c49247a01ae1b93d161782a83575dc29d"
+    },
+    {
+      "retainedReport": "candidate-source-campaign-observation.json",
+      "sha256": "sha256:552b378ab1a74b2585aa76f6d1326f931fc3e344af3062dcf4afeba2fe1bc552"
+    },
+    {
+      "execution": "existing-host-source-integration",
+      "receipt": "newcomer-source-preflight/observation.json",
+      "sha256": "sha256:2aa2c2bec9a27ab1ef8b3b380193bf264960ed8d64905c0444985fadc6466213",
+      "reviewedCause": "conductor-assumed-utf8-for-native-Windows-diagnostics",
+      "recordedFailure": null,
+      "seconds": 297.975,
+      "cleanup": "owned-newcomer-node-reaped-distro-stopped-other-workspace-retained",
+      "publisherAuthenticatedFrontend": false,
+      "cleanHost": false
+    },
+    {
+      "execution": "existing-host-source-integration",
+      "receipt": "newcomer-source-preflight-2/observation.json",
+      "sha256": "sha256:a124cf6a131a12b285297858d748aa653ba7b451815d9f0e3448f9acef447016",
+      "reviewedCause": "conductor-audit-name-allowlist-omitted-newcomer",
+      "recordedFailure": "ProbeFailure: owned-guest-public-observation-failed",
+      "seconds": 317.458,
+      "cleanup": "owned-node-reaped-distro-stopped-private-failed-state-retained",
+      "publisherAuthenticatedFrontend": false,
+      "cleanHost": false
+    }
+  ],
+  "newcomerReview": "executed-and-reviewed"
+}

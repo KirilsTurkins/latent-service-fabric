@@ -3,6 +3,8 @@
 #![forbid(unsafe_code)]
 
 pub mod deployment_operations;
+pub mod http_routes;
+pub use deployments::bindings;
 mod deployments;
 pub mod rollouts;
 mod scoped_routes;
@@ -21,14 +23,12 @@ pub use deployments::{
 };
 
 use latent_artifacts::ArtifactDescriptor;
-use latent_audit::AuditEvent;
 use latent_core::{
-    BindingId, BoxFuture, DeploymentId, NodeId, PlatformError, PolicyId, ReleaseDigest,
-    RouteGeneration, ServiceId, TenantId, TriggerId,
+    BindingId, BoxFuture, DeploymentId, NodeId, PlatformError, ReleaseDigest, RouteGeneration,
+    ServiceId, TenantId, TriggerId,
 };
-use latent_manifest::{BindingManifest, DeploymentManifest, PolicyManifest, TriggerManifest};
+use latent_manifest::{BindingManifest, DeploymentManifest, TriggerManifest};
 use latent_node::{NodeDescriptor, NodeInventory};
-use latent_policy::PolicyDecision;
 use latent_routing::RouteSnapshot;
 
 pub trait ReleaseCatalog: Send + Sync {
@@ -53,6 +53,9 @@ pub trait ReleaseCatalog: Send + Sync {
 pub struct VersionedDeployment {
     pub manifest: DeploymentManifest,
     pub generation: u64,
+    /// Captured from the same immutable revision; never a current execution grant.
+    /// Separate from the caller's original optional manifest selector.
+    pub publication: Option<latent_artifacts::PublicationRef>,
 }
 
 /// The exact normalized record installed by an apply and its catalog publication generation.
@@ -196,20 +199,6 @@ pub trait TriggerStore: Send + Sync {
     fn delete<'a>(&'a self, id: &'a TriggerId) -> BoxFuture<'a, Result<(), PlatformError>>;
 }
 
-pub trait ControlPolicyStore: Send + Sync {
-    fn apply<'a>(&'a self, policy: PolicyManifest) -> BoxFuture<'a, Result<(), PlatformError>>;
-
-    fn get<'a>(
-        &'a self,
-        id: &'a PolicyId,
-    ) -> BoxFuture<'a, Result<Option<PolicyManifest>, PlatformError>>;
-
-    fn record_decision<'a>(
-        &'a self,
-        decision: PolicyDecision,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
-}
-
 pub trait NodeInventoryStore: Send + Sync {
     fn register<'a>(
         &'a self,
@@ -248,8 +237,4 @@ pub trait CompiledRouteStore: Send + Sync {
         &'a self,
         generation: RouteGeneration,
     ) -> BoxFuture<'a, Result<Option<RouteSnapshot>, PlatformError>>;
-}
-
-pub trait ControlAuditStore: Send + Sync {
-    fn append<'a>(&'a self, event: AuditEvent) -> BoxFuture<'a, Result<(), PlatformError>>;
 }

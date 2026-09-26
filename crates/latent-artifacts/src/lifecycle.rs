@@ -1,11 +1,15 @@
 //! Bounded durable release lifecycle, separate from optional signing authority.
 mod capability;
 mod codec;
+#[cfg(feature = "development-test-host")]
+mod development;
 mod model;
 mod store;
 pub use capability::{
     LifecycleAuthorityHandle, LifecycleEligibility, ReleaseUseEligibility, ReleaseUseRecheck,
 };
+#[cfg(feature = "development-test-host")]
+pub use development::DevelopmentTestArtifact;
 pub use model::*;
 pub(crate) use store::{
     validate_audit_receipt, LifecycleEvidence, LifecycleFence, LifecycleIdentity,

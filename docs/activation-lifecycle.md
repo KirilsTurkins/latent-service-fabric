@@ -95,6 +95,40 @@ contains its committed-state, effect, and metadata summary without retaining
 those output bytes. State versions and effect IDs remain empty for ordinary
 stateless success. Declared errors are never inferred from payload conventions.
 
+## Waiting provider and descendant work
+
+[ADR-0028](../adr/0028-retain-activation-ownership-across-asynchronous-waits.md)
+keeps asynchronous provider and descendant waits inside the live `Running` phase.
+A guest future may yield the node's shared runtime thread, but the activation
+continues to own its accepted scheduler assignment, cell lease, fresh Wasmtime
+Store, guest memory, bindings, budget and cancellation registration. No public
+`Suspended` phase is introduced, and an active waiting guest is not treated as a
+dormant deployment.
+
+Phase 3 extends that ownership with bounded nested operations:
+
+| Transition | Ownership rule |
+| --- | --- |
+| guest -> provider wait | activation keeps cell/Store; #205 provider owner holds call/stream permits, staged bytes and retained response buffers |
+| provider completion -> guest | provider owner settles exactly once, then the existing guest activation may resume if still live |
+| guest -> child admission | parent keeps cell/Store; #208 reserves descendant budget before #209 admission |
+| accepted child -> child wait | child owns a separate fresh Store/cell; parent reservation remains charged until child retirement |
+| child admission failure | no child execution owner exists; genuinely unused reservation returns exactly once |
+| parent cancellation/drop | future delegation closes and cancellation propagates; live provider/child work remains charged until retirement or a separately specified safe transfer |
+| late provider/child completion | existing owner reconciles once; it cannot re-enter a completed parent or create a second refund |
+
+The child-call path must not enter an unbounded circular wait when all compatible
+cells are retained by parents. Before a parent blocks on a child, #209 must either
+establish progress inside fixed declared node capacity or reject promptly. It may
+not free the still-live parent cell, create hidden execution capacity, or rely on
+a watchdog timeout as the mechanism that eventually breaks the cycle.
+
+A provider cleanup transfer described by #205 can outlive guest observation only
+when ownership is affine and bounded, every reference to the old cell/Store/guest
+memory is severed, and remaining permits/buffers stay charged to the receiving
+node-owned cleanup owner. Until such a transition is implemented and validated,
+cell reuse waits for provider retirement or conservatively quarantines.
+
 ## Cancellation, cleanup, and accounting
 
 `status(tenant, id)`, `events(tenant, id)`, and `cancel_for(tenant, id, reason)`
@@ -115,10 +149,13 @@ shared activation budget, and affine scheduler assignment. The execution
 backend obtains the same ledger through `ExecutionCancellation::budget_accounting`.
 Host log charges and observed CPU/memory consumption survive failures and drops;
 the owner finalizes only after execution resources and cell disposition settle.
-Accepted explicit cancellation takes precedence over deadline expiration at
-terminal publication. A raw transport disconnect does not install that explicit
-cancellation winner: the original deadline still takes precedence over the
-transport stop, and both take precedence over an ordinary guest result.
+Phase 3 descendant and provider owners extend the same rule: a parent finalizer
+cannot refund reservations, provider slots or retained bytes that are still
+owned by running cleanup work. Accepted explicit cancellation takes precedence
+over deadline expiration at terminal publication. A raw transport disconnect
+does not install that explicit cancellation winner: the original deadline still
+takes precedence over the transport stop, and both take precedence over an
+ordinary guest result.
 
 After admission, the manager calls `ExecutionBackend::prepare_ready_from_repository`
 with the owned repository and pinned release's preparation key. The affine
@@ -170,6 +207,9 @@ pool/backend implementations must honor their synchronous ownership and cleanup
 contracts. This grace does not preempt a running native compiler job: cancellation
 removes the activation's waiter, while the factory retains the worker and its
 reservations until compilation returns and final shutdown joins the thread.
+The same principle applies to future provider and descendant work: a watchdog
+expiry is evidence that cleanup exceeded its bound, not proof that the underlying
+owner has physically retired.
 
 The trusted `ActivationHandle::interrupt_for_cleanup` port marks
 `ActivationTransportInterruption::Disconnected` or `DeadlineExceeded` and returns

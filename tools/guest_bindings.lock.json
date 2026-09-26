@@ -1,0 +1,11 @@
+{
+  "formatVersion": 1,
+  "generator": "wit-bindgen 0.62.0",
+  "world": "latent:platform/capsule@0.4.0",
+  "outputs": {
+    "rust/capsule.rs": "sha256:2198a5c6afe4491d3fccb75648afaa7cbdc0ec6cd53f231c6d1167ccab973592",
+    "c/capsule.c": "sha256:00ce090f3b001175347daace59516bff8753afba28de79e3e221f131315e88b5",
+    "c/capsule.h": "sha256:561c386800e077d2c3ef93d1f1bcb063cb0dbac3940d95c60e1f49d028411e34",
+    "c/capsule_component_type.o": "sha256:81ded5391d1fc6dd0d9ae502c131d4dc62f2b6ed8b774a7c26f5be2618293409"
+  }
+}

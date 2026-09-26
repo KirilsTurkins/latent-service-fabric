@@ -26,7 +26,7 @@ fn descriptor(ty: ValueType) -> ContractDescriptor {
                 }],
                 results: vec![],
                 documentation: None,
-                attributes: Default::default(),
+                attributes: std::collections::BTreeMap::default(),
             }],
         }],
     }

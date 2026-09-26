@@ -1,4 +1,4 @@
-# Phase 2 package identity and artifact format
+# Package identity and artifact format
 
 This is the format foundation delivered by
 [#140](https://github.com/KirilsTurkins/latent-service-fabric/issues/140). It
@@ -212,3 +212,7 @@ python -m unittest discover -s tools/tests -p test_package_format.py
 These portable format checks do not select the Linux catalog durability suite,
 instantiate guests, contact a registry or run a load campaign. Normal Linux CI
 also checks the existing workspace, SDKs and runtime invariants before merge.
+
+## Immutable browser asset delivery
+
+The [immutable browser asset HTTP profile](../immutable-browser-assets.md) defines exact publication URLs, current admission checks, GET/HEAD and conditional behavior, shared storage/cache ownership, and the explicitly unsupported range and compression features.

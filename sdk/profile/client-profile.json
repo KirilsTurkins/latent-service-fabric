@@ -1,0 +1,62 @@
+{
+  "profile": "latent.client.v1",
+  "sources": {
+    "api/proto/latent/control/v1/common.proto": ["ResourceBudget", "ErrorDetail", "PlatformError", "ObjectMetadata", "PageRequest", "PageResponse", "AuditAck", "AuditAckStatus"],
+    "api/proto/latent/invocation/v1/invocation.proto": ["InvocationTarget", "InvokeRequest", "BudgetConsumption", "InvokeResponse", "Success", "DeclaredError", "CancelRequest", "CancelResponse", "CancelDisposition", "GetActivationRequest", "ActivationStatus", "ActivationSuccessSummary"],
+    "api/proto/latent/control/v1/policy.proto": ["Policy", "CapabilityPolicyRecordKind", "ApplyPolicyRequest", "ApplyPolicyResponse", "GetPolicyRequest", "GetPolicyResponse", "CapabilityPolicyOperation", "GetPolicyOperationRequest", "GetPolicyOperationResponse", "ListPoliciesRequest", "ListPoliciesResponse"],
+    "api/proto/latent/control/v1/capability.proto": ["CapabilityDescriptor", "ListCapabilitiesRequest", "ListCapabilitiesResponse", "CapabilityInspectionRevision", "CapabilityInspectionPolicy", "CapabilityBindingInspection", "CapabilityInspectionCeiling", "CapabilityResourceUsage"],
+    "api/proto/latent/control/v1/release.proto": ["PublicationRef"]
+  },
+  "operations": [
+    {"name": "Invoke", "service": "latent.invocation.v1.InvocationService", "request": "InvokeRequest", "response": "InvokeResponse", "recovery": "activation_id"},
+    {"name": "Cancel", "service": "latent.invocation.v1.InvocationService", "request": "CancelRequest", "response": "CancelResponse", "recovery": "activation_id"},
+    {"name": "GetActivation", "service": "latent.invocation.v1.InvocationService", "request": "GetActivationRequest", "response": "ActivationStatus", "recovery": "activation_id"},
+    {"name": "GetPolicy", "service": "latent.control.v1.PolicyService", "request": "GetPolicyRequest", "response": "GetPolicyResponse"},
+    {"name": "ListPolicies", "service": "latent.control.v1.PolicyService", "request": "ListPoliciesRequest", "response": "ListPoliciesResponse"},
+    {"name": "ListCapabilities", "service": "latent.control.v1.CapabilityService", "request": "ListCapabilitiesRequest", "response": "ListCapabilitiesResponse"},
+    {"name": "ApplyPolicy", "service": "latent.control.v1.PolicyService", "request": "ApplyPolicyRequest", "response": "ApplyPolicyResponse", "recovery": "operation_id", "precondition": "expected_generation"},
+    {"name": "GetPolicyOperation", "service": "latent.control.v1.PolicyService", "request": "GetPolicyOperationRequest", "response": "GetPolicyOperationResponse", "recovery": "operation_id"}
+  ],
+  "local_enums": {
+    "FailureCategory": {"UNSPECIFIED": 0, "LOCAL_CANCELLED": 1, "DEADLINE": 2, "TRANSPORT": 3, "RPC": 4, "DECODE": 5, "LIMIT": 6, "INVALID_REQUEST": 7},
+    "OutcomeKnowledge": {"UNSPECIFIED": 0, "NOT_DISPATCHED": 1, "UNKNOWN": 2, "OBSERVED": 3}
+  },
+  "local_messages": {
+    "PublicationIdentity": [
+      {"name": "publication", "type": "PublicationRef", "required": true},
+      {"name": "component_digest", "type": "string"},
+      {"name": "package_digest", "type": "string"}
+    ],
+    "CallOptions": [
+      {"name": "timeout_millis", "type": "uint64", "optional": true}
+    ],
+    "RequestIdentity": [
+      {"name": "activation_id", "type": "string", "optional": true},
+      {"name": "operation_id", "type": "string", "optional": true}
+    ],
+    "UnsupportedWireValue": [
+      {"name": "field", "type": "string"},
+      {"name": "value", "type": "string", "maximum_bytes": 256}
+    ],
+    "ResponseMetadata": [
+      {"name": "identity", "type": "RequestIdentity", "required": true},
+      {"name": "outcome", "type": "OutcomeKnowledge"},
+      {"name": "audit_ack", "type": "AuditAck", "optional": true},
+      {"name": "audit_status", "type": "string", "optional": true},
+      {"name": "audit_attempt_sequence", "type": "uint64", "optional": true}
+    ],
+    "ClientFailure": [
+      {"name": "category", "type": "FailureCategory"},
+      {"name": "message", "type": "string"},
+      {"name": "grpc_status", "type": "int32", "optional": true},
+      {"name": "platform_error", "type": "PlatformError", "optional": true},
+      {"name": "dispatched", "type": "bool"},
+      {"name": "outcome", "type": "OutcomeKnowledge"},
+      {"name": "identity", "type": "RequestIdentity", "required": true},
+      {"name": "audit_ack", "type": "AuditAck", "optional": true},
+      {"name": "audit_status", "type": "string", "optional": true},
+      {"name": "unsupported_wire_value", "type": "UnsupportedWireValue", "optional": true},
+      {"name": "audit_attempt_sequence", "type": "uint64", "optional": true}
+    ]
+  }
+}

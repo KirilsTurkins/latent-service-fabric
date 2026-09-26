@@ -1,0 +1,11 @@
+{
+  "formatVersion": 1,
+  "profile": "angular-ssr-component-v1",
+  "name": "browser-boundary-fixture",
+  "version": "1.0.0",
+  "serverEntry": "server/main.ts",
+  "clientEntry": "client/main.ts",
+  "sources": ["client/application.ts", "client/main.ts", "server/main.ts", "shared/app.ts", "shared/hydration.ts"],
+  "assets": [],
+  "routes": [{"path": "/", "mode": "server"}, {"path": "/next", "mode": "server"}]
+}

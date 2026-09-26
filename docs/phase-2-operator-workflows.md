@@ -1,4 +1,4 @@
-# Phase 2 operator workflows
+# Package and deployment operations
 
 The `latent` CLI packages local bytes, transfers immutable packages and detached
 evidence through OCI, checks an explicit local verification policy, and manages
@@ -39,7 +39,8 @@ paths, duplicate referrer identities and nonportable paths. Descendants are
 opened from one approved capability root without following symlinks; regular
 file size and consistency are checked before and after reading.
 
-The CLI limits a package to 32 MiB of layer bytes and each layer to 16 MiB.
+The CLI limits a package to 64 MiB of layer bytes and each layer to 32 MiB,
+including the [qualified Angular renderer](component-development/angular-build.md).
 Detached evidence has a separate 16 MiB aggregate ceiling, at most eight entries
 per kind, a 16 KiB index, 4 KiB referrer manifests and exact `{}` configuration.
 Signature payloads are at most 4 KiB, provenance payloads 48 KiB, and SBOM
@@ -55,7 +56,10 @@ latent package pull --registry-profile registry.json --reference candidate --out
 
 The closed [registry profile](../schemas/cli-registry-profile.schema.json)
 contains an origin, repository, bounded numeric socket addresses, optional
-credential-file reference and optional DER CA-file references. Those relative
+credential-file reference and optional DER CA-file references. This CLI shape
+selects the static transport. Challenge-based Bearer, DNS and redirect configuration
+is available through the [Rust network API](reference/oci-network-profile.md);
+those fields are not accepted in this CLI profile. Those relative
 files are read below the profile's parent using the same regular-file,
 no-follow boundary. Credentials are separate from node management tokens and
 use the closed [credential file schema](../schemas/cli-registry-credentials.schema.json).
@@ -106,14 +110,16 @@ most 4 KiB. The default ring retains 256 receipts (hard maximum 1,024) within
 one 8 MiB shared metadata allowance for live/next tables, preparation scratch
 and retained replies. Read owners are finite. Preparation uses the existing
 single control-publication slot; no deployment worker, listener or timer is
-added. Legacy writers and every rollout action preserve the operation ring.
-The catalog writes format 4 after its first managed deployment operation;
-legacy formats 1 through 3 keep their existing absent-field/checksum rules.
+added. Every catalog writer and rollout action preserves the operation ring.
+The catalog writes publication-aware format 5, format 6 with capability bindings,
+or format 7 with HTTP route state. Obsolete formats 1 through 4 are rejected
+before recovery cleanup; there is no reader or migration fallback. See the
+[current persistence contract](reference/publication-runtime.md#deployment-selection-and-persistence).
 
 ## Audit and uncertain results
 
 Managed deployment mutations require configured audit and never fall back to
-legacy behavior when that support is unavailable. The server checks the full
+an unmanaged mutation when that support is unavailable. The server checks the full
 response and audit envelope sizes before durable acceptance. After acceptance,
 marking mutation started and committing the prepared catalog are synchronous,
 with no intervening await. Caller loss after commit can leave an audit outcome
@@ -134,14 +140,12 @@ The [deployment service](../api/proto/latent/control/v1/deployment.proto),
 [release service](../api/proto/latent/control/v1/release.proto),
 [rollout service](../api/proto/latent/control/v1/rollout.proto) and
 [audit service](../api/proto/latent/control/v1/audit.proto) are authoritative.
-Generated Rust RPC clients follow those additive contracts. The six existing
-handwritten SDKs expose invocation/guest interfaces; this management extension
-does not change their invocation identity or cancellation contracts. Their
-interface fixtures remain required CI checks. General SDK transports and
-capability/provider convenience models have dedicated Phase 3 tickets
-[#227](https://github.com/KirilsTurkins/latent-service-fabric/issues/227),
-[#228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228) and
-[#230](https://github.com/KirilsTurkins/latent-service-fabric/issues/230).
+All six [external SDK clients](../sdk/README.md) implement the bounded shared
+[client profile](../sdk/profile/README.md), with native authenticated loopback
+transports and invocation, policy/provider inspection, preconditioned management
+and operation recovery. Their common semantic fixtures and real-node transport
+checks cover identity, cancellation and explicit shutdown. Guest capability
+bindings are a separate [component SDK](component-development/guest-sdk.md).
 
 Validation uses compact file, policy, catalog, RPC and separate client/node
 registry workflows. Heavy catalog/benchmark runs remain opt-in.

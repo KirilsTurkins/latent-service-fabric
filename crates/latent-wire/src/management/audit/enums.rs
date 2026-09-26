@@ -12,20 +12,29 @@ macro_rules! mapping {
 mapping!(kind, Phase2AuditEventKind, Phase2AuditEventKind;
     VerificationAccepted, VerificationRejected, ReleaseRevoked, ReleaseRetired,
     CacheHit, CacheMiss, CacheCorruption, RolloutStarted, RolloutStageChanged,
-    RolloutPaused, RolloutAborted, PromotionAccepted, PromotionRejected, RollbackAccepted, RollbackRejected);
+    RolloutPaused, RolloutAborted, PromotionAccepted, PromotionRejected, RollbackAccepted, RollbackRejected,
+    CapabilityGrantAllowed, CapabilityGrantDenied, CapabilityProviderOutcome);
 mapping!(actor, AuditActorKind, AuditActorKind; User, Service, Node, Trigger, Administrator, Anonymous, Host);
 mapping!(policy, AuditPolicyRole, AuditPolicyRole; Publisher, PublisherRevocation, Builder,
     BuilderRevocation, Sbom, Admission, Delivery);
 mapping!(action, AuditControlAction, AuditControlAction; Publish, Revoke, Retire,
-    RenewEvidence, DeploymentApply, DeploymentDelete, Rollout, Promotion, Rollback);
+    RenewEvidence, DeploymentApply, DeploymentDelete, TriggerApply, TriggerDelete, Rollout, Promotion, Rollback, CapabilityCall);
+mapping!(capability_resource, AuditCapabilityResourceClass, AuditCapabilityResourceClass;
+    Context, Clock, Random, Log, Http, Blob, Secrets, Events, Telemetry, Service);
+mapping!(provider_outcome, AuditProviderOutcome, AuditProviderOutcome;
+    NotStarted, LocalDispatchAccepted, HttpResponseReceived, BrokerAcknowledged, BlobSealed,
+    SecretResolved, HostCompleted, Rejected, Unknown);
+mapping!(capability_digest_scope, AuditCapabilityDigestScope, AuditCapabilityDigestScope;
+    ResourceSelection, ProviderRequest);
 mapping!(result, AuditOperationResult, AuditOperationResult; Committed, Rejected, NotStarted, Unknown);
 mapping!(outcome, AuditOutcome, AuditObservationOutcome; Succeeded, Denied, Failed);
 mapping!(cache, AuditCacheKind, AuditCacheKind; Raw, Prepared, Native);
 mapping!(stop, AuditPageStop, AuditPageStop; End, RecordLimit, ByteLimit, ScanLimit);
 
-const KINDS: [domain::Phase2AuditEventKind; 15] = {
+const KINDS: [domain::Phase2AuditEventKind; 18] = {
     use domain::Phase2AuditEventKind::{
-        CacheCorruption, CacheHit, CacheMiss, PromotionAccepted, PromotionRejected, ReleaseRetired,
+        CacheCorruption, CacheHit, CacheMiss, CapabilityGrantAllowed, CapabilityGrantDenied,
+        CapabilityProviderOutcome, PromotionAccepted, PromotionRejected, ReleaseRetired,
         ReleaseRevoked, RollbackAccepted, RollbackRejected, RolloutAborted, RolloutPaused,
         RolloutStageChanged, RolloutStarted, VerificationAccepted, VerificationRejected,
     };
@@ -45,6 +54,9 @@ const KINDS: [domain::Phase2AuditEventKind; 15] = {
         PromotionRejected,
         RollbackAccepted,
         RollbackRejected,
+        CapabilityGrantAllowed,
+        CapabilityGrantDenied,
+        CapabilityProviderOutcome,
     ]
 };
 pub(super) fn kind_from_proto(value: i32) -> Result<domain::Phase2AuditEventKind, Status> {
@@ -52,12 +64,6 @@ pub(super) fn kind_from_proto(value: i32) -> Result<domain::Phase2AuditEventKind
         .into_iter()
         .find(|entry| kind(*entry) == value)
         .ok_or_else(|| Status::invalid_argument("invalid audit event kind"))
-}
-pub(super) fn kind_from_name(value: &str) -> Result<domain::Phase2AuditEventKind, Status> {
-    KINDS
-        .into_iter()
-        .find(|entry| entry.wire_name() == value)
-        .ok_or_else(|| Status::invalid_argument("unsupported audit action filter"))
 }
 pub(super) fn reason(value: domain::AuditReason) -> &'static str {
     use domain::AuditReason;
@@ -88,31 +94,5 @@ pub(super) fn reason(value: domain::AuditReason) -> &'static str {
         AuditReason::CanaryIncomplete => "canary-incomplete",
         AuditReason::CanaryFailed => "canary-failed",
         AuditReason::CanaryUnavailable => "canary-unavailable",
-    }
-}
-pub(super) fn action_name(value: domain::AuditControlAction) -> &'static str {
-    use domain::AuditControlAction;
-    match value {
-        AuditControlAction::Publish => "publish",
-        AuditControlAction::Revoke => "revoke",
-        AuditControlAction::Retire => "retire",
-        AuditControlAction::RenewEvidence => "renew-evidence",
-        AuditControlAction::DeploymentApply => "deployment-apply",
-        AuditControlAction::DeploymentDelete => "deployment-delete",
-        AuditControlAction::Rollout => "rollout",
-        AuditControlAction::Promotion => "promotion",
-        AuditControlAction::Rollback => "rollback",
-    }
-}
-pub(super) fn actor_name(value: domain::AuditActorKind) -> &'static str {
-    use domain::AuditActorKind;
-    match value {
-        AuditActorKind::User => "user",
-        AuditActorKind::Service => "service",
-        AuditActorKind::Node => "node",
-        AuditActorKind::Trigger => "trigger",
-        AuditActorKind::Administrator => "administrator",
-        AuditActorKind::Anonymous => "anonymous",
-        AuditActorKind::Host => "host",
     }
 }

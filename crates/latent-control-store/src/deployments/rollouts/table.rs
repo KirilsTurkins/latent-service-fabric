@@ -63,6 +63,7 @@ pub(in crate::deployments) struct CohortMember {
     deny_unknown_fields
 )]
 pub(in crate::deployments) struct StoredRollout {
+    pub plan_version: u32,
     pub status: RolloutStatus,
     pub base_manifest: String,
     pub candidate_manifest: String,
@@ -109,11 +110,17 @@ impl RolloutTable {
         Self::new(data, false, budget, limits)
     }
     pub fn new(
-        data: TableData,
+        mut data: TableData,
         enabled: bool,
         budget: &Arc<MetadataBudget>,
         limits: RolloutLimits,
     ) -> Result<Arc<Self>> {
+        let _scratch = budget.reserve(
+            data.receipts
+                .len()
+                .saturating_mul(2 * latent_core::PublicationId::TEXT_BYTES),
+        )?;
+        hydrate_publications(&mut data, limits)?;
         validate(&data, limits)?;
         let bytes = retained_bytes(&data);
         let charge = budget.reserve(bytes)?;
@@ -200,6 +207,28 @@ impl RolloutTable {
         Ok(())
     }
 }
+
+fn hydrate_publications(data: &mut TableData, limits: RolloutLimits) -> Result<()> {
+    if data.rows.len() > limits.maximum_rows || data.receipts.len() > limits.maximum_receipts {
+        return Err(capacity());
+    }
+    for stored in &mut data.receipts {
+        let receipt = &mut stored.receipt;
+        let row = data
+            .rows
+            .iter()
+            .find(|row| row.status.id == receipt.rollout_id && row.status.tenant == receipt.tenant)
+            .ok_or_else(corrupt)?;
+        receipt
+            .base_publication
+            .clone_from(&row.status.base.publication);
+        receipt
+            .candidate_publication
+            .clone_from(&row.status.candidate.publication);
+    }
+    Ok(())
+}
+
 pub(in crate::deployments) fn manifest(value: &DeploymentManifest) -> Result<String> {
     let bytes = JsonManifestCodec::default()
         .encode_deployment(value)
@@ -240,6 +269,7 @@ pub(in crate::deployments) fn retained_bytes(data: &TableData) -> usize {
     }
     for receipt in &data.receipts {
         n = n
+            .saturating_add(2 * latent_core::PublicationId::TEXT_BYTES)
             .saturating_add(
                 receipt
                     .receipt
@@ -261,13 +291,26 @@ pub(in crate::deployments) fn receipt_hash(
     Ok(codec::hash(&codec::encode(&value, MAX_RECEIPT_BYTES)?))
 }
 pub(in crate::deployments) fn plan_hash(row: &StoredRollout) -> Result<ArtifactBlobDigest> {
+    if row.plan_version != 2 {
+        return Err(corrupt());
+    }
     let s = &row.status;
     let mut value = json::json!({
-        "version":1,"tenant":s.tenant.0,"rollout":s.id.0,
+        "version":row.plan_version,"tenant":s.tenant.0,"rollout":s.id.0,
         "base":row.base_manifest,"candidate":row.candidate_manifest,
         "weights":s.candidate_weights,"basePackage":s.base.package.as_ref().map(latent_core::PackageDigest::as_str),
         "candidatePackage":s.candidate.package.as_ref().map(latent_core::PackageDigest::as_str)
     });
+    value["basePublication"] = json::json!(s
+        .base
+        .publication
+        .as_ref()
+        .map(latent_core::PublicationId::as_str));
+    value["candidatePublication"] = json::json!(s
+        .candidate
+        .publication
+        .as_ref()
+        .map(latent_core::PublicationId::as_str));
     if let Some(policy) = s.canary_policy {
         value["canaryPolicy"] = json::to_value(policy).map_err(|_| corrupt())?;
     }
@@ -307,7 +350,8 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         if s.revision == 0
             || s.state_version == 0
             || s.current_step as usize >= s.candidate_weights.len()
-            || s.base.component == s.candidate.component
+            || (s.base.component == s.candidate.component
+                && s.base.publication == s.candidate.publication)
             || !ids.insert((s.tenant.clone(), s.id.clone()))
             || row.cohort.is_empty()
             || row.cohort.len() > 2
@@ -395,8 +439,16 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         let candidate = decode_manifest(&row.candidate_manifest)?;
         if base.id != s.base.deployment_id
             || base.release != s.base.component
+            || base
+                .publication
+                .as_ref()
+                .is_some_and(|p| Some(p) != s.base.publication.as_ref())
             || candidate.id != s.candidate.deployment_id
             || candidate.release != s.candidate.component
+            || candidate
+                .publication
+                .as_ref()
+                .is_some_and(|p| Some(p) != s.candidate.publication.as_ref())
             || base.metadata.tenant.as_ref() != Some(&s.tenant)
             || candidate.metadata.tenant.as_ref() != Some(&s.tenant)
             || base.service != s.service
@@ -447,6 +499,8 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
             .find(|row| row.status.tenant == r.tenant && row.status.id == r.rollout_id)
             .ok_or_else(corrupt)?;
         if r.revision > row.status.revision
+            || r.base_publication != row.status.base.publication
+            || r.candidate_publication != row.status.candidate.publication
             || r.state_version > row.status.state_version
             || r.plan_digest != row.status.plan_digest
             || r.step as usize >= row.status.candidate_weights.len()
@@ -485,7 +539,7 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         ) {
             (RolloutAction::Promote, Some(policy), Some(decision)) => decision.validate(policy)?,
             (RolloutAction::Promote, _, _) | (RolloutAction::Advance, Some(_), _) => {
-                return Err(corrupt())
+                return Err(corrupt());
             }
             (_, _, Some(_)) => return Err(corrupt()),
             (_, _, None) => {}
@@ -516,6 +570,71 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         || data.receipts.is_empty() && data.operation_sequence != 0
     {
         return Err(corrupt());
+    }
+    Ok(())
+}
+
+pub(super) fn publication_pins(row: &StoredRollout) -> super::super::compiler::PublicationPins {
+    [&row.status.base, &row.status.candidate]
+        .into_iter()
+        .filter_map(|release| {
+            release
+                .publication
+                .as_ref()
+                .map(|publication| (release.deployment_id.clone(), publication.clone()))
+        })
+        .collect()
+}
+
+/// Validate captured associations. Current evidence is checked again when a
+/// new route grant is needed.
+pub(in crate::deployments) async fn validate_publications(
+    data: &mut TableData,
+    artifacts: &dyn latent_artifacts::ArtifactRepository,
+) -> Result<()> {
+    for row in &mut data.rows {
+        for release in [&mut row.status.base, &mut row.status.candidate] {
+            let selected = artifacts.select_execution_publication(
+                &row.status.tenant,
+                &release.component,
+                release.publication.as_ref(),
+            )?;
+            if selected.as_ref().map(|v| &v.id) != release.publication.as_ref() {
+                return Err(corrupt());
+            }
+            if let Some(selected) = selected {
+                let snapshot = artifacts
+                    .historical_execution_snapshot_selected(&release.component, Some(&selected.id))
+                    .await?;
+                let package = match snapshot.state() {
+                    latent_artifacts::HistoricalExecutionState::Eligible(token) => {
+                        token.authorize_tenant(&row.status.tenant)?;
+                        token.package().cloned()
+                    }
+                    latent_artifacts::HistoricalExecutionState::Denied(denied) => {
+                        denied.authorize_tenant(&row.status.tenant)?;
+                        if let Some(layout) = snapshot.web_layout() {
+                            Some(layout.package().clone())
+                        } else {
+                            artifacts
+                                .retained_package_source_selected(
+                                    &row.status.tenant,
+                                    &release.component,
+                                    Some(&selected.id),
+                                    32 * 1024 * 1024,
+                                )
+                                .await?
+                                .map(|source| source.package().clone())
+                        }
+                    }
+                    latent_artifacts::HistoricalExecutionState::Unmanaged => return Err(corrupt()),
+                };
+                if package != release.package {
+                    return Err(corrupt());
+                }
+                release.publication = Some(selected.id);
+            }
+        }
     }
     Ok(())
 }

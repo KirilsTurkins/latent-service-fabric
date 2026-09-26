@@ -1,6 +1,28 @@
 use super::*;
 mod readers;
 
+// Small test fixtures name their single publication by component. Production
+// lifecycle access uses exact publication IDs and owns no component index.
+impl LifecycleStore {
+    pub(super) fn fixture_publication(
+        &self,
+        scope: Option<&LifecycleScope>,
+        component: &ReleaseDigest,
+    ) -> Result<Option<PublicationId>, PlatformError> {
+        self.owner.check()?;
+        let state = self.state.try_read().map_err(lock_error)?;
+        let mut matches = state.entries.iter().filter(|(_, entry)| {
+            &entry.stored.identity.release == component
+                && scope.is_none_or(|scope| &entry.stored.identity.scope == scope)
+        });
+        let selected = matches.next().map(|(id, _)| id.clone());
+        if matches.next().is_some() {
+            return Err(crate::publication::ambiguous());
+        }
+        Ok(selected)
+    }
+}
+
 fn identity(label: &[u8]) -> LifecycleIdentity {
     LifecycleIdentity {
         scope: LifecycleScope::LocalUnscoped,
@@ -70,12 +92,13 @@ fn compact_capability_revokes_generation_and_owner_without_store_maps() {
     let id = identity(b"one");
     let record = publication(&id, "create").record.unwrap();
     let owner = Owner::new(None);
-    let row = Row::new(&record);
+    let row = Row::new(&record, id.publication().unwrap().id);
     let token = ReleaseUseEligibility::new(
         LifecycleEligibility {
             owner: Arc::clone(&owner),
             row: Arc::clone(&row),
             generation: 1,
+            projection: None,
         },
         None,
     )
@@ -242,7 +265,7 @@ mod durable {
                     assert_eq!(store.identity(&id.release).unwrap(), Some(id.clone()));
                     assert_eq!(store.record(&id.release).unwrap(), Some(record.clone()));
                     assert_eq!(
-                        store.operation(&id.scope, "unknown").unwrap(),
+                        store.selected_operation(&id.scope, "unknown").unwrap().1,
                         ReleaseOperationLookup::Unknown
                     );
                     store
@@ -311,7 +334,10 @@ mod durable {
             )
             .is_err());
             assert!(matches!(
-                store.operation(&identity.scope, "create").unwrap(),
+                store
+                    .selected_operation(&identity.scope, "create")
+                    .unwrap()
+                    .1,
                 ReleaseOperationLookup::Uncertain
             ));
             drop(store);
@@ -329,7 +355,10 @@ mod durable {
                 1
             );
             assert!(matches!(
-                reopened.operation(&identity.scope, "create").unwrap(),
+                reopened
+                    .selected_operation(&identity.scope, "create")
+                    .unwrap()
+                    .1,
                 ReleaseOperationLookup::Found(_)
             ));
         }
@@ -418,11 +447,11 @@ mod durable {
                 );
             }
             let bytes = io::required(
-                &persistence::row_path(&root.path(), &id.release).unwrap(),
+                &persistence::row_path(&root.path(), &id.publication().unwrap().id).unwrap(),
                 limits.max_record_bytes,
             )
             .unwrap();
-            identities.push(id.release.clone());
+            identities.push(id.publication().unwrap().id);
             prior_bytes.push(bytes);
         }
         assert_eq!(
@@ -431,14 +460,16 @@ mod durable {
         );
         assert!(matches!(
             store
-                .operation(&LifecycleScope::LocalUnscoped, "create-0")
-                .unwrap(),
+                .selected_operation(&LifecycleScope::LocalUnscoped, "create-0")
+                .unwrap()
+                .1,
             ReleaseOperationLookup::Unknown
         ));
         assert!(matches!(
             store
-                .operation(&LifecycleScope::LocalUnscoped, "create-11")
-                .unwrap(),
+                .selected_operation(&LifecycleScope::LocalUnscoped, "create-11")
+                .unwrap()
+                .1,
             ReleaseOperationLookup::Found(_)
         ));
     }

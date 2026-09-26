@@ -1,7 +1,7 @@
 mod encoding;
 mod hashing;
 #[cfg(test)]
-mod legacy;
+mod oracle;
 mod projection;
 
 use std::collections::BTreeMap;
@@ -41,6 +41,10 @@ pub(super) struct Payload {
     object_generations: Option<Vec<StoredObjectGeneration>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub control: Option<ControlPayload>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    publication_pins: Option<Vec<StoredPublicationPin>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capability_bindings: Option<Vec<super::bindings::model::StoredBinding>>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -54,6 +58,12 @@ pub(super) struct ControlPayload {
         deserialize_with = "crate::deployment_operations::codec::present"
     )]
     pub deployment_operations: Option<super::operations::table::TableData>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "crate::deployment_operations::codec::present"
+    )]
+    pub http_routes: Option<super::http::table::TableData>,
 }
 #[derive(Serialize)]
 #[serde(crate = "latent_manifest::__serde")]
@@ -62,6 +72,8 @@ pub(super) struct ControlPayloadRef<'a> {
     pub rollouts: &'a super::rollouts::table::TableData,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deployment_operations: Option<&'a super::operations::table::TableData>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub http_routes: Option<&'a super::http::table::TableData>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -79,17 +91,48 @@ pub(super) struct Record {
     pub payload: Payload,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
+struct StoredPublicationPin {
+    id: String,
+    publication: String,
+}
+
 impl Record {
+    pub(super) fn publication_pins(
+        &self,
+        deployments: &BTreeMap<DeploymentId, DeploymentManifest>,
+    ) -> Result<Option<super::compiler::PublicationPins>, PlatformError> {
+        let Some(entries) = &self.payload.publication_pins else {
+            return Ok(None);
+        };
+        if entries.len() > deployments.len() {
+            return Err(corrupt());
+        }
+        let mut pins = BTreeMap::new();
+        for entry in entries {
+            let id = DeploymentId(entry.id.clone());
+            let manifest = deployments.get(&id).ok_or_else(corrupt)?;
+            let publication: latent_core::PublicationId =
+                entry.publication.parse().map_err(|_| corrupt())?;
+            if manifest
+                .publication
+                .as_ref()
+                .is_some_and(|value| value != &publication)
+                || pins.insert(id, publication).is_some()
+            {
+                return Err(corrupt());
+            }
+        }
+        Ok(Some(pins))
+    }
+
     pub(super) fn object_generations(
         &self,
         deployments: &BTreeMap<DeploymentId, DeploymentManifest>,
     ) -> Result<BTreeMap<DeploymentId, u64>, PlatformError> {
         match (self.format_version, &self.payload.object_generations) {
-            (1, None) => Ok(deployments
-                .keys()
-                .map(|id| (id.clone(), self.payload.generation))
-                .collect()),
-            (2 | 3 | 4, Some(stored)) if stored.len() == deployments.len() => {
+            (5..=7, Some(stored)) if stored.len() == deployments.len() => {
                 let mut versions = BTreeMap::new();
                 for entry in stored {
                     let id = DeploymentId(entry.id.clone());
@@ -174,11 +217,13 @@ pub(super) fn own_root(root: &Path) -> Result<(PathBuf, OwnerLock), PlatformErro
             ));
         }
     }
-    // Cleanup is only allowed after acquiring the exclusive root lock. A staging
-    // marker, including an empty or truncated one, is never authoritative state.
-    remove_pending(&root)?;
-    remove_if_present(&root.join(INITIALIZED_PENDING_FILE))?;
     Ok((root, owner))
+}
+
+/// Discard non-authoritative staging only after the owned catalog is validated.
+pub(super) fn discard_staging(root: &Path) -> Result<(), PlatformError> {
+    remove_pending(root)?;
+    remove_if_present(&root.join(INITIALIZED_PENDING_FILE))
 }
 
 /// Synchronize every link that makes the catalog reachable, leaf to filesystem root.
@@ -225,21 +270,22 @@ pub(super) fn load(
         return Err(byte_limit());
     }
     let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
+    if !matches!(record.format_version, 5..=7) {
+        return Err(error(
+            PlatformErrorCode::CorruptArtifact,
+            "unsupported-catalog-format-use-fresh-state",
+        ));
+    }
     let checksum = payload_checksum(&record.payload, config.max_state_bytes, work)?;
-    if !matches!(record.format_version, 1..=4)
-        || matches!(record.format_version, 3 | 4) != record.payload.control.is_some()
-        || (record.format_version == 4)
+    if record.payload.publication_pins.is_none()
+        || (record.format_version < 7
+            && (record.format_version == 6) != record.payload.capability_bindings.is_some())
+        || (record.format_version == 7)
             != record
                 .payload
                 .control
                 .as_ref()
-                .is_some_and(|v| v.deployment_operations.is_some())
-        || (record.format_version == 3
-            && record
-                .payload
-                .control
-                .as_ref()
-                .is_some_and(|v| v.rollouts.rows.is_empty()))
+                .is_some_and(|v| v.http_routes.is_some())
         || record
             .payload
             .control
@@ -259,27 +305,27 @@ pub(super) struct EncodedCatalog {
     bytes: Vec<u8>,
 }
 
-/// A compiler-owned route candidate. Legacy callers already encoded their v2
-/// envelope; an established v3 owner supplies control metadata before encoding.
+/// A compiler-owned route candidate. Ordinary mutation supplies encoded bytes;
+/// a combined control owner supplies its metadata before encoding.
 pub(super) enum PublicationCandidate {
-    Legacy(EncodedCatalog),
+    Encoded(EncodedCatalog),
     Combined(CompiledCatalog),
 }
 impl From<EncodedCatalog> for PublicationCandidate {
     fn from(value: EncodedCatalog) -> Self {
-        Self::Legacy(value)
+        Self::Encoded(value)
     }
 }
 impl PublicationCandidate {
     pub(super) fn catalog(&self) -> &CompiledCatalog {
         match self {
-            Self::Legacy(value) => value.catalog(),
+            Self::Encoded(value) => value.catalog(),
             Self::Combined(value) => value,
         }
     }
     pub(super) fn into_parts(self) -> (CompiledCatalog, Option<Vec<u8>>) {
         match self {
-            Self::Legacy(value) => {
+            Self::Encoded(value) => {
                 let (catalog, bytes) = value.into_parts();
                 (catalog, Some(bytes))
             }
@@ -405,6 +451,10 @@ impl Write for LimitedBytes {
     }
 }
 
+pub(super) fn matches_restored_snapshot(record: &Record, catalog: &CompiledCatalog) -> bool {
+    record.payload.snapshot == catalog_snapshot_value(catalog)
+}
+
 /// Direct canonical traversal avoids a second owned public route snapshot.
 pub(super) fn catalog_snapshot_value(catalog: &CompiledCatalog) -> json::Value {
     let services = catalog
@@ -413,12 +463,16 @@ pub(super) fn catalog_snapshot_value(catalog: &CompiledCatalog) -> json::Value {
             let revisions = route
                 .revisions()
                 .map(|record| {
-                    json::json!({
+                    let mut value = json::json!({
                         "revision": record.revision.0,
                         "release": record.deployment.release.0,
                         "weight": record.deployment.route_weight,
                         "attributes": record.attributes,
-                    })
+                    });
+                    if let Some(publication) = &record.publication {
+                        value["publication"] = json::json!(publication.as_str());
+                    }
+                    value
                 })
                 .collect::<Vec<_>>();
             json::json!({
@@ -447,13 +501,16 @@ pub(super) fn stage(root: &Path, bytes: &[u8], work: &mut Work) -> Result<(), Pl
         .write(true)
         .open(root.join(PENDING_FILE))
         .map_err(io_error)?;
+    checkpoint(IoStep::StateCreated, &root.join(PENDING_FILE)).map_err(io_error)?;
     write_stage(&mut pending, bytes, work)?;
+    checkpoint(IoStep::StateWritten, &root.join(PENDING_FILE)).map_err(io_error)?;
     if let Err(failure) = pending.sync_all() {
         count!(work, stage_sync_failures, 1);
         return Err(io_error(failure));
     }
     count!(work, stage_completed, 1);
     count!(work, stage_synced_bytes, bytes.len());
+    checkpoint(IoStep::StateFileSynced, &root.join(PENDING_FILE)).map_err(io_error)?;
     Ok(())
 }
 
@@ -472,6 +529,7 @@ fn write_stage(
 }
 
 pub(super) fn replace(root: &Path) -> Result<(), PlatformError> {
+    checkpoint(IoStep::StateRename, &root.join(PENDING_FILE)).map_err(io_error)?;
     fs::rename(root.join(PENDING_FILE), root.join(STATE_FILE)).map_err(io_error)
 }
 
@@ -514,6 +572,10 @@ pub(super) fn sync_root(root: &Path) -> Result<(), PlatformError> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum IoStep {
     PathDirectorySync,
+    StateCreated,
+    StateWritten,
+    StateFileSynced,
+    StateRename,
     StateDirectorySync,
     MarkerCreated,
     MarkerPartialWrite,

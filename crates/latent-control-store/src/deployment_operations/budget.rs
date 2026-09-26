@@ -31,6 +31,13 @@ impl Budget {
         })
     }
     pub(crate) fn read(self: &Arc<Self>, payload_bytes: usize) -> Result<DeploymentReadLease> {
+        self.read_with_scratch(payload_bytes, super::MAX_OPERATION_SCRATCH_BYTES)
+    }
+    pub(crate) fn read_with_scratch(
+        self: &Arc<Self>,
+        payload_bytes: usize,
+        scratch_bytes: usize,
+    ) -> Result<DeploymentReadLease> {
         self.readers
             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
                 n.checked_add(1)
@@ -42,7 +49,7 @@ impl Budget {
         let charge = self.reserve(
             payload_bytes
                 .saturating_mul(4)
-                .saturating_add(super::MAX_OPERATION_SCRATCH_BYTES + 512),
+                .saturating_add(scratch_bytes + 512),
         );
         match charge {
             Ok(charge) => Ok(DeploymentReadLease(Arc::new(ReadCharge { charge }))),

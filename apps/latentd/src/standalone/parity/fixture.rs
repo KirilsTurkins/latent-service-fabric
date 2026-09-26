@@ -45,6 +45,11 @@ pub fn configuration(directory: &Path) -> (crate::config::NodeConfig, serde_json
         ]
     });
     std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    }
     let mut public = value;
     public.as_object_mut().unwrap().remove("credentials");
     public["dataDirectory"] = "data".into();

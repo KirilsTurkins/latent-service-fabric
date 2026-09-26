@@ -1,0 +1,22 @@
+[
+  {
+    "id": 10734065212,
+    "name": "native-runtime-release-vm-local-experimental-v1-193d52c37635026de416feffd4a2dfd57d082451",
+    "digest": "sha256:5c01f874aa878b081e3f5a0ea71275bfa5a767e879a33fdb13da3a110d243aea"
+  },
+  {
+    "id": 10734060380,
+    "name": "native-runtime-release-decision-193d52c37635026de416feffd4a2dfd57d082451",
+    "digest": "sha256:a83dec26bfe5dfb05fa35567eff61d720770ceb8dbca23c64dad9d99d3b21c86"
+  },
+  {
+    "id": 10734047407,
+    "name": "native-runtime-release-vm-external-capsule-v1-193d52c37635026de416feffd4a2dfd57d082451",
+    "digest": "sha256:f36b37f9f809b79bbfa8668b24e6651786eac4e5dfca3c1c4b36b668fb72869e"
+  },
+  {
+    "id": 10733593022,
+    "name": "native-runtime-release-193d52c37635026de416feffd4a2dfd57d082451",
+    "digest": "sha256:fc06993497a19f62a3f99c86d9ed6ee82c8e386119357ac13fc069f1218ac5d0"
+  }
+]

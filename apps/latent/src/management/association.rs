@@ -6,6 +6,16 @@ use crate::error::Failure;
 
 use super::invalid_response;
 
+pub(super) fn selected_publication(
+    actual: Option<&proto::PublicationRef>,
+    expected: Option<&proto::PublicationRef>,
+) -> Result<(), Failure> {
+    if expected.is_none() || actual != expected {
+        return Err(invalid_response());
+    }
+    Ok(())
+}
+
 pub(super) fn release(
     value: Option<&proto::ReleaseDescriptor>,
     tenant: &str,

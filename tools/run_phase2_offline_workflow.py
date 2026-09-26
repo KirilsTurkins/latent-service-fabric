@@ -22,7 +22,7 @@ if __package__ in (None, ""):
 
 from tools.build_process_signals import owned_cancellation
 from tools.phase2_operator_canary import invoke
-from tools.phase2_operator_process import Client, WorkflowError, read_json, require, write_json
+from tools.phase2_operator_process import Client, WorkflowError, read_json, require, write_json, write_selected_deployment
 from tools.phase2_operator_scenario import configure_node, connect, receipt, route, stop
 from tools.run_oci_registry_tests import IMAGE, Registry, certificates, ready
 from tools.run_phase2_operator_workflow import package_workflow, registry_profile
@@ -81,9 +81,12 @@ def run(args, origin, ca, stop_registry):
                                         "--evidence", outputs / "blue-evidence/index.json",
                                         "--operation-id", "offline-publish", "--expected-generation", "0")["data"]
                 digest = summaries["blue"]["componentDigest"]
+                selected = published["release"]["publication"]["id"]
                 require(published["release"]["digest"] == digest, "publication-identity")
                 snapshot = client.call("deployment", "get", "blue", "--operation-snapshot", codes=(6,))["data"]
-                applied = receipt(client.call("deployment", "apply", args.fixture_root / "blue/deployment.json",
+                deployment = write_selected_deployment(args.fixture_root / "blue/deployment.json",
+                                                       client.directory / "blue-selected.json", selected)
+                applied = receipt(client.call("deployment", "apply", deployment,
                                                "--operation-id", "offline-apply", "--expected-generation", "0",
                                                "--expected-state-version", snapshot["stateVersion"]), "offline-apply")
                 input_path = client_dir / "input.json"
@@ -106,8 +109,8 @@ def run(args, origin, ca, stop_registry):
                 after = invoke(client, metadata, input_path, "offline-during-outage")
                 require(after == before and route(client) == routes, "outage-changed-local-authority")
 
-                lifecycle = client.call("release", "lifecycle", digest)["data"]["status"]["record"]
-                revoked = client.call("release", "revoke", digest, "--operation-id", "offline-revoke",
+                lifecycle = client.call("release", "lifecycle", "--publication", selected)["data"]["status"]["record"]
+                revoked = client.call("release", "revoke", "--publication", selected, "--operation-id", "offline-revoke",
                                       "--expected-generation", lifecycle["generation"])["data"]["operation"]
                 # The same route is still pinned in catalog history. Current
                 # local lifecycle must deny a new call without a registry event.
@@ -118,7 +121,7 @@ def run(args, origin, ca, stop_registry):
                                      "--memory-bytes", "4194304", "--log-bytes", "1024", codes=(4,))
                 require(denied["outcomeKnown"] and denied["category"] == "platform-failure"
                         and denied["error"]["code"] == "permission-denied", "local-revocation-denial")
-                current = client.call("release", "lifecycle", digest)["data"]["status"]["record"]
+                current = client.call("release", "lifecycle", "--publication", selected)["data"]["status"]["record"]
                 require(current["state"].endswith("REVOKED") and current["operationId"] == "offline-revoke",
                         "revocation-identity")
                 stop(client, node)

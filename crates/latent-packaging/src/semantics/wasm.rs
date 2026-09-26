@@ -15,6 +15,19 @@ type Result<T> = std::result::Result<T, PlatformError>;
 
 pub(super) fn validate(component: &[u8], limits: SemanticLimits) -> Result<()> {
     limits.validate()?;
+    validate_prechecked(component, limits)
+}
+
+/// Only the selected Angular binary envelope gets its own finite work budget.
+/// The caller still validates the public WIT surface with its ordinary limits.
+pub(super) fn validate_renderer(component: &[u8], mut limits: SemanticLimits) -> Result<()> {
+    limits.validate()?;
+    limits.max_operators = limits.max_renderer_operators;
+    limits.max_type_nodes = limits.max_renderer_type_nodes;
+    validate_prechecked(component, limits)
+}
+
+fn validate_prechecked(component: &[u8], limits: SemanticLimits) -> Result<()> {
     if component.len() > limits.max_component_bytes {
         return Err(exhausted("component-byte-limit"));
     }

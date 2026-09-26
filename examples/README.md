@@ -15,3 +15,7 @@ deploys and invokes it through the operator CLI and authenticated node.
 The counter and workflow examples are not executable services in the completed
 Phase 2 runtime. A schema-valid document can describe a later phase; semantic admission
 still rejects unsupported state models and capabilities.
+
+The [outbound HTTP probe](outbound-http/README.md) executes the configured buffered
+HTTP provider through the production Wasmtime backend and a maintained async
+Component Model capsule.

@@ -1,0 +1,31 @@
+{
+  "formatVersion": 1,
+  "world": "latent:java-guest/sdk@1.0.0",
+  "generator": "lsf-java-wit-v1+wit-bindgen-0.62.0",
+  "outputs": {
+    "Bindings.java": {
+      "digest": "sha256:c27dfee6691115291d0b01e41e808a3c57240002d8adf5f06cdfbc23e74ca3c9",
+      "size": 65356
+    },
+    "bridge.c": {
+      "digest": "sha256:10a709a2f675623867256932655c640ad4363b5cc65c999a0ea6025e1674aec6",
+      "size": 75211
+    },
+    "probe.c": {
+      "digest": "sha256:f75bb13e075f0351f393e25e833f3938124df4344053d0580594125d51f4f26d",
+      "size": 62593
+    },
+    "probe.h": {
+      "digest": "sha256:5d6dd2c7e26c86f0219558b8403d2a3372aa2622f24cad202a2c6a13cd687f40",
+      "size": 30066
+    },
+    "probe_component_type.o": {
+      "digest": "sha256:f9c04bc1e432f6ec344a1e13fca9bafc7b39b34e042b3789f8d1a9a745d51e49",
+      "size": 4306
+    }
+  },
+  "digest": "sha256:12d3b88496c490feea8959d1abae2d6de4c8064967bb1eeef73f2c9a72f8b234",
+  "imports": 24,
+  "exports": 1,
+  "resources": 4
+}

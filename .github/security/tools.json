@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "reviewed": "2026-09-19",
+  "tools": {
+    "cargo-audit": {
+      "version": "0.22.2",
+      "repository": "rustsec/rustsec",
+      "tag": "cargo-audit/v0.22.2",
+      "commit": "281452c35cf0870969042374110f099a411bc185",
+      "assets": {
+        "linux-x64": {
+          "name": "cargo-audit-x86_64-unknown-linux-gnu-v0.22.2.tgz",
+          "sha256": "ab28a1bdb54db4d5d8ad5981cf1f959410370b3d28250dbd35f6a44248620e39",
+          "binary_sha256": "473b9a71e5cb5bde22f69c32f749c9b83931287d92dc36b91cb04f6705640ef2"
+        },
+        "windows-x64": {
+          "name": "cargo-audit-x86_64-pc-windows-msvc-v0.22.2.zip",
+          "sha256": "0a7316540862c13d954f648917ceacca593747baed6eec180fafa590be2710ab",
+          "binary_sha256": "0157f5ce1ce9fd4fb0a1f7c79af1229771d1f80b6c2613ddb0d9200a8ba73946"
+        }
+      }
+    },
+    "gitleaks": {
+      "version": "8.30.1",
+      "repository": "gitleaks/gitleaks",
+      "tag": "v8.30.1",
+      "commit": "83d9cd684c87d95d656c1458ef04895a7f1cbd8e",
+      "assets": {
+        "linux-x64": {
+          "name": "gitleaks_8.30.1_linux_x64.tar.gz",
+          "sha256": "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+          "binary_sha256": "88f91962aa2f93ac6ab281d553b9e125f5197bbbce38f9f2437f7299c32e5509"
+        },
+        "windows-x64": {
+          "name": "gitleaks_8.30.1_windows_x64.zip",
+          "sha256": "d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e",
+          "binary_sha256": "17157e2ee8b76fc8b1d8bee607a250e34b8a8023c8bc81822d4b5ee4d78fcb7c"
+        }
+      }
+    },
+    "zizmor": {
+      "version": "1.30.1",
+      "repository": "zizmorcore/zizmor",
+      "tag": "v1.30.1",
+      "commit": "99a054ed9283c90abdd2d5b9fb5101d27dde9783",
+      "assets": {
+        "linux-x64": {
+          "name": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
+          "sha256": "e65324f4430c2717591937edcec90ccbefaf14c174f8ec9415e03ca875b46e1a",
+          "binary_sha256": "d39db5594fd89d57fdadd744079e1b3a405f24ff312714904f8bd708c69f322f"
+        },
+        "windows-x64": {
+          "name": "zizmor-x86_64-pc-windows-msvc.zip",
+          "sha256": "b183b1e996eddfab9659f1e9b46e059f1ef1cf984a1f14e5da09f7876a4b3a1c",
+          "binary_sha256": "4ace959d58c0dc48659c3eeefc4bb9e3b18197c174e5e997d2f8e0896f0d3c9e"
+        }
+      }
+    }
+  }
+}

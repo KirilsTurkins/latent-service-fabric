@@ -1,5 +1,4 @@
-use super::super::support::{artifact, deployment, request, Harness};
-use latent_artifacts::ArtifactRepository;
+use super::super::support::{artifact, deployment, publish_artifact, request, Harness};
 use latent_audit::{AuditLimits, DirectoryPhase2AuditJournal};
 use latent_wire::management::{proto, ManagementLimits};
 use std::time::{Duration, Instant};
@@ -38,11 +37,8 @@ async fn managed_apply_delete_and_exact_replay_preserve_original_receipts() {
         DirectoryPhase2AuditJournal::open(directory.path().join("audit"), AuditLimits::default())
             .unwrap();
     let harness = Harness::with_audit(ManagementLimits::default(), None, Some(audit.clone())).await;
-    let release = harness
-        .artifacts
-        .publish(artifact("acme", "echo", "managed"))
-        .await
-        .unwrap();
+    let (publication, _component) =
+        publish_artifact(&harness, artifact("acme", "echo", "managed")).await;
     let before = snapshot(&harness, "alice").await;
     assert!(before.deployment.is_none());
     assert_eq!(before.state_version, Some(0));
@@ -52,7 +48,8 @@ async fn managed_apply_delete_and_exact_replay_preserve_original_receipts() {
         Some(proto::DeploymentDurability::Confirmed as i32)
     );
     let input = proto::ApplyDeploymentRequest {
-        deployment: Some(deployment("ship", "acme", "echo", &release.release_digest)),
+        expected_component_digest: None,
+        deployment: Some(deployment("ship", "acme", "echo", &publication)),
         expected_generation: Some(0),
         operation: operation("create", 0),
     };
@@ -207,17 +204,15 @@ async fn managed_requires_audit_and_response_capacity_before_any_catalog_effect(
             audited.then(|| audit.clone()),
         )
         .await;
-        let release = harness
-            .artifacts
-            .publish(artifact("acme", "echo", "preflight"))
-            .await
-            .unwrap();
+        let (publication, _component) =
+            publish_artifact(&harness, artifact("acme", "echo", "preflight")).await;
         let denied = harness
             .deployments_client()
             .apply_deployment(request(
                 "alice",
                 proto::ApplyDeploymentRequest {
-                    deployment: Some(deployment("ship", "acme", "echo", &release.release_digest)),
+                    expected_component_digest: None,
+                    deployment: Some(deployment("ship", "acme", "echo", &publication)),
                     expected_generation: Some(0),
                     operation: operation("blocked", 0),
                 },

@@ -1,0 +1,9 @@
+{
+  "name": "blob",
+  "package": "tests:local-blobs@1.0.0",
+  "contract": "tests:local-blobs/api@1.0.0",
+  "capability": "latent:blob/blob@0.2.0",
+  "world": "tests:local-blobs/service@1.0.0",
+  "witDirectory": "blob-v2",
+  "asynchronous": true
+}

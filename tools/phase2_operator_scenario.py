@@ -6,6 +6,7 @@ import re
 import time
 
 from tools.phase2_operator_process import (
+    write_selected_deployment,
     Process, file_digest, read_json, require, stopped_record, write_candidate_manifest, write_json,
 )
 from tools.phase2_operator_canary import invoke, positive_canary, rollback_target
@@ -43,12 +44,14 @@ def configure_node(directory, fixture, tenant):
     return config
 
 
-def connect(client, binary, directory, config, tenant, ordinal):
+def connect(client, binary, directory, config, tenant, ordinal, startup_timeout=30):
+    require(type(startup_timeout) is int and 1 <= startup_timeout <= 120, "node-startup-watchdog")
     environment = dict(client.environment, HOME=str(directory))
     node = Process([str(binary), "serve", "--config", str(config)], directory,
                    environment, client.cancellation, maximum=262144)
     try:
-        started = node.line(min(client.deadline, time.monotonic() + 30))
+        started = node.line(min(client.deadline, time.monotonic() + startup_timeout))
+        node.startup_record = started
         endpoint = started.get("endpoint", "")
         require(re.fullmatch(r"127\.0\.0\.1:[0-9]{1,5}", endpoint), "node-endpoint")
         profile = client.directory / f"client-{ordinal}.json"
@@ -131,8 +134,6 @@ def audit_pages(client, expected_operations):
 
 def node_workflow(client, binary, directory, fixture, outputs, summaries, metadata):
     tenant = metadata["tenant"]
-    candidate = write_candidate_manifest(fixture / "green/deployment.json",
-                                         client.directory / "candidate-1000.json", 1000)
     config = configure_node(directory, fixture, tenant)
     config_digest = file_digest(config, 262144, client.cancellation, client.deadline)
     node = connect(client, binary, directory, config, tenant, 1)
@@ -166,15 +167,20 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
             replay = client.call(*arguments)["data"]
             require(replay["operation"] == operation, "publication-replay")
             publications[name] = operation
-            client.call("release", "lifecycle", summaries[name]["componentDigest"])
+            client.call("release", "lifecycle", "--publication", operation["publication"]["id"])
         first = client.call("release", "list", "--page-size", "1")["data"]
         require(len(first["releases"]) == 1 and first["nextPageToken"], "release-pagination")
         second = client.call("release", "list", "--page-size", "1", "--page-token", first["nextPageToken"])["data"]
         require(len(second["releases"]) == 1 and second["releases"][0]["digest"] != first["releases"][0]["digest"],
                 "release-page-disjoint")
 
+        blue = write_selected_deployment(fixture / "blue/deployment.json", client.directory / "blue-selected.json",
+                                         publications["blue"]["publication"]["id"])
+        green = write_selected_deployment(fixture / "green/deployment.json", client.directory / "green-selected.json",
+                                          publications["green"]["publication"]["id"])
+        candidate = write_candidate_manifest(green, client.directory / "candidate-1000.json", 1000)
         snapshot = client.call("deployment", "get", "blue", "--operation-snapshot", codes=(6,))["data"]
-        arguments = ["deployment", "apply", fixture / "blue/deployment.json", "--operation-id", "apply-blue",
+        arguments = ["deployment", "apply", blue, "--operation-id", "apply-blue",
                      "--expected-state-version", snapshot["stateVersion"], "--expected-generation", "0"]
         applied = receipt(client.call(*arguments), "apply-blue")
         replay = client.call(*arguments)
@@ -228,12 +234,12 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
         negative_rollback = receipt(change(client, "rollback", "canary", aborted["revision"], "canary-rollback",
                                           "--target-generation", negative_target), "canary-rollback")
 
-        canary_counts = positive_canary(client, metadata, input_path, fixture, summaries, receipt, change)
+        canary_counts = positive_canary(client, metadata, input_path, green, summaries, receipt, change)
 
         # An intentionally tiny transport deadline is not a retry policy. Inspect
         # the exact operation afterward whether this machine completed or timed out.
         snapshot = client.call("deployment", "get", "blue", "--operation-snapshot")["data"]
-        attempted = client.call("--rpc-timeout-ms", "1", "deployment", "apply", fixture / "blue/deployment.json",
+        attempted = client.call("--rpc-timeout-ms", "1", "deployment", "apply", blue,
                                 "--operation-id", "deadline-inspect", "--expected-state-version", snapshot["stateVersion"],
                                 "--expected-generation", snapshot["deployment"]["generation"], codes=(0, 4, 5))
         inspected = client.call("deployment", "operation", "deadline-inspect")
@@ -270,11 +276,11 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
         require(deleted["action"].endswith("DELETE"), "delete-receipt-action")
         require(client.call(*deletion)["data"]["operation"]["replayed"], "delete-replay")
         client.call("deployment", "get", "blue", "--operation-snapshot", codes=(6,))
-        green = summaries["green"]["componentDigest"]
-        lifecycle = client.call("release", "lifecycle", green)["data"]["status"]["record"]
-        revoked = client.call("release", "revoke", green, "--operation-id", "revoke-green",
+        green = publications["green"]["publication"]["id"]
+        lifecycle = client.call("release", "lifecycle", "--publication", green)["data"]["status"]["record"]
+        revoked = client.call("release", "revoke", "--publication", green, "--operation-id", "revoke-green",
                               "--expected-generation", lifecycle["generation"])["data"]["operation"]
-        status = client.call("release", "lifecycle", green)["data"]["status"]
+        status = client.call("release", "lifecycle", "--publication", green)["data"]["status"]
         require(status["record"]["state"].endswith("REVOKED")
                 and int(status["record"]["generation"]) == int(lifecycle["generation"]) + 1
                 and status["record"]["operationId"] == "revoke-green", "revoke-status")

@@ -1,0 +1,6 @@
+package tests:streaming-http@1.0.0;
+interface api { run: async func(which: u32) -> u32; }
+world service {
+    import latent:http/streaming@0.3.0;
+    export api;
+}

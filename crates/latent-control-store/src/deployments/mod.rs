@@ -1,7 +1,9 @@
 //! Embedded, tenant-safe deployment catalog and immutable route publication.
 
 mod admission_fence;
+pub mod bindings;
 mod compiler;
+pub(crate) mod http;
 mod mutations;
 mod observation;
 pub(crate) mod operations;
@@ -120,9 +122,11 @@ pub struct DirectoryDeploymentRepository {
     admission: Option<Arc<dyn AdmissionAuthority>>,
     runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
-    current: RwLock<PublishedCatalog>,
+    current: Arc<RwLock<PublishedCatalog>>,
+    binding_generations: bindings::Generations,
     rollout_limits: crate::rollouts::RolloutLimits,
     operation_budget: Arc<crate::deployment_operations::budget::Budget>,
+    http_budget: Arc<crate::deployment_operations::budget::Budget>,
     rollout_budget: Arc<rollouts::table::MetadataBudget>,
     rollout_work: Arc<std::sync::atomic::AtomicBool>,
     rollout_cursor_epoch: u64,
@@ -419,19 +423,31 @@ impl DirectoryDeploymentRepository {
             let operation_budget =
                 crate::deployment_operations::budget::Budget::new(operation_limits);
             let rollout_cursor_epoch = next_rollout_cursor_epoch()?;
+            let http_budget = crate::deployment_operations::budget::Budget::new(
+                crate::deployment_operations::DeploymentOperationLimits {
+                    maximum_receipts: http::table::RECEIPTS,
+                    maximum_metadata_bytes: 8 * 1024 * 1024,
+                    maximum_read_owners: 64,
+                },
+            );
             let root = root.into();
             let (root, owner_lock) = persistence::own_root(&root)?;
             let rollout_budget =
                 rollouts::table::MetadataBudget::new(rollout_limits.maximum_metadata_bytes);
             let mut restored = persistence::load(&root, config, &mut work)?;
+            let binding_data = restored
+                .as_mut()
+                .and_then(|record| record.payload.capability_bindings.take());
             let mut control = restored
                 .as_mut()
                 .and_then(|record| record.payload.control.take());
             let needs_initial_state = restored.is_none();
+            let mut publication_pins = None;
             let (deployments, versions, generation, generated_at) = match &restored {
                 Some(record) => {
                     let deployments = record.deployments(config)?;
                     let versions = record.object_generations(&deployments)?;
+                    publication_pins = record.publication_pins(&deployments)?;
                     (
                         deployments
                             .into_iter()
@@ -456,10 +472,24 @@ impl DirectoryDeploymentRepository {
                 true,
                 runtime_profile.as_deref(),
                 lifecycle.as_ref(),
+                publication_pins.as_ref(),
             )
             .await?;
             if let Some(record) = restored {
-                if record.payload.snapshot != persistence::catalog_snapshot_value(catalog.catalog())
+                if !persistence::matches_restored_snapshot(&record, catalog.catalog())
+                    || publication_pins.as_ref().is_some_and(|pins| {
+                        catalog
+                            .catalog()
+                            .records
+                            .iter()
+                            .filter_map(|record| {
+                                record
+                                    .publication
+                                    .as_ref()
+                                    .map(|p| (&record.deployment.id, p))
+                            })
+                            .ne(pins.iter())
+                    })
                 {
                     return Err(error(
                         PlatformErrorCode::CorruptArtifact,
@@ -467,7 +497,11 @@ impl DirectoryDeploymentRepository {
                     ));
                 }
             }
-            let (catalog, bytes) = catalog.into_parts();
+            let (mut catalog, mut bytes) = catalog.into_parts();
+            if let Some(data) = binding_data {
+                catalog.bindings = bindings::restore(&catalog, data, artifacts.as_ref()).await?;
+                (catalog, bytes) = persistence::encode(catalog, config, &mut work)?.into_parts();
+            }
             recovery_admission::check(true, || {
                 catalog.check_admission_mode(admission.as_ref(), lifecycle.as_ref())
             })
@@ -475,16 +509,30 @@ impl DirectoryDeploymentRepository {
             let transaction = control
                 .as_ref()
                 .map_or(generation.0, |v| v.transaction_version);
-            let operations = if let Some(data) = control
+            let http = match control.as_mut().and_then(|c| c.http_routes.take()) {
+                Some(data) if data.sequence == 0 => return Err(crate::http_routes::corrupt()),
+                Some(data) => {
+                    http::table::HttpTable::new(data, &http_budget, transaction, generation.0)?
+                }
+                None => http::table::HttpTable::empty(&http_budget)?,
+            };
+            let operations = if let Some(mut data) = control
                 .as_mut()
                 .and_then(|value| value.deployment_operations.take())
             {
+                operations::table::validate_publications(
+                    &mut data,
+                    artifacts.as_ref(),
+                    &operation_budget,
+                )?;
                 operations::table::OperationTable::new(data, true, &operation_budget)?
             } else {
                 operations::table::OperationTable::empty(&operation_budget)?
             };
             operations.validate_catalog(transaction, generation.0)?;
-            let rollout_table = if let Some(control) = control {
+            let rollout_table = if let Some(mut control) = control {
+                rollouts::table::validate_publications(&mut control.rollouts, artifacts.as_ref())
+                    .await?;
                 let enabled = !control.rollouts.rows.is_empty();
                 rollouts::table::RolloutTable::new(
                     control.rollouts,
@@ -496,6 +544,7 @@ impl DirectoryDeploymentRepository {
                 rollouts::table::RolloutTable::empty(&rollout_budget, rollout_limits)?
             };
             rollout_table.validate_catalog(transaction, generation)?;
+            persistence::discard_staging(&root)?;
             let repository = Self {
                 root,
                 config,
@@ -504,15 +553,18 @@ impl DirectoryDeploymentRepository {
                 runtime_profile,
                 lifecycle,
                 generation: AtomicU64::new(generation.0),
-                current: RwLock::new(PublishedCatalog {
+                current: Arc::new(RwLock::new(PublishedCatalog {
                     transaction,
                     routes: Arc::new(catalog),
                     rollouts: rollout_table,
                     operations,
+                    http,
                     confirmed: false,
-                }),
+                })),
+                binding_generations: bindings::Generations::default(),
                 rollout_limits,
                 operation_budget,
+                http_budget,
                 rollout_budget,
                 rollout_work: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 rollout_cursor_epoch,
@@ -572,6 +624,7 @@ impl DirectoryDeploymentRepository {
     /// Acquires an immutable read view without waiting on a writer.
     pub fn pin(&self) -> Result<PinnedRouteResolver, PlatformError> {
         let catalog = self.invocation_catalog()?;
+        self.binding_generations.retain(&catalog.routes)?;
         Ok(PinnedRouteResolver {
             catalog: Arc::clone(&catalog.routes),
             config: self.config,
@@ -634,7 +687,7 @@ impl DirectoryDeploymentRepository {
         precondition: Option<&ObjectPrecondition>,
         work: &mut Work,
     ) -> Result<CommitOutcome, PlatformError> {
-        let (next, legacy_bytes) = next.into().into_parts();
+        let (next, encoded_bytes) = next.into().into_parts();
         let publication = self.read_publication();
         if let Some(precondition) = precondition {
             precondition.check(&publication.routes)?;
@@ -664,11 +717,12 @@ impl DirectoryDeploymentRepository {
                     .operations
                     .enabled
                     .then_some(&publication.operations.data),
+                http_routes: publication.http.enabled.then_some(&publication.http.data),
             };
-            drop(legacy_bytes);
+            drop(encoded_bytes);
             persistence::encode_combined(&next, &control, self.config.max_state_bytes, work)?
         } else {
-            legacy_bytes
+            encoded_bytes
                 .ok_or_else(|| error(PlatformErrorCode::Internal, "catalog-format-mismatch"))?
         };
         next.check_admission_mode(self.admission.as_ref(), self.lifecycle.as_ref())?;
@@ -765,6 +819,7 @@ impl DirectoryDeploymentRepository {
                     routes: next,
                     rollouts: table,
                     operations,
+                    http: Arc::clone(&publication.http),
                     confirmed: durable.is_ok(),
                 },
             );
@@ -948,7 +1003,8 @@ impl RouteResolver for DirectoryDeploymentRepository {
         let (resolved, eligibility) = {
             let catalog = self.invocation_catalog()?;
             let resolved = catalog.resolve(target, routing_key, self.config)?;
-            let eligibility = catalog.selected_eligibility(&resolved.release);
+            let eligibility =
+                catalog.selected_eligibility(&resolved.release, resolved.publication.as_ref());
             (resolved, eligibility)
         };
         admission_fence::check_selected(eligibility.as_ref(), &target.tenant)?;
@@ -981,7 +1037,7 @@ impl RouteResolver for PinnedRouteResolver {
         let resolved = self.catalog.resolve(target, routing_key, self.config)?;
         admission_fence::check_selected(
             self.catalog
-                .selected_eligibility(&resolved.release)
+                .selected_eligibility(&resolved.release, resolved.publication.as_ref())
                 .as_ref(),
             &target.tenant,
         )?;

@@ -1,13 +1,17 @@
 use super::*;
+#[cfg(unix)]
+mod capability;
+#[cfg(unix)]
+mod static_trigger;
 use latent_core::{ArtifactBlobDigest, TenantId};
 use std::{
     path::PathBuf,
     sync::atomic::{AtomicU64, Ordering},
     time::{Duration, Instant},
 };
-struct Directory(PathBuf);
+pub(super) struct Directory(pub(super) PathBuf);
 impl Directory {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(0);
         let path = std::env::temp_dir().join(format!(
             "lsf-audit-{}-{}-{}",
@@ -28,7 +32,7 @@ impl Drop for Directory {
         }
     }
 }
-struct TestWorker {
+pub(super) struct TestWorker {
     worker: AuditWorker,
     handle: AuditHandle,
 }
@@ -57,7 +61,7 @@ impl Drop for TestWorker {
         }
     }
 }
-fn open(
+pub(super) fn open(
     path: impl AsRef<std::path::Path>,
     limits: AuditLimits,
 ) -> Result<(AuditHandle, TestWorker)> {
@@ -72,7 +76,7 @@ fn open(
 fn digest() -> ArtifactBlobDigest {
     format!("sha256:{}", "a".repeat(64)).parse().unwrap()
 }
-fn attempt() -> AuditOperationAttempt {
+pub(super) fn attempt() -> AuditOperationAttempt {
     AuditOperationAttempt {
         expected_state_version: None,
         expected_rollback_target_generation: None,
@@ -93,7 +97,7 @@ fn attempt() -> AuditOperationAttempt {
         occurred_at_unix_millis: 1,
     }
 }
-fn conclusion() -> AuditOperationConclusion {
+pub(super) fn conclusion() -> AuditOperationConclusion {
     AuditOperationConclusion {
         canary_decision: None,
         result: AuditOperationResult::Committed,
@@ -226,6 +230,28 @@ fn query(scope: AuditScope) -> AuditQueryRequest {
         maximum_bytes: 65536,
     }
 }
+#[cfg(unix)]
+fn reserve_critical_when_idle(
+    handle: &AuditHandle,
+    attempt: &AuditOperationAttempt,
+) -> AuditCriticalReservation {
+    // Reservation is deliberately nonblocking. The journal worker can briefly
+    // hold its state lock even when the test has submitted no other work.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match handle.try_reserve_critical(attempt) {
+            Ok(reservation) => return reservation,
+            Err(error)
+                if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                    && error.message == "audit-busy"
+                    && Instant::now() < deadline =>
+            {
+                std::thread::yield_now();
+            }
+            Err(error) => panic!("critical reservation failed: {error:?}"),
+        }
+    }
+}
 fn stop(handle: &AuditHandle, worker: &mut AuditWorker) {
     handle.close();
     assert!(worker
@@ -250,9 +276,7 @@ fn durable_attempt_outcome_reopen_and_page_lease() {
     let directory = Directory::new();
     let path = directory.0.join("audit");
     let (handle, mut worker) = open(&path, AuditLimits::default()).unwrap();
-    let mut candidate = handle
-        .try_reserve_critical(&attempt())
-        .unwrap()
+    let mut candidate = reserve_critical_when_idle(&handle, &attempt())
         .begin()
         .blocking_wait()
         .unwrap();
@@ -267,11 +291,7 @@ fn durable_attempt_outcome_reopen_and_page_lease() {
             .sequence,
         2
     );
-    let page = handle
-        .query(
-            query(attempt().scope),
-            Instant::now() + Duration::from_secs(2),
-        )
+    let page = admitted_query(&handle, &query(attempt().scope))
         .unwrap()
         .blocking_wait()
         .unwrap();
@@ -294,9 +314,7 @@ fn abandoned_before_and_after_start_have_distinct_durable_outcomes() {
     for started in [false, true] {
         let directory = Directory::new();
         let (handle, mut worker) = open(directory.0.join("audit"), AuditLimits::default()).unwrap();
-        let mut candidate = handle
-            .try_reserve_critical(&attempt())
-            .unwrap()
+        let mut candidate = reserve_critical_when_idle(&handle, &attempt())
             .begin()
             .blocking_wait()
             .unwrap();
@@ -307,11 +325,7 @@ fn abandoned_before_and_after_start_have_distinct_durable_outcomes() {
         stop(&handle, &mut worker);
         let (reopened, mut reopened_worker) =
             open(directory.0.join("audit"), AuditLimits::default()).unwrap();
-        let page = reopened
-            .query(
-                query(attempt().scope),
-                Instant::now() + Duration::from_secs(2),
-            )
+        let page = admitted_query(&reopened, &query(attempt().scope))
             .unwrap()
             .blocking_wait()
             .unwrap();
@@ -359,9 +373,7 @@ fn acknowledged_record_missing_is_corruption_not_a_new_epoch() {
     let directory = Directory::new();
     let path = directory.0.join("audit");
     let (handle, mut worker) = open(&path, AuditLimits::default()).unwrap();
-    let candidate = handle
-        .try_reserve_critical(&attempt())
-        .unwrap()
+    let candidate = reserve_critical_when_idle(&handle, &attempt())
         .begin()
         .blocking_wait()
         .unwrap();
@@ -396,9 +408,7 @@ fn close_retains_live_attempt_and_accepts_its_prepaid_known_outcome() {
     let directory = Directory::new();
     let path = directory.0.join("audit");
     let (handle, mut worker) = open(&path, AuditLimits::default()).unwrap();
-    let mut candidate = handle
-        .try_reserve_critical(&attempt())
-        .unwrap()
+    let mut candidate = reserve_critical_when_idle(&handle, &attempt())
         .begin()
         .blocking_wait()
         .unwrap();
@@ -547,11 +557,7 @@ fn query_scope_scan_and_frozen_cursor_are_independent_of_future_appends() {
     }
     drop(store);
     let (handle, mut worker) = open(&path, limits).unwrap();
-    let page = handle
-        .query(
-            query(attempt().scope),
-            Instant::now() + Duration::from_secs(2),
-        )
+    let page = admitted_query(&handle, &query(attempt().scope))
         .unwrap()
         .blocking_wait()
         .unwrap();
@@ -562,15 +568,13 @@ fn query_scope_scan_and_frozen_cursor_are_independent_of_future_appends() {
     drop(page);
     let mut forged = query(AuditScope::Node);
     forged.cursor = Some(cursor.clone());
-    assert!(handle
-        .query(forged, Instant::now() + Duration::from_secs(2))
+    assert!(admitted_query(&handle, &forged)
         .unwrap()
         .blocking_wait()
         .is_err());
     let mut next = query(attempt().scope);
     next.cursor = Some(cursor);
-    let page = handle
-        .query(next, Instant::now() + Duration::from_secs(2))
+    let page = admitted_query(&handle, &next)
         .unwrap()
         .blocking_wait()
         .unwrap();
@@ -578,6 +582,25 @@ fn query_scope_scan_and_frozen_cursor_are_independent_of_future_appends() {
     assert_eq!(page.records()[0].sequence, 2);
     drop(page);
     stop(&handle, &mut worker);
+}
+#[cfg(unix)]
+fn admitted_query(handle: &AuditHandle, request: &AuditQueryRequest) -> Result<AuditQueryTicket> {
+    // Only retry refusal before query admission. One original deadline bounds
+    // retries; an accepted query ticket is consumed exactly once, including
+    // malformed/foreign cursor errors returned by the worker.
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        match handle.query(request.clone(), deadline) {
+            Err(error)
+                if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                    && error.message == "audit-busy"
+                    && Instant::now() < deadline =>
+            {
+                std::thread::yield_now();
+            }
+            result => return result,
+        }
+    }
 }
 #[cfg(unix)]
 fn observation(scope: AuditScope) -> AuditObservation {
@@ -773,9 +796,7 @@ fn oversized_terminal_envelope_falls_back_to_owned_unknown_and_shutdown_finishes
         },
     )
     .unwrap();
-    let mut active = handle
-        .try_reserve_critical(&source)
-        .unwrap()
+    let mut active = reserve_critical_when_idle(&handle, &source)
         .begin()
         .blocking_wait()
         .unwrap();

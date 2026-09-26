@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/web-admission-receipt.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "tenant",
+    "package",
+    "publisher",
+    "publisherKey",
+    "signatureManifest",
+    "signaturePayload",
+    "builder",
+    "builderKey",
+    "provenanceManifest",
+    "provenancePayload",
+    "sbomInventory",
+    "sbomReferrer",
+    "policy",
+    "policyDigest",
+    "epoch",
+    "verifiedAt",
+    "validUntil",
+    "profile",
+    "manifest",
+    "assets"
+  ],
+  "properties": {
+    "formatVersion": {
+      "$ref": "package-admission-receipt.schema.json#/properties/formatVersion"
+    },
+    "tenant": {
+      "$ref": "package-admission-receipt.schema.json#/properties/tenant"
+    },
+    "package": {
+      "$ref": "package-admission-receipt.schema.json#/properties/package"
+    },
+    "publisher": {
+      "$ref": "package-admission-receipt.schema.json#/properties/publisher"
+    },
+    "publisherKey": {
+      "$ref": "package-admission-receipt.schema.json#/properties/publisherKey"
+    },
+    "signatureManifest": {
+      "$ref": "package-admission-receipt.schema.json#/properties/signatureManifest"
+    },
+    "signaturePayload": {
+      "$ref": "package-admission-receipt.schema.json#/properties/signaturePayload"
+    },
+    "builder": {
+      "$ref": "package-admission-receipt.schema.json#/properties/builder"
+    },
+    "builderKey": {
+      "$ref": "package-admission-receipt.schema.json#/properties/builderKey"
+    },
+    "provenanceManifest": {
+      "$ref": "package-admission-receipt.schema.json#/properties/provenanceManifest"
+    },
+    "provenancePayload": {
+      "$ref": "package-admission-receipt.schema.json#/properties/provenancePayload"
+    },
+    "sbomInventory": {
+      "$ref": "package-admission-receipt.schema.json#/properties/sbomInventory"
+    },
+    "sbomReferrer": {
+      "$ref": "package-admission-receipt.schema.json#/properties/sbomReferrer"
+    },
+    "policy": {
+      "$ref": "package-admission-receipt.schema.json#/properties/policy"
+    },
+    "policyDigest": {
+      "$ref": "package-admission-receipt.schema.json#/properties/policyDigest"
+    },
+    "epoch": {
+      "$ref": "package-admission-receipt.schema.json#/properties/epoch"
+    },
+    "verifiedAt": {
+      "$ref": "package-admission-receipt.schema.json#/properties/verifiedAt"
+    },
+    "validUntil": {
+      "$ref": "package-admission-receipt.schema.json#/properties/validUntil"
+    },
+    "profile": {
+      "const": "lsf.web-admission.v1"
+    },
+    "manifest": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "assets": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    }
+  },
+  "title": "LSF historical componentless web admission receipt",
+  "$comment": "Historical exact package/layout/evidence/policy identities, never permission. Rust verifies canonical bytes <=16 KiB, ordering, current approved trust and exact associations. Nullable SBOM fields remain explicit in this receipt profile; no component/release field is permitted."
+}

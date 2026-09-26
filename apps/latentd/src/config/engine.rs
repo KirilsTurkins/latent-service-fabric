@@ -21,11 +21,13 @@ impl<'de> Deserialize<'de> for EngineConfig {
                 struct Fields {
                     allocator: EngineAllocator,
                     optimization: EngineOptimization,
+                    java_guest: bool,
                 }
                 let fields = Fields::deserialize(MapAccessDeserializer::new(map))?;
                 Ok(EngineConfig {
                     allocator: fields.allocator,
                     optimization: fields.optimization,
+                    java_guest: fields.java_guest,
                 })
             }
         }

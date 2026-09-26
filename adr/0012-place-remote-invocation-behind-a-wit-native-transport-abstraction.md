@@ -3,9 +3,12 @@
 - **Status:** Accepted
 - **Date:** 2026-08-17
 
-## Implementation status at Phase 1 completion
+## Current implementation
 
-Phase 1 exposes generated generic invocation RPCs on the authenticated standalone loopback listener. Cross-node routing, cluster identity, and the service-to-service remote transport remain later-phase work.
+All six client SDKs use the authenticated standalone invocation and management
+APIs. Guest-to-guest calls resolve within the same node under conserved authority,
+deadlines and budgets. Cross-node service routing and cluster identity remain
+planned; the external client listener does not implement that transport.
 
 ## Context
 

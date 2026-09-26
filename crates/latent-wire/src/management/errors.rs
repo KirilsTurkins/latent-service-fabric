@@ -15,13 +15,19 @@ const MAX_ENCODED_ERROR_BYTES: usize = 8192;
 
 pub(super) fn platform_status(error: PlatformError, limits: &ManagementLimits) -> Status {
     let code = crate::invocation::tonic_code(error.code);
-    let message = public_message(error.code);
+    let ambiguous = error.code == PlatformErrorCode::StateConflict
+        && error.message == "publication-selector-ambiguous";
+    let message = if ambiguous {
+        "publication selector is ambiguous; supply an explicit publication reference"
+    } else {
+        public_message(error.code)
+    };
     let wire_code = error.code.wire_code();
     let base = std::mem::size_of::<proto::PlatformError>() + message.len() + wire_code.len();
     let wire = proto::PlatformError {
         code: wire_code.to_owned(),
         message: message.to_owned(),
-        retryable: error.retryable,
+        retryable: error.retryable && !ambiguous,
         detail_items: public_details(error.details, limits, base),
     };
     if wire.encoded_len() <= limits.max_response_bytes.min(MAX_ENCODED_ERROR_BYTES) {

@@ -7,6 +7,14 @@ license.workspace = true
 authors.workspace = true
 description = "Bounded supply-chain admission policy and runtime authorization contracts."
 
+[features]
+development-test-host = ["latent-artifacts/development-test-host"]
+
+[[example]]
+name = "capsule_authoring"
+path = "examples/capsule_authoring.rs"
+test = true
+
 [lints]
 workspace = true
 
@@ -18,8 +26,15 @@ latent-packaging = { path = "../latent-packaging" }
 latent-signing = { path = "../latent-signing" }
 serde.workspace = true
 serde_json.workspace = true
+blake3.workspace = true
+tokio.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+rustix = { version = "=1.1.4", features = ["process", "fs"] }
 
 [dev-dependencies]
+rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }
+latent-oci = { path = "../latent-oci" }
 tempfile.workspace = true
 base64.workspace = true
 wasm-encoder.workspace = true

@@ -104,12 +104,12 @@ async fn failed_authority_startup_closes_audit_before_returning() {
 async fn unaudited_catalog_cannot_be_composed_under_audited_settings() {
     let directory = TempDir::new().unwrap();
     let mut settings = settings(&directory);
-    let catalogs = Catalogs::open(&settings).await.unwrap();
+    let mut catalogs = Catalogs::open(&settings).await.unwrap();
     settings.audit = Some(AuditLimits::default());
     assert_eq!(
         super::super::StandaloneNode::compose(
             &mut settings,
-            &catalogs,
+            &mut catalogs,
             Arc::new(SystemActivationClock)
         )
         .err()

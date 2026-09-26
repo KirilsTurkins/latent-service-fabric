@@ -19,26 +19,111 @@ use latent_wire::management::{
 use super::{
     error, load, observations, transport, ActivationClock, Arc, LocalActivationManager,
     LocalQuotaProvider, LocalScheduler, PlatformError, PlatformErrorCode, RuntimeThreads,
-    SharedActivationObserver, StandaloneNode, StructuredLocalSink, TelemetryRuntime,
-    WasmtimeComponentEngineFactory,
+    SharedActivationObserver, StandaloneNode, WasmtimeComponentEngineFactory,
 };
 use crate::config::NodeSettings;
 
 mod control;
+mod recovery;
 #[cfg(test)]
 mod tests;
 
 pub(super) struct Catalogs {
+    profile: crate::config::ExecutionProfileReport,
     pub(super) artifacts: Arc<DirectoryArtifactRepository>,
     pub(super) deployments: Arc<DirectoryDeploymentRepository>,
     pub(super) supply_chain: Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>,
     control: Option<control::StartupControl>,
     audit: Option<super::audit::AuditRuntime>,
     rollouts: Option<super::rollouts::RolloutRuntime>,
+    policies: Option<super::policies::PolicyRuntime>,
+    capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
+    providers: Option<Box<super::providers::ProviderRuntime>>,
+    telemetry: Option<Box<super::telemetry::TelemetryOwner>>,
     clock: Arc<dyn ActivationClock>,
 }
 
 impl Catalogs {
+    fn telemetry(
+        &mut self,
+        settings: &NodeSettings,
+    ) -> Result<
+        (
+            latent_telemetry::TelemetryHandle,
+            Arc<latent_telemetry::StructuredLocalSink>,
+        ),
+        PlatformError,
+    > {
+        if self.telemetry.is_none() {
+            self.telemetry = Some(super::telemetry::TelemetryOwner::start(settings)?);
+        }
+        let owner = self.telemetry.as_ref().expect("owned telemetry");
+        Ok((owner.handle.clone(), owner.sink.clone()))
+    }
+
+    fn validate_composition(
+        &self,
+        settings: &NodeSettings,
+        clock: &Arc<dyn ActivationClock>,
+    ) -> Result<(), PlatformError> {
+        if let Some(capabilities) = &self.capabilities {
+            capabilities.check_catalog(&self.artifacts.lifecycle_authority())?;
+            capabilities.check_clock(clock)?;
+            if capabilities.broker().has_audit()
+                && self
+                    .audit
+                    .as_ref()
+                    .is_none_or(|audit| !capabilities.broker().audit_owner_matches(&audit.handle()))
+            {
+                return Err(mode_error());
+            }
+            capabilities.check_policy_owner(
+                self.policies
+                    .as_ref()
+                    .ok_or_else(mode_error)?
+                    .handle()
+                    .store(),
+            )?;
+        }
+        if !self.profile.matches(settings)
+            || self
+                .telemetry
+                .as_ref()
+                .is_some_and(|owner| !owner.matches(settings))
+            || settings.supply_chain.is_enforced() != self.supply_chain.is_some()
+            || settings.audit.is_some() != self.audit.is_some()
+            || settings.rollouts.is_some() != self.rollouts.is_some()
+            || settings.capability_policies.is_some() != self.policies.is_some()
+            || settings.providers.is_some() != self.providers.is_some()
+            || self.policies.as_ref().is_some_and(|owner| {
+                let handle = owner.handle();
+                !handle
+                    .store()
+                    .catalog_owner_matches(&self.artifacts.lifecycle_authority())
+                    || settings.capability_policies.is_none_or(|config| {
+                        handle.store().limits() != config.store
+                            || handle.maximum_jobs() != config.maximum_control_jobs
+                    })
+            })
+            || settings.rollouts.and_then(|value| value.canary).is_some()
+                != self.deployments.canary_hub().is_some()
+            || !self.accepts_activation_clock(clock)
+            || (self.supply_chain.is_some() && self.control.is_none())
+            || !self
+                .deployments
+                .is_bound_to_catalog(&self.artifacts.lifecycle_authority())
+            || settings.supply_chain.is_enforced()
+                != self
+                    .artifacts
+                    .lifecycle_authority()
+                    .required_authority()
+                    .is_some()
+        {
+            return Err(mode_error());
+        }
+        Ok(())
+    }
+
     fn accepts_activation_clock(&self, clock: &Arc<dyn ActivationClock>) -> bool {
         (self.control.is_none() && self.deployments.canary_hub().is_none())
             || Arc::ptr_eq(clock, &self.clock)
@@ -49,9 +134,11 @@ impl Catalogs {
         settings: &NodeSettings,
         observer: latent_control_store::CatalogWorkObserver,
     ) -> Result<Self, PlatformError> {
+        let profile = settings.check_config()?;
         if settings.supply_chain.is_enforced()
             || settings.audit.is_some()
             || settings.rollouts.is_some()
+            || settings.capability_policies.is_some()
         {
             return Err(mode_error());
         }
@@ -77,12 +164,17 @@ impl Catalogs {
             .await?,
         );
         Ok(Self {
+            profile,
             artifacts,
             deployments,
             supply_chain: None,
             control: None,
             audit,
             rollouts: None,
+            policies: None,
+            capabilities: None,
+            providers: None,
+            telemetry: None,
             clock: Arc::new(SystemActivationClock),
         })
     }
@@ -92,6 +184,7 @@ impl Catalogs {
         if settings.supply_chain.is_enforced()
             || settings.audit.is_some()
             || settings.rollouts.is_some()
+            || settings.capability_policies.is_some()
         {
             return Err(mode_error());
         }
@@ -122,6 +215,8 @@ impl Catalogs {
         runtime: Option<&tokio::runtime::Handle>,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
+        let profile = settings.check_config()?;
+        settings.persist_execution_profile()?;
         let audit = super::audit::AuditRuntime::open(
             settings.data_directory.join("audit"),
             settings.audit,
@@ -151,6 +246,9 @@ impl Catalogs {
             )
         });
         let mut rollouts = None;
+        let mut policies = None;
+        let mut providers = None;
+        let mut telemetry = None;
         let opened = async {
             let artifacts = Arc::new(if let Some(authority) = &supply_chain {
                 let authority: Arc<dyn latent_artifacts::AdmissionAuthority> =
@@ -174,6 +272,12 @@ impl Catalogs {
                     settings.artifacts,
                 )?
             });
+            policies = super::policies::PolicyRuntime::open(
+                &settings.data_directory.join("capability-policies"),
+                settings.capability_policies,
+                artifacts.lifecycle_authority(),
+                runtime,
+            )?;
             let deployments = DirectoryDeploymentRepository::open_with_catalog_and_rollout_limits(
                 settings.data_directory.join("deployments"),
                 artifacts.clone(),
@@ -198,6 +302,9 @@ impl Catalogs {
                 deployments
             };
             let deployments = Arc::new(deployments);
+            if settings.providers.is_none() && !deployments.binding_definitions()?.is_empty() {
+                return Err(mode_error());
+            }
             if let Some(settings) = settings.rollouts {
                 rollouts = Some(super::rollouts::RolloutRuntime::start(
                     deployments.clone(),
@@ -226,8 +333,47 @@ impl Catalogs {
                     std::time::Instant::now() + std::time::Duration::from_secs(30),
                 )
                 .await?;
-                latent_artifacts::reconcile_release_audit(&audit.handle(), artifacts.as_ref())
-                    .await?;
+                latent_rollout::trigger_audit::reconcile_trigger_audit(
+                    &audit.handle(),
+                    deployments.as_ref(),
+                    std::time::Instant::now() + std::time::Duration::from_secs(30),
+                )
+                .await?;
+                recovery::reconcile(
+                    &audit.handle(),
+                    artifacts.as_ref(),
+                    std::time::Instant::now() + std::time::Duration::from_secs(30),
+                )
+                .await?;
+            }
+            if settings.providers.is_some() {
+                if settings
+                    .providers
+                    .as_ref()
+                    .is_some_and(|providers| providers.metrics.is_some())
+                {
+                    telemetry = Some(super::telemetry::TelemetryOwner::start(settings)?);
+                }
+                providers = Some(Box::new(
+                    super::providers::ProviderRuntime::open(
+                        settings,
+                        &artifacts,
+                        &deployments,
+                        policies
+                            .as_ref()
+                            .ok_or_else(mode_error)?
+                            .handle()
+                            .store()
+                            .clone(),
+                        super::providers::ProviderServices {
+                            audit: audit.as_ref().ok_or_else(mode_error)?.handle(),
+                            clock: clock.clone(),
+                            control: runtime.ok_or_else(mode_error)?.clone(),
+                            telemetry: telemetry.as_ref().map(|owner| owner.handle.clone()),
+                        },
+                    )
+                    .await?,
+                ));
             }
             Ok::<_, PlatformError>((artifacts, deployments))
         }
@@ -235,8 +381,16 @@ impl Catalogs {
         let (artifacts, deployments) = match opened {
             Ok(catalogs) => catalogs,
             Err(failure) => {
+                if let Some(providers) = &providers {
+                    let _ = providers
+                        .shutdown(std::time::Instant::now() + settings.shutdown_grace)
+                        .await;
+                }
                 if let Some(rollouts) = &rollouts {
                     let _ = rollouts.shutdown(settings.shutdown_grace).await;
+                }
+                if let Some(telemetry) = telemetry.take() {
+                    let _ = telemetry.runtime.shutdown().await;
                 }
                 if let Some(control) = control.take() {
                     let _ = control.shutdown(settings.shutdown_grace).await;
@@ -252,12 +406,17 @@ impl Catalogs {
             }
         };
         Ok(Self {
+            profile,
             artifacts,
             deployments,
             supply_chain,
             control,
             audit,
             rollouts,
+            policies,
+            capabilities: providers.as_ref().map(|owner| owner.runtime.clone()),
+            providers,
+            telemetry,
             clock,
         })
     }
@@ -275,7 +434,7 @@ impl StandaloneNode {
                 "standalone durable node requires Linux",
             ));
         }
-        let catalogs = Catalogs::open_with_control(&settings, &control_runtime).await?;
+        let catalogs = Box::pin(Catalogs::open_with_control(&settings, &control_runtime)).await?;
         Box::pin(Self::start_with_catalogs(
             settings,
             catalogs,
@@ -294,8 +453,14 @@ impl StandaloneNode {
         threads: RuntimeThreads,
     ) -> Result<Self, PlatformError> {
         let clock = Arc::clone(&catalogs.clock);
-        Self::start_with_catalogs_and_clock(settings, catalogs, control_runtime, threads, clock)
-            .await
+        Box::pin(Self::start_with_catalogs_and_clock(
+            settings,
+            catalogs,
+            control_runtime,
+            threads,
+            clock,
+        ))
+        .await
     }
 
     pub(super) async fn start_with_catalogs_and_clock(
@@ -305,11 +470,19 @@ impl StandaloneNode {
         threads: RuntimeThreads,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
-        let mut node = match Self::compose(&mut settings, &catalogs, clock) {
+        let mut node = match Self::compose(&mut settings, &mut catalogs, clock) {
             Ok(node) => node,
             Err(failure) => {
+                if let Some(providers) = &catalogs.providers {
+                    let _ = providers
+                        .shutdown(std::time::Instant::now() + settings.shutdown_grace)
+                        .await;
+                }
                 if let Some(rollouts) = &catalogs.rollouts {
                     let _ = rollouts.shutdown(settings.shutdown_grace).await;
+                }
+                if let Some(telemetry) = catalogs.telemetry.take() {
+                    let _ = telemetry.runtime.shutdown().await;
                 }
                 if let Some(control) = catalogs.control.take() {
                     let _ = control.shutdown(settings.shutdown_grace).await;
@@ -329,6 +502,8 @@ impl StandaloneNode {
         }
         node.audit = catalogs.audit.take();
         node.rollouts = catalogs.rollouts.take();
+        node.policies = catalogs.policies.take();
+        node.providers = catalogs.providers.take();
         if let Err(failure) =
             Box::pin(node.start_services(&settings, catalogs, control_runtime, threads)).await
         {
@@ -340,6 +515,30 @@ impl StandaloneNode {
         Ok(node)
     }
 
+    fn policy_management(
+        &self,
+        mut management: ManagementServiceAdapter,
+        catalogs: &Catalogs,
+    ) -> Result<ManagementServiceAdapter, PlatformError> {
+        if let Some(policies) = &self.policies {
+            management = management.with_policy_control(policies.handle())?;
+        }
+        if let Some(capabilities) = &catalogs.capabilities {
+            management = management.with_capability_inspection(
+                catalogs.deployments.clone(),
+                capabilities.broker().clone(),
+            )?;
+        }
+        management
+            .with_web_catalog(catalogs.artifacts.clone())?
+            .with_web_preparation(self.backend.clone())?
+            .with_http_control(catalogs.deployments.clone())
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        reason = "ordered shared transports, inventory installation and admission cutover stay together"
+    )]
     async fn start_services(
         &mut self,
         settings: &NodeSettings,
@@ -347,14 +546,16 @@ impl StandaloneNode {
         control_runtime: tokio::runtime::Handle,
         threads: RuntimeThreads,
     ) -> Result<(), PlatformError> {
+        let cleanup = self
+            .cleanup
+            .as_ref()
+            .expect("owned cleanup driver")
+            .handle();
         let invocation = InvocationServiceAdapter::with_services(
             Arc::new(LocalInvocationRuntime::with_cleanup(
                 self.manager.clone(),
                 settings.invocation.clone(),
-                self.cleanup
-                    .as_ref()
-                    .expect("owned cleanup driver")
-                    .handle(),
+                cleanup.clone(),
             )?),
             settings.invocation.clone(),
             InvocationServiceServices {
@@ -369,7 +570,7 @@ impl StandaloneNode {
                     .rollouts
                     .as_ref()
                     .map(super::rollouts::RolloutRuntime::handle),
-                artifacts: catalogs.artifacts,
+                artifacts: catalogs.artifacts.clone(),
                 deployments: catalogs.deployments.clone(),
                 routes: catalogs.deployments.clone(),
                 inventory: self.inventory.clone(),
@@ -379,6 +580,7 @@ impl StandaloneNode {
             },
             settings.management.clone(),
         )?;
+        let management = self.policy_management(management, &catalogs)?;
         if self.sampler.is_none() {
             self.sampler = Some(load::LoadSampler::start(
                 Arc::clone(&self.load),
@@ -397,6 +599,11 @@ impl StandaloneNode {
         )
         .await?;
         self.transport = Some(transport);
+        self.start_http(settings, &catalogs.deployments)?;
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if let Some(http) = &self.http {
+            http.install_assets(catalogs.artifacts.clone())?;
+        }
         let transport = self.transport.as_ref().expect("owned started transport");
         let topology = Arc::new(
             observations::TopologySource::new(
@@ -404,12 +611,15 @@ impl StandaloneNode {
                 self.backend.clone(),
                 self.scheduler.clone(),
                 transport.handle(),
-                self.cleanup
-                    .as_ref()
-                    .expect("owned cleanup driver")
-                    .handle(),
+                cleanup,
                 threads,
             )
+            .with_policies(
+                self.policies
+                    .as_ref()
+                    .map(super::policies::PolicyRuntime::handle),
+            )
+            .with_http(self.http.as_ref().map(super::http::HttpOwner::handle))
             .with_rollouts(
                 self.rollouts
                     .as_ref()
@@ -418,6 +628,7 @@ impl StandaloneNode {
         );
         let mut descriptor = settings.node.clone();
         descriptor.endpoint = format!("http://{}", transport.local_addr());
+        self.describe_http(settings, &mut descriptor);
         self.inventory
             .install(Arc::new(StandaloneInventoryReporter::new(
                 settings.inventory.clone(),
@@ -434,41 +645,71 @@ impl StandaloneNode {
             )?))?;
         self.load.start_accepting();
         transport.handle().start_accepting()?;
+        if let Some(http) = &self.http {
+            http.handle().start_accepting()?;
+        }
+        Ok(())
+    }
+
+    fn describe_http(&self, settings: &NodeSettings, descriptor: &mut latent_node::NodeDescriptor) {
+        if let Some(http) = &self.http {
+            let scheme = if settings.http.as_ref().expect("HTTP settings").tls.is_some() {
+                "https"
+            } else {
+                "http"
+            };
+            descriptor.attributes.insert(
+                "lsf.http.endpoint".into(),
+                format!("{scheme}://{}", http.local_addr()),
+            );
+            descriptor
+                .attributes
+                .insert("lsf.http.profile".into(), "buffered-http1-v1".into());
+        }
+    }
+
+    fn start_http(
+        &mut self,
+        settings: &NodeSettings,
+        deployments: &Arc<DirectoryDeploymentRepository>,
+    ) -> Result<(), PlatformError> {
+        if let Some(http) = &settings.http {
+            self.http = Some(super::http::HttpOwner::start(
+                http.clone(),
+                super::http::HttpServices {
+                    manager: self.manager.clone(),
+                    deployments: deployments.clone(),
+                    cleanup: self
+                        .cleanup
+                        .as_ref()
+                        .expect("owned cleanup driver")
+                        .handle(),
+                    clock: self.clock.clone(),
+                    budget: settings.admission.budget_ceiling.clone(),
+                },
+            )?);
+        }
         Ok(())
     }
 
     fn compose(
         settings: &mut NodeSettings,
-        catalogs: &Catalogs,
+        catalogs: &mut Catalogs,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
-        if settings.supply_chain.is_enforced() != catalogs.supply_chain.is_some()
-            || settings.audit.is_some() != catalogs.audit.is_some()
-            || settings.rollouts.is_some() != catalogs.rollouts.is_some()
-            || settings.rollouts.and_then(|value| value.canary).is_some()
-                != catalogs.deployments.canary_hub().is_some()
-            || !catalogs.accepts_activation_clock(&clock)
-            || (catalogs.supply_chain.is_some() && catalogs.control.is_none())
-            || !catalogs
-                .deployments
-                .is_bound_to_catalog(&catalogs.artifacts.lifecycle_authority())
-            || settings.supply_chain.is_enforced()
-                != catalogs
-                    .artifacts
-                    .lifecycle_authority()
-                    .required_authority()
-                    .is_some()
-        {
-            return Err(mode_error());
-        }
-        let sink = Arc::new(StructuredLocalSink::new(settings.local_sink)?);
-        let (telemetry, telemetry_runtime) =
-            TelemetryRuntime::spawn(settings.telemetry, sink.clone())?;
+        catalogs.validate_composition(settings, &clock)?;
+        settings
+            .node
+            .attributes
+            .extend(catalogs.profile.attributes());
+        let (telemetry, sink) = catalogs.telemetry(settings)?;
         let observer = Arc::new(SharedActivationObserver::new(
             telemetry.clone(),
             settings.observer.clone(),
         )?);
         let host_services = WasmtimeHostServices {
+            capabilities: catalogs.capabilities.clone(),
+            currentness_read_wait: Some(Arc::new(latent_node::CurrentnessReadTimer)),
             clock: Arc::clone(&clock),
             log_sink: Some(Arc::new(TelemetryLogSink::new(
                 observer.clone(),
@@ -483,7 +724,11 @@ impl StandaloneNode {
             ));
         }
         let backend = Arc::new(factory.create_backend_instance());
-        let quotas = LocalQuotaProvider::new(settings.admission.clone())?;
+        let quotas = LocalQuotaProvider::with_profile(
+            settings.admission.clone(),
+            settings.budget_profile,
+            settings.delegation_limits,
+        )?;
         let scheduler = Arc::new(LocalScheduler::new(
             settings.scheduler.clone(),
             quotas.clone(),
@@ -513,11 +758,16 @@ impl StandaloneNode {
                 ..LocalActivationServices::default()
             },
         )?;
+        install_local_services(settings, catalogs, &manager)?;
         Ok(Self {
             transport: None,
+            http: None,
             audit: None,
             rollouts: None,
+            policies: None,
+            providers: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),
+            capabilities: super::CapabilityLifetime(catalogs.capabilities.clone()),
             cleanup: Some(ActivationCleanupOwner::start_with_observer(
                 settings.manager.journal.maximum_active,
                 settings.manager.cleanup_grace,
@@ -525,7 +775,7 @@ impl StandaloneNode {
                 clock.deadline_diagnostic_observer().cloned(),
             )?),
             sampler: None,
-            telemetry_runtime: Some(telemetry_runtime),
+            telemetry_runtime: Some(catalogs.telemetry.take().expect("owned telemetry").runtime),
             factory: Some(factory),
             load,
             inventory: Arc::new(observations::InventorySlot::new()),
@@ -542,6 +792,21 @@ impl StandaloneNode {
             cleanup_grace: settings.manager.cleanup_grace,
         })
     }
+}
+
+fn install_local_services(
+    settings: &NodeSettings,
+    catalogs: &Catalogs,
+    manager: &LocalActivationManager,
+) -> Result<(), PlatformError> {
+    if settings.budget_profile == latent_core::BudgetProfile::Phase3 {
+        if let Some(capabilities) = &catalogs.capabilities {
+            capabilities.install_local_services(
+                manager.local_service_invoker(settings.admission.budget_ceiling.clone())?,
+            )?;
+        }
+    }
+    Ok(())
 }
 
 fn factory(

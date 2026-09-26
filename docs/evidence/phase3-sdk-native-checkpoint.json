@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "latent.sdk.shared.acceptance-checkpoint.v1",
+  "recordedAt": "2026-09-19T18:06:40Z",
+  "source": "3584f5891d4dc3250a7dbd2dead3e62449c71c13",
+  "profile": "separate-node-authenticated-provider-guests",
+  "host": "Linux x86_64 controlled toolchain container",
+  "javaSdkSource": "c8229d5a0ca0d5cb169ec5c70fe8777b57455b19",
+  "cSdkSource": "bf466a53840ef2252811a3b7a2f8087e8bda8ac6",
+  "matrixComplete": false,
+  "runs": [
+    {
+      "language": "java",
+      "rawReceiptSha256": "7e979ae31462d54190e70c7ca2c6c7acff938ce198b2ddb78b58f5e8381e79d7",
+      "identities": {
+        "node": "sha256:b3eb5cf592e46e5aea0cc79ce03b205583322cda104b4d4e4d3dc3e3d30951e2",
+        "cli": "sha256:541b0c714f1d77e9c150f55f348d33220e1d590e75599aa4a9fb1c53a1212018",
+        "fixture": "sha256:87e127a153f1bcd58064318a4d400f394bb812fcb4b4171681a50ee2488bb23a",
+        "participant0": "sha256:b1b0a09aaa036695716c829cd7c5213ea055eecd475d1462020330e251b717b2",
+        "participant2": "sha256:7b9f10722b2f41404af1732c94d6c7283394d9aaf7d0e4ccc4a2f67b69a98f8c"
+      },
+      "participant": {
+        "schemaVersion": "latent.sdk.provider.workflow.result.v1",
+        "language": "java",
+        "assertions": {
+          "httpGuest": true,
+          "blobGuest": true,
+          "declaredError": true,
+          "platformFailure": true,
+          "wrongTenant": true,
+          "wrongCredential": true,
+          "responseLimit": true,
+          "boundedPages": true,
+          "providerInspection": true,
+          "mutationReceipt": true,
+          "exactReplay": true,
+          "preconditionConflict": true,
+          "localCancellation": true,
+          "lostResponseStatus": true,
+          "explicitCancellation": true,
+          "absoluteDeadline": true,
+          "shutdownOutstanding": true,
+          "clientOwnersReaped": true
+        },
+        "activationIds": [
+          "java-http",
+          "java-blob",
+          "java-declared",
+          "java-platform",
+          "java-limited",
+          "java-local-cancel",
+          "java-explicit-cancel",
+          "java-deadline",
+          "java-shutdown"
+        ],
+        "operationId": "java-policy-create",
+        "auditAttempt": null,
+        "transport": "numeric-loopback-http2-protobuf-v1"
+      },
+      "upstream": {
+        "requests": 6,
+        "authorized": 6,
+        "unexpected": 0,
+        "holds": 4,
+        "closedHolds": 4
+      },
+      "nodeReaped": true,
+      "nodeClean": true,
+      "providers": {
+        "clean": true,
+        "controlOwners": 0,
+        "connections": 0,
+        "pendingRequests": 0,
+        "runningRequests": 0,
+        "workers": 0,
+        "cleanupJobs": 0,
+        "failedCleanup": 0,
+        "sessions": 0,
+        "handles": 0,
+        "calls": 0,
+        "results": 0,
+        "ioCalls": 0,
+        "ioRetainedBytes": 0,
+        "blobStages": 0,
+        "blobHandles": 0,
+        "blobWork": 0
+      },
+      "compilerJoined": 1,
+      "auditJoined": true
+    },
+    {
+      "language": "c",
+      "rawReceiptSha256": "6e04200fc97e6db34043070d1aae5d776ae8d8e7002d4ec2b1082a1b61e04867",
+      "identities": {
+        "node": "sha256:b3eb5cf592e46e5aea0cc79ce03b205583322cda104b4d4e4d3dc3e3d30951e2",
+        "cli": "sha256:541b0c714f1d77e9c150f55f348d33220e1d590e75599aa4a9fb1c53a1212018",
+        "fixture": "sha256:87e127a153f1bcd58064318a4d400f394bb812fcb4b4171681a50ee2488bb23a",
+        "participant0": "sha256:4c183d6a788b46decc1036ca6d9fd32ff7f7d2de68628c689c401d1310aef41b"
+      },
+      "participant": {
+        "schemaVersion": "latent.sdk.provider.workflow.result.v1",
+        "language": "c",
+        "assertions": {
+          "httpGuest": true,
+          "blobGuest": true,
+          "declaredError": true,
+          "platformFailure": true,
+          "wrongTenant": true,
+          "wrongCredential": true,
+          "boundedPages": true,
+          "providerInspection": true,
+          "mutationReceipt": true,
+          "exactReplay": true,
+          "preconditionConflict": true,
+          "localCancellation": true,
+          "explicitCancellation": true,
+          "lostResponseStatus": true,
+          "absoluteDeadline": true,
+          "responseLimit": true,
+          "shutdownOutstanding": true,
+          "clientOwnersReaped": true
+        },
+        "activationIds": [
+          "c-http",
+          "c-blob",
+          "c-declared",
+          "c-platform",
+          "c-limited",
+          "c-local-cancel",
+          "c-explicit-cancel",
+          "c-deadline",
+          "c-shutdown"
+        ],
+        "operationId": "c-policy-create",
+        "auditAttempt": null,
+        "transport": "numeric-loopback-http2-protobuf-v1"
+      },
+      "upstream": {
+        "requests": 6,
+        "authorized": 6,
+        "unexpected": 0,
+        "holds": 4,
+        "closedHolds": 4
+      },
+      "nodeReaped": true,
+      "nodeClean": true,
+      "providers": {
+        "clean": true,
+        "controlOwners": 0,
+        "connections": 0,
+        "pendingRequests": 0,
+        "runningRequests": 0,
+        "workers": 0,
+        "cleanupJobs": 0,
+        "failedCleanup": 0,
+        "sessions": 0,
+        "handles": 0,
+        "calls": 0,
+        "results": 0,
+        "ioCalls": 0,
+        "ioRetainedBytes": 0,
+        "blobStages": 0,
+        "blobHandles": 0,
+        "blobWork": 0
+      },
+      "compilerJoined": 1,
+      "auditJoined": true
+    }
+  ],
+  "remaining": [
+    "Go attempt failed during node startup before participant launch: startup-resource-exhausted; diagnosis remains open",
+    "Current combined Rust and Node revalidation pending; earlier source-bound runs remain separate",
+    "Dotnet native participant integration and execution pending",
+    "Maintained six-language matrix and exact final-head CI remain required"
+  ]
+}

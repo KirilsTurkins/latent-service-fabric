@@ -11,15 +11,22 @@ mod local_repository;
 pub mod package;
 mod preparation;
 mod preparation_fingerprint;
+mod publication;
+mod publication_management;
 mod raw_cache;
 mod retained_package;
 mod verification_statistics;
 mod verified_metadata;
+#[cfg(feature = "development-test-host")]
+pub use lifecycle::DevelopmentTestArtifact;
+pub mod web;
+pub use publication::PublicationRef;
+pub use publication_management::PublicationOperationReceipt;
 pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
 
 pub use audit::{
     reconcile_release_audit, AuditedAdmissionAuthority, ReleaseAuditAck, ReleaseAuditGuard,
-    ReleaseAuditStatus,
+    ReleaseAuditStatus, WebAuditGuard,
 };
 pub use historical_execution::{
     HistoricalExecutionSnapshot, HistoricalExecutionState, HistoricalReleaseDenial,
@@ -35,7 +42,7 @@ pub use lifecycle::{
 };
 pub use preparation::{
     ArtifactPreparationIdentity, ArtifactPreparationReadBounds, ArtifactPreparationReadLimits,
-    ArtifactPreparationSource, OwnedArtifactPreparationSource,
+    ArtifactPreparationReadWait, ArtifactPreparationSource, OwnedArtifactPreparationSource,
 };
 pub use preparation_fingerprint::{
     preparation_metadata_fingerprint, PreparationMetadataFingerprint,
@@ -55,7 +62,10 @@ pub use admission::{
 pub use local_repository::contract_metadata::{
     decode_contract_metadata, encode_contract_metadata, ContractMetadataLimits,
 };
-pub use local_repository::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
+pub use local_repository::{
+    DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig, PublicationContentReclamation,
+    PublicationStorageSnapshot,
+};
 
 /// Contract metadata accepted by artifact publication and consumed by route compilation.
 pub use latent_contracts::{
@@ -119,6 +129,9 @@ pub struct ArtifactPage {
 /// Immutable metadata verified at publication or recovery, without loading component bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArtifactCatalogEntry {
+    /// Exact scoped association, independently of executable bytes.
+    pub publication: Option<latent_core::PublicationId>,
+    pub package: Option<latent_core::PackageDigest>,
     pub descriptor: ArtifactDescriptor,
     pub tenant: Option<TenantId>,
     pub service: ServiceId,
@@ -173,6 +186,154 @@ pub struct DerivedArtifactDescriptor {
 }
 
 pub trait ArtifactRepository: Send + Sync {
+    /// Authenticated scope is checked before resolving an exact publication.
+    /// Repositories without publication identity do not support this operation.
+    fn get_selected_catalog_entry<'a>(
+        &'a self,
+        _scope: &'a LifecycleScope,
+        _selector: &'a PublicationRef,
+    ) -> BoxFuture<'a, Result<Option<ArtifactCatalogEntry>, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    fn get_selected_lifecycle<'a>(
+        &'a self,
+        _scope: &'a LifecycleScope,
+        _selector: &'a PublicationRef,
+    ) -> BoxFuture<'a, Result<Option<ReleaseLifecycleStatus>, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    /// Lookup is scope + operation ID. It never resolves a component again.
+    fn get_selected_operation<'a>(
+        &'a self,
+        _scope: &'a LifecycleScope,
+        _operation_id: &'a str,
+    ) -> BoxFuture<
+        'a,
+        Result<(Option<latent_core::PublicationId>, ReleaseOperationLookup), PlatformError>,
+    > {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    /// Select an exact, currently admitted browser publication. The returned
+    /// value owns the bounded read/admission lease and must be retained through
+    /// the response acceptance boundary.
+    fn select_web_publication(
+        &self,
+        _reference: &PublicationRef,
+    ) -> Result<web::WebSelection, PlatformError> {
+        Err(unsupported_catalog_query())
+    }
+
+    fn get_web_operation<'a>(
+        &'a self,
+        _scope: &'a LifecycleScope,
+        _operation_id: &'a str,
+    ) -> BoxFuture<'a, Result<Option<web::WebOperationReceipt>, PlatformError>> {
+        Box::pin(async { Ok(None) })
+    }
+
+    fn change_selected_lifecycle<'a>(
+        &'a self,
+        _context: ReleaseMutationContext,
+        _selector: &'a PublicationRef,
+        _action: ReleaseLifecycleAction,
+        _reason: ReleaseLifecycleReason,
+        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<PublicationOperationReceipt, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    fn renew_selected_evidence<'a>(
+        &'a self,
+        _context: ReleaseMutationContext,
+        _selector: &'a PublicationRef,
+        _package: &'a latent_core::PackageDigest,
+        _evidence: ReleaseEvidenceUpload,
+        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<PublicationOperationReceipt, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+    /// Recover a stored component selection from a unique current scoped match.
+    /// Archived Phase 2 migration mappings are unsupported. This creates no grant.
+    fn recover_execution_publication(
+        &self,
+        tenant: &TenantId,
+        release: &ReleaseDigest,
+    ) -> Result<Option<PublicationRef>, PlatformError> {
+        if let Some(source) = self.preparation_source() {
+            source
+                .recover_execution_publication(tenant, release)
+                .map(Some)
+        } else {
+            self.select_execution_publication(tenant, release, None)
+        }
+    }
+
+    /// Resolve only inside the authenticated tenant (or explicit local compatibility scope).
+    /// A returned reference is a selection, never an execution permission.
+    fn select_execution_publication(
+        &self,
+        tenant: &TenantId,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<Option<PublicationRef>, PlatformError> {
+        if let Some(source) = self.preparation_source() {
+            source
+                .select_execution_publication(tenant, release, publication)
+                .map(Some)
+        } else if publication.is_some() {
+            Err(unsupported_catalog_query())
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Exact reads use one sealed directory source for metadata and authority.
+    fn historical_execution_snapshot_selected<'a>(
+        &'a self,
+        release: &'a ReleaseDigest,
+        publication: Option<&'a latent_core::PublicationId>,
+    ) -> BoxFuture<'a, Result<HistoricalExecutionSnapshot, PlatformError>> {
+        if let Some(source) = self.preparation_source() {
+            Box::pin(async move { source.historical_snapshot_selected(release, publication) })
+        } else if publication.is_some() {
+            Box::pin(async { Err(unsupported_catalog_query()) })
+        } else {
+            self.historical_execution_snapshot(release)
+        }
+    }
+
+    fn fetch_verified_metadata_selected<'a>(
+        &'a self,
+        release: &'a ReleaseDigest,
+        publication: Option<&'a latent_core::PublicationId>,
+    ) -> BoxFuture<'a, Result<VerifiedArtifactMetadata, PlatformError>> {
+        if let Some(source) = self.preparation_source() {
+            Box::pin(async move { source.metadata_selected(release, publication) })
+        } else if publication.is_some() {
+            Box::pin(async { Err(unsupported_catalog_query()) })
+        } else {
+            self.fetch_verified_metadata(release)
+        }
+    }
+
+    fn execution_eligibility_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<Option<ReleaseUseEligibility>, PlatformError> {
+        if let Some(source) = self.preparation_source() {
+            source.execution_eligibility_selected(release, publication)
+        } else if publication.is_some() {
+            Err(unsupported_catalog_query())
+        } else {
+            self.execution_eligibility(release)
+        }
+    }
     /// Authenticated publication with a bounded durable retry receipt. The host
     /// callback must accept the exact response before any filesystem mutation.
     fn publish_managed<'a>(
@@ -182,46 +343,6 @@ pub trait ArtifactRepository: Send + Sync {
         _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
                      + Send),
     ) -> BoxFuture<'a, Result<ManagedPublicationReceipt, PlatformError>> {
-        Box::pin(async { Err(unsupported_catalog_query()) })
-    }
-
-    fn get_release_lifecycle<'a>(
-        &'a self,
-        _scope: &'a LifecycleScope,
-        _release: &'a ReleaseDigest,
-    ) -> BoxFuture<'a, Result<Option<ReleaseLifecycleStatus>, PlatformError>> {
-        Box::pin(async { Err(unsupported_catalog_query()) })
-    }
-
-    fn get_release_operation<'a>(
-        &'a self,
-        _scope: &'a LifecycleScope,
-        _operation_id: &'a str,
-    ) -> BoxFuture<'a, Result<ReleaseOperationLookup, PlatformError>> {
-        Box::pin(async { Err(unsupported_catalog_query()) })
-    }
-
-    fn change_release_lifecycle<'a>(
-        &'a self,
-        _context: ReleaseMutationContext,
-        _release: &'a ReleaseDigest,
-        _action: ReleaseLifecycleAction,
-        _reason: ReleaseLifecycleReason,
-        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
-                     + Send),
-    ) -> BoxFuture<'a, Result<ReleaseOperationReceipt, PlatformError>> {
-        Box::pin(async { Err(unsupported_catalog_query()) })
-    }
-
-    fn renew_release_evidence<'a>(
-        &'a self,
-        _context: ReleaseMutationContext,
-        _release: &'a ReleaseDigest,
-        _package: &'a latent_core::PackageDigest,
-        _evidence: ReleaseEvidenceUpload,
-        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
-                     + Send),
-    ) -> BoxFuture<'a, Result<ReleaseOperationReceipt, PlatformError>> {
         Box::pin(async { Err(unsupported_catalog_query()) })
     }
 
@@ -310,6 +431,24 @@ pub trait ArtifactRepository: Send + Sync {
         &'a self,
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>>;
+
+    fn retained_package_source_selected<'a>(
+        &'a self,
+        tenant: &'a TenantId,
+        release: &'a ReleaseDigest,
+        publication: Option<&'a latent_core::PublicationId>,
+        maximum_bytes: usize,
+    ) -> BoxFuture<'a, Result<Option<RetainedPackageSource>, PlatformError>> {
+        if let Some(source) = self.preparation_source() {
+            Box::pin(async move {
+                source.retained_package_selected(tenant, release, publication, maximum_bytes)
+            })
+        } else if publication.is_some() {
+            Box::pin(async { Err(unsupported_catalog_query()) })
+        } else {
+            self.retained_package_source(tenant, release, maximum_bytes)
+        }
+    }
 
     /// Optional sealed retained package bytes for an explicit control comparison.
     /// None means this source does not provide a package; it is not proof of local

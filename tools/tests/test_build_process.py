@@ -64,6 +64,20 @@ class BuildProcessTests(unittest.TestCase):
         return run_bounded([sys.executable, "-c", source], self.root, dict(os.environ),
                            timeout_seconds=timeout, max_output_bytes=maximum)
 
+    def test_opt_in_nonzero_diagnostics_preserve_status_and_both_streams(self):
+        result = build_process.run_bounded_result(
+            [sys.executable, "-c", "import sys; print('out'); print('error',file=sys.stderr); sys.exit(7)"],
+            self.root, dict(os.environ), timeout_seconds=3, max_output_bytes=4096)
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(result.stdout, b"out" + os.linesep.encode())
+        self.assertEqual(result.stderr, b"error" + os.linesep.encode())
+
+    def test_opt_in_diagnostics_do_not_disable_process_output_limits(self):
+        with self.assertRaises(BuildProcessError):
+            build_process.run_bounded_result(
+                [sys.executable, "-c", "print('x' * 8192)"], self.root, dict(os.environ),
+                timeout_seconds=3, max_output_bytes=1024)
+
     def assert_gone(self, pid):
         deadline = time.monotonic() + 1
         while _alive(pid) and time.monotonic() < deadline:
@@ -124,7 +138,7 @@ class BuildProcessTests(unittest.TestCase):
         tail = "" if exit_parent else "\nimport time; time.sleep(30)"
         return ("import subprocess,sys,pathlib\n"
                 "p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'])\n"
-                "pathlib.Path('child.pid').write_text(str(p.pid))\n"
+                "marker=pathlib.Path('child.pid.pending'); marker.write_text(str(p.pid)); marker.replace('child.pid')\n"
                 "print('ready',flush=True)" + tail)
 
     def test_successful_early_parent_exit_cleans_inherited_pipe_descendant(self):
@@ -135,9 +149,17 @@ class BuildProcessTests(unittest.TestCase):
     def test_deadline_cleans_descendant_and_preserves_unrelated_process(self):
         kwargs = {"creationflags": 0x08000000} if os.name == "nt" else {}
         unrelated = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"], **kwargs)
+        capture = build_process._capture
+        def deadline_after_ready(owner, deadline, maximum, cancellation):
+            marker = self.root / "child.pid"
+            while not marker.exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertTrue(marker.exists(), "descendant must exist before testing its deadline cleanup")
+            return capture(owner, min(deadline, time.monotonic() + 0.2), maximum, cancellation)
         try:
-            with self.assertRaisesRegex(BuildProcessError, "^command-deadline$"):
-                self.run_python(self.descendant_source(exit_parent=False), timeout=0.7)
+            with patch.object(build_process, "_capture", deadline_after_ready), \
+                    self.assertRaisesRegex(BuildProcessError, "^command-deadline$"):
+                self.run_python(self.descendant_source(exit_parent=False), timeout=5)
             self.assert_gone(int((self.root / "child.pid").read_text()))
             self.assertIsNone(unrelated.poll())
         finally:

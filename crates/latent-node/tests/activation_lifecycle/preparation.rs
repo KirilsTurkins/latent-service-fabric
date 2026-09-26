@@ -279,3 +279,122 @@ async fn code_wait_uses_original_deadline_and_releases_unassigned_quota() {
     assert_eq!(pool.quarantined, 0);
     harness.assert_idle();
 }
+
+#[tokio::test]
+async fn materialization_wait_retains_one_ready_owner_and_cell_without_repreparing() {
+    use super::support::pending;
+    use latent_core::ActivationPhase;
+    use latent_scheduler::CellClass;
+    use std::pin::Pin;
+
+    let harness = Harness::standard();
+    harness.backend.materialize_gate.close();
+    let mut handle = harness
+        .manager
+        .start(request("waiting-materialization"))
+        .unwrap();
+    pending(Pin::new(&mut handle)).await;
+    assert_eq!(
+        harness.status("waiting-materialization").phase,
+        ActivationPhase::Materializing
+    );
+    assert_eq!(
+        harness
+            .scheduler
+            .observations(CellClass::Tiny)
+            .active_leases,
+        1
+    );
+    assert_eq!(harness.quotas.usage().unwrap().active_activations, 1);
+    assert_eq!(harness.backend.live_prepared.load(Ordering::Relaxed), 1);
+    assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 0);
+    harness.backend.materialize_gate.open();
+    assert!(matches!(
+        finish(handle).await.outcome,
+        ActivationOutcome::Succeeded(_)
+    ));
+    assert_eq!(harness.artifacts.entered.load(Ordering::Relaxed), 1);
+    assert_eq!(harness.backend.preparation_calls.load(Ordering::Relaxed), 1);
+    assert_eq!(
+        harness
+            .backend
+            .materialization_calls
+            .load(Ordering::Relaxed),
+        1
+    );
+    assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 1);
+    harness.assert_idle();
+}
+
+#[tokio::test]
+async fn materialization_wait_obeys_original_cancellation_deadline_and_transport_stops() {
+    use super::support::{pending, tenant};
+    use latent_core::{ActivationPhase, CancelDisposition};
+    use latent_node::ActivationTransportInterruption as Cause;
+    use latent_scheduler::CellClass;
+    use std::pin::Pin;
+    use std::time::Duration;
+
+    for stop in 0..4 {
+        let harness = Harness::standard();
+        harness.backend.materialize_gate.close();
+        let mut handle = harness
+            .manager
+            .start(request("stop-materialization"))
+            .unwrap();
+        pending(Pin::new(&mut handle)).await;
+        assert_eq!(
+            harness.status("stop-materialization").phase,
+            ActivationPhase::Materializing
+        );
+        assert_eq!(harness.backend.live_prepared.load(Ordering::Relaxed), 1);
+        assert_eq!(
+            harness
+                .scheduler
+                .observations(CellClass::Tiny)
+                .active_leases,
+            1
+        );
+        match stop {
+            0 => assert_eq!(
+                harness
+                    .manager
+                    .cancel_for(&tenant(), handle.activation_id(), "stop currentness wait")
+                    .unwrap(),
+                CancelDisposition::Accepted
+            ),
+            1 => harness.clock.advance(Duration::from_secs(60)),
+            2 => handle = handle.interrupt_for_cleanup(Cause::Disconnected),
+            3 => handle = handle.interrupt_for_cleanup(Cause::DeadlineExceeded),
+            _ => unreachable!(),
+        }
+        let ActivationOutcome::Failed { error, .. } = finish(handle).await.outcome else {
+            panic!("a materialization read cannot outlive its original activation");
+        };
+        assert_eq!(
+            error.code,
+            if stop == 0 || stop == 2 {
+                PlatformErrorCode::Cancelled
+            } else {
+                PlatformErrorCode::DeadlineExceeded
+            }
+        );
+        assert_eq!(
+            harness
+                .backend
+                .materialization_calls
+                .load(Ordering::Relaxed),
+            1
+        );
+        assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 0);
+        assert_eq!(
+            harness.scheduler.observations(CellClass::Tiny).quarantined,
+            0
+        );
+        harness.assert_idle();
+        harness.backend.materialize_gate.open();
+        tokio::task::yield_now().await;
+        assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 0);
+        harness.assert_idle();
+    }
+}

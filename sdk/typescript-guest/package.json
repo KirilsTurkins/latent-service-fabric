@@ -1,0 +1,11 @@
+{
+  "name": "@latent/guest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Activation-scoped TypeScript component bindings; no external client transport",
+  "exports": {
+    "./capabilities/*": "./capabilities/*.ts",
+    "./text": "./runtime/text.ts"
+  }
+}

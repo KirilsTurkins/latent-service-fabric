@@ -9,19 +9,33 @@ message Policy {
   ObjectMetadata metadata = 2;
   string document = 3;
   uint64 generation = 4;
+  // Exact closed document profile; descriptive data never grants execution.
+  string language = 5;
+  CapabilityPolicyRecordKind record_kind = 6;
+  string content_digest = 7;
+  bool revoked = 8;
+}
+
+enum CapabilityPolicyRecordKind {
+  CAPABILITY_POLICY_RECORD_KIND_UNSPECIFIED = 0;
+  CAPABILITY_POLICY_RECORD_KIND_POLICY = 1;
+  CAPABILITY_POLICY_RECORD_KIND_PROVIDER_BINDING = 2;
 }
 
 message ApplyPolicyRequest {
   Policy policy = 1;
   optional uint64 expected_generation = 2;
+  string operation_id = 3;
 }
 
 message ApplyPolicyResponse {
   Policy policy = 1;
+  CapabilityPolicyOperation receipt = 2;
 }
 
 message GetPolicyRequest {
   string id = 1;
+  CapabilityPolicyRecordKind record_kind = 2;
 }
 
 message GetPolicyResponse {
@@ -34,6 +48,15 @@ message EvaluatePolicyRequest {
   string subject = 3;
   string resource = 4;
   map<string, string> attributes = 5;
+  // The original generic action/subject/resource/attributes fields must be
+  // empty in the closed Phase 3 profile. Identity comes from authentication.
+  string service = 6;
+  string publication_id = 7;
+  string capability = 8;
+  string operation = 9;
+  string resource_document = 10;
+  string provider_binding_id = 11;
+  repeated string additional_policy_ids = 12;
 }
 
 message PolicyReason {
@@ -52,6 +75,32 @@ message EvaluatePolicyResponse {
 message DeletePolicyRequest {
   string id = 1;
   optional uint64 expected_generation = 2;
+  string operation_id = 3;
+  CapabilityPolicyRecordKind record_kind = 4;
+}
+
+message CapabilityPolicyOperation {
+  string operation_id = 1;
+  string tenant = 2;
+  string id = 3;
+  CapabilityPolicyRecordKind record_kind = 4;
+  uint64 generation = 5;
+  string content_digest = 6;
+  bool revoked = 7;
+}
+message GetPolicyOperationRequest { string operation_id = 1; }
+message GetPolicyOperationResponse {
+  // Absence means not retained/unknown, never proof that a mutation did not run.
+  optional CapabilityPolicyOperation receipt = 1;
+}
+message ListPoliciesRequest {
+  CapabilityPolicyRecordKind record_kind = 1;
+  PageRequest page = 2;
+}
+message ListPoliciesResponse {
+  repeated Policy policies = 1;
+  uint64 catalog_generation = 2;
+  PageResponse page = 3;
 }
 
 service PolicyService {
@@ -59,4 +108,6 @@ service PolicyService {
   rpc GetPolicy(GetPolicyRequest) returns (GetPolicyResponse);
   rpc EvaluatePolicy(EvaluatePolicyRequest) returns (EvaluatePolicyResponse);
   rpc DeletePolicy(DeletePolicyRequest) returns (Empty);
+  rpc ListPolicies(ListPoliciesRequest) returns (ListPoliciesResponse);
+  rpc GetPolicyOperation(GetPolicyOperationRequest) returns (GetPolicyOperationResponse);
 }

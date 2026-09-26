@@ -1,0 +1,73 @@
+{
+  "conductorSourceCommit": "dce74332c242e2b17f62299c3a1d22b867d39356",
+  "independentPolicyApproved": true,
+  "linux": {
+    "absentHostCompilers": [
+      "gcc",
+      "g++",
+      "clang",
+      "rustc",
+      "cargo",
+      "dotnet",
+      "javac",
+      "go",
+      "node"
+    ],
+    "cleanup": "owned-container-stopped-private-state-retained-until-runner-teardown",
+    "completed": [
+      "offline-frontend-authentication",
+      "runtime-and-rust-tool-installation",
+      "descriptor-abi-traversal-untrusted-recipe-unicode-hardlink-and-symlink-rejections"
+    ],
+    "containerStopped": true,
+    "failure": "frontend-command-failed-build",
+    "frontendCode": "build-deadline-exceeded",
+    "hostReceipt": {
+      "artifact": "packaged-linux-observation-36155360224-1",
+      "file": "packaged-linux/host-observation.json",
+      "sha256": "sha256:eb4d5b910c17a9b442b362ccef1b7cbed52939eebb7347ff267d491da76229ed"
+    },
+    "kernel": "6.17.0-1022-azure",
+    "passed": false,
+    "receipt": {
+      "artifact": "packaged-linux-observation-36155360224-1",
+      "file": "packaged-linux/observation.json",
+      "sha256": "sha256:db84b4d5d40bc324bc15c6ded7ff5c5d898412995466fbae04f4b33367098bff"
+    },
+    "seconds": 1036.85
+  },
+  "publiclyPublished": false,
+  "qualificationComplete": false,
+  "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36155360224",
+  "schemaVersion": "latent.dev.packaged-attempt-observation.v1",
+  "sourceCommit": "f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+  "windows": {
+    "cleanup": "failed-attempt-private-workspaces-retained-inspect-cleanup-receipts",
+    "completed": [
+      "offline-frontend-authentication",
+      "wrong-target-rejection",
+      "archive-tamper-rejection",
+      "wrong-publisher-identity-rejection",
+      "actual-owned-wsl-provisioning",
+      "runtime-and-rust-tool-installation",
+      "rust-build",
+      "success-and-declared-error",
+      "original-release-deployment-invocation-recovery"
+    ],
+    "failure": "conductor-event-deadline",
+    "host": {
+      "architecture": "AMD64",
+      "osVersion": "10.0.26100"
+    },
+    "nodeReaped": true,
+    "observedWatchCode": "signed-test-build-changed-use-new-workspace",
+    "passed": false,
+    "profile": "signed-fixture",
+    "receipt": {
+      "artifact": "packaged-windows-observation-36155360224-1",
+      "file": "packaged-observation/observation.json",
+      "sha256": "sha256:8240e73430a80f9199c6f95a358576d6b2fcf1ab001187649dc0590556483f0c"
+    },
+    "seconds": 586.785
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "schema": "latent.deterministic-tests.v1",
+  "passed": true,
+  "seed": 433,
+  "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo_target_dir": "/tmp/lsf-deterministic-target",
+  "timing": "prebuilt test process wall time, including process startup; compilation excluded",
+  "repeats": 5,
+  "measurements": [
+    {
+      "phase": "before",
+      "revision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+      "dirty": false,
+      "suite": "admission.policy-deadline",
+      "package": "latent-admission",
+      "selector": "admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work",
+      "tests": [
+        "tests::stress::live_admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work"
+      ],
+      "count": 1,
+      "test_threads": 1,
+      "execution_seconds": [
+        0.07653037899999049,
+        0.07671354400000041,
+        0.07684618900000828,
+        0.07704661000001067,
+        0.07688781000000233
+      ],
+      "median_seconds": 0.07684618900000828
+    },
+    {
+      "phase": "before",
+      "revision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+      "dirty": false,
+      "suite": "admission.policy-deadline",
+      "package": "latent-admission",
+      "selector": "admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work",
+      "tests": [
+        "tests::stress::live_admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work"
+      ],
+      "count": 1,
+      "test_threads": 4,
+      "execution_seconds": [
+        0.07698594299999684,
+        0.0770749980000005,
+        0.07694379800000206,
+        0.07696826100000465,
+        0.07703831099999547
+      ],
+      "median_seconds": 0.07698594299999684
+    },
+    {
+      "phase": "before",
+      "revision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+      "dirty": false,
+      "suite": "scheduler.fixed-pool-races",
+      "package": "latent-scheduler",
+      "selector": "fixed_pool::tests::races::",
+      "tests": [
+        "fixed_pool::tests::races::lease_token_exhaustion_quarantines_the_slot_and_fails_all_waiters",
+        "fixed_pool::tests::races::release_and_explicit_cancellation_race_is_linearizable",
+        "fixed_pool::tests::races::release_and_task_abort_race_preserves_exact_capacity_accounting"
+      ],
+      "count": 3,
+      "test_threads": 1,
+      "execution_seconds": [
+        0.028379194999999413,
+        0.02702700999999763,
+        0.026400926000007985,
+        0.027238280000005943,
+        0.027138205999989395
+      ],
+      "median_seconds": 0.027138205999989395
+    },
+    {
+      "phase": "before",
+      "revision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+      "dirty": false,
+      "suite": "scheduler.fixed-pool-races",
+      "package": "latent-scheduler",
+      "selector": "fixed_pool::tests::races::",
+      "tests": [
+        "fixed_pool::tests::races::lease_token_exhaustion_quarantines_the_slot_and_fails_all_waiters",
+        "fixed_pool::tests::races::release_and_explicit_cancellation_race_is_linearizable",
+        "fixed_pool::tests::races::release_and_task_abort_race_preserves_exact_capacity_accounting"
+      ],
+      "count": 3,
+      "test_threads": 4,
+      "execution_seconds": [
+        0.01784202300000004,
+        0.017459807999998134,
+        0.017384222000004,
+        0.01754654199999095,
+        0.01722125999999946
+      ],
+      "median_seconds": 0.017459807999998134
+    },
+    {
+      "phase": "after",
+      "revision": "b27113253dfaead86f549087fa31363c8bc43cda",
+      "dirty": false,
+      "suite": "admission.policy-deadline",
+      "package": "latent-admission",
+      "selector": "admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work",
+      "tests": [
+        "tests::stress::admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work"
+      ],
+      "count": 1,
+      "test_threads": 1,
+      "execution_seconds": [
+        0.002021592000005512,
+        0.0019564889999941215,
+        0.0019301509999962718,
+        0.001957379999993236,
+        0.0019420570000079351
+      ],
+      "median_seconds": 0.0019564889999941215
+    },
+    {
+      "phase": "after",
+      "revision": "b27113253dfaead86f549087fa31363c8bc43cda",
+      "dirty": false,
+      "suite": "admission.policy-deadline",
+      "package": "latent-admission",
+      "selector": "admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work",
+      "tests": [
+        "tests::stress::admission_resamples_time_after_policy_lookup_instead_of_granting_expired_work"
+      ],
+      "count": 1,
+      "test_threads": 4,
+      "execution_seconds": [
+        0.001993269999999825,
+        0.0019225240000082522,
+        0.0019275869999972883,
+        0.0019320829999998068,
+        0.0018938040000051615
+      ],
+      "median_seconds": 0.0019275869999972883
+    },
+    {
+      "phase": "after",
+      "revision": "b27113253dfaead86f549087fa31363c8bc43cda",
+      "dirty": false,
+      "suite": "scheduler.fixed-pool-races",
+      "package": "latent-scheduler",
+      "selector": "fixed_pool::tests::races::",
+      "tests": [
+        "fixed_pool::tests::races::abandoned_client_keeps_work_and_buffers_charged_multi_thread",
+        "fixed_pool::tests::races::abandoned_client_keeps_work_and_buffers_charged_single_thread",
+        "fixed_pool::tests::races::explicit_cancellation_single_thread",
+        "fixed_pool::tests::races::lease_token_exhaustion_quarantines_the_slot_and_fails_all_waiters",
+        "fixed_pool::tests::races::release_and_explicit_cancellation_race_is_linearizable",
+        "fixed_pool::tests::races::release_and_task_abort_race_preserves_exact_capacity_accounting",
+        "fixed_pool::tests::races::task_abort_single_thread"
+      ],
+      "count": 7,
+      "test_threads": 1,
+      "execution_seconds": [
+        0.00581264699999906,
+        0.005868941000002792,
+        0.005647756999991316,
+        0.005599666999998476,
+        0.005532149000003983
+      ],
+      "median_seconds": 0.005647756999991316
+    },
+    {
+      "phase": "after",
+      "revision": "b27113253dfaead86f549087fa31363c8bc43cda",
+      "dirty": false,
+      "suite": "scheduler.fixed-pool-races",
+      "package": "latent-scheduler",
+      "selector": "fixed_pool::tests::races::",
+      "tests": [
+        "fixed_pool::tests::races::abandoned_client_keeps_work_and_buffers_charged_multi_thread",
+        "fixed_pool::tests::races::abandoned_client_keeps_work_and_buffers_charged_single_thread",
+        "fixed_pool::tests::races::explicit_cancellation_single_thread",
+        "fixed_pool::tests::races::lease_token_exhaustion_quarantines_the_slot_and_fails_all_waiters",
+        "fixed_pool::tests::races::release_and_explicit_cancellation_race_is_linearizable",
+        "fixed_pool::tests::races::release_and_task_abort_race_preserves_exact_capacity_accounting",
+        "fixed_pool::tests::races::task_abort_single_thread"
+      ],
+      "count": 7,
+      "test_threads": 4,
+      "execution_seconds": [
+        0.004247139000000288,
+        0.0044630169999919644,
+        0.004003190999995354,
+        0.004269444999991379,
+        0.0040935920000038095
+      ],
+      "median_seconds": 0.004247139000000288
+    }
+  ]
+}

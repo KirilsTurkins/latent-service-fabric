@@ -13,6 +13,11 @@ use super::Failure;
 const SCHEMA: &str = "latent.standalone.status.v1";
 const MAXIMUM_LINE_BYTES: usize = 16 * 1024;
 
+#[cfg(target_os = "linux")]
+pub(super) fn configuration(report: &crate::config::ExecutionProfileReport) -> Result<(), Failure> {
+    output(report)
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg(target_os = "linux")]
@@ -22,6 +27,10 @@ struct Started<'a> {
     node_id: &'a str,
     endpoint: SocketAddr,
     ready: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    http_endpoint: Option<SocketAddr>,
+    #[serde(skip_serializing_if = "<[crate::standalone::ProviderDescriptor]>::is_empty")]
+    providers: &'a [crate::standalone::ProviderDescriptor],
 }
 
 #[derive(Serialize)]
@@ -35,13 +44,19 @@ struct Stopped<'a, T> {
 }
 
 #[cfg(target_os = "linux")]
-pub(super) fn started(node_id: &str, endpoint: SocketAddr, ready: bool) -> Result<(), Failure> {
+pub(super) fn started(
+    node_id: &str,
+    node: &crate::standalone::StandaloneNode,
+    ready: bool,
+) -> Result<(), Failure> {
     output(&Started {
         schema_version: SCHEMA,
         event: if ready { "ready" } else { "started" },
         node_id,
-        endpoint,
+        endpoint: node.endpoint(),
         ready,
+        http_endpoint: node.http_endpoint(),
+        providers: node.configured_providers(),
     })
 }
 

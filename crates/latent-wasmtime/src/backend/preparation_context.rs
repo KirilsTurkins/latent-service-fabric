@@ -19,6 +19,8 @@ use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
 pub(super) struct PreparationContext {
+    pub(super) capabilities:
+        Option<std::sync::Weak<latent_capabilities::broker::ActivationCapabilityRuntime>>,
     pub(super) native_aot: Option<Arc<crate::aot::cache::NativeAotService>>,
     pub(super) runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     pub(super) admission: Option<Arc<dyn AdmissionAuthority>>,
@@ -94,6 +96,81 @@ impl PreparationContext {
                 false,
             )
         })?;
+        if let Some(invoker) = self.local_services() {
+            crate::host::service::install(&mut linker, invoker).map_err(|error| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    &format!(
+                        "failed to bind local service import: {}",
+                        bounded_error(&error)
+                    ),
+                    false,
+                )
+            })?;
+        }
+        if let Some(invoker) = self.http() {
+            crate::host::http::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind HTTP import",
+                    false,
+                )
+            })?;
+        }
+        if let Some(invoker) = self.streaming_http() {
+            crate::host::streaming_http::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind streaming HTTP import",
+                    false,
+                )
+            })?;
+        }
+        if let Some(publisher) = self.events() {
+            crate::host::events::install(&mut linker, publisher).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind event import",
+                    false,
+                )
+            })?;
+        }
+        if let Some(provider) = self.random() {
+            crate::host::random::install(&mut linker, provider).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind random import",
+                    false,
+                )
+            })?;
+        }
+        if let Some(provider) = self.metrics() {
+            crate::host::metrics::install(&mut linker, provider).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind metrics import",
+                    false,
+                )
+            })?;
+        }
+        if let Some(invoker) = self.secrets() {
+            crate::host::secrets::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind secret import",
+                    false,
+                )
+            })?;
+        }
+        if let Some(invoker) = self.blobs() {
+            crate::host::blob::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind blob import",
+                    false,
+                )
+            })?;
+        }
         let pre = linker.instantiate_pre(component).map_err(|error| {
             platform_error(
                 PlatformErrorCode::IncompatibleContract,
@@ -105,6 +182,44 @@ impl PreparationContext {
             )
         })?;
         Ok(pre)
+    }
+    pub(super) fn events(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::events::EventPublisher>> {
+        self.capabilities.as_ref()?.upgrade()?.events().ok()
+    }
+    pub(super) fn random(
+        &self,
+    ) -> Option<Arc<latent_capabilities::broker::random::RandomProvider>> {
+        self.capabilities.as_ref()?.upgrade()?.random().ok()
+    }
+    pub(super) fn metrics(
+        &self,
+    ) -> Option<Arc<latent_capabilities::broker::metrics::MetricProvider>> {
+        self.capabilities.as_ref()?.upgrade()?.metrics().ok()
+    }
+    pub(super) fn secrets(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::secrets::SecretInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.secrets().ok()
+    }
+    pub(super) fn blobs(&self) -> Option<Arc<dyn latent_capabilities::broker::blob::BlobInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.blobs().ok()
+    }
+    pub(super) fn streaming_http(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::streaming_http::StreamingHttpInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.streaming_http().ok()
+    }
+    pub(super) fn http(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::http::OutboundHttpInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.http().ok()
+    }
+    pub(super) fn local_services(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::LocalServiceInvoker>> {
+        self.capabilities.as_ref()?.upgrade()?.local_services().ok()
     }
 
     pub(super) fn validate_key(
@@ -303,7 +418,12 @@ impl PreparationContext {
         identity: &ArtifactPreparationIdentity,
         key: &PreparationKey,
     ) -> Result<(), PlatformError> {
-        if !identity.matches_release(&key.release) {
+        if !identity.matches_release(&key.release)
+            || key
+                .publication
+                .as_ref()
+                .is_some_and(|id| identity.publication() != id)
+        {
             return Err(platform_error(
                 PlatformErrorCode::CorruptArtifact,
                 "artifact repository returned a different release",

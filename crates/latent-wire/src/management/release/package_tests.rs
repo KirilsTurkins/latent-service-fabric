@@ -124,7 +124,10 @@ fn protobuf_decoded_publication_accepts_bounded_empty_evidence_configuration() {
 fn renewal() -> proto::RenewReleaseEvidenceRequest {
     let entry = upload().package.unwrap().signatures.remove(0);
     proto::RenewReleaseEvidenceRequest {
-        digest: format!("sha256:{}", "a".repeat(64)),
+        publication: Some(proto::PublicationRef {
+            id: format!("publication:sha256:{}", "a".repeat(64)),
+            tenant: "acme".into(),
+        }),
         package_digest: format!("sha256:{}", "b".repeat(64)),
         evidence: Some(proto::ReleaseEvidenceUpload {
             signatures: vec![entry.clone()],

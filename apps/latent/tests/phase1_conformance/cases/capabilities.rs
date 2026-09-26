@@ -29,8 +29,11 @@ pub async fn context(harness: &mut Harness, evidence: &mut Evidence, package: &P
                     &visible,
                     "--metadata",
                     "internal.credential=private-context-marker",
+                    // The first context call also prepares its cold component.
+                    // Use the existing node cap; deadline intersection has its
+                    // own assertions in the persistent-wall-ceiling case.
                     "--wall-time-ms",
-                    "1000",
+                    "5000",
                 ],
                 (0, "success"),
             )

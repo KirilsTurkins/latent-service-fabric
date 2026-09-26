@@ -1,6 +1,8 @@
 //! Sealed preparation provenance bound to one concrete repository owner.
 
 mod owned;
+pub(crate) mod read_wait;
+pub use read_wait::ArtifactPreparationReadWait;
 
 pub use owned::{
     ArtifactPreparationReadBounds, ArtifactPreparationReadLimits, OwnedArtifactPreparationSource,
@@ -10,7 +12,7 @@ use std::hash::{Hash, Hasher};
 use std::mem::size_of_val;
 use std::sync::Arc;
 
-use latent_core::{BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest};
+use latent_core::{BoxFuture, PlatformError, PlatformErrorCode, PublicationId, ReleaseDigest};
 use sha2::{Digest, Sha256};
 
 use crate::{
@@ -81,6 +83,7 @@ pub struct ArtifactPreparationIdentity {
     component_digest: [u8; 32],
     component_bytes: u64,
     metadata: PreparationMetadataFingerprint,
+    publication: PublicationId,
 }
 
 impl PartialEq for ArtifactPreparationIdentity {
@@ -89,6 +92,7 @@ impl PartialEq for ArtifactPreparationIdentity {
             && self.component_digest == other.component_digest
             && self.component_bytes == other.component_bytes
             && self.metadata == other.metadata
+            && self.publication == other.publication
     }
 }
 impl Eq for ArtifactPreparationIdentity {}
@@ -99,6 +103,7 @@ impl Hash for ArtifactPreparationIdentity {
         self.component_digest.hash(state);
         self.component_bytes.hash(state);
         self.metadata.hash(state);
+        self.publication.hash(state);
     }
 }
 
@@ -108,18 +113,24 @@ impl ArtifactPreparationIdentity {
         release: &ReleaseDigest,
         component_bytes: u64,
         metadata: PreparationMetadataFingerprint,
+        publication: PublicationId,
     ) -> Result<Self, PlatformError> {
         Ok(Self {
             epoch,
             component_digest: digest_bytes(release).ok_or_else(mismatch)?,
             component_bytes,
             metadata,
+            publication,
         })
     }
 
     #[must_use]
     pub fn metadata(&self) -> &PreparationMetadataFingerprint {
         &self.metadata
+    }
+    #[must_use]
+    pub fn publication(&self) -> &PublicationId {
+        &self.publication
     }
     #[must_use]
     pub fn component_digest(&self) -> &[u8; 32] {
@@ -170,20 +181,21 @@ impl ArtifactPreparationIdentity {
     #[must_use]
     pub fn cache_digest(&self) -> [u8; 32] {
         let mut hash = Sha256::new();
-        hash.update(b"lsf-artifact-preparation-source-v1\0");
+        hash.update(b"lsf-artifact-preparation-source-v2\0");
         hash.update((Arc::as_ptr(&self.epoch) as usize).to_le_bytes());
         hash.update(self.component_digest);
         hash.update(self.component_bytes.to_le_bytes());
         hash.update(self.metadata.digest());
         hash.update(self.metadata.charged_bytes().to_le_bytes());
         hash.update(self.metadata.required_type_depth().to_le_bytes());
+        hash.update(self.publication.as_str().as_bytes());
         hash.finalize().into()
     }
 
     /// Conservative per-retained-token charge, including shared epoch storage.
     #[must_use]
     pub fn retained_bytes(&self) -> usize {
-        size_of_val(self) + EPOCH_RETAINED_BYTES
+        size_of_val(self) + EPOCH_RETAINED_BYTES + PublicationId::TEXT_BYTES
     }
 }
 
@@ -228,5 +240,84 @@ fn mismatch() -> PlatformError {
         message: "artifact preparation identity does not match verified metadata".to_owned(),
         retryable: false,
         details: Vec::new(),
+    }
+}
+
+impl ArtifactPreparationSource<'_> {
+    pub fn recover_execution_publication(
+        &self,
+        tenant: &latent_core::TenantId,
+        release: &ReleaseDigest,
+    ) -> Result<crate::PublicationRef, PlatformError> {
+        self.repository
+            .select_execution_publication(tenant, release, None)
+    }
+
+    pub fn select_execution_publication(
+        &self,
+        tenant: &latent_core::TenantId,
+        release: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+    ) -> Result<crate::PublicationRef, PlatformError> {
+        self.repository
+            .select_execution_publication(tenant, release, publication)
+    }
+    pub fn execution_eligibility_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+    ) -> Result<Option<crate::ReleaseUseEligibility>, PlatformError> {
+        self.repository
+            .selected_execution_eligibility(release, publication)
+            .map(Some)
+    }
+    pub fn identity_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+    ) -> Result<Option<ArtifactPreparationIdentity>, PlatformError> {
+        self.repository
+            .selected_preparation_identity(release, publication)
+    }
+    pub fn metadata_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+    ) -> Result<VerifiedArtifactMetadata, PlatformError> {
+        self.repository.selected_metadata(release, publication)
+    }
+    pub fn historical_snapshot_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+    ) -> Result<crate::HistoricalExecutionSnapshot, PlatformError> {
+        self.repository
+            .selected_historical_snapshot(release, publication)
+    }
+    pub fn fetch_selected<'a>(
+        &'a self,
+        release: &'a ReleaseDigest,
+        publication: Option<&'a PublicationId>,
+    ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>> {
+        Box::pin(async move {
+            self.repository.selected_fetch(
+                release,
+                publication,
+                self.repository.repository_read_limits(),
+            )
+        })
+    }
+}
+
+impl ArtifactPreparationSource<'_> {
+    pub fn retained_package_selected(
+        &self,
+        tenant: &latent_core::TenantId,
+        release: &ReleaseDigest,
+        publication: Option<&PublicationId>,
+        maximum_bytes: usize,
+    ) -> Result<Option<crate::RetainedPackageSource>, PlatformError> {
+        self.repository
+            .retained_package_selected(tenant, release, publication, maximum_bytes)
     }
 }

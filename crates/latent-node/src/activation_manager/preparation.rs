@@ -13,6 +13,8 @@ use super::probes::ActivationControl;
 use super::transport_stop::TransportStop;
 use super::Inner;
 
+mod wait;
+
 impl Inner {
     pub(super) async fn prepare_ready(
         &self,
@@ -26,18 +28,28 @@ impl Inner {
             .as_ref()
             .expect("pinned revision")
             .release;
-        let key = self.dependencies.backend.preparation_key(release)?;
+        let mut key = self.dependencies.backend.preparation_key(release)?;
+        key.publication = envelope
+            .resolved_revision
+            .as_ref()
+            .expect("pinned revision")
+            .publication
+            .clone();
         if &key.release != release {
             return Err(error(
                 PlatformErrorCode::IncompatibleContract,
                 "backend preparation key changed the pinned release",
             ));
         }
+        let read_wait = wait::Timer;
         let ready = stage(
-            self.dependencies.backend.prepare_ready_from_repository(
-                Arc::clone(&self.dependencies.artifacts),
-                key.clone(),
-            ),
+            self.dependencies
+                .backend
+                .prepare_ready_from_repository_with_wait(
+                    Arc::clone(&self.dependencies.artifacts),
+                    key.clone(),
+                    &read_wait,
+                ),
             token,
             budget.deadline().monotonic(),
             &self.clock,
@@ -48,7 +60,7 @@ impl Inner {
         Ok((key, ready))
     }
 
-    pub(super) fn materialize(
+    pub(super) async fn materialize(
         &self,
         envelope: &ActivationEnvelope,
         control: &ActivationControl,
@@ -66,7 +78,20 @@ impl Inner {
             return Err(failure);
         }
         self.verify_preparation(ready.descriptor(), key)?;
-        let activation = self.dependencies.backend.materialize_ready(ready)?;
+        // Retain the assigned cell, original readiness and activation budget.
+        // Only the backend's pre-materialization currentness read may wait; no
+        // repository acquisition, materialization or guest call is replayed.
+        let read_wait = wait::Timer;
+        let activation = stage(
+            self.dependencies
+                .backend
+                .materialize_ready_with_wait(ready, &read_wait),
+            control.token(),
+            budget.deadline().monotonic(),
+            &self.clock,
+            control.transport(),
+        )
+        .await?;
         self.verify_preparation(activation.prepared.descriptor(), key)?;
         let imports = activation
             .imports

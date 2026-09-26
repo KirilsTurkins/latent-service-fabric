@@ -1,0 +1,24 @@
+[package]
+name = "latent-vault"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Bounded Vault KV-v2 secrets using protected credentials and explicit capability disclosure."
+
+[lints]
+workspace = true
+
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
+latent-core = { path = "../latent-core" }
+latent-capabilities = { path = "../latent-capabilities" }
+latent-policy = { path = "../latent-policy" }
+latent-secrets = { path = "../latent-secrets" }
+latent-http = { path = "../latent-http" }
+base64.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+zeroize = { version = "=1.9.0", features = ["alloc"] }
+time = { version = "=0.3.55", features = ["parsing"] }

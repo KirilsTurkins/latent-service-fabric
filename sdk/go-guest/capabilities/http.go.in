@@ -1,0 +1,10 @@
+package http
+
+import (
+	raw "wit_component/@raw@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+)
+
+// Send performs one authorized, budgeted request. It preserves the exact WIT
+// error and never treats an idempotency key as automatic retry authority.
+func Send(request Request) wit.Result[Response, HttpError] { return raw.Send(request) }

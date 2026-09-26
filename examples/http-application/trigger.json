@@ -1,0 +1,20 @@
+{
+  "apiVersion": "latent.dev/v1alpha1",
+  "kind": "HttpTrigger",
+  "metadata": {"name": "web-http", "tenant": "examples"},
+  "spec": {
+    "target": {
+      "service": "examples/web",
+      "contract": "latent:web/application@0.1.0",
+      "function": "handle",
+      "route": "web",
+      "publication": "publication:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "revision": "revision-v1:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "deploymentGeneration": 1
+    },
+    "configuration": {
+      "profile": "buffered-v1", "scheme": "https", "host": "web.example.invalid",
+      "path": "/", "pathMatch": "prefix", "method": "GET"
+    }
+  }
+}

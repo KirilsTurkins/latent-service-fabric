@@ -1,24 +1,93 @@
 # Activation-scoped capabilities
 
-The generic Wasmtime backend implements four imports: `latent:context/context`,
+The generic Wasmtime backend supplies four built-in imports: `latent:context/context`,
 `latent:log/log`, `latent:clock/monotonic`, and `latent:clock/wall`, all at version
 `0.1.0`. They are explicit Component Model imports supplied to a fresh store for
 each activation. Preparation verifies the component's declared surface, and an
 invocation must bind exactly its prepared imports. No WASI filesystem,
 environment, network, process, or other ambient authority is installed. The
-remaining platform capability packages are contracts for later implementation.
-Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
-currentness, native caching and rollout control; it does not expand this guest
-import set. The 41-ticket [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
-is planned work, with no Phase 3 providers or host ABI implementation merged.
+configured [local service adapter](local-service-invocation.md) additionally
+implements canonical async `latent:service/invoke@0.1.0`. The configured
+[outbound HTTP adapter](outbound-http.md) implements `latent:http/client@0.2.0`; [streaming HTTP](streaming-http.md) adds
+`latent:http/streaming@0.3.0` with owned upload/body/chunk resources. The Linux
+[local blob provider](local-blobs.md) and [S3 provider](s3-blobs.md) implement `latent:blob/blob@0.2.0` with
+scoped durable references and owned read chunks. The configured
+[local](local-secrets.md) and [Vault KV-v2](vault-secrets.md) secret providers implement `latent:secrets/reader@0.1.0`
+with protected sources, atomic rotation and separate opaque provider credentials.
+[NATS JetStream publication](nats-events.md) implements immediate `latent:events/publisher@0.2.0` with broker receipts and explicit uncertainty.
+[Cryptographic randomness](random.md) implements both `latent:random/random@0.1.0` methods through the activation broker and original ledger.
+[Custom metrics](custom-metrics.md) implements all four `latent:telemetry/custom@0.1.0` kinds through a shared bounded registry and exporter.
+Package delivery, native caching and rollout control do not expand this guest
+import set. The [versioned host ABI profile](host-abi-profile.md) defines the
+supported contract versions.
+Package inspection recognizes its exact provider contracts and selected async
+imports, while preparation rejects providers without installed owners. The [sealed activation broker](capability-broker.md) now implements session,
+handle and call ownership and can gate the four built-in imports in explicit
+managed embeddings. [Exact plan compilation](capability-bindings.md) and
+conserved [descendant budgets](descendant-budgets.md) support local child calls.
+The [standalone bootstrap](../reference/standalone-providers.md) installs the
+configured HTTP, local-blob, activation-clock and OS-entropy providers and exposes
+scoped provider management. Explicit bindings, deployment grants and current
+policy remain required.
+Other concrete adapters use their documented trusted Rust compositions; declaring
+their contracts does not install them through standalone configuration. Start with
+[the capability walkthrough](../learn/use-capabilities.md) to exercise the actual
+configuration, allowed and denied operations, revocation and cleanup.
+
+The [bounded asynchronous I/O substrate](async-host-io.md) now adds affine queue,
+buffer and stream ownership on the existing runtime. Cancellation retains charges
+for actual work and delayed consumers; waiting never refunds an execution cell.
+Its real async guest conformance fixture does not expand the production import set.
+The [shared provider pools](provider-pools.md) add configured client reuse,
+tenant/provider fairness, credential epochs, connection limits and bounded
+worker/cleanup shutdown. They run on the node's existing control runtime.
+
+The delivered [durable capability policy owner](capability-policies.md) provides
+bounded rules, scoped revisions, provider-binding metadata and authenticated
+apply/get/list/revoke/explain control. Sealed decisions recheck policy and
+publication authority at final admission. This control foundation does not itself
+install the remaining guest providers.
+
+[Capability audit and inspection](capability-audit.md) records required provider
+attempts and typed outcomes through the existing audit owner. Scoped management
+reads explain compiled grants and retained resources without granting execution
+permission or exposing credential-bearing selectors.
 
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
-[standalone node](../reference/standalone-node.md). Phase 3 plans the shared
-capability broker, HTTP/blob/secrets/events providers, local child calls, random
-and custom metrics, application ingress and web/SSR integration. Transactional
-state/effects, cluster transport and durable workflow suspension remain later
-phases; declared WIT alone makes none of them callable.
+[standalone node](../reference/standalone-node.md). The standalone provider
+configuration and application ingress remain distinct authority boundaries. Transactional
+state/effects, cluster transport and durable workflow suspension are not
+implemented; declared WIT alone makes none of them callable.
+
+## Immediate provider operations
+
+[ADR-0025](../../adr/0025-separate-immediate-capability-operations-from-transactional-effect-intents.md)
+defines the semantic mode for external providers. HTTP, blob and event
+operations are immediate activation-scoped capability calls, not application
+state transactions or durable effect intents. Provider contracts must distinguish
+rejection before dispatch, provider acknowledgement, known provider failure and
+uncertain outcome after possible dispatch wherever the underlying protocol can
+support that distinction.
+
+Cancellation and deadline expiry stop work that LSF still controls. Once an
+external operation may have been dispatched, they cannot prove that the remote
+effect did not occur. A lost acknowledgement therefore cannot be rewritten as a
+definite failure or used to justify automatic replay of an uncertain mutation.
+An idempotency key is an input to an explicit provider retry/deduplication policy;
+it is not permission for a hidden retry.
+
+Provider acknowledgement is also narrower than application completion. An HTTP
+response, blob-provider acknowledgement or broker publication receipt does not
+by itself prove downstream consumer processing, invocation success, a guest-state
+commit or end-to-end exactly-once execution. Audit observations report what LSF
+observed; provider cleanup/recovery records retain provider-owned work. Neither is
+an application transaction or outbox receipt.
+
+Buffered/streaming HTTP, local/S3 immutable blobs, local/Vault secrets and
+immediate NATS publication preserve these distinctions in their typed results
+and cleanup. Inbound consumer
+triggers are implemented by the [shared JetStream poller](nats-triggers.md).
 
 ## Context disclosure
 
@@ -128,5 +197,5 @@ LSF_CAPABILITIES_COMPONENT=target/capsules/capabilities/capabilities-capsule.was
 ```
 
 These are bounded semantic regressions. They do not establish the long-running
-reclamation, dormant-release scale, or complete Phase 1 conformance evidence in
+reclamation, dormant-release scale, or complete runtime conformance evidence in
 the [validation contract](../../VALIDATION.md).

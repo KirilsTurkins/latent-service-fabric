@@ -292,6 +292,12 @@ impl Project for proto::RolloutObservation {
 impl Project for proto::RolloutOperationReceipt {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
+        for id in [&self.base_publication_id, &self.candidate_publication_id]
+            .into_iter()
+            .flatten()
+        {
+            publication_id(id, b)?;
+        }
         b.text(&self.rollout_id, 4096)?;
         b.text(&self.tenant, 4096)?;
         b.text(&self.operation_id, 4096)?;
@@ -323,6 +329,8 @@ impl Project for proto::RolloutOperationReceipt {
     }
     fn project(self) -> Value {
         json!({
+        "basePublicationId": self.base_publication_id,
+        "candidatePublicationId": self.candidate_publication_id,
         "rolloutId": json!(self.rollout_id),
         "tenant": json!(self.tenant),
         "operationId": json!(self.operation_id),
@@ -349,6 +357,9 @@ impl Project for proto::RolloutOperationReceipt {
 impl Project for proto::RolloutRelease {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
+        if let Some(id) = &self.publication_id {
+            publication_id(id, b)?;
+        }
         b.text(&self.deployment_id, 4096)?;
         b.text(&self.component_digest, 4096)?;
         if let Some(value) = &self.package_digest {
@@ -359,6 +370,7 @@ impl Project for proto::RolloutRelease {
     fn project(self) -> Value {
         json!({
         "deploymentId": json!(self.deployment_id),
+        "publicationId": self.publication_id,
         "componentDigest": json!(self.component_digest),
         "packageDigest": self.package_digest.map(|value| json!(value)),
         })
@@ -464,4 +476,12 @@ impl Project for proto::StartRolloutResponse {
         "observation": self.observation.map(Project::project),
         })
     }
+}
+
+fn publication_id(value: &String, budget: &mut Tree) -> Result<(), Failure> {
+    budget.text(value, latent_core::PublicationId::TEXT_BYTES)?;
+    value
+        .parse::<latent_core::PublicationId>()
+        .map_err(|_| invalid_response())?;
+    Ok(())
 }

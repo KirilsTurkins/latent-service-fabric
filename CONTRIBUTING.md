@@ -1,14 +1,19 @@
 # Contributing
 
-LSF has completed Phase 1, its performance/infrastructure extension, and Phase 2
-packaging and supply-chain delivery. Work is moving into the
-[Phase 3 capability and application-hosting backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
-Those planned interfaces and open pull requests do not establish delivered
-features; use the current `development` implementation and
-[Phase 2 completion review](docs/phase-2-completion.md) as the starting boundary.
-Contributions should distinguish architectural contracts, generated surfaces,
-implemented behavior, and planned phase scope. Consult [the roadmap](docs/roadmap.md)
-for dependencies and the later state, cluster, and workflow phases.
+Contribute bug fixes, tests, documentation and new capabilities through pull
+requests into `development`. Start with the step-by-step
+[contributor guide](docs/contribute/index.md), then use the rules below for the
+kind of change you are making.
+
+To build an application on LSF, use the [packaged developer workflow](docs/start/application-development.md).
+It includes the six guest-language toolchains, project templates and real-node
+tests. The contributor toolchain below is for changing LSF itself.
+
+Read the full issue and its existing pull requests before starting. Current
+implementation and documented supported contracts determine behavior; proposed
+interfaces and historical measurements do not establish a delivered feature.
+Maintainer planning and acceptance records are collected separately in
+[engineering records](docs/development/engineering-records.md).
 
 ## First contribution
 
@@ -18,6 +23,10 @@ Create your branch from the current `development` branch and target `development
 
 Install the pinned prerequisites from the [development toolchain guide](docs/development/toolchain.md), then select checks appropriate to the change using [VALIDATION.md](VALIDATION.md). Keep expensive scale probes, profiling, calibration, and resource soaks opt-in unless the issue or acceptance criteria explicitly require them.
 
+For exact local planning, preparation, execution, and failure reproduction, use the [local test entry point](docs/development/local-tests.md). It reads the same registered suite/recipe inventory as CI; `run` never compiles or broadens a selection.
+
+For timing and cancellation tests, use the [deterministic testing guide](docs/development/deterministic-tests.md), shared clock and current-readiness helpers, and executable deadline/cancellation examples. Assert actual resource ownership; do not use sleeps or yield counts as readiness witnesses.
+
 ## Change categories
 
 - **ADR:** a decision that changes a core invariant, dependency direction, execution model, or compatibility promise.
@@ -26,6 +35,15 @@ Install the pinned prerequisites from the [development toolchain guide](docs/dev
 - **Implementation change:** code behind an accepted interface.
 
 ## Interface rules
+
+LSF is in alpha. Remove obsolete APIs, adapters, formats, command aliases and
+deprecated code when their replacements are adopted; no deprecation waiting
+period or compatibility with superseded Phase 1/2 behavior is required. Update
+callers, generated surfaces, tests and current documentation in the same change.
+Record breaking changes and any required fresh-state setup explicitly. Keep only
+compatibility that serves a current supported contract, such as a specifically
+qualified native upgrade pair. Historical evidence records what was tested at
+its original revision; it does not require the old implementation to remain.
 
 1. WIT is authoritative for guest-visible component contracts.
 2. Protobuf is authoritative for control-plane and generic management RPCs.
@@ -56,3 +74,7 @@ Run checks appropriate to the change using [VALIDATION.md](VALIDATION.md).
 Normal validation excludes expensive ignored acceptance tests; request
 100,000-release catalog scaling, native profiling, and long resource soaks only
 through their documented explicit commands or manual workflow inputs.
+
+For the isolated compiler and native-cache tests, see the
+[prepared AOT test input guide](docs/development/aot-test-inputs.md) for build-free
+execution, exact executable authentication, and explicit equal-case cost comparisons.

@@ -1,0 +1,7 @@
+{
+  "title": "Static generator reference",
+  "pages": [
+    {"path": "index.html", "title": "Static home", "text": "A finite generated documentation tree."},
+    {"path": "guide/index.html", "title": "Static guide", "text": "Directory indexes are signed package policy."}
+  ]
+}

@@ -5,6 +5,8 @@ use latent_core::{PlatformError, PlatformErrorCode};
 #[allow(clippy::struct_field_names)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationLimits {
+    /// Trusted endpoint selection, never obtained from caller metadata.
+    pub budget_profile: latent_core::BudgetProfile,
     pub max_message_bytes: usize,
     pub max_payload_bytes: usize,
     pub max_metadata_entries: usize,
@@ -30,6 +32,7 @@ pub struct InvocationLimits {
 impl Default for InvocationLimits {
     fn default() -> Self {
         Self {
+            budget_profile: latent_core::BudgetProfile::Phase1,
             max_message_bytes: 4 * 1024 * 1024,
             max_payload_bytes: 1024 * 1024,
             max_metadata_entries: 64,
@@ -91,12 +94,13 @@ impl InvocationLimits {
                 .and_then(|entries| entries.checked_mul(4096))
                 .is_none_or(|bytes| bytes > self.max_message_bytes)
             || self.max_timeout_millis > 24 * 60 * 60 * 1000
-            || self.max_child_calls != 0
-            || self.max_outbound_requests != 0
+            || (self.budget_profile == latent_core::BudgetProfile::Phase1
+                && (self.max_child_calls != 0
+                    || self.max_outbound_requests != 0
+                    || self.max_blob_read_bytes != 0
+                    || self.max_blob_write_bytes != 0))
             || self.max_state_read_bytes != 0
             || self.max_state_write_bytes != 0
-            || self.max_blob_read_bytes != 0
-            || self.max_blob_write_bytes != 0
             || self.max_effect_count != 0
         {
             return Err(boundary_error(

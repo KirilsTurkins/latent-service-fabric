@@ -23,9 +23,9 @@ macro_rules! call {
     }};
 }
 
-pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome, Failure> {
-    if matches!(
-        &operation,
+fn is_phase2(operation: &Operation) -> bool {
+    matches!(
+        operation,
         Operation::PublishRelease(_)
             | Operation::ApplyDeployment(_)
             | Operation::DeleteDeployment(_)
@@ -42,10 +42,18 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
             | Operation::LookupRolloutReceipt(_)
             | Operation::EvaluateRollout(_)
             | Operation::QueryAudit(_)
-    ) {
+    )
+}
+
+pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome, Failure> {
+    if is_phase2(&operation) {
         return super::phase2::execute(operation, session).await;
     }
     match operation {
+        Operation::Web(operation) => super::web::execute(*operation, session).await,
+        Operation::Trigger(operation) => super::triggers::execute(*operation, session).await,
+        Operation::Capability(operation) => super::capabilities::execute(*operation, session).await,
+        Operation::Policy(operation) => super::policies::execute(*operation, session).await,
         Operation::PublishRelease(request) => {
             let digest = publication_digest(&request)?;
             let value = call!(session, ReleaseServiceClient, publish_release, request);
@@ -58,14 +66,15 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
             response::published(value)
         }
         Operation::GetRelease(request) => {
-            let digest = request.digest.clone();
+            let publication = request.publication.clone();
             let value = call!(session, ReleaseServiceClient, get_release, request);
-            association::release(
-                value.release.as_ref(),
-                session.tenant(),
-                Some(&digest),
-                None,
-            )?;
+            association::release(value.release.as_ref(), session.tenant(), None, None)?;
+            if let Some(release) = &value.release {
+                association::selected_publication(
+                    release.publication.as_ref(),
+                    publication.as_ref(),
+                )?;
+            }
             response::got_release(value)
         }
         Operation::ListReleases(request) => list_releases(request, session).await,

@@ -7,6 +7,15 @@ license.workspace = true
 authors.workspace = true
 description = "Bounded Wasmtime Component Model runtime with a retained Phase 0 compatibility facade."
 
+[features]
+# Off by default; timing observations cannot authorize compilation or loading.
+aot-test-timings = []
+development-clock-fixture = []
+development-test-host = ["latent-artifacts/development-test-host", "latent-policy/development-test-host", "development-clock-fixture"]
+
+# Retains the standalone compiler diagnostic; node installation is separately explicit.
+java-guest-diagnostic = []
+
 [lints.rust]
 # Only the private authenticated copying loader may locally allow unsafe.
 unsafe_code = "deny"
@@ -29,18 +38,23 @@ path = "tests/aot_sandbox.rs"
 harness = false
 
 [dependencies]
+latent-packaging = { path = "../latent-packaging" }
 blake3.workspace = true
+latent-activation = { path = "../latent-activation" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-audit = { path = "../latent-audit" }
 latent-component-bindings = { path = "../latent-component-bindings" }
 latent-core = { path = "../latent-core" }
+latent-capabilities = { path = "../latent-capabilities" }
+latent-policy = { path = "../latent-policy" }
+latent-routing = { path = "../latent-routing" }
 latent-executor = { path = "../latent-executor" }
 latent-manifest = { path = "../latent-manifest" }
 latent-telemetry = { path = "../latent-telemetry" }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
-wasmtime.workspace = true
+wasmtime = { workspace = true, features = ["gc", "gc-drc"] }
 zeroize = { version = "=1.9.0", features = ["alloc"] }
 
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
@@ -51,15 +65,30 @@ rustix = { version = "=1.1.4", features = ["process", "thread", "fs", "pipe", "m
 seccompiler = "=0.5.0"
 
 [dev-dependencies]
+getrandom = "=0.4.3"
+latent-ingress = { path = "../latent-ingress" }
+base64.workspace = true
+latent-signing = { path = "../latent-signing" }
+latent-capabilities = { path = "../latent-capabilities", features = ["test-support"] }
+latent-nats = { path = "../latent-nats" }
+latent-vault = { path = "../latent-vault" }
+latent-secrets = { path = "../latent-secrets" }
+latent-blobs = { path = "../latent-blobs" }
+latent-http = { path = "../latent-http" }
+latent-admission = { path = "../latent-admission" }
+latent-control-store = { path = "../latent-control-store" }
+tempfile.workspace = true
 wasm-encoder.workspace = true
-latent-activation = { path = "../latent-activation" }
+wit-parser = { version = "=0.252.0", default-features = false, features = ["std"] }
 latent-node = { path = "../latent-node" }
-latent-routing = { path = "../latent-routing" }
 latent-scheduler = { path = "../latent-scheduler" }
-tokio = { workspace = true, features = ["rt-multi-thread"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
 rustix = { version = "=1.1.4", features = ["time"] }
+rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = { version = "=0.26.5", default-features = false, features = ["ring", "tls12"] }
 
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dev-dependencies]
 memmap2 = "=0.9.11"

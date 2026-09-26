@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "latent.native-shared-license-sources.v1",
+  "sources": [
+    {
+      "repository": "https://github.com/bytecodealliance/wasmtime",
+      "sourceCommit": "254cb7a02d5804d4e466198212cda9d3575ad381",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "sourceUrl": "https://github.com/bytecodealliance/wasmtime/blob/254cb7a02d5804d4e466198212cda9d3575ad381/LICENSE",
+      "donor": {"name": "wasmtime", "version": "47.0.4", "file": "LICENSE"},
+      "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
+      "packages": {
+        "cranelift-assembler-x64": "0.134.4",
+        "cranelift-assembler-x64-meta": "0.134.4",
+        "cranelift-bitset": "0.134.4",
+        "cranelift-isle": "0.134.4",
+        "cranelift-srcgen": "0.134.4",
+        "pulley-interpreter": "47.0.4",
+        "pulley-macros": "47.0.4",
+        "wasmtime-internal-component-macro": "47.0.4",
+        "wasmtime-internal-component-util": "47.0.4",
+        "wasmtime-internal-core": "47.0.4",
+        "wasmtime-internal-jit-debug": "47.0.4",
+        "wasmtime-internal-jit-icache-coherence": "47.0.4",
+        "wasmtime-internal-versioned-export-macros": "47.0.4",
+        "wasmtime-internal-wit-bindgen": "47.0.4"
+      }
+    },
+    {
+      "repository": "https://github.com/hyperium/tonic",
+      "sourceCommit": "6cb6056b5a748bc5a29bd48f4602dbc4e552bb7d",
+      "license": "MIT",
+      "sourceUrl": "https://github.com/hyperium/tonic/blob/6cb6056b5a748bc5a29bd48f4602dbc4e552bb7d/LICENSE",
+      "donor": {"name": "tonic", "version": "0.14.6", "file": "LICENSE"},
+      "sha256": "e24a56698aa6feaf3a02272b3624f9dc255d982970c5ed97ac4525a95056a5b3",
+      "packages": {"tonic-prost": "0.14.6"}
+    }
+  ]
+}

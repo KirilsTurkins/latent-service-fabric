@@ -1,0 +1,151 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LSF example scenario v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "title",
+    "audience",
+    "target",
+    "variants"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^(client|browser|guest)/[a-z][a-z0-9-]*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "audience": {
+      "type": "string",
+      "enum": [
+        "client-developer",
+        "browser-developer",
+        "guest-author"
+      ]
+    },
+    "target": {
+      "type": "string",
+      "enum": [
+        "client",
+        "browser",
+        "guest"
+      ]
+    },
+    "variants": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "language",
+          "kind",
+          "source",
+          "regions",
+          "validation"
+        ],
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "rust",
+              "typescript",
+              "go",
+              "c",
+              "java",
+              "csharp"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "maintained",
+              "synthetic",
+              "test-double"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "regions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          "validation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target",
+              "instructions",
+              "evidence"
+            ],
+            "properties": {
+              "target": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "instructions": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "evidence": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "path",
+                      "sha256"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 512
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

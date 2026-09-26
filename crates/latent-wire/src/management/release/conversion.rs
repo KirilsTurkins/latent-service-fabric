@@ -25,6 +25,23 @@ pub fn release_descriptor_to_proto(
         ));
     }
     Ok(proto::ReleaseDescriptor {
+        publication: entry
+            .publication
+            .as_ref()
+            .map(|id| {
+                entry
+                    .tenant
+                    .as_ref()
+                    .map(|tenant| super::selector::owned(id, tenant))
+                    .ok_or_else(|| {
+                        ManagementConversionError::new("publication", "requires tenant scope")
+                    })
+            })
+            .transpose()?,
+        package_digest: entry
+            .package
+            .as_ref()
+            .map(|package| package.as_str().to_owned()),
         digest: entry.descriptor.release_digest.0,
         artifact_reference: entry.descriptor.reference.0,
         service: entry.service.0,
@@ -53,6 +70,31 @@ pub fn release_descriptor_from_proto(
         ));
     }
     Ok(ArtifactCatalogEntry {
+        publication: value
+            .publication
+            .map(|reference| {
+                if value.tenant.as_deref() != Some(reference.tenant.as_str())
+                    || reference.tenant.is_empty()
+                {
+                    return Err(ManagementConversionError::new(
+                        "publication",
+                        "tenant does not match descriptor",
+                    ));
+                }
+                reference
+                    .id
+                    .parse()
+                    .map_err(|_| ManagementConversionError::new("publication", "invalid identity"))
+            })
+            .transpose()?,
+        package: value
+            .package_digest
+            .map(|digest| {
+                digest.parse().map_err(|_| {
+                    ManagementConversionError::new("package_digest", "invalid package identity")
+                })
+            })
+            .transpose()?,
         descriptor: ArtifactDescriptor {
             reference: ArtifactReference(value.artifact_reference),
             release_digest: ReleaseDigest(value.digest),

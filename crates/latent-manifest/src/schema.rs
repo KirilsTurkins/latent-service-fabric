@@ -83,7 +83,19 @@ fn assert_supported_schema(schema: &Value, path: &str) {
                     assert_supported_schema(child, &format!("{path}.{keyword}.{name}"));
                 }
             }
-            "items" => assert_supported_schema(value, &format!("{path}.items")),
+            "oneOf" => {
+                let children = value.as_array().unwrap_or_else(|| {
+                    panic!("embedded schema keyword `{path}.{keyword}` must be an array")
+                });
+                assert!(
+                    !children.is_empty(),
+                    "embedded schema keyword `{path}.{keyword}` must not be empty"
+                );
+                for (index, child) in children.iter().enumerate() {
+                    assert_supported_schema(child, &format!("{path}.{keyword}[{index}]"));
+                }
+            }
+            "items" | "if" | "then" => assert_supported_schema(value, &format!("{path}.{keyword}")),
             "additionalProperties" if value.is_object() => {
                 assert_supported_schema(value, &format!("{path}.additionalProperties"));
             }
@@ -105,6 +117,40 @@ fn validate_node(
 ) {
     if violations.len() >= max_violations {
         return;
+    }
+
+    if let Some(condition) = schema.get("if") {
+        let mut probe = Vec::new();
+        validate_node(condition, instance, path, root, &mut probe, 1);
+        if probe.is_empty() {
+            if let Some(consequent) = schema.get("then") {
+                validate_node(consequent, instance, path, root, violations, max_violations);
+            }
+        }
+        if violations.len() >= max_violations {
+            return;
+        }
+    }
+
+    if let Some(alternatives) = schema.get("oneOf").and_then(Value::as_array) {
+        let mut matches = 0usize;
+        for alternative in alternatives {
+            let mut probe = Vec::new();
+            validate_node(alternative, instance, path, root, &mut probe, 1);
+            if probe.is_empty() {
+                matches += 1;
+            }
+        }
+        if matches != 1 {
+            push_violation(
+                violations,
+                max_violations,
+                path,
+                "invalid-value",
+                "value must match exactly one schema-defined alternative".to_owned(),
+            );
+            return;
+        }
     }
 
     if let Some(reference) = schema.get("$ref").and_then(Value::as_str) {
@@ -405,6 +451,21 @@ fn validate_string(
     if let Some(pattern) = schema.get("pattern").and_then(Value::as_str) {
         let (matches, code, message) = match pattern {
             "^sha256:[a-fA-F0-9]{64}$" => (is_sha256_digest(value), "invalid-digest", "value must be a sha256: digest followed by exactly 64 hexadecimal characters"),
+            r"^sha256:[0-9a-f]{64}(?![\s\S])" => (
+                value.parse::<latent_core::ArtifactBlobDigest>().is_ok(),
+                "invalid-renderer-digest",
+                "renderer digest must be a canonical lowercase SHA-256 identity",
+            ),
+            "^publication:sha256:[a-f0-9]{64}$" => (
+                value.parse::<latent_core::PublicationId>().is_ok(),
+                "invalid-publication",
+                "publication must be a canonical publication:sha256: identity with 64 lowercase hexadecimal characters",
+            ),
+            "^revision-v1:sha256:[a-f0-9]{64}$" => (
+                value.strip_prefix("revision-v1:").is_some_and(|digest| digest.parse::<latent_core::ArtifactBlobDigest>().is_ok()),
+                "invalid-revision",
+                "revision must be a canonical revision-v1:sha256: identity with 64 lowercase hexadecimal characters",
+            ),
             r"^[A-Za-z0-9_.]+(?:-[A-Za-z0-9_.]+){2,}(?![\s\S])" => (
                 crate::runtime_compatibility::model::target(value),
                 "invalid-target-triple",

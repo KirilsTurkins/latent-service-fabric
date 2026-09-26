@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/node-providers.schema.json",
+  "title": "Optional standalone bounded capability providers",
+  "description": "Value of providers. Omission disables installation; null does not. Requires protected configuration, Linux x86_64, phase3 budgets, capabilityPolicies and durable audit. Native validation additionally checks canonical origins, actual address policy, credentials, tenant/service associations, metric descriptor uniqueness and histogram ordering, and aggregate reservations. Installs only maintained HTTP, local-blob, protected-local-secret, custom-metric, isolated-local-service, TLS-NATS-immediate-event, activation-clock and OS-entropy profiles; it grants no guest authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "bindings"],
+  "anyOf": [{"required": ["events"]}, {"required": ["http"]}, {"required": ["blob"]}, {"required": ["secrets"]}, {"required": ["metrics"]}, {"required": ["localService"]}, {"required": ["clockMonotonic"]}, {"required": ["clockWall"]}, {"required": ["random"]}],
+  "properties": {
+    "formatVersion": {"type": "integer", "const": 1},
+    "events": {"$ref": "#/$defs/events"},
+    "http": {"$ref": "#/$defs/http"},
+    "secrets": {"$ref": "#/$defs/secrets"},
+    "metrics": {"$ref": "#/$defs/metrics"},
+    "localService": {
+      "type": "object", "additionalProperties": false, "required": ["identity", "deployment", "contract"],
+      "properties": {"identity": {"$ref": "#/$defs/identity"}, "deployment": {"$ref": "#/$defs/token"},
+        "contract": {"$ref": "#/$defs/token", "not": {"const": "latent:service/invoke@0.1.0"}}}
+    },
+    "clockMonotonic": {"$ref": "#/$defs/scalar"},
+    "clockWall": {"$ref": "#/$defs/scalar"},
+    "random": {"$ref": "#/$defs/scalar"},
+    "blob": {
+      "type": "object", "additionalProperties": false, "required": ["identity", "namespace"],
+      "properties": {"identity": {"$ref": "#/$defs/identity"}, "namespace": {"$ref": "#/$defs/token"}}
+    },
+    "bindings": {
+      "type": "array", "minItems": 1, "maxItems": 16, "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "tenant", "consumerService", "providerService", "contract", "providerBinding"],
+        "properties": {
+          "name": {"$ref": "#/$defs/token"}, "tenant": {"$ref": "#/$defs/token"},
+          "consumerService": {"$ref": "#/$defs/token"}, "providerService": {"$ref": "#/$defs/token"},
+          "providerBinding": {"$ref": "#/$defs/token"}, "route": {"$ref": "#/$defs/token"},
+          "contract": {"enum": ["latent:events/publisher@0.2.0", "latent:http/client@0.2.0", "latent:blob/blob@0.2.0", "latent:secrets/reader@0.1.0", "latent:telemetry/custom@0.1.0", "latent:service/invoke@0.1.0", "latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0"]}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "eventSubject": {"type":"string","minLength":1,"maxLength":128,"pattern":"^[A-Za-z0-9][A-Za-z0-9_-]*(?:\\.[A-Za-z0-9_-]+)*$"},
+    "events": {"type":"object","additionalProperties":false,"required":["identity","configuration","credentialDirectory","credentialReference","credentialFile"],"properties":{"identity":{"$ref":"#/$defs/identity"},"configuration":{"$ref":"#/$defs/eventConfiguration"},"credentialDirectory":{"type":"string","minLength":1,"maxLength":4096},"credentialReference":{"$ref":"#/$defs/token"},"credentialFile":{"$ref":"#/$defs/leaf"}}},
+    "eventConfiguration": {"type":"object","additionalProperties":false,"required":["formatVersion","endpoint","publicRoots","extraRoots","topics","idempotencyNamespace","maximumPayloadBytes","timeoutMillis"],"properties":{"formatVersion":{"const":1},"endpoint":{"type":"object","additionalProperties":false,"required":["serverName","peer","allowNonPublicPeer"],"properties":{"serverName":{"type":"string","minLength":1,"maxLength":256},"peer":{"type":"string","minLength":1,"maxLength":21},"allowNonPublicPeer":{"type":"boolean"}}},"publicRoots":{"type":"boolean"},"extraRoots":{"type":"array","maxItems":8,"items":{"type":"array","minItems":1,"maxItems":16384,"items":{"type":"integer","minimum":0,"maximum":255}}},"topics":{"type":"array","minItems":1,"maxItems":16,"items":{"type":"object","additionalProperties":false,"required":["tenant","topic","subject","stream","duplicateWindowMillis"],"properties":{"tenant":{"$ref":"#/$defs/token"},"topic":{"$ref":"#/$defs/eventSubject"},"subject":{"$ref":"#/$defs/eventSubject"},"stream":{"type":"string","minLength":1,"maxLength":128,"pattern":"^[A-Za-z0-9][A-Za-z0-9_-]*$"},"duplicateWindowMillis":{"type":"integer","minimum":1000,"maximum":86400000}}}},"idempotencyNamespace":{"type":"string","minLength":1,"maxLength":128,"pattern":"^[!-~]+$"},"maximumPayloadBytes":{"type":"integer","minimum":1,"maximum":262144},"timeoutMillis":{"type":"integer","minimum":10,"maximum":30000}},"if":{"properties":{"publicRoots":{"const":false}}},"then":{"properties":{"extraRoots":{"minItems":1}}}},
+    "metricName": {
+      "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z][A-Za-z0-9_.]*$",
+      "not": {"pattern": "^(?:[Ll][Aa][Tt][Ee][Nn][Tt]|[Oo][Tt][Ee][Ll]|[Hh][Oo][Ss][Tt])"}
+    },
+    "metrics": {
+      "type": "object", "additionalProperties": false, "required": ["identity", "descriptors"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/identity"},
+        "descriptors": {"type": "array", "minItems": 1, "maxItems": 16, "items": {
+          "type": "object", "additionalProperties": false,
+          "required": ["name", "kind", "unit", "labels", "histogramUpperBounds"],
+          "properties": {
+            "name": {"$ref": "#/$defs/metricName"},
+            "kind": {"enum": ["counter", "up-down-counter", "gauge", "histogram"]},
+            "unit": {"type": "string", "minLength": 1, "maxLength": 16, "pattern": "^[A-Za-z0-9_./-]+$"},
+            "labels": {"type": "array", "maxItems": 8, "items": {
+              "type": "object", "additionalProperties": false, "required": ["key", "values"],
+              "properties": {
+                "key": {"$ref": "#/$defs/metricName", "maxLength": 32},
+                "values": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true,
+                  "items": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[!-~]+$"}}
+              }
+            }},
+            "histogramUpperBounds": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"type": "number"}}
+          },
+          "if": {"properties": {"kind": {"const": "histogram"}}},
+          "else": {"properties": {"histogramUpperBounds": {"maxItems": 0}}}
+        }}
+      }
+    },
+    "secrets": {
+      "type": "object", "additionalProperties": false, "required": ["identity", "directory", "references"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/identity"},
+        "directory": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "references": {"type": "array", "minItems": 1, "maxItems": 8, "items": {
+          "type": "object", "additionalProperties": false, "required": ["reference", "file"],
+          "properties": {
+            "reference": {"$ref": "#/$defs/token"},
+            "file": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9_.-]+$", "not": {"enum": [".", ".."]}},
+            "expiresAtUnixMillis": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615}
+          }
+        }}
+      }
+    },
+    "scalar": {
+      "type": "object", "additionalProperties": false, "required": ["identity"],
+      "properties": {"identity": {"$ref": "#/$defs/identity"}}
+    },
+    "token": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9_.:/@-]+$"},
+    "leaf": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9_.@-]+$", "not": {"enum": [".", ".."]}},
+    "identity": {
+      "type": "object", "additionalProperties": false, "required": ["id", "tenant", "service", "epoch"],
+      "properties": {
+        "id": {"$ref": "#/$defs/leaf"}, "tenant": {"$ref": "#/$defs/token"}, "service": {"$ref": "#/$defs/token"},
+        "epoch": {"type": "integer", "minimum": 1, "maximum": 18446744073709551615}
+      }
+    },
+    "http": {
+      "type": "object", "additionalProperties": false, "required": ["identity", "configuration"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/identity"}, "configuration": {"$ref": "#/$defs/httpConfiguration"},
+        "credentialDirectory": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "credentials": {
+          "type": "array", "maxItems": 8, "items": {
+            "type": "object", "additionalProperties": false, "required": ["reference", "file", "destination", "header"],
+            "properties": {
+              "reference": {"$ref": "#/$defs/token"}, "file": {"$ref": "#/$defs/leaf"},
+              "destination": {"type": "integer", "minimum": 0, "maximum": 7},
+              "header": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9_.:/@-]+$"}
+            }
+          }
+        }
+      },
+      "if": {"required": ["credentialDirectory"]},
+      "then": {"required": ["credentials"], "properties": {"credentials": {"minItems": 1}}},
+      "else": {"properties": {"credentials": {"maxItems": 0}}}
+    },
+    "httpConfiguration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["formatVersion", "destinations", "limits", "extraRoots", "publicRoots"],
+      "properties": {
+        "formatVersion": {"type": "integer", "const": 1},
+        "destinations": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"$ref": "#/$defs/destination"}},
+        "limits": {
+          "type": "object", "additionalProperties": false,
+          "required": ["maximumRequestBodyBytes", "maximumResponseBodyBytes", "maximumEncodedResponseBytes", "maximumHeaderBytes", "maximumHeaders", "maximumRedirects"],
+          "properties": {
+            "maximumRequestBodyBytes": {"type": "integer", "minimum": 1, "maximum": 524288},
+            "maximumResponseBodyBytes": {"type": "integer", "minimum": 1, "maximum": 524288},
+            "maximumEncodedResponseBytes": {"type": "integer", "minimum": 1, "maximum": 524288},
+            "maximumHeaderBytes": {"type": "integer", "minimum": 1024, "maximum": 32768},
+            "maximumHeaders": {"type": "integer", "minimum": 1, "maximum": 64},
+            "maximumRedirects": {"type": "integer", "minimum": 0, "maximum": 3}
+          }
+        },
+        "extraRoots": {"type": "array", "maxItems": 8, "items": {"type": "array", "minItems": 1, "maxItems": 8192, "items": {"type": "integer", "minimum": 0, "maximum": 255}}},
+        "publicRoots": {"type": "boolean"}
+      }
+    },
+    "destination": {
+      "type": "object", "additionalProperties": false,
+      "required": ["origin", "addresses", "resolution", "allowedRequestHeaders", "redirectDestinations"],
+      "properties": {
+        "origin": {
+          "type": "object", "additionalProperties": false, "required": ["scheme", "host", "port"],
+          "properties": {
+            "scheme": {"enum": ["http", "https"]}, "host": {"type": "string", "minLength": 1, "maxLength": 253},
+            "port": {"type": "integer", "minimum": 1, "maximum": 65535}
+          }
+        },
+        "addresses": {
+          "type": "object", "additionalProperties": false, "required": ["networks", "specialAddresses"],
+          "properties": {
+            "networks": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "specialAddresses": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+          }
+        },
+        "resolution": {
+          "oneOf": [
+            {
+              "type": "object", "additionalProperties": false, "required": ["kind", "addresses"],
+              "properties": {"kind": {"const": "static"}, "addresses": {"type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}}
+            },
+            {
+              "type": "object", "additionalProperties": false, "required": ["kind", "server", "maximumTtlSeconds"],
+              "properties": {"kind": {"const": "dns"}, "server": {"type": "string", "minLength": 1}, "maximumTtlSeconds": {"type": "integer", "minimum": 0, "maximum": 300}}
+            }
+          ]
+        },
+        "allowedRequestHeaders": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 64}},
+        "redirectDestinations": {"type": "array", "maxItems": 8, "uniqueItems": true, "items": {"type": "integer", "minimum": 0, "maximum": 7}}
+      }
+    }
+  }
+}

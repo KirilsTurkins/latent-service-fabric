@@ -1,0 +1,8 @@
+package lsf:renderer-qualification;
+
+// ComponentizeJS 0.22 cannot generate an async WIT export. This private proof
+// interface does not replace latent:web/application@0.1.0's async contract.
+world renderer {
+    export render: func(input: string) -> string;
+    export probe: func(mode: string) -> string;
+}

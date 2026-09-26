@@ -42,14 +42,15 @@ impl Node {
         threads: RuntimeThreads,
         origin: Instant,
     ) -> Result<Self> {
-        Self::start_configured(
+        // One benchmark startup owner, outside the invocation measurement path.
+        Box::pin(Self::start_configured(
             2 + u64::from(plan.count()) * 2,
             configuration(directory),
             fixture,
             control,
             threads,
             origin,
-        )
+        ))
         .await
     }
 
@@ -88,7 +89,9 @@ impl Node {
         let journal = settings.manager.journal;
         let correlations = settings.observer.maximum_active_correlations;
         let started = Instant::now();
-        let catalogs = Catalogs::open(&settings).await.map_err(platform)?;
+        let catalogs = Box::pin(Catalogs::open(&settings))
+            .await
+            .map_err(platform)?;
         let catalog_open = started.elapsed().as_nanos().to_string();
         let artifacts = catalogs.artifacts.clone();
         let deployments = catalogs.deployments.clone();

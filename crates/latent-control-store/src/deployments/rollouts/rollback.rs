@@ -1,5 +1,5 @@
 use super::super::{
-    compiler::compile_catalog_with_runtime, next_generation, observation::Work, CompiledCatalog,
+    compiler::compile_catalog_with_pins, next_generation, observation::Work, CompiledCatalog,
     DirectoryDeploymentRepository, PublicationView,
 };
 use super::{
@@ -76,8 +76,9 @@ impl DirectoryDeploymentRepository {
         versions.remove(&row.status.candidate.deployment_id);
         versions.insert(base.id.clone(), generation.0);
         desired.insert(base.id.clone(), Arc::new(base));
+        let pins = table::publication_pins(row);
         Ok(Arc::new(
-            compile_catalog_with_runtime(
+            compile_catalog_with_pins(
                 desired,
                 versions,
                 generation,
@@ -88,6 +89,8 @@ impl DirectoryDeploymentRepository {
                 &mut Work::default(),
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
+                Some(&pins),
+                None,
             )
             .await?,
         ))

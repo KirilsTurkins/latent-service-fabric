@@ -3,6 +3,7 @@ mod budget;
 mod conversion;
 mod managed;
 mod response;
+pub(super) mod selection;
 pub(super) mod validation;
 
 #[cfg(test)]
@@ -28,6 +29,19 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
     ) -> Result<Response<proto::ApplyDeploymentResponse>, Status> {
         let deadline = managed::deadline(&request);
         let principal = self.authenticate(&mut request, ManagementOperation::Tenant)?;
+        let input = std::mem::take(request.get_mut());
+        *request.get_mut() = tokio::time::timeout_at(
+            deadline.into(),
+            selection::input(
+                input,
+                principal.tenant.as_ref().expect("authenticated tenant"),
+                self.services.artifacts.as_ref(),
+                self.web.as_deref(),
+                &self.limits,
+            ),
+        )
+        .await
+        .map_err(|_| Status::deadline_exceeded("deployment selection deadline exceeded"))??;
         if request.get_ref().operation.is_some() {
             return managed::apply(self, request.into_inner(), principal, deadline).await;
         }
@@ -63,15 +77,40 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
         // Reject an unreturnable ordinary receipt before a durable mutation. The
         // catalog normalizes existing fields and assigns at most a u64 stamp.
         let desired = VersionedDeployment {
+            publication: manifest
+                .publication
+                .as_ref()
+                .map(|id| latent_artifacts::PublicationRef {
+                    id: id.clone(),
+                    scope: latent_artifacts::LifecycleScope::Tenant(
+                        manifest.metadata.tenant.clone().expect("validated tenant"),
+                    ),
+                }),
             manifest,
             generation: u64::MAX,
         };
+        let mut preflight_limits = self.limits.clone();
+        if desired.publication.is_none() {
+            // Legacy compilation may resolve a publication. Reserve its response
+            // representation before mutation without inventing a selected ID.
+            let extra = std::mem::size_of::<proto::PublicationRef>()
+                + latent_core::PublicationId::TEXT_BYTES
+                + tenant.0.capacity()
+                + 16;
+            preflight_limits.max_response_bytes = preflight_limits
+                .max_response_bytes
+                .checked_sub(extra)
+                .ok_or_else(super::bounds::exhausted)?;
+        }
         let preflight = audit::response(
             &desired,
             &tenant,
-            &self.limits,
+            &preflight_limits,
             self.services.audit.is_some(),
         )?;
+        if prost::Message::encoded_len(&preflight) > preflight_limits.max_response_bytes {
+            return Err(super::bounds::exhausted());
+        }
         self.response(preflight)?;
         let audit = audit::DeploymentAudit::apply(
             self.services.audit.as_ref(),

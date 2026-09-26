@@ -1,0 +1,108 @@
+name: Rust capsule authoring
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - '.github/workflows/rust-capsule-authoring.yml'
+      - 'sdk/rust-guest/**'
+      - 'crates/**'
+      - 'apps/**'
+      - 'examples/**'
+      - 'schemas/**'
+      - 'tools/**'
+      - 'wit/**'
+      - 'Cargo.*'
+      - 'docs/component-development/rust-authoring.md'
+  push:
+    branches: [development]
+    paths:
+      - '.github/workflows/rust-capsule-authoring.yml'
+      - 'sdk/rust-guest/**'
+      - 'crates/**'
+      - 'apps/**'
+      - 'examples/**'
+      - 'schemas/**'
+      - 'tools/**'
+      - 'wit/**'
+      - 'Cargo.*'
+      - 'docs/component-development/rust-authoring.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-capsule-authoring-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  authoring:
+    name: Standalone Rust capsule authoring
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_INCREMENTAL: 0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt,clippy
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Install pinned validation and guest tools
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+          cargo fetch --locked
+      - name: Test standalone validation and process ownership
+        run: python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process
+      - name: Execute complete outside-checkout authoring qualification
+        run: python3 tools/qualify_rust_capsules.py --output "$RUNNER_TEMP/rust-capsule-authoring"
+      - name: Exercise developer cache with the actual operator and compiled Rust package inputs
+        run: >-
+          python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent
+          --inputs "$RUNNER_TEMP/rust-capsule-authoring/builds/greeting"
+          --output "$RUNNER_TEMP/dev-build-cache"
+      - name: Test contract derivation and isolated provenance approvals
+        if: success() || failure()
+        run: |
+          cargo test --locked -p latent-packaging semantics::authoring
+          cargo test --locked -p latent-signing --test guest_provenance
+      - name: Retain source-bound authoring evidence including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rust-capsule-authoring-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/dev-build-cache/
+            ${{ runner.temp }}/rust-capsule-authoring/*.json
+            ${{ runner.temp }}/rust-capsule-authoring/*.log
+            ${{ runner.temp }}/rust-capsule-authoring/*.stdout
+            ${{ runner.temp }}/rust-capsule-authoring/*.stderr
+            ${{ runner.temp }}/rust-capsule-authoring/logs/**
+            ${{ runner.temp }}/rust-capsule-authoring/builds/**
+            ${{ runner.temp }}/rust-capsule-authoring/ownership/*.json
+            ${{ runner.temp }}/rust-capsule-authoring/ownership/*.jsonl
+            ${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr.txt
+            ${{ runner.temp }}/rust-capsule-authoring/node/**
+            ${{ runner.temp }}/rust-capsule-authoring/releases/**
+            ${{ runner.temp }}/rust-capsule-authoring/guide/guide.json
+            ${{ runner.temp }}/rust-capsule-authoring/guide/guide.sh
+            ${{ runner.temp }}/rust-capsule-authoring/guide/logs/**
+            ${{ runner.temp }}/rust-capsule-authoring/guide/projects/results/**
+          if-no-files-found: warn
+          retention-days: 3

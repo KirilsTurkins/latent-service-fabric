@@ -19,12 +19,17 @@ pub(super) enum Execution {
 #[derive(Clone)]
 pub(in crate::deployments) struct InactiveRelease {
     release: ReleaseDigest,
+    publication: latent_core::PublicationId,
     owner: LifecycleAuthorityHandle,
     state: HistoricalExecutionState,
     failure: PlatformError,
 }
 
 impl InactiveRelease {
+    pub fn publication(&self) -> &latent_core::PublicationId {
+        &self.publication
+    }
+
     pub fn release(&self) -> &ReleaseDigest {
         &self.release
     }
@@ -63,6 +68,7 @@ impl InactiveRelease {
         std::mem::size_of::<Self>()
             .saturating_add(state)
             .saturating_add(self.release.0.capacity())
+            .saturating_add(self.publication.as_str().len())
             .saturating_add(self.failure.message.capacity())
     }
 }
@@ -70,14 +76,19 @@ impl InactiveRelease {
 pub(super) async fn load(
     artifacts: &dyn ArtifactRepository,
     release: &ReleaseDigest,
+    publication: Option<&latent_core::PublicationId>,
     recovery: bool,
     profile: Option<&RuntimeCompatibilityProfile>,
     lifecycle: Option<&LifecycleAuthorityHandle>,
 ) -> Result<(VerifiedArtifactMetadata, Execution), PlatformError> {
     let Some(owner) = lifecycle else {
-        let metadata = recovery_admission::metadata(artifacts, release, recovery).await?;
+        let metadata =
+            recovery_admission::metadata_selected(artifacts, release, publication, recovery)
+                .await?;
         latent_manifest::check_runtime_compatibility(metadata.manifest(), profile)?;
-        let token = recovery_admission::eligibility(artifacts, release, recovery).await?;
+        let token =
+            recovery_admission::eligibility_selected(artifacts, release, publication, recovery)
+                .await?;
         return Ok((
             metadata,
             token.map_or(Execution::Unmanaged, Execution::Eligible),
@@ -85,7 +96,10 @@ pub(super) async fn load(
     };
     let retry = recovery_admission::Retry::new(recovery);
     let snapshot = loop {
-        match artifacts.historical_execution_snapshot(release).await {
+        match artifacts
+            .historical_execution_snapshot_selected(release, publication)
+            .await
+        {
             Err(failure) if retry.pause(&failure).await => {}
             value => break value?,
         }
@@ -99,7 +113,7 @@ pub(super) async fn load(
             ));
         }
         HistoricalExecutionState::Eligible(token) => {
-            if token.release() != release {
+            if token.release() != release || Some(token.publication()) != publication {
                 return Err(error(
                     PlatformErrorCode::CorruptArtifact,
                     "route-lifecycle-release-mismatch",
@@ -109,7 +123,7 @@ pub(super) async fn load(
             None
         }
         HistoricalExecutionState::Denied(denied) => {
-            if denied.release() != release {
+            if denied.release() != release || Some(denied.publication()) != publication {
                 return Err(error(
                     PlatformErrorCode::CorruptArtifact,
                     "route-lifecycle-release-mismatch",
@@ -130,6 +144,12 @@ pub(super) async fn load(
     let execution = if let Some(failure) = negative.or(incompatible) {
         Execution::Inactive(InactiveRelease {
             release: release.clone(),
+            publication: publication.cloned().ok_or_else(|| {
+                error(
+                    PlatformErrorCode::PermissionDenied,
+                    "inactive-publication-required",
+                )
+            })?,
             owner: owner.clone(),
             state,
             failure,

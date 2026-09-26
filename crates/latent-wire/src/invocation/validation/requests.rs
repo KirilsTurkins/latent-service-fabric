@@ -134,10 +134,11 @@ fn validate_budget(
     limits: &InvocationLimits,
 ) -> Result<(), Status> {
     // Raising an RPC ceiling does not enable later-phase runtime capabilities.
-    super::super::budget_from_proto(*budget)
-        .validate_phase1_request()
+    limits
+        .budget_profile
+        .validate_request(&super::super::budget_from_proto(*budget))
         .map_err(|_| {
-            Status::invalid_argument("resource budget requests an unsupported Phase 1 dimension")
+            Status::invalid_argument("resource budget requests an unsupported profile dimension")
         })?;
     if budget.cpu_fuel > limits.max_cpu_fuel
         || budget.memory_bytes > limits.max_memory_bytes

@@ -1,5 +1,6 @@
 use super::request::{mutation_digest, observed_time, Preflight, Request};
 use super::*;
+use crate::PublicationRef;
 use crate::{
     ReleaseEligibility, ReleaseEvidenceUpload, ReleaseLifecycleAction, ReleaseLifecycleReason,
     ReleaseMutationContext, ReleaseOperationDisposition, ReleaseOperationPreview,
@@ -8,10 +9,23 @@ use crate::{
 use latent_core::PackageDigest;
 
 impl DirectoryArtifactRepository {
-    pub(in crate::local_repository) fn change_lifecycle(
+    pub fn change_publication_lifecycle(
+        &self,
+        context: ReleaseMutationContext,
+        reference: &PublicationRef,
+        action: ReleaseLifecycleAction,
+        reason: ReleaseLifecycleReason,
+        preflight: &mut Preflight<'_>,
+    ) -> Result<ReleaseOperationReceipt, PlatformError> {
+        let release = self.selected_component(&context, reference)?;
+        self.change_lifecycle_inner(context, &release, reference, action, reason, preflight)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn change_lifecycle_inner(
         &self,
         context: ReleaseMutationContext,
         release: &ReleaseDigest,
+        selected: &PublicationRef,
         action: ReleaseLifecycleAction,
         reason: ReleaseLifecycleReason,
         preflight: &mut Preflight<'_>,
@@ -49,6 +63,7 @@ impl DirectoryArtifactRepository {
             None,
             mutation_digest(release, None, Some(reason), None),
         )?;
+        request.select_publication(selected)?;
         if let Some(receipt) = self.replay(&request, preflight)? {
             return Ok(receipt);
         }
@@ -83,7 +98,8 @@ impl DirectoryArtifactRepository {
             // Negative decisions require neither a fresh signing proof nor a
             // healthy verification clock. Previous policy is historical only.
             old.observed_at_unix_millis = observed_time();
-            self.life_store().prepare(
+            self.life_store().prepare_publication(
+                request.publication.clone(),
                 request.receipt(Some(old), ReleaseOperationDisposition::Committed, reason),
                 None,
             )
@@ -93,6 +109,7 @@ impl DirectoryArtifactRepository {
             Err(failure) => return Err(self.reject_request(&request, failure, preflight)?),
         };
         preflight(ReleaseOperationPreview {
+            publication: request.publication.as_ref(),
             replay: false,
             receipt: prepared.receipt(),
             release: None,
@@ -115,10 +132,23 @@ impl DirectoryArtifactRepository {
         Ok(prepared.receipt().clone())
     }
 
-    pub(in crate::local_repository) fn renew_evidence(
+    pub fn renew_publication_evidence(
+        &self,
+        context: ReleaseMutationContext,
+        reference: &PublicationRef,
+        package: &PackageDigest,
+        evidence: ReleaseEvidenceUpload,
+        preflight: &mut Preflight<'_>,
+    ) -> Result<ReleaseOperationReceipt, PlatformError> {
+        let release = self.selected_component(&context, reference)?;
+        self.renew_evidence_inner(context, &release, reference, package, evidence, preflight)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn renew_evidence_inner(
         &self,
         context: ReleaseMutationContext,
         release: &ReleaseDigest,
+        selected: &PublicationRef,
         package: &PackageDigest,
         evidence: ReleaseEvidenceUpload,
         preflight: &mut Preflight<'_>,
@@ -136,13 +166,14 @@ impl DirectoryArtifactRepository {
                 .map_or_else(crate::AdmissionStorageLimits::default, |value| value.limits),
             self.life_store().limits().max_evidence_revision_bytes,
         )?;
-        let request = Request::new(
+        let mut request = Request::new(
             context,
             ReleaseLifecycleAction::RenewEvidence,
             Some(release.clone()),
             Some(package.as_str().parse().expect("canonical package digest")),
             mutation_digest(release, Some(package), None, Some(&evidence)),
         )?;
+        request.select_publication(selected)?;
         if let Some(receipt) = self.replay(&request, preflight)? {
             return Ok(receipt);
         }
@@ -161,10 +192,14 @@ impl DirectoryArtifactRepository {
                     "renewal-package-mismatch",
                 ));
             }
-            let verified = self.verify_new_evidence(release, package, evidence)?;
+            let reference = PublicationRef {
+                id: request.publication.clone().expect("selected record"),
+                scope: request.context.scope.clone(),
+            };
+            let verified = self.verify_new_evidence(&reference, package, evidence)?;
             let identity = self
                 .life_store()
-                .identity(release)?
+                .identity_publication(&reference.id)?
                 .ok_or_else(|| corrupt("lifecycle-identity-missing"))?;
             let upload = verified.upload;
             let raw = ReleaseEvidenceUpload {
@@ -201,8 +236,13 @@ impl DirectoryArtifactRepository {
             self.index
                 .read()
                 .map_err(lock_error)?
-                .eligibility_capacity(release, proof.retained_bytes(), self.config)?;
-            let prepared = self.life_store().prepare(
+                .eligibility_capacity(
+                    request.publication.as_ref().expect("selected record"),
+                    proof.retained_bytes(),
+                    self.config,
+                )?;
+            let prepared = self.life_store().prepare_publication(
+                request.publication.clone(),
                 request.receipt(
                     Some(record),
                     ReleaseOperationDisposition::Committed,
@@ -218,6 +258,7 @@ impl DirectoryArtifactRepository {
             Err(failure) => return Err(self.reject_request(&request, failure, preflight)?),
         };
         preflight(ReleaseOperationPreview {
+            publication: request.publication.as_ref(),
             replay: false,
             receipt: prepared.receipt(),
             release: None,
@@ -232,7 +273,11 @@ impl DirectoryArtifactRepository {
                     self.index
                         .read()
                         .map_err(lock_error)?
-                        .eligibility_capacity(release, proof.retained_bytes(), self.config)?;
+                        .eligibility_capacity(
+                            request.publication.as_ref().expect("selected record"),
+                            proof.retained_bytes(),
+                            self.config,
+                        )?;
                     check.check()?;
                     fence.commit(&prepared)?;
                     check.check()?;
@@ -240,7 +285,7 @@ impl DirectoryArtifactRepository {
                         .write()
                         .map_err(lock_error)?
                         .install_selected_eligibility(
-                            release,
+                            request.publication.as_ref().expect("selected record"),
                             Some(proof.clone()),
                             completion,
                             self.config,
@@ -274,19 +319,34 @@ impl DirectoryArtifactRepository {
         Ok(prepared.receipt().clone())
     }
 
+    fn selected_component(
+        &self,
+        context: &ReleaseMutationContext,
+        reference: &PublicationRef,
+    ) -> Result<ReleaseDigest, PlatformError> {
+        context.validate()?;
+        if reference.scope != context.scope {
+            return Err(error(
+                PlatformErrorCode::InvalidArgument,
+                "publication-selector-scope-mismatch",
+            ));
+        }
+        self.publication_catalog_entry(reference)?
+            .map(|entry| entry.descriptor.release_digest)
+            .ok_or_else(|| error(PlatformErrorCode::NotFound, "publication not found"))
+    }
     fn scoped_record(
         &self,
         request: &Request,
     ) -> Result<crate::ReleaseLifecycleRecord, PlatformError> {
+        let id = request
+            .publication
+            .as_ref()
+            .ok_or_else(|| error(PlatformErrorCode::NotFound, "publication not found"))?;
         self.life_store()
-            .record(
-                request
-                    .component
-                    .as_ref()
-                    .ok_or_else(|| corrupt("operation-release-missing"))?,
-            )?
-            .filter(|value| value.scope == request.context.scope)
-            .ok_or_else(|| error(PlatformErrorCode::NotFound, "release digest not found"))
+            .record_publication(id)?
+            .filter(|record| record.scope == request.context.scope)
+            .ok_or_else(|| error(PlatformErrorCode::NotFound, "publication not found"))
     }
 }
 

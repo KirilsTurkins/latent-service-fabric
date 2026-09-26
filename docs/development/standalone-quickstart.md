@@ -1,5 +1,10 @@
 # Standalone echo quickstart
 
+For the task-oriented delivery/recovery learning path and exact executed-evidence
+boundary, start with [Deliver, invoke and recover a capsule](../learn/deliver-and-recover-a-capsule.md).
+Native rootless/server installation remains a separate
+[verified-bundle path](../installation.md), with no container-runtime prerequisite.
+
 The first sequence retains the Phase 1 trusted-local compatibility workflow.
 For authenticated packages, managed receipts, canary promotion and rollback,
 use the [bounded Phase 2 workflow](#bounded-phase-2-operator-workflow) below.
@@ -161,15 +166,17 @@ cli release publish --manifest "$PACKAGE/capsule.json" \
     --component "$PACKAGE/echo-capsule.wasm" --contracts "$PACKAGE/contracts.json" \
     >"$RESULTS/published.json"
 DIGEST=$(field "$RESULTS/published.json" data release digest)
-cli release get "$DIGEST" >"$RESULTS/release.json"
+PUBLICATION=$(field "$RESULTS/published.json" data release publication id)
+cli release get --publication "$PUBLICATION" >"$RESULTS/release.json"
 cli release list --service examples/echo --page-size 1 >"$RESULTS/releases.json"
 
-# Use the returned digest, even though the generated deployment already contains it.
-python3 - "$PACKAGE/deployment.json" "$RESULTS/deployment.json" "$DIGEST" <<'PY'
+# Select the admitted publication and assert its returned component digest.
+python3 - "$PACKAGE/deployment.json" "$RESULTS/deployment.json" "$DIGEST" "$PUBLICATION" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as source:
     deployment = json.load(source)
 deployment["spec"]["release"] = sys.argv[3]
+deployment["spec"]["publication"] = sys.argv[4]
 with open(sys.argv[2], "x", encoding="utf-8") as output:
     json.dump(deployment, output)
     output.write("\n")
@@ -285,8 +292,9 @@ this bounded integration schedule only. The signed build observation is syntheti
 test data, not evidence of a real production build. Actual observed-build tests
 and historical Phase 1 measurements retain their separate purposes. The
 [Phase 2 completion review](../phase-2-completion.md) combines the relevant
-evidence and records the completed gate's limitations; Phase 3 providers remain
-planned. The retained passing run is a fixed integration observation, not a
+evidence and records the completed gate's limitations; this Phase 2 scenario
+does not qualify the additional Phase 3 provider/client/browser paths. The
+retained passing run is a fixed integration observation, not a
 zero-error availability guarantee. Its preceding unclassified `Unavailable`
 attempt remains in the [attempt ledger](../../benchmarks/phase2/2026-09-13/attempts.json).
 The supplied source commit identifies the binary build's base; run from a clean
@@ -299,5 +307,5 @@ It must use the maintained fixture's credentials and OCI behavior; the runner
 does not acquire or clean up an externally supplied registry. See
 [operator workflows](../phase-2-operator-workflows.md),
 [management services](../reference/management-services.md) and
-[validation](../../VALIDATION.md#phase-2-focused-validation) for the underlying
+[validation](../../VALIDATION.md#package-and-delivery-validation) for the underlying
 contracts and focused tests.

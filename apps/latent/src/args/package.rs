@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(Subcommand)]
 pub enum PackageCommand {
+    /// Print the exact installed Angular renderer compatibility identity for builders.
+    RendererProfile,
     /// Package explicitly supplied bytes; does not compile source or create provenance.
     Build(PackageBuildArgs),
     /// Inspect exact package identities and semantics without granting trust.
@@ -17,62 +19,69 @@ pub enum PackageCommand {
 
 #[derive(Args)]
 pub struct PackageBuildArgs {
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub source: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::DirPath)]
     pub input_root: PathBuf,
-    #[arg(long = "output-dir")]
+    #[arg(long = "output-dir", value_hint = clap::ValueHint::DirPath)]
     pub output_dir: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub sbom_inputs: Option<PathBuf>,
+    /// Require the closed web manifest, exact assets and supported renderer ABI.
+    #[arg(long)]
+    pub validate_web: bool,
 }
 
 #[derive(Args)]
 pub struct PackageDirectoryArgs {
+    #[arg(value_hint = clap::ValueHint::DirPath)]
     pub directory: PathBuf,
 }
 
 #[derive(Args)]
 pub struct PackageVerifyArgs {
+    #[arg(value_hint = clap::ValueHint::DirPath)]
     pub directory: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub evidence_index: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::DirPath)]
     pub evidence_root: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub policy: PathBuf,
 }
 
 #[derive(Args)]
 pub struct PackagePushArgs {
+    #[arg(value_hint = clap::ValueHint::DirPath)]
     pub directory: PathBuf,
     /// Explicit closed registry configuration file, separate from node credentials.
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub registry_profile: PathBuf,
     #[arg(long)]
     pub reference: String,
-    #[arg(long, requires = "evidence_root")]
+    #[arg(long, requires = "evidence_root", value_hint = clap::ValueHint::FilePath)]
     pub evidence_index: Option<PathBuf>,
-    #[arg(long, requires = "evidence_index")]
+    #[arg(long, requires = "evidence_index", value_hint = clap::ValueHint::DirPath)]
     pub evidence_root: Option<PathBuf>,
 }
 
 #[derive(Args)]
 pub struct PackagePullArgs {
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub registry_profile: PathBuf,
     #[arg(long)]
     pub reference: String,
-    #[arg(long = "output-dir")]
+    #[arg(long = "output-dir", value_hint = clap::ValueHint::DirPath)]
     pub output_dir: PathBuf,
     /// Separate new directory for detached evidence and its index.json.
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::DirPath)]
     pub evidence_output: PathBuf,
 }
 
 impl PackageCommand {
     pub fn name(&self) -> &'static str {
         match self {
+            Self::RendererProfile => "package renderer-profile",
             Self::Build(_) => "package build",
             Self::Inspect(_) => "package inspect",
             Self::Verify(_) => "package verify",
@@ -84,6 +93,7 @@ impl PackageCommand {
         use super::validation::{identifier, path_argument};
         let path = |p: &Path| path_argument(p);
         match self {
+            Self::RendererProfile => (),
             Self::Build(a) => {
                 for p in [&a.source, &a.input_root, &a.output_dir] {
                     path(p)?;
