@@ -136,6 +136,11 @@ This node listens on an automatically selected loopback port. Its random client
 credential stays in private files. It verifies both package signatures and the
 builder policy before admitting a release.
 
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: java-authoring-1.sh -->
+
 ```bash
 mkdir "$LSF_JAVA_PROJECTS/node" "$LSF_JAVA_PROJECTS/results"
 python3 - <<'PY'
@@ -220,6 +225,8 @@ java_cli() { "$BIN/latent" --config "$LSF_JAVA_PROJECTS/client.json" --output js
 java_cli node get java-learning-node >"$LSF_JAVA_PROJECTS/results/node.json"
 ```
 
+Run `source "$HOME/Downloads/java-authoring-1.sh"`.
+
 ## 5. Publish, deploy and invoke
 
 Publishing returns an exact publication identity. This Java runtime needs explicit
@@ -230,6 +237,11 @@ before the application can return. The guest's 64 MiB memory budget includes the
 reservation and linear memory, including its fixed 4 MiB Java heap and C transport.
 Fuel and wall time bound computation and synchronous Java waits on asynchronous
 host imports. No guest can create a host thread or its own event loop.
+
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: java-authoring-2.sh -->
 
 ```bash
 java_cli release publish-package "$LSF_JAVA_PROJECTS/releases/my-greeting/package" \
@@ -297,6 +309,8 @@ java_cli invoke --memory-bytes 67108864 --cpu-fuel 1000000000 --wall-time-ms 120
   --input "$LSF_JAVA_PROJECTS/results/empty.json" >"$LSF_JAVA_PROJECTS/results/error.json" || test "$?" -eq 3
 java_answer "$LSF_JAVA_PROJECTS/results/error.json"
 ```
+
+Run `source "$HOME/Downloads/java-authoring-2.sh"`.
 
 Expected answers are `[{"ok":"Hello, Ada!"}]` and
 `[{"err":"Please enter a name."}]`. Exit code 3 is a declared application

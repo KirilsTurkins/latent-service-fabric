@@ -32,36 +32,11 @@ connect it to your language's function. For now, keep the contract unchanged.
 
 ## 2. Create the project
 
-Choose the `greeting` template. These commands read its identity from the verified
-template index and create your project; you do not copy identifiers by hand.
-
-**If you use Windows**, run this in your PowerShell working terminal:
-
-```powershell
-$Example = 'greeting'
-$Templates = (dev acquire --bundle-directory (Join-Path $Inputs $Language) `
-    --publisher-policy $DeveloperPolicy --trusted-root $TrustedRoot `
-    --verifier $WindowsVerifier --verifier-sha256 $WindowsVerifierSha256 `
-    --version $Version --target linux-x86_64 --allow-candidate | ConvertFrom-Json).result
-$Bundle = $Templates.bundle
-$Index = Get-Content -LiteralPath (Join-Path $State "bundles/$Bundle/templates.json") -Raw | ConvertFrom-Json
-$TemplateIdentity = $Index.templates.PSObject.Properties[$Example].Value.identity
-dev init "$Project" --bundle $Bundle --template "$Language/$Example" --template-sha256 $TemplateIdentity
-```
-
-**If you use Linux**, run this in your Bash working terminal:
+Choose the `greeting` template. Setup has already selected its verified bundle
+and template settings. Run this same command on Windows or Linux:
 
 ```bash
-Example=greeting
-Version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$Inputs/developer-policy.json")
-VerifierIdentity="sha256:$(sha256sum "$Inputs/gh-linux" | cut -d' ' -f1)"
-dev acquire --bundle-directory "$Inputs/$Language" \
-    --publisher-policy "$Inputs/developer-policy.json" --trusted-root "$Inputs/trusted_root.jsonl" \
-    --verifier "$Inputs/gh-linux" --verifier-sha256 "$VerifierIdentity" \
-    --version "$Version" --target linux-x86_64 --allow-candidate > "$Inputs/template-acquisition.json"
-Bundle=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["result"]["bundle"])' "$Inputs/template-acquisition.json")
-TemplateIdentity=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["templates"][sys.argv[2]]["identity"])' "$State/bundles/$Bundle/templates.json" "$Example")
-dev init "$Project" --bundle "$Bundle" --template "$Language/$Example" --template-sha256 "$TemplateIdentity"
+dev init "$Project" --bundle "$Bundle" --template "$Language/greeting" --template-sha256 "$GreetingTemplate"
 ```
 
 Open the project in your editor:
@@ -167,9 +142,12 @@ count: func(text: string) -> result<u32, string>;
 Stop the greeting with `dev down --workspace "$Workspace"`. Create another
 workspace and project using the [workspace setup](../start/development-workspace.md),
 for example `test-my-words` and `My words`. Reuse your downloads and existing WSL
-distro. In step 2 above set `$Example = 'word-count'` on Windows or
-`Example=word-count` on Linux, then follow the same build, start, deploy and test
-steps with that workspace name.
+distro. Create the project with this command, then follow the same build, start,
+deploy and test steps with that workspace name:
+
+```bash
+dev init "$Project" --bundle "$Bundle" --template "$Language/word-count" --template-sha256 "$WordCountTemplate"
+```
 
 The tests send `LSF runs small programs` and expect `4`. Look in
 `tests/scenarios.json` for the service, contract and function to use in a direct call.
@@ -185,8 +163,13 @@ a price in cents: 500 for standard delivery or 1200 for express, plus 75 per ite
 quote: func(items: u32, express: bool) -> result<u32, string>;
 ```
 
-Use another project and workspace, selecting `shipping` in step 2. Run the same
-build, start, deploy and test commands. Two items with standard delivery produce
+Use another project and workspace, then select the shipping template:
+
+```bash
+dev init "$Project" --bundle "$Bundle" --template "$Language/shipping" --template-sha256 "$ShippingTemplate"
+```
+
+Run the same build, start, deploy and test commands. Two items with standard delivery produce
 `650`; express delivery produces `1350`. Zero items produce
 `Choose between 1 and 100 items.` as a declared application error.
 

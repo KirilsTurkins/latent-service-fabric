@@ -48,6 +48,11 @@ this node the name `learning-node`, stores its data in that directory, and
 listens only on your machine at port 17840. If that port is already occupied,
 choose another unused port before running the block.
 
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: first-node-1.sh -->
+
 ```bash
 export LSF_TUTORIAL_DIR
 LSF_TUTORIAL_DIR=$(mktemp -d "${TMPDIR:-/tmp}/lsf-learning.XXXXXXXX")
@@ -83,6 +88,8 @@ PY
 "$BIN/latentd" check-config --config "$LSF_TUTORIAL_DIR/node/node.json"
 ```
 
+Run `source "$HOME/Downloads/first-node-1.sh"`.
+
 The script creates a random password shared by the node and your client, and
 writes it to private files. You do not need to copy or print the password.
 The local profile lets you run capsules you build yourself. Use the
@@ -94,6 +101,11 @@ its own trust policy.
 The following helpers start this node in the background and stop it when you
 close the terminal. `cli` saves you from typing the client configuration path
 for every command.
+
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: first-node-2.sh -->
 
 ```bash
 NODE_PID=
@@ -143,6 +155,8 @@ PY
 start_node
 ready
 ```
+
+Run `source "$HOME/Downloads/first-node-2.sh"`.
 
 Wait for **Your node is ready.** A connection error during the first moment of
 startup is harmless if the next attempt succeeds. If the node exits, inspect

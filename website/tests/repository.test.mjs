@@ -41,6 +41,20 @@ test('cross-root documents, ADR identities, escaped paths and source links bind 
   assert.equal(routeFor('adr/README.md'), '/decisions/');
 });
 
+test('script downloads keep the exact fenced source and reject ambiguous names or block types', context => {
+  const {index} = fixture(context);
+  const script = 'printf "%s\\n" "hello"\n# Keep $variables and Unicode: α\n';
+  const document = `<!-- lsf-download: setup.sh -->\n\n\`\`\`bash\n${script}\`\`\`\n`;
+  const result = transformDocument(parseDocument(document, 'docs/nested/start.md'), index, 'docs/nested/start.md', {});
+  assert.equal(result.children.length, 1);
+  assert.equal(result.children[0].meta, 'download=setup.sh');
+  assert.equal(result.children[0].value + '\n', script);
+  for (const invalid of [document.replace('setup.sh', '../setup.sh'), document.replace('setup.sh', 'setup.exe'),
+    document.replace('```bash', '```json'), document.replace('\n\n```bash', '\n\nOther paragraph\n\n```bash')]) {
+    assert.throws(() => transformDocument(parseDocument(invalid, 'docs/nested/start.md'), index, 'docs/nested/start.md', {}), /Download marker/);
+  }
+});
+
 test('missing, wrongly cased, escaped and unsafe links fail instead of silently becoming source links', context => {
   const {index} = fixture(context);
   for (const url of ['missing.md', '../Escaped%20page.md', '#absent', '../../../outside', '../%2e%2e/secret', '../../sdk%2fsource%20file.ts', 'javascript:alert(1)', 'file:///tmp/secret', '//remote.invalid/file']) {
