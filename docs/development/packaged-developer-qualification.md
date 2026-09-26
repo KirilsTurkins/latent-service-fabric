@@ -341,3 +341,31 @@ the read-only conductor interpreter running there, and a separate SSH handshake
 from UID 10001 to UID 23002. Its application/helper placeholders were never
 executed. The first server-only smoke lacked the client account; that failed
 attempt and both successful cleanup results are retained.
+
+## Newcomer candidate shutdown correction
+
+The independently approved `d8bf53383fea87d9f43c9e9a8921d8ec045e22ea`
+candidates ran with conductor `c20bb931b77c616dd3e120cf0b69924b977d3262`
+in [run 36227800146](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36227800146).
+The [Linux receipts](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36227800146/artifacts/10902454514)
+passed the direct Linux, explicit SSH and opt-in devcontainer schedules, including
+owned cleanup. The conductor is merged in #602 after 24 passing CI checks and
+seven conditional skips.
+
+The [Windows receipt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36227800146/artifacts/10901174597)
+retains a failed newcomer attempt after 348.648 seconds. The greeting's three
+node cases, Hello-to-Welcome edit, focused watch tests, compiler error with the
+last-good deployment still callable, mapped Unicode diagnostics and restored
+build all passed. The requested down confirmed clean node shutdown and reaping,
+but watch returned `helper-operation-failed` after its concurrent status request
+lost the closing supervisor connection. Retained restart, newcomer purge and
+the subsequent Windows matrix were not reached and are not counted as passed.
+
+A deterministic Linux regression reproduces the unread socket reset after the
+supervisor commits its stopped record. The helper now reconciles connection
+reset and broken pipe through the existing durable ownership checks. It sends
+no replacement request and reports uncertainty when the owner is not confirmed
+stopped. Coverage includes status, logs and down; neither a reset nor a generic
+helper error is accepted as proof of cleanup. Replacement authenticated package
+qualification is still required; this source correction does not change the
+original candidate receipt into a pass.
