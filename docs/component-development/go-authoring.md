@@ -130,6 +130,11 @@ This node listens on an automatically selected loopback port. Its random client
 credential stays in private files. It verifies both package signatures and the
 builder policy before admitting a release.
 
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: go-authoring-1.sh -->
+
 ```bash
 mkdir "$LSF_GO_PROJECTS/node" "$LSF_GO_PROJECTS/results"
 python3 - <<'PY'
@@ -214,6 +219,8 @@ go_cli() { "$BIN/latent" --config "$LSF_GO_PROJECTS/client.json" --output json "
 go_cli node get go-learning-node >"$LSF_GO_PROJECTS/results/node.json"
 ```
 
+Run `source "$HOME/Downloads/go-authoring-1.sh"`.
+
 ## 5. Publish, deploy and invoke
 
 Publishing returns an exact publication identity. This Go runtime needs explicit
@@ -222,6 +229,11 @@ block scopes each grant to this one publication, service, operation and caller.
 There is no ambient WASI authority. Omitting a grant produces a platform denial
 before the application can return. The guest's 64 MiB memory and fuel budgets
 bound its runtime heap and goroutines; no guest can create a host thread.
+
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: go-authoring-2.sh -->
 
 ```bash
 go_cli release publish-package "$LSF_GO_PROJECTS/releases/my-greeting/package" \
@@ -290,6 +302,8 @@ go_cli invoke --memory-bytes 67108864 --cpu-fuel 1000000000 --wall-time-ms 12000
   --input "$LSF_GO_PROJECTS/results/empty.json" >"$LSF_GO_PROJECTS/results/error.json" || test "$?" -eq 3
 go_answer "$LSF_GO_PROJECTS/results/error.json"
 ```
+
+Run `source "$HOME/Downloads/go-authoring-2.sh"`.
 
 Expected answers are `[{"ok":"Hello, Ada!"}]` and
 `[{"err":"Please enter a name."}]`. Exit code 3 is a declared application

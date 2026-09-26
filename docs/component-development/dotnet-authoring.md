@@ -124,6 +124,11 @@ This node listens on an automatically selected loopback port. Its random client
 credential stays in private files. It verifies both package signatures and the
 builder policy before admitting a release.
 
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: dotnet-authoring-1.sh -->
+
 ```bash
 mkdir "$LSF_DOTNET_PROJECTS/node" "$LSF_DOTNET_PROJECTS/results"
 python3 - <<'PY'
@@ -206,6 +211,8 @@ dotnet_cli() { "$BIN/latent" --config "$LSF_DOTNET_PROJECTS/client.json" --outpu
 dotnet_cli node get dotnet-learning-node >"$LSF_DOTNET_PROJECTS/results/node.json"
 ```
 
+Run `source "$HOME/Downloads/dotnet-authoring-1.sh"`.
+
 ## 5. Publish, deploy and invoke
 
 Publishing returns an exact publication identity. This C# runtime needs explicit
@@ -215,6 +222,11 @@ block scopes each grant to this one publication, service, operation and caller.
 There is no ambient WASI authority. Omitting a grant produces a platform denial
 before the application can return. The guest's 128 MiB memory and fuel budgets
 bound its runtime heap; no guest can create a host thread.
+
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: dotnet-authoring-2.sh -->
 
 ```bash
 dotnet_cli release publish-package "$LSF_DOTNET_PROJECTS/releases/my-greeting/package" \
@@ -281,6 +293,8 @@ dotnet_cli invoke --memory-bytes 134217728 --cpu-fuel 1000000000 --wall-time-ms 
   --input "$LSF_DOTNET_PROJECTS/results/empty.json" >"$LSF_DOTNET_PROJECTS/results/error.json" || test "$?" -eq 3
 dotnet_answer "$LSF_DOTNET_PROJECTS/results/error.json"
 ```
+
+Run `source "$HOME/Downloads/dotnet-authoring-2.sh"`.
 
 Expected answers are `[{"ok":"Hello, Ada!"}]` and
 `[{"err":"Please enter a name."}]`. Exit code 3 is a declared application

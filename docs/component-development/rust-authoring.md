@@ -107,6 +107,11 @@ This node listens on an automatically selected loopback port. Its random client
 credential stays in private files. It verifies both package signatures and the
 builder policy before admitting a release.
 
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: rust-authoring-1.sh -->
+
 ```bash
 mkdir "$LSF_RUST_PROJECTS/node" "$LSF_RUST_PROJECTS/results"
 python3 - <<'PY'
@@ -171,10 +176,17 @@ rust_cli() { "$BIN/latent" --config "$LSF_RUST_PROJECTS/client.json" --output js
 rust_cli node get rust-learning-node >"$LSF_RUST_PROJECTS/results/node.json"
 ```
 
+Run `source "$HOME/Downloads/rust-authoring-1.sh"`.
+
 ## 5. Publish, deploy and invoke
 
 Publishing returns an exact publication identity. Put that identity into the
 generated deployment before applying it:
+
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: rust-authoring-2.sh -->
 
 ```bash
 rust_cli release publish-package "$LSF_RUST_PROJECTS/releases/my-greeting/package" \
@@ -212,6 +224,8 @@ rust_cli invoke --service examples/my-greeting --route my-greeting \
   --input "$LSF_RUST_PROJECTS/results/empty.json" >"$LSF_RUST_PROJECTS/results/error.json" || test "$?" -eq 3
 rust_answer "$LSF_RUST_PROJECTS/results/error.json"
 ```
+
+Run `source "$HOME/Downloads/rust-authoring-2.sh"`.
 
 Expected answers are `[{"ok":"Hello, Ada!"}]` and
 `[{"err":"Please enter a name."}]`. Exit code 3 is a declared application

@@ -5,7 +5,7 @@ import AxeBuilder from '@axe-core/playwright';
 import {chromium} from '@playwright/test';
 import {serveBuiltSite, validateBuiltSite} from '../lib/built-site.mjs';
 import {generatedDirectory} from '../lib/prepare.mjs';
-import {websiteRoot} from '../lib/repository.mjs';
+import {repositoryRoot, websiteRoot} from '../lib/repository.mjs';
 
 const output = generatedDirectory('.generated/discovery-review');
 const results = [];
@@ -34,6 +34,31 @@ try {
         accessibility.push({name, serious: 0, other: result.violations.map(item => item.id)});
       }
       const prefix = server.origin + built.manifest.baseUrl;
+      const setupDownloads = [];
+      for (const slug of ['start/developer-setup', 'start/development-workspace', 'start/first-node',
+        ...['rust', 'c', 'typescript', 'go', 'java', 'dotnet'].map(language => `component-development/${language}-authoring`)]) {
+        await page.goto(`${prefix}docs/${slug}/`, {waitUntil: 'networkidle'});
+        const document = fs.readFileSync(path.join(repositoryRoot, 'docs', `${slug}.md`), 'utf8');
+        const scripts = [...document.matchAll(/<!-- lsf-download: ([a-z0-9-]+\.(?:ps1|sh|py)) -->\s*\n```[^\n]*\n([\s\S]*?)^```/gm)];
+        assert.ok(scripts.length > 0, slug);
+        for (const [, filename, source] of scripts) {
+          const block = page.locator(`[data-setup-script="${filename}"]`);
+          assert.equal(await block.locator('details').getAttribute('open'), null);
+          const received = page.waitForEvent('download');
+          await block.getByRole('button', {name: `Download ${filename}`, exact: true}).click();
+          const download = await received;
+          assert.equal(download.suggestedFilename(), filename);
+          assert.equal(await download.failure(), null);
+          assert.equal(fs.readFileSync(await download.path(), 'utf8'), source);
+          await block.locator('summary').click();
+          assert.equal(await block.locator('details').getAttribute('open'), '');
+          setupDownloads.push(filename);
+        }
+        await page.setViewportSize({width: 390, height: 844});
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), slug);
+        await audit(`${slug}-downloads-mobile`);
+        await page.setViewportSize({width: 1280, height: 900});
+      }
       await page.goto(prefix, {waitUntil: 'networkidle'});
       await audit('home-light');
       await page.locator('main').getByRole('link', {name: 'Start', exact: true}).click();
@@ -148,6 +173,7 @@ try {
         firstGuide: true, selectedVersionSearch: true, queryUrl: true, noResults: true, missingVersion: true,
         filteredCatalogue: true, previousNext: true, directReload: true, keyboardSearch: true,
         applicationGuides: applicationPages.map(([slug]) => slug),
+        setupDownloads,
         mobileWidth: 390, reflowWidth: 640, reducedMotion: true, externalRequests: 0, browserErrors: 0, accessibility});
     } finally { await context.close(); await server.close(); }
   }

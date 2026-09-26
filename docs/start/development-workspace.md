@@ -1,35 +1,37 @@
 # Set up your development workspace
 
 Create the place where your capsule will be compiled and run. Your application
-files stay in your project folder. LSF keeps the node, compiler and credentials
-in separate private storage. You can stop the node and return to the same work later.
+files stay in your project folder; the node, compiler and credentials use separate
+private storage. First [get the developer tools](developer-setup.md).
 
-First [get the developer tools](developer-setup.md) for your chosen language.
-Use **Windows** or **Linux** below, then continue to the same
-[Creating a capsule](../component-development/creating-a-capsule.md) tutorial.
-Windows uses WSL2 for the compiler and node; you still edit files and run commands
-from PowerShell. This creates an LSF application, regardless of your desktop OS.
+Save the setup file for your OS to **Downloads**. It prepares the existing `dev`
+commands, installs your selected tools and reads the template settings for you.
+You only choose your language, project and workspace; you do not assemble JSON
+files or copy hashes. Keep this terminal open for the capsule tutorial.
 
-The examples use a new project named `My greeting`, workspace `test-my-greeting`
-and port `18080`. Choose a different project and workspace name for another example;
-choose another port if you want both nodes running together. Use the same language
-identifier you downloaded: `rust`, `c`, `typescript`, `go`, `java` or `dotnet` (C#).
+The default project is `Projects/My greeting` in your home folder, the workspace
+is `test-my-greeting`, and the node uses port `18080`.
 
 ## If you use Windows
 
-### Open your working terminal
+Use PowerShell on Windows x86-64 with working WSL2 and virtualization. Your editor
+and commands stay on Windows; the compiler and node run in the LSF-owned distro.
 
-Open PowerShell and run this once in that terminal. The `dev` function is a short
-form of `latent-dev --state-root ... dev`; it supplies your tool and state paths
-and stops on a failed command. Keep this terminal open for the tutorial.
+<!-- lsf-download: setup-lsf-workspace.ps1 -->
 
 ```powershell
-$Inputs = Join-Path $env:USERPROFILE 'LSF-inputs-alpha4'
-$Language = 'rust' # Use the language you downloaded.
+param(
+    [ValidateSet('rust','c','typescript','go','java','dotnet')][string]$Language = 'rust',
+    [ValidatePattern('^test-[a-z0-9][a-z0-9-]*$')][string]$Workspace = 'test-my-greeting',
+    [string]$Project = (Join-Path $env:USERPROFILE 'Projects\My greeting'),
+    [ValidateRange(1024,65535)][int]$Port = 18080,
+    [string]$Inputs = (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4'),
+    [string]$State = (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial'),
+    [switch]$Provision,
+    [switch]$SessionOnly
+)
+$ErrorActionPreference = 'Stop'
 $Frontend = Join-Path $Inputs 'frontend/bin/latent-dev.exe'
-$State = Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial'
-$Project = Join-Path $env:USERPROFILE 'Projects\My greeting'
-$Workspace = 'test-my-greeting'
 $WindowsVerifier = (Get-Command gh.exe).Source
 $WindowsVerifierSha256 = 'sha256:' + (Get-FileHash -LiteralPath $WindowsVerifier -Algorithm SHA256).Hash.ToLowerInvariant()
 $LinuxVerifierSha256 = 'sha256:' + (Get-FileHash -LiteralPath (Join-Path $Inputs 'gh-linux') -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -45,41 +47,27 @@ function dev {
     if ($LASTEXITCODE -ne 0) { throw 'The command failed. Inspect its output before continuing.' }
 }
 
+if ($SessionOnly) { return }
 dev doctor
 $Admission = if ($Language -in @('rust','c')) { 'trusted-local' } else { 'signed-fixture' }
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Project) | Out-Null
-```
 
-Expect doctor to report the available prerequisites. WSL2 and virtualization must
-already work. Keep `$State` in private local storage outside the project; let the
-frontend create it with the required permissions.
-
-### Create the Linux environment once
-
-On your first setup, authenticate and import the supplied WSL image:
-
-```powershell
 $WslBundle = (dev acquire --bundle-directory (Join-Path $Inputs 'wsl') `
     --publisher-policy $DeveloperPolicy --trusted-root $TrustedRoot `
     --verifier $WindowsVerifier --verifier-sha256 $WindowsVerifierSha256 `
     --version $Version --target linux-x86_64-wsl-rootfs --allow-candidate | ConvertFrom-Json).result
 $WslInventory = Get-Content -LiteralPath (Join-Path $State "bundles\$($WslBundle.bundle)\rootfs-inventory.json") `
     -Encoding UTF8 | ConvertFrom-Json
-$Distro = (dev provision --bundle $WslBundle.bundle --consent-provision | ConvertFrom-Json).result
-```
+if ($Provision) {
+    dev provision --bundle $WslBundle.bundle --consent-provision
+} else {
+    dev wsl-status
+}
 
-This creates one LSF-owned distro, leaving your other distros alone. Save its
-returned name. For another workspace in the same `$State`, **skip the provision
-command**: run `dev wsl-status` to inspect the existing distro and reuse the
-verified `$WslInventory` from this terminal.
-
-### Create a workspace and install its tools
-
-```powershell
 dev wsl-workspace --workspace $Workspace --helper-sha256 $WslInventory.helperSha256
 $Utf8 = [Text.UTF8Encoding]::new($false)
-$RuntimeInputs = Join-Path $Inputs 'tutorial-runtime.json'
-$ToolInputs = Join-Path $Inputs "tutorial-$Language-tools.json"
+$RuntimeInputs = Join-Path $Inputs "$Workspace-runtime.json"
+$ToolInputs = Join-Path $Inputs "$Workspace-$Language-tools.json"
 $Common = @{
     version = $Version; trustedRoot = $TrustedRoot
     verifier = (Join-Path $Inputs 'gh-linux'); verifierSha256 = $LinuxVerifierSha256
@@ -90,7 +78,7 @@ $Runtime.schemaVersion = 'latent.dev.install-inputs.v1'
 $Runtime.releaseDirectory = Join-Path $Inputs 'native'
 $Runtime.publisherPolicy = $RuntimePolicy
 $Runtime.profile = 'local-experimental-v1'
-$Runtime.port = 18080
+$Runtime.port = $Port
 $Tools = $Common.Clone()
 $Tools.schemaVersion = 'latent.dev.tool-inputs.v1'
 $Tools.bundleDirectory = Join-Path $Inputs $Language
@@ -100,38 +88,58 @@ $Tools.language = $Language
 [IO.File]::WriteAllText($ToolInputs, ($Tools | ConvertTo-Json), $Utf8)
 dev install --workspace $Workspace --runtime-inputs $RuntimeInputs
 dev install-tools --workspace $Workspace --tool-inputs $ToolInputs
+
+$Templates = (dev acquire --bundle-directory (Join-Path $Inputs $Language) `
+    --publisher-policy $DeveloperPolicy --trusted-root $TrustedRoot `
+    --verifier $WindowsVerifier --verifier-sha256 $WindowsVerifierSha256 `
+    --version $Version --target linux-x86_64 --allow-candidate | ConvertFrom-Json).result
+$Bundle = $Templates.bundle
+$Index = Get-Content -LiteralPath (Join-Path $State "bundles/$Bundle/templates.json") -Raw | ConvertFrom-Json
+$GreetingTemplate = $Index.templates.greeting.identity
+$WordCountTemplate = $Index.templates.'word-count'.identity
+$ShippingTemplate = $Index.templates.shipping.identity
+Write-Host 'Workspace ready. Continue with Creating a capsule in this terminal.'
 ```
 
-The workspace has its own Linux user and private node credentials. The two input
-files contain paths and public verification settings; you do not write tokens.
-Expect each command to finish with `code: success`.
+For your **first workspace**, run this in PowerShell, choosing your downloaded language:
+
+```powershell
+. "$HOME/Downloads/setup-lsf-workspace.ps1" -Language rust -Provision
+```
+
+The leading dot loads the `dev` shortcut and project settings into this terminal.
+`-Provision` creates the shared LSF distro and leaves other distros alone. For later
+workspaces, omit `-Provision` to reuse it.
 
 ## If you use Linux
 
-Use Ubuntu 24.04 x86-64, Linux 6.8 or newer, and Python 3.13.5 installed at
-`/usr/local/bin/python3.13`. Run as your ordinary account. The downloaded frontend
-contains the helper; the helper's pinned interpreter is a separate host prerequisite.
+Use Ubuntu 24.04 x86-64, Linux 6.8 or newer, and Python 3.13.5 at
+`/usr/local/bin/python3.13`. Run as your ordinary account. Your host administrator
+supplies this interpreter; the downloaded frontend contains the helper.
 
-Open Bash and run this once. It creates installation settings from the downloaded
-toolkit, selects this host, and installs the node and your compiler into the workspace.
-The `dev` function supplies the frontend and private state paths in later examples.
+<!-- lsf-download: setup-lsf-workspace.sh -->
 
 ```bash
 set -euo pipefail
 umask 077
-export Inputs="$HOME/LSF-inputs-alpha4"
-export Language=rust
+export Inputs="${LSF_INPUTS:-$HOME/LSF-inputs-alpha4}"
+export Language="${1:-rust}"
+export Workspace="${2:-test-my-greeting}"
+Project="${3:-$HOME/Projects/My greeting}"
+export Port="${4:-18080}"
+case "$Language" in rust|c|typescript|go|java|dotnet) ;; *) echo 'Choose a supported language.' >&2; return 2;; esac
+[[ "$Workspace" =~ ^test-[a-z0-9][a-z0-9-]*$ ]] || { echo 'Use a test- workspace name.' >&2; return 2; }
+[[ "$Port" =~ ^[0-9]+$ ]] && ((Port >= 1024 && Port <= 65535)) || { echo 'Choose a port from 1024 to 65535.' >&2; return 2; }
 Frontend="$Inputs/frontend/bin/latent-dev"
-State="$HOME/.latent-dev-tutorial"
-Workspace=test-my-greeting
-Project="$HOME/Projects/My greeting"
+State="${LSF_STATE:-$HOME/.latent-dev-tutorial}"
 Admission=signed-fixture
 if [[ "$Language" == rust || "$Language" == c ]]; then Admission=trusted-local; fi
-mkdir -p "$HOME/Projects"
+mkdir -p "$(dirname "$Project")"
 python3 - <<'PY'
 import hashlib, json, os, pathlib, shutil
 root = pathlib.Path(os.environ['Inputs'])
 language = os.environ['Language']
+workspace = os.environ['Workspace']
 assert language in ('rust', 'c', 'typescript', 'go', 'java', 'dotnet')
 manifest = json.loads((root/'linux/developer-bundle.json').read_text())
 helper = next(file for file in manifest['files'] if file['path'] == 'helper.pyz')
@@ -145,38 +153,77 @@ save('direct-backend.json', dict(kind='linux', helperSha256=helper['sha256'],
      python='/usr/local/bin/python3.13', helper=str(root/'frontend/helper.pyz')))
 common = dict(version=manifest['version'], trustedRoot=str(root/'trusted_root.jsonl'),
               verifier=str(verifier), verifierSha256=identity, allowCandidate=True, consent=True)
-save('tutorial-runtime.json', dict(common, schemaVersion='latent.dev.install-inputs.v1',
+save(workspace+'-runtime.json', dict(common, schemaVersion='latent.dev.install-inputs.v1',
      releaseDirectory=str(root/'native'), publisherPolicy=str(root/'native-policy.json'),
-     profile='local-experimental-v1', port=18080))
-save('tutorial-tools.json', dict(common, schemaVersion='latent.dev.tool-inputs.v1',
+     profile='local-experimental-v1', port=int(os.environ['Port'])))
+save(workspace+'-tools.json', dict(common, schemaVersion='latent.dev.tool-inputs.v1',
      bundleDirectory=str(root/language), publisherPolicy=str(root/'developer-policy.json'), language=language))
 PY
 dev() { "$Frontend" --state-root "$State" dev "$@"; }
 dev doctor
 dev connect --workspace "$Workspace" --backend-config "$Inputs/direct-backend.json"
-dev install --workspace "$Workspace" --runtime-inputs "$Inputs/tutorial-runtime.json"
-dev install-tools --workspace "$Workspace" --tool-inputs "$Inputs/tutorial-tools.json"
+dev install --workspace "$Workspace" --runtime-inputs "$Inputs/$Workspace-runtime.json"
+dev install-tools --workspace "$Workspace" --tool-inputs "$Inputs/$Workspace-tools.json"
+
+Version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$Inputs/developer-policy.json")
+VerifierIdentity="sha256:$(sha256sum "$Inputs/gh-linux" | cut -d' ' -f1)"
+dev acquire --bundle-directory "$Inputs/$Language" \
+    --publisher-policy "$Inputs/developer-policy.json" --trusted-root "$Inputs/trusted_root.jsonl" \
+    --verifier "$Inputs/gh-linux" --verifier-sha256 "$VerifierIdentity" \
+    --version "$Version" --target linux-x86_64 --allow-candidate > "$Inputs/$Workspace-templates.json"
+Bundle=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["result"]["bundle"])' "$Inputs/$Workspace-templates.json")
+GreetingTemplate=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["templates"]["greeting"]["identity"])' "$State/bundles/$Bundle/templates.json")
+WordCountTemplate=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["templates"]["word-count"]["identity"])' "$State/bundles/$Bundle/templates.json")
+ShippingTemplate=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["templates"]["shipping"]["identity"])' "$State/bundles/$Bundle/templates.json")
+echo 'Workspace ready. Continue with Creating a capsule in this terminal.'
 ```
 
-Expect `code: success` for the connection and both installations. The private
-credentials are generated for you. Two workspaces under the same Linux account
-do not protect data from that account; use separate accounts when that matters.
+Run this in Bash, choosing your downloaded language:
+
+```bash
+source "$HOME/Downloads/setup-lsf-workspace.sh" rust
+```
+
+`source` loads the `dev` shortcut and project settings into this terminal.
+Two workspaces under the same Linux account do not protect data from that
+account; use separate accounts when that matters.
 
 ## Continue with your application
 
-Keep the terminal and its variables. Open [Creating a capsule](../component-development/creating-a-capsule.md)
-to create the project, read its code, build it, and send the first request. The
-remaining development commands are the same on Windows and Linux.
+Expect successful installation results followed by **Workspace ready**. The node
+has not started yet. Open [Creating a capsule](../component-development/creating-a-capsule.md)
+to create the project, build it, start the node and send your first request.
+The remaining development commands are shared across Windows and Linux.
 
-Rust and C use the explicit `trusted-local` profile for your own disposable
-development code, allowing an edit/build/deploy loop. The other languages use
-`signed-fixture` with the runtime permissions required by their compiler. That
-fixture approves one build for 30 minutes. Use a fresh disposable workspace for
-a changed build or expired fixture; this toolkit is not a production signing service.
+Rust and C use the explicit `trusted-local` profile for your disposable development
+code. The other languages use `signed-fixture` with their compiler's required
+runtime permissions. This fixture approves one build for 30 minutes; a changed
+build or expired fixture needs a fresh disposable workspace. The [edit guide](../learn/deliver-and-recover-a-capsule.md)
+explains this and the supported automatic watch loop.
 
-If a port is occupied, select another port in the runtime input before installing
-a new workspace. LSF does not stop another process to claim its port. For command
-help, failed builds, lost responses and cleanup, use [Developer commands](../how-to/developer-commands.md).
+## Set up another project
+
+Reuse the same downloads. Choose a different workspace and project; use a different
+port if both nodes will run together. For a word counter, **on Windows**:
+
+```powershell
+. "$HOME/Downloads/setup-lsf-workspace.ps1" -Language rust -Workspace test-my-words -Project "$HOME/Projects/My words" -Port 18081
+```
+
+Or **on Linux**, the arguments are language, workspace, project and port:
+
+```bash
+source "$HOME/Downloads/setup-lsf-workspace.sh" rust test-my-words "$HOME/Projects/My words" 18081
+```
+
+If you chose a custom download directory, supply `-Inputs PATH` on Windows or set
+`LSF_INPUTS` before sourcing the Linux script. Custom private state uses `-State`
+or `LSF_STATE`; keep it outside the project and let the frontend create it.
+
+For an occupied port, choose another port for a new workspace. If setup fails,
+inspect the reported error before running more commands. A partial WSL import
+needs `dev wsl-status` and the documented recovery path; do not repeat an uncertain
+operation. See [Developer commands](../how-to/developer-commands.md).
 
 ## Use a remote Linux host instead
 
