@@ -19,7 +19,19 @@ class IllustrationPaletteTests(unittest.TestCase):
     def test_current_inventory_covers_every_svg_and_preserves_exact_originals(self) -> None:
         inventory, palette, outputs = palette_tool.prepare()
         self.assertEqual(len(inventory["sources"]), 5)
-        self.assertEqual(len(inventory["snapshots"]), 5)
+        versions = json.loads(palette_tool.read_bytes(palette_tool.ROOT, "website/versions.json"))
+        expected_snapshots = {}
+        for version in versions:
+            manifest_path = palette_tool.safe_path(
+                palette_tool.ROOT, f"website/versioned_manifests/version-{version}.json")
+            manifest = json.loads(manifest_path.read_bytes())
+            for asset in manifest["assets"]:
+                expected_snapshots[f"website/versioned_assets/version-{version}/{asset['path']}"] = (
+                    asset["sha256"], manifest["documentationSource"])
+        self.assertEqual(
+            {entry["path"]: (entry["sha256"], entry["sourceRevision"]) for entry in inventory["snapshots"]},
+            expected_snapshots,
+        )
         for entry in inventory["snapshots"]:
             self.assertEqual(hashlib.sha256(palette_tool.read_bytes(palette_tool.ROOT, entry["path"])).hexdigest(), entry["sha256"])
         self.assertEqual(len(outputs), 0)
