@@ -206,7 +206,10 @@ def dispatch(request: dict) -> dict:
                 build_control.stop(root / CHILD)
         try:
             result = service.request(root, operation)
-        except (FileNotFoundError, ConnectionRefusedError):
+        except (FileNotFoundError, ConnectionRefusedError, ConnectionResetError, BrokenPipeError):
+            # A concurrent down can commit cleanup and close a queued status,
+            # logs or down connection. Reconcile durable ownership without
+            # resending the request; a live/unknown owner still fails closed.
             result = service.disconnected(root)
         if operation == "down":
             result["build"] = build_control.wait_stopped(root)

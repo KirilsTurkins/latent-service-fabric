@@ -126,6 +126,65 @@ class SourceSnapshots(unittest.TestCase):
 
 
 class OwnedCommands(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "linux", "Linux supervisor socket ownership")
+    def test_status_queued_during_shutdown_reads_confirmed_cleanup_after_socket_reset(self):
+        from concurrent.futures import ThreadPoolExecutor
+        import socket
+        from tools.dev_workflow import helper, service
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workspace = state.workspace(root, "test-shutdown", create=True)
+            ready = {"state": "ready", "guestInstance": service.guest_instance()}
+            stopped = {**ready, "state": "stopped", "reaped": True, "cleanShutdown": True, "dataRetained": True}
+            state.atomic(workspace, "lifecycle.json", ready)
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as server:
+                server.bind(str(service.socket_path(workspace)))
+                server.listen(1)
+                server.settimeout(5)
+                def shutdown():
+                    connection, _ = server.accept()
+                    with connection:
+                        connection.settimeout(5)
+                        # A queued request remains unread when the supervisor
+                        # closes after committing a different client's down.
+                        self.assertTrue(connection.recv(4096, socket.MSG_PEEK))
+                        state.atomic(workspace, "lifecycle.json", stopped)
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    closed = executor.submit(shutdown)
+                    with patch.object(helper, "root_directory", return_value=root), \
+                            patch.object(service, "request", wraps=service.request) as requested:
+                        result = helper.dispatch(protocol.request("status", workspace.name, {}))
+                    closed.result(timeout=5)
+            self.assertEqual({key: result[key] for key in stopped}, stopped)
+            self.assertEqual(result["workflow"]["buildProcess"], {"state": "idle"})
+            requested.assert_called_once_with(workspace, "status")
+
+    @unittest.skipUnless(sys.platform == "linux", "Linux supervisor lifecycle ownership")
+    def test_closed_supervisor_transport_never_replays_or_assumes_cleanup(self):
+        from tools.dev_workflow import helper, service
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workspace = state.workspace(root, "test-disconnect", create=True)
+            ready = {"state": "ready", "guestInstance": service.guest_instance()}
+            for operation in ("status", "logs", "down"):
+                for failure in (ConnectionResetError, BrokenPipeError):
+                    for confirmed in (False, True):
+                        with self.subTest(operation=operation, failure=failure, confirmed=confirmed):
+                            prior = {**ready, "state": "stopped", "reaped": True} if confirmed else ready
+                            state.atomic(workspace, "lifecycle.json", prior)
+                            with patch.object(helper, "root_directory", return_value=root), \
+                                    patch.object(service, "request", side_effect=failure()) as requested:
+                                if confirmed:
+                                    result = helper.dispatch(protocol.request(operation, workspace.name, {}))
+                                    self.assertEqual(result["state"], "stopped")
+                                    self.assertTrue(result["reaped"])
+                                else:
+                                    with self.assertRaisesRegex(common.DevError, "cleanup-unknown") as failed:
+                                        helper.dispatch(protocol.request(operation, workspace.name, {}))
+                                    self.assertTrue(failed.exception.uncertain)
+                            requested.assert_called_once_with(workspace, operation)
+                            self.assertEqual(state.load(workspace, "lifecycle.json"), prior)
+
     @unittest.skipUnless(sys.platform == "linux", "Linux guest namespace ownership")
     def test_restart_confirms_reaping_without_claiming_clean_shutdown(self):
         from tools.dev_workflow import service
