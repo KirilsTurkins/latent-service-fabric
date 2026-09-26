@@ -1,5 +1,6 @@
 import React, {type ComponentProps, useEffect, useRef, useState} from 'react';
 import MDXComponents from '@theme-original/MDXComponents';
+import CodeExample from '../../components/CodeExample';
 
 function Table(props: ComponentProps<'table'>) {
   const ref = useRef<HTMLTableElement>(null);
@@ -16,4 +17,4 @@ function Table(props: ComponentProps<'table'>) {
   return <table {...props} ref={ref} tabIndex={props.tabIndex ?? (scrollable ? 0 : undefined)} />;
 }
 
-export default {...MDXComponents, table: Table};
+export default {...MDXComponents, table: Table, CodeExample};
