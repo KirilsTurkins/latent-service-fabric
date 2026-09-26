@@ -29,7 +29,7 @@ zeroize = { version = "=1.9.0", features = ["alloc"] }
 tokio = { workspace = true, features = ["sync", "time"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rustix = { version = "=1.1.4", features = ["rand"] }
+rustix = { version = "=1.1.5", features = ["rand"] }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 getrandom = "=0.4.3"

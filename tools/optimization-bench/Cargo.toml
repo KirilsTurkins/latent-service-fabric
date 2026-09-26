@@ -30,7 +30,7 @@ tokio = { workspace = true, features = ["net", "signal", "rt-multi-thread", "io-
 wasmparser = "=0.252.0"
 
 [target.'cfg(unix)'.dependencies]
-rustix = { version = "=1.1.4", features = ["process", "event", "fs"] }
+rustix = { version = "=1.1.5", features = ["process", "event", "fs"] }
 
 [[bin]]
 name = "artifact-identity-probe"
