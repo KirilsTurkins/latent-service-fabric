@@ -10,15 +10,13 @@ their lockfiles have not changed. This is the monitoring/promotion slice of
 [#359](https://github.com/KirilsTurkins/latent-service-fabric/issues/359), not a
 new scanner, runtime sandbox certification or automatic dependency updater.
 
-These instructions target the integrated scoped baseline, including the resolved
-SDK graphs and every tracked Cargo lock. The frozen native candidate predates
-that integration. Complete reviewed source for this contract is available at
-[native/security integration `edec84fa`](https://github.com/KirilsTurkins/latent-service-fabric/tree/edec84fa17460b11e166cbb25a9e51f7ea15e78b):
-`.github/workflows/security-baseline.yml`, its reusable `security-rustsec.yml`,
-`.github/security/`, `tools/security_settings.py`, `tools/security_scope.py`,
-`tools/security_scan.py`, `tools/security_sdk_graphs.py` and their focused tests. Before
-execution, use the parent-approved clean source containing those files; do not
-assume an older alpha checkout has the complete baseline.
+These instructions target the maintained baseline, including the resolved SDK
+graphs and every tracked Cargo lock. Use the reviewed current checkout. The
+[coordinator](../../.github/workflows/security-baseline.yml),
+[settings inventory](../../tools/security_settings.py) and
+[scanner](../../tools/security_scan.py) are maintained with their rules and tests.
+Monitoring is already active on this repository; the steps below verify it and
+explain how a maintainer can run a fresh check.
 
 The [baseline reference](../development/security-baseline.md) is authoritative
 for tool pins, inventories, rules, exceptions and boundaries at the selected
@@ -93,20 +91,18 @@ timeout --kill-after=5s 30s gh api \
   --jq '{strict, contexts, checks}'
 ```
 
-At the [2026-09-19 16:40 UTC checkpoint](../evidence/operator-release-prerequisites-2026-09-19.json),
-the coordinator was registered and active, but its file was absent on default
-`release`. There were zero manual and zero scheduled coordinator runs, and only
-`CI result` was required on `development`. These are dated observations with
-administrator visibility, not a claim that a later parent activation has failed.
-The native release workflow and its reviewer environment were also absent;
-those are separate gates, not a reason to invent another security coordinator.
+Expect the coordinator file on `release`, an active workflow registration, and
+both `CI result` and `Security baseline result` among development's required
+checks. The [activation record](../development/security-baseline-evidence.md)
+retains the actual manual and scheduled runs. Refresh the commands above before
+relying on repository settings, which can change independently of the source.
 
 The parent promotes the reviewed implementation and patched dependency graphs
 through the normal development-to-release review/CI path. Do not transplant only
 the YAML: tools, inventories, pins, tests and the source actually being scanned
 must be present and reviewed together. Do not force-push the default branch or
 disable a finding to make the older release appear clean. The existing native
-candidate's VM result does not clear the old renderer dependency graph.
+candidate's VM result does not clear a different dependency graph.
 
 After promotion, repeat the read-only inventory. Add the approved security
 aggregate to required checks only with the parent's rollout review and actual
@@ -219,16 +215,8 @@ temporary review files only from the operator-created private directory after
 checking its identity; do not delete another worktree, shared scanner state,
 retained native backups, protected trust or any user's workloads.
 
-This guide records the real read-only checkpoint, not an executed activation.
-The [actual settings walkthrough](../evidence/operator-settings-2026-09-19.json)
-runs the unmodified helper from integrated guide commit `1ed9ef3c` using Windows
-PowerShell, Python 3.13.5 and GitHub CLI 2.96.0. It confirms enabled services,
-read-only workflow defaults and the still-missing default coordinator/protection;
-it changes nothing. This is the helper's actual execution, not a Linux shell or
-runtime walkthrough. The parent still owns default promotion, required checks
-and actual manual/scheduled coordinator runs. Existing focused baseline tests
-belong to their recorded source, and the f8d native receipts do not validate the
-new inventory.
-[Rendered guide review and remaining child outcomes](../development/operator-guide-acceptance.md)
-stay pending separately. Development documentation may be published honestly
-before #240 closes; that does not close #282 or waive native release gates.
+The [activation record](../development/security-baseline-evidence.md) contains
+the executed manual/scheduled coverage and the earlier read-only checkpoint.
+The [guide review](../development/operator-guide-acceptance.md) is accepted.
+Those records preserve their original scope; use the live inventory and the
+selected run's results for a new monitoring decision.

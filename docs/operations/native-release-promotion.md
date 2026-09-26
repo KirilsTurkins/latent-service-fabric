@@ -253,7 +253,7 @@ scoped successes. Those records are not qualification for the current source or
 authority to consume a candidate through the release verification procedure.
 
 The [guide review handoff](../development/operator-guide-acceptance.md)
-separates retained execution, command/source checks and pending rendered human
+separates retained execution, command/source checks and the accepted maintainer
 review. The recorded rc.2 foundation and final alpha.4 rehearsal are executed
 evidence. Publication must retain its own authenticated results before being
 called complete.

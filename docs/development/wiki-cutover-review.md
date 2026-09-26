@@ -1,16 +1,22 @@
 # Wiki removal review
 
-The public Wiki will be removed after the complete documentation site is deployed
-and Phase 3 is complete. The maintainer decision of September 22, 2026 replaces
-the earlier plan to publish 26 archive notices and preserve legacy navigation.
-Migrate useful material and verify current destinations; old Wiki URLs, anchors
-and obsolete pages do not have to remain available.
+The repository Wiki is disabled. [PR #507](https://github.com/KirilsTurkins/latent-service-fabric/pull/507)
+already removed its publisher from `docs/wiki`, and the remaining bootstrap and
+publisher registrations were disabled on September 26. The
+[retirement observation](../evidence/wiki-retirement-2026-09-26.json) confirms both
+registrations and zero active writer runs. The complete-site deployment and
+replacement-route checks still need their final receipt before #356 closes.
+
+The maintainer decision of September 22 replaces the earlier plan to publish
+26 archive notices and preserve legacy navigation. Useful material belongs in
+current guides; old Wiki URLs, anchors and obsolete pages need not remain live.
 
 The [migration inventory](../evidence/wiki-migration-2026-09-20.json) records source
 `d1035a50d2fd99b076c74dd958ca4437d909f2ec`, published Wiki
 `e0cc50fe654b783f189b30a8a6f7946d66177180`, all four assets and historical identities.
 These pinned references establish attribution without retaining an active Wiki.
-The observations below are historical checks, not proof of a completed removal.
+The route observations below are historical checks, not proof of a completed
+website cutover. The newer retirement observation does not change their results.
 
 ## Website and destination observations
 
@@ -58,8 +64,8 @@ learning path; that guide links to the repository contribution contract.
 
 ## Execution order
 
-1. Merge and qualify the remaining essential guides and retain their execution
-   receipts. Complete the separate human newcomer reviews required by #345.
+1. Preserve the accepted September 26 guide review and qualify subsequent guide
+   corrections. The maintainer delegated those updates without another approval.
 2. Publish the reviewed development site through the protected exact artifact
    flow. Record source, successful push CI run, attempt, artifact, publisher run
    and live receipt. Recheck every maintained destination, including the two
@@ -67,11 +73,10 @@ learning path; that guide links to the repository contribution contract.
 3. Switch repository and public entry links to the tested site and remove active
    Wiki navigation. Obsolete page content can be retired rather than copied.
 4. Complete the Phase 3 gate using the content migration, guide reviews and live
-   website evidence. Record that the administrative Wiki removal follows this
-   decision; it is not a prerequisite that depends on Phase 3 completing first.
-5. Retire the old publishing workflow through a reviewed change on `docs/wiki`.
-   Disable the repository Wiki after the completed Phase 3 decision and website
-   deployment. Verify the setting, retired workflow and maintained entry links.
+   website evidence. Keep the actual earlier source-removal and settings
+   observations; do not claim that those actions happened after this decision.
+5. Recheck the disabled Wiki, retired workflow registrations and maintained entry
+   links. Do not recreate or re-enable the old service to repeat its removal.
 6. Record the resulting site/source identity and Wiki removal receipt in the
    [migration guide](wiki-migration.md), then close #356. Publishing archive
    notices, preserving legacy links or maintaining redirect pages is unnecessary.

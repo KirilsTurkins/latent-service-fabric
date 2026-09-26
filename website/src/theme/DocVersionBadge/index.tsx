@@ -19,7 +19,7 @@ export default function DocVersionBadge(props: Props): ReactNode {
     <OriginalBadge {...props} />
     <aside className="alert alert--secondary margin-bottom--md" aria-label="Documentation support" data-doc-version={publication?.version ?? 'development'}>
       <strong>{publication ? learningPage ? `Version ${publication.runtimeVersion}` : `${publication.runtimeVersion} · ${publication.profile}` : 'Development preview'}</strong>
-      <p>{publication ? learningPage ? 'These instructions are for this version. Select Development for the latest guides.' : publication.verification : 'These guides use the development source. Start with “Run your first node” to build the matching tools.'}</p>
+      <p>{publication ? learningPage ? 'These instructions are for this version. Select Development for the latest guides.' : publication.verification : 'These guides describe current development. Start with “Build your first application” for the packaged tools, or select a released version from the menu.'}</p>
       {!learningPage && <a href={`https://github.com/KirilsTurkins/latent-service-fabric/tree/${publication?.documentationSource ?? current.revision}`}>Exact documentation source</a>}
       {publication && !learningPage && <details><summary>Publication identity</summary>
         <p>Runtime source: <code>{publication.runtimeSource}</code></p>
