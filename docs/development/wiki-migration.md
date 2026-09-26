@@ -1,15 +1,19 @@
 # Wiki migration and removal
 
-The documentation site replaces the Wiki. Migrate useful current explanations,
-complete the essential guide reviews and verify the deployed site. Once Phase 3
-is complete and that site is deployed, remove the public Wiki and retire its
-publisher. Old Wiki URLs, anchors, page bodies and archive notices are not a
+The documentation site replaces the Wiki. Useful current explanations have
+been migrated and the essential guide review is accepted. The repository Wiki
+is disabled and its publishers are retired; final complete-site publication and
+replacement-route verification remain to be recorded. Old Wiki URLs, anchors,
+page bodies and archive notices are not a
 compatibility contract. This policy supersedes the original preservation plan
 for #356, following the maintainer decision of September 22, 2026.
 
 The [cutover review](wiki-cutover-review.md) records the content map, historical
-live route checks and remaining execution steps. Wiki removal is still pending;
-the existing inventory does not establish that the final site has been deployed.
+live route checks and remaining execution steps. The
+[September 26 retirement observation](../evidence/wiki-retirement-2026-09-26.json)
+confirms the disabled Wiki, previously merged publisher removal, both disabled
+workflow registrations and zero active writer runs. It does not establish that
+the final site has been deployed.
 
 ## Preserved source and published identities
 
@@ -66,12 +70,13 @@ root and project base paths and must resolve to maintained content.
    links to the tested site. Remove obsolete Wiki-specific navigation and active
    content. Record the live deployment identity and content dispositions.
 4. Complete the Phase 3 gate. Content migration, guide review and successful
-   site publication are gate prerequisites; the final Wiki removal follows this
-   decision so that the ordering does not make the gate depend on itself.
-5. Retire the old publishing workflow through a reviewed change on its source,
-   disable the repository Wiki, and verify that no active writer can recreate
-   it. Record the settings/workflow result and close #356. No notice-only Wiki
-   publication, redirect layer or indefinitely archived public Wiki is required.
+   site publication are gate prerequisites. The Wiki setting and source
+   retirement were already in effect before this final gate; preserve their
+   actual observation dates instead of claiming a different execution order.
+5. Recheck the retired workflow registrations and disabled Wiki, record the
+   final live destinations, and close #356 after the gate and site checks.
+   Do not re-enable a publisher or restore the Wiki to repeat a completed step.
+   No archive-notice publication or redirect layer is required.
 
 If a destination check fails before removal, finish the site correction before
 cutover. If the deployed site later needs rollback, use its protected exact

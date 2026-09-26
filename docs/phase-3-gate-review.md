@@ -8,7 +8,9 @@ authorized guide updates and release publication without another approval.
 Fresh release-source qualification, public website deployment and native delivery
 remain acceptance work. Security-monitoring activation #282, the actual Angular
 reference workflow #236 and static-site delivery #495/#496/#497 are complete.
-Wiki removal follows Phase 3 completion and verified website deployment.
+The Wiki is already disabled and its publishers are retired; final live-site
+cutover checks remain separate from that
+[retirement observation](evidence/wiki-retirement-2026-09-26.json).
 
 The current completion preparation starts from development
 `9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf`, including all six guest SDKs and
@@ -194,10 +196,10 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
    criteria, including removal of obsolete Phase 1/2 compatibility, then publish
    the final #240 decision with immutable evidence and accepted residual limits.
    That decision closes #201 and changes the roadmap's phase-completion status.
-7. After Phase 3 completion and verified site deployment, retire the old Wiki
-   writer through a reviewed change, disable the repository Wiki, verify both
-   actions and close #356. This final administrative removal follows the gate;
-   content migration and live site readiness remain gate prerequisites.
+7. After Phase 3 completion and verified site deployment, recheck the already
+   disabled Wiki and retired writers, retain the final cutover receipt and close
+   #356. Preserve the original dates of the earlier source removal and settings
+   observation. Content migration and live readiness remain gate prerequisites.
 
 ## Required six-language capsule authoring
 
