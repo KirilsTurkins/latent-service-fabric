@@ -5,7 +5,7 @@ without WSL, a Linux node or a VM. It is a controlled development test process,
 with a closed set of imports and execution controls. It is not a Windows
 production node and does not certify Linux isolation, admission or performance.
 
-[Get the developer tools](../start/developer-setup.md#windows-download-and-verify).
+[Get the developer tools](../start/developer-setup.md#if-you-use-windows).
 The authenticated Windows developer bundle contains
 `latent-portable-test-host.exe`, and its support files. Separately obtain your application project and its compiled
 component, capsule manifest and contracts. Use the exact three files produced
@@ -21,7 +21,15 @@ different observations.
 ## Select the native host and application
 
 Use the authenticated frontend and independent verification inputs from
-[working-terminal setup](../start/development-workspace.md#open-your-working-terminal). Acquire the
+[workspace setup](../start/development-workspace.md#if-you-use-windows). Load its downloaded
+script with `-SessionOnly` to define the command shortcut without provisioning,
+connecting or installing a Linux workspace:
+
+```powershell
+. "$HOME/Downloads/setup-lsf-workspace.ps1" -SessionOnly
+```
+
+Acquire the
 Windows bundle into the private host cache, then explicitly request portable
 execution. `$Artifacts` is the root under which the descriptor's artifact paths
 exist; it is not a node state directory.

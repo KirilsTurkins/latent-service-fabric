@@ -125,6 +125,11 @@ This node listens on an automatically selected loopback port. Its random client
 credential stays in private files. It verifies both package signatures and the
 builder policy before admitting a release.
 
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: typescript-authoring-1.sh -->
+
 ```bash
 mkdir "$LSF_TYPESCRIPT_PROJECTS/node" "$LSF_TYPESCRIPT_PROJECTS/results"
 python3 - <<'PY'
@@ -193,10 +198,17 @@ typescript_cli() { "$BIN/latent" --config "$LSF_TYPESCRIPT_PROJECTS/client.json"
 typescript_cli node get typescript-learning-node >"$LSF_TYPESCRIPT_PROJECTS/results/node.json"
 ```
 
+Run `source "$HOME/Downloads/typescript-authoring-1.sh"`.
+
 ## 5. Publish, deploy and invoke
 
 Publishing returns an exact publication identity. Put that identity into the
 generated deployment before applying it:
+
+Download this step's script, then run it in the same terminal. You can expand
+the script to inspect the commands first.
+
+<!-- lsf-download: typescript-authoring-2.sh -->
 
 ```bash
 typescript_cli release publish-package "$LSF_TYPESCRIPT_PROJECTS/releases/my-greeting/package" \
@@ -236,6 +248,8 @@ typescript_cli invoke --memory-bytes 134217728 --cpu-fuel 1000000000 --wall-time
   --input "$LSF_TYPESCRIPT_PROJECTS/results/empty.json" >"$LSF_TYPESCRIPT_PROJECTS/results/error.json" || test "$?" -eq 3
 typescript_answer "$LSF_TYPESCRIPT_PROJECTS/results/error.json"
 ```
+
+Run `source "$HOME/Downloads/typescript-authoring-2.sh"`.
 
 Expected answers are `[{"ok":"Hello, Ada!"}]` and
 `[{"err":"Please enter a name."}]`. Exit code 3 is a declared application

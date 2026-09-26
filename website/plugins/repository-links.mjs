@@ -23,6 +23,21 @@ export function checkHtml(element, index, source, options) {
 }
 
 export function transformDocument(tree, index, source, options) {
+  visit(tree, parent => {
+    if (!Array.isArray(parent.children)) return;
+    for (let i = 0; i < parent.children.length; i++) {
+      const marker = parent.children[i];
+      if (marker.type !== 'html' || !marker.value.includes('lsf-download:')) continue;
+      const match = /^<!-- lsf-download: ([a-z0-9-]+\.(ps1|sh|py)) -->$/.exec(marker.value.trim());
+      const block = parent.children[i + 1];
+      requireValue(match && block?.type === 'code'
+        && ({ps1: ['powershell'], sh: ['bash', 'sh'], py: ['python']})[match[2]].includes(block.lang),
+      `Download marker must name the following script block: ${source}`);
+      requireValue(!/\bdownload=/.test(block.meta ?? ''), `Duplicate script download metadata: ${source}`);
+      block.meta = [block.meta, `download=${match[1]}`].filter(Boolean).join(' ');
+      parent.children.splice(i--, 1);
+    }
+  });
   const imageDefinitions = new Set();
   const definitions = new Map();
   visit(tree, 'imageReference', node => imageDefinitions.add(node.identifier));

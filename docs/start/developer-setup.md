@@ -23,18 +23,29 @@ names, then check each original signature and file digest. They do not start a
 node, install a system service, import a WSL distro or generate credentials.
 Keep the resulting directory for offline setup and future projects.
 
-## Windows: download and verify
+## Download your toolkit
 
-Open PowerShell. Choose a language: `rust`, `c`, `typescript`, `go`, `java` or
-`dotnet`. Use a new input directory; the example creates one in your home folder.
-The download can be several hundred megabytes, depending on the compiler.
+Save the setup file for your OS to **Downloads**, then run the short command
+below it. Replace `rust` with your language. You can expand **View the setup
+script** to read exactly what it does; you do not need to copy or edit the script.
+It keeps the publisher and package checks in place and stops if any check fails.
+
+The download can be several hundred megabytes. The default destination is
+`LSF-inputs-alpha4` in your home folder and must not already exist. If Downloads
+is elsewhere on your machine, substitute that folder in the command.
+
+### If you use Windows
+
+<!-- lsf-download: get-lsf-tools.ps1 -->
 
 ```powershell
+param(
+    [ValidateSet('rust','c','typescript','go','java','dotnet')][string]$Language = 'rust',
+    [string]$Inputs = (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4')
+)
 $ErrorActionPreference = 'Stop'
 $Version = '0.1.0-alpha.4'
-$Language = 'rust'
 $Repo = 'KirilsTurkins/latent-service-fabric'
-$Inputs = Join-Path $env:USERPROFILE 'LSF-inputs-alpha4'
 if (Test-Path -LiteralPath $Inputs) { throw 'Choose a new input directory.' }
 if ($Language -notin @('rust','c','typescript','go','java','dotnet')) { throw 'Choose a supported language.' }
 New-Item -ItemType Directory -Path $Inputs | Out-Null
@@ -93,34 +104,30 @@ $Frontend = Join-Path $Inputs 'frontend/bin/latent-dev.exe'
 if ($LASTEXITCODE -ne 0) { throw 'Satisfy the reported host prerequisites before continuing.' }
 ```
 
-Verification should succeed for the selection and all four packages. Doctor then
-reports your host prerequisites. It does not claim a node is running yet.
-If a download fails, retain the failed directory for diagnosis and use a new
-directory for a fresh attempt; never execute a file whose verification failed.
+Open PowerShell and run:
 
-Continue with [workspace setup](development-workspace.md#if-you-use-windows).
-Use the `$Inputs` and `$Frontend` paths above. That guide creates one owned WSL
-distro and a private workspace, then builds and tests your greeting. For a
-different language, select its compiler here and follow the same versioned
-project workflow with its supported admission profile.
+```powershell
+& "$HOME/Downloads/get-lsf-tools.ps1" -Language rust
+```
 
-## Linux: download and verify
+### If you use Linux
 
-Use a fresh directory and run this from Bash. The Python helper below downloads
-data through the independently installed GitHub CLI; it executes no downloaded
-installer. The pinned Linux frontend is extracted only after authentication.
+<!-- lsf-download: get-lsf-tools.sh -->
 
 ```bash
 set -euo pipefail
 umask 077
-mkdir "$HOME/LSF-inputs-alpha4"
-cd "$HOME/LSF-inputs-alpha4"
+export LSF_LANGUAGE="${1:-rust}"
+export LSF_INPUTS="${2:-$HOME/LSF-inputs-alpha4}"
+case "$LSF_LANGUAGE" in rust|c|typescript|go|java|dotnet) ;; *) echo 'Choose a supported language.' >&2; exit 2;; esac
+mkdir "$LSF_INPUTS"
+cd "$LSF_INPUTS"
 python3 - <<'PY'
-import hashlib, json, pathlib, subprocess, zipfile
+import hashlib, json, os, pathlib, subprocess, zipfile
 
 root = pathlib.Path.cwd()
 repository = 'KirilsTurkins/latent-service-fabric'
-version, language = '0.1.0-alpha.4', 'rust'
+version, language = '0.1.0-alpha.4', os.environ['LSF_LANGUAGE']
 assert language in ('rust', 'c', 'typescript', 'go', 'java', 'dotnet')
 def gh(*args):
     return subprocess.check_output(['gh', *args], timeout=900).decode('utf-8')
@@ -167,10 +174,23 @@ PY
 "$PWD/frontend/bin/latent-dev" dev doctor
 ```
 
-Continue with [workspace setup](development-workspace.md#if-you-use-linux).
-Your host administrator supplies the pinned helper interpreter; an explicit SSH
-backend uses its own protected account and host key. No command above installs
-a system service or changes a remote machine.
+Open Bash and run:
+
+```bash
+bash "$HOME/Downloads/get-lsf-tools.sh" rust
+```
+
+## Check the result
+
+Expect successful verification followed by the frontend's prerequisite report.
+No node is running yet. Continue with [workspace setup](development-workspace.md).
+Keep the downloaded packages so another workspace can use them offline.
+
+If a download fails, keep its directory for diagnosis and choose a new input
+directory for another attempt. Windows accepts `-Inputs PATH` after the language;
+Linux accepts the directory as its second argument. If PowerShell blocks a
+downloaded script, review it first, then use `Unblock-File` on that one file and
+run it again; there is no need to change your machine's execution policy.
 
 ## Keep or remove the inputs
 
