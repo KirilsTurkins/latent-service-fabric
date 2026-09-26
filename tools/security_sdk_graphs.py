@@ -142,7 +142,7 @@ def nuget_project(project: element_tree.Element) -> None:
     require(project.tag == "Project" and project.attrib == {"Sdk": "Microsoft.NET.Sdk"}, "unreviewed-project-sdk")
     properties = {"TargetFramework", "ImplicitUsings", "Nullable", "TreatWarningsAsErrors", "RestorePackagesWithLockFile",
                   "Deterministic", "OutputType", "RootNamespace", "AssemblyName", "LangVersion", "AllowUnsafeBlocks",
-                  "WarningsAsErrors", "EnableDefaultCompileItems", "RuntimeFrameworkVersion", "RollForward"}
+                  "WarningsAsErrors", "EnableDefaultCompileItems", "RuntimeFrameworkVersion", "RollForward", "Version"}
     attributes = {"PackageReference": {"Include", "Version", "PrivateAssets"}, "ProjectReference": {"Include"},
                   "Protobuf": {"Include", "ProtoRoot", "GrpcServices", "Access"}, "Compile": {"Include"},
                   "FrameworkReference": {"Include"}}
@@ -152,6 +152,8 @@ def nuget_project(project: element_tree.Element) -> None:
             require(not list(node), "unreviewed-project-dependency-logic")
             if group.tag == "PropertyGroup":
                 require(node.tag in properties and not node.attrib and bool(node.text), "unreviewed-project-dependency-logic")
+                if node.tag == "Version":
+                    require(VERSION.fullmatch(node.text) is not None, "unresolved-project-version")
             else:
                 require(node.tag in attributes and set(node.attrib) <= attributes[node.tag]
                         and "Include" in node.attrib and not (node.text or "").strip(), "unreviewed-project-dependency-logic")
