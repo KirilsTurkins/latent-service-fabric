@@ -226,18 +226,12 @@ test outcomes and cleanup confirmations. After review, remove only that new,
 resolved review directory. Do not remove an installed node's state, credentials,
 provider inventory or another worktree's target.
 
-An older retained receipt records actual CI execution at `05360c50eb6c40212111ad0d87198db5dead78a5`
-for reviewed PR head `edec84fa`, not execution at the guide commit. The original
-check matches 18 source objects, including the complete relevant crate/WIT trees,
-runner/support files and lock/toolchain inputs, against guide source `22dc2f07`.
-At the later historical `3c2f3e7d` base, 17 objects matched, while `Cargo.lock`
-had changed. Preserve that record without extending its result to newer binaries.
 The [core/provider validation handoff](../development/core-guide-validation.md)
-now links separate September 21 receipts for configured-node management,
-HTTP/blob execution, capability policy and the 79-case local/call/utility
-selection plus its isolated environment child. Each receipt keeps its own
-runtime, collector and cleanup identities. Human newcomer review remains
-pending in the [guide acceptance inventory](../development/operator-guide-acceptance.md).
+records the executed provider, management and recovery scenarios, including
+their source and cleanup results. The
+[guide acceptance inventory](../development/operator-guide-acceptance.md)
+records the completed maintainer review. These engineering records are available
+when you need to check which implementation and environment were tested.
 
 Continue with [policy receipt/revocation recovery](reconcile-a-policy-change.md)
 and the [operator delivery path](../learn/deliver-and-recover-a-capsule.md).

@@ -8,7 +8,7 @@ retroactively turn it into a verified binary release.
 
 ## Prerequisites and independent bootstrap trust
 
-The initial candidate targets **Ubuntu Server 24.04, Linux x86_64, kernel 6.8
+The native bundle targets **Ubuntu Server 24.04, Linux x86_64, kernel 6.8
 or newer, glibc 2.39 or newer, SSE2, Python 3.12 or newer**, local POSIX
 filesystems with descriptor/xattr inspection, exclusive file locks and directory
 fsync, and readable `/proc/pressure/cpu` and `/proc/pressure/memory`.
@@ -19,7 +19,7 @@ working Landlock ABI 3 and seccomp; the real compiler probe, not a kernel versio
 comparison, decides availability. No Rust, guest compiler, Docker, Podman,
 Kubernetes, registry, application provider, or external orchestrator is needed
 to install and run the native binaries. Other distributions, ARM64 and musl are
-not declared supported by this first candidate.
+not declared supported by this release.
 
 Before executing **any downloaded installer or verifier code**, independently
 provision GitHub CLI **2.96.0 or newer**, Sigstore trusted roots, and the exact

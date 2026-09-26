@@ -62,6 +62,31 @@ test('documentation corrections keep the original runtime and example revisions 
   assert.equal(snapshot.manifest.documents.find(doc => doc.source === 'docs/guide.mdx').sha256, sha256(f.read('docs/guide.mdx')));
 });
 
+test('installer documentation anchors remain pinned to the selected release source', t => {
+  const f = setup(t);
+  const installer = '# Native bundle\n\n## Rootless evaluation\n\nUse the verified bundle.\n';
+  f.write('packaging/linux/INSTALL.md', installer);
+  f.write('docs/guide.mdx', f.read('docs/guide.mdx') + '\n[Install](../packaging/linux/INSTALL.md#rootless-evaluation)\n');
+  const source = f.commit();
+  const snapshot = f.snapshot('0.1.0-alpha.1');
+  storeSnapshot(f.root, snapshot);
+  f.write('packaging/linux/INSTALL.md', '# New installation contract\n');
+  f.commit();
+  const [loaded] = loadSnapshots(f.root);
+  assert.equal(loaded.manifest.linkMetadata['packaging/linux/INSTALL.md'].sha256, sha256(installer));
+  assert.equal(resolveLink(loaded.index, 'docs/guide.mdx', '../packaging/linux/INSTALL.md#rootless-evaluation'),
+    `https://github.com/KirilsTurkins/latent-service-fabric/blob/${source}/packaging/linux/INSTALL.md#rootless-evaluation`);
+  assert.throws(() => f.snapshot('0.1.0-alpha.2'), /Missing repository Markdown anchor/);
+});
+
+test('installer documentation support does not admit executable packaging inputs', t => {
+  const f = setup(t);
+  f.write('packaging/linux/install.py', 'raise RuntimeError("never execute snapshot input")\n');
+  f.write('docs/guide.mdx', f.read('docs/guide.mdx') + '\n[Installer source](../packaging/linux/install.py#L1)\n');
+  f.commit();
+  assert.throws(() => f.snapshot('0.1.0-alpha.1'), /Unapproved snapshot content root/);
+});
+
 test('missing regions and non-commit identities cannot produce a snapshot', t => {
   const f = setup(t);
   f.write('docs/guide.mdx', f.read('docs/guide.mdx').replace('region="invoke"', 'region="missing"')); f.commit();

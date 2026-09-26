@@ -14,7 +14,8 @@ it holds the paths and helper functions used by later steps.
 
 ## 1. Get the source and build LSF
 
-Use Linux with Git, Python 3.13.5, Rust 1.97.1 and wasm-tools 1.254.0 installed.
+This walkthrough uses the `0.1.0-alpha.4` source tag. Use Linux with Git,
+Python 3.13.5, Rust 1.97.1 and wasm-tools 1.254.0 installed.
 The [toolchain setup](../development/toolchain.md) describes those prerequisites.
 You do not need Docker, Kubernetes or a cloud account. Windows users can use a
 Linux environment such as WSL for these commands.
@@ -22,7 +23,7 @@ Linux environment such as WSL for these commands.
 ```bash
 set -euo pipefail
 umask 077
-git clone --branch development https://github.com/KirilsTurkins/latent-service-fabric.git
+git clone --branch 0.1.0-alpha.4 https://github.com/KirilsTurkins/latent-service-fabric.git
 cd latent-service-fabric
 export CARGO_TARGET_DIR="$PWD/target"
 python3 -m venv target/guide-venv
@@ -37,6 +38,8 @@ BIN="$CARGO_TARGET_DIR/debug"
 `latentd` is the node. `latent` is the command-line client that manages it.
 The last build creates the example program and its configuration in
 `target/capsules/echo`. The first build can take several minutes.
+For work on unreleased changes, follow the [contribution setup](../contribute/index.md)
+and use its development branch instead.
 
 ## 2. Create your node
 
