@@ -1,7 +1,7 @@
 # Documentation publication identities
 
 Released guides use an immutable documentation snapshot. Development continues
-to read `docs/`; it is labelled as unfinished Phase 3 work. The version menu
+to read `docs/` and is labelled separately from released snapshots. The version menu
 selects the historical page where that page exists. A missing historical page
 has no development content substituted at its URL.
 

@@ -64,6 +64,10 @@ pub struct Fixture {
 
 impl Fixture {
     pub async fn new() -> Self {
+        Self::with_services(WasmtimeHostServices::default()).await
+    }
+
+    pub async fn with_services(services: WasmtimeHostServices) -> Self {
         let root = tempfile::tempdir().unwrap();
         let input = packaging::capsule(packaging::component::Options::default());
         let inventory = sbom::inventory(&input);
@@ -120,7 +124,7 @@ impl Fixture {
             .unwrap();
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             config,
-            WasmtimeHostServices::default(),
+            services,
             repository.lifecycle_authority(),
         )
         .unwrap();

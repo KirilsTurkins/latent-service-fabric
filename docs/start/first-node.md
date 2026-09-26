@@ -1,8 +1,13 @@
-# Run your first node
+# Run your first node from source
 
 Create a local LSF node and give it a small program to run. By the end, you will
 send `hello` to an echo capsule, receive `hello`, and restart the node without
 losing the deployment. Later tutorials use this same node for your own capsules.
+
+For the shorter packaged workflow, start with [application development](application-development.md).
+It creates private node credentials and manages build, test and edit/watch for
+you. This source walkthrough remains useful when contributing to LSF or learning
+the individual operator commands.
 
 Run the Bash blocks in order, in **one terminal**. Keep it open while you work;
 it holds the paths and helper functions used by later steps.

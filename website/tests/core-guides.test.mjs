@@ -6,10 +6,11 @@ import sidebars from '../sidebars.ts';
 import {prepare} from '../lib/prepare.mjs';
 import {repositoryRoot} from '../lib/repository.mjs';
 
-test('Start opens the decision page followed by the real first-node path', () => {
-  assert.deepEqual(sidebars.start.slice(0, 2).map(item => item.id), ['start/index', 'start/first-node']);
+test('Start leads to packaged application development and retains the source-node path', () => {
+  assert.deepEqual(sidebars.start.slice(0, 4).map(item => item.id),
+    ['start/index', 'start/application-development', 'start/developer-setup', 'start/first-node']);
   const expected = {
-    start: ['start/index', 'start/first-node'],
+    start: ['start/index', 'start/application-development', 'start/developer-setup', 'start/first-node'],
     learn: ['learn/author-your-first-capsule', 'learn/deliver-and-recover-a-capsule'],
     howTo: ['how-to/operate-and-contribute'],
   };

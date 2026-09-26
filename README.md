@@ -11,23 +11,25 @@ request finishes, fails, times out or is cancelled.
 
 ## Try LSF
 
-Follow [Run your first node](docs/start/first-node.md) to build LSF, start a local
-node, deploy a capsule, invoke it and try it again after a restart. The walkthrough
-includes the commands and expected results. Then
-[create a capsule](docs/component-development/creating-a-capsule.md) or
-[call it from your application](docs/learn/use-a-client.mdx).
+Start with [application development](docs/start/application-development.md).
+Install the packaged tools, create a greeting in Rust, C, TypeScript, Go, Java or
+C#, and run it on a local development node. The controller creates the private
+credentials and manages build, test, edit/watch, restart and cleanup. Your
+application stays outside the LSF checkout; you do not build LSF itself.
 
-With an independently approved developer candidate, follow
-[application development with packaged tools](docs/start/application-development.md)
-for Windows/WSL2, direct Linux, explicit SSH and native Windows capsule tests.
-This path keeps application source outside the LSF checkout and uses selected
-prebuilt runtime and compiler distributions.
+Use Windows x86-64 with WSL2 or supported Linux x86-64. An explicit SSH backend
+and optional development container use the same workflow. Native Windows can
+also run the supported portable tests on already compiled capsules.
 
-LSF is in alpha. Native binary publication is on hold; use the source walkthrough
-until an approved release is available. The historical `0.1.0-alpha.3` release is
-source-only. See [installation](docs/installation.md) for availability and host
-requirements. Maintainers track remaining work and approval in the
-[release gate review](docs/phase-3-gate-review.md).
+For a persistent Linux server, follow [native installation](docs/installation.md).
+[Run a node from source](docs/start/first-node.md) remains available for
+contributors and readers who want to inspect the lower-level steps.
+
+LSF is experimental. The `0.1.0-alpha.4` distribution separates the native
+server runtime from the controlled development toolkit. Use the matching
+[installation and support instructions](docs/installation.md); an alpha release
+does not certify hostile multitenancy or production performance. The historical
+`0.1.0-alpha.3` release is source-only.
 
 The [documentation website](https://kirilsturkins.github.io/latent-service-fabric/)
 provides Start, Learn, How-to, Reference, Understand and Contribute sections.

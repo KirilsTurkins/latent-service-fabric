@@ -48,6 +48,7 @@ mod readiness;
 mod reclamation;
 #[cfg(test)]
 mod result_lifetime_tests;
+mod start;
 use preparation_context::PreparationContext;
 mod store;
 use owned::WasmtimePreparedUse;
@@ -456,23 +457,6 @@ impl WasmtimeBackend {
         // transfers its original reservation and never looks in the cache again.
         let (instance_permit, runtime) =
             self.invocation_runtime(prepared, &request.prepared.opaque_handle)?;
-        let _execution_eligibility = self
-            .shared
-            .preparation_context
-            .start_execution(&runtime, &request)?;
-        let function = self.requested_function(&runtime, &request)?;
-        let temporary_buffer_guard = self.shared.resources.temporary_buffer();
-        let raw_input = input::RawInvocationInput::new(
-            std::mem::take(&mut request.activation.input),
-            input_trace,
-        );
-        let input = values::decode_params(
-            &function.params,
-            raw_input.bytes(),
-            &request.activation.input_media_type,
-            self.config.value_codec_limits,
-        )?;
-
         let cancellation_probe = cancellation.probe();
         let cancellation_guard = cancellation_probe
             .as_ref()
@@ -498,6 +482,31 @@ impl WasmtimeBackend {
                 }
                 Err(error) => return Err(error),
             };
+        let stop = Arc::new(StopControl::with_clock(
+            accounting.deadline().monotonic(),
+            cancellation_probe,
+            Arc::clone(&self.shared.clock),
+        ));
+        let _execution_eligibility = match self
+            .execution_eligibility(&runtime, &request, cancellation, &stop)
+            .await?
+        {
+            Ok(eligibility) => eligibility,
+            Err(outcome) => return Ok(outcome),
+        };
+        let function = self.requested_function(&runtime, &request)?;
+        let temporary_buffer_guard = self.shared.resources.temporary_buffer();
+        let raw_input = input::RawInvocationInput::new(
+            std::mem::take(&mut request.activation.input),
+            input_trace,
+        );
+        let input = values::decode_params(
+            &function.params,
+            raw_input.bytes(),
+            &request.activation.input_media_type,
+            self.config.value_codec_limits,
+        )?;
+
         let capabilities = self
             .shared
             .capabilities
@@ -516,11 +525,6 @@ impl WasmtimeBackend {
         *capability_observer = capabilities
             .as_ref()
             .map(latent_capabilities::broker::CapabilitySession::observer);
-        let stop = Arc::new(StopControl::with_clock(
-            accounting.deadline().monotonic(),
-            cancellation_probe,
-            Arc::clone(&self.shared.clock),
-        ));
         if let Some(kind) = stop.observe() {
             return Ok(interrupted_outcome(
                 kind,
@@ -833,6 +837,14 @@ impl ExecutionBackend for WasmtimeBackend {
         ready: latent_executor::PreparedReadiness,
     ) -> Result<PreparedActivation, PlatformError> {
         self.materialize_readiness(ready)
+    }
+
+    fn materialize_ready_with_wait<'a>(
+        &'a self,
+        ready: latent_executor::PreparedReadiness,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<'a, Result<latent_executor::PreparedActivation, PlatformError>> {
+        Box::pin(self.materialize_readiness_with_wait(ready, wait))
     }
     fn backend_id(&self) -> &str {
         &self.profile.id

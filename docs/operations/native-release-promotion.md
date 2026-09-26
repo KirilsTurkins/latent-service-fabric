@@ -8,12 +8,15 @@ an explicitly approved publication. This is a development runbook for
 [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308), not a
 download announcement or production/hostile-multitenancy certification.
 
-**Publication is on hold.** The maintainer reserves `0.1.0-alpha.4` for
-completed requirements merged from `development` into `release`, followed by
-explicit approval. The premature final tag was removed and
+**Publication authorized September 26, 2026.** The maintainer instructed the
+release owner to update the guides, verify readiness, merge `development` into
+`release`, publish `0.1.0-alpha.4` and deploy Pages. The completed guide review
+and subsequent guide corrections need no further approval. Required CI, native
+artifact qualification and configured environment reviews remain in force. The premature final tag was removed and
 [publication run 35822633436](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35822633436)
 was cancelled before publication. No GitHub release or public assets existed.
-Do not recreate the tag, resume the cancelled run or publish the earlier build.
+The new release uses the completed integration and fresh exact-source
+qualification. Do not resume the cancelled run or publish its earlier build.
 
 The [historical rehearsal](../evidence/native-upgrade-35821200294/README.md)
 records complete acceptance for source
@@ -191,11 +194,11 @@ foundation binaries, move a tag or use same-version reinstall as an upgrade.
 ## 4. Select the final source after approval
 
 Complete all delivery and documentation requirements, including the human guide
-review. Merge the completed `development` branch into `release`. Present that
-exact release commit and its passing CI to the maintainer and obtain explicit
-approval before creating `0.1.0-alpha.4`. The version must identify the approved
-release commit, not the earlier rehearsal source. No final commit or CI run is
-selected while the hold is in effect.
+review. Merge the completed `development` branch into `release`. Record that
+exact release commit and its passing CI before creating `0.1.0-alpha.4`.
+The September 26 maintainer instruction authorizes this promotion after the
+required checks; it does not require another confirmation. The version must identify the approved
+release commit, not the earlier rehearsal source. Select a fresh successful CI run for the final release commit.
 
 After approval, create the tag once and select a fresh release-workflow run.
 Qualify that exact source and artifact against the authenticated rc.2 foundation.

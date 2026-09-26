@@ -5,12 +5,19 @@ count words, and calculate a shipping price. Each has its own service name and
 purpose. Together they show how to accept input, return an answer and explain
 an invalid request.
 
-For a packaged workflow without building LSF, start with
-[application development](../start/application-development.md) and the
-[Windows edit/watch walkthrough](windows-application.md). The commands below
-use the source-built node from the first-node tutorial.
+For your first project, use [application development](../start/application-development.md)
+and the [Windows edit/watch walkthrough](windows-application.md) or
+[Linux workspace](linux-workspace.md). Select `greeting`, `word-count` or
+`shipping` from the authenticated template index for your chosen language.
+`dev init`, `dev build` and `dev test --environment node` use the same project
+contract in all six languages.
 
-Complete steps 1–7 of [Run your first node](../start/first-node.md) first.
+This page explains the three programs and also supplies the lower-level
+source-build/operator commands. Only that latter path needs the source-built
+node from the first-node tutorial.
+
+For the lower-level commands in steps 4–8, complete steps 1–7 of
+[Run your first node from source](../start/first-node.md) first.
 Keep that terminal open: this tutorial uses its running node, `cli`, `field`
 and `answer` helpers. Run commands from the same repository root.
 
@@ -30,8 +37,8 @@ entropy grants; its guide includes those bounded host policies.
 
 The [client SDK guide](../learn/use-a-client.mdx) offers Rust, TypeScript, Go,
 C, Java and C# examples for a different task: calling these programs from an
-application outside the node. Those client SDKs do not compile capsules in
-all six languages. For C ownership and capability examples, see the
+application outside the node. Capsule compilation uses the separate guest SDKs
+and the selected language's compiler bundle. For C ownership and capability examples, see the
 [C guest examples](../../sdk/c-guest/README.md).
 
 ## 1. A greeting capsule

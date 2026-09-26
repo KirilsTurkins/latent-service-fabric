@@ -8,9 +8,11 @@ import {validateCoverage} from '../lib/coverage.mjs';
 const index = createRepositoryIndex();
 const original = JSON.parse(fs.readFileSync(path.join(websiteRoot, 'content/coverage.json'), 'utf8'));
 
-test('the finite live-source inventory maps all required outcomes without claiming guide acceptance', () => {
-  assert.deepEqual(validateCoverage(original, index), {rows: 27, pendingHumanReview: 27, acceptance: false});
-  assert.throws(() => validateCoverage(original, index, {acceptance: true}), /human guide\/execution review/);
+test('the accepted inventory retains every required outcome and pending reviews still block publication', () => {
+  assert.deepEqual(validateCoverage(original, index, {acceptance: true}), {rows: 27, pendingHumanReview: 0, acceptance: true});
+  const pending = structuredClone(original);
+  pending.rows[0].review = {...pending.rows[0].review, status: 'pending', reviewedCommit: null, criteria: []};
+  assert.throws(() => validateCoverage(pending, index, {acceptance: true}), /human guide\/execution review/);
 });
 
 test('missing and duplicate finite IDs fail', () => {
@@ -47,6 +49,7 @@ test('page existence or a test source cannot be promoted into reviewed execution
   document.rows[0].evidence = document.rows[0].evidence.filter(entry => entry.kind === 'test-source');
   document.rows[0].review.status = 'approved';
   document.rows[0].review.reviewedCommit = index.revision;
+  document.rows[0].review.criteria = [];
   assert.throws(() => validateCoverage(document, index), /lacks a guide/);
   document.rows[0].pages[0].role = 'guide';
   assert.throws(() => validateCoverage(document, index), /Incomplete human authoring review/);

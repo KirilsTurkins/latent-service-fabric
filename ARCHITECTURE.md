@@ -4,8 +4,12 @@ The authoritative architecture is divided by concern so that runtime implementat
 
 The current product is a standalone Linux runtime with publication-aware package
 admission, stateless capsule execution, bounded capability providers, six native
-client SDKs, shared HTTP ingress, static websites and the supported Angular SSR
-profile. Start with the [overview](docs/architecture/overview.md) for the
+client SDKs, six guest authoring SDKs, shared HTTP ingress, static websites and
+the supported Angular SSR profile. The [developer workflow](docs/start/application-development.md)
+uses packaged compilers, explicit Linux/WSL/SSH workspaces and a separate native
+Windows portable test subset. It manages development tools and nodes; it does
+not allocate a persistent language process for each deployment.
+Start with the [overview](docs/architecture/overview.md) for the
 implemented components and the [node reference](docs/reference/standalone-node.md)
 for configuration. Provider availability depends on the configured standalone
 or trusted Rust embedding profile.

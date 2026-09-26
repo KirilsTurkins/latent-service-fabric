@@ -11,7 +11,8 @@ use crate::StructuredLogSink;
 #[derive(Clone)]
 pub struct WasmtimeHostServices {
     pub clock: Arc<dyn ActivationClock>,
-    /// Explicit executor-neutral timer for pre-effect host-clock admission.
+    /// Explicit executor-neutral timer for pre-guest activation currentness
+    /// and pre-effect host-clock admission.
     /// None preserves immediate, nonblocking capability admission. This does
     /// not grant authority, refresh proofs, or change activation deadlines.
     pub currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,

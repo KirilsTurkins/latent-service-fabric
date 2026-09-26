@@ -7,36 +7,45 @@ storage. The example deliberately selects the provider-free trusted-local
 development profile so that source edits can be deployed without a signing
 service. Use it only for your own controlled application code.
 
+The default language below is Rust. For C, TypeScript, Go, Java or C#, use
+your selected language during setup, complete the common workspace steps 1–2,
+then follow [Build a packaged capsule in your language](packaged-languages.md).
+That path uses the matching signed test profile instead of the Rust watch example.
+
 ## 1. Obtain the selected inputs
 
-Ask your maintainer for an independently verified and extracted Windows frontend
-and a reviewed offline input directory. It must contain the matching WSL image,
-native Linux runtime distribution, Rust compiler/template bundle, independently
+Complete [Get the developer tools](../start/developer-setup.md#windows-download-and-verify)
+with the `rust` language selection for this example, or your chosen language
+for the six-language walkthrough. It produces an independently verified Windows
+frontend and an offline input directory containing the matching WSL image,
+native Linux runtime distribution, selected compiler/template bundle, independently
 approved developer/runtime publisher policies, trusted roots, and pinned Windows
 and Linux GitHub CLI verifiers. The verifiers must support attestation verification
 with the selected offline trusted root. Use GitHub CLI 2.96.0 or newer.
 
-The frontend must be verified **before its first execution**. The maintainer
-handoff verifies the attestation on `SHA256SUMS` against the approved repository,
+The frontend must be verified **before its first execution**. The download
+walkthrough verifies the attestation on `SHA256SUMS` against the approved repository,
 workflow, branch and full source commit, verifies each named file's hash and size,
 then extracts the selected Windows archive into a new directory. Do not use a
 policy found inside an untrusted archive as independent approval. Online download
 and offline verification are separate steps; all inputs below can be provisioned
 before disconnecting the machine.
 
-Replace the paths and two verifier digests below with that handoff. A digest has
-the form `sha256:` followed by 64 hexadecimal characters. Keep this PowerShell
-terminal open throughout the walkthrough.
+Use the input directory created by that walkthrough. The commands below
+calculate verifier identities from the independently installed Windows CLI and
+the already verified Linux CLI. Keep this PowerShell terminal open throughout
+the walkthrough; later steps reuse its paths and helper.
 
 ```powershell
-$Frontend = 'C:\LSF Tools\bin\latent-dev.exe'
-$Inputs = 'C:\LSF Inputs'
+$Inputs = Join-Path $env:USERPROFILE 'LSF-inputs-alpha4'
+$Language = 'rust'
+$Frontend = Join-Path $Inputs 'frontend/bin/latent-dev.exe'
 $State = Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial'
 $Project = Join-Path $env:USERPROFILE 'Projects\My greeting'
 $Workspace = 'test-my-greeting'
-$WindowsVerifier = 'C:\Program Files\GitHub CLI\gh.exe'
-$WindowsVerifierSha256 = 'sha256:REPLACE_WITH_APPROVED_WINDOWS_VERIFIER_DIGEST'
-$LinuxVerifierSha256 = 'sha256:REPLACE_WITH_APPROVED_LINUX_VERIFIER_DIGEST'
+$WindowsVerifier = (Get-Command gh.exe).Source
+$WindowsVerifierSha256 = 'sha256:' + (Get-FileHash -LiteralPath $WindowsVerifier -Algorithm SHA256).Hash.ToLowerInvariant()
+$LinuxVerifierSha256 = 'sha256:' + (Get-FileHash -LiteralPath (Join-Path $Inputs 'gh-linux') -Algorithm SHA256).Hash.ToLowerInvariant()
 $DeveloperPolicy = Join-Path $Inputs 'developer-policy.json'
 $RuntimePolicy = Join-Path $Inputs 'native-policy.json'
 $TrustedRoot = Join-Path $Inputs 'trusted_root.jsonl'
@@ -67,7 +76,7 @@ with broad inherited access or place node state on a shared source mount.
 
 ## 2. Authenticate and provision the workspace
 
-The input directory uses `wsl`, `native` and `rust` subdirectories for the
+The input directory uses `wsl`, `native` and the selected language subdirectories for the
 corresponding selected distributions. Verification is offline and checks the
 independently pinned verifier before using it.
 
@@ -93,7 +102,7 @@ generates and protects the workspace's credentials.
 ```powershell
 $Utf8 = [Text.UTF8Encoding]::new($false)
 $RuntimeInputs = Join-Path $Inputs 'tutorial-runtime.json'
-$ToolInputs = Join-Path $Inputs 'tutorial-rust-tools.json'
+$ToolInputs = Join-Path $Inputs "tutorial-$Language-tools.json"
 $Common = @{
     version = $Version; trustedRoot = $TrustedRoot
     verifier = (Join-Path $Inputs 'gh-linux'); verifierSha256 = $LinuxVerifierSha256
@@ -107,9 +116,9 @@ $Runtime.profile = 'local-experimental-v1'
 $Runtime.port = 18080
 $Tools = $Common.Clone()
 $Tools.schemaVersion = 'latent.dev.tool-inputs.v1'
-$Tools.bundleDirectory = Join-Path $Inputs 'rust'
+$Tools.bundleDirectory = Join-Path $Inputs $Language
 $Tools.publisherPolicy = $DeveloperPolicy
-$Tools.language = 'rust'
+$Tools.language = $Language
 [IO.File]::WriteAllText($RuntimeInputs, ($Runtime | ConvertTo-Json), $Utf8)
 [IO.File]::WriteAllText($ToolInputs, ($Tools | ConvertTo-Json), $Utf8)
 Invoke-LsfDev install --workspace $Workspace --runtime-inputs $RuntimeInputs
@@ -179,7 +188,7 @@ Open a **second PowerShell terminal** and run the following foreground command,
 using the same paths and workspace selected above:
 
 ```powershell
-& 'C:\LSF Tools\bin\latent-dev.exe' --state-root (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial') `
+& (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4/frontend/bin/latent-dev.exe') --state-root (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial') `
     dev up --workspace test-my-greeting
 ```
 
@@ -219,7 +228,7 @@ then exits. In that second terminal, start watch with the same explicit frontend
 and state root:
 
 ```powershell
-& 'C:\LSF Tools\bin\latent-dev.exe' --state-root (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial') `
+& (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4/frontend/bin/latent-dev.exe') --state-root (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial') `
     --editor-diagnostics dev up --workspace test-my-greeting --project "$env:USERPROFILE\Projects\My greeting" `
     --watch --test-select greeting-0
 ```

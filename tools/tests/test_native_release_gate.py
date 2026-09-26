@@ -2,10 +2,11 @@
 
 import copy
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from tools.native_release_gate import receipts, require_remote_tag, reviewed_ci, select_predecessor
+from tools.native_release_gate import authenticate_developer_selection, receipts, require_remote_tag, reviewed_ci, select_predecessor
 from tools.native_runtime.common import InstallError, encode
 from tools.native_runtime.verify import RELEASE_WORKFLOW, REPOSITORY
 from tools.select_native_vm_artifact import candidate_source
@@ -13,6 +14,29 @@ from tools.tests.test_native_runtime import fixture, policy_fixture
 
 
 class ReleaseGateTests(unittest.TestCase):
+    def test_developer_selection_requires_reviewed_bytes_version_and_release_attestation(self):
+        arguments = SimpleNamespace(release_directory=Path("synthetic-release"), version="0.1.0-alpha.4")
+        publisher = SimpleNamespace(verifier=Path("independent-gh"), roots=Path("independent-roots"))
+        policy = {"workflow": RELEASE_WORKFLOW, "sourceRef": "refs/tags/0.1.0-alpha.4", "sourceCommit": "a" * 40}
+        selected = {"schemaVersion": "latent.developer-release-selection.v1", "version": arguments.version,
+                    "purpose": "controlled-development-toolkit"}
+        with patch("tools.native_release_gate.files.read", return_value=encode(selected)), \
+                patch("tools.native_release_gate.execute", return_value=(0, b"{}")) as verification:
+            authenticate_developer_selection(arguments, publisher, policy)
+            self.assertIn("refs/tags/0.1.0-alpha.4", verification.call_args.args[0])
+            self.assertIn("a" * 40, verification.call_args.args[0])
+            verification.return_value = (1, b"rejected")
+            with self.assertRaisesRegex(InstallError, "attestation-identity-mismatch"):
+                authenticate_developer_selection(arguments, publisher, policy)
+        with patch("tools.native_release_gate.files.read", side_effect=[encode(selected), b"changed"]), \
+                self.assertRaisesRegex(InstallError, "reviewed-developer-selection-changed"):
+            authenticate_developer_selection(arguments, publisher, policy)
+        for change in ({"version": "0.1.0-alpha.3"}, {"purpose": "server-runtime"}):
+            with self.subTest(change=change), \
+                    patch("tools.native_release_gate.files.read", return_value=encode({**selected, **change})), \
+                    self.assertRaisesRegex(InstallError, "version-and-purpose"):
+                authenticate_developer_selection(arguments, publisher, policy)
+
     def test_receipt_gate_rejects_partial_wrong_artifact_or_diagnostic_only_runs(self):
         manifest, _archive = fixture()
         previous = {"version": "0.1.0-test.0", "sourceCommit": "b" * 40, "archiveSha256": "c" * 64}

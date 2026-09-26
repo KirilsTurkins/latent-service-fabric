@@ -25,11 +25,14 @@ provider inspection, preconditioned mutation and recovery. Each native transport
 implements that profile. The profile's fast semantic fixtures and each
 transport's network tests cover separate parts of the contract.
 
-The [Rust guest SDK](rust-guest/README.md) provides generated typed capability
-bindings and ownership helpers for actual Wasm components;
-[C guest fixtures](c-guest/README.md) validate generated ownership and ABI behavior.
-See the [guest workflow](../docs/component-development/guest-sdk.md) for exact
-profiles, signed admission and runtime validation.
+All six languages also support capsule authoring through their separate guest
+SDKs: [Rust](rust-guest/README.md), [C](c-guest/README.md),
+[TypeScript](typescript-guest/README.md), [Go](go-guest/README.md),
+[Java](java-guest/README.md) and [C#](dotnet-guest/README.md).
+Start with [packaged application development](../docs/start/application-development.md)
+to create and test a project without building LSF or installing a host compiler.
+The [guest workflow](../docs/component-development/guest-sdk.md) explains each
+supported component profile, capability bindings and admission requirements.
 
 WIT remains authoritative for typed capsule contracts. Language SDKs are convenience surfaces and must preserve deadlines, cancellation, platform errors, domain errors, resource budgets, identity, and idempotency semantics.
 

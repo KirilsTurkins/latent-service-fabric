@@ -82,7 +82,7 @@ const config: Config = {
       backgroundColor: 'var(--lsf-raised)',
       textColor: 'var(--lsf-text)',
       id: 'development-foundation',
-      content: 'LSF is in alpha. Start with “Run your first node”; use the version menu to choose your documentation.',
+      content: 'LSF is in alpha. Start with “Build your first application”; use the version menu to choose your documentation.',
       isCloseable: false,
     },
     navbar: {

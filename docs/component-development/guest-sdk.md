@@ -11,7 +11,9 @@ the exact language, heap, clock-grant and ownership boundaries.
 That guide covers editable source, generated contracts, packaging, signing,
 enforced node admission and cleanup. This reference describes capability ownership.
 
-The maintained guest SDK is [Rust `latent-guest`](../../sdk/rust-guest/README.md).
+All six languages have guest SDKs. [Packaged application development](../start/application-development.md)
+is the starting point for installing their compilers and creating a project.
+[Rust `latent-guest`](../../sdk/rust-guest/README.md) provides the Rust owners.
 The [C guest SDK](../../sdk/c-guest/README.md) provides explicit allocation and
 async ownership helpers over generated canonical ABI bindings.
 The [Go guest SDK](../../sdk/go-guest/README.md) adds typed capability packages

@@ -3,15 +3,19 @@
 **Decision: pending.** This is the evidence handoff for
 [#240](https://github.com/KirilsTurkins/latent-service-fabric/issues/240), not a
 Phase 3 completion declaration or runtime release. The implementation receipts
-below retain their original source and measurement identities. Required guide
-reviews, public website deployment and native delivery
+below retain their original source and measurement identities. The maintainer confirmed the 27-topic guide review on September 26 and
+authorized guide updates and release publication without another approval.
+Fresh release-source qualification, public website deployment and native delivery
 remain acceptance work. Security-monitoring activation #282, the actual Angular
 reference workflow #236 and static-site delivery #495/#496/#497 are complete.
 Wiki removal follows Phase 3 completion and verified website deployment.
 
-This review starts from development
-`6c63b68064ae44284d931e80d76d1e9012189b2b`, after the integrated security and
-guide-execution changes were merged. It does not certify a later integration
+The current completion preparation starts from development
+`9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf`, including all six guest SDKs and
+the qualified developer workflow. The [developer handoff](development/windows-qualification-handoff.md)
+retains the independently authenticated package source and complete supported-host results.
+The historical runtime execution review below starts from
+`6c63b68064ae44284d931e80d76d1e9012189b2b`. It does not certify a later integration
 commit merely because that commit contains the same documentation.
 The preceding runtime integration is development
 `532364d697b1b93f2b3187e0df367f878023e91a`, reviewed on September 23, 2026.
@@ -87,8 +91,10 @@ unchanged beside the newly executed reference workflow. Angular
 compilation still reports unchecked reproducibility and incomplete declared
 dependency coverage. This review covers the declared Linux x86_64 T0/T1
 profiles; T2 guest-process containment and production certification remain
-outside it. Human guide review, complete-site deployment, six-language authoring
-and the final phase decision remain pending. Runtime publication is on hold.
+outside it. At that historical checkpoint, guide review, site deployment and authoring were
+still pending. All six authoring tickets #544–#549 and developer workflow #559
+are now closed, and the maintainer has accepted the guide review. Fresh native
+publication, complete-site deployment and the final decision remain to be recorded.
 
 ## Dependency and evidence closure
 
@@ -103,14 +109,14 @@ and the final phase decision remain pending. Runtime publication is on hold.
 | Resource equation #239 | [Provider recovery](testing/phase3-resource-recovery.md), [renderer memory/storage](testing/phase3-resource-renderer.md), [event and child ownership](testing/phase3-resource-events.md), and OCI qualification. #376 merged after exact-head CI passed; #239 is closed. | Keep profile-specific measurements, failed attempts and unexported counters explicit. |
 | Angular application/reference #44/#236 | [Actual Angular reference workflow](testing/angular-reference-workflow.md): real signed two-build publication, public/authenticated browser delivery, DOM-reusing hydration, provider denial/cancellation, canary/revocation/restart/rollback and cleanup. #372 merged as `ffa90dc3f76f4bc589be63d313103fdb67fb5f1b`; both tickets are closed. | Preserve the restricted profile, unchecked reproducibility and declared incomplete dependency coverage. Guide review #361 remains separate. |
 | Static web extension #495/#496/#497 | [Contract PR #498](https://github.com/KirilsTurkins/latent-service-fabric/pull/498), [delivery PR #501](https://github.com/KirilsTurkins/latent-service-fabric/pull/501) and [CSR/static-generator workflow PR #502](https://github.com/KirilsTurkins/latent-service-fabric/pull/502) are merged; all three tickets are closed. #502 merged as `e4c9120b7d4c14220a4315bfd8e717505e37a5b4` after [CI run 35784029574](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35784029574) passed, including the actual OCI/browser qualification. | Preserve the final integrated static and SSR checks; human guide review remains separate. |
-| Native distribution #308 | [Authenticated alpha.4 rehearsal](evidence/native-upgrade-35821200294/README.md) passed both real VM profiles with complete acceptance, including genuine rc.2 upgrade, unsupported downgrade rejection, reboot, retained invocation and recovery/removal; local rootless evaluation also passed. The historical source and harness are `193d52c37635026de416feffd4a2dfd57d082451`. | Publication is on hold. The premature final tag was removed and run 35822633436 cancelled. Complete requirements, merge development into release, obtain explicit maintainer approval, then recreate the final tag and qualify/publish that exact release commit. |
-| Runbooks and guides #237/#357/#358/#359/#361 | Executed first-node, delivery, provider and six-client receipts are retained. [Guide execution PR #467](https://github.com/KirilsTurkins/latent-service-fabric/pull/467) merged after all 17 checks passed. | Native bundle/upgrade evidence under #308, rendered newcomer walkthroughs and maintainer pedagogy review remain required. |
-| Finite documentation gate #345 | Foundation, theme, diagrams, examples, version binding, discovery and initial protected Pages publication are delivered. The [coverage contract](development/website.md#coverage-is-a-review-contract-not-a-page-counter) retains 27 required outcomes. | Complete their exact-revision human reviews, publish the complete reviewed site, verify live routes, and finish #356's content cutover; remove the Wiki and retire its writer after Phase 3 completion. |
+| Native distribution #308 | [Authenticated alpha.4 rehearsal](evidence/native-upgrade-35821200294/README.md) passed both real VM profiles with complete acceptance, including genuine rc.2 upgrade, unsupported downgrade rejection, reboot, retained invocation and recovery/removal; local rootless evaluation also passed. The historical source and harness are `193d52c37635026de416feffd4a2dfd57d082451`. | The earlier premature tag was removed and run 35822633436 cancelled. Publication is now authorized after completion and promotion: qualify and publish the exact final release commit, preserving the historical rehearsal separately. |
+| Runbooks and guides #237/#357/#358/#359/#361 | Executed first-node, delivery, provider and six-client receipts are retained. [Guide execution PR #467](https://github.com/KirilsTurkins/latent-service-fabric/pull/467) merged after all 17 checks passed. | The maintainer review is accepted. Updated packaged setup steps, final native bundle/upgrade evidence and the published site remain to be verified. |
+| Finite documentation gate #345 | Foundation, theme, diagrams, examples, version binding, discovery and initial protected Pages publication are delivered. The [coverage contract](development/website.md#coverage-is-a-review-contract-not-a-page-counter) retains 27 required outcomes. | The 27-topic maintainer review is accepted with subsequent edits delegated. Publish the updated complete site, verify live routes, and finish #356's content cutover; remove the Wiki and retire its writer after Phase 3 completion. |
 
 The [continuous Documentation & Learning workstream](development/website.md)
 stays open. Its later tasks do not enlarge the finite #345 gate.
 The [27-outcome checklist](development/phase3-guide-review.md) gives the
-maintainer a finite review path without changing any pending review status.
+maintainer a finite review path and records the September 26 acceptance and delegated updates.
 
 ## Fixed, active and bounded shared resources
 
@@ -167,15 +173,15 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
    its retained six-client, browser, security and cleanup receipts. Any further
    runtime change needs its own required checks and review.
 2. Preserve #282's activated monitoring and scheduled-ref evidence and #308's
-   successful historical native rehearsal. Publication remains on hold. Complete
-   all requirements, merge development into release and obtain explicit
-   maintainer approval before recreating the final tag. Qualify the resulting
+   successful historical native rehearsal. The maintainer has authorized
+   publication after the required corrections. Complete the requirements and
+   merge development into release before recreating the final tag. Qualify the resulting
    release source and verify its actual published assets through the protected
    publisher; the earlier rehearsal does not qualify later runtime changes.
-3. Have the named reviewers execute the rendered guide paths at an exact source
-   revision. Record each required outcome, expected failure, cleanup, version
-   and reviewer in the coverage inventory. Automation cannot create a human
-   review identity or mark a walkthrough that did not occur as reviewed.
+3. Preserve the maintainer's accepted 27-topic review and delegated updates in
+   the coverage inventory. Validate the changed packaged setup paths and report
+   their execution source separately. Do not attribute later automated checks
+   to the human reviewer or relabel historical execution receipts.
 4. Publish that reviewed complete site through the protected exact-artifact
    flow. Record source SHA, successful push CI run/attempt, immutable artifact,
    publisher run and live deployment identity. Verify home, nested/versioned

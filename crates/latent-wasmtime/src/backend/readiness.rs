@@ -2,7 +2,7 @@
 
 mod input;
 mod ownership;
-mod wait;
+pub(super) mod wait;
 pub(super) mod worker_wait;
 
 #[cfg(all(test, target_os = "linux"))]
@@ -31,7 +31,8 @@ impl WasmtimeBackend {
     ) -> Result<PreparedReadiness, PlatformError> {
         // One finite caller-side read window, never one new window per check.
         // Opt-in sealed-source jobs have a separate real-clock worker window.
-        // Materialization and activation start remain immediate/fail-closed.
+        // Materialization has a separate affine read window. Activation start
+        // opts in only through the node's explicitly supplied host read timer.
         let window = wait::Window::new(read_wait);
         let pool = self
             .shared

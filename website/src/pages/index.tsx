@@ -3,7 +3,7 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 
 const sections = [
-  ['Start', '/docs/start/', 'Create a node and run your first program.'],
+  ['Start', '/docs/start/', 'Install the developer tools, create an application and run its tests.'],
   ['Learn', '/docs/component-development/creating-a-capsule/', 'Build a greeting service, a word counter and a shipping calculator.'],
   ['How-to', '/docs/phase-2-operator-workflows/', 'Find delivery, rollout and recovery procedures.'],
   ['Reference', '/docs/reference/operator-cli/', 'Consult CLI, API, configuration and protocol references.'],
@@ -16,9 +16,10 @@ export default function Home(): React.ReactNode {
     <main className="container foundation-home">
       <p className="lsf-eyebrow">Bounded execution. Explicit authority.</p>
       <h1>Latent Service Fabric documentation</h1>
-      <p>Run small programs on an LSF node and call them from your applications. Start by creating a node, then build and deploy your own capsules.</p>
+      <p>Build capsules in Rust, C, TypeScript, Go, Java or C#. The packaged developer tools create your workspace and manage build, test and edit/watch on an LSF node.</p>
+      <p><Link className="button button--primary" to="/docs/start/application-development/">Create your first application</Link></p>
       <p><Link className="button button--primary margin-right--sm" to="/guides/">Find a guide by task</Link> <Link to="/search/">Search documentation</Link></p>
-      <p>The development channel includes work in progress. The version menu also provides the preserved <strong>0.1.0-alpha.3</strong> documentation.</p>
+      <p>Use the version menu to choose a released documentation snapshot or the current development guides. Each snapshot keeps its own examples and supported features.</p>
       <div className="foundation-grid">{sections.map(([label, route, description]) =>
         <section key={label}><h2><Link to={route}>{label}</Link></h2><p>{description}</p></section>,
       )}</div>

@@ -148,6 +148,22 @@ def gate(arguments):
     return result
 
 
+def authenticate_developer_selection(arguments, publisher, policy):
+    selection = arguments.release_directory / "developer-selection.json"
+    selection_bytes = files.read(selection, 262144)
+    require(selection_bytes == files.read(ROOT / "packaging/dev/release-selection.json", 262144),
+            "reviewed-developer-selection-changed")
+    selected = document(selection_bytes, 262144)
+    require(selected.get("schemaVersion") == "latent.developer-release-selection.v1"
+            and selected.get("version") == arguments.version
+            and selected.get("purpose") == "controlled-development-toolkit",
+            "developer-selection-version-and-purpose")
+    command = verify.verification_command(str(publisher.verifier), selection,
+        arguments.release_directory / "SHA256SUMS.sigstore.json", publisher.roots, policy)
+    status, _observed = execute(command, timeout=60, maximum=2_097_152)
+    require(status == 0, "developer-selection-attestation-identity-mismatch")
+
+
 def publish_assets(arguments):
     require(arguments.receipts is not None and arguments.release_directory is not None
             and arguments.acceptance_bundle is not None, "publication-requires-complete-receipts-and-attestation")
@@ -166,6 +182,7 @@ def publish_assets(arguments):
                                                publisher.roots, decision["publisherPolicy"])
         status, _observed = execute(command, timeout=60, maximum=2_097_152)
         require(status == 0, "acceptance-attestation-identity-mismatch")
+        authenticate_developer_selection(arguments, publisher, decision["publisherPolicy"])
     notes = ROOT / "target/native-release-notes.md"
     require(not notes.exists(), "new-owned-release-notes-required")
     files.create(notes, ("# Experimental native Linux runtime\n\n"
@@ -181,7 +198,7 @@ def publish_assets(arguments):
     bundle = ROOT / "target/VM-EVIDENCE.sigstore.json"
     files.create(bundle, files.read(arguments.acceptance_bundle, 1_048_576))
     assets = [arguments.release_directory / name for name in
-              (archive, "release.json", "lsf-install.pyz", "SHA256SUMS", "SHA256SUMS.sigstore.json")]
+              (archive, "release.json", "lsf-install.pyz", "SHA256SUMS", "SHA256SUMS.sigstore.json", "developer-selection.json")]
     assets += [acceptance, bundle] + [arguments.receipts / (profile + ".json")
                                      for profile in ("local-experimental-v1", "external-capsule-v1")]
     expected = {asset.name: {"size": asset.stat().st_size, "sha256": files.digest(asset)} for asset in assets}
