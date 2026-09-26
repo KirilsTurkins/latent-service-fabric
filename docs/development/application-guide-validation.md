@@ -34,7 +34,8 @@ so it is supplemental evidence, not a clean-host qualification claim.
 | Exit | `0`; one passed, zero failed |
 
 The actual generated VS Code tasks, diagnostic failure and source fix are recorded
-separately in [editor integration](editor-task-integration.md). Final exact-candidate
-clean-machine walkthrough, independently approved identities and the combined
-platform handoff remain acceptance work under #568/#569. This document does not
-turn a static check, existing-host test or source frontend into that final proof.
+separately in [editor integration](editor-task-integration.md). The completed
+[final qualification handoff](windows-qualification-handoff.md) supplies the
+exact-candidate clean-machine walkthrough, independently approved identities and
+combined platform review for #568/#569. The static checks, existing-host native
+test and source frontend remain separately labeled evidence.

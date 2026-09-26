@@ -5,9 +5,10 @@ On September 24, 2026, the maintainer removed Mac, Lima and Apple Silicon requir
 from the epic and its children. The active scope is Windows x86-64/WSL2, native
 Windows tests, Linux x86-64/direct, explicit SSH, and opt-in devcontainer tooling.
 Issue #562 was removed and closed as not planned; it is not an implemented feature.
-The [packaged platform handoff](packaged-platform-handoff.md) records the passing
-five-entry schedule. Build/watch/native children #563/#564/#566 are closed;
-editor/newcomer work and final combined review remain open under #568/#569.
+The [final qualification handoff](windows-qualification-handoff.md) records all
+five passing entries, the clean-machine newcomer walkthrough and the reviewed
+#568/#569 aggregate. The earlier [platform handoff](packaged-platform-handoff.md)
+and source observations below retain their original identities and boundaries.
 
 `latent-dev` is a separate executable. It does not replace `latent`, change the
 operator CLI's single-operation behavior, or enable a production Windows node.
@@ -511,7 +512,8 @@ actual task execution, live compiler diagnostics, last-good deployment, task
 termination, explicit down, retained restart and untrusted folder opening.
 Watch uses build start/end markers to flush and clear its background problem
 matcher while the task remains running. The separate clean-machine newcomer
-walkthrough and final authenticated package qualification remain open.
+walkthrough and final authenticated package qualification passed; their exact
+identities are in the [final handoff](windows-qualification-handoff.md).
 
 `dev up` stays in the foreground until interruption or an explicit `dev down`
 from another terminal. Its private WSL session remains open while the node is
@@ -520,7 +522,11 @@ The session ends when the controller exits; it does not change `.wslconfig` or
 create a Windows service. Status, invocation and down commands remain available
 while the foreground controller waits. Use another terminal for those commands.
 
-## Executed evidence and remaining acceptance
+## Evidence history and final handoff
+
+The observations below describe their original revisions and acceptance state.
+The [final handoff](windows-qualification-handoff.md) supplies the later completed
+package/newcomer qualification; historical source runs remain source evidence.
 
 The developer-tools workflow builds nonpublishing Windows and WSL candidates.
 The Windows bundle contains the standalone frontend, helper and release-mode
@@ -982,14 +988,14 @@ clean host, VM-disconnect recovery or rendered newcomer/editor review.
 | #564 | Closed: packaged watch ordering, compiler failure, in-flight revision, cancellation, revoked restore and expired/UNKNOWN/concurrent-actor recovery passed. |
 | #565 | [Packaged and source campaigns passed](packaged-platform-handoff.md): all six node templates, closed failures, real capability fixtures and isolated cleanup, with execution classes kept separate. |
 | #566 | [Native Windows scope passed](native-windows-qualification.md): authenticated distribution, six languages, closed failures/clock, unsupported-required rejection and exact-source provider/node comparisons. |
-| #568 | Devcontainer passed; finish final editor-fix candidate qualification and the clean-machine newcomer walkthrough. |
-| #569 | Five packaged entries passed; finish the editor/newcomer evidence and reviewed aggregate for the selected final identities. |
+| #568 | [Completed newcomer/editor handoff](windows-qualification-handoff.md#newcomer-and-editor-review): actual package walkthrough, separate VS Code integration, rendered guides and optional devcontainer. |
+| #569 | [Final qualified matrix](windows-qualification-handoff.md): all five entries, exact approved candidates, retained failures and the schema-validated aggregate. |
 
 `latent.dev.qualification.v1` rejects missing entries, mocks, cross-builds,
 wrong environments, unsupported required scenarios, incomplete language coverage
-and unconfirmed cleanup. It intentionally cannot turn the checks above into epic
-completion. No public release, tag, support expansion or Phase 3 closure is
-authorized by this work.
+and unconfirmed cleanup. The [final report](windows-qualification-report.json)
+passes that validator using the actual packaged receipts. No public release,
+tag, support expansion or broader Phase 3 closure is authorized by this work.
 
 ## Contributor verification
 

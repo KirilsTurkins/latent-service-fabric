@@ -3,8 +3,9 @@
 All five required platform entries passed the final packaged schedule in
 [run 36187710975](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36187710975).
 This handoff supplies completed platform evidence for #560/#561/#563/#564/#565/#566.
-The editor-fix candidates, clean-machine newcomer walkthrough and final combined
-review remain with #568/#569; this record does not close epic #559.
+This is the historical platform handoff. The replacement candidates, clean-machine
+newcomer walkthrough and combined #568/#569 review are complete in the
+[final qualification handoff](windows-qualification-handoff.md).
 
 Application packages were independently approved at
 `0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3`. Their developer-tool build was
@@ -91,5 +92,6 @@ the actual WSL/direct/SSH/devcontainer observations above.
 Earlier failed attempts remain linked from
 [packaged qualification](packaged-developer-qualification.md). The editor test
 subsequently found buffered diagnostics and produced #599; its replacement
-candidate identity and newcomer review remain separate final work. Mac, Lima and
-ARM64 are excluded from the accepted scope, not untested support claims.
+candidate identity and newcomer review are recorded separately in the final
+handoff. Mac, Lima and ARM64 are excluded from the accepted scope, not untested
+support claims.

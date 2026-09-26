@@ -5,8 +5,9 @@ WSL node on Windows x86-64. The [compact observation](editor-task-integration-ob
 records the frontend bytes, modified source hashes, approved runtime identity,
 task exits, compiler location, revisions and owned cleanup. This is local source
 integration evidence; the rebuilt frontend is not a publisher-authenticated
-candidate, and the host is not a clean machine. It does not complete #568's
-newcomer walkthrough or #569's final package qualification.
+candidate, and the host is not a clean machine. The separately completed
+[final package handoff](windows-qualification-handoff.md) supplies #568's
+clean-machine newcomer walkthrough and #569's combined qualification.
 
 The extension test host used the editor's public task, document and diagnostic
 APIs. It executed the generated tasks without a second lifecycle controller or
