@@ -27,7 +27,7 @@ serde_json.workspace = true
 sha2.workspace = true
 tonic.workspace = true
 tokio = { workspace = true, features = ["net", "signal", "rt-multi-thread", "io-util", "process"] }
-wasmparser = "=0.252.0"
+wasmparser = "=0.259.0"
 
 [target.'cfg(unix)'.dependencies]
 rustix = { version = "=1.1.4", features = ["process", "event", "fs"] }

@@ -1863,7 +1863,7 @@ dependencies = [
  "sha2 0.10.9",
  "tokio",
  "tonic",
- "wasmparser 0.252.0",
+ "wasmparser 0.259.0",
 ]
 
 [[package]]
@@ -1890,7 +1890,7 @@ dependencies = [
  "spdx",
  "tempfile",
  "wasm-encoder 0.252.0",
- "wasmparser 0.252.0",
+ "wasmparser 0.259.0",
  "wit-parser 0.252.0",
 ]
 
@@ -2290,7 +2290,7 @@ dependencies = [
  "tonic",
  "tower",
  "wasm-encoder 0.252.0",
- "wasmparser 0.252.0",
+ "wasmparser 0.259.0",
  "zeroize",
 ]
 
@@ -3946,6 +3946,7 @@ dependencies = [
  "hashbrown 0.17.1",
  "indexmap",
  "semver",
+ "serde",
 ]
 
 [[package]]
