@@ -4,7 +4,7 @@ from __future__ import annotations
 import platform
 import time
 
-from . import build, node_cancellation, node_fixtures, node_invocation, node_test_grants, node_test_profile, node_tests, paths, scenarios, service, state
+from . import build, node_cancellation, node_deployment, node_fixtures, node_invocation, node_test_grants, node_test_profile, node_tests, paths, scenarios, service, state
 from .common import decode, digest, members, require
 
 
@@ -32,6 +32,7 @@ def run(root, arguments, *, deadline: float | None = None):
             "scenario-service-outside-test-project")
     manifest = decode(paths.read(source, descriptor["artifacts"]["capsule"]))
     ceilings = manifest["execution"]["limits"]
+    deployment_recoveries = []
     def controls(case):
         execution = case["execution"]
         return (installed is not None and not execution.get("cancelBeforeStart", False)
@@ -43,9 +44,12 @@ def run(root, arguments, *, deadline: float | None = None):
         if execution is not None:
             selected = node_test_grants.selection(root, descriptor, deployed["publication"], execution, installed, cli, journal)
             if current_grants != selected:
-                # deploy observes the owned generation and catalog state before
-                # applying. It records/reconciles the original operation ID.
-                deploy(root, test_grants=selected, deadline=deadline)
+                # Apply once, then reconcile only its original durable receipt
+                # on response loss. The target is re-observed before Invoke.
+                recovery = node_deployment.switch(cli, journal,
+                    lambda: deploy(root, test_grants=selected, deadline=deadline), deadline)
+                if recovery is not None:
+                    deployment_recoveries.append({"case": case["id"], **recovery})
                 current_grants = selected
         deployed, revision, current_grants = node_tests.target(root, descriptor, build_receipt, cli)
         path = root / "test-input.json"
@@ -134,6 +138,8 @@ def run(root, arguments, *, deadline: float | None = None):
     else:
         report["cleanup"] = "no-invocations-node-retained"
     report["pendingOperation"] = {key: pending[key] for key in ("id", "kind", "requestDigest")} if pending else None
+    if deployment_recoveries:
+        report["deploymentRecoveries"] = deployment_recoveries
     report["identity"]["deployment"] = deployed
     report["identity"]["expectedRevision"] = revision
     state.atomic(root, "test-report.json", report)
