@@ -60,7 +60,7 @@ export function buildSidebars(pages) {
     {label: 'Command-line tools', ids: ['reference/operator-cli']},
     {label: 'Capsule language profiles', ids: ['rust', 'c', 'typescript', 'go', 'java', 'dotnet'].map(language => `component-development/${language}-authoring`)},
     {label: 'Client SDKs', match: id => /^reference\/.+-client$/.test(id)},
-    {label: 'Capsules and publication', ids: ['component-development/guest-sdk', 'component-development/packaging', 'component-development/sbom'],
+    {label: 'Capsules and publication', ids: ['component-development/guest-sdk', 'reference/developer-test-fixtures', 'component-development/packaging', 'component-development/sbom'],
       match: id => /^reference\/(?:publication|publisher|package|build-provenance|release|oci|raw-artifact)/.test(id)},
     {label: 'HTTP and web delivery', ids: ['component-development/static-sites'], match: id => /^reference\/(?:http|web)/.test(id)},
     {label: 'Rollouts and recovery', match: id => id.startsWith('phase-2-')},
