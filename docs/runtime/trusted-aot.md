@@ -1,12 +1,12 @@
 # Isolated trusted-local AOT compilation and native cache
 
-Phase 2 issue #150 adds a bounded compiler producer to `latent-wasmtime`.
-`IsolatedAotCompiler` launches an approved one-job executable, verifies its input
+`latent-wasmtime` provides bounded isolated compilation.
+Its `IsolatedAotCompiler` launches an approved one-job executable, verifies its input
 and output, and returns locally authenticated native bytes with an owned memory
 allowance. The child uses Wasmtime 47.0.4's safe `Engine::precompile_component`;
 it never instantiates a guest or loads native output.
 
-Issue #151 adds opt-in persistent native reuse and authenticated loading. A
+Persistent native reuse and authenticated loading are opt-in. A
 configured factory uses its exact directory catalog, approved isolated compiler,
 protected host key, bounded raw-blob cache and bounded receipt cache. The normal
 configuration continues to compile portable components locally. There is no
@@ -34,7 +34,7 @@ Create a `ValidatedAotProfile` from a validated `WasmtimeConfig`, configure a
 the profile, authority and `AotProcessLimits`.
 
 `reserve_selected` accepts a concrete `OwnedArtifactPreparationSource`, exact
-`ReleaseDigest` and selected publication ID. The legacy `reserve` requires an
+`ReleaseDigest` and selected publication ID. The component-only `reserve` method requires an
 unambiguous component association. The producer obtains the catalog's current lifecycle/admission capability
 and reserves resources before the fresh bounded fetch. The job checks component
 bytes, descriptor, manifest, metadata and the retained capability. Missing

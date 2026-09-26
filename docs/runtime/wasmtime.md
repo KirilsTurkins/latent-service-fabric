@@ -1,6 +1,6 @@
 # Generic Wasmtime execution
 
-`WasmtimeComponentEngineFactory` and `WasmtimeBackend` implement the Phase 1
+`WasmtimeComponentEngineFactory` and `WasmtimeBackend` implement the
 Component Model execution port. They prepare a locally trusted release through
 its repository, or accept a directly supplied `CapsuleArtifact`,
 and invoke the requested exported contract and function through
@@ -11,8 +11,8 @@ This Rust API is a runtime building block used by the
 [activation lifecycle manager](../activation-lifecycle.md) and the
 [standalone Linux node](../reference/standalone-node.md), which supplies the
 configured invocation and management listener.
-The `Phase0WasmtimeEngineFactory` compatibility facade preserves the
-retained echo demonstration and its original text/domain-error wire format.
+The separate echo-test adapter is used by retained runtime tests with their
+text/domain-error wire format. Applications use the generic factory described here.
 
 ## Preparation and dispatch
 
@@ -63,7 +63,7 @@ cell, and granted activation limits, accounted across the store's memories.
 
 The engine enables fuel and epoch interruption. Epoch checkpoints observe the
 live cancellation probe and the original monotonic admission deadline when
-the cancellation view supplies it; legacy callers derive a monotonic deadline
+the cancellation view supplies it; callers without that view derive a monotonic deadline
 once from the envelope's Unix deadline. Guest code
 does not need to cooperate by making a host call. Guest traps, fuel exhaustion,
 memory denial, cancellation, and deadline expiry are contained to the activation.
@@ -86,8 +86,11 @@ drop intervals; the intervening classification belongs to
 without counting classification twice.
 
 No WASI filesystem, environment, network, process, or other ambient authority
-is installed. The supported host imports are activation context, structured
-logging, and monotonic/wall clocks. Their disclosure policy, shared live budget,
+is installed. The base host imports provide activation context, structured
+logging, and monotonic/wall clocks. Configured capability adapters additionally
+support the selected HTTP, blob, randomness and service-invocation interfaces;
+the [binding contract](capability-bindings.md) governs their authority.
+The base imports' disclosure policy, shared live budget,
 clock injection, and log acceptance contract are documented in
 [activation capabilities](capabilities.md).
 
@@ -102,7 +105,7 @@ The optional positive `fuel_async_yield_interval` makes async guest execution
 yield after a configured amount of fuel. Its default is disabled; enabling it
 does not replenish the activation's allowance and participates in preparation
 compatibility. Fuel exhaustion and epoch interruption remain enforced.
-The Phase 0 facade retains its stricter 80 KiB canonical-transfer allowance;
+The echo-test adapter uses a stricter 80 KiB canonical-transfer allowance;
 its effective allowance is also included in preparation compatibility.
 `preparation_key` binds the release to the Wasmtime
 version, engine configuration, host target, and CPU compatibility identity;
@@ -167,7 +170,7 @@ cost once, regardless of how many ready, active or temporary owners share it:
 
 | Runtime population | Ownership represented |
 | --- | --- |
-| `unpublished` | Constructed runtimes not admitted to the cache, including uncached Phase 0 uses. |
+| `unpublished` | Constructed runtimes not admitted to the cache, including uncached echo-test uses. |
 | `resident` | Runtimes currently owned by a resident cache entry. |
 | `evicted_live` | Former residents still held by ready, active, compiler or deferred-eviction owners. This is not an active-invocation count. |
 | `live` | The total of the three disjoint populations above. |
@@ -196,7 +199,7 @@ all manifest imports without an active-instance permit or Store. After assignmen
 same code pin into `PreparedActivation`. Its affine `PreparedUse` retains the
 exact runtime and instance reservation through `invoke_prepared_contained`. Invocation
 consumes this owner without looking in the cache again, so eviction or explicit
-legacy `release` cannot invalidate an already prepared use. Dropping an unused
+`release` cannot invalidate an already prepared use. Dropping an unused
 owner releases its pin synchronously. The backend rejects tokens from another
 factory or descriptors that differ from the token's original descriptor.
 Direct `prepare_for_use` callers retain the checked owned-artifact path.
@@ -208,8 +211,8 @@ runtime pins held by active uses are bounded by this shared reservation count an
 each runtime's validated source, metadata, and compiled-image ceilings. Pins
 waiting for a cell instead obey the separate ready count, metadata and image
 allowances described below. These counters do not
-claim to measure total process memory. Legacy `prepare` still returns only a
-descriptor, which can become absent after eviction; legacy `release` removes
+claim to measure total process memory. The descriptor-only `prepare` returns a
+descriptor, which can become absent after eviction; `release` removes
 cache ownership and is not activation cleanup.
 
 Each invocation owns a store guard that observes remaining fuel and confirmed
@@ -250,9 +253,9 @@ second lifetime charge. Neither accounting nor input caps claim a total compiler
 heap/RSS bound. Detailed stage/CPU observations are opt-in measurement instrumentation.
 
 The borrowed `prepare_from_repository` and direct preparation APIs remain
-compatible synchronous paths. The generic node readiness path supplies the
-bounded worker behavior; the Phase 0 facade retains its original execution model.
-Cache-disabled preparation remains restricted to the Phase 0 profiling facade;
+available synchronous paths. The generic node readiness path supplies the
+bounded worker behavior; the echo-test adapter has its own execution path.
+Cache-disabled preparation is restricted to that test adapter;
 the Generic factory rejects that configuration before creating its engine.
 A shared instance gate defaults to 64 active component instances
 across the factory's backends, and each store also has explicit instance,
@@ -349,7 +352,7 @@ LSF_ECHO_COMPONENT=target/capsules/echo/echo-capsule.wasm \
 These regressions establish the behavior they exercise and live-resource
 accounting at completion. They do not replace native long-running RSS/mapping,
 helper-topology, or dormant-release scaling evidence. The completed
-[Phase 1 gate](../phase-1-completion.md) and
+[historical runtime gate](../phase-1-completion.md) and
 [extension report](../phase-1-extension-completion.md) record those separate
 measurements and their source-specific limits. New heavy calibration, profiling,
 and soak runs require explicit selection as described in

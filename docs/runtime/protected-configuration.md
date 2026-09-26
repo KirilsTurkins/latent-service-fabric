@@ -1,6 +1,6 @@
 # Protected standalone configuration files
 
-Phase 3 hardens the two standalone inputs that carry security authority: the
+The standalone node protects two inputs that carry security authority: the
 credential-bearing node configuration and, when supply-chain admission is
 `enforced`, its trust-policy document. This is one prerequisite of the
 `external-capsule-v1` profile from [RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md).
