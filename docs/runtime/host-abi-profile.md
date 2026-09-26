@@ -26,7 +26,7 @@ error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-re
 | `latent:service/invoke@0.1.0` | supported, async import | configured [isolated local adapter](local-service-invocation.md) |
 
 An inspected package has no provider authority. Wasmtime preparation rejects a
-required provider that has no installed owner. The generated Phase 3 host/guest
+required provider that has no installed owner. The generated host/guest
 bindings contain types and registration helpers; the production linker supplies
 context, log and clock, plus service invocation, buffered/streaming HTTP, local/S3 blobs, local/Vault secrets, NATS publication, cryptographic randomness and custom metrics when their node-owned
 adapters are installed. Activations must supply their exact prepared

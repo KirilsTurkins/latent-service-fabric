@@ -9,14 +9,13 @@ adds scoped authenticated transfers. [Publisher signature verification](../refer
 binds exact packages to approved keys and current trust state. [Build provenance](../reference/build-provenance.md)
 adds independent builder policy; [SBOM inspection](../component-development/sbom.md)
 binds inventories to package content. [Trusted catalog admission](../reference/package-admission.md)
-and [durable rollout](../phase-2-rollouts.md) complete the delivery path accepted
-by the [Phase 2 gate](../phase-2-completion.md).
+and [durable rollout](../phase-2-rollouts.md) complete the delivery path.
 
 ## Identity and compatibility
 
 | Identity | Bytes or object identified |
 | --- | --- |
-| `ReleaseDigest` | Existing Phase 1 component bytes; local catalog and invocation RPC meaning is unchanged. |
+| `ReleaseDigest` | Exact executable component bytes. |
 | `PackageDigest` | Exact OCI package manifest bytes, including their configuration/layer descriptors. |
 | `ArtifactBlobDigest` | Exact configuration, layer or other content bytes. |
 | Implementation version | Package's declared semantic version; it is not a content identity. |
@@ -30,8 +29,7 @@ Whitespace or ordering changes may therefore create distinct valid package
 digests. Canonical publishing is deterministic but does not relabel received
 content.
 
-No migration rewrites Phase 1 catalog keys, completion records, historical
-receipts, RPC descriptors or SDK invocation fields. The verified package
+Historical receipts retain their original identities. The verified package
 admission path persists the association between package and component identity,
 enforces existing metadata immutability, and derives trust from verified evidence. An old
 local record is not evidence of a signed package. Deduplicating bytes never

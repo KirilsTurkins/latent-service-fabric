@@ -1,7 +1,7 @@
 # Publication-bound deployment and execution
 
-Phase 3 issue #266 carries the [catalog publication identity](publication-catalog.md)
-through deployment, preparation and actual guest start. `ReleaseDigest` continues
+The [catalog publication identity](publication-catalog.md) is carried through
+deployment, preparation and actual guest start. `ReleaseDigest` continues
 to identify executable bytes; it does not identify a tenant's admission. This
 implements the runtime portion of [ADR-0027](../../adr/0027-separate-publication-authority-from-component-identity.md).
 The [management API contract](publication-api.md) requires exact tenant publications
@@ -111,7 +111,7 @@ owners. They do not establish freshness relative to a remote controller.
 [RFC-0004](../../rfcs/0004-route-and-authorization-freshness.md) require future
 cluster leases to bind this same publication and current authority independently
 from route retention and component/code identity. Finite expiry, new-boot
-revalidation and conservative clock checks are Phase 5 implementation work.
+revalidation and conservative clock checks belong to that future cluster work.
 
 The guarded-start callback is the acceptance cutover, not the first literal
 guest instruction. Work accepted before a later denial may finish under its own

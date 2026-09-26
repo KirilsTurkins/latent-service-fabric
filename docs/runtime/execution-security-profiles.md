@@ -1,13 +1,13 @@
 # Execution security profiles
 
-Phase 3 #280 implements the node selectors defined by
+The node supports the execution selectors defined by
 [ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md).
 `securityProfile` is an optional, exact string in `node.json`:
 
 | Selection | Trust assumption | Required controls |
 | --- | --- | --- |
 | `local-experimental-v1` (default) | T0: operator-controlled workloads and preparation | Existing standalone validation; admission and isolated AOT remain explicit independent options. |
-| `external-capsule-v1` | T1: hostile component bytes/inputs, trusted node, Wasmtime, host bindings, native loader and OS | Enforced package admission, protected credentials/trust policy/native key, exact Phase 3 ABI and reviewed Wasmtime 47.0.4 baseline, supported Linux x86_64 isolated compilation. |
+| `external-capsule-v1` | T1: hostile component bytes/inputs, trusted node, Wasmtime, host bindings, native loader and OS | Enforced package admission, protected credentials/trust policy/native key, exact host ABI and reviewed Wasmtime 47.0.4 baseline, supported Linux x86_64 isolated compilation. |
 
 The compiler and authenticated native-loading subprofiles are observations of
 these controls, not additional node selectors. Unknown, null, future, provider,
@@ -63,7 +63,7 @@ fixed diagnostic/exit-code convention. Node inventory exposes the effective
 
 The runtime factory requires actual enforced admission and native compiler
 owners before constructing an external-profile engine or its workers. Local
-embedding and Phase 0 constructors cannot bypass that requirement. The exact
+embedding constructors cannot bypass that requirement. The exact
 selection participates in prepared/native compatibility identity, separately
 from mutable tenant grants and credentials. Cold, warm, queued, synchronous and
 persistent native-cache paths retain current catalog authority checks. There is
@@ -89,8 +89,7 @@ an independent authority and is not provided by this marker.
 
 ## Finite evidence and remaining boundaries
 
-The following reusable checks form the compiler/profile portion of the Phase 3
-#238 adversarial matrix and #237 operational guidance. They run on small fixtures
+The following reusable checks cover compiler and profile security. They run on small fixtures
 in normal CI. They establish the listed properties, not universal absence of
 compiler or sandbox defects.
 
@@ -108,8 +107,8 @@ Compiler CPU/address-space limits cover the child only. Parent-side parsing,
 signature verification, catalog metadata and native loading retain their separate
 byte/work/owner bounds. Guest Store limits do not bound all Wasmtime/embedder
 allocations or node RSS. Native deserialization remains a synchronous trusted
-node operation. Provider/renderer containment, cross-capability isolation and
-Phase 3's integrated completion evidence remain assigned to their owning tickets.
+node operation. Provider/renderer containment and cross-capability isolation
+retain their separate execution and resource measurements.
 Dormant deployments acquire no process, thread, listener, compiler or guest state.
 
 The [Angular renderer qualification](angular-renderer-profile.md) evaluates a

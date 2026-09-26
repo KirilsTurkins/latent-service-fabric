@@ -90,8 +90,8 @@ to the adapter and bridge, with compatible manager request limits.
 Missing targets/budgets, malformed IDs, forged principal metadata, expired
 request deadlines, and oversized input fail before route resolution, admission,
 or cell allocation. Explicit zero resource grants remain hard ceilings. Child
-calls, outbound requests, state/blob I/O, and effects must all be zero in Phase 1.
-An explicitly configured [Phase 3 budget profile](../runtime/descendant-budgets.md)
+calls, outbound requests, state/blob I/O, and effects must all be zero in the basic profile.
+An explicitly configured [capability budget profile](../runtime/descendant-budgets.md)
 permits bounded child/outbound/blob counters. State and effect counters remain
 unsupported. The endpoint's trusted profile selection is independent of request
 metadata and does not itself authorize capability use.

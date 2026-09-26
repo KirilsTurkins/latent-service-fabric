@@ -1,10 +1,10 @@
 # Capability audit and inspection
 
-Phase 3 [#210](https://github.com/KirilsTurkins/latent-service-fabric/issues/210)
-connects the [sealed broker](capability-broker.md) to the existing
+Capability auditing connects the [sealed broker](capability-broker.md) to the
 [durable audit owner](../phase-2-audit.md). It adds typed capability evidence,
-required audit admission and scoped `CapabilityService` inspection. Remaining
-HTTP, blob, secret and event providers have their own implementation tickets.
+required audit admission and scoped `CapabilityService` inspection. The
+[provider reference](../reference/standalone-providers.md) distinguishes installed
+standalone providers from the additional trusted embedding integrations.
 
 ## Required recording and optional observations
 
@@ -16,8 +16,8 @@ and means false. Present null and nonboolean values are rejected.
 A configured embedding calls
 `ActivationCapabilityBroker::with_audit(handle, observations)` before registering
 providers or compiling plans. Standalone composition requires the same audit
-owner as management. Normal standalone provider configuration remains its own
-Phase 3 ticket.
+owner as management. Configure supported standalone providers through the
+[node provider settings](../reference/standalone-providers.md).
 
 `prepare_owned_dispatch` retains the exact handle and provisional budget owners.
 `CapabilityDispatch::dispatch` preflights applicable terminal records, reserves

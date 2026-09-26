@@ -91,9 +91,9 @@ directly; the obsolete component-or-publication selector has been removed.
 | Exact operation replay | Returns captured history without applying it again. |
 | Unsupported stored catalog format | Rejected without implicit catalog admission; use fresh alpha state. |
 
-Phase 2 release roots are unsupported. The offline migrator has been removed;
-follow the [fresh-state procedure](publication-catalog.md#supported-storage-and-fresh-state)
-instead. A nonempty obsolete root cannot become a newly admitted publication
+Obsolete release-root formats are unsupported. Follow the
+[fresh-state procedure](publication-catalog.md#supported-storage-and-fresh-state)
+for a new installation. A nonempty obsolete root cannot become a newly admitted publication
 catalog. Current deployment operation-table validation remains separate from
 retired release-root formats.
 

@@ -1,24 +1,24 @@
 # Standalone node
 
-Phase 3's optional `capabilityPolicies` section enables one bounded durable policy
+The optional `capabilityPolicies` section enables one bounded durable policy
 owner on the existing control runtime and listener. See [capability policy
 configuration and recovery](../runtime/capability-policies.md#durable-owner-and-finite-retention).
 It adds policy/provider-binding management and sealed revision checks; it does not
 install application providers or change dormant-service execution resources.
 
-The optional `budgetProfile` selector enables [Phase 3 accounting and descendant
-limits](../runtime/descendant-budgets.md). It defaults to Phase 1. New counter
-ceilings default to zero and remain separate from capability grants.
+The optional `budgetProfile` selector enables [capability accounting and descendant
+limits](../runtime/descendant-budgets.md) with `mode: "phase3"`. Its default,
+`mode: "phase1"`, supplies basic execution accounting. Capability counter ceilings
+default to zero and remain separate from grants.
 
 `latentd serve` runs the standalone stateless node on Linux. One process composes
 durable release and deployment catalogs, immutable routing, admission and quotas,
 fixed execution cells, generic Wasmtime execution, activation capabilities,
 bounded lifecycle/status retention, telemetry, and the invocation and management
 RPC adapters. Worker and listener counts come from node configuration and do not
-grow with deployed services. Completed Phase 2 provides authenticated package admission,
+grow with deployed services. The node provides authenticated package admission,
 release lifecycle, optional authenticated native caching, durable audit and
-manual/canary/rollback control. The [Phase 2 completion review](../phase-2-completion.md)
-records its accepted scope and evidence. Optional Phase 3 capability providers
+manual/canary/rollback control. Optional capability providers
 use their explicit policy and provider configurations. [HTTP trigger
 management](http-triggers.md) shares this node's catalog and management listener;
 the optional [shared HTTP/TLS application listener](http-ingress.md) provides
@@ -30,7 +30,7 @@ audit history; the
 [scriptable echo quickstart](../development/standalone-quickstart.md) starts a node
 with an ephemeral endpoint and private credentials. Generated Tonic clients can
 also use the [management](management-services.md) and
-[invocation](../protocol/invocation-service.md) contracts directly. The historical Phase 0 `phase0-spike`/`spike` command family is no longer part of the current `latentd` product surface; its recorded receipts and versioned documentation remain available as historical evidence.
+[invocation](../protocol/invocation-service.md) contracts directly.
 
 ## Execution security profile
 
@@ -120,8 +120,8 @@ The [authenticated package admission](package-admission.md) mode is selected
 with `"supplyChain":{"mode":"enforced","policyFile":"admission-policy.json",
 "clockLeaseSeconds":5}`. The policy path is also anchored to the configuration
 directory. It requires a complete bounded publisher/builder/revocation/SBOM and
-tenant-authorization policy. An omitted member or explicit `trusted-local` keeps
-Phase 1 compatibility only for local catalogs; an existing enforced root refuses
+tenant-authorization policy. An omitted member or explicit `trusted-local` selects
+controlled local publication; an existing enforced root refuses
 that downgrade. The [member schema](../../schemas/node-supply-chain.schema.json)
 describes both closed forms. Changing the policy file does not automatically
 reload live trust; the host replacement API owns that transaction.
@@ -671,10 +671,10 @@ grace even though the run reports failure. An outer process supervisor supplies
 the hard termination boundary. A timeout is failure
 evidence, not proof that the work stopped. A clean finite run establishes the reported
 cleanup for that run; it does not establish long-running reclamation, dormant
-100000-service scale. The retained [Phase 1 measurements](../testing/phase-1-measurements.md)
+100000-service scale. The retained [runtime measurements](../testing/phase-1-measurements.md)
 provide that separate evidence for their recorded source revisions.
 
-The [separate Phase 2 workflow](../development/standalone-quickstart.md#bounded-phase-2-operator-workflow)
+The [separate operator workflow](../development/standalone-quickstart.md#bounded-phase-2-operator-workflow)
 uses current binaries, freshly signed test packages and a disposable TLS registry
 to exercise these boundaries through actual CLI and node processes. Its
 synthetic signing fixture is not production build provenance. The

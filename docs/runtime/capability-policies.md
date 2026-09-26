@@ -1,6 +1,6 @@
 # Durable capability policies
 
-Phase 3 delivers a Linux node-owned policy store and evaluator in `latent-policy`,
+LSF provides a Linux node-owned policy store and evaluator in `latent-policy`,
 authenticated `PolicyService` management APIs, and `latent policy` commands.
 The closed language is `lsf-capability-policy-v1`; provider selection metadata uses
 `lsf-provider-binding-v1`. These are authorization building blocks for the broker

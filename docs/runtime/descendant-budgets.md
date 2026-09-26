@@ -1,12 +1,10 @@
 # Budgets and cancellation trees
 
-Issue [#208](https://github.com/KirilsTurkins/latent-service-fabric/issues/208)
-adds explicit Phase 3 accounting to RPC validation, request normalization,
+Capability accounting applies to RPC validation, request normalization,
 admission, the original activation ledger and managed Wasmtime execution.
-The default remains the [Phase 1 profile](resource-budgets.md). This accounting
+The default remains the [basic execution profile](resource-budgets.md). This accounting
 foundation does not install providers or authorize a guest to call a service.
-The local invocation adapter is delivered separately by
-[#209](https://github.com/KirilsTurkins/latent-service-fabric/issues/209).
+The [local invocation adapter](local-service-invocation.md) supplies the execution path.
 
 ## Configuration and enforcement
 
@@ -27,14 +25,14 @@ defines the closed set of fields. For example:
 }
 ```
 
-Omission or `{"mode":"phase1"}` preserves existing behavior. In Phase 3, omitted
+Omission or `{"mode":"phase1"}` selects basic execution accounting. With `mode: "phase3"`, omitted
 counter ceilings are zero; choosing the profile alone grants no additional
 capacity. Limits are node ceilings, intersected with the request, deployment and
 execution policy. Each operation also requires its own capability authorization.
 Request metadata cannot select a profile. Unmanaged executor calls still use the
-Phase 1 profile; managed execution must carry the exact admitted ledger.
+basic profile; managed execution must carry the exact admitted ledger.
 
-| Dimension | Phase 3 contract |
+| Dimension | Capability accounting contract |
 | --- | --- |
 | CPU fuel, log bytes | Additive across the activation and descendants. |
 | Child calls | One for each accepted child, plus that child's accepted descendants. Rejected admission spends none. |
@@ -90,7 +88,7 @@ RSS or every embedder allocation.
 
 ## Cancellation and waiting
 
-Each admitted Phase 3 root is linked to its actual node cancellation and transport
+Each admitted capability-budget root is linked to its actual node cancellation and transport
 owner. Each accepted child supplies its own owner signal and inherits its sealed
 ancestry. `descendant_is_cancelled` checks the bounded chain;
 `descendant_cancelled` waits on at most 17 signals without spawning a task.
@@ -117,7 +115,7 @@ that resumes a parent after a child must checkpoint native fuel before delegatio
 and adjust the fuel watermark on resumption so child usage cannot be spent again
 or counted as the parent's own instructions. The delivered
 [local service adapter](local-service-invocation.md) implements this boundary.
-Pending Phase 3 guest memory growth reserves aggregate capacity before allocation;
+Pending guest memory growth reserves aggregate capacity before allocation;
 confirmation records the peak, while failed growth refunds only its pending claim.
 
 ## Validation

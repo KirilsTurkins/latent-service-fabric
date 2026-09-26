@@ -1,6 +1,6 @@
 # Build observations and current builder trust
 
-Phase 2 provides a maintained echo build observer and separate builder-provenance
+LSF provides a maintained echo build observer and separate builder-provenance
 verification in `latent-signing`. The observer executes selected committed source
 and records its component output. A trusted builder signs that observation after
 binding it to an independently inspected package. `BuilderVerifier` checks exact
@@ -67,7 +67,7 @@ caches and network dependency retrieval are outside a complete isolated input
 closure. Two matching outputs do not establish reproducibility on every machine.
 No SLSA level or SLSA conformance is claimed.
 
-## Phase 3 guest recipes
+## Guest build recipes
 
 [ADR-0034](../../adr/0034-version-maintained-guest-build-provenance-profiles.md)
 adds `https://latent.dev/build/rust-guest/v1` and

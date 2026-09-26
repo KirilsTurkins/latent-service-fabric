@@ -1,6 +1,6 @@
 # Scoped HTTP trigger routes
 
-Phase 3 HTTP trigger management exposes `TriggerService` Apply/Get/List/Delete
+HTTP trigger management exposes `TriggerService` Apply/Get/List/Delete
 and `GetTriggerOperation` over the standalone node's management listener.
 The same route catalog is selected by the shared ingress for executable
 application routes and componentless static browser publication routes.
@@ -90,9 +90,8 @@ creating a per-site listener, renderer or cache.
 
 See the [example template](../../examples/http-application/trigger.json).
 Replace its illustrative publication, revision and generation with values from
-the intended deployment. The older echo HTTP example remains a structural
-Phase 1 declaration. It has no executable profile or application target and is
-rejected by this route management API. Other trigger kinds remain declarations.
+the intended deployment. This API requires an executable HTTP profile and an
+application target. Generic trigger declarations cannot establish a served route.
 
 ## Scope, changes and receipts
 

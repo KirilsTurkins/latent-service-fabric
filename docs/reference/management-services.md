@@ -35,7 +35,7 @@ generated package inputs through this RPC boundary.
 or report fabricated cluster state.
 
 An omitted audit owner makes both audit calls return `Unimplemented` after
-authentication and scope validation. See [Phase 2 audit](../phase-2-audit.md) and
+authentication and scope validation. See [durable audit](../phase-2-audit.md) and
 the node's [durable audit settings](standalone-node.md#optional-durable-audit).
 
 `GetRelease` and `GetDeployment` return an absent optional record for both missing
@@ -293,7 +293,7 @@ response before any durable staging. An enforced repository rejects the legacy
 
 In trusted-local mode, `PublishReleaseRequest.artifact` carries these inputs:
 
-- `capsule_manifest_json`: the validated Phase 1 capsule manifest.
+- `capsule_manifest_json`: the validated capsule manifest.
 - `component_bytes`: the component bytes, subject to the configured upload cap.
 - `component_digest`: the canonical lowercase `sha256:` content identity.
 - `component_media_type`: `application/vnd.wasm.component.v1+wasm` or
@@ -376,9 +376,9 @@ The bounded encoder and decoder accept the same configured representation.
 
 ## Deployment versions and receipts
 
-Deployment IDs must equal `metadata.name`. The adapter preserves Phase 1 grants,
+Deployment IDs must equal `metadata.name`. The adapter preserves declared grants,
 placement, availability, metadata, and all resource budget fields. It rejects
-unsupported Phase 1 resource dimensions rather than discarding them. The public
+unsupported resource dimensions rather than discarding them. The public
 conversion helpers preserve optional wall-time budgets, including absent versus
 present zero; semantic validation then decides whether a request is admissible.
 
@@ -514,7 +514,7 @@ work and retained response owners. A page allowance remains owned through
 conversion, delayed protobuf encoding and HTTP body/frame consumption or drop;
 transport-retained bytes still count. The absolute query deadline includes
 conversion and is at most five seconds. These calls do not perform audit work
-on the invocation path. See [Phase 2 audit](../phase-2-audit.md) for persistence,
+on the invocation path. See [durable audit](../phase-2-audit.md) for persistence,
 loss accounting, producer scope and shutdown guarantees.
 
 ## Pages, routes, and inventory
@@ -539,7 +539,7 @@ Route reads return every selected route row for the tenant, or fail with
 generation selects the current generation only. Older or future generations
 return `NotFound`. The returned tenant and digest cover that tenant's canonical
 projection, including the catalog generation and timestamp, instead of exposing
-a global snapshot digest. Phase 1 projections contain no bindings or policies.
+a global snapshot digest. Basic projections contain no bindings or policies.
 The route row limit counts default and deployment-named routes separately.
 
 `ListNodes` returns zero or one node after applying trust-class, region, and zone
