@@ -16,7 +16,8 @@ This page explains the three programs and also supplies the lower-level
 source-build/operator commands. Only that latter path needs the source-built
 node from the first-node tutorial.
 
-Complete steps 1–7 of [Run your first node](../start/first-node.md) first.
+For the lower-level commands in steps 4–8, complete steps 1–7 of
+[Run your first node from source](../start/first-node.md) first.
 Keep that terminal open: this tutorial uses its running node, `cli`, `field`
 and `answer` helpers. Run commands from the same repository root.
 
@@ -36,8 +37,8 @@ entropy grants; its guide includes those bounded host policies.
 
 The [client SDK guide](../learn/use-a-client.mdx) offers Rust, TypeScript, Go,
 C, Java and C# examples for a different task: calling these programs from an
-application outside the node. Those client SDKs do not compile capsules in
-all six languages. For C ownership and capability examples, see the
+application outside the node. Capsule compilation uses the separate guest SDKs
+and the selected language's compiler bundle. For C ownership and capability examples, see the
 [C guest examples](../../sdk/c-guest/README.md).
 
 ## 1. A greeting capsule

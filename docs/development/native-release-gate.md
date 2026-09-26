@@ -2,13 +2,16 @@
 
 This is the maintainer gate for [native standalone installation](../installation.md)
 and [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
-**Publication is on hold at the maintainer's request.** The premature
+**Publication is authorized after final release-source qualification.** On
+September 26 the maintainer accepted the guide review, requested the completed
+development-to-release promotion and publication, and delegated subsequent guide
+updates without another approval. The earlier premature
 `0.1.0-alpha.4` tag was removed on September 23, 2026, and publication run
 [35822633436](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35822633436)
 was cancelled before publication. No GitHub release or release assets existed.
 The version is reserved for completed Phase 3: finish all requirements, merge
-`development` into `release`, obtain explicit maintainer approval, and only then
-create the tag on that approved release commit and qualify/publish its artifacts.
+`development` into `release`, then create the tag on that reviewed release commit
+and qualify/publish its artifacts through the configured protected environment.
 The earlier rehearsal remains historical evidence for its original source.
 The release maintainer chooses the final reviewed commit and new version only
 after exact-head CI. Do not move the historical source-only `0.1.0-alpha.3` tag.
@@ -62,8 +65,8 @@ profile also exercised non-root foreground evaluation. This proof uses current
 storage formats; it introduces no obsolete reader or compatibility shim.
 
 The cancelled publication run must not be resumed. After the release-branch
-merge and explicit approval, a new run rebuilds and
-authenticates a new archive and reruns both profiles before maintainer approval.
+merge, a new run rebuilds and authenticates a new archive and reruns both profiles
+before the authorized protected publication proceeds.
 Do not use the rehearsal archive's digest as the digest of a later rebuild or
 claim that a release exists from these nonpublishing receipts.
 

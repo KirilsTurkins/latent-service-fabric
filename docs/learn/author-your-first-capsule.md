@@ -1,93 +1,89 @@
 # Understand your first capsule
 
-The [first-node walkthrough](../start/first-node.md) runs an echo capsule:
-you send a message and get the same message back. This page explains how its
-contract, Rust implementation and deployment fit together. To write programs
-with different purposes, continue with
-[Creating a capsule](../component-development/creating-a-capsule.md).
+The [packaged application walkthrough](../start/application-development.md)
+creates a greeting program: send `Ada`, receive `Hello, Ada!`. This page explains
+the files you created and how an input becomes a typed answer. You can write the
+same capsule in Rust, C, TypeScript, Go, Java or C#.
 
 ## 1. Read the contract
 
-Open [echo.wit](../../examples/echo-contract/wit/echo.wit). Its function is:
+Open the WIT contract under your project's `app` directory. The greeting exports:
 
 ```wit
-variant echo-error {
-    empty-message,
-    message-too-large,
-}
-
-echo: func(message: string) -> result<string, echo-error>;
+greet: func(name: string) -> result<string, string>;
 ```
 
-`message: string` is the input. `result<string, echo-error>` means the function
-returns either a string or one of the named errors. A caller can handle an empty
-message differently from a message that is too long.
+`name: string` is the input. `result<string, string>` means the function returns
+either a greeting or an explanation of invalid input. An **export** is a
+function callers can use. An **import** is a function your capsule asks the
+node to provide, such as a permitted clock or HTTP request.
 
-The same file's `world service` exports this API and imports two host capabilities:
-activation context and logging. An **export** is a function callers can use.
-An **import** is a function your capsule asks the node to provide.
+The contract stays the same when you choose another programming language.
+Generated bindings connect your language's types to that contract. The node
+checks calls against the contract before running the function.
 
-## 2. Follow the Rust implementation
+## 2. Follow the implementation
 
-The [domain logic](../../tools/toolchain-smoke/examples/echo_capsule/logic.rs)
-checks for an empty string, rejects messages larger than 65,536 UTF-8 bytes,
-and otherwise returns the input. The limit counts bytes, so some characters
-occupy more than one byte.
+Select your language above this complete greeting example:
 
-The following implementation connects that logic to the generated interface:
+<!-- lsf-example: guest/tutorial-greeting capsule -->
 
-<!-- lsf-example: guest/rust-echo echo -->
+The program trims the supplied name, rejects empty or excessive input, and
+returns the greeting. Open the matching source under `app` in the project
+created by `dev init`. Edit that source, then use `dev build` to compile it.
+The [Windows walkthrough](../component-development/windows-application.md)
+also shows a Rust watch session that changes `Hello,` to `Welcome,` and keeps
+the previous deployment working through a compiler error.
 
-`impl Guest for EchoCapsule` implements the exported function. The generated
-`EchoError` type corresponds to the two errors in WIT. Before returning, the
-function also records the activation ID, input length and outcome in a log.
-It does not log the message contents. Logging is best effort: a rejected log
-record does not turn a successful echo into an application error.
+This code runs **inside** the capsule. A [client SDK](use-a-client.mdx) is a
+separate application that calls the capsule from outside the node. Both offer
+six language choices, but their libraries have different jobs.
 
-The complete [component source](../../tools/toolchain-smoke/examples/echo_capsule/component.rs)
-includes binding generation, imports and the export macro. This is Rust code
-compiled **inside** the capsule. An external Rust or other-language client is a
-separate application that calls it through the [client SDK](use-a-client.mdx).
+## 3. Connect the project files
 
-## 3. Connect the files you built
-
-After `make echo-capsule`, the `target/capsules/echo` directory contains:
-
-| File | Role |
+| File or directory | What you use it for |
 | --- | --- |
-| `echo-capsule.wasm` | The program the node executes |
-| `capsule.json` | Its identity, exported contract and execution requirements |
-| `contracts.json` | Input/output types used to check calls |
-| `deployment.json` | The service name, chosen publication and allowed resources |
-| `input.json` | A sample call |
+| `app` | Edit the application source and its WIT contract |
+| `latent.project.json` | Review the selected compiler, build recipe and output paths |
+| `tests/scenarios.json` | See the named success and failure cases |
+| `tests/*-input.json` and `tests/*-expected.json` | Read or change a case's input and expected typed answer |
+| `.vscode/tasks.json`, after `dev editor` | Run the same commands from an optional editor |
 
-The builder fills in the program's checksum. Publishing returns a publication
-ID, and the first-node walkthrough puts that ID into the deployment. Deploying
-selects which program answers calls; editing a source file does not automatically
-replace a running deployment.
+`dev build` produces the component and its manifests. `dev deploy` selects that
+accepted build for your service. The frontend keeps the generated identifiers
+and node credentials; you do not copy them into your source.
 
-Each call starts with fresh guest state. A global variable in the capsule is
-not storage for the next request. Host access also needs a deployment grant:
-importing a capability alone does not authorize it.
+Each call starts with fresh guest state. A global variable is not storage for
+the next request. Host access needs an explicit deployment grant: importing a
+capability alone does not authorize it. See [Use capabilities](use-capabilities.md)
+when your program needs something beyond its input and local computation.
 
 ## 4. Compare a result and an error
 
-In the [first-node walkthrough](../start/first-node.md#6-call-the-capsule):
+The greeting's real-node scenarios include:
 
-| Input | Decoded answer | Meaning |
+| Input | Expected answer | Meaning |
 | --- | --- | --- |
-| `["hello"]` | `[{"ok":"hello"}]` | The capsule returned a normal result |
-| `[""]` | An `err` containing `empty-message` | The capsule rejected the input as its contract permits |
+| `Ada` | `Hello, Ada!` | The function returned a successful result |
+| An empty name | A declared string error | The program rejected invalid input |
 
-These application errors differ from a connection failure or an exhausted
-execution budget. The CLI returns exit code 3 for a declared application error;
-[other exit codes](../reference/operator-cli.md#output-and-exits) identify the
-other outcomes. Do not repeat an uncertain call merely because its response
-was lost.
+Run `dev test --environment node` with your workspace as shown in the platform
+walkthrough. Expect all three greeting cases to pass, including the declared
+error. A test passes when the observed outcome matches its expectation; an
+expected application error is a useful successful test.
 
-## Next: write your own functions
+A connection failure, denied capability or exhausted execution budget is a
+different outcome. Inspect the reported category and original operation status.
+Do not repeat a call whose response was lost: it may already have executed.
 
-[Creating a capsule](../component-development/creating-a-capsule.md) provides
-complete greeting, word-count and shipping-calculator implementations and the
-commands to deploy all three. It shows a source change you can make and passes
-you to [updating and restoring a deployment](deliver-and-recover-a-capsule.md).
+## 5. Try a different purpose
+
+[Build a packaged capsule in your language](../component-development/packaged-languages.md)
+shows how to select the `word-count` or `shipping` template. Use a new project
+and disposable workspace for each example. [Creating a capsule](../component-development/creating-a-capsule.md)
+explains all three programs, displays their six-language implementations, and
+also provides the lower-level operator commands for running them together.
+
+Use `dev down` to stop your node while retaining its data. Use the explicit
+workspace purge from the platform guide when the disposable tutorial is finished.
+Your application source remains available for the next edit.
