@@ -101,6 +101,7 @@ pub fn invocation_response_to_proto(
         revision_id: pin.map_or_else(String::new, |pin| pin.revision_id.0.clone()),
         release_digest: pin.map_or_else(String::new, |pin| pin.release_digest.0.clone()),
         route_generation: pin.map_or(0, |pin| pin.route_generation.0),
+        publication_id: pin.and_then(|pin| pin.publication_id.as_ref()).map(ToString::to_string),
         result: Some(result),
         consumption: Some(consumption_to_proto(consumption)),
     })

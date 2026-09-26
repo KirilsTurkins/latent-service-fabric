@@ -252,29 +252,24 @@ fn first_summary_too_large_fails_without_clones_or_empty_continuation_loop() {
 }
 
 #[test]
-fn global_digest_cannot_acquire_a_second_tenant_summary() {
+fn identical_components_have_independent_tenant_summaries() {
     let temp = TempRoot::new();
     let repo = repository(temp.path());
     let value = scoped("one-owner", Some("tenant-a"), "echo");
     block_on(repo.publish(value.clone())).expect("publish");
     let foreign = scoped("one-owner", Some("tenant-b"), "echo");
-    assert_eq!(
-        block_on(repo.publish(foreign))
-            .expect_err("global identity conflict")
-            .code,
-        PlatformErrorCode::AlreadyExists
-    );
+    block_on(repo.publish(foreign)).expect("independent tenant publication");
     assert!(block_on(repo.get_catalog_entry(
         &TenantId("tenant-b".to_owned()),
         &value.descriptor.release_digest
     ))
     .expect("foreign scope")
-    .is_none());
+    .is_some());
     assert_eq!(
         block_on(repo.list_catalog_entries(&query("tenant-a", None, 10)))
             .expect("owner")
             .catalog_generation,
-        1
+        2
     );
 }
 
@@ -310,7 +305,7 @@ fn eight_index_adoptions_precharge_capacity_and_preserve_every_scope_path() {
         PlatformErrorCode::ResourceExhausted
     );
     let index = repo.index.read().expect("index");
-    assert_eq!(index.by_digest.len(), 8);
+    assert_eq!(index.by_publication.len(), 8);
     assert!(index.accounted_bytes <= config.max_index_bytes);
 }
 

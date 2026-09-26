@@ -1,0 +1,140 @@
+{
+  "profile": "latent.client.v1",
+  "unsigned": [
+    {"decimal": "0", "valid": true},
+    {"decimal": "9007199254740993", "valid": true},
+    {"decimal": "9223372036854775808", "valid": true},
+    {"decimal": "18446744073709551615", "valid": true},
+    {"decimal": "18446744073709551616", "valid": false},
+    {"decimal": "-1", "valid": false},
+    {"decimal": "+1", "valid": false},
+    {"decimal": "01", "valid": false},
+    {"decimal": " 1", "valid": false},
+    {"decimal": "1 ", "valid": false},
+    {"decimal": "1.0", "valid": false},
+    {"decimal": "1e3", "valid": false},
+    {"decimal": "", "valid": false},
+    {"decimal": "1\u0000", "valid": false},
+    {"decimal": "1\n", "valid": false},
+    {"decimal": "1\r\n", "valid": false}
+  ],
+  "cases": [
+    {
+      "name": "invoke-absent-identity-and-deadlines",
+      "type": "InvokeRequest",
+      "value": {"target": {"tenant": "tenant-a", "service": "echo", "contract": "example:echo/api@1.0.0", "function": "echo"}, "payload": "AAEC/w==", "media_type": "application/octet-stream", "budget": {"cpu_fuel": "18446744073709551615", "memory_bytes": "9223372036854775808"}, "metadata": {"trace": "redacted"}}
+    },
+    {
+      "name": "invoke-present-invalid-and-zero-not-absence",
+      "type": "InvokeRequest",
+      "request_error": "invalid-identity",
+      "value": {"activation_id": "", "parent_activation_id": "parent-a", "root_activation_id": "", "target": {"route": ""}, "deadline_unix_millis": "0", "idempotency_key": "", "budget": {"wall_time_limit_millis": "0"}}
+    },
+    {
+      "name": "invoke-known-identity-full-width-deadline-and-priority",
+      "type": "InvokeRequest",
+      "value": {"activation_id": "activation-a", "parent_activation_id": "parent-a", "root_activation_id": "root-a", "deadline_unix_millis": "18446744073709551615", "priority": 4294967295, "idempotency_key": "not-an-authority-or-retry-key"}
+    },
+    {
+      "name": "full-resource-budget",
+      "type": "ResourceBudget",
+      "value": {"cpu_fuel": "18446744073709551615", "memory_bytes": "18446744073709551615", "child_calls": 4294967295, "outbound_requests": 4294967295, "state_read_bytes": "18446744073709551615", "state_write_bytes": "18446744073709551615", "blob_read_bytes": "18446744073709551615", "blob_write_bytes": "18446744073709551615", "log_bytes": "18446744073709551615", "effect_count": 4294967295, "wall_time_limit_millis": "18446744073709551615"}
+    },
+    {
+      "name": "invoke-success-retains-publication-and-component",
+      "type": "InvokeResponse",
+      "value": {"activation_id": "activation-a", "revision_id": "revision-a", "release_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "publication_id": "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "route_generation": "18446744073709551615", "success": {"payload": "AAEC/w==", "media_type": "application/octet-stream", "committed_state_version": "", "effect_ids": ["effect-a", "effect-b"], "metadata": {"result": "redacted"}}, "consumption": {"cpu_fuel": "18446744073709551615", "wall_time_micros": "9007199254740993"}}
+    },
+    {
+      "name": "typed-declared-provider-uncertainty-retains-receipt",
+      "type": "InvokeResponse",
+      "value": {"activation_id": "activation-a", "revision_id": "revision-a", "release_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "publication_id": "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "route_generation": "9223372036854775808", "declared_error": {"code": "uncertain", "message": "provider outcome unknown", "payload": "AAEC/w==", "media_type": "application/octet-stream", "metadata": {"contract": "latent:http/streaming@0.3.0"}}, "consumption": {"blob_write_bytes": "18446744073709551615"}}
+    },
+    {
+      "name": "typed-platform-capability-failure-retains-detail-items",
+      "type": "InvokeResponse",
+      "value": {"activation_id": "activation-a", "platform_failure": {"code": "permission-denied", "message": "capability-provider-failed", "retryable": false, "detail_items": [{"kind": "capability-observation", "fields": {"capability": "latent:http/streaming@0.3.0", "state": "policy-revoked"}}, {"kind": "future-detail", "fields": {"bounded": "preserved"}}]}, "consumption": {"log_bytes": "18446744073709551615"}}
+    },
+    {
+      "name": "present-invalid-publication-not-legacy",
+      "type": "InvokeResponse",
+      "value": {"activation_id": "activation-a", "publication_id": "", "success": {}}
+    },
+    {
+      "name": "contradictory-outcome-retained-for-rejection",
+      "type": "InvokeResponse",
+      "response_error": "contradictory-oneof",
+      "value": {"activation_id": "activation-a", "success": {}, "platform_failure": {"code": "internal"}}
+    },
+    {"name": "cancel-request-known-id", "type": "CancelRequest", "value": {"activation_id": "activation-a", "reason": "caller-requested"}},
+    {"name": "cancel-accepted-not-cleanup", "type": "CancelResponse", "value": {"disposition": 1}},
+    {"name": "cancel-already-terminal", "type": "CancelResponse", "value": {"disposition": 2, "terminal_state": "completed"}},
+    {"name": "cancel-not-found-not-nonexecution", "type": "CancelResponse", "value": {"disposition": 3}},
+    {"name": "cancel-unspecified-not-accepted", "type": "CancelResponse", "value": {"disposition": 0, "terminal_state": ""}},
+    {"name": "cancel-unknown-enum", "type": "CancelResponse", "value": {"disposition": 91, "terminal_state": "future-terminal-state"}},
+    {"name": "cancel-negative-enum", "type": "CancelResponse", "value": {"disposition": -2147483648}},
+    {"name": "get-activation-recovery", "type": "GetActivationRequest", "value": {"activation_id": "activation-a"}},
+    {"name": "activation-running-absent-terminal", "type": "ActivationStatus", "value": {"activation_id": "activation-a", "phase": "running", "last_updated_unix_millis": "18446744073709551615"}},
+    {"name": "activation-terminal-typed-failure", "type": "ActivationStatus", "value": {"activation_id": "activation-a", "phase": "terminal", "terminal_state": "failed", "terminal_at_unix_millis": "0", "platform_failure": {"code": "resource-exhausted", "message": "capability-capacity", "detail_items": [{"kind": "budget", "fields": {"resource": "buffer-bytes"}}]}, "final_consumption": {"peak_memory_bytes": "18446744073709551615"}}},
+    {"name": "activation-terminal-success-summary", "type": "ActivationStatus", "value": {"activation_id": "activation-a", "phase": "terminal", "terminal_state": "completed", "terminal_at_unix_millis": "18446744073709551615", "succeeded": {"committed_state_version": "state-a", "effect_ids": ["effect-a"], "metadata": {"retained": "true"}}, "final_consumption": {"effect_count": 4294967295}}},
+    {"name": "policy-absence", "type": "GetPolicyResponse", "value": {}},
+    {"name": "policy-record-kind", "type": "GetPolicyRequest", "value": {"id": "policy-a", "record_kind": 1}},
+    {"name": "provider-binding-record-kind", "type": "GetPolicyRequest", "value": {"id": "binding-a", "record_kind": 2}},
+    {"name": "unknown-policy-kind", "type": "Policy", "value": {"id": "future-record", "record_kind": 2147483647, "generation": "18446744073709551615", "revoked": true, "metadata": {"name": "future-record", "tenant": "", "namespace": "", "labels": {"sampled": "true"}, "annotations": {"descriptive": "not-authority"}}}},
+    {"name": "apply-missing-generation", "type": "ApplyPolicyRequest", "request_error": "missing-generation", "value": {"operation_id": "operation-a"}},
+    {"name": "apply-present-empty-operation", "type": "ApplyPolicyRequest", "request_error": "invalid-operation-id", "value": {"expected_generation": "0", "operation_id": ""}},
+    {
+      "name": "apply-create-policy-zero-generation",
+      "type": "ApplyPolicyRequest",
+      "value": {"expected_generation": "0", "operation_id": "operation-a", "policy": {"id": "policy-a", "record_kind": 1, "metadata": {"name": "policy-a", "tenant": "tenant-a"}, "language": "lsf-capability-policy-v1", "document": "{\"formatVersion\":1,\"tenant\":\"tenant-a\",\"rules\":[{\"id\":\"deny\",\"effect\":\"deny\",\"principals\":[{\"kind\":\"user\",\"subject\":\"fixture-user\"}],\"services\":[\"echo\"],\"publications\":[\"publication:sha256:1111111111111111111111111111111111111111111111111111111111111111\"],\"capability\":\"latent:secrets/reader@0.1.0\",\"operations\":[\"read\"],\"resources\":{\"kind\":\"secrets\",\"references\":[\"fixture-selector\"]},\"ceiling\":{\"operations\":0,\"inputBytes\":0,\"outputBytes\":0,\"wallTimeMillis\":0}}]}"}}
+    },
+    {
+      "name": "apply-binding-max-precondition-and-opaque-limit-document",
+      "type": "ApplyPolicyRequest",
+      "value": {"expected_generation": "18446744073709551615", "operation_id": "operation-binding", "policy": {"id": "binding-a", "record_kind": 2, "metadata": {"name": "binding-a", "tenant": "tenant-a"}, "language": "lsf-provider-binding-v1", "document": "{\"formatVersion\":1,\"tenant\":\"tenant-a\",\"capability\":\"latent:secrets/reader@0.1.0\",\"providerProfile\":\"local-secrets-v1\",\"configurationDigest\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"configurationEpoch\":18446744073709551615,\"restriction\":{\"operations\":[],\"ceiling\":{\"operations\":0,\"inputBytes\":18446744073709551615,\"outputBytes\":0,\"wallTimeMillis\":0}}}"}}
+    },
+    {"name": "policy-page-absent", "type": "ListPoliciesRequest", "request_error": "missing-page", "value": {"record_kind": 1}},
+    {"name": "policy-page-zero-invalid", "type": "ListPoliciesRequest", "request_error": "invalid-page-size", "value": {"record_kind": 2, "page": {"page_size": 0}}},
+    {"name": "policy-page-empty-token-invalid", "type": "ListPoliciesRequest", "request_error": "invalid-page-token", "value": {"record_kind": 1, "page": {"page_size": 1, "page_token": ""}}},
+    {"name": "policy-page-first", "type": "ListPoliciesResponse", "value": {"policies": [{"id": "policy-a", "record_kind": 1, "generation": "18446744073709551615", "content_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "revoked": true}], "catalog_generation": "18446744073709551615", "page": {"next_page_token": "opaque-policy-cursor"}}},
+    {"name": "policy-page-last", "type": "ListPoliciesResponse", "value": {"catalog_generation": "18446744073709551615", "page": {}}},
+    {"name": "policy-next-page-request", "type": "ListPoliciesRequest", "value": {"record_kind": 1, "page": {"page_size": 1, "page_token": "opaque-policy-cursor"}}},
+    {"name": "apply-retains-original-receipt", "type": "ApplyPolicyResponse", "value": {"policy": {"id": "policy-a", "record_kind": 1, "generation": "18446744073709551615", "content_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, "receipt": {"operation_id": "operation-a", "tenant": "tenant-a", "id": "policy-a", "record_kind": 1, "generation": "18446744073709551615", "content_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}},
+    {"name": "get-policy-operation-known-id", "type": "GetPolicyOperationRequest", "value": {"operation_id": "operation-a"}},
+    {"name": "operation-recovery-not-retained-is-unknown", "type": "GetPolicyOperationResponse", "value": {}},
+    {"name": "operation-recovery-original-receipt", "type": "GetPolicyOperationResponse", "value": {"receipt": {"operation_id": "operation-a", "tenant": "tenant-a", "id": "policy-a", "record_kind": 1, "generation": "18446744073709551615", "content_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}},
+    {"name": "capabilities-absent-page-default", "type": "ListCapabilitiesRequest", "value": {"deployment_id": "deployment-a"}},
+    {"name": "capabilities-zero-page-default", "type": "ListCapabilitiesRequest", "value": {"deployment_id": "deployment-a", "page": {"page_size": 0}}},
+    {"name": "capabilities-present-empty-filters", "type": "ListCapabilitiesRequest", "value": {"deployment_id": "deployment-a", "contract_prefix": "", "provider": "", "page": {"page_size": 128}, "include_node_usage": true}},
+    {"name": "capabilities-explicit-deployment-required", "type": "ListCapabilitiesRequest", "request_error": "invalid-deployment-id", "value": {"page": {"page_size": 1}}},
+    {"name": "capabilities-page-too-large", "type": "ListCapabilitiesRequest", "request_error": "invalid-page-size", "value": {"deployment_id": "deployment-a", "page": {"page_size": 4294967295}}},
+    {
+      "name": "redacted-capability-provider-inspection",
+      "type": "ListCapabilitiesResponse",
+      "value": {"capabilities": [{"id": "latent:secrets/reader@0.1.0", "contract": "latent:secrets/reader@0.1.0", "provider": "local-secrets-v1", "operations": ["read"], "inspection": {"definition_digest": "", "provider_binding": {"id": "binding-a", "revision": "18446744073709551615", "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}, "policies": [{"id": "policy-a", "revision": "9223372036854775808", "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}], "provider_profile": "local-secrets-v1", "provider_configuration_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "provider_configuration_epoch": "18446744073709551615", "state": "provider-configuration-changed"}}, {"id": "future-capability", "contract": "future-contract", "provider": "future-provider", "attributes": {"descriptive": "not-authority"}}], "page": {"next_page_token": "opaque-capability-cursor"}, "revision": {"deployment_id": "deployment-a", "revision_id": "revision-a", "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "publication_id": "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "route_generation": "18446744073709551615", "catalog_transaction": "9223372036854775808"}, "tenant_usage": {"scope": "tenant", "counters": {"sessions": "18446744073709551615", "calls": "0"}, "unavailable": ["fixture-owner-unavailable"]}, "state": "sampled"}
+    },
+    {"name": "missing-provider-plan-not-zero-usage", "type": "ListCapabilitiesResponse", "value": {"state": "binding-plan-unavailable", "node_usage": {"scope": "node", "unavailable": ["provider-pools-no-retained-owner", "audit-owner-not-configured"]}}},
+    {"name": "typed-ceiling-zero-and-max-not-grant", "type": "CapabilityInspectionCeiling", "value": {"operations": 0, "input_bytes": "18446744073709551615", "output_bytes": "0", "wall_time_millis": "18446744073709551615"}},
+    {"name": "local-timeout-absent", "type": "CallOptions", "value": {}},
+    {"name": "local-timeout-zero", "type": "CallOptions", "value": {"timeout_millis": "0"}},
+    {"name": "local-timeout-max-not-wrapped", "type": "CallOptions", "value": {"timeout_millis": "18446744073709551615"}},
+    {"name": "local-cancel-before-dispatch", "type": "ClientFailure", "value": {"category": 1, "message": "local-cancelled", "outcome": 1, "identity": {"activation_id": "activation-a"}}},
+    {"name": "deadline-after-dispatch-is-uncertain", "type": "ClientFailure", "value": {"category": 2, "message": "deadline", "grpc_status": 4, "dispatched": true, "outcome": 2, "identity": {"operation_id": "operation-a"}, "audit_ack": {"status": 2, "attempt_sequence": "18446744073709551615"}, "audit_status": "outcome-unknown", "audit_attempt_sequence": "18446744073709551615"}},
+    {"name": "rpc-conflict-retains-request-identity", "type": "ClientFailure", "value": {"category": 4, "message": "capability-policy-conflict", "grpc_status": 9, "dispatched": true, "outcome": 3, "identity": {"operation_id": "operation-a"}, "platform_error": {"code": "state-conflict", "message": "capability-policy-conflict", "detail_items": [{"kind": "future-detail", "fields": {"value": "retained"}}]}}},
+    {"name": "decode-failure-retains-known-identity", "type": "ClientFailure", "value": {"category": 5, "message": "invalid-response", "dispatched": true, "outcome": 2, "identity": {"activation_id": "activation-a", "operation_id": "operation-a"}, "unsupported_wire_value": {"field": "phase", "value": "future-phase-not-authority"}}},
+    {"name": "observed-receipt-audit-outcome-independent", "type": "ResponseMetadata", "value": {"identity": {"operation_id": "operation-a"}, "outcome": 3, "audit_ack": {"status": 2, "attempt_sequence": "18446744073709551615"}, "audit_status": "outcome-unknown", "audit_attempt_sequence": "18446744073709551615"}},
+    {"name": "policy-response-has-no-fabricated-audit", "type": "ResponseMetadata", "value": {"identity": {"operation_id": "operation-a"}, "outcome": 3}},
+    {"name": "missing-recovery-keeps-outcome-unknown", "type": "ResponseMetadata", "value": {"identity": {"operation_id": "operation-a"}, "outcome": 2}},
+    {"name": "unknown-audit-enum-and-status", "type": "ResponseMetadata", "value": {"identity": {"operation_id": "operation-a"}, "outcome": 91, "audit_ack": {"status": 91, "attempt_sequence": "0"}, "audit_status": "future-audit-status", "audit_attempt_sequence": "0"}},
+    {"name": "unknown-audit-header-and-max-attempt", "type": "ResponseMetadata", "value": {"identity": {"operation_id": "operation-a"}, "outcome": 3, "audit_status": "future-state", "audit_attempt_sequence": "18446744073709551615"}},
+    {"name": "failed-rpc-unknown-audit-header-and-max-attempt", "type": "ClientFailure", "value": {"category": 4, "message": "rpc-failure", "grpc_status": 13, "dispatched": true, "outcome": 2, "identity": {"operation_id": "operation-a"}, "audit_status": "future-state", "audit_attempt_sequence": "18446744073709551615"}},
+    {"name": "audit-durable-attempt-absent", "type": "AuditAck", "value": {"status": 1}},
+    {"name": "audit-unavailable-attempt-zero", "type": "AuditAck", "value": {"status": 3, "attempt_sequence": "0"}},
+    {"name": "audit-disabled-distinct-from-absence", "type": "AuditAck", "value": {"status": 4}},
+    {"name": "publication-reference-invalid-id", "type": "PublicationRef", "value": {"id": "", "tenant": "tenant-a"}},
+    {"name": "publication-reference-tenant-scope", "type": "PublicationRef", "value": {"id": "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant": "tenant-b"}},
+    {"name": "publication-original-package", "type": "PublicationIdentity", "value": {"publication": {"id": "publication:sha256:1111111111111111111111111111111111111111111111111111111111111111", "tenant": "tenant-a"}, "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "package_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"}},
+    {"name": "publication-corrected-package-same-component", "type": "PublicationIdentity", "value": {"publication": {"id": "publication:sha256:2222222222222222222222222222222222222222222222222222222222222222", "tenant": "tenant-a"}, "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "package_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"}},
+    {"name": "publication-other-tenant-same-package", "type": "PublicationIdentity", "value": {"publication": {"id": "publication:sha256:3333333333333333333333333333333333333333333333333333333333333333", "tenant": "tenant-b"}, "component_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "package_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"}}
+  ]
+}

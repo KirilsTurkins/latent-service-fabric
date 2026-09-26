@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "maven": "https://repo.maven.apache.org/maven2/",
+  "artifacts": [
+    {
+      "path": "io/grpc/grpc-api/1.84.0/grpc-api-1.84.0.jar",
+      "sha256": "a2a57594571a4392751609bf4c63cf838ba7dcdbc8e5fd07983c313cb1565ac8",
+      "size": 346588,
+      "platform": "any"
+    },
+    {
+      "path": "io/grpc/grpc-core/1.84.0/grpc-core-1.84.0.jar",
+      "sha256": "750c08018e22014cb5e6b6ac64fd4d0b2302b7db9cb2b83a1e0914d0561ed71c",
+      "size": 661896,
+      "platform": "any"
+    },
+    {
+      "path": "io/grpc/grpc-context/1.84.0/grpc-context-1.84.0.jar",
+      "sha256": "e6f6e5db0d704e34d03f013cceb6be326c9ed3916346378ca1587ed41f943080",
+      "size": 293,
+      "platform": "any"
+    },
+    {
+      "path": "io/grpc/grpc-util/1.84.0/grpc-util-1.84.0.jar",
+      "sha256": "b64b8eedb714ec8c22ddc57361c7f2c0718cd51fa9d44a8cff68b30c117a6c23",
+      "size": 108997,
+      "platform": "any"
+    },
+    {
+      "path": "io/grpc/grpc-stub/1.84.0/grpc-stub-1.84.0.jar",
+      "sha256": "5d7c9eac0386fbf6f1c9dc90171034939093c9f72196bd9242acf819c5f10a4a",
+      "size": 61670,
+      "platform": "any"
+    },
+    {
+      "path": "io/grpc/grpc-protobuf/1.84.0/grpc-protobuf-1.84.0.jar",
+      "sha256": "076ad68d91d59132970dd739ff908d0b8fffea9fb0ccbea9310d933e0a677802",
+      "size": 5204,
+      "platform": "any"
+    },
+    {
+      "path": "io/grpc/grpc-protobuf-lite/1.84.0/grpc-protobuf-lite-1.84.0.jar",
+      "sha256": "12827fd4ba3d75f7ab5fceb3296c5ac9f473826e6b2aa67684d32879b7fa239b",
+      "size": 7815,
+      "platform": "any"
+    },
+    {
+      "path": "io/grpc/grpc-netty-shaded/1.84.0/grpc-netty-shaded-1.84.0.jar",
+      "sha256": "f07624d7ca0b0bce8dded33dfe261fd9be59168bb6a77f0580ab09ecd22f113d",
+      "size": 10855978,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/protobuf/protobuf-java/3.25.9/protobuf-java-3.25.9.jar",
+      "sha256": "df18b719cd0c5a11e569013216cc9de47a0a954adeede685c0f98ce4c42d4d1a",
+      "size": 1876598,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/api/grpc/proto-google-common-protos/2.64.1/proto-google-common-protos-2.64.1.jar",
+      "sha256": "beb8107f340dc0bb04bf40d1a61631a21e450c58aad93c160959f0292136d99f",
+      "size": 2861414,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/guava/guava/33.6.0-android/guava-33.6.0-android.jar",
+      "sha256": "9532ca9ba8aceb4cd2067171f981c799988b7f5844e3e274811a3bb757034bc4",
+      "size": 2978210,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/guava/failureaccess/1.0.3/failureaccess-1.0.3.jar",
+      "sha256": "cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb",
+      "size": 10763,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+      "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99",
+      "size": 2199,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/code/gson/gson/2.14.0/gson-2.14.0.jar",
+      "sha256": "2cbd119bf1961c28788310963dc80ba65f58cdeec1dd139c8bdb1240faa2c36f",
+      "size": 313604,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar",
+      "sha256": "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7",
+      "size": 19936,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/errorprone/error_prone_annotations/2.50.0/error_prone_annotations-2.50.0.jar",
+      "sha256": "4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a",
+      "size": 20252,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/j2objc/j2objc-annotations/3.1/j2objc-annotations-3.1.jar",
+      "sha256": "84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b",
+      "size": 16762,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/android/annotations/4.1.1.4/annotations-4.1.1.4.jar",
+      "sha256": "ba734e1e84c09d615af6a09d33034b4f0442f8772dec120efb376d86a565ae15",
+      "size": 3120,
+      "platform": "any"
+    },
+    {
+      "path": "org/codehaus/mojo/animal-sniffer-annotations/1.27/animal-sniffer-annotations-1.27.jar",
+      "sha256": "cfd7e51a828fe6b98bc0dbb99e34900c9e9012322cb9ddd57fd8dd0b02da5e27",
+      "size": 3194,
+      "platform": "any"
+    },
+    {
+      "path": "org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar",
+      "sha256": "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab",
+      "size": 3819,
+      "platform": "any"
+    },
+    {
+      "path": "io/perfmark/perfmark-api/0.27.0/perfmark-api-0.27.0.jar",
+      "sha256": "c7b478503ec524e55df19b424d46d27c8a68aeb801664fadd4f069b71f52d0f6",
+      "size": 6954,
+      "platform": "any"
+    },
+    {
+      "path": "javax/annotation/javax.annotation-api/1.3.2/javax.annotation-api-1.3.2.jar",
+      "sha256": "e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b",
+      "size": 26586,
+      "platform": "any"
+    },
+    {
+      "path": "com/google/protobuf/protoc/3.25.9/protoc-3.25.9-windows-x86_64.exe",
+      "sha256": "614f1fa619853cd8aa05817bd6b97eb03dd96d4bdbb79561fa8ae005e44d3973",
+      "size": 11565811,
+      "platform": "windows-x86_64"
+    },
+    {
+      "path": "io/grpc/protoc-gen-grpc-java/1.84.0/protoc-gen-grpc-java-1.84.0-windows-x86_64.exe",
+      "sha256": "1d0b584f436c2521542a98914d8e6c42ba0aa5d86b459bc632e4c3884a3b5d4d",
+      "size": 2016256,
+      "platform": "windows-x86_64"
+    },
+    {
+      "path": "com/google/protobuf/protoc/3.25.9/protoc-3.25.9-linux-x86_64.exe",
+      "sha256": "277c8548ead748ac3e600d3b860f114d36a1311dff29568cd95115ad65f59e2f",
+      "size": 8856872,
+      "platform": "linux-x86_64"
+    },
+    {
+      "path": "io/grpc/protoc-gen-grpc-java/1.84.0/protoc-gen-grpc-java-1.84.0-linux-x86_64.exe",
+      "sha256": "907c2d4efc2bae9b21cada75c31b36f3821e15b7be96311e214a6be65bcd20aa",
+      "size": 7999464,
+      "platform": "linux-x86_64"
+    }
+  ]
+}

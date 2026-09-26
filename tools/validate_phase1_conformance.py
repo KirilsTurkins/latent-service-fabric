@@ -356,13 +356,27 @@ def phase_status(value: Any, activation_id: str, phase: str) -> None:
             and data.get("terminalAtUnixMillis") is None, "case-pending-association")
 
 
+def publication_identity(value: Any) -> None:
+    require(isinstance(value, str)
+            and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", value) is not None,
+            "invalid-publication-identity")
+
+
 def invocation_failure(value: Any, activation_id: str, code: str, terminal: str) -> dict[str, Any]:
     data = cli_data(value, "invoke", "platform-failure")
     require(data.get("activationId") == activation_id and data.get("terminalState") == terminal
             and isinstance(value["error"], dict) and value["error"].get("code") == code,
             "case-platform-outcome-mismatch")
     cli_consumption(data.get("consumption"))
-    pin = fields(data.get("resolvedRevision"), "revisionId releaseDigest routeGeneration")
+    pin = data.get("resolvedRevision")
+    legacy = {"revisionId", "releaseDigest", "routeGeneration"}
+    require(isinstance(pin, dict) and set(pin) in (legacy, legacy | {"publicationId"}),
+            "invalid-object-fields")
+    # Old reports omit the field; a new CLI receiving a legacy response renders
+    # null. Any actual publication must retain its distinct canonical identity.
+    publication = pin.get("publicationId")
+    if publication is not None:
+        publication_identity(publication)
     text(pin["revisionId"], 512)
     digest(pin["releaseDigest"])
     require(uint(pin["routeGeneration"]) > 0, "missing-case-revision")
@@ -527,7 +541,15 @@ def wall_observation(value: Any, activation_id: str, ceiling: int, absolute: int
 
 def wall_deployment(value: Any, command: str, ceiling: int | None) -> dict[str, Any]:
     data = cli_data(value, command, "success")
-    deployment = fields(data.get("deployment"), "manifest generation")
+    deployment = data.get("deployment")
+    legacy = {"manifest", "generation"}
+    require(isinstance(deployment, dict) and set(deployment) in (legacy, legacy | {"publication"}),
+            "invalid-object-fields")
+    publication = deployment.get("publication")
+    if publication is not None:
+        fields(publication, "id tenant")
+        publication_identity(publication["id"])
+        require(publication["tenant"] == "tests", "wrong-deployment-publication-tenant")
     require(uint(deployment["generation"]) > 0 and isinstance(deployment["manifest"], dict), "invalid-wall-deployment")
     manifest = deployment["manifest"]
     require(isinstance(manifest.get("metadata"), dict) and manifest["metadata"].get("name") == "capabilities"
@@ -561,6 +583,8 @@ def verify_wall(observations: Any, report: dict[str, Any]) -> None:
     restored = wall_deployment(observations["restored"], "deployment apply", None)
     require(canonical_json(restored["manifest"]) == canonical_json(original["manifest"])
             and uint(restored["generation"]) > uint(applied["generation"]), "relative-ceiling-not-restored")
+    require(original.get("publication") == applied.get("publication") == restored.get("publication"),
+            "wall-policy-changed-publication")
     idle_sample(observations["idleSample"], report, "wall-ceilings-settled")
 
 

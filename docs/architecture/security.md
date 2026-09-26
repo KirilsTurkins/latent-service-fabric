@@ -1,11 +1,10 @@
 # Security architecture
 
-The current standalone boundary combines authenticated tenant management,
-stateless Wasmtime containment and exact directory-catalog ownership. Phase 2
-delivers enforced package admission, durable lifecycle, authenticated local
-native reuse and control audit. Its [completion review](../phase-2-completion.md)
-records the accepted evidence and limitations; these features do not establish
-production readiness or a multi-node security boundary.
+The standalone boundary combines authenticated management, publication-aware
+package admission, Wasmtime containment, current capability policy, protected
+configuration, bounded provider I/O, HTTP/browser controls and durable audit.
+The runtime uses fixed in-process guest cells. Separate guest execution processes
+and multi-node security are not implemented.
 
 ## Untrusted inputs and authority
 
@@ -20,8 +19,12 @@ credentials and derives the principal's tenant and actor. A request body cannot
 choose another actor or tenant. Administrative release, deployment, rollout and
 audit operations remain tenant scoped; node audit additionally requires the
 trusted node-operator claim. That claim does not authorize arbitrary tenant
-queries. The delivered listener is bounded loopback RPC; workload mTLS and
-cross-node delegation belong to later work.
+queries. That listener remains bounded loopback RPC. The separate optional
+[HTTP/TLS application listener](../reference/http-ingress.md) uses invoke-role
+credentials or explicit public-origin principals and exact current tenant
+publication pins. Forwarded fields never grant authority, and finite connection
+residency applies before authentication. Workload mTLS and cross-node delegation
+belong to later work.
 
 ## Supply-chain admission
 
@@ -91,19 +94,19 @@ MAC is not publisher provenance and does not replace current catalog authority.
 
 ## Guest capabilities
 
-The current host exposes filtered context, structured logging and monotonic/wall
-clocks. There is no unrestricted guest filesystem, socket, environment, process,
-thread or secret access. General capability WIT declarations remain unavailable
-until a concrete provider and its policy are implemented.
+Context, logging, clocks and installed HTTP, blob, secret, event, local-call,
+randomness and metric capabilities are available through checked host bindings.
+The [standalone provider reference](../reference/standalone-providers.md)
+distinguishes its accepted configuration from providers requiring a trusted
+Rust embedding. There is no unrestricted guest filesystem, socket, environment,
+process or thread access.
 
-Phase 3's [broker and grant work](../roadmap.md#phase-3-capabilities-and-application-hosting)
-will compose exact import requests, durable deployment/policy grants,
-invocation-principal authorization and provider configuration epochs. Opaque
-handles must be activation scoped, operation scoped, quota bound and revocable
-without reviving stale handles. Descendant calls must conserve budgets and
-cancellation ownership. Secret values must remain outside logs, audit fields,
-cache keys, snapshots and derived artifacts. Shared pools and streaming I/O need
-their own finite owners through cancellation and shutdown.
+The [capability broker](../runtime/capability-broker.md) combines exact import
+requests, deployment and policy grants, caller identity and provider epochs.
+Opaque handles are activation scoped, operation scoped, charged and revocable.
+Local descendants conserve budgets and cancellation ownership. Secret values
+stay out of logs, audit fields, cache keys and derived artifacts. Shared provider
+pools and streaming I/O retain finite ownership through cancellation and shutdown.
 
 ## Audit, recovery and storage trust
 
@@ -127,9 +130,38 @@ Lowered limits cannot silently discard security history to make room.
 
 ## Isolation scope
 
-The delivered guest boundary is a fresh Wasmtime store in fixed in-process
-cells. The compiler child is a separate bounded compilation boundary, not a
-per-service execution host. Trust-sharded guest processes, native compatibility
-hosts, containers/microVM fallback and separate-machine side-channel isolation
-remain architectural options, not current execution modes. Phase 3 adds provider
-and browser isolation tests; Phase 5 adds node identity and transport security.
+[ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
+[RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) define the
+minimum profile matrix and evidence boundary. The delivered guest boundary is a
+fresh Wasmtime store in fixed in-process cells (`local-experimental-v1`). The
+standalone node, Wasmtime, host bindings and host OS remain trusted. Guest Store
+limits are not a whole-process RSS boundary.
+
+This delivered default is T0: operator-trusted local admission and preparation.
+Its Wasm execution barrier does not turn the in-process compilation path into
+the T1 external-capsule admission profile. Enforced signatures and isolated
+compilation remain separate controls; selecting `securityProfile` as
+`external-capsule-v1` requires both. Startup and `check-config` verify the actual
+approved compiler before storage or listeners are opened. See
+[execution-profile enforcement](../runtime/execution-security-profiles.md).
+
+The isolated compiler child (`isolated-aot-compiler-v1`) is a separate bounded
+compilation boundary, not a per-service execution host. Authenticated native AOT
+reuse (`authenticated-native-aot-v1`) keeps the parent parser/validator, native
+loader, Wasmtime and OS inside the trusted computing base. Arbitrary external
+native artifacts are unsupported.
+
+The implemented `external-capsule-v1` profile requires enforced admission, exact
+host compatibility, protected trust configuration, the reviewed runtime baseline
+and supported isolated compilation. Its persistent data-directory requirement
+prevents a restart with an omitted or weaker profile. It still uses the
+in-process Wasmtime guest boundary and therefore does not claim containment after
+compromise of that process.
+
+Trust-sharded guest/provider/renderer/native-compatibility work that requires
+process-compromise resistance must use a separate fixed/bounded node-owned
+execution host. That profile is currently unsupported. A requested stronger
+profile must fail closed rather than downgrade. Host/kernel compromise and strong
+same-machine side-channel isolation remain outside the current standalone model.
+Provider and browser isolation have dedicated conformance tests. Distributed
+node identity and transport security remain unimplemented.

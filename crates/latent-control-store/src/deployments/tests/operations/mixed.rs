@@ -45,7 +45,7 @@ fn start(store: &Store, release: &ReleaseDigest) {
 }
 
 #[test]
-fn v3_upgrade_and_every_legacy_writer_preserve_both_committed_histories() {
+fn every_legacy_writer_preserves_both_committed_histories() {
     let root = TempRoot::new();
     let releases = Arc::new(Releases::default());
     let old = releases.add("mixed-base");
@@ -71,12 +71,12 @@ fn v3_upgrade_and_every_legacy_writer_preserve_both_committed_histories() {
     let store = open(&root, &releases);
     run(store.apply(deployment("base", "alice", &old))).unwrap();
     start(&store, &candidate);
-    assert_eq!(stored(&root)["format_version"], 3);
+    assert_eq!(stored(&root)["format_version"], 5);
     let rollout_before = stored(&root)["payload"]["control"]["rollouts"].clone();
     let managed = execute(&store, managed_request("managed", 2, 0));
     let receipt = managed.value().receipt.clone();
     drop(managed);
-    assert_eq!(stored(&root)["format_version"], 4);
+    assert_eq!(stored(&root)["format_version"], 5);
     assert_eq!(
         stored(&root)["payload"]["control"]["rollouts"],
         rollout_before
@@ -100,7 +100,7 @@ fn v3_upgrade_and_every_legacy_writer_preserve_both_committed_histories() {
     run(RouteSnapshotPublisher::publish(&store, next)).unwrap();
     run(store.apply_many(vec![green])).unwrap();
     run(store.delete(&DeploymentId("green".into()))).unwrap();
-    assert_eq!(stored(&root)["format_version"], 4);
+    assert_eq!(stored(&root)["format_version"], 5);
     assert_eq!(
         stored(&root)["payload"]["control"]["deployment_operations"],
         operations_before
@@ -138,7 +138,7 @@ fn intervening_legacy_publication_invalidates_sealed_managed_commit() {
     let before = bytes(&root);
     assert_code(store.commit_operation(prepared), Code::StateConflict);
     assert_eq!(bytes(&root), before);
-    assert_eq!(stored(&root)["format_version"], 2);
+    assert_eq!(stored(&root)["format_version"], 5);
     assert!(matches!(
         lookup(&store, "stale").value(),
         DeploymentOperationLookup::Unknown { .. }
@@ -186,21 +186,26 @@ fn managed_commit_requires_live_release_but_historical_replay_never_reauthorizes
         lookup(&store, "second").value(),
         DeploymentOperationLookup::Unknown { .. }
     ));
-    run(releases.change_release_lifecycle(
-        latent_artifacts::ReleaseMutationContext {
-            scope: latent_artifacts::LifecycleScope::LocalUnscoped,
-            actor: context("unused", 0).actor,
-            operation: Some(latent_artifacts::ReleaseOperationPrecondition {
-                operation_id: "revoke-original".into(),
-                expected_generation: 1,
-            }),
-        },
-        &first,
-        latent_artifacts::ReleaseLifecycleAction::Revoke,
-        latent_artifacts::ReleaseLifecycleReason::OperatorRevocation,
-        &mut |_| Ok(()),
-    ))
-    .unwrap();
+    let publication = releases
+        .select_execution_publication(&latent_core::TenantId("alice".into()), &first, None)
+        .unwrap()
+        .unwrap();
+    releases
+        .change_publication_lifecycle(
+            latent_artifacts::ReleaseMutationContext {
+                scope: latent_artifacts::LifecycleScope::LocalUnscoped,
+                actor: context("unused", 0).actor,
+                operation: Some(latent_artifacts::ReleaseOperationPrecondition {
+                    operation_id: "revoke-original".into(),
+                    expected_generation: 1,
+                }),
+            },
+            &publication,
+            latent_artifacts::ReleaseLifecycleAction::Revoke,
+            latent_artifacts::ReleaseLifecycleReason::OperatorRevocation,
+            &mut |_| Ok(()),
+        )
+        .unwrap();
     let replay = execute(&store, first_request);
     assert_eq!(replay.value().receipt, receipt);
     assert!(replay.value().replayed);

@@ -12,6 +12,7 @@ pub(super) type Preflight<'a> =
     dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError> + Send + 'a;
 
 pub(super) struct Request {
+    pub publication: Option<latent_core::PublicationId>,
     pub context: ReleaseMutationContext,
     pub operation_id: String,
     pub action: ReleaseLifecycleAction,
@@ -69,6 +70,7 @@ impl Request {
         );
         part(&mut hash, payload.as_str().as_bytes());
         Ok(Self {
+            publication: None,
             context,
             operation_id,
             action,
@@ -76,6 +78,24 @@ impl Request {
             component,
             package,
         })
+    }
+    pub fn select_publication(
+        &mut self,
+        publication: &crate::PublicationRef,
+    ) -> Result<(), PlatformError> {
+        if publication.scope != self.context.scope {
+            return Err(error(
+                PlatformErrorCode::InvalidArgument,
+                "publication-selector-scope-mismatch",
+            ));
+        }
+        let mut hash = Sha256::new();
+        part(&mut hash, b"lsf-explicit-publication-operation-v2");
+        part(&mut hash, self.digest.as_str().as_bytes());
+        part(&mut hash, publication.id.as_str().as_bytes());
+        self.digest = finish(hash);
+        self.publication = Some(publication.id.clone());
+        Ok(())
     }
     pub fn receipt(
         &self,
@@ -191,10 +211,10 @@ impl DirectoryArtifactRepository {
         request: &Request,
         preflight: &mut Preflight<'_>,
     ) -> Result<Option<ReleaseOperationReceipt>, PlatformError> {
-        match self
+        let (publication, operation) = self
             .life_store()
-            .operation(&request.context.scope, &request.operation_id)?
-        {
+            .selected_operation(&request.context.scope, &request.operation_id)?;
+        match operation {
             crate::ReleaseOperationLookup::Found(receipt) => {
                 if receipt.request_digest != request.digest {
                     return Err(error(
@@ -205,20 +225,15 @@ impl DirectoryArtifactRepository {
                 let summary = if receipt.disposition == ReleaseOperationDisposition::Committed
                     && receipt.action == ReleaseLifecycleAction::Publish
                 {
-                    receipt.component_digest.as_ref().and_then(|release| {
-                        self.index
-                            .read()
-                            .ok()?
-                            .by_digest
-                            .get(release)
-                            .map(|entry| entry.value.clone())
-                    })
+                    let publication = self.operation_publication_ref(&receipt)?;
+                    self.publication_catalog_entry(&publication)?
                 } else {
                     None
                 };
                 let failure = (receipt.disposition == ReleaseOperationDisposition::Rejected)
                     .then(|| rejected_error(&receipt));
                 preflight(ReleaseOperationPreview {
+                    publication: publication.as_ref(),
                     replay: true,
                     receipt: &receipt,
                     release: summary.as_ref(),
@@ -265,10 +280,13 @@ impl DirectoryArtifactRepository {
             PlatformErrorCode::ResourceExhausted => return Ok(failure),
             _ => ReleaseLifecycleReason::InvalidPackage,
         };
+        if failure.message == "publication-selector-ambiguous" {
+            return Ok(failure);
+        }
         let old = request
-            .component
+            .publication
             .as_ref()
-            .map(|release| self.life_store().record(release))
+            .map(|id| self.life_store().record_publication(id))
             .transpose()?
             .flatten();
         if old
@@ -281,9 +299,12 @@ impl DirectoryArtifactRepository {
             ));
         }
         let receipt = request.receipt(old, ReleaseOperationDisposition::Rejected, reason);
-        let prepared = self.life_store().prepare(receipt, None)?;
+        let prepared =
+            self.life_store()
+                .prepare_publication(request.publication.clone(), receipt, None)?;
         let failure = rejected_error(prepared.receipt());
         preflight(ReleaseOperationPreview {
+            publication: request.publication.as_ref(),
             replay: false,
             receipt: prepared.receipt(),
             release: None,

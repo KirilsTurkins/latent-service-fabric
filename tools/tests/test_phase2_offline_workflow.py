@@ -14,6 +14,8 @@ class OfflineWorkflowLifetimeTests(unittest.TestCase):
         # the test runner. The real owned_cancellation context installs, records,
         # delivers and restores handlers against this small registry.
         numbers = [signal.SIGINT, signal.SIGTERM]
+        if hasattr(signal, "SIGHUP"):
+            numbers.append(signal.SIGHUP)
         if hasattr(signal, "SIGBREAK"):
             numbers.append(signal.SIGBREAK)
         self.original_handlers = dict.fromkeys(numbers, signal.SIG_DFL)

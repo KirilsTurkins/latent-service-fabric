@@ -147,8 +147,9 @@ impl DirectoryDeploymentRepository {
             };
             precondition.check(previous)?;
             let generation = next_generation(previous.generation)?;
-            let receipt = DeploymentApplyReceipt {
+            let mut receipt = DeploymentApplyReceipt {
                 deployment: VersionedDeployment {
+                    publication: None,
                     manifest: deployment.clone(),
                     generation: generation.0,
                 },
@@ -172,6 +173,11 @@ impl DirectoryDeploymentRepository {
                 publication.has_control(),
             )
             .await?;
+            receipt.deployment.publication = compiled
+                .catalog()
+                .record_by_id(&receipt.deployment.manifest.id)
+                .ok_or_else(crate::deployment_operations::corrupt)?
+                .publication_reference(self.artifacts.as_ref())?;
             let outcome = self.commit_checked(
                 previous.generation,
                 publication.transaction,
@@ -217,6 +223,11 @@ impl DirectoryDeploymentRepository {
             let generation = next_generation(previous.generation)?;
             let receipt = DeploymentDeleteReceipt {
                 deleted: VersionedDeployment {
+                    publication: previous
+                        .record_by_id(id)
+                        .map(|record| record.publication_reference(self.artifacts.as_ref()))
+                        .transpose()?
+                        .flatten(),
                     manifest,
                     generation: previous.versions[id],
                 },
@@ -367,14 +378,22 @@ impl DeploymentStore for DirectoryDeploymentRepository {
         Box::pin(async move {
             self.validate_target(tenant, id)?;
             let catalog = self.read_catalog();
-            Ok(catalog
+            catalog
                 .deployments
                 .get(id)
                 .filter(|manifest| manifest.metadata.tenant.as_ref() == Some(tenant))
-                .map(|manifest| VersionedDeployment {
-                    manifest: manifest.as_ref().clone(),
-                    generation: catalog.versions[id],
-                }))
+                .map(|manifest| {
+                    Ok(VersionedDeployment {
+                        publication: catalog
+                            .record_by_id(id)
+                            .map(|record| record.publication_reference(self.artifacts.as_ref()))
+                            .transpose()?
+                            .flatten(),
+                        manifest: manifest.as_ref().clone(),
+                        generation: catalog.versions[id],
+                    })
+                })
+                .transpose()
         })
     }
 

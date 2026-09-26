@@ -55,7 +55,7 @@ pub fn scenario() {
             .get_release(request(
                 OPERATOR,
                 proto::GetReleaseRequest {
-                    digest: digest.clone(),
+                    publication: release.publication.clone(),
                 },
             ))
             .await
@@ -114,24 +114,31 @@ async fn publish(
     assert_eq!(release.tenant.as_deref(), Some("examples"));
     assert_eq!(release.service, "examples/echo");
     assert!(release.admitted);
-    assert!(releases
-        .get_release(request(
-            FOREIGN,
-            proto::GetReleaseRequest {
-                digest: digest.clone(),
-            }
-        ))
-        .await
-        .expect("foreign lookup is hidden")
-        .into_inner()
-        .release
-        .is_none());
+    let mut foreign = release.publication.clone().unwrap();
+    foreign.tenant = "other".into();
+    assert_eq!(
+        releases
+            .get_release(request(
+                FOREIGN,
+                proto::GetReleaseRequest {
+                    publication: Some(foreign)
+                }
+            ))
+            .await
+            .unwrap_err()
+            .code(),
+        tonic::Code::NotFound
+    );
+    let mut desired = deployment(&digest);
+    desired.publication = release.publication.clone();
+    desired.release_digest.clear();
     let applied = DeploymentServiceClient::new(channel)
         .apply_deployment(request(
             OPERATOR,
             proto::ApplyDeploymentRequest {
+                expected_component_digest: Some(digest.clone()),
                 operation: None,
-                deployment: Some(deployment(&digest)),
+                deployment: Some(desired),
                 expected_generation: Some(0),
             },
         ))
@@ -220,6 +227,7 @@ fn deployment(digest: &str) -> proto::Deployment {
         .expect("maintained echo deployment");
     manifest.release = latent_core::ReleaseDigest(digest.to_owned());
     deployment_to_proto(&VersionedDeployment {
+        publication: None,
         manifest,
         generation: 0,
     })

@@ -104,6 +104,12 @@ enumeration!(RolloutOperationOutcome { Committed });
     deny_unknown_fields
 )]
 pub struct RolloutRelease {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "codec::optional"
+    )]
+    pub publication: Option<latent_core::PublicationId>,
     #[serde(with = "codec::text")]
     pub deployment_id: DeploymentId,
     #[serde(with = "codec::text")]
@@ -176,6 +182,11 @@ pub struct RolloutStatus {
     deny_unknown_fields
 )]
 pub struct RolloutOperationReceipt {
+    /// Captured from the same retained plan; legacy canonical bytes stay unchanged.
+    #[serde(skip)]
+    pub base_publication: Option<latent_core::PublicationId>,
+    #[serde(skip)]
+    pub candidate_publication: Option<latent_core::PublicationId>,
     pub rollout_id: RolloutId,
     #[serde(with = "codec::text")]
     pub tenant: TenantId,

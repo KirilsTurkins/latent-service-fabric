@@ -23,6 +23,7 @@ pub struct CatalogSource {
     pub global_policy_reads: AtomicUsize,
     pub keys: Arc<Mutex<Vec<String>>>,
     pub resolve_hook: Arc<Mutex<Option<ResolveHook>>>,
+    pub policy_hook: Arc<Mutex<Option<ResolveHook>>>,
 }
 
 impl Default for CatalogSource {
@@ -32,6 +33,7 @@ impl Default for CatalogSource {
             global_policy_reads: AtomicUsize::new(0),
             keys: Arc::default(),
             resolve_hook: Arc::default(),
+            policy_hook: Arc::default(),
         }
     }
 }
@@ -42,6 +44,7 @@ impl ActivationCatalogSource for CatalogSource {
             generation: self.generation.load(Ordering::Acquire),
             keys: Arc::clone(&self.keys),
             resolve_hook: Arc::clone(&self.resolve_hook),
+            policy_hook: Arc::clone(&self.policy_hook),
         }))
     }
 }
@@ -63,6 +66,7 @@ struct Catalog {
     generation: u8,
     keys: Arc<Mutex<Vec<String>>>,
     resolve_hook: Arc<Mutex<Option<ResolveHook>>>,
+    policy_hook: Arc<Mutex<Option<ResolveHook>>>,
 }
 
 impl RouteResolver for Catalog {
@@ -87,6 +91,7 @@ impl RouteResolver for Catalog {
         // has repository tests; this proves the manager supplies varying keys.
         let bucket = key.bytes().fold(0_u8, u8::wrapping_add) % 2;
         Ok(ResolvedRevision {
+            publication: None,
             target: target.clone(),
             revision: RevisionId(format!("revision-{}-{bucket}", self.generation)),
             release: model::artifact(self.generation, bucket)
@@ -119,6 +124,9 @@ impl RevisionPolicySource for Catalog {
         &self,
         revision: &ResolvedRevision,
     ) -> Result<RevisionAdmissionPolicy, PlatformError> {
+        if let Some(hook) = self.policy_hook.lock().expect("policy hook").clone() {
+            hook()?;
+        }
         if revision.route_generation != self.generation() {
             return Err(error(
                 PlatformErrorCode::StateConflict,

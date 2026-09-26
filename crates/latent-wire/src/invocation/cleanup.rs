@@ -1,5 +1,6 @@
 //! Bounded continuation of an existing lifecycle after its transport disappears.
 mod driver;
+mod retained;
 mod snapshot;
 mod state;
 #[cfg(test)]
@@ -16,6 +17,7 @@ use tokio::time::Instant;
 
 use super::errors::boundary_error;
 use driver::Driver;
+pub use retained::{ActivationCleanupReservation, RetainedActivation};
 pub use snapshot::ActivationCleanupSnapshot;
 pub(super) use state::CleanupSlot;
 use state::Shared;
@@ -152,6 +154,12 @@ impl Drop for ActivationCleanupOwner {
 }
 
 impl ActivationCleanupHandle {
+    /// Reserve before accepting an activation. The returned affine owner can
+    /// retain a trusted adapter's bounded buffers through actual cleanup.
+    pub fn reserve_activation(&self) -> Result<ActivationCleanupReservation, PlatformError> {
+        self.try_reserve().map(ActivationCleanupReservation)
+    }
+
     #[must_use]
     pub fn snapshot(&self) -> ActivationCleanupSnapshot {
         self.shared.snapshot()

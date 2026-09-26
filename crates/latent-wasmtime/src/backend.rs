@@ -101,7 +101,9 @@ pub(crate) struct SharedRuntime {
     instances: Arc<ActiveInstanceGate>,
     uncached_prepared: Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>,
     pub(crate) log_sink: BoundedLogSink,
+    pub(crate) capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
     clock: Arc<dyn ActivationClock>,
+    currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
     clock_origin: Instant,
     context_policy: Arc<ContextExposurePolicy>,
     resources: RuntimeResourceCounters,
@@ -149,6 +151,7 @@ impl SharedRuntime {
         let preparation_observer = PreparationObserver::new(config.maximum_concurrent_preparations);
         let uncached_prepared = Arc::new(Mutex::new(None));
         let preparation_context = Arc::new(PreparationContext {
+            capabilities: services.capabilities.as_ref().map(Arc::downgrade),
             native_aot,
             admission,
             lifecycle,
@@ -184,6 +187,8 @@ impl SharedRuntime {
                 config.retained_log_maximum_bytes,
                 services.log_sink,
             ),
+            capabilities: services.capabilities,
+            currentness_read_wait: services.currentness_read_wait,
             clock_origin: services.clock.monotonic_now(),
             clock: services.clock,
             context_policy: Arc::new(config.context_policy.clone()),
@@ -305,14 +310,37 @@ impl WasmtimeBackend {
             .map(|runtime| runtime.descriptor.clone())
     }
 
+    /// Compile immutable application-test bytes through the ordinary validation,
+    /// component linker, capacity gates and owner checks. This fixture capability
+    /// cannot match a production catalog or satisfy enforced signing admission.
+    #[cfg(feature = "development-test-host")]
+    pub fn prepare_development_test(
+        &self,
+        input: &latent_artifacts::DevelopmentTestArtifact,
+        key: &PreparationKey,
+    ) -> Result<PreparedComponent, PlatformError> {
+        let job = self.shared.preparation_observer.begin(&key.release);
+        let runtime = self.prepare_runtime_with_integrity(
+            input.artifact(),
+            key,
+            ComponentIntegrity::Verify,
+            Some(input.eligibility().clone()),
+            &job,
+        )?;
+        job.complete();
+        Ok(runtime.descriptor.clone())
+    }
+
     fn prepare_runtime(
         &self,
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.shared
-            .preparation_context
-            .check_eligibility(None, &key.release)?;
+        self.shared.preparation_context.check_eligibility(
+            None,
+            &key.release,
+            key.publication.as_ref(),
+        )?;
         let job = self.shared.preparation_observer.begin(&key.release);
         let runtime = self.prepare_runtime_with_integrity(
             artifact,
@@ -333,9 +361,11 @@ impl WasmtimeBackend {
         eligibility: Option<ReleaseUseEligibility>,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.shared
-            .preparation_context
-            .check_eligibility(eligibility.as_ref(), &key.release)?;
+        self.shared.preparation_context.check_eligibility(
+            eligibility.as_ref(),
+            &key.release,
+            key.publication.as_ref(),
+        )?;
         let validation = job.stage(PreparationStage::MetadataValidation);
         let identity = self
             .shared
@@ -355,8 +385,12 @@ impl WasmtimeBackend {
             prepared_handle(key, &component_digest, &identity.digest),
             eligibility.as_ref(),
         );
-        let metadata_bytes =
-            preparation::retained_metadata_bytes(identity.bytes, None, eligibility.as_ref())?;
+        let metadata_bytes = preparation::retained_metadata_bytes(
+            identity.bytes,
+            None,
+            eligibility.as_ref(),
+            key.publication.as_ref(),
+        )?;
         let reserved_metadata = self
             .shared
             .preparation_context
@@ -400,6 +434,7 @@ impl WasmtimeBackend {
         timing: &mut Phase0InvocationTiming,
         prepared: Option<WasmtimePreparedUse>,
         input_trace: Option<&InputTrace>,
+        capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
     ) -> Result<GuestOutcome, PlatformError> {
         let setup_started = Instant::now();
         let _active_invocation = self.shared.resources.active_invocation();
@@ -442,6 +477,15 @@ impl WasmtimeBackend {
         let cancellation_guard = cancellation_probe
             .as_ref()
             .map(|_| self.shared.resources.cancellation_probe());
+        if self.shared.capabilities.is_some()
+            && (cancellation.budget_accounting().is_none() || cancellation_probe.is_none())
+        {
+            return Err(platform_error(
+                PlatformErrorCode::PermissionDenied,
+                "capability execution owner required",
+                false,
+            ));
+        }
         let accounting =
             match InvocationAccounting::new(&request, cancellation, self.shared.clock.as_ref()) {
                 Ok(accounting) => accounting,
@@ -454,6 +498,24 @@ impl WasmtimeBackend {
                 }
                 Err(error) => return Err(error),
             };
+        let capabilities = self
+            .shared
+            .capabilities
+            .as_ref()
+            .map(|owner| {
+                let publication = runtime.eligibility.as_ref().ok_or_else(|| {
+                    platform_error(
+                        PlatformErrorCode::PermissionDenied,
+                        "capability publication owner required",
+                        false,
+                    )
+                })?;
+                owner.open_session(&request, cancellation, publication, accounting.deadline())
+            })
+            .transpose()?;
+        *capability_observer = capabilities
+            .as_ref()
+            .map(latent_capabilities::broker::CapabilitySession::observer);
         let stop = Arc::new(StopControl::with_clock(
             accounting.deadline().monotonic(),
             cancellation_probe,
@@ -470,7 +532,8 @@ impl WasmtimeBackend {
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
-        let mut store = AccountedStore::new(self.invocation_store(request, &stop, accounting)?);
+        let mut store =
+            AccountedStore::new(self.invocation_store(request, &stop, accounting, capabilities)?);
         // Decoding and every borrowed validation have completed. The Store now
         // owns only the moved context; destroy the actual raw input before call.
         raw_input.release(InvocationInputDropReason::BeforeGuestCall);
@@ -587,6 +650,7 @@ impl WasmtimeBackend {
         request: ExecutionRequest,
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
+        capabilities: Option<latent_capabilities::broker::CapabilitySession>,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -611,7 +675,7 @@ impl WasmtimeBackend {
         let host_context =
             ActivationHostContext::from_request(request, accounting.deadline().unix_millis());
         let initial_fuel = accounting.initial_fuel();
-        let host_state = HostState::with_config(
+        let mut host_state = HostState::with_config(
             host_context,
             maximum_memory_bytes,
             &self.config,
@@ -622,6 +686,11 @@ impl WasmtimeBackend {
             self.shared.log_sink.clone(),
         );
 
+        host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
+        host_state.currentness_read_wait = self.shared.currentness_read_wait.clone();
+        if self.config.java_guest {
+            host_state.limiter.reserve_exception_heap()?;
+        }
         let mut store = Store::new(&self.engine, host_state);
         store.set_hostcall_fuel(self.config.hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
@@ -747,7 +816,16 @@ impl ExecutionBackend for WasmtimeBackend {
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
     ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
-        Box::pin(self.prepare_ready_repository(repository, key))
+        Box::pin(self.prepare_ready_repository(repository, key, None))
+    }
+
+    fn prepare_ready_from_repository_with_wait<'a>(
+        &'a self,
+        repository: Arc<dyn ArtifactRepository>,
+        key: PreparationKey,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
+        Box::pin(self.prepare_ready_repository(repository, key, Some(wait)))
     }
 
     fn materialize_ready(
@@ -805,7 +883,7 @@ impl ExecutionBackend for WasmtimeBackend {
         request: ExecutionRequest,
         cancellation: &'a dyn ExecutionCancellation,
     ) -> BoxFuture<'a, Result<GuestOutcome, PlatformError>> {
-        Box::pin(async move { self.invoke_inner(request, cancellation, None).await })
+        Box::pin(async move { self.invoke_inner(request, cancellation, None).await.outcome })
     }
 
     fn invoke_contained<'a>(
@@ -820,9 +898,8 @@ impl ExecutionBackend for WasmtimeBackend {
                 return ExecutionReport::reusable(Err(error));
             }
             let activation_id = request.activation.activation_id.clone();
-            let outcome = self.invoke_inner(request, cancellation, None).await;
+            let report = self.invoke_inner(request, cancellation, None).await;
             let proof_started = Instant::now();
-            let report = ExecutionReport::reusable(outcome);
             self.lock_timings()
                 .update_reusable_proof(&activation_id.0, elapsed_micros(proof_started));
             report
@@ -866,7 +943,7 @@ fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
 
 fn prepared_handle(key: &PreparationKey, component_digest: &str, metadata_digest: &str) -> String {
     let material = format!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}",
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         key.release.0,
         key.engine_version,
         key.engine_configuration_digest,
@@ -874,6 +951,9 @@ fn prepared_handle(key: &PreparationKey, component_digest: &str, metadata_digest
         key.cpu_feature_set,
         component_digest,
         metadata_digest,
+        key.publication
+            .as_ref()
+            .map_or("", latent_core::PublicationId::as_str),
     );
     format!("wasmtime:{}", blake3::hash(material.as_bytes()).to_hex())
 }
@@ -993,6 +1073,7 @@ fn invocation_accounting(
     timing: &mut Phase0InvocationTiming,
 ) -> (BudgetConsumption, Option<PlatformError>) {
     let remaining_fuel = store.get_fuel().unwrap_or(0);
+    store.data_mut().limiter.confirm_memory_growth();
     let peak_memory = store.data().limiter.peak_memory_bytes();
     let accounting_error = store
         .data_mut()
@@ -1004,11 +1085,7 @@ fn invocation_accounting(
         elapsed_micros: host_call_micros,
     } = store.data().host_call_timing();
     let consumption = BudgetConsumption {
-        cpu_fuel: store
-            .data()
-            .accounting
-            .initial_fuel()
-            .saturating_sub(remaining_fuel),
+        cpu_fuel: store.data().accounting.native_fuel_consumed(remaining_fuel),
         peak_memory_bytes: store.data().limiter.peak_memory_bytes(),
         wall_time_micros,
         log_bytes: store.data().logs.bytes(),

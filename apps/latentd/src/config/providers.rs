@@ -1,0 +1,320 @@
+use std::path::{Path, PathBuf};
+
+use latent_control_store::bindings::BindingDefinition;
+use latent_core::{BudgetProfile, PlatformError};
+use latent_manifest::{BindingMode, JsonManifestCodec, ManifestCodec};
+use serde::{Deserialize, Deserializer};
+
+use super::{invalid, NodeConfig};
+
+#[path = "providers/secrets.rs"]
+mod secrets;
+pub use secrets::SecretInstallation;
+#[path = "providers/metrics.rs"]
+mod metrics;
+pub use metrics::MetricsInstallation;
+#[path = "providers/local_service.rs"]
+mod local_service;
+pub use local_service::LocalServiceInstallation;
+#[path = "providers/events.rs"]
+mod events;
+pub use events::EventInstallation;
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ConfiguredProviders {
+    pub format_version: u32,
+    #[serde(default, deserialize_with = "present")]
+    pub http: Option<HttpInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub blob: Option<BlobInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub secrets: Option<SecretInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub metrics: Option<MetricsInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub local_service: Option<LocalServiceInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub events: Option<EventInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub clock_monotonic: Option<ScalarInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub clock_wall: Option<ScalarInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub random: Option<ScalarInstallation>,
+    pub bindings: Vec<HostBinding>,
+}
+
+/// Explicit node-owned scalar installation. Limits and implementation are fixed
+/// by the maintained profile; configuration cannot inject a test provider.
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ScalarInstallation {
+    pub identity: ProviderIdentity,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ProviderIdentity {
+    pub id: String,
+    pub tenant: String,
+    pub service: String,
+    pub epoch: u64,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct HttpInstallation {
+    pub identity: ProviderIdentity,
+    pub configuration: latent_http::HttpProviderConfig,
+    #[serde(default, deserialize_with = "present")]
+    pub credential_directory: Option<PathBuf>,
+    #[serde(default)]
+    pub credentials: Vec<ProviderSecretFile>,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ProviderSecretFile {
+    pub reference: String,
+    pub file: String,
+    pub destination: usize,
+    pub header: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BlobInstallation {
+    pub identity: ProviderIdentity,
+    pub namespace: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct HostBinding {
+    pub name: String,
+    pub tenant: String,
+    pub consumer_service: String,
+    pub provider_service: String,
+    pub contract: String,
+    pub provider_binding: String,
+    #[serde(default, deserialize_with = "present")]
+    pub route: Option<String>,
+}
+
+pub(super) fn present<'de, Document: Deserialize<'de>, Input: Deserializer<'de>>(
+    input: Input,
+) -> Result<Option<Document>, Input::Error> {
+    Document::deserialize(input).map(Some)
+}
+
+pub(super) fn derive(
+    config: &NodeConfig,
+) -> Result<Option<Box<ConfiguredProviders>>, PlatformError> {
+    let Some(providers) = &config.providers else {
+        return Ok(None);
+    };
+    if !config.credentials_from_protected_file
+        || !cfg!(all(target_os = "linux", target_arch = "x86_64"))
+        || config.capability_policies.is_none()
+        || config.audit.is_none()
+        || config.budget_profile.profile() != BudgetProfile::Phase3
+        || providers.format_version != 1
+        || (providers.http.is_none()
+            && providers.blob.is_none()
+            && providers.secrets.is_none()
+            && providers.metrics.is_none()
+            && providers.local_service.is_none()
+            && providers.events.is_none()
+            && providers.clock_monotonic.is_none()
+            && providers.clock_wall.is_none()
+            && providers.random.is_none())
+        || providers.bindings.is_empty()
+        || providers.bindings.capacity() > 16
+    {
+        return Err(invalid("providers"));
+    }
+    if let Some(http) = &providers.http {
+        http.identity.validate()?;
+        http.configuration
+            .validate()
+            .map_err(|_| invalid("providers.http"))?;
+        if http.credentials.capacity() > 8
+            || http.credential_directory.is_some() == http.credentials.is_empty()
+        {
+            return Err(invalid("providers.http.credentials"));
+        }
+        for (index, credential) in http.credentials.iter().enumerate() {
+            if !token(&credential.reference, 128)
+                || !token(&credential.file, 128)
+                || credential.file.contains(['/', '\\', ':'])
+                || matches!(credential.file.as_str(), "." | "..")
+                || !token(&credential.header, 64)
+                || credential.destination >= http.configuration.destinations.len()
+                || http.credentials[..index].iter().any(|previous| {
+                    previous.reference == credential.reference
+                        || previous.destination == credential.destination
+                })
+            {
+                return Err(invalid("providers.http.credentials"));
+            }
+        }
+    }
+    if let Some(blob) = &providers.blob {
+        blob.identity.validate()?;
+        if !token(&blob.namespace, 128) {
+            return Err(invalid("providers.blob.namespace"));
+        }
+        if providers.http.as_ref().is_some_and(|http| {
+            http.identity.id == blob.identity.id
+                || (http.identity.tenant == blob.identity.tenant
+                    && http.identity.service == blob.identity.service)
+        }) {
+            return Err(invalid("providers.identity"));
+        }
+    }
+    if let Some(secrets) = &providers.secrets {
+        secrets.validate()?;
+        for identity in [
+            providers.http.as_ref().map(|v| &v.identity),
+            providers.blob.as_ref().map(|v| &v.identity),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            if identity.id == secrets.identity.id
+                || (identity.tenant == secrets.identity.tenant
+                    && identity.service == secrets.identity.service)
+            {
+                return Err(invalid("providers.identity"));
+            }
+        }
+    }
+    if let Some(metrics) = &providers.metrics {
+        metrics.validate()?;
+    }
+    if let Some(local) = &providers.local_service {
+        local.validate_installation(providers)?;
+    }
+    if let Some(events) = &providers.events {
+        events.validate_installation(providers)?;
+    }
+    for scalar in [
+        &providers.clock_monotonic,
+        &providers.clock_wall,
+        &providers.random,
+    ]
+    .into_iter()
+    .flatten()
+    {
+        scalar.identity.validate()?;
+    }
+    providers.definitions()?;
+    Ok(Some(Box::new(providers.clone())))
+}
+
+impl ProviderIdentity {
+    fn validate(&self) -> Result<(), PlatformError> {
+        if !token(&self.id, 128)
+            || !token(&self.tenant, 128)
+            || !token(&self.service, 128)
+            || self.epoch == 0
+            || self.id.contains(['/', '\\', ':'])
+            || matches!(self.id.as_str(), "." | "..")
+        {
+            return Err(invalid("providers.identity"));
+        }
+        Ok(())
+    }
+}
+
+impl ConfiguredProviders {
+    pub(crate) fn definitions(&self) -> Result<Vec<BindingDefinition>, PlatformError> {
+        self.bindings.iter().enumerate().map(|(index, binding)| {
+            if [&binding.name, &binding.tenant, &binding.consumer_service,
+                &binding.provider_service, &binding.provider_binding, &binding.contract]
+                .iter().any(|value| !token(value, 128))
+                || binding.route.as_ref().is_some_and(|route| !token(route, 128))
+                || self.bindings[..index].iter().any(|previous| {
+                    previous.tenant == binding.tenant && previous.name == binding.name
+                })
+            {
+                return Err(invalid("providers.bindings"));
+            }
+            let installed = match binding.contract.as_str() {
+                "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
+                "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
+                "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
+                "latent:telemetry/custom@0.1.0" => self.metrics.as_ref().map(|v| &v.identity),
+                "latent:service/invoke@0.1.0" => self.local_service.as_ref().map(|v| &v.identity),
+                "latent:events/publisher@0.2.0" => self.events.as_ref().map(|v| &v.identity),
+                "latent:clock/monotonic@0.1.0" => self.clock_monotonic.as_ref().map(|v| &v.identity),
+                "latent:clock/wall@0.1.0" => self.clock_wall.as_ref().map(|v| &v.identity),
+                "latent:random/random@0.1.0" => self.random.as_ref().map(|v| &v.identity),
+                _ => None,
+            }.ok_or_else(|| invalid("providers.bindings.contract"))?;
+            if installed.tenant != binding.tenant || installed.service != binding.provider_service {
+                return Err(invalid("providers.bindings.scope"));
+            }
+            let mut consumer = serde_json::json!({"service":binding.consumer_service,"contract":binding.contract});
+            if let Some(route) = &binding.route {
+                consumer["route"] = serde_json::json!(route);
+            }
+            let (provider, mode, allowed) = if binding.contract == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY {
+                let local = self.local_service.as_ref().ok_or_else(|| invalid("providers.localService"))?;
+                local.validate()?;
+                if binding.consumer_service == local.identity.service {
+                    return Err(invalid("providers.localService.selfBinding"));
+                }
+                (serde_json::json!({"service":local.identity.service,"contract":local.contract,"route":local.deployment}),
+                    "isolated-local", BindingMode::IsolatedLocal)
+            } else {
+                (serde_json::json!({"service":binding.provider_service,"contract":binding.contract}), "host", BindingMode::Host)
+            };
+            let document = serde_json::json!({"apiVersion":latent_manifest::MANIFEST_API_VERSION,
+                "kind":"Binding","metadata":{"name":binding.name,"tenant":binding.tenant},
+                "spec":{"consumer":consumer,"provider":provider,"mode":mode}});
+            let bytes = serde_json::to_vec(&document).map_err(|_| invalid("providers.bindings"))?;
+            Ok(BindingDefinition {
+                manifest: JsonManifestCodec::default().decode_binding(&bytes)
+                    .map_err(|_| invalid("providers.bindings"))?,
+                provider_binding_id: binding.provider_binding.clone(),
+                allowed_modes: vec![allowed],
+                restriction_json: br#"{"operations":[]}"#.to_vec(),
+            })
+        }).collect()
+    }
+}
+
+pub(super) fn anchor(config: &mut ConfiguredProviders, parent: &Path) -> Result<(), PlatformError> {
+    if let Some(events) = &mut config.events {
+        events.anchor(parent)?;
+    }
+    if let Some(secrets) = &mut config.secrets {
+        secrets.anchor(parent)?;
+    }
+    if let Some(directory) = config
+        .http
+        .as_mut()
+        .and_then(|http| http.credential_directory.as_mut())
+    {
+        if directory.as_os_str().is_empty() || directory.as_os_str().len() > 4096 {
+            return Err(invalid("providers.http.credentialDirectory"));
+        }
+        if directory.is_relative() {
+            *directory = parent
+                .canonicalize()
+                .map_err(|_| invalid("configurationPath"))?
+                .join(&*directory);
+        }
+    }
+    Ok(())
+}
+
+fn token(value: &String, maximum: usize) -> bool {
+    !value.is_empty()
+        && value.capacity() <= maximum
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"-_.:/@".contains(&byte))
+}

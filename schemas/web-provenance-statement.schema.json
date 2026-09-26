@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/web-provenance-statement.schema.json",
+  "title": "LSF componentless web package provenance statement",
+  "$comment": "Restricted in-toto Statement/v1, separately versioned LSF web predicate; not SLSA conformance. Same exact package subject and approved builder cryptography as capsule provenance. The observation has web outputs, not a synthetic component.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_type",
+    "subject",
+    "predicateType",
+    "predicate"
+  ],
+  "properties": {
+    "_type": {
+      "const": "https://in-toto.io/Statement/v1"
+    },
+    "subject": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "digest"
+        ],
+        "properties": {
+          "name": {
+            "const": "lsf-package"
+          },
+          "digest": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sha256"
+            ],
+            "properties": {
+              "sha256": {
+                "type": "string",
+                "minLength": 64,
+                "maxLength": 64,
+                "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+              }
+            }
+          }
+        }
+      }
+    },
+    "predicateType": {
+      "const": "https://latent.dev/web-provenance/v1"
+    },
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "formatVersion",
+        "packageSubject",
+        "builderId",
+        "issuedAt",
+        "expiresAt",
+        "observation"
+      ],
+      "properties": {
+        "formatVersion": {
+          "$ref": "package-provenance-statement.schema.json#/properties/predicate/properties/formatVersion"
+        },
+        "packageSubject": {
+          "$ref": "package-provenance-statement.schema.json#/properties/predicate/properties/packageSubject"
+        },
+        "builderId": {
+          "$ref": "package-provenance-statement.schema.json#/properties/predicate/properties/builderId"
+        },
+        "issuedAt": {
+          "$ref": "package-provenance-statement.schema.json#/properties/predicate/properties/issuedAt"
+        },
+        "expiresAt": {
+          "$ref": "package-provenance-statement.schema.json#/properties/predicate/properties/expiresAt"
+        },
+        "observation": {
+          "$ref": "web-build-observation.schema.json"
+        }
+      }
+    }
+  }
+}

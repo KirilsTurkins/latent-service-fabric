@@ -16,6 +16,7 @@ fn row() -> Attempt {
 
 fn success(id: &str, payload: &[u8]) -> proto::InvokeResponse {
     proto::InvokeResponse {
+        publication_id: None,
         activation_id: id.into(),
         revision_id: "revision".into(),
         release_digest: "release".into(),

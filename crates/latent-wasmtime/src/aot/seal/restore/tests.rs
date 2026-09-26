@@ -71,6 +71,10 @@ fn every_compatibility_field_is_checked_before_claims_are_exposed() {
     let (authority, key, output) = fixture();
     let original: Value = serde_json::from_slice(output.receipt()).unwrap();
     let replacements = [
+        (
+            "publication",
+            json!(format!("publication:sha256:{}", "08".repeat(32))),
+        ),
         ("scope", json!({"kind":"tenant","tenant":"other"})),
         ("package", json!(blob([8; 32]).as_str())),
         ("component", json!(blob([8; 32]).as_str())),

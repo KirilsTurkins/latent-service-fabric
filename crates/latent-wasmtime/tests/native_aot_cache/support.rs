@@ -24,11 +24,13 @@ pub struct Fixture {
 
 impl Fixture {
     pub fn new() -> Self {
+        let _stage = compiler::diagnostics::Span::new("fixture-creation");
         Self {
             directory: compiler::Directory::new(),
         }
     }
     pub fn catalog(&self) -> Arc<DirectoryArtifactRepository> {
+        let _stage = compiler::diagnostics::Span::new("catalog-creation-or-reopen");
         Arc::new(
             DirectoryArtifactRepository::open(
                 self.directory.path().join("catalog"),
@@ -68,6 +70,7 @@ impl Fixture {
         audit: Option<latent_audit::AuditHandle>,
         config: latent_wasmtime::WasmtimeConfig,
     ) -> Session {
+        let _stage = compiler::diagnostics::Span::new("native-session-creation");
         let process = compiler::limits();
         let authority = TrustedAotCompilerAuthority::new(
             compiler::COMPILER_NAME,
@@ -235,8 +238,12 @@ pub async fn publish(repository: &DirectoryArtifactRepository, second: bool) -> 
 }
 
 pub async fn revoke(repository: &DirectoryArtifactRepository, release: &ReleaseDigest) {
+    let publication = repository
+        .select_execution_publication(&TenantId("tests".into()), release, None)
+        .unwrap()
+        .unwrap();
     repository
-        .change_release_lifecycle(
+        .change_publication_lifecycle(
             ReleaseMutationContext {
                 scope: LifecycleScope::Tenant(TenantId("tests".into())),
                 actor: ReleaseActor {
@@ -248,11 +255,10 @@ pub async fn revoke(repository: &DirectoryArtifactRepository, release: &ReleaseD
                     expected_generation: 1,
                 }),
             },
-            release,
+            &publication,
             ReleaseLifecycleAction::Revoke,
             ReleaseLifecycleReason::OperatorRevocation,
             &mut |_| Ok(()),
         )
-        .await
         .unwrap();
 }

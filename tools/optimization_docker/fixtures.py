@@ -40,6 +40,7 @@ def materialize(component: Path, directory: Path, *, root: Path, repository: Pat
     contracts = directory / "contracts.json"
     canonical.write(contracts, canonical.contracts())
     canonical.write(directory / "node.json", node_configuration())
+    (directory / "node.json").chmod(0o600)
     token = directory / "token"
     with token.open("xb") as stream:
         stream.write((TOKEN + "\n").encode())

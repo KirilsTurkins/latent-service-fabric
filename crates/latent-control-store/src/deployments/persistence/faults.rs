@@ -207,6 +207,10 @@ fn initialization_orders_state_marker_file_rename_and_directory_sync() {
         .collect::<Vec<_>>();
     let pending = root.join(INITIALIZED_PENDING_FILE);
     expected.extend([
+        (IoStep::StateCreated, root.join(super::PENDING_FILE)),
+        (IoStep::StateWritten, root.join(super::PENDING_FILE)),
+        (IoStep::StateFileSynced, root.join(super::PENDING_FILE)),
+        (IoStep::StateRename, root.join(super::PENDING_FILE)),
         (IoStep::StateDirectorySync, root.clone()),
         (IoStep::MarkerCreated, pending.clone()),
         (IoStep::MarkerPartialWrite, pending.clone()),
@@ -290,4 +294,59 @@ fn staging_marker_cleanup_never_repairs_corrupt_completed_state() {
         fs::read(root.join(STATE_FILE)).unwrap(),
         b"corrupt completed record"
     );
+}
+
+#[test]
+fn obsolete_catalog_rejection_preserves_state_and_staging_without_write_attempts() {
+    use latent_manifest::__serde_json as json;
+    for format in 1..=4 {
+        let scratch = Scratch::new();
+        let root = scratch.0.join("catalog");
+        drop(open(&root).unwrap());
+        let path = root.join(STATE_FILE);
+        let mut value: json::Value = json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        value["format_version"] = json::json!(format);
+        value["payload"]
+            .as_object_mut()
+            .unwrap()
+            .remove("publication_pins");
+        if format == 1 {
+            value["payload"]
+                .as_object_mut()
+                .unwrap()
+                .remove("object_generations");
+        }
+        let mut record: super::Record = json::from_value(value).unwrap();
+        record.checksum =
+            latent_artifacts::content_digest(&json::to_vec(&record.payload).unwrap()).0;
+        let original = json::to_vec(&record).unwrap();
+        fs::write(&path, &original).unwrap();
+        fs::write(root.join(super::PENDING_FILE), b"retained pending bytes").unwrap();
+        fs::write(
+            root.join(INITIALIZED_PENDING_FILE),
+            b"retained pending marker",
+        )
+        .unwrap();
+        let guard = Guard::new(None);
+        for _ in 0..2 {
+            assert!(open(&root).is_err());
+        }
+        assert!(!guard.events().iter().any(|(step, _)| matches!(
+            step,
+            IoStep::StateCreated
+                | IoStep::StateWritten
+                | IoStep::StateFileSynced
+                | IoStep::StateRename
+                | IoStep::StateDirectorySync
+        )));
+        assert_eq!(fs::read(&path).unwrap(), original);
+        assert_eq!(
+            fs::read(root.join(super::PENDING_FILE)).unwrap(),
+            b"retained pending bytes"
+        );
+        assert_eq!(
+            fs::read(root.join(INITIALIZED_PENDING_FILE)).unwrap(),
+            b"retained pending marker"
+        );
+    }
 }

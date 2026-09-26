@@ -1,14 +1,11 @@
 use super::{compare::Comparison, incompatible, SemanticLimits};
-use latent_core::PlatformError;
-use std::collections::BTreeMap;
+use latent_core::{PlatformError, PHASE3_HOST_ABI_CURRENT};
+use std::collections::{BTreeMap, BTreeSet};
 use wit_parser::{InterfaceId, Resolve};
 
-pub(super) const IMPORTS: [&str; 4] = [
-    "latent:context/context@0.1.0",
-    "latent:log/log@0.1.0",
-    "latent:clock/monotonic@0.1.0",
-    "latent:clock/wall@0.1.0",
-];
+pub(super) fn recognizes(name: &str) -> bool {
+    PHASE3_HOST_ABI_CURRENT.interface(name).is_some()
+}
 
 pub(super) fn validate(
     resolve: &Resolve,
@@ -16,33 +13,29 @@ pub(super) fn validate(
     limits: SemanticLimits,
 ) -> Result<(), PlatformError> {
     let mut trusted = Resolve::default();
-    let mut loaded = BTreeMap::new();
-    for (name, id) in imports {
-        if !IMPORTS.contains(&name.as_str()) {
-            return Err(incompatible("unsupported-host-import"));
-        }
-        let (package, source) = if name.starts_with("latent:context/") {
-            (
-                "latent:context",
-                include_str!("../../../../wit/platform/context/package.wit"),
-            )
-        } else if name.starts_with("latent:log/") {
-            (
-                "latent:log",
-                include_str!("../../../../wit/platform/log/package.wit"),
-            )
-        } else {
-            (
-                "latent:clock",
-                include_str!("../../../../wit/platform/clock/package.wit"),
-            )
-        };
-        if !loaded.contains_key(package) {
-            let package_id = trusted
-                .push_source(package, source)
+    let mut loaded = BTreeSet::new();
+    for name in imports.keys() {
+        let specification = PHASE3_HOST_ABI_CURRENT
+            .interface(name)
+            .ok_or_else(|| incompatible("unsupported-host-import"))?;
+        // Semantic inspection recognizes the exact ABI without installing or
+        // authorizing a provider. Runtime preparation checks actual availability.
+        let source = specification.wit;
+        // A capsule may import both HTTP package versions. Deduplicate exact
+        // immutable sources, never the unversioned package name.
+        if loaded.insert(source) {
+            trusted
+                .push_source(specification.interface, source)
                 .map_err(|_| incompatible("invalid-pinned-host-wit"))?;
-            loaded.insert(package, package_id);
         }
+    }
+    // One work allowance across every required host, including repeated type
+    // visits. A caller cannot reset the comparison budget by adding interfaces.
+    let mut comparison = Comparison::new(resolve, &trusted, limits);
+    for (name, id) in imports {
+        let specification = PHASE3_HOST_ABI_CURRENT
+            .interface(name)
+            .ok_or_else(|| incompatible("unsupported-host-import"))?;
         let interface = trusted
             .interfaces
             .iter()
@@ -50,7 +43,15 @@ pub(super) fn validate(
                 (trusted.id_of(index).as_deref() == Some(name.as_str())).then_some(index)
             })
             .ok_or_else(|| incompatible("pinned-host-interface-missing"))?;
-        Comparison::new(resolve, &trusted, limits).interface(*id, interface)?;
+        comparison.host_interface(
+            *id,
+            interface,
+            specification.asynchronous,
+            specification.resource_types(),
+        )?;
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests;

@@ -46,6 +46,12 @@ pub struct AdmissionBinding {
 /// invokes it before rename and again after synchronization before adoption.
 pub trait AdmissionRecheck {
     fn check(&self) -> Result<(), PlatformError>;
+    fn check_web_grant(
+        &self,
+        _grant: &dyn crate::web::WebAdmissionGrant,
+    ) -> Result<(), PlatformError> {
+        Err(crate::web::incompatible())
+    }
     fn check_grant(&self, _grant: &dyn AdmissionGrant) -> Result<(), PlatformError> {
         Err(latent_core::PlatformError {
             code: latent_core::PlatformErrorCode::IncompatibleContract,
@@ -93,6 +99,33 @@ pub struct VerifiedAdmission {
 /// Host configuration authority. Implementations own bounded crypto/policy work
 /// and never accept stored receipt fields as substitutes for verification.
 pub trait AdmissionAuthority: Send + Sync {
+    /// Refresh a finite clock lease at an authenticated mutation boundary.
+    /// This does not grant authority: the retained grant must still pass its
+    /// current policy check under the commit fence. Never call from invocation
+    /// or cache lookup paths, or while that fence is held.
+    /// Authorities without durable clock leases need no additional work.
+    fn renew_control_lease(&self) -> Result<(), PlatformError> {
+        Ok(())
+    }
+
+    /// Additive web profile. Older/custom authorities explicitly deny it rather
+    /// than interpreting browser assets as a capsule with a fabricated digest.
+    fn verify_web(
+        &self,
+        _tenant: &TenantId,
+        _upload: PackageAdmissionUpload,
+    ) -> Result<crate::web::VerifiedWebAdmission, PlatformError> {
+        Err(crate::web::incompatible())
+    }
+
+    fn recover_web(
+        &self,
+        _binding: &crate::web::WebAdmissionBinding,
+        _upload: PackageAdmissionUpload,
+    ) -> Result<crate::web::VerifiedWebAdmission, PlatformError> {
+        Err(crate::web::incompatible())
+    }
+
     fn verify(
         &self,
         tenant: &TenantId,

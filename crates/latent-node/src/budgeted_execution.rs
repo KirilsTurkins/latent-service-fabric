@@ -9,8 +9,8 @@ use latent_core::{
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionCancellationProbe, ExecutionReport,
-    ExecutionRequest, GuestOutcome, PreparationKey, PreparedActivation, PreparedComponent,
-    PreparedReadiness, PreparedUse,
+    ExecutionRequest, GuestOutcome, PreparationKey, PreparationReadWait, PreparedActivation,
+    PreparedComponent, PreparedReadiness, PreparedUse,
 };
 
 use crate::ActivationBudgetRegistry;
@@ -127,6 +127,16 @@ impl ExecutionBackend for BudgetedExecutionBackend {
         key: PreparationKey,
     ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
         self.inner.prepare_ready_from_repository(repository, key)
+    }
+
+    fn prepare_ready_from_repository_with_wait<'a>(
+        &'a self,
+        repository: Arc<dyn ArtifactRepository>,
+        key: PreparationKey,
+        wait: &'a dyn PreparationReadWait,
+    ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
+        self.inner
+            .prepare_ready_from_repository_with_wait(repository, key, wait)
     }
 
     fn materialize_ready(

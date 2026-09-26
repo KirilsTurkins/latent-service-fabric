@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod custom;
 mod local;
 mod observation;
 mod observer;
@@ -31,7 +32,8 @@ pub use pipeline::{
 use latent_activation::TraceContext;
 use latent_core::{BoxFuture, Metadata, PlatformError};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum MetricKind {
     Counter,
     UpDownCounter,
@@ -80,6 +82,19 @@ pub struct SpanRecord {
 }
 
 pub trait TelemetrySink: Send + Sync {
+    /// Custom application series require explicit exporter support. Acceptance
+    /// in the shared queue does not imply export or durable delivery.
+    fn emit_custom_metric(
+        &self,
+        _point: custom::CustomMetricPoint,
+    ) -> BoxFuture<'_, Result<(), PlatformError>> {
+        Box::pin(std::future::ready(Err(PlatformError {
+            code: latent_core::PlatformErrorCode::Unavailable,
+            message: "custom metric exporter unavailable".into(),
+            retryable: false,
+            details: Vec::new(),
+        })))
+    }
     fn emit_metric(&self, point: MetricPoint) -> BoxFuture<'_, Result<(), PlatformError>>;
 
     fn emit_log(&self, record: LogRecord) -> BoxFuture<'_, Result<(), PlatformError>>;

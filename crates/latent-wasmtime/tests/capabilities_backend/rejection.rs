@@ -38,7 +38,7 @@ async fn missing_clock_grant_is_rejected_before_store_creation() {
 
 #[tokio::test]
 #[ignore = "requires contracts-gate capabilities component and denied-import fixture"]
-async fn forbidden_import_families_are_unavailable_even_when_manifest_declares_them() {
+async fn unsupported_or_uninstalled_imports_do_not_gain_ambient_authority() {
     let original = artifact();
     let path = PathBuf::from(std::env::var_os("LSF_CAPABILITIES_COMPONENT").expect("fixture path"));
     let factory = WasmtimeComponentEngineFactory::new(config()).expect("factory");
@@ -74,10 +74,11 @@ async fn forbidden_import_families_are_unavailable_even_when_manifest_declares_t
             PlatformErrorCode::IncompatibleContract,
             "{family}"
         );
-        assert_eq!(
-            error.message, "component imports an unsupported host capability",
-            "{family}"
-        );
+        let expected = match family {
+            "random" | "blob" | "secrets" => "required host capability provider is unavailable",
+            _ => "component imports an unsupported host capability",
+        };
+        assert_eq!(error.message, expected, "{family}");
     }
     assert_eq!(backend.resource_snapshot().stores_created, 0);
     idle(&backend);

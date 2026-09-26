@@ -26,7 +26,11 @@ pub(super) fn invocation(
     let fields = identifier(&value.activation_id, 512)
         && requested.is_none_or(|id| id == value.activation_id)
         && value.revision_id.len() <= 512
-        && value.release_digest.len() <= 512;
+        && value.release_digest.len() <= 512
+        && value
+            .publication_id
+            .as_ref()
+            .is_none_or(|id| id.len() == 83);
     let outcome = match value.result.as_ref() {
         Some(proto::invoke_response::Result::Success(value)) => success(value),
         Some(proto::invoke_response::Result::DeclaredError(value)) => declared(value),

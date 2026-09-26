@@ -12,13 +12,13 @@ use latent_core::ArtifactBlobDigest;
 use std::fmt;
 
 /// Inspected syntax and associations, without authenticated builder authority.
-pub struct UnverifiedProvenance {
-    pub(crate) statement: Statement,
+pub struct UnverifiedProvenance<T = BuildObservation> {
+    pub(crate) statement: Statement<T>,
     pub(crate) payload: Box<[u8]>,
     pub(crate) signature: [u8; 64],
     pub(crate) key_hint: ArtifactBlobDigest,
 }
-impl UnverifiedProvenance {
+impl<T> UnverifiedProvenance<T> {
     #[must_use]
     pub fn subject(&self) -> &PackageSubject {
         &self.statement.predicate.package_subject
@@ -28,7 +28,7 @@ impl UnverifiedProvenance {
         &self.statement.predicate.builder_id
     }
     #[must_use]
-    pub fn observation(&self) -> &BuildObservation {
+    pub fn observation(&self) -> &T {
         &self.statement.predicate.observation
     }
     #[must_use]
@@ -47,7 +47,7 @@ impl UnverifiedProvenance {
         }
     }
 }
-impl fmt::Debug for UnverifiedProvenance {
+impl<T> fmt::Debug for UnverifiedProvenance<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("UnverifiedProvenance")
             .field("payload_bytes", &self.payload.len())
@@ -58,6 +58,23 @@ pub fn inspect_provenance(
     envelope: &[u8],
     limits: ProvenanceLimits,
 ) -> SignatureResult<UnverifiedProvenance> {
+    inspect_as(
+        envelope,
+        limits,
+        PROVENANCE_PREDICATE_TYPE,
+        |value, limits| {
+            validate_observation(value, limits)?;
+            Ok(value.finished_at)
+        },
+    )
+}
+
+pub(crate) fn inspect_as<T: serde::de::DeserializeOwned>(
+    envelope: &[u8],
+    limits: ProvenanceLimits,
+    predicate_type: &str,
+    validate: fn(&T, ProvenanceLimits) -> SignatureResult<u64>,
+) -> SignatureResult<UnverifiedProvenance<T>> {
     limits.validate()?;
     let raw = dsse::inspect(
         envelope,
@@ -65,7 +82,7 @@ pub fn inspect_provenance(
         limits.max_envelope_bytes,
         limits.max_payload_bytes,
     )?;
-    let statement = decode_statement(&raw.payload, limits)?;
+    let statement = decode_as(&raw.payload, limits, predicate_type, validate)?;
     Ok(UnverifiedProvenance {
         statement,
         payload: raw.payload,
@@ -77,10 +94,23 @@ pub(crate) fn decode_statement(
     bytes: &[u8],
     limits: ProvenanceLimits,
 ) -> SignatureResult<Statement> {
+    decode_as(bytes, limits, PROVENANCE_PREDICATE_TYPE, |value, limits| {
+        validate_observation(value, limits)?;
+        Ok(value.finished_at)
+    })
+}
+
+pub(crate) fn decode_as<T: serde::de::DeserializeOwned>(
+    bytes: &[u8],
+    limits: ProvenanceLimits,
+    predicate_type: &str,
+    validate: fn(&T, ProvenanceLimits) -> SignatureResult<u64>,
+) -> SignatureResult<Statement<T>> {
     limits.validate()?;
-    let statement: Statement = json::decode(bytes, limits.max_payload_bytes, limits.max_materials)?;
+    let statement: Statement<T> =
+        json::decode(bytes, limits.max_payload_bytes, limits.max_materials)?;
     if statement.kind != STATEMENT_TYPE
-        || statement.predicate_type != PROVENANCE_PREDICATE_TYPE
+        || statement.predicate_type != predicate_type
         || statement.predicate.format_version != 1
     {
         return Err(SignatureFailure::UnsupportedProfile.into());
@@ -92,8 +122,8 @@ pub(crate) fn decode_statement(
         issued_at: predicate.issued_at,
         expires_at: predicate.expires_at,
     })?;
-    validate_observation(&predicate.observation, limits)?;
-    if predicate.issued_at < predicate.observation.finished_at {
+    let finished_at = validate(&predicate.observation, limits)?;
+    if predicate.issued_at < finished_at {
         return Err(SignatureFailure::InvalidValidity.into());
     }
     if statement.subject[0].name != "lsf-package"

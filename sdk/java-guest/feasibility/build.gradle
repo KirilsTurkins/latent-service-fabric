@@ -1,0 +1,46 @@
+buildscript {
+    repositories { mavenCentral() }
+    dependencies { classpath 'org.teavm:teavm-gradle-plugin:0.15.0' }
+    configurations.classpath.resolutionStrategy.eachDependency {
+        if (requested.group.startsWith('com.fasterxml.jackson')) {
+            useVersion '2.18.9'
+        }
+        if (requested.group.startsWith('org.eclipse.jetty')) {
+            useVersion '12.1.10'
+        }
+    }
+}
+apply plugin: 'java'
+apply plugin: 'org.teavm'
+
+repositories { mavenCentral() }
+java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+configurations.configureEach {
+    resolutionStrategy.failOnDynamicVersions()
+    resolutionStrategy.failOnChangingVersions()
+    resolutionStrategy.eachDependency {
+        if (requested.group.startsWith('com.fasterxml.jackson')) useVersion '2.18.9'
+        if (requested.group.startsWith('org.eclipse.jetty')) useVersion '12.1.10'
+    }
+}
+dependencies { implementation teavm.libs.interop }
+teavm {
+    c {
+        mainClass = 'dev.latent.guest.NativeEntrypoints'
+        // Native callers are outside TeaVM's Java reachability analysis.
+        preservedClasses = ['dev.latent.guest.Probe', 'dev.latent.guest.NativeEntrypoints']
+        outputDir = layout.buildDirectory.dir('teavm-c').get().asFile
+        minHeapSize = 1
+        maxHeapSize = 4
+        obfuscated = false
+    }
+}
+tasks.register('probeJvm', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'dev.latent.guest.Probe'
+}

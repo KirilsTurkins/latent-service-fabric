@@ -7,6 +7,9 @@ and its owning suites. Phase 2 adds signature/provenance/SBOM rejection, current
 policy and revocation fences, digest-verified raw cache and authenticated native
 reuse, isolated compiler checks, scoped audit and rollout controls. The
 [Phase 2 gate](../../docs/phase-2-completion.md) maps those executed boundaries.
+Phase 3's [execution-profile evidence matrix](../../docs/runtime/execution-security-profiles.md#finite-evidence-and-remaining-boundaries)
+adds enforced external-capsule prerequisites, real readiness/restart checks,
+profile downgrade rejection and guest availability during compiler failure.
 The broader target list below also includes later-phase state, provider handles
 and descendant calls, which remain unimplemented.
 

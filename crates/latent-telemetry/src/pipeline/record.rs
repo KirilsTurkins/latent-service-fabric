@@ -8,6 +8,7 @@ pub(crate) fn retained_bytes(record: &TelemetryRecord, maximum: usize) -> Option
     let mut cost = Cost { remaining: maximum };
     cost.charge(size_of::<TelemetryRecord>())?;
     match record {
+        TelemetryRecord::CustomMetric(point) => cost.charge(point.retained_bytes())?,
         TelemetryRecord::Metric(point) => {
             cost.string(&point.name)?;
             cost.string(&point.unit)?;
@@ -67,6 +68,8 @@ pub(super) fn valid(record: &TelemetryRecord, config: &TelemetryPipelineConfig) 
         return false;
     }
     match record {
+        // The private custom constructor has already applied its finite policy.
+        TelemetryRecord::CustomMetric(point) => metadata_valid(&point.point().attributes, config),
         TelemetryRecord::Metric(point) => {
             !point.name.is_empty()
                 && point.name.len() <= config.maximum_attribute_value_bytes

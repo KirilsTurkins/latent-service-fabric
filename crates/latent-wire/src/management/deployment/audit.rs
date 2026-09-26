@@ -53,6 +53,7 @@ impl DeploymentAudit {
             principal,
             AuditIdentities {
                 deployment: Some(manifest.id.clone()),
+                publication: manifest.publication.clone(),
                 component: Some(manifest.release.clone()),
                 ..Default::default()
             },
@@ -160,7 +161,7 @@ impl DeploymentAudit {
             preview_receipt_digest: None,
         };
         let mut accepted = audit
-            .try_reserve_critical(&attempt)
+            .reserve_control_critical(&attempt)
             .map_err(|error| platform_status(error, limits))?
             .begin()
             .wait()
@@ -245,6 +246,10 @@ impl DeploymentAudit {
                 receipt_digest: Some(digest::receipt(deployment, generation, self.delete)),
                 identities: AuditIdentities {
                     deployment: Some(deployment.manifest.id.clone()),
+                    publication: deployment
+                        .publication
+                        .as_ref()
+                        .map(|reference| reference.id.clone()),
                     component: Some(deployment.manifest.release.clone()),
                     deployment_generation: Some(deployment.generation),
                     route_generation: Some(generation),

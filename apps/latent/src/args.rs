@@ -3,8 +3,11 @@
 pub mod audit;
 mod invoke;
 mod package;
+pub mod phase3;
+pub mod policy;
 pub mod release;
 pub mod rollout;
+pub mod web;
 pub use package::{PackageCommand, PackagePullArgs, PackagePushArgs};
 mod management;
 #[cfg(test)]
@@ -15,10 +18,10 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand, ValueEnum};
 
-pub use invoke::InvokeArgs;
+pub use invoke::{InvokeArgs, InvokeBudgetProfile};
 pub use management::{
-    ActivationCommand, ApplyArgs, DeploymentCommand, NodeCommand, PublishArgs, ReleaseCommand,
-    RouteCommand, ServicePageArgs, ValidateCommand,
+    ActivationCommand, ApplyArgs, DeploymentCommand, NodeCommand, PublicationArgs, PublishArgs,
+    ReleaseCommand, RouteCommand, ServicePageArgs, ValidateCommand,
 };
 #[cfg(test)]
 pub use management::{CancelArgs, DeleteArgs, DeploymentOperationArgs, FileArgs, IdArgs};
@@ -33,7 +36,7 @@ pub use release::OptionalReleaseOperation;
 )]
 pub struct Cli {
     /// Explicit JSON credential profile file; no automatic discovery.
-    #[arg(long, global = true, value_name = "FILE")]
+    #[arg(long, global = true, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub config: Option<PathBuf>,
     #[arg(long, global = true, value_name = "NAME")]
     pub profile: Option<String>,
@@ -63,6 +66,22 @@ pub enum OutputFormat {
 
 #[derive(Subcommand)]
 pub enum Command {
+    /// Print an offline completion script; never installs files or contacts a node.
+    #[command(
+        after_help = "Writes only shell source. --quiet preserves the script; --output json is rejected. Installation and removal: docs/cli-completions.md"
+    )]
+    Completions {
+        #[arg(value_enum)]
+        shell: crate::completions::CompletionShell,
+    },
+    #[command(subcommand)]
+    Web(web::WebCommand),
+    #[command(subcommand)]
+    Trigger(phase3::TriggerCommand),
+    #[command(subcommand)]
+    Capability(phase3::CapabilityCommand),
+    /// Manage bounded tenant policies and provider binding metadata.
+    Policy(policy::PolicyArgs),
     #[command(subcommand)]
     Rollout(rollout::RolloutCommand),
     #[command(subcommand)]

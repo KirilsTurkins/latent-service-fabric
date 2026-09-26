@@ -1,6 +1,9 @@
 mod component;
 use super::*;
-use latent_artifacts::ArtifactRepository;
+use latent_artifacts::{
+    ArtifactRepository, CapsuleArtifact, LifecycleScope, ManagedPublicationUpload, ReleaseActor,
+    ReleaseActorKind, ReleaseMutationContext,
+};
 use latent_control_store::DeploymentStore;
 use latent_core::{ActivationClock, ClockSample, ContractId, FunctionId, ServiceId, TenantId};
 use latent_routing::{InvocationTarget, RouteResolver};
@@ -11,18 +14,16 @@ use std::{
 };
 
 pub(super) struct Clock {
-    base: Instant,
     elapsed: AtomicU64,
 }
 impl Clock {
     pub(super) fn new() -> Self {
         Self {
-            base: Instant::now(),
             elapsed: AtomicU64::new(0),
         }
     }
     fn finish_interval(&self) {
-        self.elapsed.store(1000, Ordering::Release);
+        self.elapsed.store(30_000, Ordering::Release);
     }
 }
 impl ActivationClock for Clock {
@@ -30,7 +31,11 @@ impl ActivationClock for Clock {
         ClockSample::new(1, self.monotonic_now())
     }
     fn monotonic_now(&self) -> Instant {
-        self.base + Duration::from_millis(self.elapsed.load(Ordering::Acquire))
+        // The real transport derives RPC deadlines from this clock. Freezing
+        // it at construction makes those deadlines expire during catalog setup
+        // on a busy runner. Only fast-forward the observation after the call;
+        // before then, keep progressing in the real monotonic time domain.
+        Instant::now() + Duration::from_millis(self.elapsed.load(Ordering::Acquire))
     }
 }
 
@@ -53,6 +58,33 @@ fn invoke_request(value: invocation::InvokeRequest) -> tonic::Request<invocation
     value
 }
 
+pub(super) async fn prepare_invocation(
+    node: &crate::standalone::StandaloneNode,
+    artifacts: &dyn ArtifactRepository,
+    component: &str,
+) {
+    use latent_executor::ExecutionBackend;
+    let release = latent_core::ReleaseDigest(component.to_owned());
+    let mut key = node.backend.preparation_key(&release).unwrap();
+    key.publication = Some(
+        artifacts
+            .select_execution_publication(&TenantId("tests".into()), &release, None)
+            .unwrap()
+            .expect("published canary component")
+            .id,
+    );
+    // Canary routing/outcome assertions use the normal one-second invocation
+    // budget. Cold compilation is bounded setup, not a runner-speed assertion.
+    let prepared = tokio::time::timeout(
+        Duration::from_secs(10),
+        node.backend.prepare_from_repository(artifacts, &key),
+    )
+    .await
+    .expect("bounded canary compilation setup")
+    .expect("canary component preparation");
+    drop(prepared);
+}
+
 pub(super) fn configured(directory: &TempDir) -> NodeSettings {
     let mut value = settings(directory);
     value.audit = Some(AuditLimits::default());
@@ -66,17 +98,10 @@ pub(super) fn configured(directory: &TempDir) -> NodeSettings {
 }
 
 pub(super) async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::StartRolloutRequest {
-    let base = catalogs
-        .artifacts
-        .publish(component::artifact(1))
-        .await
-        .unwrap();
-    let candidate = catalogs
-        .artifacts
-        .publish(component::artifact(2))
-        .await
-        .unwrap();
-    let mut base = super::fixtures::deployment("base", "tests", "echo", &base.release_digest);
+    let (base_publication, base_digest) = publish(catalogs, component::artifact(1)).await;
+    let (candidate_publication, candidate_digest) = publish(catalogs, component::artifact(2)).await;
+    let mut base = super::fixtures::deployment("base", "tests", "echo", &base_digest);
+    base.publication = Some(base_publication);
     // The generic catalog fixture uses "local". Actual node admission permits
     // only the trust class derived from this node's operator configuration.
     base.placement.as_mut().unwrap().trust_class = trust_class.to_owned();
@@ -87,10 +112,13 @@ pub(super) async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::Start
         .await
         .unwrap();
     let mut candidate =
-        super::fixtures::deployment("candidate", "tests", "echo", &candidate.release_digest);
+        super::fixtures::deployment("candidate", "tests", "echo", &candidate_digest);
+    candidate.publication = Some(candidate_publication);
+    candidate.release_digest.clear();
     candidate.placement.as_mut().unwrap().trust_class = trust_class.to_owned();
     candidate.route_weight = 5000;
     proto::StartRolloutRequest {
+        expected_candidate_component_digest: Some(candidate_digest.0),
         id: "observed".into(),
         base_deployment_id: "base".into(),
         expected_base_generation: Some(base.deployment.generation),
@@ -102,13 +130,44 @@ pub(super) async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::Start
         }),
         canary_policy: Some(proto::RolloutCanaryPolicy {
             format_version: 1,
-            observation_millis: 1000,
+            observation_millis: 30_000,
             minimum_candidate_samples: 1,
             maximum_failure_basis_points: Some(0),
-            latency_threshold_micros: 100,
+            // This is a routing/outcome handoff test, not a latency benchmark.
+            // Successful calls already obey the one-second invocation budget.
+            latency_threshold_micros: 1_000_000,
             maximum_slow_basis_points: Some(0),
         }),
     }
+}
+
+async fn publish(
+    catalogs: &Catalogs,
+    artifact: CapsuleArtifact,
+) -> (proto::PublicationRef, latent_core::ReleaseDigest) {
+    let published = catalogs
+        .artifacts
+        .publish_managed(
+            ReleaseMutationContext {
+                scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                actor: ReleaseActor {
+                    subject: "canary-fixture".into(),
+                    kind: ReleaseActorKind::Host,
+                },
+                operation: None,
+            },
+            ManagedPublicationUpload::Local(artifact),
+            &mut |_| Ok(()),
+        )
+        .await
+        .unwrap();
+    (
+        proto::PublicationRef {
+            id: published.publication.id.into_string(),
+            tenant: "tests".into(),
+        },
+        published.release.descriptor.release_digest.clone(),
+    )
 }
 
 #[tokio::test]
@@ -128,8 +187,9 @@ async fn actual_candidate_invocation_drives_only_the_matching_canary_promotion()
     .await
     .unwrap();
     let input = seed(&catalogs, &settings.node.trust_classes[0]).await;
+    let artifacts = catalogs.artifacts.clone();
     let deployments = catalogs.deployments.clone();
-    let candidate = input.candidate.as_ref().unwrap().release_digest.clone();
+    let candidate = input.expected_candidate_component_digest.clone().unwrap();
     let node = Box::pin(
         super::super::super::super::StandaloneNode::start_with_catalogs(
             settings,
@@ -140,6 +200,8 @@ async fn actual_candidate_invocation_drives_only_the_matching_canary_promotion()
     )
     .await
     .unwrap();
+    prepare_invocation(&node, artifacts.as_ref(), &candidate).await;
+    drop(artifacts);
     let endpoint = format!("http://{}", node.endpoint());
     let mut client = proto::rollout_service_client::RolloutServiceClient::connect(endpoint.clone())
         .await
@@ -269,7 +331,7 @@ pub(super) async fn invoke(endpoint: &str, activation: String) -> invocation::In
 async fn canary_compose_rejects_a_different_clock_before_activation_services() {
     let directory = TempDir::new().unwrap();
     let mut settings = configured(&directory);
-    let catalogs = Catalogs::open_with_control_and_clock(
+    let mut catalogs = Catalogs::open_with_control_and_clock(
         &settings,
         &tokio::runtime::Handle::current(),
         Arc::new(Clock::new()),
@@ -279,7 +341,7 @@ async fn canary_compose_rejects_a_different_clock_before_activation_services() {
     assert_eq!(
         super::super::super::super::StandaloneNode::compose(
             &mut settings,
-            &catalogs,
+            &mut catalogs,
             Arc::new(Clock::new())
         )
         .err()

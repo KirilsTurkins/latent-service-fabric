@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/node-http-ingress.schema.json",
+  "title": "Optional shared HTTP application ingress",
+  "description": "Value of httpIngress. Omission disables ingress; null does not. Native derivation validates numeric bind/peer addresses, canonical origins, known tenants, protected TLS files, aggregate reservations, node capacity and phase deadlines against connection age. Requires limits.maximumPayloadBytes = 2097152.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "bind", "transport", "authentication"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "bind": {"type": "string", "minLength": 1},
+    "transport": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["mode"], "properties": {"mode": {"const": "loopback"}}},
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["mode", "certificateFile", "privateKeyFile"],
+          "properties": {
+            "mode": {"const": "tls"},
+            "certificateFile": {"type": "string", "minLength": 1},
+            "privateKeyFile": {"type": "string", "minLength": 1}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false, "required": ["mode", "peers"],
+          "properties": {
+            "mode": {"const": "trusted-proxy"},
+            "peers": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+          }
+        }
+      ]
+    },
+    "authentication": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["mode"], "properties": {"mode": {"const": "bearer"}}},
+        {
+          "type": "object", "additionalProperties": false, "required": ["mode", "origins"],
+          "properties": {
+            "mode": {"const": "public-origins"},
+            "origins": {
+              "type": "array", "minItems": 1, "maxItems": 32,
+              "items": {
+                "type": "object", "additionalProperties": false, "required": ["authority", "subject", "tenant"],
+                "properties": {
+                  "authority": {"type": "string", "minLength": 1},
+                  "subject": {"type": "string", "minLength": 1, "maxLength": 256},
+                  "tenant": {"type": "string", "minLength": 1, "maxLength": 256}
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "browserOrigins": {
+      "description": "Bearer browser opt-in: exact canonical authority to one authenticated tenant. Omitted/empty keeps bearer ingress native-client-only. Public-origins authentication derives these bindings itself and requires this array empty. Origins share the configured transport scheme; forwarded origin fields are never used.",
+      "type": "array", "maxItems": 32, "uniqueItems": true, "default": [],
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["authority", "tenant"],
+        "properties": {
+          "authority": {"type": "string", "minLength": 1, "maxLength": 255},
+          "tenant": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      }
+    },
+    "responseCache": {
+      "description": "Optional immutable-public-v1 operator approvals. Empty or omitted disables the response cache. Native validation requires public-origins authentication, matching tenant/authority, canonical exact paths and unique route approvals. Changes require restart, which discards cached content.",
+      "type": "array", "maxItems": 32, "default": [],
+      "items": {"$ref": "node-http-response-cache.schema.json"}
+    },
+    "limits": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "maximumConnections": {"type": "integer", "minimum": 1, "maximum": 128, "default": 32},
+        "maximumExchanges": {"type": "integer", "minimum": 1, "maximum": 64, "default": 8},
+        "maximumBufferBytes": {"type": "integer", "minimum": 4718592, "maximum": 536870912, "default": 50331648},
+        "handshakeTimeoutMillis": {"type": "integer", "minimum": 10, "maximum": 30000, "default": 2000},
+        "headerTimeoutMillis": {"type": "integer", "minimum": 10, "maximum": 30000, "default": 2000},
+        "bodyTimeoutMillis": {"type": "integer", "minimum": 10, "maximum": 30000, "default": 5000},
+        "idleTimeoutMillis": {"type": "integer", "minimum": 10, "maximum": 30000, "default": 5000},
+        "writeTimeoutMillis": {"type": "integer", "minimum": 10, "maximum": 30000, "default": 5000},
+        "maximumConnectionAgeMillis": {"type": "integer", "minimum": 100, "maximum": 300000, "default": 60000},
+        "maximumRequestsPerConnection": {"type": "integer", "minimum": 1, "maximum": 1000, "default": 100}
+      }
+    }
+  }
+}

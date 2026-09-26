@@ -60,9 +60,9 @@ Those separate deliveries have since completed in Phase 2. The
 [completion map](../docs/phase-2-completion.md) records their composition; this
 transfer decision's authority and ownership limits remain unchanged.
 
-Some registries require separate token exchanges, object-store redirects or
-legacy referrer fallback. They must use preissued credentials and this supported
-profile, or wait for a separately designed authority/consistency extension.
+Registries requiring token exchanges or authorized redirects use the separately
+configured Bearer profile in ADR-0029. Mutable referrers-tag fallback remains
+unsupported. The static profile defined here retains its original restrictions.
 Finite HTTP parser scratch, metadata, raw buffers and caller-owned copies remain
 distinct; configured raw-byte leases are not a total process memory guarantee.
 
@@ -73,3 +73,16 @@ immutable ID and ownership label match its recovery record. No persistent
 registry volume or load-benchmark evidence is needed. The
 [registry reference](../docs/reference/oci-registry.md) documents configuration,
 limits, ownership and supported interoperability.
+
+## Phase 3 transport profiles
+
+[ADR-0029](0029-separate-registry-authority-from-transport-profile.md) and
+[RFC-0003](../rfcs/0003-versioned-oci-transport-profiles.md) preserve this ADR's
+registry/repository authority, digest pinning, credential provenance, finite
+ownership and uncertain-write rules while making static addresses, preissued
+credentials, DNS/token challenge handling and redirects explicit versioned
+transport choices. The implementation delivered by this ADR is named
+`lsf-oci-static-v1`. The implemented `lsf-oci-bearer-v1` profile adds explicitly
+configured token, DNS and redirect authority. Its
+[network conformance record](../docs/reference/oci-network-profile.md) limits
+the claim to the tested topology and separately controlled redirect peers.

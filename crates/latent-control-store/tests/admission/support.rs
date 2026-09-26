@@ -45,12 +45,14 @@ pub struct State {
     pub active: AtomicBool,
     pub now: AtomicU64,
     pub until: AtomicU64,
+    /// Optional finite clock window, independent of policy/proof expiry.
+    pub clock_lease_until: AtomicU64,
     pub fence: Mutex<()>,
     pub started: AtomicU64,
     pub revoke_after_fence: AtomicBool,
 }
 impl State {
-    fn check(&self) -> Result<(), PlatformError> {
+    fn check_policy(&self) -> Result<(), PlatformError> {
         if !self.active.load(Ordering::SeqCst) {
             return Err(denied("fixture-revoked"));
         }
@@ -59,10 +61,26 @@ impl State {
         }
         Ok(())
     }
+
+    fn check(&self) -> Result<(), PlatformError> {
+        self.check_policy()?;
+        let ceiling = self.clock_lease_until.load(Ordering::SeqCst);
+        if ceiling != 0 && self.now.load(Ordering::SeqCst) >= ceiling {
+            return Err(PlatformError {
+                code: PlatformErrorCode::Unavailable,
+                message: "fixture-clock-lease-uncovered".into(),
+                retryable: true,
+                details: Vec::new(),
+            });
+        }
+        Ok(())
+    }
 }
 
 pub struct Authority {
     pub state: Arc<State>,
+    pub control_renewals: AtomicU64,
+    pub fail_control_renewal: AtomicU64,
     artifacts: Vec<CapsuleArtifact>,
 }
 impl Authority {
@@ -72,10 +90,13 @@ impl Authority {
     pub fn new_many(artifacts: Vec<CapsuleArtifact>) -> Arc<Self> {
         Arc::new(Self {
             artifacts,
+            control_renewals: AtomicU64::new(0),
+            fail_control_renewal: AtomicU64::new(0),
             state: Arc::new(State {
                 active: AtomicBool::new(true),
                 now: AtomicU64::new(100),
                 until: AtomicU64::new(200),
+                clock_lease_until: AtomicU64::new(0),
                 fence: Mutex::new(()),
                 started: AtomicU64::new(0),
                 revoke_after_fence: AtomicBool::new(false),
@@ -140,6 +161,33 @@ impl AdmissionGrant for Grant {
     }
 }
 impl AdmissionAuthority for Authority {
+    fn renew_control_lease(&self) -> Result<(), PlatformError> {
+        let renewal = self.control_renewals.fetch_add(1, Ordering::SeqCst) + 1;
+        if renewal == self.fail_control_renewal.load(Ordering::SeqCst) {
+            return Err(PlatformError {
+                code: PlatformErrorCode::Unavailable,
+                message: "fixture-control-lease-unavailable".into(),
+                retryable: true,
+                details: Vec::new(),
+            });
+        }
+        if self.state.clock_lease_until.load(Ordering::SeqCst) != 0 {
+            // A clock refresh itself grants no proof authority. Slow-boundary
+            // tests must still reach the broker's independent live checks.
+            self.state.clock_lease_until.store(
+                self.state
+                    .now
+                    .load(Ordering::SeqCst)
+                    .checked_add(5)
+                    .unwrap(),
+                Ordering::SeqCst,
+            );
+        } else {
+            self.state.check_policy()?;
+        }
+        Ok(())
+    }
+
     fn verify(
         &self,
         tenant: &TenantId,
@@ -154,12 +202,40 @@ impl AdmissionAuthority for Authority {
         let release = layout
             .component_release()
             .ok_or_else(|| denied("fixture-kind"))?;
+        let capsule_layer = layout
+            .config()
+            .layers
+            .iter()
+            .find(|layer| layer.role == package::LayerRole::CapsuleManifest)
+            .ok_or_else(|| denied("fixture-manifest"))?;
+        let capsule_bytes = upload
+            .layers
+            .iter()
+            .find(|(path, _)| path == &capsule_layer.path)
+            .map(|(_, bytes)| bytes)
+            .ok_or_else(|| denied("fixture-manifest"))?;
+        package::verify_layer_bytes(
+            capsule_layer,
+            capsule_bytes,
+            package::PackageLimits::default(),
+        )?;
+        let manifest = JsonManifestCodec::default()
+            .decode_capsule(capsule_bytes)
+            .map_err(|_| denied("fixture-manifest"))?;
         let artifact = self
             .artifacts
             .iter()
-            .find(|artifact| artifact.descriptor.release_digest == release)
+            .find(|artifact| {
+                artifact.descriptor.release_digest == release && artifact.manifest == manifest
+            })
             .ok_or_else(|| denied("fixture-release"))?;
-        if artifact.manifest.metadata.tenant.as_ref() != Some(tenant) {
+        if artifact
+            .manifest
+            .metadata
+            .tenant
+            .as_ref()
+            .is_some_and(|scope| scope != tenant)
+        {
             return Err(denied("fixture-tenant"));
         }
         let mut artifact = artifact.clone();

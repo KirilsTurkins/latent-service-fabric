@@ -9,7 +9,7 @@ from tools.phase2_operator_process import require
 from tools.phase2_operator_scenario import NODE_ID, TOKEN
 
 PROFILE = {
-    "id": "phase2-dormant-32-r1", "preparation": "portable", "releases": 32,
+    "id": "phase2-dormant-32-r3", "preparation": "portable", "releases": 32,
     "deployments": 16, "referencedReleases": 2, "invocations": 32,
     "maximumControls": 256, "deadlineSeconds": 300, "shutdownSeconds": 10,
     "osSamples": 12, "samplesPerPhase": 3, "sampleIntervalMillis": 50,
@@ -18,7 +18,8 @@ PROFILE = {
     "maximumFixtureFiles": 2048, "maximumFixtureBytes": 8388608,
     "maximumBinaryBytes": 536870912,
     "proc": {"fileBytes": 65536, "fds": 4096, "tasks": 256,
-             "networkBytes": 1048576, "networkRows": 8192, "sampleSeconds": 2},
+             "networkBytes": 1048576, "networkRows": 8192, "sampleSeconds": 2,
+             "transientLoadFds": 1, "transientClockFds": 1},
 }
 PHASES = ("baseline", "dormant", "reclaimed", "unrouted")
 ZERO_ROWS = (
@@ -231,7 +232,22 @@ def validate_receipt(value):
     require(len(samples) == 12 and [s["phase"] for s in samples] ==
             [phase for phase in PHASES for _ in range(3)], "receipt-samples")
     baseline = samples[0]
-    fixed = ("threads", "tasks", "fdCount", "socketCount", "listeningTcpSockets", "descendants")
+    fixed = ("threads", "tasks", "socketCount", "listeningTcpSockets", "descendants")
+    def retained_fds(observed):
+        # The same fixed control owner sequentially renews the durable clock
+        # lease and reads PSI, even with no activations. Preserve raw counts;
+        # only positively identified descriptors are separate from retention.
+        transient = integer(observed["loadSamplerFdCount"])
+        clock = integer(observed["clockLeaseFdCount"])
+        total = integer(observed["fdCount"])
+        require(transient <= PROFILE["proc"]["transientLoadFds"] and transient < total,
+                "receipt-sampler-bound")
+        require(clock <= PROFILE["proc"]["transientClockFds"]
+                and transient + clock <= 1 and transient + clock < total,
+                "receipt-clock-bound")
+        return total - transient - clock
+
+    baseline_fds = retained_fds(baseline["os"])
     first_rows = baseline["inventory"]["topology"]["entries"]
     preparation_misses = integer(baseline["inventory"]["cacheSummary"]["misses"])
     require(preparation_misses == 2, "receipt-warm-preparations")
@@ -272,7 +288,8 @@ def validate_receipt(value):
         require(item["inventory"]["routeGeneration"] == expected_route, "receipt-phase-route")
         require(observed["descendants"] == 0 and observed["listeningTcpSockets"] == 1,
                 "receipt-process-topology")
-        require(all(observed[key] == baseline["os"][key] for key in fixed),
+        require(all(observed[key] == baseline["os"][key] for key in fixed)
+                and retained_fds(observed) == baseline_fds,
                 "receipt-topology-growth")
         rows = item["inventory"]["topology"]["entries"]
         require(len(rows) == len(first_rows), "receipt-topology-shape")

@@ -130,24 +130,26 @@ fn full_audit_blocks_regular_mutation_but_emergency_revoke_retains_catalog_recei
     let repo = repository(temp.path());
     let journal = Journal::new(2);
     let value = scoped_artifact("audit-full");
-    let release = value.descriptor.release_digest.clone();
-    publish(&repo, &journal, "create", value).0.unwrap();
+    let publication = publish(&repo, &journal, "create", value)
+        .0
+        .unwrap()
+        .publication;
     let mut retirement =
         ReleaseAuditGuard::new(Some(&journal.handle), ReleaseLifecycleAction::Retire);
-    let result = block_on(repo.change_release_lifecycle(
+    let result = repo.change_publication_lifecycle(
         context("retire", 1),
-        &release,
+        &publication,
         ReleaseLifecycleAction::Retire,
         ReleaseLifecycleReason::OperatorRetirement,
         &mut |preview| retirement.preview(preview),
-    ));
+    );
     assert_eq!(
         result.unwrap_err().code,
         PlatformErrorCode::ResourceExhausted
     );
     drop(retirement);
     assert_eq!(
-        block_on(repo.get_release_lifecycle(&scope(), &release))
+        block_on(repo.get_selected_lifecycle(&scope(), &publication))
             .unwrap()
             .unwrap()
             .record
@@ -156,14 +158,15 @@ fn full_audit_blocks_regular_mutation_but_emergency_revoke_retains_catalog_recei
     );
     let mut revocation =
         ReleaseAuditGuard::new(Some(&journal.handle), ReleaseLifecycleAction::Revoke);
-    let actual = block_on(repo.change_release_lifecycle(
-        context("revoke", 1),
-        &release,
-        ReleaseLifecycleAction::Revoke,
-        ReleaseLifecycleReason::SecurityIncident,
-        &mut |preview| revocation.preview(preview),
-    ))
-    .unwrap();
+    let actual = repo
+        .change_publication_lifecycle(
+            context("revoke", 1),
+            &publication,
+            ReleaseLifecycleAction::Revoke,
+            ReleaseLifecycleReason::SecurityIncident,
+            &mut |preview| revocation.preview(preview),
+        )
+        .unwrap();
     let ack = block_on(Box::pin(revocation.finish(&repo, Some(&actual))));
     assert_eq!(ack.status, ReleaseAuditStatus::AuditUnavailable);
     assert_eq!(actual.record.unwrap().state, ReleaseLifecycleState::Revoked);
@@ -188,7 +191,9 @@ fn response_rejection_occurs_before_either_catalog_or_audit_persistence() {
     assert!(result.is_err());
     assert_eq!(journal.handle.snapshot().retained_records, 0);
     assert!(matches!(
-        block_on(repo.get_release_operation(&scope(), "unreturnable")).unwrap(),
+        block_on(repo.get_selected_operation(&scope(), "unreturnable"))
+            .unwrap()
+            .1,
         ReleaseOperationLookup::Unknown
     ));
 }
@@ -218,7 +223,9 @@ fn failed_terminal_storage_preserves_real_committed_catalog_result_and_reserved_
     assert_eq!(snapshot.reserved_records, 1);
     assert!(snapshot.reserved_bytes > 0);
     let ReleaseOperationLookup::Found(receipt) =
-        block_on(repo.get_release_operation(&scope(), "committed-before-audit-failure")).unwrap()
+        block_on(repo.get_selected_operation(&scope(), "committed-before-audit-failure"))
+            .unwrap()
+            .1
     else {
         panic!("durable actual receipt");
     };
@@ -250,4 +257,75 @@ fn returned_receipt_change_cannot_change_the_audited_durable_catalog_outcome() {
     };
     assert_eq!(conclusion.identities.lifecycle_generation, Some(1));
     assert_eq!(conclusion.result, AuditOperationResult::Committed);
+}
+
+#[test]
+fn audit_publication_binding_survives_coexistence_revocation_and_receipt_recovery() {
+    let temp = TempRoot::new();
+    let repo = repository(temp.path());
+    let journal = Journal::new(12);
+    let value = scoped_artifact("audit-same-component");
+    let first = publish(&repo, &journal, "original", value.clone())
+        .0
+        .unwrap();
+    let mut corrected = value.clone();
+    corrected.manifest.semantic_version = "2.0.0".to_owned();
+    let second = publish(&repo, &journal, "corrected", corrected).0.unwrap();
+    assert_eq!(
+        first.release.descriptor.release_digest,
+        second.release.descriptor.release_digest
+    );
+    assert_ne!(first.publication, second.publication);
+    let selector = first.publication.clone();
+    let mut audit = ReleaseAuditGuard::new(Some(&journal.handle), ReleaseLifecycleAction::Revoke);
+    let changed = block_on(repo.change_selected_lifecycle(
+        context("exact-revoke", 1),
+        &selector,
+        ReleaseLifecycleAction::Revoke,
+        ReleaseLifecycleReason::OperatorRevocation,
+        &mut |preview| audit.preview(preview),
+    ))
+    .unwrap();
+    assert_eq!(changed.publication, Some(first.publication.id.clone()));
+    let ack = block_on(Box::pin(audit.finish(&repo, Some(&changed.operation))));
+    assert_eq!(ack.status, ReleaseAuditStatus::Durable);
+    drop(repo);
+    let reopened = repository(temp.path());
+    let recovered = block_on(reopened.get_selected_operation(&scope(), "original")).unwrap();
+    assert_eq!(recovered.0, Some(first.publication.id.clone()));
+    assert!(
+        matches!(recovered.1, ReleaseOperationLookup::Found(receipt) if receipt == first.operation)
+    );
+    assert_eq!(
+        reopened
+            .publication_lifecycle_status(&second.publication)
+            .unwrap()
+            .unwrap()
+            .record
+            .state,
+        ReleaseLifecycleState::Admitted
+    );
+    let (replayed, ack) = publish(&reopened, &journal, "original", value);
+    assert_eq!(replayed.unwrap().publication, first.publication);
+    assert_eq!(ack.status, ReleaseAuditStatus::Durable);
+    let rows = journal.rows();
+    assert_eq!(rows.len(), 8);
+    for (index, row) in rows.iter().enumerate() {
+        let expected = if index == 2 || index == 3 {
+            &second.publication.id
+        } else {
+            &first.publication.id
+        };
+        let identities = match &row.data {
+            AuditRecordData::Attempt(attempt) => &attempt.identities,
+            AuditRecordData::Outcome { conclusion, .. } => &conclusion.identities,
+            _ => panic!("control record expected"),
+        };
+        assert_eq!(
+            row.scope,
+            AuditScope::Tenant(TenantId("examples".to_owned()))
+        );
+        assert_eq!(identities.publication.as_ref(), Some(expected));
+    }
+    assert_eq!(journal.handle.snapshot().reserved_records, 0);
 }

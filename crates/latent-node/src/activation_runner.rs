@@ -19,6 +19,8 @@ use latent_executor::{
 use latent_scheduler::{CellClass, CellLease, CellPool};
 use tokio::sync::watch;
 
+mod diagnostics;
+
 const MAX_DIAGNOSTIC_BYTES: usize = 512;
 const MAX_ERROR_DETAILS: usize = 8;
 const MAX_DETAIL_FIELDS: usize = 16;
@@ -640,15 +642,17 @@ pub(crate) fn map_execution_outcome(
                 bounded_text(&trap.code, MAX_DETAIL_VALUE_BYTES),
             );
             fields.insert("cell_id".to_owned(), bounded_cell_id);
+            let mut details = vec![ErrorDetail {
+                kind: "activation.guest-trap".to_owned(),
+                fields,
+            }];
+            details.extend(diagnostics::currentness_detail(&trap));
             failure(
                 PlatformError {
                     code: PlatformErrorCode::GuestTrap,
                     message: bounded_text(&trap.message, MAX_DIAGNOSTIC_BYTES),
                     retryable: false,
-                    details: vec![ErrorDetail {
-                        kind: "activation.guest-trap".to_owned(),
-                        fields,
-                    }],
+                    details,
                 },
                 consumption,
             )

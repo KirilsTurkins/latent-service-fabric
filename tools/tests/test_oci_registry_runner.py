@@ -21,7 +21,7 @@ class RegistryRunnerTests(unittest.TestCase):
     def test_launch_pins_image_loopback_and_container_resources(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             registry = RUNNER.Registry(Path(temporary))
-            replies = ["sha256:image", "container", '[{"HostIp":"127.0.0.1","HostPort":"34567"}]']
+            replies = ["sha256:image", "c" * 64, '[{"HostIp":"127.0.0.1","HostPort":"34567"}]']
             with patch.object(RUNNER, "command", side_effect=replies) as execute:
                 self.assertEqual(registry.launch(), "https://127.0.0.1:34567")
             arguments = execute.call_args_list[1].args[0]

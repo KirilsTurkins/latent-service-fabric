@@ -41,6 +41,7 @@ pub struct RuntimeRequirement {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RuntimeRequirements {
     pub runtime: Option<RuntimeRequirement>,
+    pub renderer: Option<crate::RendererRequirement>,
     pub target_triples: Vec<String>,
     pub cpu_features: Vec<String>,
 }
@@ -50,6 +51,9 @@ impl RuntimeRequirements {
     pub fn validate(&self) -> Result<(), PlatformError> {
         list(&self.target_triples, 8)?;
         list(&self.cpu_features, 32)?;
+        if let Some(renderer) = &self.renderer {
+            renderer.validate()?;
+        }
         if let Some(runtime) = &self.runtime {
             text(&runtime.engine)?;
             text(&runtime.minimum_version)?;
@@ -73,7 +77,10 @@ impl RuntimeRequirements {
 
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.runtime.is_none() && self.target_triples.is_empty() && self.cpu_features.is_empty()
+        self.runtime.is_none()
+            && self.renderer.is_none()
+            && self.target_triples.is_empty()
+            && self.cpu_features.is_empty()
     }
 
     /// Conservative storage charge, including spare capacity of typed inputs.
@@ -81,6 +88,9 @@ impl RuntimeRequirements {
     pub fn retained_bytes(&self) -> usize {
         let lists = [&self.target_triples, &self.cpu_features];
         let mut count = std::mem::size_of::<Self>();
+        if let Some(renderer) = &self.renderer {
+            count = count.saturating_add(renderer.profile_digest.capacity());
+        }
         for values in lists {
             count = count.saturating_add(
                 values

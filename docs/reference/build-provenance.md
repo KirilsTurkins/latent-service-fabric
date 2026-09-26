@@ -67,10 +67,40 @@ caches and network dependency retrieval are outside a complete isolated input
 closure. Two matching outputs do not establish reproducibility on every machine.
 No SLSA level or SLSA conformance is claimed.
 
+## Phase 3 guest recipes
+
+[ADR-0034](../../adr/0034-version-maintained-guest-build-provenance-profiles.md)
+adds `https://latent.dev/build/rust-guest/v1` and
+`https://latent.dev/build/c-guest/v1`. Their requirements need separate explicit
+builder approval; an echo approval does not authorize either recipe. The
+[guest workflow](../component-development/guest-sdk.md) builds nine Rust
+examples and one C fixture with the pinned tools, then tests real package
+inspection, publisher/builder signing, enforced admission and guest execution.
+
+These profiles capture bounded explicit worktree inputs rather than a committed
+Git archive. Their `revision` is the 64-digit source inventory hash and must
+match `snapshotDigest`; it is not a Git commit. Common required materials are
+`source-snapshot`, `build-recipe`, `toolchain-config`, `wasm-tools` and
+`wit-bindgen`. Rust additionally requires `cargo`, `rustc` and `dependency-lock`;
+C requires `zig`. The exact recipe parameters and capture/completeness claims
+are checked together. Arbitrary Cargo examples and mixed C/Rust recipes fail.
+
+The driver limits each command to 600 seconds and 4 MiB of captured output,
+the build to 900 seconds, and source capture to 4,096 files, 4 MiB per file and
+32 MiB total. It uses the existing Python 3.13 process owner and environment
+allowlist. Inputs and actual tool binaries are checked again before writing
+`BUILD-COMPLETE.json`, which identifies every completed observation. The
+signing test checks that marker and the source inventory before signing.
+
+Guest observations say `hermetic: false`, `reproducibility: not-checked` and
+`dependencyCompleteness: declared-inputs-incomplete`. They do not establish a
+complete dependency inventory or sandbox trusted tools. Keep private signing
+keys outside build children; approve the intended recipe and source explicitly.
+
 ## Observation and signing authority
 
 `observation.json` and `BuildObservation` are unsigned assertions.
-`decode_build_observation` checks their bounded closed format, fixed echo recipe,
+`decode_build_observation` checks their bounded closed format, selected exact recipe,
 required materials and snapshot association. It cannot prove that a compiler ran.
 An approved builder remains responsible for the truth of its signed claims; an
 approved key holder can lie.
@@ -88,7 +118,7 @@ Construct `PackageSigningSubject` from exact manifest/config bytes after the
 `LocalBuilderSigner::sign_build` requires a capsule subject whose config component
 digest and size equal the observed output. The statement binds the component and
 the exact package: repackaging unchanged Wasm with different metadata requires new
-evidence. Browser/SSR build recipes are outside this initial profile.
+evidence. Browser/SSR build recipes are outside these profiles.
 
 The [packaging receipt](../component-development/packaging.md#determinism-and-observed-input-identities)
 records supplied-artifact packaging rather than compilation. Original input
@@ -174,7 +204,8 @@ binding. A builder signature cannot replace that local native-output authority.
 | Component / observed build duration | 64 MiB / 3600 seconds |
 | Keys / source requirements | 64 / 256 each |
 | Revoked keys / revoked builders | 256 / 256; 64 / 256 |
-| Captured files / per-file / total source / archive | 4096 / 4 MiB / 32 MiB / 40 MiB |
+| Captured files / explicit archive directories | 4096 / 4096 |
+| Per-file / total source / archive | 4 MiB / 32 MiB / 40 MiB |
 
 Configured Rust limits must be positive and within hard ceilings. JSON rejects
 unknown fields, duplicate keys, floats, negative integers and `null`, and bounds

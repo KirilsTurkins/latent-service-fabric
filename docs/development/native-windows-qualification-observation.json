@@ -1,0 +1,596 @@
+{
+  "schemaVersion": "latent.dev.native-qualification-observation.v1",
+  "sourceCommit": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+  "ownerIssue": 566,
+  "nativeScopePassed": true,
+  "epicQualificationComplete": false,
+  "claimedNativeHost": "windows-x86_64",
+  "trust": "controlled-development-test",
+  "productionNode": false,
+  "publiclyPublished": false,
+  "candidateBuild": {
+    "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36164649914",
+    "conclusion": "success"
+  },
+  "authenticatedPackage": {
+    "manifest": {
+      "file": "qualification-0cb5cf08/artifacts/windows/developer-bundle.json",
+      "sha256": "sha256:8962db9f6ae3765e9395a61dd3765f8b346251a246fb6b54203f9c9c3024f6a8"
+    },
+    "archive": {
+      "name": "latent-dev-windows-x86_64.zip",
+      "sha256": "sha256:c22ecfc69f3f9f04df9ade9e4d4bfc69c60c8a30e0d5cd5fabd687aa2a0c708b",
+      "size": 18573719
+    },
+    "nativeHost": {
+      "executable": true,
+      "path": "bin/latent-portable-test-host.exe",
+      "sha256": "sha256:c2aa294fef132428229cc417fe73945497610b2d7b829a3aafa079105a9d8453",
+      "size": 23198720
+    },
+    "independentPolicyApproved": true,
+    "policyFiles": {
+      "developer-policy.json": "sha256:9b82963f9abd04a2c9499f161a1590b6a63644fb49e076d04cb47ad7a52fb251",
+      "native-policy.json": "sha256:234e03f4477522b8a5fe5a7b78532928ddab10004adbbf423ba419ed4636b02a"
+    }
+  },
+  "installedWindowsSchedule": {
+    "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36182234076",
+    "conductorSourceCommit": "a7420d28a66c93c4493a44483e097427eccb9ef7",
+    "receipt": {
+      "file": "dev559-packaged-36182234076/windows/packaged-observation/observation.json",
+      "sha256": "sha256:880d177e6af2bc60f4d432777034c229478a26ede0f6c43671a48bc315509fe0"
+    },
+    "passed": true,
+    "host": {
+      "architecture": "AMD64",
+      "osVersion": "10.0.26100"
+    },
+    "seconds": 1614.447,
+    "ownedWslDistributionPurgedBeforeNativeExecution": true,
+    "sourceCheckoutUsedByApplication": false,
+    "runtimeCompiled": false,
+    "cleanup": "owned-workspaces-and-distribution-purged-author-source-retained",
+    "languages": {
+      "c": {
+        "passed": true,
+        "selection": [
+          "greeting-0",
+          "greeting-1",
+          "greeting-2"
+        ],
+        "cleanup": "owned-native-host-reaped",
+        "sameTypedValuesAsWslNode": true,
+        "component": "sha256:625132c4e1d174d3e0295490df4ad4b10913c585c6ae74544985b5e9d3700c39"
+      },
+      "dotnet": {
+        "passed": true,
+        "selection": [
+          "greeting-0",
+          "greeting-1",
+          "greeting-2",
+          "greeting-runtime-denied",
+          "greeting-after-runtime-denial"
+        ],
+        "cleanup": "owned-native-host-reaped",
+        "sameTypedValuesAsWslNode": true,
+        "component": "sha256:99a80d2f34939706bd6a9d03984269470989b51a3578c58f0841a685f675d67c"
+      },
+      "go": {
+        "passed": true,
+        "selection": [
+          "greeting-0",
+          "greeting-1",
+          "greeting-2",
+          "greeting-runtime-denied",
+          "greeting-after-runtime-denial"
+        ],
+        "cleanup": "owned-native-host-reaped",
+        "sameTypedValuesAsWslNode": true,
+        "component": "sha256:af92002ec164572af36e6585f1382aef70279723171547851b943a68e3a7312c"
+      },
+      "java": {
+        "passed": true,
+        "selection": [
+          "greeting-0",
+          "greeting-1",
+          "greeting-2",
+          "greeting-runtime-denied",
+          "greeting-after-runtime-denial"
+        ],
+        "cleanup": "owned-native-host-reaped",
+        "sameTypedValuesAsWslNode": true,
+        "component": "sha256:c84b7840a9f3d134d3dc3e22347a1f5c45ff997c65d34c21e02096a0755b1855"
+      },
+      "rust": {
+        "passed": true,
+        "selection": [
+          "greeting-0",
+          "greeting-1",
+          "greeting-2"
+        ],
+        "cleanup": "owned-native-host-reaped",
+        "sameTypedValuesAsWslNode": true,
+        "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5"
+      },
+      "typescript": {
+        "passed": true,
+        "selection": [
+          "greeting-0",
+          "greeting-1",
+          "greeting-2"
+        ],
+        "cleanup": "owned-native-host-reaped",
+        "sameTypedValuesAsWslNode": true,
+        "component": "sha256:6a430c0c00e7b1e65cbb367da63330e0231a2a600ae81d903564300ea8071569"
+      }
+    },
+    "closedProfile": {
+      "clock": {
+        "passed": true,
+        "selection": [
+          "clock-zero-cold",
+          "clock-zero-warm",
+          "clock-zero-denied",
+          "clock-zero-fresh"
+        ],
+        "cleanup": "owned-native-host-reaped",
+        "sameArtifactsAndTypedValuesAsWslNode": true,
+        "artifacts": {
+          "capsule": "sha256:d6afe724367f102b8d404cfe2ee47fdf0a7dcafabae11bd4027acf9f48aa904e",
+          "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+          "contracts": "sha256:d55be943e7359ae45761cd95aee8a12189800e3d3f1a953897a10384b3039be8"
+        }
+      },
+      "failure": {
+        "passed": true,
+        "selection": [
+          "cold-fresh",
+          "warm-fresh",
+          "declared",
+          "trap",
+          "after-trap",
+          "fuel",
+          "after-fuel",
+          "memory",
+          "after-memory",
+          "deadline",
+          "after-deadline",
+          "after-cancel"
+        ],
+        "cleanup": "owned-native-host-reaped",
+        "sameArtifactsAndTypedValuesAsWslNode": true,
+        "artifacts": {
+          "capsule": "sha256:6653a3e01d00ebccc8d109f8b72c130fa00750052fe51724ab0f33d2a6640192",
+          "component": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+          "contracts": "sha256:b7653f2f72139c822a836cef8684dba2ce9cf53de4896d5fd65a4f1ca3534d1c"
+        },
+        "requiredRunningCancellation": {
+          "passed": false,
+          "status": "unsupported",
+          "cleanup": "no-native-host-started"
+        },
+        "nativePrestartCancellation": {
+          "passed": true,
+          "selection": [
+            "native-cancel-before-start"
+          ],
+          "cleanup": "owned-native-host-reaped"
+        }
+      }
+    }
+  },
+  "sourceBoundNativeCoverage": {
+    "nativeHostMatchesAuthenticatedPackage": true,
+    "execution": "actual-component-production-wasmtime",
+    "cleanHost": false,
+    "receipts": [
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-c-applications.json",
+        "sha256": "sha256:2c8d60497d20b604a5dfa875192fcc19fd18b17ad15e27a348130f3caedebd9e",
+        "schemaVersion": "latent.dev.portable-applications.v1",
+        "cleanup": "owned-processes-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-c-smoke.json",
+        "sha256": "sha256:aacf886938f436f73756dbfd75c091b78fc4acfee6e0940b5df63fbf3fa88fe0",
+        "schemaVersion": "latent.dev.portable-c-smoke.v1",
+        "cleanup": "owned-processes-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-clock-comparison.json",
+        "sha256": "sha256:f5fe02fea77552f54962c68e4430ab41ca844c66e59579d723a8e512bb1ef9a1",
+        "schemaVersion": "latent.dev.windows-clock-comparison.v1",
+        "cleanup": "owned-native-hosts-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-dotnet-applications.json",
+        "sha256": "sha256:266d37eecbf07de5dd11ec4c8cd83d930a120ce8f1c17c8eb7a9e43940fe93e3",
+        "schemaVersion": "latent.dev.portable-applications.v1",
+        "cleanup": "owned-processes-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-failure-comparison.json",
+        "sha256": "sha256:e11411e16eb714c47faa7e69fe0192a5b5cc1469bcabc2170101d7b85bb47784",
+        "schemaVersion": "latent.dev.windows-failure-comparison.v1",
+        "cleanup": "owned-native-host-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-go-applications.json",
+        "sha256": "sha256:6c12b7180a636df5e812f1786e4573b201a6f1bc990c58847fbdeaaa394d575c",
+        "schemaVersion": "latent.dev.portable-applications.v1",
+        "cleanup": "owned-processes-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-http-comparison.json",
+        "sha256": "sha256:9141600774cf760c8aa07be78b653fa6403ac3832b14d15a49915e598deb4afd",
+        "schemaVersion": "latent.dev.windows-http-comparison.v1",
+        "cleanup": "owned-native-host-and-peer-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-java-applications.json",
+        "sha256": "sha256:67b25225da35493da08b82878c0edf6daba47a74c294861421e2a0356b2f0a06",
+        "schemaVersion": "latent.dev.portable-applications.v1",
+        "cleanup": "owned-processes-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-metric-comparison.json",
+        "sha256": "sha256:87acc3afe3c7b6ec7f9057a3bc77cffba8cc466c051a9f1ae8a4d5ac861cf58a",
+        "schemaVersion": "latent.dev.windows-metric-comparison.v1",
+        "cleanup": "owned-native-host-reaped-exporter-joined-queue-drained"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-rust-applications.json",
+        "sha256": "sha256:49ff194ae96b9d5ef3e292de7c6dde09b92ed479869593a29704024b12acac22",
+        "schemaVersion": "latent.dev.portable-applications.v1",
+        "cleanup": "owned-processes-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-smoke.json",
+        "sha256": "sha256:435f3ae8ee3122fdce2778fe8fb4e2c7f309fb05282950cb14214fc4552ff7c0",
+        "schemaVersion": "latent.dev.portable-smoke.v1",
+        "cleanup": "owned-processes-reaped"
+      },
+      {
+        "file": "dev559-portable-0cb/windows/dev-portable-typescript-applications.json",
+        "sha256": "sha256:5341423fd8873af2b41ec74359eb31b28e45a67cc4ec0a505c5223fcbe850a4d",
+        "schemaVersion": "latent.dev.portable-applications.v1",
+        "cleanup": "owned-processes-reaped"
+      }
+    ],
+    "providers": {
+      "rust": {
+        "builtins": {
+          "cases": 3,
+          "outcomes": {
+            "success": 3
+          }
+        },
+        "fixedClocks": {
+          "cases": 2,
+          "outcomes": {
+            "success": 2
+          }
+        },
+        "http": {
+          "cases": 7,
+          "outcomes": {
+            "success": 5,
+            "platform-failure": 2
+          }
+        },
+        "metrics": {
+          "cases": 8,
+          "outcomes": {
+            "success": 7,
+            "platform-failure": 1
+          }
+        },
+        "random": {
+          "cases": 7,
+          "outcomes": {
+            "success": 6,
+            "platform-failure": 1
+          }
+        },
+        "sharedFixtureScenarios": {
+          "cases": 2,
+          "outcomes": {
+            "success": 2
+          }
+        }
+      },
+      "c": {
+        "builtins": {
+          "cases": 3,
+          "outcomes": {
+            "success": 3
+          }
+        },
+        "fixedClocks": {
+          "cases": 2,
+          "outcomes": {
+            "success": 2
+          }
+        },
+        "http": {
+          "cases": 7,
+          "outcomes": {
+            "success": 5,
+            "platform-failure": 2
+          }
+        },
+        "metrics": {
+          "cases": 8,
+          "outcomes": {
+            "success": 7,
+            "platform-failure": 1
+          }
+        },
+        "random": {
+          "cases": 7,
+          "outcomes": {
+            "success": 6,
+            "platform-failure": 1
+          }
+        },
+        "sharedFixtureScenarios": {
+          "cases": 2,
+          "outcomes": {
+            "success": 2
+          }
+        }
+      }
+    },
+    "realNodeComparisons": {
+      "maximum": {
+        "nodeReportSha256": "sha256:7663883e8cd4e7835d644af7c4b4c916e01795a01a724dc4501c03b3a578a4c6",
+        "portableReportSha256": "sha256:ffb30c1b9ae13f400a1d9d0b2f52de16a8b7851d5a285f6f47a2e98f2b7aebf0",
+        "selection": [
+          "clock-maximum-cold",
+          "clock-maximum-warm",
+          "clock-maximum-denied",
+          "clock-maximum-fresh"
+        ],
+        "reviewedDifferences": [
+          "node-only-publication-admission-and-routing",
+          "host-os-and-architecture",
+          "bounded-cold-node-preparation-deadline",
+          "system-clock-and-entropy-not-compared"
+        ],
+        "guestClockCompared": true,
+        "httpFixtureCompared": false,
+        "metricsCompared": false
+      },
+      "zero": {
+        "nodeReportSha256": "sha256:c83d472e59b40c4cee58c974def2fb505520254554365b4a6c5ca3d14a84d0ab",
+        "portableReportSha256": "sha256:570e65b9e2943e6811e89fd85598c67692aac41c24fa7716c31109f7bb70ad7e",
+        "selection": [
+          "clock-zero-cold",
+          "clock-zero-warm",
+          "clock-zero-denied",
+          "clock-zero-fresh"
+        ],
+        "reviewedDifferences": [
+          "node-only-publication-admission-and-routing",
+          "host-os-and-architecture",
+          "bounded-cold-node-preparation-deadline",
+          "system-clock-and-entropy-not-compared"
+        ],
+        "guestClockCompared": true,
+        "httpFixtureCompared": false,
+        "metricsCompared": false
+      },
+      "failure": {
+        "nodeReportSha256": "sha256:e9be821e35cc336e1ee75a26d8b0e0b781300ab5d6500f69c41bd23c92a9e59b",
+        "portableReportSha256": "sha256:e4ea307b0d15b3ec6d2183a15b0382a834de789345cc754f332a6c9c3eb4f1f8",
+        "selection": [
+          "cold-fresh",
+          "warm-fresh",
+          "declared",
+          "trap",
+          "after-trap",
+          "fuel",
+          "after-fuel",
+          "memory",
+          "after-memory",
+          "deadline",
+          "after-deadline",
+          "after-cancel"
+        ],
+        "reviewedDifferences": [
+          "node-only-publication-admission-and-routing",
+          "host-os-and-architecture",
+          "bounded-cold-node-preparation-deadline",
+          "system-clock-and-entropy-not-compared",
+          "node-public-resource-code-and-portable-engine-detail"
+        ],
+        "guestClockCompared": false,
+        "httpFixtureCompared": false,
+        "metricsCompared": false
+      },
+      "http": {
+        "nodeReportSha256": "sha256:fc9950b04e478bb7e0e5451344632a18b3f95ac0cd8030484823deb143a6bcb5",
+        "portableReportSha256": "sha256:ed3c55badf16fd9aa3cc9d64f672599bbee1f3c5ba1bf2463ebf8bc960c3b267",
+        "selection": [
+          "cold",
+          "warm",
+          "head",
+          "path-denied",
+          "policy-denied",
+          "after-denial"
+        ],
+        "reviewedDifferences": [
+          "node-only-publication-admission-and-routing",
+          "host-os-and-architecture",
+          "bounded-cold-node-preparation-deadline",
+          "system-clock-and-entropy-not-compared"
+        ],
+        "guestClockCompared": false,
+        "httpFixtureCompared": true,
+        "metricsCompared": false
+      },
+      "metric": {
+        "nodeReportSha256": "sha256:4eef1457775f07fe13130797322e7612bc1a77282472cc3825cdbfef96f5ba0a",
+        "portableReportSha256": "sha256:12cb04958768acd4cd76aa3dfcc09ff139a7acc7a368896ecf1f67757de49dda",
+        "selection": [
+          "cold",
+          "warm",
+          "invalid-label",
+          "unknown-name",
+          "wrong-kind",
+          "policy-denied",
+          "after-denial",
+          "two-observations",
+          "after-two"
+        ],
+        "reviewedDifferences": [
+          "node-only-publication-admission-and-routing",
+          "host-os-and-architecture",
+          "bounded-cold-node-preparation-deadline",
+          "system-clock-and-entropy-not-compared"
+        ],
+        "guestClockCompared": false,
+        "httpFixtureCompared": false,
+        "metricsCompared": true
+      }
+    },
+    "unsupportedImportRejectedBeforeExecution": true,
+    "requiredLinuxScenarioRemainsUnsupported": true,
+    "hostAbi": "lsf-host-abi-phase3-v4",
+    "wasmtime": "47.0.4",
+    "supportedImports": [
+      "latent:context/context@0.1.0",
+      "latent:log/log@0.1.0",
+      "latent:clock/monotonic@0.1.0",
+      "latent:clock/wall@0.1.0",
+      "latent:random/random@0.1.0",
+      "latent:telemetry/custom@0.1.0",
+      "latent:http/client@0.2.0"
+    ],
+    "excludedChecks": [
+      "authentication",
+      "compiler-isolation",
+      "deployment",
+      "immediate-event-fixture",
+      "immutable-blob-fixture",
+      "local-service-fixture",
+      "native-cache",
+      "pressure",
+      "protected-files",
+      "restart",
+      "running-cancellation",
+      "scoped-secret-fixture"
+    ],
+    "coreCases": {
+      "echo": {
+        "success": "success",
+        "declared-error": "declared-error",
+        "denied": "incompatible-contract",
+        "cancelled": "cancelled",
+        "after-failure": "success"
+      },
+      "generic": {
+        "fresh-first": "success",
+        "fresh-second": "success",
+        "declared": "declared-error",
+        "absent-result": "success",
+        "trap": "guest-trap",
+        "fuel": "fuel-exhausted",
+        "memory": "memory-exhausted",
+        "deadline": "deadline-exceeded",
+        "recover": "success"
+      },
+      "fixedGuestClockControl": {
+        "fixed-clock-deadline": "deadline-exceeded",
+        "fixed-clock-cancelled": "cancelled",
+        "fixed-clock-recovered": "success"
+      }
+    }
+  },
+  "sixLanguageWindowsLinuxNativeDifferentials": {
+    "c": {
+      "file": "dev559-portable-0cb/differential/c-differential.json",
+      "sha256": "sha256:b0367bc35c4e6f11ef2a0bba384283ac2669ec3e3c59277669ced8b04e935cee",
+      "passed": true,
+      "windowsReceipt": "sha256:2c8d60497d20b604a5dfa875192fcc19fd18b17ad15e27a348130f3caedebd9e",
+      "linuxReceipt": "sha256:d2e9aa1e644e838c0679c9c799df77a1820a74034dfc5f6504d1c5e11ea907d7",
+      "applications": [
+        "greeting",
+        "shipping",
+        "word-count"
+      ]
+    },
+    "dotnet": {
+      "file": "dev559-portable-0cb/differential/dotnet-differential.json",
+      "sha256": "sha256:db60c6d0efb8b3c30685360984bb74193f1f68d3877942274f2c14f5bd8260f7",
+      "passed": true,
+      "windowsReceipt": "sha256:266d37eecbf07de5dd11ec4c8cd83d930a120ce8f1c17c8eb7a9e43940fe93e3",
+      "linuxReceipt": "sha256:fa06cd287e44c31e0bbc63c5ad43987afe37010530fca537e088c1dff48aa84b",
+      "applications": [
+        "greeting",
+        "shipping",
+        "word-count"
+      ]
+    },
+    "go": {
+      "file": "dev559-portable-0cb/differential/go-differential.json",
+      "sha256": "sha256:23b46372c5afb2e7208081db612a399ac3c7a970f9b214258cb31366889ec118",
+      "passed": true,
+      "windowsReceipt": "sha256:6c12b7180a636df5e812f1786e4573b201a6f1bc990c58847fbdeaaa394d575c",
+      "linuxReceipt": "sha256:d0d6eada66a3d2f6594994cbd6c620c5ecebd994c8b06281b1e24831d31c203f",
+      "applications": [
+        "greeting",
+        "shipping",
+        "word-count"
+      ]
+    },
+    "java": {
+      "file": "dev559-portable-0cb/differential/java-differential.json",
+      "sha256": "sha256:28b05e609a0dab05bf703bc1ea624ff94c82359812551c8b08d9ccd9a8441bfd",
+      "passed": true,
+      "windowsReceipt": "sha256:67b25225da35493da08b82878c0edf6daba47a74c294861421e2a0356b2f0a06",
+      "linuxReceipt": "sha256:b94f494e947b7496c0dfc7a667f9a247c17727546c0c669af8da6b7ce5af949b",
+      "applications": [
+        "greeting",
+        "shipping",
+        "word-count"
+      ]
+    },
+    "rust": {
+      "file": "dev559-portable-0cb/differential/rust-differential.json",
+      "sha256": "sha256:27ccff60f4e46732859551372feb3ecbec2da210ad4e08ee733fa5f3e62915af",
+      "passed": true,
+      "windowsReceipt": "sha256:49ff194ae96b9d5ef3e292de7c6dde09b92ed479869593a29704024b12acac22",
+      "linuxReceipt": "sha256:93d0850e5699fdbd0663c487f43eec48a8c8224731d306a924c24bbd24025d24",
+      "applications": [
+        "greeting",
+        "shipping",
+        "word-count"
+      ]
+    },
+    "typescript": {
+      "file": "dev559-portable-0cb/differential/typescript-differential.json",
+      "sha256": "sha256:c3de90cf6364b2c45ca952143d7727b4d7fa01d3c2d55aafa734957a83570f90",
+      "passed": true,
+      "windowsReceipt": "sha256:5341423fd8873af2b41ec74359eb31b28e45a67cc4ec0a505c5223fcbe850a4d",
+      "linuxReceipt": "sha256:80a01207781bd62aa9c9a84e999b3a6a6c318405813808d86037a7092b124903",
+      "applications": [
+        "greeting",
+        "shipping",
+        "word-count"
+      ]
+    }
+  },
+  "failedAttempts": [
+    "packaged-candidate-attempt-observation.json",
+    "packaged-candidate-c-install-attempt-observation.json",
+    "packaged-monitor-candidate-attempt-observation.json"
+  ],
+  "remainingEpicGates": [
+    "advanced-packaged-watch-and-recovery",
+    "devcontainer",
+    "newcomer-editor-review",
+    "complete-platform-qualification-aggregation"
+  ]
+}

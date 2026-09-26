@@ -16,6 +16,7 @@ mod rollback;
 #[cfg(all(test, unix))]
 mod tests;
 mod ticket;
+pub mod trigger_audit;
 mod worker;
 
 pub use audit::reconcile_rollout_audit;

@@ -73,6 +73,24 @@ impl ContextExposurePolicy {
         })
     }
 
+    pub(crate) fn metadata_bytes(&self, values: &Metadata) -> usize {
+        selected_bytes(values, |key| {
+            self.metadata_prefixes
+                .iter()
+                .any(|prefix| key.starts_with(prefix))
+        })
+    }
+    pub(crate) fn claim_bytes(&self, values: &Metadata) -> usize {
+        selected_bytes(values, |key| {
+            self.claim_keys.iter().any(|allowed| key == allowed)
+        })
+    }
+    pub(crate) fn baggage_bytes(&self, values: &Metadata) -> usize {
+        selected_bytes(values, |key| {
+            self.baggage_keys.iter().any(|allowed| key == allowed)
+        })
+    }
+
     pub(crate) fn append_profile_fields(&self, fields: &mut Metadata) {
         fields.insert(
             "context-exposure-policy".to_owned(),
@@ -103,6 +121,29 @@ fn selected_pairs(metadata: &Metadata, include: impl Fn(&str) -> bool) -> Vec<(S
         .collect()
 }
 
+// Iterator collection can grow its vector geometrically; charge up to twice
+// the selected pair headers plus the exact cloned UTF-8 payload, before copying.
+fn selected_bytes(metadata: &Metadata, include: impl Fn(&str) -> bool) -> usize {
+    let (count, bytes) = metadata.iter().filter(|(key, _)| include(key)).fold(
+        (0usize, 0usize),
+        |(count, bytes), (key, value)| {
+            (
+                count + 1,
+                bytes.saturating_add(key.len()).saturating_add(value.len()),
+            )
+        },
+    );
+    if count == 0 {
+        return 0;
+    }
+    // Vec's first allocation may contain four pair slots even for one item.
+    bytes.saturating_add(
+        count
+            .max(2)
+            .saturating_mul(2 * std::mem::size_of::<(String, String)>()),
+    )
+}
+
 fn invalid_policy() -> PlatformError {
     platform_error(
         PlatformErrorCode::InvalidArgument,
@@ -114,6 +155,27 @@ fn invalid_policy() -> PlatformError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn context_preflight_covers_observed_vector_and_string_capacities() {
+        let policy = ContextExposurePolicy::default();
+        for count in [0, 1, 2, 3, 5, 17, 32] {
+            let values = (0..count)
+                .map(|n| (format!("guest.{n}"), "value".repeat(n + 1)))
+                .collect();
+            let charge = policy.metadata_bytes(&values);
+            let copied = policy.metadata_pairs(&values);
+            let actual = copied.capacity() * std::mem::size_of::<(String, String)>()
+                + copied
+                    .iter()
+                    .map(|(k, v)| k.capacity() + v.capacity())
+                    .sum::<usize>();
+            assert!(
+                charge >= actual,
+                "preflight {charge} below actual capacity {actual} for {count} pairs"
+            );
+        }
+    }
 
     fn values() -> Metadata {
         Metadata::from([

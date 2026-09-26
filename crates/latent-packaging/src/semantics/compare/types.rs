@@ -1,6 +1,6 @@
 use super::{incompatible, Comparison};
 use latent_core::PlatformError;
-use wit_parser::{Type, TypeDefKind};
+use wit_parser::{Handle, Resolve, Type, TypeDefKind, TypeId, TypeOwner};
 
 impl Comparison<'_> {
     pub(super) fn ty(
@@ -76,8 +76,30 @@ impl Comparison<'_> {
                         self.optional(a.ok, b.ok, depth + 1)?;
                         self.optional(a.err, b.err, depth + 1)?;
                     }
-                    // This also rejects resources/handles, flags, maps, fixed
-                    // lists, async future/stream and unresolved unknown types.
+                    (TypeDefKind::Resource, TypeDefKind::Resource) => {
+                        let expected = resource_identity(self.left, left_id)?;
+                        let actual = resource_identity(self.right, right_id)?;
+                        if self.resources.is_empty()
+                            || expected != actual
+                            || latent_core::PHASE3_HOST_ABI_CURRENT
+                                .interface(&expected.0)
+                                .is_none_or(|profile| {
+                                    !profile.resource_types().contains(&expected.1)
+                                })
+                            || !self.resources.contains(&expected.1)
+                        {
+                            return Err(incompatible("unsupported-resource-identity"));
+                        }
+                    }
+                    (TypeDefKind::Handle(Handle::Own(a)), TypeDefKind::Handle(Handle::Own(b)))
+                    | (
+                        TypeDefKind::Handle(Handle::Borrow(a)),
+                        TypeDefKind::Handle(Handle::Borrow(b)),
+                    ) => {
+                        self.ty(Type::Id(*a), Type::Id(*b), depth + 1)?;
+                    }
+                    // Reject ownership substitutions, flags, maps, fixed lists,
+                    // implicit future/stream and unresolved unknown types.
                     _ => return Err(incompatible("unsupported-or-mismatched-component-type")),
                 }
             }
@@ -109,4 +131,19 @@ impl Comparison<'_> {
         }
         Ok(())
     }
+}
+
+fn resource_identity(resolve: &Resolve, id: TypeId) -> Result<(String, &str), PlatformError> {
+    let resource = &resolve.types[id];
+    let TypeOwner::Interface(interface) = resource.owner else {
+        return Err(incompatible("unowned-resource-type"));
+    };
+    let name = resource
+        .name
+        .as_deref()
+        .ok_or_else(|| incompatible("unnamed-resource-type"))?;
+    let interface = resolve
+        .id_of(interface)
+        .ok_or_else(|| incompatible("unnamed-resource-interface"))?;
+    Ok((interface, name))
 }

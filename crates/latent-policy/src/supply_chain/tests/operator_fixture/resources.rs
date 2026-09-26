@@ -121,7 +121,7 @@ fn export_phase2_resource_fixture() {
     write_json(
         &root.join("fixture.json"),
         &json!({
-            "formatVersion":1,"profile":"phase2-dormant-32-r1",
+            "formatVersion":1,"profile":"phase2-dormant-32-r3",
             "tenant":"tests","service":"tests/packaging",
             "contract":packaging::component::CONTRACT,"function":"inspect",
             "input":[{"count":7,"outcome":{"ok":{"case":"empty"}}}],

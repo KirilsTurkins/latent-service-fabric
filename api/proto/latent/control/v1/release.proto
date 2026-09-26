@@ -4,6 +4,13 @@ package latent.control.v1;
 
 import "latent/control/v1/common.proto";
 
+// Exact publication in the authenticated tenant. An ID grants no authority.
+// Local-unscoped publications are not a public tenant selector.
+message PublicationRef {
+  string id = 1;
+  string tenant = 2;
+}
+
 message ReleaseDescriptor {
   string digest = 1;
   // Server-assigned opaque locator only. A client must not provide a filesystem
@@ -23,6 +30,9 @@ message ReleaseDescriptor {
   // Explicit scope of a catalog descriptor. Phase 1 RPC publication requires it
   // in the capsule manifest; reads return only the authenticated tenant.
   optional string tenant = 12;
+  // Additive identities; digest remains the executable component identity.
+  PublicationRef publication = 13;
+  optional string package_digest = 14;
 }
 
 // The Phase 1 locally trusted publish representation. All byte fields are
@@ -179,6 +189,7 @@ message ReleaseLifecycleRecord {
   ReleasePolicyIdentity policy = 9;
   optional uint64 observed_at_unix_millis = 10;
   optional string evidence_revision_digest = 11;
+  PublicationRef publication = 12;
 }
 
 // A live observation, not a renewable or transferable admission grant.
@@ -204,10 +215,14 @@ message ReleaseOperationReceipt {
   ReleaseLifecycleRecord record = 11;
   ReleasePolicyIdentity policy = 12;
   optional uint64 observed_at_unix_millis = 13;
+  PublicationRef publication = 14;
 }
 
 message GetReleaseLifecycleRequest {
-  string digest = 1;
+  // An exact publication is required; component-only selection is unsupported.
+  reserved 1;
+  reserved "digest";
+  PublicationRef publication = 2;
 }
 
 message GetReleaseLifecycleResponse {
@@ -225,7 +240,10 @@ message GetReleaseOperationResponse {
 }
 
 message ChangeReleaseLifecycleRequest {
-  string digest = 1;
+  // An exact publication is required; component-only selection is unsupported.
+  reserved 1;
+  reserved "digest";
+  PublicationRef publication = 5;
   // Only REVOKE or RETIRE is accepted; publication/restoration is not implicit.
   ReleaseLifecycleAction action = 2;
   ReleaseOperationPrecondition operation = 3;
@@ -244,7 +262,10 @@ message ReleaseEvidenceUpload {
 }
 
 message RenewReleaseEvidenceRequest {
-  string digest = 1;
+  // An exact publication is required; component-only selection is unsupported.
+  reserved 1;
+  reserved "digest";
+  PublicationRef publication = 5;
   string package_digest = 2;
   ReleaseOperationPrecondition operation = 3;
   // Evidence only: immutable package/component layers are retained by the owner.
@@ -277,7 +298,10 @@ message PublishReleaseResponse {
 }
 
 message GetReleaseRequest {
-  string digest = 1;
+  // An exact publication is required; component-only selection is unsupported.
+  reserved 1;
+  reserved "digest";
+  PublicationRef publication = 2;
 }
 
 message GetReleaseResponse {
@@ -305,4 +329,122 @@ service ReleaseService {
   rpc GetReleaseOperation(GetReleaseOperationRequest) returns (GetReleaseOperationResponse);
   rpc ChangeReleaseLifecycle(ChangeReleaseLifecycleRequest) returns (ChangeReleaseLifecycleResponse);
   rpc RenewReleaseEvidence(RenewReleaseEvidenceRequest) returns (RenewReleaseEvidenceResponse);
+  rpc PublishWebPackage(PublishWebPackageRequest) returns (PublishWebPackageResponse);
+  rpc GetWebPublication(GetWebPublicationRequest) returns (GetWebPublicationResponse);
+  rpc PrepareWebPublication(PrepareWebPublicationRequest) returns (PrepareWebPublicationResponse);
+  rpc GetWebOperation(GetWebOperationRequest) returns (GetWebOperationResponse);
+  rpc ChangeWebLifecycle(ChangeWebLifecycleRequest) returns (ChangeWebLifecycleResponse);
+  rpc RenewWebEvidence(RenewWebEvidenceRequest) returns (RenewWebEvidenceResponse);
+}
+
+message WebOperationReceipt {
+  uint32 format_version = 1;
+  PublicationRef publication = 2;
+  string operation_id = 3;
+  ReleaseLifecycleAction action = 4;
+  ReleaseActor actor = 5;
+  uint64 expected_generation = 6;
+  uint64 resulting_generation = 7;
+  ReleaseOperationDisposition disposition = 8;
+  ReleaseLifecycleReason reason = 9;
+  string request_digest = 10;
+  bool replayed = 11;
+}
+
+message WebLifecycleRecord {
+  PublicationRef publication = 1;
+  string package_digest = 2;
+  string web_manifest_digest = 3;
+  string assets_digest = 4;
+  ReleaseLifecycleState state = 5;
+  uint64 generation = 6;
+  ReleaseActor actor = 7;
+  ReleaseLifecycleReason reason = 8;
+  string operation_id = 9;
+  optional string evidence_revision_digest = 10;
+}
+
+enum WebRendererProfile {
+  WEB_RENDERER_PROFILE_UNSPECIFIED = 0;
+  WEB_RENDERER_PROFILE_WASM_WEB_BUFFERED_V1 = 1;
+  WEB_RENDERER_PROFILE_ANGULAR_SSR_COMPONENT_V1 = 2;
+}
+
+message WebRendererDescriptor {
+  string component_digest = 1;
+  WebRendererProfile profile = 2;
+  string profile_digest = 3;
+  uint64 component_bytes = 4;
+}
+
+message PublishWebPackageRequest {
+  PackageAdmissionUpload package = 1;
+  ReleaseOperationPrecondition operation = 2;
+}
+
+message WebMutationResponse {
+  WebOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
+message PublishWebPackageResponse {
+  WebOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
+message ChangeWebLifecycleResponse {
+  WebOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
+message RenewWebEvidenceResponse {
+  WebOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
+message GetWebPublicationRequest {
+  PublicationRef publication = 1;
+}
+
+message GetWebPublicationResponse {
+  WebLifecycleRecord record = 1;
+  ReleaseLiveEligibility eligibility = 2;
+  ReleaseEligibilityReason eligibility_reason = 3;
+  optional WebRendererDescriptor renderer = 4;
+}
+
+message GetWebOperationRequest {
+  string operation_id = 1;
+}
+
+message GetWebOperationResponse {
+  ReleaseOperationLookupDisposition disposition = 1;
+  optional WebOperationReceipt operation = 2;
+  string tenant = 3;
+}
+
+message ChangeWebLifecycleRequest {
+  PublicationRef publication = 1;
+  ReleaseLifecycleAction action = 2;
+  ReleaseLifecycleReason reason = 3;
+  ReleaseOperationPrecondition operation = 4;
+}
+
+message RenewWebEvidenceRequest {
+  PublicationRef publication = 1;
+  ReleaseEvidenceUpload evidence = 2;
+  ReleaseOperationPrecondition operation = 3;
+}
+
+message PrepareWebPublicationRequest {
+  PublicationRef publication = 1;
+  uint64 lifecycle_generation = 2;
+  uint64 maximum_wait_millis = 3;
+}
+
+message PrepareWebPublicationResponse {
+  PublicationRef publication = 1;
+  uint64 lifecycle_generation = 2;
+  string component_digest = 3;
+  bool prepared = 4;
 }

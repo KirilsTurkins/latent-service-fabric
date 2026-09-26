@@ -2,6 +2,11 @@
 
 mod input;
 mod ownership;
+mod wait;
+pub(super) mod worker_wait;
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests;
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -22,7 +27,12 @@ impl WasmtimeBackend {
         &self,
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
+        read_wait: Option<&dyn latent_executor::PreparationReadWait>,
     ) -> Result<PreparedReadiness, PlatformError> {
+        // One finite caller-side read window, never one new window per check.
+        // Opt-in sealed-source jobs have a separate real-clock worker window.
+        // Materialization and activation start remain immediate/fail-closed.
+        let window = wait::Window::new(read_wait);
         let pool = self
             .shared
             .compiler
@@ -33,19 +43,36 @@ impl WasmtimeBackend {
         context.validate_engine_key(&key)?;
         let source = Arc::clone(&repository).owned_preparation_source();
         let eligibility = if let Some(source) = &source {
-            source.execution_eligibility(&key.release)?
+            window
+                .check(|| {
+                    source.execution_eligibility_selected(&key.release, key.publication.as_ref())
+                })
+                .await?
         } else {
-            if repository.execution_eligibility(&key.release)?.is_some() {
+            if repository
+                .execution_eligibility_selected(&key.release, key.publication.as_ref())?
+                .is_some()
+            {
                 return Err(super::admission_association_error());
             }
             None
         };
-        context.check_eligibility(eligibility.as_ref(), &key.release)?;
-        let identity = source
-            .as_ref()
-            .map(|source| source.identity(&key.release))
-            .transpose()?
-            .flatten();
+        window
+            .check(|| {
+                context.check_eligibility(
+                    eligibility.as_ref(),
+                    &key.release,
+                    key.publication.as_ref(),
+                )
+            })
+            .await?;
+        let identity = if let Some(source) = &source {
+            window
+                .check(|| source.identity_selected(&key.release, key.publication.as_ref()))
+                .await?
+        } else {
+            None
+        };
         let mut bounds = None;
         let (handle, source_bytes, metadata_bytes) = if let Some(identity) = &identity {
             context.validate_identity(identity, &key)?;
@@ -57,13 +84,19 @@ impl WasmtimeBackend {
                     identity.metadata().charged_bytes(),
                     Some(identity),
                     eligibility.as_ref(),
+                    key.publication.as_ref(),
                 )?)?,
             )
         } else {
-            bounds = source
-                .as_ref()
-                .map(|source| source.read_bounds(&key.release))
-                .transpose()?;
+            if let Some(source) = &source {
+                bounds = Some(
+                    window
+                        .check(|| {
+                            source.read_bounds_selected(&key.release, key.publication.as_ref())
+                        })
+                        .await?,
+                );
+            }
             let bytes = bounds.map_or(self.config.maximum_component_bytes as u64, |bounds| {
                 bounds.component_bytes
             });
@@ -86,6 +119,7 @@ impl WasmtimeBackend {
                     self.config.maximum_artifact_metadata_bytes,
                     None,
                     eligibility.as_ref(),
+                    key.publication.as_ref(),
                 )?)?,
             )
         };
@@ -100,6 +134,17 @@ impl WasmtimeBackend {
             metadata_bytes,
             document_bytes: 0,
         };
+        // A later source snapshot may see refreshed catalog evidence. It must
+        // never upgrade the original grant captured by this preparation.
+        window
+            .check(|| {
+                context.check_eligibility(
+                    eligibility.as_ref(),
+                    &key.release,
+                    key.publication.as_ref(),
+                )
+            })
+            .await?;
         let acquired = pool.acquire(admission)?;
         let pin = match acquired {
             Acquisition::Ready(pin) => {
@@ -117,16 +162,32 @@ impl WasmtimeBackend {
                     );
                     counters::add(&context.preparation.repository_fetches, 1);
                     let input = if let Some(native) = &context.native_aot {
-                        let bounds = source
+                        let native_source = source
                             .as_ref()
-                            .ok_or_else(super::admission_association_error)?
-                            .read_bounds(&key.release)?;
+                            .ok_or_else(super::admission_association_error)?;
+                        let bounds = window
+                            .check(|| {
+                                native_source
+                                    .read_bounds_selected(&key.release, key.publication.as_ref())
+                            })
+                            .await?;
                         future.reserve_documents(document_bytes(bounds)?)?;
-                        let job = native.reserve(&key.release)?;
+                        let job = native.reserve(&key.release, key.publication.as_ref())?;
                         drop(source);
                         input::ArtifactInput::Native(Some(job))
                     } else if let Some(source) = source {
-                        let bounds = bounds.map_or_else(|| source.read_bounds(&key.release), Ok)?;
+                        let bounds = if let Some(bounds) = bounds {
+                            bounds
+                        } else {
+                            window
+                                .check(|| {
+                                    source.read_bounds_selected(
+                                        &key.release,
+                                        key.publication.as_ref(),
+                                    )
+                                })
+                                .await?
+                        };
                         if bounds.component_bytes != source_bytes as u64 {
                             return Err(invalid("preparation-read-size-changed"));
                         }
@@ -156,6 +217,13 @@ impl WasmtimeBackend {
                         input::ArtifactInput::Native(Some(job)) => Some(job.control()),
                         _ => None,
                     };
+                    let worker_wait = if read_wait.is_some()
+                        && matches!(&input, input::ArtifactInput::Source { .. })
+                    {
+                        Some(worker_wait::WorkerWindow::new(future.control()?))
+                    } else {
+                        None
+                    };
                     let build =
                         move |reservation| -> crate::compiler::Task<super::PreparedRuntime> {
                             Box::new(move |queue| {
@@ -166,6 +234,7 @@ impl WasmtimeBackend {
                                     authority,
                                     reservation,
                                     queue,
+                                    worker_wait,
                                 )
                             })
                         };
@@ -188,7 +257,7 @@ impl WasmtimeBackend {
         {
             return Err(invalid("prepared-source-association"));
         }
-        context.check_runtime(&pin.runtime)?;
+        window.check(|| context.check_runtime(&pin.runtime)).await?;
         Ok(self.ready_owner(pin))
     }
 }

@@ -2,6 +2,8 @@
 mod admission;
 #[path = "catalog_query_tests.rs"]
 mod catalog_queries;
+#[path = "format_tests.rs"]
+mod format;
 #[path = "integrity_tests.rs"]
 mod integrity;
 #[path = "integrity_publication_tests.rs"]
@@ -15,6 +17,9 @@ mod lock_release;
 mod owned_preparation;
 #[path = "preparation_tests.rs"]
 mod preparation;
+#[cfg(unix)]
+#[path = "publication_tests.rs"]
+mod publications;
 #[path = "regression_tests.rs"]
 mod regressions;
 #[path = "root_durability_tests.rs"]
@@ -23,6 +28,9 @@ mod root_durability;
 mod verified_metadata;
 #[path = "visibility_tests.rs"]
 mod visibility;
+#[cfg(target_os = "linux")]
+#[path = "web_tests.rs"]
+mod web;
 
 use std::fs;
 use std::future::Future;
@@ -178,7 +186,27 @@ pub(super) fn contract_fixture() -> ContractDescriptor {
 }
 
 fn release_dir(root: &Path, digest: &ReleaseDigest) -> PathBuf {
-    root.join("releases").join(
+    // Legacy test callers select fixtures by component; production paths use
+    // publication identity. Refuse to hide ambiguity in a test fixture.
+    let matches: Vec<_> = fs::read_dir(root.join("publications"))
+        .into_iter()
+        .flatten()
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            let bytes = fs::read(entry.path().join("metadata.json")).ok()?;
+            let value: serde_json::Value = serde_json::from_slice(&bytes).ok()?;
+            (value["descriptor"]["release_digest"].as_str() == Some(digest.0.as_str()))
+                .then(|| entry.path())
+        })
+        .collect();
+    assert!(
+        matches.len() <= 1,
+        "fixture needs an explicit publication selector"
+    );
+    if let Some(path) = matches.into_iter().next() {
+        return path;
+    }
+    root.join("publications").join(
         digest
             .0
             .strip_prefix("sha256:")
@@ -520,7 +548,7 @@ fn incomplete_directories_do_not_consume_completed_index_quota() {
     for index in 0..8 {
         fs::create_dir_all(
             temp.path()
-                .join("releases")
+                .join("publications")
                 .join(format!("incomplete-{index:02}")),
         )
         .expect("incomplete directory");
@@ -541,8 +569,12 @@ fn separate_recovery_scan_bound_is_enforced() {
     let temp = TempRoot::new();
     drop(repository(temp.path()));
     for index in 0..3 {
-        fs::create_dir_all(temp.path().join("releases").join(format!("debris-{index}")))
-            .expect("debris");
+        fs::create_dir_all(
+            temp.path()
+                .join("publications")
+                .join(format!("debris-{index}")),
+        )
+        .expect("debris");
     }
     assert_eq!(
         DirectoryArtifactRepository::open(
@@ -646,6 +678,9 @@ fn one_hundred_thousand_index_adoptions_are_bounded() {
         repo.finalize_adoption(indexed, None)
             .expect("index adoption");
     }
-    assert_eq!(repo.index.read().expect("index").by_digest.len(), 100_000);
+    assert_eq!(
+        repo.index.read().expect("index").by_publication.len(),
+        100_000
+    );
     assert!(repo.index.read().expect("index").accounted_bytes <= repo.config.max_index_bytes);
 }

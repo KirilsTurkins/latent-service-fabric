@@ -24,6 +24,10 @@ impl Cli {
             path_argument(path)?;
         }
         match &self.command {
+            Command::Web(command) => command.validate(),
+            Command::Trigger(command) => command.validate(),
+            Command::Capability(command) => command.validate(),
+            Command::Policy(command) => command.validate(),
             Command::Rollout(command) => rollout(command),
             Command::Audit(super::audit::AuditCommand::Query(args)) => {
                 optional(args.actor.as_deref(), 512)?;
@@ -43,7 +47,7 @@ impl Cli {
             ) => path_argument(&args.file),
             Command::Release(command) => release(command),
             Command::Deployment(command) => deployment(command),
-            Command::Route(_) => Ok(()),
+            Command::Completions { .. } | Command::Route(_) => Ok(()),
             Command::Invoke(args) => invoke(args),
             Command::Activation(ActivationCommand::Get(args)) => identifier(&args.id, 512),
             Command::Activation(ActivationCommand::Cancel(args)) => {
@@ -72,13 +76,11 @@ fn release(command: &ReleaseCommand) -> Result<(), Failure> {
             }
             single_stdin(&[&args.manifest, &args.component, &args.contracts])
         }
-        ReleaseCommand::Get(args) | ReleaseCommand::Lifecycle(args) => {
-            identifier(&args.digest, 512)
-        }
+        ReleaseCommand::Get(args) | ReleaseCommand::Lifecycle(args) => release_selector(args),
         ReleaseCommand::List(args) => page(args),
         ReleaseCommand::Operation(args) => identifier(&args.operation_id, 128),
         ReleaseCommand::Revoke(args) | ReleaseCommand::Retire(args) => {
-            identifier(&args.digest, 71)?;
+            release_selector(&args.selector)?;
             identifier(&args.operation.operation_id, 128)?;
             if args.operation.expected_generation == 0 {
                 return Err(invalid());
@@ -97,7 +99,7 @@ fn release(command: &ReleaseCommand) -> Result<(), Failure> {
             Ok(())
         }
         ReleaseCommand::RenewEvidence(args) => {
-            identifier(&args.digest, 71)?;
+            release_selector(&args.selector)?;
             identifier(&args.package_digest, 71)?;
             identifier(&args.operation.operation_id, 128)?;
             if args.operation.expected_generation == 0 {
@@ -106,6 +108,14 @@ fn release(command: &ReleaseCommand) -> Result<(), Failure> {
             path_argument(&args.evidence)
         }
     }
+}
+
+fn release_selector(args: &super::management::PublicationArgs) -> Result<(), Failure> {
+    identifier(&args.publication, latent_core::PublicationId::TEXT_BYTES)?;
+    args.publication
+        .parse::<latent_core::PublicationId>()
+        .map_err(|_| invalid())?;
+    Ok(())
 }
 
 fn deployment(command: &DeploymentCommand) -> Result<(), Failure> {
@@ -303,7 +313,7 @@ pub(super) fn path_argument(path: &Path) -> Result<(), Failure> {
     Ok(())
 }
 
-fn invalid() -> Failure {
+pub(super) fn invalid() -> Failure {
     Failure::local(
         "invalid-arguments",
         "Command arguments are invalid or exceed their limits.",

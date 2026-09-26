@@ -1,22 +1,24 @@
 # Versioning and deployment
 
-The completed [Phase 2](../phase-2-completion.md) extends the Phase 1 local
-routing model. Identity, historical outcome and current permission remain
-separate at every publication boundary.
+A deployment selects exact content and configuration. Updating routes changes
+new selections while running activations retain their revision. Identity,
+historical outcome and current permission remain separate at every publication
+boundary.
 
 ## Immutable release
 
-`ReleaseDigest` remains SHA-256 of component bytes. The local catalog's
-versioned completion record separately binds the descriptor, contracts and
-canonical capsule manifest to those bytes. Metadata cannot change under an
-existing release identity. This detects accidental storage corruption under the
-locally trusted filesystem boundary. See the
-[local release catalog](../development/local-release-catalog.md).
+`ReleaseDigest` remains SHA-256 of component bytes. The catalog's versioned
+completion record binds the descriptor, contracts and canonical capsule manifest
+to those bytes. The [publication identity](../reference/publication-catalog.md)
+separates the immutable package/local-completion association from tenant-scoped
+admission. Metadata cannot change under an existing publication, but different
+immutable packages may contain the same component. A corrected embedded SBOM
+therefore creates another package/publication without changing `ReleaseDigest`.
+The protected local catalog verifies those associations during recovery.
 
-Phase 2 adds a separate `PackageDigest` over exact package-manifest bytes
-and [bounded OCI transfer](../reference/oci-registry.md) for immutable
-package distribution. These additions preserve the existing local release
-identity. Separate [publisher](../reference/publisher-trust.md) and
+A separate `PackageDigest` covers exact package-manifest bytes.
+[Bounded OCI transfer](../reference/oci-registry.md) distributes immutable
+packages while preserving their content identities. Separate [publisher](../reference/publisher-trust.md) and
 [builder-provenance](../reference/build-provenance.md) verifiers authenticate
 exact package evidence against explicit current trust policies.
 [Authenticated package admission](../reference/package-admission.md) combines
@@ -39,12 +41,13 @@ before an old route can acquire current grants.
 ## Mutable deployment
 
 A deployment points to a release and supplies capability grants, resource ceilings
-and route weight. The schema also carries placement and availability declarations;
-Phase 1 validates supported local requirements but does not reconcile cached
+and route weight. The schema also carries placement and availability declarations.
+The standalone node validates supported local requirements but does not reconcile cached
 copies or place work across nodes. These distinct identities describe updates:
 
 | Identity | Meaning |
 | --- | --- |
+| Publication reference | Exact publication ID plus scope, independent of component/package digests. Owns lifecycle/admission; captured deployment and rollback pins do not reselect by component. |
 | Deployment generation | The object's last successful mutation version, used for caller preconditions. Unrelated object writes leave it unchanged. |
 | Route generation | The catalog's monotonically increasing publication sequence. A batch advances it once. |
 | `RevisionId` | A deterministic digest of the deployment's execution policy and release, excluding route weight. |
@@ -69,14 +72,17 @@ commit rechecks caller object preconditions, route generation and combined state
 version under the actual writer lock and final authority fence. A concurrent
 writer cannot commit an earlier candidate over a newer control-only change.
 
-| Durable format | Contents and compatibility |
+| Supported durable format | Contents |
 | --- | --- |
-| 1 | Legacy deployment catalog remains readable. |
-| 2 | Versioned deployment and snapshot metadata retain their existing decoding and checksum behavior. |
-| 3 | Combined catalog adds rollout rows and finite committed rollout receipts. |
-| 4 | Managed deployment receipts join the same catalog transaction. Earlier omitted fields keep their original encoding. |
+| 5 | Exact publication pins with routes, rollouts and managed receipts. |
+| 6 | Publication-aware state with capability bindings. |
+| 7 | Publication-aware state with HTTP route state. |
 
-All writers preserve histories introduced by later formats, including legacy
+Formats 1 through 4 and obsolete rollout/operation records are rejected before
+recovery cleanup. Use the documented [fresh-state procedure](../reference/publication-catalog.md#supported-storage-and-fresh-state)
+for obsolete storage; there is no compatibility reader or implicit migration.
+
+All supported writers preserve operation histories, including unmanaged
 apply/delete, snapshot publication and state-only rollout operations. Recovery
 checks complete retained associations rather than silently dropping history to
 fit changed limits. Confirmed atomic replacement and a failure to confirm the
@@ -89,8 +95,8 @@ claiming durable completion.
 requires an operation ID, exact expected object generation and exact expected
 catalog state version. Actor and tenant come from authentication. A coherent
 operation snapshot supplies the object and state precondition, including when
-the object is absent. Existing callers can retain the legacy operation path;
-requesting managed semantics never silently falls back to it.
+the object is absent. Requesting managed semantics never silently falls back
+to an unmanaged mutation.
 
 The receipt binds action, normalized request, both preconditions, selected
 deployment/component/manifest and the resulting object, route and state versions.
@@ -147,8 +153,8 @@ its original weight and deployment policy. Completed or aborted plans may still
 restore that target if their exact cohort and preconditions hold. The currently
 served candidate is historical comparison input and need not regain execution
 permission; the restored base must pass current lifecycle, trust and runtime
-checks. Legacy plans without a retained target report target-unavailable for a
-new rollback. No history derivation or implicit migration fabricates a target.
+checks. Recovery rejects obsolete plans; no history derivation or implicit
+migration fabricates a target.
 
 Canary thresholds, window identity and decision summaries persist with the
 operation receipt. Runtime observations themselves remain bounded live data;
@@ -161,7 +167,7 @@ evidence or current generation checks.
 Multiple implementation and contract versions may coexist. A provider is selected only when the consumer's contract requirement and binding policy are satisfied.
 
 The current runtime supports coexisting local revisions and explicit versioned
-contract/function selection. Phase 3 adds exact host/provider bindings and
+contract/function selection, exact host/provider bindings and
 isolated local service calls; it does not migrate a consumer's contract ID
 implicitly. See [contracts and bindings](contracts-and-bindings.md).
 
@@ -177,10 +183,27 @@ The implemented prepared cache holds locally compiled Wasmtime code under
 validated compatibility keys. Snapshotting, fused composition and distributed
 AOT artifact acceptance remain planned; prepared entries retain no guest store.
 
-Phase 2 also provides an [isolated trusted-local compiler producer](../runtime/trusted-aot.md)
-with authenticated, bounded native-output ownership. Opt-in persistent native
+The [isolated trusted-local compiler producer](../runtime/trusted-aot.md)
+authenticates native output and bounds its ownership. Opt-in persistent native
 storage and loading bind the approved compiler, actual engine/host compatibility,
 exact catalog source and protected host key. Reopened cache hits verify those
 identities and current release authority before loading; resident prepared hits
 retain their existing bounded ownership. The default mode continues local
 portable compilation.
+
+## Route data and authorization lifetime
+
+An immutable snapshot and a historical deployment/operation receipt do not
+renew execution permission. The delivered standalone runtime checks exact local
+publication/lifecycle/admission at guarded start. It has no distributed lease or
+remote-policy watch.
+
+[ADR-0030](../../adr/0030-bound-disconnected-authorization-validity.md) specifies
+future cluster authority separately: monotonic snapshot and policy identities,
+finite node/boot-bound authorization leases, conservative time/disconnection
+limits, durable replay floors and fresh restart/reconnect validation. Queued or
+ready activations remain subject to current authority; already accepted work may
+finish within its original bounded execution contract. A rollback publishes new
+route state and checks the captured publication's present permission. It never
+restores an old lease. The [Cluster conformance design](cluster-freshness-handoff.md) covers
+expiry with retained routes, stale restart, reordering and cutover races.

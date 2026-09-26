@@ -30,10 +30,11 @@ fn delayed_unary_body_keeps_arrival_deadline_and_expiry_drop_cause() {
             )
             .unwrap();
             let routes = tonic::service::Routes::new(adapter.into_server());
-            let transport =
-                Transport::start_routes(configuration(), routes, clock.clone(), control.clone())
-                    .await
-                    .unwrap();
+            let mut config = configuration();
+            config.unauthenticated_timeout = Duration::from_millis(100);
+            let transport = Transport::start_routes(config, routes, clock.clone(), control.clone())
+                .await
+                .unwrap();
             transport.handle().start_accepting().unwrap();
             let gate = Arc::new(signal::Signal::default());
             let channel = tonic::transport::Endpoint::from_shared(format!(
@@ -64,9 +65,18 @@ fn delayed_unary_body_keeps_arrival_deadline_and_expiry_drop_cause() {
                 tokio::task::yield_now().await;
             }
             assert_eq!(runtime.started.load(Ordering::Acquire), 0);
+            // Once the request has authenticated, the accept-time deadline must
+            // no longer own this connection even while its DATA body is delayed.
+            tokio::time::sleep(Duration::from_millis(120)).await;
+            assert_eq!(
+                transport
+                    .handle()
+                    .snapshot()
+                    .expired_unauthenticated_connections,
+                0
+            );
             // A real delayed DATA body makes an incorrectly restarted relative
             // timer strictly later than Tonic's header timer, beyond tick rounding.
-            tokio::time::sleep(Duration::from_millis(20)).await;
             let elapsed = if already_expired {
                 Duration::from_millis(500)
             } else {

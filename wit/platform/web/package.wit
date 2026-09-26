@@ -1,0 +1,53 @@
+package latent:web@0.1.0;
+
+// The buffered-v1 limits and HTTP semantics are part of this contract.
+// See docs/protocol/http-applications.md. This is an application export,
+// not an outbound HTTP capability or permission to create a listener.
+interface application {
+    enum profile { buffered-v1 }
+    enum method { get, head, post, put, patch, delete, options }
+    enum scheme { http, https }
+
+    record header {
+        name: string,
+        // Opaque HTTP field bytes, not implicitly decoded UTF-8.
+        value: list<u8>,
+    }
+
+    record request {
+        profile: profile,
+        method: method,
+        scheme: scheme,
+        authority: string,
+        path: string,
+        query: option<string>,
+        // Order and repeated fields, including Cookie, are preserved.
+        headers: list<header>,
+        media-type: option<string>,
+        // RFC 4648 canonical padded base64. Empty body is the empty string.
+        // This explicit string avoids a generic runtime Val per binary byte.
+        body-base64: string,
+    }
+
+    record response {
+        profile: profile,
+        status: u16,
+        // Set-Cookie fields remain separate; never comma-join them.
+        headers: list<header>,
+        media-type: option<string>,
+        // Only HEAD and 304 may describe a representation without a body.
+        representation-length: option<u64>,
+        body-base64: string,
+    }
+
+    // HTTP error statuses are ordinary application responses. Traps, invalid
+    // results and platform failures use the separate documented mapping.
+    handle: async func(request: request) -> response;
+}
+
+world application-service {
+    // Authoritative principal, trace and deadline are host context, never
+    // caller-supplied HTTP fields or a serialized request-body projection.
+    import latent:context/context@0.1.0;
+    export application;
+}

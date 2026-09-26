@@ -4,12 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import importlib.util
 import json
 import posixpath
 import re
 import subprocess
+import sys
+import tomllib
 import unicodedata
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -17,8 +20,66 @@ from collections.abc import Iterable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(ROOT))
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 DEFINITION = re.compile(r"^ {0,3}\[([^]\n]+)\]:\s*(.*)$")
+APPLICATION_GUIDES = frozenset({"docs/start/application-development.md",
+    "docs/component-development/windows-application.md", "docs/component-development/linux-workspace.md",
+    "docs/component-development/portable-tests.md"})
+
+
+def application_guide_contracts(documents: dict[str, str]) -> dict:
+    """Check displayed command names/options against the actual frontend parser.
+
+    This static drift check does not execute shell examples or establish host
+    qualification. PowerShell syntax and the real walkthrough are separate checks.
+    """
+    from tools.dev_workflow.cli import parser
+    from tools.dev_workflow.project import LANGUAGES
+
+    frontend = parser()
+    groups = next(action for action in frontend._actions if isinstance(action, argparse._SubParsersAction))
+    commands = next(action for action in groups.choices["dev"]._actions
+                    if isinstance(action, argparse._SubParsersAction)).choices
+    errors, count = [], 0
+    for source, document in documents.items():
+        if source not in APPLICATION_GUIDES:
+            continue
+        for block in re.findall(r"^```(?:powershell|bash)\n(.*?)^```", document, re.M | re.S):
+            block = re.sub(r"[`\\]\n\s*", " ", block)
+            for line in block.splitlines():
+                match = re.search(r"\b(?:Invoke-LsfDev|dev)\s+([a-z][a-z-]*)(.*)", line)
+                if match is None:
+                    continue
+                command, arguments = match.groups()
+                count += 1
+                label = f"{source}: displayed dev {command}"
+                if command not in commands:
+                    errors.append(label + " is not a frontend command")
+                    continue
+                actions = commands[command]._actions
+                options = {option: action for action in actions for option in action.option_strings}
+                selected = set(re.findall(r"--[a-z][a-z0-9-]*", arguments))
+                for option in sorted(selected - options.keys()):
+                    errors.append(label + " has unknown option " + option)
+                for action in actions:
+                    if action.required and action.option_strings and not selected.intersection(action.option_strings):
+                        errors.append(label + " lacks " + action.option_strings[0])
+                for option in selected & options.keys():
+                    choices = options[option].choices
+                    literal = re.search(re.escape(option) + r"\s+['\"]?([a-zA-Z0-9][a-zA-Z0-9_.-]*)", arguments)
+                    if choices is not None and literal is not None and literal[1] not in choices:
+                        errors.append(label + " has unsupported " + option + " value " + literal[1])
+        if source == "docs/start/application-development.md":
+            languages = re.findall(r"^\| `([a-z]+)` \|", document, re.M)
+            if len(languages) != len(LANGUAGES) or set(languages) != set(LANGUAGES):
+                errors.append(source + ": language table differs from maintained template owners")
+        expected_rust = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))["toolchain"]["channel"]
+        for selected_rust in re.findall(r"cargo \+([0-9.]+) test", document):
+            if selected_rust != expected_rust:
+                errors.append(source + ": native business test differs from the pinned Rust toolchain")
+    return {"commands": count, "errors": errors}
 
 
 def tracked_files(root: Path) -> set[str]:
@@ -34,7 +95,6 @@ def prose(text: str, source: str, errors: list[str]) -> str:
     output: list[str] = []
     opened: tuple[str, int, int] | None = None
     for number, line in enumerate(text.splitlines(), 1):
-        # A block quote may contain a fenced example too.
         candidate = re.sub(r"^(?: {0,3}> ?)+", "", line)
         match = FENCE.match(candidate)
         if opened is not None:
@@ -103,8 +163,6 @@ def links(text: str) -> Iterable[str]:
             definitions.setdefault(reference_key(match[1]), found[0])
             lines[number] = ""
     text = "\n".join(lines)
-    # A bracket stack preserves both destinations in a linked image. Consuming
-    # reference labels also avoids counting [text][reference] twice.
     stack: list[int] = []
     index = 0
     while index < len(text):
@@ -183,8 +241,6 @@ def ordinary_path(root: Path, relative: str) -> bool:
 
 
 def svg_errors(root: Path, paths: list[Path], require_documents: bool = False) -> list[str]:
-    # A private module instance reuses the authoritative SVG rules while replacing
-    # only file enumeration. It neither walks untracked outputs nor reads JSON.
     spec = importlib.util.spec_from_file_location(
         "_docs_svg_rules", Path(__file__).with_name("validate_repository.py")
     )
@@ -199,6 +255,33 @@ def svg_errors(root: Path, paths: list[Path], require_documents: bool = False) -
     return list(module.ERRORS)
 
 
+def registered_snapshot_document(root: Path, source: str, tracked: set[str]) -> bool:
+    """Historical relative links belong to the exact snapshot's repository tree.
+
+    The mandatory site job validates that tree, routes, examples and assets.
+    This prose pass still checks the registered bytes and Markdown fences.
+    """
+    match = re.fullmatch(r"website/versioned_docs/version-([0-9][A-Za-z0-9._-]{0,79})/(.+\.mdx?)", source)
+    if match is None:
+        return False
+    version, relative = match.groups()
+    manifest_path = f"website/versioned_manifests/version-{version}.json"
+    for filename, maximum in (("website/versions.json", 1024), (manifest_path, 2 * 1024 * 1024)):
+        if filename not in tracked or not ordinary_path(root, filename) or (root / filename).stat().st_size > maximum:
+            return False
+    try:
+        versions = json.loads((root / "website/versions.json").read_text(encoding="utf-8"))
+        manifest = json.loads((root / manifest_path).read_text(encoding="utf-8"))
+        return (isinstance(versions, list) and version in versions
+                and manifest.get("version") == version
+                and re.fullmatch(r"[a-f0-9]{40}", manifest.get("documentationSource", "")) is not None
+                and any(document == {"source": "docs/" + relative,
+                                     "sha256": hashlib.sha256((root / source).read_bytes()).hexdigest()}
+                        for document in manifest.get("documents", [])))
+    except (ValueError, TypeError, AttributeError):
+        return False
+
+
 def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
                   *, require_documents: bool = True) -> dict:
     root = root.resolve()
@@ -211,9 +294,11 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
             directories.add(parent)
             parent = posixpath.dirname(parent)
     documents: dict[str, str] = {}
+    application_guides: dict[str, str] = {}
+    snapshots: set[str] = set()
     svgs: list[Path] = []
     for name in sorted(tracked):
-        if Path(name).suffix.lower() not in {".md", ".svg"}:
+        if Path(name).suffix.lower() not in {".md", ".mdx", ".svg"}:
             continue
         path = root / name
         if not ordinary_path(root, name) or not path.is_file():
@@ -227,12 +312,21 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
                 if not content.strip():
                     errors.append(f"{name}: empty Markdown document")
                 documents[name] = prose(content, name, errors)
+                if name in APPLICATION_GUIDES:
+                    application_guides[name] = content
+                if name.startswith("website/versioned_docs/"):
+                    if registered_snapshot_document(root, name, tracked):
+                        snapshots.add(name)
+                    else:
+                        errors.append(f"{name}: unregistered or altered historical snapshot document")
             except (OSError, UnicodeError) as exc:
                 errors.append(f"{name}: cannot read UTF-8 Markdown: {type(exc).__name__}")
     anchors = {name: heading_anchors(text) for name, text in documents.items()}
     local_targets = tracked | directories
     checked_links = checked_anchors = 0
     for source, text in documents.items():
+        if source in snapshots:
+            continue
         for raw in links(text):
             raw = html.unescape(re.sub(r"\\([!\"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])", r"\1", raw))
             try:
@@ -264,10 +358,12 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
                     if fragment not in ids:
                         errors.append(f"{source}: missing SVG anchor {raw!r}")
                 except (OSError, ET.ParseError):
-                    pass  # The shared SVG validator reports the parse failure.
+                    pass
     errors.extend(svg_errors(root, svgs, require_documents))
-    return {"documents": len(documents), "svgs": len(svgs), "local_links": checked_links,
-            "anchors": checked_anchors, "errors": errors}
+    application = application_guide_contracts(application_guides) if application_guides else {"commands": 0, "errors": []}
+    errors.extend(application["errors"])
+    return {"documents": len(documents), "versioned_documents": len(snapshots), "svgs": len(svgs), "local_links": checked_links,
+            "anchors": checked_anchors, "application_commands": application["commands"], "errors": errors}
 
 
 def main() -> int:
@@ -279,8 +375,18 @@ def main() -> int:
     except (OSError, UnicodeError, subprocess.CalledProcessError) as exc:
         print(f"FAIL: cannot enumerate documentation: {type(exc).__name__}")
         return 1
+    try:
+        issue_forms = subprocess.run(
+            [sys.executable, str(Path(__file__).with_name("validate_issue_forms.py")),
+             "--repo", str(args.root.resolve())],
+            check=False,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"FAIL: cannot validate issue forms: {type(exc).__name__}")
+        return 1
     print(json.dumps(report, indent=2))
-    return int(bool(report["errors"]))
+    return int(bool(report["errors"]) or issue_forms.returncode != 0)
 
 
 if __name__ == "__main__":

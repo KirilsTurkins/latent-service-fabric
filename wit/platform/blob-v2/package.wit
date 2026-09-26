@@ -1,0 +1,34 @@
+package latent:blob@0.2.0;
+
+/// Immutable large values. Handles belong to one activation and cannot be
+/// transferred. Writes are sequential; seal consumes the writer on any outcome.
+interface blob {
+    type blob-handle = u64;
+    resource chunk;
+    record blob-reference {
+        digest: string,
+        size: u64,
+        media-type: string,
+    }
+    variant blob-error {
+        not-found,
+        permission-denied,
+        invalid-range,
+        invalid-state,
+        checksum-mismatch,
+        budget-exhausted,
+        unavailable,
+        uncertain,
+        deadline-exceeded,
+        cancelled,
+    }
+    create: async func(media-type: string, expected-size: option<u64>) -> result<blob-handle, blob-error>;
+    open: async func(reference: blob-reference) -> result<blob-handle, blob-error>;
+    write: async func(handle: blob-handle, offset: u64, bytes: list<u8>) -> result<u64, blob-error>;
+    read: async func(handle: blob-handle, offset: u64, length: u32) -> result<chunk, blob-error>;
+    /// One materialization per resource; its memory remains charged until Drop.
+    chunk-bytes: async func(value: borrow<chunk>) -> result<list<u8>, blob-error>;
+    seal: async func(handle: blob-handle) -> result<blob-reference, blob-error>;
+    /// Explicit local cleanup; it never releases a durable committed reference.
+    close: async func(handle: blob-handle) -> result<bool, blob-error>;
+}

@@ -4,6 +4,8 @@
 mod concurrency;
 #[path = "fair_scheduler/faults.rs"]
 mod faults;
+#[path = "fair_scheduler/immediate.rs"]
+mod immediate;
 #[path = "fair_scheduler/lifecycle.rs"]
 mod lifecycle;
 #[path = "fair_scheduler/ordering.rs"]

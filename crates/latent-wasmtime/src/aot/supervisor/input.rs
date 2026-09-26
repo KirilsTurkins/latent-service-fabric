@@ -182,24 +182,30 @@ pub(super) mod tests {
                 .unwrap()
         }
         pub(crate) fn revoke(&self) {
-            ready(self.repository.change_release_lifecycle(
-                ReleaseMutationContext {
-                    scope: LifecycleScope::Tenant(TenantId("tests".into())),
-                    actor: ReleaseActor {
-                        subject: "native-test".into(),
-                        kind: ReleaseActorKind::Host,
+            let publication = self
+                .repository
+                .select_execution_publication(&TenantId("tests".into()), &self.release, None)
+                .unwrap()
+                .unwrap();
+            self.repository
+                .change_publication_lifecycle(
+                    ReleaseMutationContext {
+                        scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                        actor: ReleaseActor {
+                            subject: "native-test".into(),
+                            kind: ReleaseActorKind::Host,
+                        },
+                        operation: Some(ReleaseOperationPrecondition {
+                            operation_id: "revoke".into(),
+                            expected_generation: 1,
+                        }),
                     },
-                    operation: Some(ReleaseOperationPrecondition {
-                        operation_id: "revoke".into(),
-                        expected_generation: 1,
-                    }),
-                },
-                &self.release,
-                ReleaseLifecycleAction::Revoke,
-                ReleaseLifecycleReason::OperatorRevocation,
-                &mut |_| Ok(()),
-            ))
-            .unwrap();
+                    &publication,
+                    ReleaseLifecycleAction::Revoke,
+                    ReleaseLifecycleReason::OperatorRevocation,
+                    &mut |_| Ok(()),
+                )
+                .unwrap();
         }
         pub(crate) fn raw_bytes(&self, bytes: &[u8]) -> latent_artifacts::RawArtifactBytes {
             use latent_artifacts::{RawArtifactCache, RawArtifactCacheLimits, RawArtifactKey};
@@ -225,11 +231,16 @@ pub(super) mod tests {
                 .unwrap()
         }
         fn remove_component_after_fetch(&self) {
+            let token = self
+                .repository
+                .execution_eligibility(&self.release)
+                .unwrap()
+                .unwrap();
             std::fs::remove_file(
                 self.directory
                     .0
-                    .join("releases")
-                    .join(self.release.0.strip_prefix("sha256:").unwrap())
+                    .join("publications")
+                    .join(token.lifecycle().publication().hex())
                     .join("component.wasm"),
             )
             .unwrap();
@@ -258,6 +269,88 @@ pub(super) mod tests {
         let restored = input.authenticate_receipt(&receipt).unwrap();
         drop(receipt);
         assert_eq!(restored.output_size(), output.output().len());
+    }
+
+    #[test]
+    fn native_proofs_cannot_cross_publications_of_the_same_component() {
+        use latent_artifacts::ManagedPublicationUpload;
+        let fixture = Fixture::new();
+        let first = fixture.read();
+        let context = |operation: &str, generation| ReleaseMutationContext {
+            scope: LifecycleScope::Tenant(TenantId("tests".into())),
+            actor: ReleaseActor {
+                subject: "native-test".into(),
+                kind: ReleaseActorKind::Host,
+            },
+            operation: Some(ReleaseOperationPrecondition {
+                operation_id: operation.into(),
+                expected_generation: generation,
+            }),
+        };
+        let mut corrected = first.artifact.clone();
+        corrected
+            .manifest
+            .metadata
+            .annotations
+            .insert("inventory-revision".into(), "corrected".into());
+        let publication = ready(fixture.repository.publish_managed(
+            context("corrected", 0),
+            ManagedPublicationUpload::Local(corrected),
+            &mut |_| Ok(()),
+        ))
+        .unwrap()
+        .publication;
+        let second = fixture
+            .compiler
+            .reserve_selected(
+                fixture
+                    .repository
+                    .clone()
+                    .owned_preparation_source()
+                    .unwrap(),
+                &fixture.release,
+                Some(&publication.id),
+            )
+            .unwrap()
+            .read()
+            .unwrap();
+        assert_eq!(
+            first.artifact.component_bytes,
+            second.artifact.component_bytes
+        );
+        assert_ne!(first.key().digest(), second.key().digest());
+        assert_eq!(second.key().publication(), &publication.id);
+        let engine = fixture.engine();
+        let old_output = fixture.output(&first, &engine);
+        let new_output = fixture.output(&second, &engine);
+        assert!(first.authenticate_output(&old_output).is_ok());
+        assert!(second.authenticate_output(&new_output).is_ok());
+        assert!(second.authenticate_output(&old_output).is_err());
+        assert!(first.authenticate_output(&new_output).is_err());
+        assert!(second.authenticate_receipt(old_output.receipt()).is_err());
+        assert!(first.authenticate_receipt(new_output.receipt()).is_err());
+        fixture
+            .repository
+            .change_publication_lifecycle(
+                context("revoke-first", 1),
+                &latent_artifacts::PublicationRef {
+                    id: first.key().publication().clone(),
+                    scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                },
+                ReleaseLifecycleAction::Revoke,
+                ReleaseLifecycleReason::OperatorRevocation,
+                &mut |_| Ok(()),
+            )
+            .unwrap();
+        assert!(first.authenticate_output(&old_output).is_err());
+        assert!(second.authenticate_output(&new_output).is_ok());
+        // Ineligibility does not refund a still-owned source or compiler slot.
+        assert_eq!(fixture.compiler.snapshot().jobs, 2);
+        drop(first);
+        assert_eq!(fixture.compiler.snapshot().jobs, 1);
+        drop(second);
+        assert_eq!(fixture.compiler.snapshot().jobs, 0);
+        assert_eq!(fixture.compiler.snapshot().native_bytes, 0);
     }
 
     #[test]

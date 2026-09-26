@@ -25,6 +25,7 @@ pub struct InvocationTarget {
 pub struct RevisionRoute {
     pub revision: RevisionId,
     pub release: ReleaseDigest,
+    pub publication: Option<latent_core::PublicationId>,
     pub weight: u16,
     pub attributes: Metadata,
 }
@@ -65,6 +66,7 @@ pub struct ResolvedRevision {
     pub target: InvocationTarget,
     pub revision: RevisionId,
     pub release: ReleaseDigest,
+    pub publication: Option<latent_core::PublicationId>,
     pub route_generation: RouteGeneration,
     pub attributes: Metadata,
 }

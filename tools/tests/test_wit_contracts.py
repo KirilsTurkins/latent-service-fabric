@@ -152,11 +152,26 @@ class WitContractTests(unittest.TestCase):
             )
             self.assertTrue((destination / "deps" / "context" / "package.wit").is_file())
             self.assertFalse((destination / "deps" / "runtime").exists())
-
             (destination / "stale.txt").write_text("stale\n", encoding="utf-8")
             stager.stage(destination, source)
             self.assertFalse((destination / "stale.txt").exists())
             self.assertTrue((destination / "deps" / "context" / "package.wit").is_file())
+
+    def test_versioned_runtime_worlds_stage_only_their_selected_package_versions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            for world, http, events, count in [("runtime", "http", "events", 12),
+                                               ("runtime-phase3", "http-v2", "events-v2", 10),
+                                               ("runtime-phase3-streaming", "http-v2", "events-v2", 11),
+                                               ("runtime-phase3-blobs", "http-v2", "events-v2", 12)]:
+                destination = Path(temporary) / world
+                stager.stage(destination, ROOT / "wit/platform" / world)
+                deps = {path.name for path in (destination / "deps").iterdir()}
+                self.assertEqual(len(deps), count)
+                self.assertEqual(deps & {"http", "http-v2"}, {http})
+                self.assertEqual(deps & {"events", "events-v2"}, {events})
+                self.assertFalse(deps & {"runtime", "runtime-phase3", "runtime-phase3-streaming", "runtime-phase3-blobs"})
+                self.assertEqual("http-v3" in deps, world in {"runtime-phase3-streaming", "runtime-phase3-blobs"})
+                self.assertEqual("blob-v2" in deps, world == "runtime-phase3-blobs")
 
 
 if __name__ == "__main__":

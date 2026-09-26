@@ -1,0 +1,9 @@
+{
+  "name": "service",
+  "package": "tests:caller@1.0.0",
+  "contract": "tests:caller/api@1.0.0",
+  "capability": "latent:service/invoke@0.1.0",
+  "world": "tests:caller/service@1.0.0",
+  "witDirectory": "invocation",
+  "asynchronous": true
+}

@@ -1,0 +1,1026 @@
+{
+  "conductorSourceCommit": "748317b9855a8440762178b1419e7431a823f6a8",
+  "devcontainer": {
+    "cleanup": "owned-containers-stopped-private-volume-and-source-retained",
+    "configurationNameDiagnostic": {
+      "candidateExecuted": false,
+      "cases": {
+        ".devcontainer.json": {
+          "command": "read-configuration",
+          "containerUser": "latent-dev",
+          "exitCode": 0,
+          "relativeDockerfile": "Dockerfile"
+        },
+        "qualification.json": {
+          "command": "up",
+          "exitCode": 1,
+          "rejected": "Filename must be devcontainer.json or .devcontainer.json"
+        }
+      },
+      "generatedConfigurationSha256": "sha256:706fd7b1c0dfa396dfb7a0b036bff2894de47ab3bed701cfbcad93236b2c5dde",
+      "purpose": "actual-reviewed-cli-configuration-parsing-only",
+      "schemaVersion": "latent.dev.terminal-config-observation.v1"
+    },
+    "failure": "devcontainer-host-command-failed",
+    "passed": false,
+    "receipt": {
+      "artifactFile": "linux/packaged-devcontainer/host-observation.json",
+      "sha256": "sha256:0ae14cc52502b79c255dd8fe793a7867907f247afc53d7289d912baa28c029b4"
+    },
+    "seconds": 11.304,
+    "stage": "terminal-cli-up-before-client-container-creation"
+  },
+  "independentPolicyApproved": true,
+  "linux": {
+    "backends": {
+      "linux": {
+        "application": {
+          "artifacts": {
+            "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+            "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+            "evidence": "sha256:a9c962f7388f2b40c1658d7a3fd065656fd79a872de5a72eeca2d2b21a5d45d0",
+            "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ]
+        },
+        "closedProfile": {
+          "clock": {
+            "artifacts": {
+              "capsule": "sha256:d6afe724367f102b8d404cfe2ee47fdf0a7dcafabae11bd4027acf9f48aa904e",
+              "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+              "contracts": "sha256:d55be943e7359ae45761cd95aee8a12189800e3d3f1a953897a10384b3039be8",
+              "deployment": "sha256:e94da5769c14431925c6e8e4cd812480bb617f195363633d406eacf5213ae559",
+              "evidence": "sha256:8ee20c7fa46970588f69f8a957c36b260447fad37eb9d469701daf0c95c8fe31",
+              "packageSource": "sha256:d0eb26e4254efdab41b9044ac4325af531d5b64a244f434f5946a35ab84f8a46"
+            },
+            "environment": "node",
+            "outcomes": [
+              {
+                "category": "success",
+                "id": "clock-zero-cold"
+              },
+              {
+                "category": "success",
+                "id": "clock-zero-warm"
+              },
+              {
+                "category": "platform-failure",
+                "id": "clock-zero-denied"
+              },
+              {
+                "category": "success",
+                "id": "clock-zero-fresh"
+              }
+            ],
+            "passed": true,
+            "selection": [
+              "clock-zero-cold",
+              "clock-zero-warm",
+              "clock-zero-denied",
+              "clock-zero-fresh"
+            ]
+          },
+          "failure": {
+            "artifacts": {
+              "capsule": "sha256:6653a3e01d00ebccc8d109f8b72c130fa00750052fe51724ab0f33d2a6640192",
+              "component": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+              "contracts": "sha256:b7653f2f72139c822a836cef8684dba2ce9cf53de4896d5fd65a4f1ca3534d1c",
+              "deployment": "sha256:ac1ef61630168c67ab2dc0eabdd2d0dc28dae30efa00d570eaee8fc72773d414",
+              "evidence": "sha256:ecd762a66c27ad6e60815073849b5d2de0c880093b4e898b4fcfe922a3967f98",
+              "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+            },
+            "environment": "node",
+            "outcomes": [
+              {
+                "category": "success",
+                "id": "cold-fresh"
+              },
+              {
+                "category": "success",
+                "id": "warm-fresh"
+              },
+              {
+                "category": "declared-error",
+                "id": "declared"
+              },
+              {
+                "category": "platform-failure",
+                "id": "trap"
+              },
+              {
+                "category": "success",
+                "id": "after-trap"
+              },
+              {
+                "category": "platform-failure",
+                "id": "fuel"
+              },
+              {
+                "category": "success",
+                "id": "after-fuel"
+              },
+              {
+                "category": "platform-failure",
+                "id": "memory"
+              },
+              {
+                "category": "success",
+                "id": "after-memory"
+              },
+              {
+                "category": "platform-failure",
+                "id": "deadline"
+              },
+              {
+                "category": "success",
+                "id": "after-deadline"
+              },
+              {
+                "category": "platform-failure",
+                "id": "running-cancel"
+              },
+              {
+                "category": "success",
+                "id": "after-cancel"
+              }
+            ],
+            "passed": true,
+            "selection": [
+              "cold-fresh",
+              "warm-fresh",
+              "declared",
+              "trap",
+              "after-trap",
+              "fuel",
+              "after-fuel",
+              "memory",
+              "after-memory",
+              "deadline",
+              "after-deadline",
+              "running-cancel",
+              "after-cancel"
+            ]
+          }
+        },
+        "isolation": "mutual-home-denial-and-original-other-node-invocation-after-owned-purge",
+        "passed": true,
+        "watch": "revision-b-compiler-failure-retained-restart-source-preserving-purge"
+      },
+      "ssh": {
+        "application": {
+          "artifacts": {
+            "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+            "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+            "evidence": "sha256:0a7bf37a7c6bad88b1eef4275560bbf38e2a4fd5d0b862b58477d3bf041ecb6b",
+            "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ]
+        },
+        "closedProfile": {
+          "clock": {
+            "artifacts": {
+              "capsule": "sha256:d6afe724367f102b8d404cfe2ee47fdf0a7dcafabae11bd4027acf9f48aa904e",
+              "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+              "contracts": "sha256:d55be943e7359ae45761cd95aee8a12189800e3d3f1a953897a10384b3039be8",
+              "deployment": "sha256:e94da5769c14431925c6e8e4cd812480bb617f195363633d406eacf5213ae559",
+              "evidence": "sha256:4c11847167f43f9adb7c5eb69e8f375931090e04ec341be6ede74c18123cbfc3",
+              "packageSource": "sha256:d0eb26e4254efdab41b9044ac4325af531d5b64a244f434f5946a35ab84f8a46"
+            },
+            "environment": "node",
+            "outcomes": [
+              {
+                "category": "success",
+                "id": "clock-zero-cold"
+              },
+              {
+                "category": "success",
+                "id": "clock-zero-warm"
+              },
+              {
+                "category": "platform-failure",
+                "id": "clock-zero-denied"
+              },
+              {
+                "category": "success",
+                "id": "clock-zero-fresh"
+              }
+            ],
+            "passed": true,
+            "selection": [
+              "clock-zero-cold",
+              "clock-zero-warm",
+              "clock-zero-denied",
+              "clock-zero-fresh"
+            ]
+          },
+          "failure": {
+            "artifacts": {
+              "capsule": "sha256:6653a3e01d00ebccc8d109f8b72c130fa00750052fe51724ab0f33d2a6640192",
+              "component": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+              "contracts": "sha256:b7653f2f72139c822a836cef8684dba2ce9cf53de4896d5fd65a4f1ca3534d1c",
+              "deployment": "sha256:ac1ef61630168c67ab2dc0eabdd2d0dc28dae30efa00d570eaee8fc72773d414",
+              "evidence": "sha256:ef9a4cc6c2d006ce41a0f6a4b8ca771236c2606ddf68ff8d1eb35df431c8938a",
+              "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+            },
+            "environment": "node",
+            "outcomes": [
+              {
+                "category": "success",
+                "id": "cold-fresh"
+              },
+              {
+                "category": "success",
+                "id": "warm-fresh"
+              },
+              {
+                "category": "declared-error",
+                "id": "declared"
+              },
+              {
+                "category": "platform-failure",
+                "id": "trap"
+              },
+              {
+                "category": "success",
+                "id": "after-trap"
+              },
+              {
+                "category": "platform-failure",
+                "id": "fuel"
+              },
+              {
+                "category": "success",
+                "id": "after-fuel"
+              },
+              {
+                "category": "platform-failure",
+                "id": "memory"
+              },
+              {
+                "category": "success",
+                "id": "after-memory"
+              },
+              {
+                "category": "platform-failure",
+                "id": "deadline"
+              },
+              {
+                "category": "success",
+                "id": "after-deadline"
+              },
+              {
+                "category": "platform-failure",
+                "id": "running-cancel"
+              },
+              {
+                "category": "success",
+                "id": "after-cancel"
+              }
+            ],
+            "passed": true,
+            "selection": [
+              "cold-fresh",
+              "warm-fresh",
+              "declared",
+              "trap",
+              "after-trap",
+              "fuel",
+              "after-fuel",
+              "memory",
+              "after-memory",
+              "deadline",
+              "after-deadline",
+              "running-cancel",
+              "after-cancel"
+            ]
+          }
+        },
+        "isolation": "mutual-home-denial-and-original-other-node-invocation-after-owned-purge",
+        "passed": true,
+        "watch": "revision-b-compiler-failure-retained-restart-source-preserving-purge"
+      }
+    },
+    "cleanup": "both-owned-node-workspaces-purged-author-source-retained",
+    "hostCleanup": "owned-container-stopped-private-state-retained-until-runner-teardown",
+    "passed": true,
+    "receipts": [
+      {
+        "artifactFile": "linux/packaged-linux/observation.json",
+        "sha256": "sha256:c455e365cb6cc042ab1305abc22c09cc98f08df306288bd172eaba85eabc5586"
+      },
+      {
+        "artifactFile": "linux/packaged-linux/host-observation.json",
+        "sha256": "sha256:e125aed9509c35ef8fb3e52816471951969220e241294f9e3aede840c3542e3d"
+      }
+    ],
+    "runtimeCompiled": false,
+    "seconds": 2271.422,
+    "sourceCheckoutUsedByApplication": false
+  },
+  "publiclyPublished": false,
+  "qualificationComplete": false,
+  "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36175733422",
+  "schemaVersion": "latent.dev.packaged-attempt-observation.v1",
+  "sourceCommit": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+  "windows": {
+    "closedProfile": {
+      "clock": {
+        "node": {
+          "artifacts": {
+            "capsule": "sha256:d6afe724367f102b8d404cfe2ee47fdf0a7dcafabae11bd4027acf9f48aa904e",
+            "component": "sha256:8c2ff71be4e678217b872df1de8954bad9e5a8d825ce3c045c427ebce1715867",
+            "contracts": "sha256:d55be943e7359ae45761cd95aee8a12189800e3d3f1a953897a10384b3039be8",
+            "deployment": "sha256:e94da5769c14431925c6e8e4cd812480bb617f195363633d406eacf5213ae559",
+            "evidence": "sha256:38687855b506c82cc6881ff07b874699912ae0d75cfb2e9900eef0a52b3e5d1b",
+            "packageSource": "sha256:d0eb26e4254efdab41b9044ac4325af531d5b64a244f434f5946a35ab84f8a46"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "clock-zero-cold"
+            },
+            {
+              "category": "success",
+              "id": "clock-zero-warm"
+            },
+            {
+              "category": "platform-failure",
+              "id": "clock-zero-denied"
+            },
+            {
+              "category": "success",
+              "id": "clock-zero-fresh"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "clock-zero-cold",
+            "clock-zero-warm",
+            "clock-zero-denied",
+            "clock-zero-fresh"
+          ]
+        },
+        "portable": "not-reached"
+      },
+      "failure": {
+        "comparisonFailure": "conductor-compared-node-only-deployment-evidence-and-packageSource-keys-with-portable-record",
+        "node": {
+          "artifacts": {
+            "capsule": "sha256:6653a3e01d00ebccc8d109f8b72c130fa00750052fe51724ab0f33d2a6640192",
+            "component": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+            "contracts": "sha256:b7653f2f72139c822a836cef8684dba2ce9cf53de4896d5fd65a4f1ca3534d1c",
+            "deployment": "sha256:ac1ef61630168c67ab2dc0eabdd2d0dc28dae30efa00d570eaee8fc72773d414",
+            "evidence": "sha256:99382c897e4e8ea32a699b3fab21f040d790014bf705bed5ed7369570036abf6",
+            "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "cold-fresh"
+            },
+            {
+              "category": "success",
+              "id": "warm-fresh"
+            },
+            {
+              "category": "declared-error",
+              "id": "declared"
+            },
+            {
+              "category": "platform-failure",
+              "id": "trap"
+            },
+            {
+              "category": "success",
+              "id": "after-trap"
+            },
+            {
+              "category": "platform-failure",
+              "id": "fuel"
+            },
+            {
+              "category": "success",
+              "id": "after-fuel"
+            },
+            {
+              "category": "platform-failure",
+              "id": "memory"
+            },
+            {
+              "category": "success",
+              "id": "after-memory"
+            },
+            {
+              "category": "platform-failure",
+              "id": "deadline"
+            },
+            {
+              "category": "success",
+              "id": "after-deadline"
+            },
+            {
+              "category": "platform-failure",
+              "id": "running-cancel"
+            },
+            {
+              "category": "success",
+              "id": "after-cancel"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "cold-fresh",
+            "warm-fresh",
+            "declared",
+            "trap",
+            "after-trap",
+            "fuel",
+            "after-fuel",
+            "memory",
+            "after-memory",
+            "deadline",
+            "after-deadline",
+            "running-cancel",
+            "after-cancel"
+          ]
+        },
+        "portable": {
+          "artifacts": {
+            "capsule": "sha256:6653a3e01d00ebccc8d109f8b72c130fa00750052fe51724ab0f33d2a6640192",
+            "component": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+            "contracts": "sha256:b7653f2f72139c822a836cef8684dba2ce9cf53de4896d5fd65a4f1ca3534d1c"
+          },
+          "environment": "portable",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "cold-fresh"
+            },
+            {
+              "category": "success",
+              "id": "warm-fresh"
+            },
+            {
+              "category": "declared-error",
+              "id": "declared"
+            },
+            {
+              "category": "platform-failure",
+              "id": "trap"
+            },
+            {
+              "category": "success",
+              "id": "after-trap"
+            },
+            {
+              "category": "platform-failure",
+              "id": "fuel"
+            },
+            {
+              "category": "success",
+              "id": "after-fuel"
+            },
+            {
+              "category": "platform-failure",
+              "id": "memory"
+            },
+            {
+              "category": "success",
+              "id": "after-memory"
+            },
+            {
+              "category": "platform-failure",
+              "id": "deadline"
+            },
+            {
+              "category": "success",
+              "id": "after-deadline"
+            },
+            {
+              "category": "success",
+              "id": "after-cancel"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "cold-fresh",
+            "warm-fresh",
+            "declared",
+            "trap",
+            "after-trap",
+            "fuel",
+            "after-fuel",
+            "memory",
+            "after-memory",
+            "deadline",
+            "after-deadline",
+            "after-cancel"
+          ]
+        },
+        "sharedArtifactsMatch": true,
+        "typedResultsMatch": true
+      },
+      "portableRequiredUnsupportedAndPrestartCancellation": "not-reached"
+    },
+    "failure": "same-byte-real-node-native-comparison-required",
+    "host": {
+      "architecture": "AMD64",
+      "osVersion": "10.0.26100"
+    },
+    "languages": {
+      "c": {
+        "authorSourcePreserved": true,
+        "nativeHostReaped": true,
+        "node": {
+          "artifacts": {
+            "capsule": "sha256:c28d0555367fa67340656b7e3db31abe6f32169fa62866aa153d4fc181967def",
+            "component": "sha256:40b41bbe8d91a3da8f14540e0eb2139fa3c69cb31c352ea3a55e7ed2d46d85bd",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:a52bffa23b970366941d433f38e3c0dfff325895cd2c229b9c005f3f2a63453f",
+            "evidence": "sha256:7e62025d1a8d79b4bb9d21defc5785d4585405fb08b66602b50ac150617b6eaf",
+            "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ]
+        },
+        "portable": {
+          "artifacts": {
+            "capsule": "sha256:c28d0555367fa67340656b7e3db31abe6f32169fa62866aa153d4fc181967def",
+            "component": "sha256:40b41bbe8d91a3da8f14540e0eb2139fa3c69cb31c352ea3a55e7ed2d46d85bd",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+          },
+          "environment": "portable",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ]
+        }
+      },
+      "dotnet": {
+        "authorSourcePreserved": true,
+        "nativeHostReaped": true,
+        "node": {
+          "artifacts": {
+            "capsule": "sha256:63aef5765a10a350a091a938299e3c23ff9c266732e62348dd31853885309b38",
+            "component": "sha256:0d2f2ac85b02a77b9698a564cc67ca534f4eaaee152e516242bf9dac2f812395",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:a8772c0410cc75df8c7bf8ecc7ac82b41d695cbb1303ba929320dd2aff845c8d",
+            "evidence": "sha256:66a7b8b4b1bd8c04be6f8cf2c1b09e7b6000734fc2b8329503df827e5de09468",
+            "packageSource": "sha256:d0eb26e4254efdab41b9044ac4325af531d5b64a244f434f5946a35ab84f8a46"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            },
+            {
+              "category": "platform-failure",
+              "id": "greeting-runtime-denied"
+            },
+            {
+              "category": "success",
+              "id": "greeting-after-runtime-denial"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2",
+            "greeting-runtime-denied",
+            "greeting-after-runtime-denial"
+          ]
+        },
+        "portable": {
+          "artifacts": {
+            "capsule": "sha256:63aef5765a10a350a091a938299e3c23ff9c266732e62348dd31853885309b38",
+            "component": "sha256:0d2f2ac85b02a77b9698a564cc67ca534f4eaaee152e516242bf9dac2f812395",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+          },
+          "environment": "portable",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            },
+            {
+              "category": "platform-failure",
+              "id": "greeting-runtime-denied"
+            },
+            {
+              "category": "success",
+              "id": "greeting-after-runtime-denial"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2",
+            "greeting-runtime-denied",
+            "greeting-after-runtime-denial"
+          ]
+        }
+      },
+      "go": {
+        "authorSourcePreserved": true,
+        "nativeHostReaped": true,
+        "node": {
+          "artifacts": {
+            "capsule": "sha256:5b09df677787747af4900b883c9d56f7dc1a5e1942385ce174ef4e590391b526",
+            "component": "sha256:d39b03768cfefc3bdea39b928a5893a30b177f0439de6b9bafaf3f42b33c0cbe",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:13233df479126f7c4edeaf0d4278a004b9bbdb6d6075922267f8839de275c7e5",
+            "evidence": "sha256:723b23a2a00836e60dd449020d2d6c80770777fc22c399f5dc629ecab28b9a48",
+            "packageSource": "sha256:2831cbe72d106d111cb6d79a00f379921369259fc730d51e1203c9c5d79f5817"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            },
+            {
+              "category": "platform-failure",
+              "id": "greeting-runtime-denied"
+            },
+            {
+              "category": "success",
+              "id": "greeting-after-runtime-denial"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2",
+            "greeting-runtime-denied",
+            "greeting-after-runtime-denial"
+          ]
+        },
+        "portable": {
+          "artifacts": {
+            "capsule": "sha256:5b09df677787747af4900b883c9d56f7dc1a5e1942385ce174ef4e590391b526",
+            "component": "sha256:d39b03768cfefc3bdea39b928a5893a30b177f0439de6b9bafaf3f42b33c0cbe",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+          },
+          "environment": "portable",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            },
+            {
+              "category": "platform-failure",
+              "id": "greeting-runtime-denied"
+            },
+            {
+              "category": "success",
+              "id": "greeting-after-runtime-denial"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2",
+            "greeting-runtime-denied",
+            "greeting-after-runtime-denial"
+          ]
+        }
+      },
+      "java": {
+        "authorSourcePreserved": true,
+        "nativeHostReaped": true,
+        "node": {
+          "artifacts": {
+            "capsule": "sha256:ef07e1edb4ac6b63cf7c372dfd1ef794e4a8ed9f6c1c57a38f7a22ec64263baf",
+            "component": "sha256:c84b7840a9f3d134d3dc3e22347a1f5c45ff997c65d34c21e02096a0755b1855",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:5325667382c51aee85788812942cc6cd5203da88b5f0f628741db458b97f4570",
+            "evidence": "sha256:a87662b91b3e00b31ad194bf5e2ac77d9aecbb6ea4a7b40e8fa1d1add92eb7e0",
+            "packageSource": "sha256:5abcc71ad55a59cb8d46686d0a8fb3270eb1e2e24dab2cd306e3cf547b785a71"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            },
+            {
+              "category": "platform-failure",
+              "id": "greeting-runtime-denied"
+            },
+            {
+              "category": "success",
+              "id": "greeting-after-runtime-denial"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2",
+            "greeting-runtime-denied",
+            "greeting-after-runtime-denial"
+          ]
+        },
+        "portable": {
+          "artifacts": {
+            "capsule": "sha256:ef07e1edb4ac6b63cf7c372dfd1ef794e4a8ed9f6c1c57a38f7a22ec64263baf",
+            "component": "sha256:c84b7840a9f3d134d3dc3e22347a1f5c45ff997c65d34c21e02096a0755b1855",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+          },
+          "environment": "portable",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            },
+            {
+              "category": "platform-failure",
+              "id": "greeting-runtime-denied"
+            },
+            {
+              "category": "success",
+              "id": "greeting-after-runtime-denial"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2",
+            "greeting-runtime-denied",
+            "greeting-after-runtime-denial"
+          ]
+        }
+      },
+      "rust": {
+        "authorSourcePreserved": true,
+        "nativeHostReaped": true,
+        "node": {
+          "artifacts": {
+            "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+            "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+            "evidence": "sha256:1e64e6f303c3f372d1b781913bcfd86a4b84b2d3489fa50b9cf66037ce0a0a47",
+            "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ]
+        },
+        "portable": {
+          "artifacts": {
+            "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+            "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+          },
+          "environment": "portable",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ]
+        }
+      },
+      "typescript": {
+        "authorSourcePreserved": true,
+        "nativeHostReaped": true,
+        "node": {
+          "artifacts": {
+            "capsule": "sha256:dd6f06e1fdb34ac9e6103f9e7e828bf5abc031951c2b8960d91b49e438a8c8ee",
+            "component": "sha256:1119763a49e9191c438e0c1c4413359a50ccb51d2f382a2c9cd108061defc5ca",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:d724944745791af3accc223e2a05bab49718c90abf31f6cb77866c26336869f0",
+            "evidence": "sha256:844bbf3e79c9afd63ddceace804abf46335f96ddbab7b4c518e3ae1c36ea9c0b",
+            "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+          },
+          "environment": "node",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ]
+        },
+        "portable": {
+          "artifacts": {
+            "capsule": "sha256:dd6f06e1fdb34ac9e6103f9e7e828bf5abc031951c2b8960d91b49e438a8c8ee",
+            "component": "sha256:1119763a49e9191c438e0c1c4413359a50ccb51d2f382a2c9cd108061defc5ca",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a"
+          },
+          "environment": "portable",
+          "outcomes": [
+            {
+              "category": "success",
+              "id": "greeting-0"
+            },
+            {
+              "category": "success",
+              "id": "greeting-1"
+            },
+            {
+              "category": "declared-error",
+              "id": "greeting-2"
+            }
+          ],
+          "passed": true,
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ]
+        }
+      }
+    },
+    "ownedWslDistributionPurgedBeforeNativeTests": true,
+    "passed": false,
+    "receipt": {
+      "artifactFile": "windows/packaged-observation/observation.json",
+      "sha256": "sha256:49ec9ebf271d3b94497000e36653fab326b1bb9ce804887592ba3b63a921318f"
+    },
+    "runtimeCompiled": false,
+    "seconds": 2037.161,
+    "sourceCheckoutUsedByApplication": false
+  }
+}

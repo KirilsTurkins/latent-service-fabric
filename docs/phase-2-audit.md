@@ -1,4 +1,8 @@
-# Phase 2 audit
+# Durable administrative audit
+
+[Capability audit and inspection](runtime/capability-audit.md) extends this
+same owner with typed capability grant/call/provider evidence and optional
+policy-required admission. It preserves the query and resource contracts below.
 
 `latent-audit` provides a bounded durable journal for security and administrative
 history. An optional node configuration opens one filesystem owner and one
@@ -16,8 +20,7 @@ semantics and explicitly rejects unsupported platforms before mutation.
 The earlier `BoundedPhase2AuditJournal` remains an explicit volatile embedding
 API. It starts no worker and loses its records on restart. Its bounded metadata
 maps and secret-bearing-key checks do not provide the durable guarantees below.
-The production implementation evolves the event vocabulary and memory journal
-contributed in PR165.
+The durable journal below has a separate ownership and recovery contract.
 
 ## Typed records and identity
 
@@ -63,6 +66,13 @@ does it mark the mutation started and enter the catalog operation. Audit waits
 occur outside lifecycle, signing-authority and catalog commit fences; the audit
 worker never calls back into those owners.
 
+Control adapters use `reserve_control_critical` to synchronize with the audit
+worker's short memory-state fence before checking the unchanged finite journal
+and queue limits. Recovery snapshots and reconciliation use the same fence.
+Journal I/O stays outside it. Capability dispatch and diagnostic capture retain
+their nonblocking reservation APIs; a pending critical operation or exhausted
+capacity still rejects a new control reservation before mutation.
+
 The guard accepts a known conclusion only from the actual matching lifecycle
 receipt, or an exact scoped retained operation lookup after an error. The request
 identity and full preview receipt digest must match. Exact retries record the
@@ -88,9 +98,10 @@ the directory catalog is also usable without them.
 Dropping an accepted attempt before `mutation_started` produces `NotStarted`;
 dropping it afterward produces `Unknown`. Its prepaid terminal capacity remains
 owned by the worker. Deployment adapters bind the normalized request and actual
-returned deployment/catalog generation. The deployment catalog has no retained
-idempotency receipt for crash reconciliation, so an unresolved deployment
-attempt recovers as unknown.
+returned deployment/catalog generation. Managed deployment operations retain
+exact receipts for startup reconciliation. A matching retained receipt can
+establish the committed result; an absent receipt or an unmanaged deployment
+attempt leaves the outcome unknown. Recovery never repeats the mutation.
 
 ## Storage, recovery and retention
 
@@ -154,8 +165,8 @@ allocation or process RSS.
 `AuditService.QueryPhase2Audit` returns typed records. Tenant queries require an
 administrator bound to exactly the authenticated tenant. Node queries additionally
 require the trusted `latent.node.operator` claim; it grants no cross-tenant query
-access. The existing `QueryAudit` method provides a limited tenant projection;
-unsupported resource-prefix filters are rejected.
+access. Every query supplies an explicit scope and returns coverage with its
+records.
 
 Cursors bind the journal epoch, exact scope and filters, position and frozen high
 watermark. They grant no authorization. Later appends are excluded from the same
@@ -215,5 +226,6 @@ no committed catalog receipt.
 Focused tests exercise transaction cutpoints, missing acknowledged history,
 private paths, full-record capacity, exact replay, post-commit sink failure,
 scope/cursor/deadline behavior, response leases and shutdown with live attempts.
-These tests and the canary tests are part of the implementation evidence; final
-ticket completion and release readiness still depend on the required CI gates.
+The tests cover journal behavior and canary integration. For a live incident,
+inspect both the operation owner's retained result and the audit acknowledgement;
+neither a missing response nor an incomplete audit history proves rollback.

@@ -3,6 +3,7 @@ mod admission_storage;
 mod component_reader;
 pub(crate) mod contract_metadata;
 mod document_reader;
+mod format;
 mod index;
 mod integrity;
 mod lifecycle;
@@ -10,9 +11,14 @@ mod metadata;
 mod metadata_codec;
 mod paging;
 mod preparation_read;
+mod publication_access;
+mod publication_preparation;
 mod retained_package;
 mod root_durability;
+mod shared_content;
+pub use shared_content::{PublicationContentReclamation, PublicationStorageSnapshot};
 mod sha256;
+mod web;
 
 #[cfg(test)]
 mod tests;
@@ -48,7 +54,7 @@ use integrity::CompletionRecord;
 use metadata_codec::{decode_metadata, encode_metadata};
 use sha256::release_digest;
 
-const RELEASES_DIR: &str = "releases";
+const RELEASES_DIR: &str = "publications";
 const TEMP_DIR: &str = ".tmp";
 const OWNER_LOCK_FILE: &str = ".catalog.lock";
 const METADATA_FILE: &str = "metadata.json";
@@ -78,6 +84,11 @@ const DEFAULT_MAX_RECOVERY_DIRECTORIES: usize = 1_000_000;
 /// metadata and component reads are also bounded before allocation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DirectoryArtifactRepositoryConfig {
+    /// Conservative shared-file plus publication-link storage exposure ceiling.
+    pub max_storage_bytes: u64,
+    pub max_content_index_bytes: usize,
+    pub max_content_blobs: usize,
+    pub max_publication_files: usize,
     pub max_index_entries: usize,
     pub max_index_bytes: usize,
     pub max_page_size: usize,
@@ -94,6 +105,10 @@ pub struct DirectoryArtifactRepositoryConfig {
 impl Default for DirectoryArtifactRepositoryConfig {
     fn default() -> Self {
         Self {
+            max_storage_bytes: 4 * 1024 * 1024 * 1024,
+            max_content_index_bytes: 64 * 1024 * 1024,
+            max_content_blobs: 1_000_000,
+            max_publication_files: 1024,
             max_index_entries: DEFAULT_MAX_INDEX_ENTRIES,
             max_index_bytes: DEFAULT_MAX_INDEX_BYTES,
             max_page_size: DEFAULT_MAX_PAGE_SIZE,
@@ -108,13 +123,14 @@ impl Default for DirectoryArtifactRepositoryConfig {
 
 #[derive(Debug, Default)]
 struct PublicationState {
-    pending: Option<ReleaseDigest>,
+    pending: Option<latent_core::PublicationId>,
     // Includes indexed, pending and incomplete directories, not just releases
     // visible to readers. Root ownership and the writer mutex protect this count.
     release_directories: usize,
 }
 
 struct VerifiedEntry {
+    publication: crate::PublicationRef,
     metadata: VerifiedArtifactMetadata,
     component_bytes: Vec<u8>,
     completion: CompletionRecord,
@@ -163,8 +179,10 @@ pub struct DirectoryArtifactRepository {
     /// indeterminate durability. Only a retry of the pending digest may proceed.
     publish_lock: Mutex<PublicationState>,
     admission_work: Mutex<()>,
+    content: Mutex<shared_content::SharedContent>,
     admission: Option<admission::RepositoryAdmission>,
     lifecycle: OnceLock<crate::lifecycle::LifecycleStore>,
+    web: web::WebCatalog,
     _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
@@ -235,8 +253,34 @@ impl DirectoryArtifactRepository {
         admission: Option<admission::RepositoryAdmission>,
         lifecycle_limits: crate::LifecycleLimits,
     ) -> Result<Self, PlatformError> {
+        let repository = Self::acquire_configured(root, config, admission, lifecycle_limits)?;
+        format::check_current_format(&repository.root)?;
+        fs::create_dir_all(repository.root.join(RELEASES_DIR)).map_err(io_error)?;
+        fs::create_dir_all(repository.root.join(TEMP_DIR)).map_err(io_error)?;
+        cleanup_temporary_entries(&repository.root)?;
+        repository.content.lock().map_err(lock_error)?.open()?;
+        sync_dir(&repository.root)?;
+        let baseline = repository.rebuild_index()?;
+        repository.initialize_lifecycle(&baseline)?;
+        repository.initialize_web()?;
+        if repository.admission.is_some() {
+            admission::persist_mode(&repository.root)?;
+        }
+        Ok(repository)
+    }
+
+    fn acquire_configured(
+        root: PathBuf,
+        config: DirectoryArtifactRepositoryConfig,
+        admission: Option<admission::RepositoryAdmission>,
+        lifecycle_limits: crate::LifecycleLimits,
+    ) -> Result<Self, PlatformError> {
         validate_config(config)?;
         lifecycle_limits.validate()?;
+        let config = DirectoryArtifactRepositoryConfig {
+            max_index_entries: config.max_index_entries.min(lifecycle_limits.max_records),
+            ..config
+        };
         let root = root_durability::create_durable_root(&root)?;
 
         let owner_lock = OpenOptions::new()
@@ -254,12 +298,8 @@ impl DirectoryArtifactRepository {
         let owner_lock = OwnerLock(owner_lock);
         admission::check_mode(&root, admission.is_some())?;
 
-        fs::create_dir_all(root.join(RELEASES_DIR)).map_err(io_error)?;
-        fs::create_dir_all(root.join(TEMP_DIR)).map_err(io_error)?;
-        cleanup_temporary_entries(&root)?;
-        sync_dir(&root)?;
-
         let repository = Self {
+            content: Mutex::new(shared_content::SharedContent::new(&root, config)),
             root,
             config,
             lifecycle_limits,
@@ -271,6 +311,11 @@ impl DirectoryArtifactRepository {
             verification_statistics: VerificationStatistics::default(),
             publish_lock: Mutex::new(PublicationState::default()),
             admission_work: Mutex::new(()),
+            web: web::WebCatalog::new(
+                admission
+                    .as_ref()
+                    .map(|configured| Arc::clone(&configured.authority)),
+            )?,
             admission,
             lifecycle: OnceLock::new(),
             _owner_lock: owner_lock,
@@ -279,11 +324,6 @@ impl DirectoryArtifactRepository {
             #[cfg(test)]
             stamp_byte_limit: crate::preparation::MAXIMUM_STAMP_BYTES,
         };
-        let baseline = repository.rebuild_index()?;
-        repository.initialize_lifecycle(&baseline)?;
-        if repository.admission.is_some() {
-            admission::persist_mode(&repository.root)?;
-        }
         Ok(repository)
     }
 
@@ -305,23 +345,7 @@ impl DirectoryArtifactRepository {
         &self,
         release: &ReleaseDigest,
     ) -> Result<Option<ArtifactPreparationIdentity>, PlatformError> {
-        self.current_eligibility(release)?;
-        let index = self.index.read().map_err(lock_error)?;
-        let entry = index
-            .by_digest
-            .get(release)
-            .ok_or_else(|| error(PlatformErrorCode::NotFound, "release digest not found"))?;
-        entry
-            .preparation_stamp
-            .map(|stamp| {
-                ArtifactPreparationIdentity::new(
-                    Arc::clone(&self.preparation_epoch),
-                    release,
-                    entry.value.descriptor.size_bytes,
-                    stamp,
-                )
-            })
-            .transpose()
+        self.selected_preparation_identity(release, None)
     }
 
     fn preparation_stamp(
@@ -345,9 +369,7 @@ impl DirectoryArtifactRepository {
         let mut scanned = 0_usize;
         for entry in fs::read_dir(&releases).map_err(io_error)? {
             let entry = entry.map_err(io_error)?;
-            if !entry.file_type().map_err(io_error)?.is_dir() {
-                continue;
-            }
+            shared_content::directory(&entry.path())?;
             scanned = scanned.saturating_add(1);
             if scanned > self.config.max_recovery_directories {
                 return Err(resource_exhausted(
@@ -356,6 +378,10 @@ impl DirectoryArtifactRepository {
             }
             let path = entry.path();
             if !is_recovery_candidate(&path)? {
+                self.content
+                    .lock()
+                    .map_err(lock_error)?
+                    .charge_incomplete(&path)?;
                 continue;
             }
             if complete_entries.len()
@@ -376,14 +402,16 @@ impl DirectoryArtifactRepository {
         let mut baseline = Vec::with_capacity(complete_entries.len());
         for path in complete_entries {
             let verified = self.load_complete_entry(&path, Retention::Metadata)?;
+            self.content
+                .lock()
+                .map_err(lock_error)?
+                .register_directory(&verified.publication.id, &path)?;
             let eligibility = self.recover_eligibility(&path, &verified)?;
             let completion = verified.completion.identity()?;
             let metadata = verified.metadata;
+            let publication_ref = verified.publication;
             baseline.push(crate::lifecycle::LifecycleIdentity {
-                scope: metadata.manifest().metadata.tenant.clone().map_or(
-                    crate::LifecycleScope::LocalUnscoped,
-                    crate::LifecycleScope::Tenant,
-                ),
+                scope: publication_ref.scope.clone(),
                 release: metadata.verified_digest().clone(),
                 package: eligibility
                     .as_ref()
@@ -393,6 +421,7 @@ impl DirectoryArtifactRepository {
             let stamp = self.preparation_stamp(&metadata);
             if let Some(recovered) = eligibility {
                 next.insert_admitted(
+                    publication_ref,
                     metadata,
                     stamp,
                     recovered.binding,
@@ -401,7 +430,7 @@ impl DirectoryArtifactRepository {
                     self.config,
                 )?;
             } else {
-                next.insert_verified(metadata, stamp, self.config)?;
+                next.insert_verified(publication_ref, metadata, stamp, self.config)?;
             }
         }
         // Reconcile completed entries from an interrupted publication before
@@ -489,11 +518,30 @@ impl DirectoryArtifactRepository {
             &component.digest,
             component.size,
         )?;
-        let expected_dir = digest_hex(&descriptor.release_digest)?;
-        if path.file_name().and_then(|value| value.to_str()) != Some(expected_dir.as_str()) {
-            return Err(corrupt("release directory does not match its digest"));
+        let publication = if let Some(stored) = &admission {
+            let binding =
+                stored.binding(path, self.admission.as_ref().expect("enforced mode").limits)?;
+            crate::PublicationRef::package(
+                crate::LifecycleScope::Tenant(binding.tenant),
+                &binding.package,
+            )?
+        } else {
+            crate::PublicationRef::trusted_local(
+                manifest.metadata.tenant.clone().map_or(
+                    crate::LifecycleScope::LocalUnscoped,
+                    crate::LifecycleScope::Tenant,
+                ),
+                &completion.identity()?,
+            )?
+        };
+        let expected_dir = publication.id.hex();
+        if path.file_name().and_then(|value| value.to_str()) != Some(expected_dir) {
+            return Err(corrupt(
+                "publication directory does not match its immutable association",
+            ));
         }
         Ok(VerifiedEntry {
+            publication,
             metadata: VerifiedArtifactMetadata::from_verified_parts(
                 descriptor,
                 manifest,
@@ -507,7 +555,7 @@ impl DirectoryArtifactRepository {
     }
 
     fn entry_path(&self, digest: &ReleaseDigest) -> Result<PathBuf, PlatformError> {
-        Ok(self.root.join(RELEASES_DIR).join(digest_hex(digest)?))
+        Ok(self.publication_path(&self.require_legacy_publication(None, digest)?.id))
     }
 
     fn validate_descriptor_bounds(
@@ -523,13 +571,20 @@ impl DirectoryArtifactRepository {
         artifact: CapsuleArtifact,
         stamp: Option<PreparationMetadataFingerprint>,
     ) -> Result<ArtifactDescriptor, PlatformError> {
+        let publication = self.local_publication_ref(&artifact)?;
         let mut index = self.index.write().map_err(lock_error)?;
-        index.insert(artifact, stamp, self.config)
+        index.insert(publication, artifact, stamp, self.config)
     }
 
+    #[cfg(test)]
     fn preflight_adoption(&self, artifact: &CapsuleArtifact) -> Result<(), PlatformError> {
         let index = self.index.read().map_err(lock_error)?;
-        index.preflight(&artifact.descriptor, &artifact.manifest, self.config)
+        index.preflight(
+            &self.local_publication_ref(artifact)?,
+            &artifact.descriptor,
+            &artifact.manifest,
+            self.config,
+        )
     }
 
     fn prepare_publication(
@@ -569,7 +624,7 @@ impl DirectoryArtifactRepository {
             &artifact.manifest.component_digest,
             &artifact.component_bytes,
         )?;
-        self.preflight_adoption(&artifact)?;
+        self.validate_descriptor_bounds(&artifact.descriptor)?;
         let metadata_bytes = encode_metadata(&artifact, self.config.max_metadata_bytes)?;
         let completion =
             CompletionRecord::from_payloads(&artifact.descriptor, &metadata_bytes, &manifest_bytes);
@@ -603,19 +658,12 @@ impl DirectoryArtifactRepository {
         fs::create_dir(&tmp_path).map_err(io_error)?;
 
         let staged = (|| {
-            write_synced(&tmp_path.join(METADATA_FILE), &prepared.metadata_bytes)?;
-            write_synced(&tmp_path.join(MANIFEST_FILE), &prepared.manifest_bytes)?;
-            write_synced(
-                &tmp_path.join(COMPONENT_FILE),
-                &prepared.artifact.component_bytes,
-            )?;
-            if let Some(admission) = admission {
-                admission.write(&tmp_path)?;
+            let completion = prepared.completion.encode()?;
+            let files = self.publication_content_files(prepared, admission, &completion)?;
+            let mut content = self.content.lock().map_err(lock_error)?;
+            for (name, bytes) in files {
+                content.link_bytes(&tmp_path.join(name), bytes)?;
             }
-            write_synced(
-                &tmp_path.join(COMPLETE_FILE),
-                &prepared.completion.encode()?,
-            )?;
             sync_dir(&tmp_path)
         })();
         if let Err(failure) = staged {
@@ -632,6 +680,118 @@ impl DirectoryArtifactRepository {
 }
 
 impl ArtifactRepository for DirectoryArtifactRepository {
+    fn get_selected_catalog_entry<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        selector: &'a crate::PublicationRef,
+    ) -> BoxFuture<'a, Result<Option<crate::ArtifactCatalogEntry>, PlatformError>> {
+        Box::pin(async move {
+            self.resolve_publication(scope, selector)?
+                .as_ref()
+                .map(|reference| self.publication_catalog_entry(reference))
+                .transpose()
+                .map(Option::flatten)
+        })
+    }
+    fn get_selected_lifecycle<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        selector: &'a crate::PublicationRef,
+    ) -> BoxFuture<'a, Result<Option<crate::ReleaseLifecycleStatus>, PlatformError>> {
+        Box::pin(async move {
+            self.resolve_publication(scope, selector)?
+                .as_ref()
+                .map(|reference| self.publication_lifecycle_status(reference))
+                .transpose()
+                .map(Option::flatten)
+        })
+    }
+    fn get_selected_operation<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        operation_id: &'a str,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            (
+                Option<latent_core::PublicationId>,
+                crate::ReleaseOperationLookup,
+            ),
+            PlatformError,
+        >,
+    > {
+        Box::pin(async move { self.life_store().selected_operation(scope, operation_id) })
+    }
+    fn select_web_publication(
+        &self,
+        reference: &crate::PublicationRef,
+    ) -> Result<crate::web::WebSelection, PlatformError> {
+        DirectoryArtifactRepository::select_web_publication(self, reference)
+    }
+
+    fn get_web_operation<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        operation_id: &'a str,
+    ) -> BoxFuture<'a, Result<Option<crate::web::WebOperationReceipt>, PlatformError>> {
+        Box::pin(async move { self.web_operation_status(scope, operation_id) })
+    }
+    fn change_selected_lifecycle<'a>(
+        &'a self,
+        context: crate::ReleaseMutationContext,
+        selector: &'a crate::PublicationRef,
+        action: crate::ReleaseLifecycleAction,
+        reason: crate::ReleaseLifecycleReason,
+        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<crate::PublicationOperationReceipt, PlatformError>> {
+        Box::pin(async move {
+            let mut publication = None;
+            let operation = self.change_publication_lifecycle(
+                context,
+                selector,
+                action,
+                reason,
+                &mut |preview| {
+                    preflight(preview)?;
+                    publication = preview.publication.cloned();
+                    Ok(())
+                },
+            )?;
+            Ok(crate::PublicationOperationReceipt {
+                publication,
+                operation,
+            })
+        })
+    }
+    fn renew_selected_evidence<'a>(
+        &'a self,
+        context: crate::ReleaseMutationContext,
+        selector: &'a crate::PublicationRef,
+        package: &'a latent_core::PackageDigest,
+        evidence: crate::ReleaseEvidenceUpload,
+        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<crate::PublicationOperationReceipt, PlatformError>> {
+        Box::pin(async move {
+            let mut publication = None;
+            let operation = self.renew_publication_evidence(
+                context,
+                selector,
+                package,
+                evidence,
+                &mut |preview| {
+                    preflight(preview)?;
+                    publication = preview.publication.cloned();
+                    Ok(())
+                },
+            )?;
+            Ok(crate::PublicationOperationReceipt {
+                publication,
+                operation,
+            })
+        })
+    }
     fn retained_package_source<'a>(
         &'a self,
         tenant: &'a latent_core::TenantId,
@@ -660,42 +820,6 @@ impl ArtifactRepository for DirectoryArtifactRepository {
                      + Send),
     ) -> BoxFuture<'a, Result<crate::ManagedPublicationReceipt, PlatformError>> {
         Box::pin(async move { self.managed_publish(context, upload, preflight) })
-    }
-    fn get_release_lifecycle<'a>(
-        &'a self,
-        scope: &'a crate::LifecycleScope,
-        release: &'a ReleaseDigest,
-    ) -> BoxFuture<'a, Result<Option<crate::ReleaseLifecycleStatus>, PlatformError>> {
-        Box::pin(async move { self.lifecycle_status(scope, release) })
-    }
-    fn get_release_operation<'a>(
-        &'a self,
-        scope: &'a crate::LifecycleScope,
-        operation_id: &'a str,
-    ) -> BoxFuture<'a, Result<crate::ReleaseOperationLookup, PlatformError>> {
-        Box::pin(async move { self.life_store().operation(scope, operation_id) })
-    }
-    fn change_release_lifecycle<'a>(
-        &'a self,
-        context: crate::ReleaseMutationContext,
-        release: &'a ReleaseDigest,
-        action: crate::ReleaseLifecycleAction,
-        reason: crate::ReleaseLifecycleReason,
-        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
-                     + Send),
-    ) -> BoxFuture<'a, Result<crate::ReleaseOperationReceipt, PlatformError>> {
-        Box::pin(async move { self.change_lifecycle(context, release, action, reason, preflight) })
-    }
-    fn renew_release_evidence<'a>(
-        &'a self,
-        context: crate::ReleaseMutationContext,
-        release: &'a ReleaseDigest,
-        package: &'a latent_core::PackageDigest,
-        evidence: crate::ReleaseEvidenceUpload,
-        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
-                     + Send),
-    ) -> BoxFuture<'a, Result<crate::ReleaseOperationReceipt, PlatformError>> {
-        Box::pin(async move { self.renew_evidence(context, release, package, evidence, preflight) })
     }
     fn release_eligibility(
         &self,
@@ -742,12 +866,9 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         Box::pin(async move {
             let index = self.index.read().map_err(lock_error)?;
             let descriptor = if let Some(digest) = &query.release_digest {
-                index.by_digest.get(digest)
+                index.legacy_component(None, digest)?
             } else if let Some(reference) = &query.reference {
-                index
-                    .by_reference
-                    .get(reference)
-                    .and_then(|digest| index.by_digest.get(digest))
+                index.legacy_reference(None, reference)?
             } else {
                 None
             };
@@ -790,8 +911,8 @@ impl ArtifactRepository for DirectoryArtifactRepository {
                 .index
                 .read()
                 .map_err(lock_error)?
-                .by_digest
-                .contains_key(digest)
+                .legacy_component(None, digest)?
+                .is_some()
             {
                 return Err(error(
                     PlatformErrorCode::NotFound,
@@ -831,11 +952,16 @@ impl ArtifactRepository for DirectoryArtifactRepository {
             let mut entries = Vec::new();
             let mut response_bytes = 0_usize;
             let mut has_more = false;
-            for descriptor in index
-                .by_digest
+            for (component, rows) in index
+                .component_rows()
                 .range((after.map_or(Unbounded, Excluded), Unbounded))
-                .map(|(_, descriptor)| descriptor)
             {
+                if rows.is_empty() {
+                    continue;
+                }
+                let descriptor = index
+                    .legacy_component(None, component)?
+                    .expect("indexed component");
                 if entries.len() >= entry_limit {
                     has_more = true;
                     break;
@@ -862,7 +988,13 @@ impl ArtifactRepository for DirectoryArtifactRepository {
 }
 
 fn validate_config(config: DirectoryArtifactRepositoryConfig) -> Result<(), PlatformError> {
-    if config.max_index_entries == 0
+    if config.max_storage_bytes == 0
+        || config.max_content_index_bytes == 0
+        || config.max_content_blobs == 0
+        || config.max_content_blobs > 1_000_000
+        || config.max_publication_files == 0
+        || config.max_publication_files > 1024
+        || config.max_index_entries == 0
         || config.max_index_bytes == 0
         || config.max_page_size == 0
         || config.max_page_bytes == 0

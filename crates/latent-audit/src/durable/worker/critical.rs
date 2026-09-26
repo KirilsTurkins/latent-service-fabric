@@ -11,6 +11,16 @@ pub struct AuditAttempt {
     pending: Option<Arc<Pending>>,
 }
 impl AuditHandle {
+    /// Reserve on an existing bounded control worker, outside runtime fences.
+    /// This entrypoint may synchronize with the audit worker's memory state.
+    pub fn reserve_control_critical(
+        &self,
+        attempt: &AuditOperationAttempt,
+    ) -> Result<AuditCriticalReservation> {
+        codec::attempt(attempt)?;
+        self.reserve_critical_locked(attempt, self.shared.control_lock()?)
+    }
+
     /// Reject-only shape and complete-envelope size validation. Does not reserve
     /// journal capacity or authorize a control mutation.
     pub fn preflight_conclusion(
@@ -20,6 +30,7 @@ impl AuditHandle {
     ) -> Result<()> {
         codec::attempt(attempt)?;
         codec::conclusion(conclusion)?;
+        codec::capability_pair(attempt, conclusion)?;
         let conclusion = codec::normalize(conclusion, self.shared.limits.maximum_record_bytes)?;
         codec::envelope(
             &attempt.scope,
@@ -36,7 +47,14 @@ impl AuditHandle {
         attempt: &AuditOperationAttempt,
     ) -> Result<AuditCriticalReservation> {
         codec::attempt(attempt)?;
-        let mut s = self.shared.lock()?;
+        self.reserve_critical_locked(attempt, self.shared.lock()?)
+    }
+
+    fn reserve_critical_locked(
+        &self,
+        attempt: &AuditOperationAttempt,
+        mut s: std::sync::MutexGuard<'_, super::State>,
+    ) -> Result<AuditCriticalReservation> {
         self.shared.queue_room(&s, 16384)?;
         if s.pending.is_some() {
             return Err(error(
@@ -77,7 +95,7 @@ impl AuditHandle {
     ) -> Result<AuditAppendTicket> {
         codec::conclusion(&conclusion)?;
         let p = {
-            let s = self.shared.lock()?;
+            let s = self.shared.control_lock()?;
             if s.closed || s.summary.recovery_pending {
                 return Err(unavailable());
             }
@@ -177,6 +195,7 @@ fn finish(p: Arc<Pending>, conclusion: AuditOperationConclusion) -> AuditAppendT
     let result = (|| {
         codec::conclusion(&conclusion)?;
         let shared = p.shared.upgrade().ok_or_else(closed)?;
+        codec::capability_pair(&p.attempt, &conclusion)?;
         let mut s = shared.state.lock().map_err(|_| unavailable())?;
         if s.summary.recovery_pending
             || s.finish.is_some()
@@ -217,6 +236,14 @@ fn finish(p: Arc<Pending>, conclusion: AuditOperationConclusion) -> AuditAppendT
 }
 pub(super) fn abandoned(p: &Pending) -> AuditOperationConclusion {
     let started = p.started.load(Ordering::Acquire);
+    let mut identities = p.attempt.identities.clone();
+    if let Some(context) = &mut identities.capability {
+        context.provider_outcome = Some(if started {
+            super::super::AuditProviderOutcome::Unknown
+        } else {
+            super::super::AuditProviderOutcome::NotStarted
+        });
+    }
     AuditOperationConclusion {
         canary_decision: None,
         result: if started {
@@ -230,7 +257,7 @@ pub(super) fn abandoned(p: &Pending) -> AuditOperationConclusion {
             AuditReason::NotStarted
         },
         receipt_digest: None,
-        identities: p.attempt.identities.clone(),
+        identities,
         replay: p.attempt.replay,
         occurred_at_unix_millis: store::now(),
     }

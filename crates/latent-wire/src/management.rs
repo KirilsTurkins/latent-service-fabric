@@ -3,15 +3,19 @@
 mod audit;
 mod authentication;
 mod bounds;
+mod capabilities;
 mod control_audit;
 mod deployment;
 mod errors;
 mod inspection;
 mod inventory;
 mod limits;
+mod policies;
 mod release;
+mod resource;
 mod rollouts;
 mod routes;
+mod triggers;
 
 use std::fmt;
 use std::sync::Arc;
@@ -35,8 +39,15 @@ pub use deployment::{
 pub use inventory::{node_inventory_from_proto, node_inventory_to_proto};
 pub use latent_rpc::control::v1 as proto;
 pub use limits::ManagementLimits;
-pub use release::{release_descriptor_from_proto, release_descriptor_to_proto};
+pub use policies::PolicyResponseService;
+pub use release::{
+    release_descriptor_from_proto, release_descriptor_to_proto, MAX_WEB_MUTATION_WAIT_MILLIS,
+    MAX_WEB_PREPARATION_WAIT_MILLIS, WEB_EVIDENCE_RPC_PATH, WEB_PREPARATION_RPC_PATH,
+    WEB_PUBLICATION_RPC_PATH,
+};
+pub use resource::parse_inspection_resource;
 pub use rollouts::RolloutResponseService;
+pub use triggers::{http_trigger_from_proto, http_trigger_to_proto};
 
 /// All services share existing node-owned state. The adapter opens no listener.
 #[derive(Clone)]
@@ -56,6 +67,11 @@ pub struct ManagementServices {
 pub struct ManagementServiceAdapter {
     services: ManagementServices,
     limits: ManagementLimits,
+    policies: Option<latent_policy::capability::PolicyControlHandle>,
+    capabilities: Option<capabilities::Inspection>,
+    http: Option<Arc<latent_control_store::DirectoryDeploymentRepository>>,
+    web: Option<Arc<latent_artifacts::DirectoryArtifactRepository>>,
+    web_backend: Option<Arc<dyn latent_executor::ExecutionBackend>>,
 }
 
 impl ManagementServiceAdapter {
@@ -77,7 +93,51 @@ impl ManagementServiceAdapter {
                 details: Vec::new(),
             });
         }
-        Ok(Self { services, limits })
+        Ok(Self {
+            services,
+            limits,
+            policies: None,
+            capabilities: None,
+            http: None,
+            web: None,
+            web_backend: None,
+        })
+    }
+
+    /// Attach the single policy owner checked by node/catalog composition.
+    pub fn with_policy_control(
+        mut self,
+        policies: latent_policy::capability::PolicyControlHandle,
+    ) -> Result<Self, PlatformError> {
+        if self.policies.is_some() {
+            return Err(latent_core::PlatformError {
+                code: latent_core::PlatformErrorCode::InvalidArgument,
+                message: "capability-policy-owner-already-configured".into(),
+                retryable: false,
+                details: Vec::new(),
+            });
+        }
+        self.policies = Some(policies);
+        Ok(self)
+    }
+
+    #[must_use]
+    pub fn policy_server(
+        self,
+    ) -> PolicyResponseService<proto::policy_service_server::PolicyServiceServer<Self>> {
+        let input = self
+            .limits
+            .max_request_bytes
+            .min(policies::MAX_REQUEST_BYTES);
+        let output = self
+            .limits
+            .max_response_bytes
+            .min(policies::MAX_RESPONSE_BYTES);
+        PolicyResponseService::new(
+            proto::policy_service_server::PolicyServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
     }
 
     #[must_use]

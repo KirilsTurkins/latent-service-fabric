@@ -60,6 +60,7 @@ impl WasmtimeBackend {
 
     pub(super) fn key_for_release(&self, release: &ReleaseDigest) -> PreparationKey {
         PreparationKey {
+            publication: None,
             release: release.clone(),
             engine_version: self.profile.wasmtime_version.clone(),
             engine_configuration_digest: self.profile.configuration["configuration-digest"].clone(),
@@ -118,11 +119,10 @@ impl WasmtimeBackend {
             Err(error) => return ExecutionReport::reusable(Err(error)),
         };
         let activation_id = request.activation.activation_id.clone();
-        let outcome = self
+        let report = self
             .invoke_inner(request, cancellation, Some(ownership))
             .await;
         let proof_started = Instant::now();
-        let report = ExecutionReport::reusable(outcome);
         self.lock_timings()
             .update_reusable_proof(&activation_id.0, elapsed_micros(proof_started));
         report

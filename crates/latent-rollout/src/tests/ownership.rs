@@ -3,6 +3,8 @@ use latent_control_store::rollouts::{RolloutId, RolloutOperationLookup};
 use latent_core::{PlatformErrorCode, TenantId};
 use std::sync::mpsc;
 
+mod completion;
+
 #[test]
 fn mutation_preflight_precedes_audit_and_catalog_effects() {
     runtime().block_on(async {
@@ -205,8 +207,8 @@ fn response_slots_bound_reads_and_owned_input_capacity_rejects_before_admission(
                 .code,
             PlatformErrorCode::InvalidArgument
         );
-        assert_eq!(fixture.handle.snapshot().retained_request_bytes, 0);
         fixture.shutdown().await;
+        assert_eq!(fixture.handle.snapshot().retained_request_bytes, 0);
     });
 }
 

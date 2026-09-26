@@ -75,6 +75,7 @@ mod tests {
     fn descriptor() -> PreparedComponent {
         PreparedComponent {
             key: PreparationKey {
+                publication: None,
                 release: ReleaseDigest("release".to_owned()),
                 engine_version: "test".to_owned(),
                 engine_configuration_digest: "test".to_owned(),

@@ -112,14 +112,12 @@ pub(super) fn receipt(
 pub(super) fn transition(
     state: &State,
     receipt: &ReleaseOperationReceipt,
+    publication: Option<&PublicationId>,
     new_identity: Option<&LifecycleIdentity>,
     enforced: bool,
     limits: LifecycleLimits,
 ) -> Result<(), PlatformError> {
-    let old = receipt
-        .component_digest
-        .as_ref()
-        .and_then(|release| state.entries.get(release));
+    let old = publication.and_then(|release| state.entries.get(release));
     if old.is_some_and(|entry| entry.stored.record.scope != receipt.scope) {
         return Err(invalid());
     }
@@ -159,6 +157,9 @@ pub(super) fn transition(
         .or_else(|| old.map(|entry| &entry.stored.identity))
         .ok_or_else(invalid)?;
     self::identity(identity, enforced)?;
+    if publication != Some(&identity.publication()?.id) {
+        return Err(invalid());
+    }
     if identity.scope != row.scope
         || identity.release != row.release
         || identity.package != row.package
@@ -258,7 +259,7 @@ fn quota(
             record: row.clone(),
         };
         let size = encode(&stored, limits.max_record_bytes)?.len();
-        if let Some(old) = state.entries.get(&row.release) {
+        if let Some(old) = state.entries.get(&stored.identity.publication()?.id) {
             bytes = bytes.checked_sub(old.bytes).ok_or_else(corrupt)?;
         } else {
             count = count.checked_add(1).ok_or_else(exhausted)?;
@@ -281,7 +282,7 @@ pub(super) fn retention(
     // rows in retained metadata, rather than counting only JSON on disk.
     let retained = bytes
         .checked_mul(3)
-        .and_then(|value| value.checked_add(count.checked_mul(1024)?))
+        .and_then(|value| value.checked_add(count.checked_mul(4096)?))
         .and_then(|value| value.checked_add(fixed))
         .ok_or_else(exhausted)?;
     if count > limits.max_records || retained > limits.max_total_metadata_bytes {

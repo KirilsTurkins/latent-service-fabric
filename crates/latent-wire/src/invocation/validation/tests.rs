@@ -43,6 +43,36 @@ fn request() -> proto::InvokeRequest {
     }
 }
 
+#[test]
+fn phase3_requires_endpoint_selection_and_preserves_zero_and_future_phase_denials() {
+    let policy = CountingPolicy(AtomicUsize::new(0));
+    let mut call = request();
+    call.budget.as_mut().unwrap().child_calls = 2;
+    let mut limits = InvocationLimits {
+        max_child_calls: 2,
+        ..InvocationLimits::default()
+    };
+    assert_eq!(
+        validate(call.clone(), &limits, &policy).unwrap_err().code(),
+        Code::InvalidArgument
+    );
+    limits.budget_profile = latent_core::BudgetProfile::Phase3;
+    validate(call.clone(), &limits, &policy).unwrap();
+    call.budget.as_mut().unwrap().outbound_requests = 1;
+    assert_eq!(
+        validate(call.clone(), &limits, &policy).unwrap_err().code(),
+        Code::ResourceExhausted
+    );
+    limits.max_outbound_requests = 1;
+    validate(call.clone(), &limits, &policy).unwrap();
+    limits.max_state_read_bytes = 1;
+    call.budget.as_mut().unwrap().state_read_bytes = 1;
+    assert_eq!(
+        validate(call, &limits, &policy).unwrap_err().code(),
+        Code::InvalidArgument
+    );
+}
+
 fn validate(
     request: proto::InvokeRequest,
     limits: &InvocationLimits,

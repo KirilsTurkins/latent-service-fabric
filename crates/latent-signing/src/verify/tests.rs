@@ -68,4 +68,19 @@ fn contended_owner_rejects_without_queuing_and_preserves_observed_time() {
         SignatureFailure::ClockRegression
     );
     verifier.replace_trust(&expected, deny_all(2), 20).unwrap();
+    for reason in [
+        SignatureFailure::ClockRegression,
+        SignatureFailure::TrustConflict,
+        SignatureFailure::StaleProof,
+    ] {
+        let failure: latent_core::PlatformError = crate::SignatureError::from(reason).into();
+        assert_eq!(failure.code, latent_core::PlatformErrorCode::StateConflict);
+        assert_eq!(failure.details.len(), 1);
+        assert_eq!(failure.details[0].kind, "admission.currentness");
+        assert_eq!(failure.details[0].fields.len(), 1);
+        assert_eq!(failure.details[0].fields["reason"], reason.code());
+    }
+    let failure: latent_core::PlatformError =
+        crate::SignatureError::from(SignatureFailure::Internal).into();
+    assert!(failure.details.is_empty());
 }

@@ -1,0 +1,61 @@
+{
+  "name": "callee",
+  "package": "tests:local@1.0.0",
+  "contract": "tests:local/api@1.0.0",
+  "world": "tests:local/service@1.0.0",
+  "capability": null,
+  "witDirectory": null,
+  "asynchronous": false,
+  "functions": [
+    {
+      "id": "answer",
+      "name": "answer",
+      "asynchronous": false,
+      "parameters": [],
+      "results": [
+        {
+          "name": "result",
+          "value_type": "U32",
+          "documentation": null
+        }
+      ],
+      "documentation": null,
+      "attributes": {}
+    },
+    {
+      "id": "fail",
+      "name": "fail",
+      "asynchronous": false,
+      "parameters": [],
+      "results": [
+        {
+          "name": "result",
+          "value_type": {
+            "Result": {
+              "ok": "U32",
+              "error": "String"
+            }
+          },
+          "documentation": null
+        }
+      ],
+      "documentation": null,
+      "attributes": {}
+    },
+    {
+      "id": "spin",
+      "name": "spin",
+      "asynchronous": false,
+      "parameters": [],
+      "results": [
+        {
+          "name": "result",
+          "value_type": "U32",
+          "documentation": null
+        }
+      ],
+      "documentation": null,
+      "attributes": {}
+    }
+  ]
+}

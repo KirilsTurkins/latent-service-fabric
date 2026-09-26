@@ -195,6 +195,7 @@ def main():
             "fixture-metadata")
     require(int(metadata["expiresAtUnixSeconds"]) > time.time() + 300, "fixture-expiring")
     stage = "acquire"
+    client = build = collectors = policy_digest = metadata_digest = None
     try:
         with owned_cancellation() as cancellation:
             deadline = time.monotonic() + 300
@@ -233,6 +234,19 @@ def main():
             cancellation.check()
         print(bounded_receipt(result))
     except BaseException as error:
+        # All existing owner/context cleanup has already unwound. This is a
+        # failed observation, not a clean-node or successful-cleanup assertion;
+        # identities below were captured before execution, not rechecked here.
+        try:
+            failure = {"schemaVersion": "latent.operator.workflow-test.v1", "passed": False,
+                       "stage": stage, "failedCall": client.failed_call if client is not None else None,
+                       "build": build, "collectorDigests": collectors,
+                       "policyFileDigest": policy_digest, "fixtureMetadataDigest": metadata_digest,
+                       "identityRechecked": False, "nodeShutdown": "unverified"}
+            print(bounded_receipt(failure))
+        except Exception:
+            # A broken receipt sink must not replace the original failure.
+            pass
         if isinstance(error, (KeyboardInterrupt, SystemExit)):
             raise
         # Never include argv, server output, tokens or source exception text.

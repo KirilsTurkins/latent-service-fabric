@@ -191,6 +191,7 @@ impl Fixture {
             pool.clone(),
             backend.clone(),
             prepared(PreparationKey {
+                publication: None,
                 release: digest,
                 engine_version: "test".to_owned(),
                 engine_configuration_digest: "test".to_owned(),

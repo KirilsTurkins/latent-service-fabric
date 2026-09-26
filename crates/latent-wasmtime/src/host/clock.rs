@@ -3,31 +3,101 @@
 use std::time::Instant;
 
 use latent_core::ActivationClock;
+use wasmtime::component::Linker;
 
 use super::HostState;
 use crate::bindings::latent::clock::{monotonic, wall};
 
+/// Clock-provider charges share the activation ledger with guest instructions.
+/// Checkpoint before dispatch and synchronize the native counter afterwards,
+/// including a failed dispatch, so the guest cannot spend host-charged fuel.
+pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
+    linker
+        .instance("latent:clock/monotonic@0.1.0")?
+        .func_wrap_async("now-nanos", |mut store, (): ()| {
+            Box::new(async move {
+                super::service::checkpoint(&mut store)?;
+                let result = monotonic::Host::now_nanos(store.data_mut()).await;
+                super::service::synchronize(&mut store)?;
+                result.map(|value| (value,))
+            })
+        })?;
+    linker.instance("latent:clock/wall@0.1.0")?.func_wrap_async(
+        "now-unix-millis",
+        |mut store, (): ()| {
+            Box::new(async move {
+                super::service::checkpoint(&mut store)?;
+                let result = wall::Host::now_unix_millis(store.data_mut()).await;
+                super::service::synchronize(&mut store)?;
+                result.map(|value| (value,))
+            })
+        },
+    )
+}
+
 impl monotonic::Host for HostState {
-    async fn now_nanos(&mut self) -> u64 {
+    async fn now_nanos(&mut self) -> wasmtime::Result<u64> {
         let started = Instant::now();
-        let value = monotonic_nanos(
-            self.clock.as_ref(),
-            self.clock_origin,
-            &mut self.last_monotonic_nanos,
-        );
+        let mut call = self
+            .capabilities
+            .clock(
+                latent_capabilities::broker::HostClock::Monotonic,
+                self.currentness_read_wait.as_deref(),
+            )
+            .await?;
+        let value = self.guest_monotonic_nanos();
+        if let Some(call) = &mut call {
+            let _ = call.record_provider_outcome(
+                latent_capabilities::broker::AuditProviderOutcome::HostCompleted,
+            );
+        }
         self.record_host_call(started);
-        value
+        Ok(value)
     }
 }
 
 impl wall::Host for HostState {
-    async fn now_unix_millis(&mut self) -> u64 {
+    async fn now_unix_millis(&mut self) -> wasmtime::Result<u64> {
         let started = Instant::now();
+        let mut call = self
+            .capabilities
+            .clock(
+                latent_capabilities::broker::HostClock::Wall,
+                self.currentness_read_wait.as_deref(),
+            )
+            .await?;
         // Wall-clock adjustments are observable; elapsed time and deadlines
         // remain based on the separate monotonic process clock.
-        let value = self.clock.sample().unix_millis();
+        let value = self.guest_wall_millis();
+        if let Some(call) = &mut call {
+            let _ = call.record_provider_outcome(
+                latent_capabilities::broker::AuditProviderOutcome::HostCompleted,
+            );
+        }
         self.record_host_call(started);
-        value
+        Ok(value)
+    }
+}
+
+impl HostState {
+    fn guest_monotonic_nanos(&mut self) -> u64 {
+        #[cfg(feature = "development-clock-fixture")]
+        if let Some(readings) = self.development_clock_readings {
+            return readings.monotonic_nanos;
+        }
+        monotonic_nanos(
+            self.clock.as_ref(),
+            self.clock_origin,
+            &mut self.last_monotonic_nanos,
+        )
+    }
+
+    fn guest_wall_millis(&self) -> u64 {
+        #[cfg(feature = "development-clock-fixture")]
+        if let Some(readings) = self.development_clock_readings {
+            return readings.wall_unix_millis;
+        }
+        self.clock.sample().unix_millis()
     }
 }
 

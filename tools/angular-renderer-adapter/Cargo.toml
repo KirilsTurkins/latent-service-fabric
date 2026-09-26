@@ -1,0 +1,36 @@
+[package]
+name = "latent-angular-renderer-adapter"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Fixed public async adapter for the closed Angular component profile."
+publish = false
+
+[features]
+backend-http = []
+
+[lib]
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[lints.rust]
+# The generated canonical ABI export needs unsafe code in one isolated module.
+# Handwritten adapter code remains denied, including on the guest target.
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+base64.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+wit-bindgen.workspace = true

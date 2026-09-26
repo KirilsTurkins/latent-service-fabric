@@ -14,6 +14,58 @@ from tools import ci_profile as profile
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_website_sources_use_only_the_site_and_documentation_jobs(self) -> None:
+        for path in ("website/package-lock.json", "website/docusaurus.config.ts", "website/src/pages/index.tsx",
+                     "website/plugins/examples/remark.mjs", "website/src/css/theme.css", "website/content/coverage.json",
+                     "docs/learn/first.mdx", "adr/design.mdx", "docs/assets/lsf-palette.json"):
+            with self.subTest(path=path):
+                result = profile.classify_paths(["README.md", path])
+                self.assertEqual(result.profile, "website")
+                self.assertFalse(result.renderer)
+        for path in ("website/../Cargo.toml", "website//config.json", "website/new.py",
+                     "website/build/index.js", "website/.generated/evidence.json", "website/.docusaurus/data.json",
+                     "website/node_modules/package/index.js", "tools/ci_result.py", "sdk/go/client.go",
+                     "examples/website-ui/specimen.rs", "benchmarks/receipt.json", "wit/platform/web/world.wit"):
+            with self.subTest(path=path):
+                self.assertEqual(profile.classify_paths(["website/src/pages/index.tsx", path]).profile, "full")
+
+    def test_renderer_proof_follows_its_inputs_and_defaults_to_running(self) -> None:
+        for path in ["Cargo.lock", "Cargo.toml", "tools/renderer-profile/src/main.rs",
+                     "examples/renderer-profile/package-lock.json",
+                     "crates/latent-wasmtime/src/backend.rs", ".github/workflows/ci.yml",
+                     "wit/platform/web/package.wit", "tools/ci_profile.py"]:
+            with self.subTest(path=path):
+                self.assertTrue(profile.classify_paths(["README.md", path]).renderer)
+        for path in ["tools/angular-renderer-adapter/src/lib.rs", "tools/build_angular_renderer.py",
+                     "tools/angular_build/guard.mjs", "tools/build_angular_package.py",
+                     "tools/run_angular_build_tests.py", "tools/check_angular_hydration.mjs",
+                     "examples/angular-application/server/main.ts", "tools/build_inventory_units.py",
+                     "crates/latent-signing/src/web_provenance/angular.rs", "crates/latent-policy/src/supply_chain.rs",
+                     "apps/latent/src/package.rs", "schemas/angular-build.schema.json",
+                     "schemas/web-build-observation.schema.json", "schemas/builder-policy.schema.json",
+                     "tools/tests/test_build_angular_package.py", "tools/tests/test_angular_build_runner.py",
+                     "tools/run_angular_renderer_tests.py", "apps/latentd/src/config/renderer.rs",
+                     "crates/latent-packaging/src/semantics/web.rs", "crates/latent-manifest/src/renderer.rs",
+                     "crates/latent-node/src/lib.rs", "crates/latent-ingress/src/http.rs",
+                     "tools/run_angular_t1_workflow.py", "tools/phase3_web_qualification.py",
+                     "tools/run_phase3_resource_acceptance.py", "tools/phase3_resource_web.py",
+                     "tools/tests/test_phase3_resource_web.py",
+                     "tools/tests/test_angular_t1_workflow.py", "tools/ci_rust_artifacts.py",
+                     "apps/latent/src/args/web.rs", "apps/latent/src/management/web/execute.rs",
+                     "api/proto/latent/control/v1/release.proto",
+                     "crates/latent-wire/src/management/release/web.rs"]:
+            with self.subTest(path=path):
+                self.assertTrue(profile.classify_paths([path]).renderer)
+        for path in ["examples/browser-boundary/shared/hydration.ts", "tools/browser-boundary/build.mjs",
+                     "tools/browser-boundary/browser.mjs", "tools/tests/browser_hydration.test.mjs"]:
+            with self.subTest(path=path):
+                self.assertTrue(profile.classify_paths([path]).renderer)
+        self.assertFalse(profile.classify_paths(["README.md"]).renderer)
+        self.assertTrue(profile.classify_paths(["sdk/go/client.go"]).renderer)
+        self.assertTrue(profile.classify_paths([]).renderer)
+        self.assertTrue(profile.classify_event("workflow_dispatch", {}, Path.cwd()).renderer)
+        self.assertTrue(profile.classify_event("push", {}, Path.cwd()).renderer)
+
     def test_only_known_documentation_is_allowlisted(self) -> None:
         allowed = [
             "README.md", "ARCHITECTURE.md", "CONTRIBUTING.md", "VALIDATION.md", "docs/roadmap.md",
@@ -21,6 +73,8 @@ class ClassificationTests(unittest.TestCase):
             "adr/0021-decision.md", "research/future/plan.md", "rfcs/next.md",
             "crates/latent-core/README.md", "sdk/python-client/README.md",
             "examples/package-inputs/README.md", "schemas/README.md",
+            ".github/ISSUE_TEMPLATE/bug_report.yml", ".github/ISSUE_TEMPLATE/architecture.yml",
+            ".github/ISSUE_TEMPLATE/config.yml",
         ]
         self.assertEqual(profile.classify_paths(allowed).profile, "docs")
         denied = [
@@ -30,13 +84,27 @@ class ClassificationTests(unittest.TestCase):
             "schemas/capsule.schema.json", "crates/latent-core/src/lib.rs",
             "sdk/python-client/client.py", "Cargo.lock", "Cargo.toml",
             ".github/workflows/ci.yml", "tools/ci_profile.py", "tools/toolchain.toml",
-            ".github/ISSUE_TEMPLATE/bug_report.yml", "docs/../Cargo.toml",
+            ".github/ISSUE_TEMPLATE/other.yml", "docs/../Cargo.toml",
             "/docs/roadmap.md", "docs//roadmap.md", "docs\\roadmap.md",
             "docs/line\nbreak.md", "docs/./roadmap.md",
         ]
         for name in denied:
             with self.subTest(name=name):
                 self.assertEqual(profile.classify_paths(["README.md", name]).profile, "full")
+
+    def test_issue_form_mixed_with_sensitive_inputs_remains_full(self) -> None:
+        form = ".github/ISSUE_TEMPLATE/bug_report.yml"
+        for name in (
+            ".github/workflows/ci.yml",
+            "crates/latent-core/src/lib.rs",
+            "Cargo.lock",
+            "schemas/capsule.schema.json",
+            "examples/package-format/capsule.lsf",
+            "benchmarks/phase2/receipt.json",
+            "docs/testing/phase-2-resource-profile.md",
+        ):
+            with self.subTest(name=name):
+                self.assertEqual(profile.classify_paths([form, name]).profile, "full")
 
     def test_code_after_three_hundred_documentation_paths_is_not_truncated(self) -> None:
         names = [f"docs/page-{index}.md" for index in range(400)] + ["src/last.rs"]
@@ -87,10 +155,7 @@ class ClassificationTests(unittest.TestCase):
             result = profile.classify_event("pull_request", event, Path.cwd())
         self.assertEqual((result.profile, result.reason), ("full", "history-unavailable"))
         fetches = [call.args[1:] for call in git.call_args_list if call.args[1] == "fetch"]
-        self.assertEqual(fetches, [
-            ("fetch", "--no-tags", "--filter=blob:none", "--depth=128", "origin", "a" * 40, "b" * 40),
-            ("fetch", "--no-tags", "--filter=blob:none", "--depth=512", "origin", "a" * 40, "b" * 40),
-        ])
+        self.assertEqual(fetches, [])
 
     def test_failure_never_emits_docs_or_any_accepted_output(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -113,7 +178,8 @@ class ClassificationTests(unittest.TestCase):
                     "--github-output", str(output), "--github-step-summary", str(summary)]
             with patch.dict(os.environ, {}, clear=True), contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(profile.main(args), 0)
-            self.assertEqual(output.read_text(), "profile=full\nreason=manual-dispatch\nchanged_files=0\n")
+            self.assertEqual(dict(line.split("=", 1) for line in output.read_text().splitlines()),
+                             profile.Decision("full", "manual-dispatch", 0).outputs())
             self.assertIn("manual-dispatch", summary.read_text())
 
 
@@ -188,12 +254,50 @@ class GitHistoryTests(unittest.TestCase):
         frozen = self.commit()
         self.assertEqual(self.pr(deleted, frozen).profile, "full")
 
+    def test_known_issue_form_edit_and_delete_remain_documentation_profile(self) -> None:
+        path = ".github/ISSUE_TEMPLATE/bug_report.yml"
+        self.write(path, "name: first\n")
+        base = self.commit()
+        self.write(path, "name: second\n")
+        edited = self.commit()
+        self.assertEqual((self.pr(base, edited).profile, self.pr(base, edited).changed_files), ("docs", 1))
+        (self.repo / path).unlink()
+        deleted = self.commit()
+        self.assertEqual((self.pr(edited, deleted).profile, self.pr(edited, deleted).changed_files), ("docs", 1))
+
+    def test_known_issue_form_rename_to_unknown_path_requires_full(self) -> None:
+        source = ".github/ISSUE_TEMPLATE/bug_report.yml"
+        target = ".github/ISSUE_TEMPLATE/renamed.yml"
+        self.write(source, "name: form\n")
+        base = self.commit()
+        (self.repo / source).rename(self.repo / target)
+        head = self.commit()
+        result = self.pr(base, head)
+        self.assertEqual((result.profile, result.changed_files), ("full", 2))
+
     def test_executable_markdown_mode_requires_full(self) -> None:
         self.git("update-index", "--chmod=+x", "README.md")
         self.git("commit", "--quiet", "-m", "mode fixture")
         head = self.git("rev-parse", "HEAD")
         result = self.pr(self.base, head)
         self.assertEqual((result.profile, result.reason), ("full", "non-documentation-mode"))
+
+    def test_site_renames_deletions_and_modes_keep_the_complete_inventory(self) -> None:
+        self.write("website/src/page.tsx", "export default 1;\n")
+        first = self.commit()
+        self.assertEqual(self.pr(self.base, first).profile, "website")
+        (self.repo / "website/src/page.tsx").rename(self.repo / "website/src/page.mjs")
+        renamed = self.commit()
+        self.assertEqual(self.pr(first, renamed).changed_files, 2)
+        self.assertEqual(self.pr(first, renamed).profile, "website")
+        self.git("update-index", "--chmod=+x", "website/src/page.mjs")
+        self.git("commit", "--quiet", "-m", "site mode")
+        changed_mode = self.git("rev-parse", "HEAD")
+        self.assertEqual(self.pr(renamed, changed_mode).profile, "full")
+        (self.repo / "website/src/page.mjs").unlink()
+        deleted = self.commit()
+        self.assertEqual(self.pr(changed_mode, deleted).profile, "full")
+
 
     def test_real_diff_collects_more_than_three_hundred_files(self) -> None:
         for index in range(305):
@@ -203,7 +307,7 @@ class GitHistoryTests(unittest.TestCase):
         result = self.pr(self.base, head)
         self.assertEqual((result.profile, result.changed_files), ("full", 306))
 
-    def test_depth_one_checkout_fetches_exact_missing_history(self) -> None:
+    def test_depth_one_checkout_preserves_full_without_fetching(self) -> None:
         self.git("config", "uploadpack.allowFilter", "true")
         self.write("docs/first.md", "first\n")
         self.commit()
@@ -218,9 +322,9 @@ class GitHistoryTests(unittest.TestCase):
                 result = profile.classify_event("pull_request", {
                     "pull_request": {"base": {"sha": self.base}, "head": {"sha": head}},
                 }, checkout)
-            self.assertEqual((result.profile, result.changed_files), ("docs", 2))
+            self.assertEqual((result.profile, result.reason), ("full", "history-unavailable"))
             fetches = [call for call in git.call_args_list if call.args[1] == "fetch"]
-            self.assertEqual(len(fetches), 1)
+            self.assertEqual(fetches, [])
 
 
 if __name__ == "__main__":

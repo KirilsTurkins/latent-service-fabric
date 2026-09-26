@@ -1,15 +1,19 @@
 //! Fixed node-owned composition for the standalone stateless runtime.
 
 mod audit;
+pub mod http;
 mod load;
 #[cfg(all(test, target_os = "linux"))]
 mod measurements;
 mod observations;
 #[cfg(all(test, target_os = "linux"))]
 mod parity;
+mod policies;
+mod providers;
 mod rollouts;
 mod shutdown;
 mod start;
+mod telemetry;
 pub mod transport;
 
 use std::net::SocketAddr;
@@ -29,6 +33,8 @@ use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory};
 use latent_wire::invocation::{ActivationCleanupOwner, ActivationCleanupSnapshot};
 
 pub use audit::AuditShutdownReport;
+pub use policies::PolicyShutdownReport;
+pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
 
@@ -42,9 +48,13 @@ pub struct RuntimeThreads {
 /// Retain this owner until explicit shutdown has joined its services and helpers.
 pub struct StandaloneNode {
     supply_chain: SupplyChainLifetime,
+    capabilities: CapabilityLifetime,
     transport: Option<transport::Transport>,
+    http: Option<http::HttpOwner>,
     audit: Option<audit::AuditRuntime>,
     rollouts: Option<rollouts::RolloutRuntime>,
+    policies: Option<policies::PolicyRuntime>,
+    providers: Option<Box<providers::ProviderRuntime>>,
     cleanup: Option<ActivationCleanupOwner>,
     sampler: Option<load::LoadSampler>,
     telemetry_runtime: Option<TelemetryRuntime>,
@@ -64,6 +74,20 @@ pub struct StandaloneNode {
     cleanup_grace: Duration,
 }
 
+struct CapabilityLifetime(Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>);
+impl CapabilityLifetime {
+    fn retire(&self) {
+        if let Some(owner) = &self.0 {
+            owner.retire();
+        }
+    }
+}
+impl Drop for CapabilityLifetime {
+    fn drop(&mut self) {
+        self.retire();
+    }
+}
+
 struct SupplyChainLifetime(Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>);
 impl SupplyChainLifetime {
     fn retire(&self) {
@@ -79,6 +103,23 @@ impl Drop for SupplyChainLifetime {
 }
 
 impl StandaloneNode {
+    #[must_use]
+    pub fn configured_providers(&self) -> &[ProviderDescriptor] {
+        self.providers
+            .as_deref()
+            .map_or(&[], providers::ProviderRuntime::descriptors)
+    }
+
+    #[must_use]
+    pub fn http_endpoint(&self) -> Option<SocketAddr> {
+        self.http.as_ref().map(http::HttpOwner::local_addr)
+    }
+
+    #[must_use]
+    pub fn http_snapshot(&self) -> Option<http::HttpSnapshot> {
+        self.http.as_ref().map(|owner| owner.handle().snapshot())
+    }
+
     /// Actual bounded continuation ownership; absence is retained for older
     /// compositions used as comparison controls.
     #[must_use]
@@ -103,6 +144,7 @@ impl StandaloneNode {
         self.transport
             .as_ref()
             .is_some_and(|transport| !transport.is_finished())
+            && self.http.as_ref().is_none_or(|http| !http.is_finished())
     }
 }
 

@@ -28,8 +28,8 @@ fn catalog(
     .unwrap()
 }
 
-fn assert_legacy_bytes(catalog: &CompiledCatalog) -> Vec<u8> {
-    let legacy = legacy::encode(catalog, Limits::default()).unwrap();
+fn assert_oracle_bytes(catalog: &CompiledCatalog) -> Vec<u8> {
+    let legacy = oracle::encode(catalog, Limits::default()).unwrap();
     let actual = encode_bytes(
         catalog,
         Limits::default().max_state_bytes,
@@ -51,7 +51,7 @@ fn streamed_encoding_matches_original_for_empty_escaped_and_large_number_states(
     let releases = Releases::default();
     let one = releases.add("serializer-one");
     let two = releases.add("serializer-two");
-    assert_legacy_bytes(&catalog(&releases, Vec::new(), 0));
+    assert_oracle_bytes(&catalog(&releases, Vec::new(), 0));
     for generation in [1, 9, 10, u64::MAX] {
         let mut blue = deployment("blue", "alice", &one);
         blue.metadata.namespace = Some("example".into());
@@ -66,7 +66,7 @@ fn streamed_encoding_matches_original_for_empty_escaped_and_large_number_states(
         green.route_weight = 10_000;
         let bob = deployment("bob", "bob", &one);
         let state = catalog(&releases, vec![blue, green, bob], generation);
-        let bytes = assert_legacy_bytes(&state);
+        let bytes = assert_oracle_bytes(&state);
         let parsed: Record = json::from_slice(&bytes).unwrap();
         assert!(parsed.payload.deployments[0].is_object());
         for route in parsed.payload.snapshot["services"].as_array().unwrap() {
@@ -84,7 +84,7 @@ fn exact_final_document_limit_and_structural_boundaries_never_publish_partial_by
     let releases = Releases::default();
     let digest = releases.add("serializer-boundaries");
     let state = catalog(&releases, vec![deployment("blue", "alice", &digest)], 9);
-    let bytes = assert_legacy_bytes(&state);
+    let bytes = assert_oracle_bytes(&state);
     let payload_start = bytes
         .windows(b"\"payload\":".len())
         .position(|value| value == b"\"payload\":")
@@ -120,7 +120,7 @@ fn exact_final_document_limit_and_structural_boundaries_never_publish_partial_by
     assert_eq!(encoded.bytes(), bytes);
     let (state, owned_bytes) = encoded.into_parts();
     assert_eq!(
-        legacy::encode(&state, Limits::default()).unwrap(),
+        oracle::encode(&state, Limits::default()).unwrap(),
         owned_bytes
     );
 }
@@ -137,14 +137,14 @@ fn nine_to_ten_uses_current_generation_fields_without_rewriting_canonical_deploy
         ],
         9,
     );
-    let original = assert_legacy_bytes(&state);
+    let original = assert_oracle_bytes(&state);
     let old_records = state.records.iter().map(Arc::clone).collect::<Vec<_>>();
     state.generation = RouteGeneration(10);
     *state
         .versions
         .get_mut(&latent_core::DeploymentId("blue".into()))
         .unwrap() = 10;
-    let changed = assert_legacy_bytes(&state);
+    let changed = assert_oracle_bytes(&state);
     assert_eq!(changed.len(), original.len() + 3); // payload/snapshot generation plus one object stamp
     assert!(state
         .records
@@ -181,7 +181,7 @@ fn failed_sealing_releases_the_only_catalog_record_owner() {
 fn typed_checksum_sink_preserves_v1_omission_and_exact_payload_byte_bound() {
     let releases = Releases::default();
     let state = catalog(&releases, Vec::new(), 0);
-    let bytes = assert_legacy_bytes(&state);
+    let bytes = assert_oracle_bytes(&state);
     let mut record: Record = json::from_slice(&bytes).unwrap();
     for format in [1, 2] {
         record.format_version = format;

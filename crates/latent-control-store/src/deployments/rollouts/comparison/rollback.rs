@@ -1,5 +1,5 @@
 //! Reverse comparison reads historical source integrity without reviving its grant.
-use super::{bundle, descriptors, incompatible, MAX_PACKAGE};
+use super::{bundle, descriptors, incompatible, web, MAX_PACKAGE};
 use crate::rollouts::{error, Result, RolloutRelease};
 use latent_artifacts::{
     AdmissionAuthority, ArtifactRepository, HistoricalExecutionState, LifecycleAuthorityHandle,
@@ -19,9 +19,9 @@ pub(in crate::deployments::rollouts) async fn compare(
     // The snapshot's metadata and permission state have one sealed constructor.
     // A negative state is used solely for source identity, never route authority.
     let historical = repository
-        .historical_execution_snapshot(&served.component)
+        .historical_execution_snapshot_selected(&served.component, served.publication.as_ref())
         .await?;
-    let (previous, state) = historical.into_parts();
+    let previous = historical.metadata();
     if previous.verified_digest() != &served.component
         || previous
             .manifest()
@@ -32,11 +32,12 @@ pub(in crate::deployments::rollouts) async fn compare(
     {
         return Err(incompatible());
     }
-    match (&state, owner) {
+    match (historical.state(), owner) {
         (HistoricalExecutionState::Unmanaged, None) if authority.is_none() => {}
         (HistoricalExecutionState::Eligible(token), owner) => {
             if owner.is_some_and(|owner| !token.belongs_to_catalog(owner))
                 || token.release() != &served.component
+                || Some(token.publication()) != served.publication.as_ref()
                 || token.package() != served.package.as_ref()
             {
                 return Err(owner_mismatch());
@@ -48,13 +49,16 @@ pub(in crate::deployments::rollouts) async fn compare(
                 denial.check_for_catalog(owner)?;
             }
             denial.authorize_tenant(tenant)?;
-            if denial.release() != &served.component {
+            if denial.release() != &served.component
+                || Some(denial.publication()) != served.publication.as_ref()
+            {
                 return Err(owner_mismatch());
             }
         }
         _ => return Err(owner_mismatch()),
     }
-    let target_eligibility = repository.execution_eligibility(&target.component)?;
+    let target_eligibility = repository
+        .execution_eligibility_selected(&target.component, target.publication.as_ref())?;
     match (target_eligibility.as_ref(), owner) {
         (Some(token), owner) => {
             if let Some(owner) = owner {
@@ -65,18 +69,48 @@ pub(in crate::deployments::rollouts) async fn compare(
             }
             token.check_current()?;
             token.authorize_tenant(tenant)?;
-            if token.release() != &target.component || token.package() != target.package.as_ref() {
+            if token.release() != &target.component
+                || token.package() != target.package.as_ref()
+                || Some(token.publication()) != target.publication.as_ref()
+            {
                 return Err(owner_mismatch());
             }
         }
         (None, None) if authority.is_none() => {}
         _ => return Err(owner_mismatch()),
     }
+    match (
+        historical.web_layout(),
+        target_eligibility
+            .as_ref()
+            .and_then(|token| token.web_projection()),
+    ) {
+        (Some(previous), Some(next)) => {
+            if Some(previous.package()) != served.package.as_ref()
+                || Some(next.layout().package()) != target.package.as_ref()
+            {
+                return Err(incompatible());
+            }
+            return web::compare(previous, next.layout());
+        }
+        (None, None) => {}
+        _ => return Err(incompatible()),
+    }
     let old_source = repository
-        .retained_package_source(tenant, &served.component, MAX_PACKAGE)
+        .retained_package_source_selected(
+            tenant,
+            &served.component,
+            served.publication.as_ref(),
+            MAX_PACKAGE,
+        )
         .await?;
     let new_source = repository
-        .retained_package_source(tenant, &target.component, MAX_PACKAGE)
+        .retained_package_source_selected(
+            tenant,
+            &target.component,
+            target.publication.as_ref(),
+            MAX_PACKAGE,
+        )
         .await?;
     if old_source
         .as_ref()
@@ -101,7 +135,7 @@ pub(in crate::deployments::rollouts) async fn compare(
         }
         (None, None) => {
             let next = repository
-                .fetch_verified_metadata(&target.component)
+                .fetch_verified_metadata_selected(&target.component, target.publication.as_ref())
                 .await?;
             if next
                 .manifest()
@@ -112,7 +146,7 @@ pub(in crate::deployments::rollouts) async fn compare(
             {
                 return Err(incompatible());
             }
-            descriptors(&previous, &next, &served.component, &target.component)?;
+            descriptors(previous, &next, &served.component, &target.component)?;
         }
         _ => return Err(incompatible()),
     }
