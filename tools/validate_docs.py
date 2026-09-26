@@ -26,7 +26,7 @@ FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 DEFINITION = re.compile(r"^ {0,3}\[([^]\n]+)\]:\s*(.*)$")
 APPLICATION_GUIDES = frozenset({"docs/start/application-development.md",
     "docs/start/development-workspace.md", "docs/component-development/creating-a-capsule.md",
-    "docs/learn/deliver-and-recover-a-capsule.md", "docs/how-to/developer-commands.md",
+    "docs/learn/deliver-and-recover-a-capsule.md", "docs/learn/use-capabilities.md", "docs/how-to/developer-commands.md",
     "docs/component-development/portable-tests.md", "docs/start/developer-setup.md"})
 
 
