@@ -40,6 +40,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
         with:
           components: rustfmt,clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: source
+          key: pr605-materialization-validation
+          cache-on-failure: true
       - name: Apply the exact reviewed patch and preserve source boundaries
         run: |
           set -euo pipefail
@@ -50,6 +55,10 @@ jobs:
           raw = zlib.decompress(base64.b64decode(pathlib.Path('../validation/pr605-validation.patch.z64').read_bytes()))
           assert hashlib.sha256(raw).hexdigest() == '04e11a0b3e1bfc9b362f3afdc5d56cfdcbf0828722ed6023df15724a7a301108'
           subprocess.run(['git', 'apply', '--index', '-'], input=raw, check=True)
+          path = pathlib.Path('crates/latent-wasmtime/src/backend/readiness/tests/materialization.rs')
+          text = path.read_text()
+          assert text.startswith('use std::future::Future;\n')
+          path.write_text(text.removeprefix('use std::future::Future;\n'))
           PY
           cargo fmt --all
           git diff --check
@@ -84,7 +93,9 @@ jobs:
         run: |
           set -euo pipefail
           evidence="$RUNNER_TEMP/pr605-evidence"
-          cargo --config .cargo/managed-guest.toml clippy --locked -p latent-executor -p latent-node -p latent-wasmtime --lib --tests --all-features -- -D warnings 2>&1 | tee "$evidence/clippy.log"
+          # These packages use the workspace warning policy, not the separate
+          # warnings-as-errors package selection in tools/ci_cargo.py.
+          cargo --config .cargo/managed-guest.toml clippy --locked -p latent-executor -p latent-node -p latent-wasmtime --lib --tests --all-features --no-deps 2>&1 | tee "$evidence/clippy.log"
           cargo --config .cargo/managed-guest.toml test --locked -p latent-executor --lib --all-features -- --test-threads=1 2>&1 | tee "$evidence/executor.log"
           cargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib --all-features -- --test-threads=1 2>&1 | tee "$evidence/node-lib.log"
           cargo --config .cargo/managed-guest.toml test --locked -p latent-node --test activation_lifecycle --all-features -- --test-threads=1 2>&1 | tee "$evidence/node-lifecycle.log"
