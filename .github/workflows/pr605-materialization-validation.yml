@@ -44,6 +44,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/pr605-evidence"
+          exec > >(tee "$RUNNER_TEMP/pr605-evidence/preflight.log") 2>&1
           python - <<'PY'
           import base64, hashlib, pathlib, subprocess, zlib
           raw = zlib.decompress(base64.b64decode(pathlib.Path('../validation/pr605-validation.patch.z64').read_bytes()))
@@ -54,7 +55,7 @@ jobs:
           git diff --check
           python -m pip install -r tools/requirements.lock
           python tools/ci_coverage.py
-          python tools/validate_repo.py
+          python tools/validate_repository.py
       - name: Reproduce the real busy fence against the original synchronous materialization
         run: |
           set -euo pipefail
