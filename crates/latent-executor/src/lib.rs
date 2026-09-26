@@ -281,6 +281,20 @@ pub trait ExecutionBackend: Send + Sync {
             .map_err(|_| owned_preparation_unsupported())
     }
 
+    /// Retains the same readiness owner while an opt-in backend waits only for
+    /// its final read-only currentness check, before materializing exactly once.
+    /// The caller must bound this future by its original deadline/cancellation.
+    /// The default calls the synchronous method once and never consults the
+    /// timer or retries a failed materialization. Dropping even an unpolled
+    /// future releases the readiness owner.
+    fn materialize_ready_with_wait<'a>(
+        &'a self,
+        ready: PreparedReadiness,
+        _wait: &'a dyn PreparationReadWait,
+    ) -> BoxFuture<'a, Result<PreparedActivation, PlatformError>> {
+        Box::pin(async move { self.materialize_ready(ready) })
+    }
+
     /// Consumes one prepared-state owner. The returned future owns synchronous
     /// reclamation even if it is never polled, cancelled, or unwinds.
     fn invoke_prepared_contained<'a>(

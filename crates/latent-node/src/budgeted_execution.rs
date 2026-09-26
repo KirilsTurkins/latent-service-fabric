@@ -146,6 +146,14 @@ impl ExecutionBackend for BudgetedExecutionBackend {
         self.inner.materialize_ready(ready)
     }
 
+    fn materialize_ready_with_wait<'a>(
+        &'a self,
+        ready: PreparedReadiness,
+        wait: &'a dyn PreparationReadWait,
+    ) -> BoxFuture<'a, Result<PreparedActivation, PlatformError>> {
+        self.inner.materialize_ready_with_wait(ready, wait)
+    }
+
     fn invoke_prepared_contained<'a>(
         &'a self,
         request: ExecutionRequest,

@@ -4,13 +4,13 @@ use std::time::{Duration, Instant};
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_executor::PreparationReadWait;
 
-pub(super) struct Window<'a> {
+pub(in crate::backend) struct Window<'a> {
     wait: Option<&'a dyn PreparationReadWait>,
     until: Option<Instant>,
 }
 
 impl<'a> Window<'a> {
-    pub(super) fn new(wait: Option<&'a dyn PreparationReadWait>) -> Self {
+    pub(in crate::backend) fn new(wait: Option<&'a dyn PreparationReadWait>) -> Self {
         Self {
             wait,
             until: wait.and_then(|wait| wait.now().checked_add(Duration::from_secs(5))),
@@ -21,7 +21,7 @@ impl<'a> Window<'a> {
     /// The caller retains its original activation deadline and cancellation by
     /// owning this future. A failed read drops every currentness guard before
     /// this one timer is awaited. All checkpoints share the original window.
-    pub(super) async fn check<T>(
+    pub(in crate::backend) async fn check<T>(
         &self,
         mut read: impl FnMut() -> Result<T, PlatformError>,
     ) -> Result<T, PlatformError> {
