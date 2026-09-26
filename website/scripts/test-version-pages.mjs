@@ -91,21 +91,22 @@ try {
         assert.ok(built.manifest.versions.every(version => version.profile !== 'synthetic-fixture'));
         await page.goto(server.origin + built.manifest.baseUrl + 'docs/architecture/overview/', {waitUntil: 'networkidle'});
         assert.equal(await page.locator('[data-doc-version]').getAttribute('data-doc-version'), 'development');
-        const released = built.manifest.versions.find(version => version.version === '0.1.0-alpha.3');
-        assert.ok(released);
-        await selectVersion(page, '0.1.0-alpha.3 (alpha)');
-        assert.ok(new URL(page.url()).pathname.includes('/docs/0.1.0-alpha.3/architecture/overview/'));
-        const support = page.getByRole('complementary', {name: 'Documentation support'});
-        assert.equal(await support.getAttribute('data-doc-version'), released.version);
-        assert.match(await support.innerText(), /Historical source snapshot/);
-        assert.ok((await support.getByRole('link', {name: 'Exact documentation source'}).getAttribute('href')).includes(released.documentationSource));
-        assert.equal(await page.locator('[data-document-version="development"]').count(), 0);
-        await page.reload({waitUntil: 'networkidle'});
+        assert.ok(built.manifest.versions.length > 0);
+        for (const released of built.manifest.versions) {
+          await selectVersion(page, `${released.version} (alpha)`);
+          assert.ok(new URL(page.url()).pathname.includes(`/docs/${released.version}/architecture/overview/`));
+          const support = page.getByRole('complementary', {name: 'Documentation support'});
+          assert.equal(await support.getAttribute('data-doc-version'), released.version);
+          assert.match(await support.innerText(), /Historical source snapshot/);
+          assert.ok((await support.getByRole('link', {name: 'Exact documentation source'}).getAttribute('href')).includes(released.documentationSource));
+          assert.equal(await page.locator('[data-document-version="development"]').count(), 0);
+          await page.reload({waitUntil: 'networkidle'});
+          results.push({variant, fixtureOnly: false, sourceRevision: built.manifest.revision, releasedSnapshot: released.snapshotIdentity,
+            releasedSource: released.documentationSource, switchedVersions: true, honestHistoricalAvailability: true,
+            notices: true, directReload: true, browserErrors: errors.length});
+        }
         await selectVersion(page, 'Development');
         assert.equal(await page.locator('[data-doc-version]').getAttribute('data-doc-version'), 'development');
-        results.push({variant, fixtureOnly: false, sourceRevision: built.manifest.revision, releasedSnapshot: released.snapshotIdentity,
-          releasedSource: released.documentationSource, switchedVersions: true, honestHistoricalAvailability: true,
-          notices: true, directReload: true, browserErrors: errors.length});
       }
       assert.deepEqual(errors, []);
     } finally { await context.close(); await server.close(); }
