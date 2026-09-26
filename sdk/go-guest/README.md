@@ -1,6 +1,10 @@
 # Go capsule SDK
 
-Start with [Create your own Go capsule](../../docs/component-development/go-authoring.md).
+For an application tutorial, use [Creating a compiler profile](../../docs/component-development/creating-a-capsule.md)
+and select your language. The language profile below describes compiler and
+custom packaging details.
+
+Start with [Go compiler profile](../../docs/component-development/go-authoring.md).
 It creates an editable project outside LSF, derives typed contracts from WIT,
 captures the actual compiler inputs, signs the resulting package, admits it to
 a node and explicitly cleans up. External Go clients under `sdk/go` are a

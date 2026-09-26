@@ -271,12 +271,12 @@
       ],
       "pages": [
         {
-          "path": "docs/learn/author-your-first-capsule.md",
+          "path": "docs/component-development/creating-a-capsule.md",
           "role": "guide"
         },
         {
-          "path": "docs/component-development/creating-a-capsule.md",
-          "role": "reference-only"
+          "path": "docs/learn/author-your-first-capsule.md",
+          "role": "guide"
         },
         {
           "path": "docs/component-development/guest-sdk.md",
@@ -284,6 +284,18 @@
         },
         {
           "path": "docs/start/application-development.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/start/developer-setup.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/start/development-workspace.md",
+          "role": "guide"
+        },
+        {
+          "path": "docs/how-to/developer-commands.md",
           "role": "guide"
         }
       ],

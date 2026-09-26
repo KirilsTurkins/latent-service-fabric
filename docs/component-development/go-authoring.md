@@ -1,8 +1,13 @@
-# Create your own Go capsule
+# Go compiler and runtime profile
 
-For the packaged Go workflow, start with [application development](../start/application-development.md) and select `go` when [getting the tools](../start/developer-setup.md). The controller builds your project on Linux or WSL, creates node credentials, and runs the real-node tests. You do not need to build LSF or install the language compiler on Windows.
+For application development, use [Creating a capsule](creating-a-capsule.md).
+That shared tutorial has all six language choices and uses `dev init`, `build`,
+`deploy` and `test`. You do not need the source-build commands below for it.
 
-The commands below describe the language-owned source recipe, packaging and admission steps for readers who need to work at that level.
+This reference is for compiler integration, custom package signing and direct
+node admission. The complete source recipe is retained here for developers who
+need to work below the packaged workflow.
+
 
 Create an independent Go project, edit its typed contract, and run its signed
 package on a local node. Your application lives outside the LSF checkout and

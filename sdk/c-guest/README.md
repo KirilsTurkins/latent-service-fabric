@@ -1,6 +1,10 @@
 # C guest SDK
 
-Start with [Create your own C capsule](../../docs/component-development/c-authoring.md).
+For an application tutorial, use [Creating a compiler profile](../../docs/component-development/creating-a-capsule.md)
+and select your language. The language profile below describes compiler and
+custom packaging details.
+
+Start with [C compiler profile](../../docs/component-development/c-authoring.md).
 It creates an independent project and walks through WIT, compilation, packaging,
 signing, enforced admission, publication, deployment, invocation and cleanup.
 This guest SDK is separate from the external C control-plane client in `../c`.

@@ -6,7 +6,7 @@ export default function discovery() {
   const {index} = prepare();
   const coverage = JSON.parse(readSource(repositoryRoot, 'website/content/coverage.json').toString());
   const guides = coverage.rows.map(row => ({id: row.id, title: row.outcomes[0], topic: row.area, audience: row.audience,
-    languages: languages[row.id] ? [languages[row.id]] : [], pages: row.pages.map(page => {
+    languages: row.id === 'author-capsule' ? Object.values(languages) : languages[row.id] ? [languages[row.id]] : [], pages: row.pages.map(page => {
       const source = index.pages.find(item => item.source === page.path);
       return {title: source.title, route: source.route, role: page.role};
     })}));
