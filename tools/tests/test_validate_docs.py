@@ -31,7 +31,7 @@ class DocumentationValidationTests(unittest.TestCase):
         self.assertEqual(report["errors"], [])
 
     def test_application_command_drift_is_rejected_without_executing_examples(self) -> None:
-        source = "docs/component-development/windows-application.md"
+        source = "docs/start/development-workspace.md"
         examples = {
             "Invoke-LsfDev missing-command": "not a frontend command",
             "Invoke-LsfDev build --workspace $Workspace --unknown-option value": "unknown option",

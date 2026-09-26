@@ -1,5 +1,9 @@
 # Java capsule guest SDK
 
+For an application tutorial, use [Creating a compiler profile](../../docs/component-development/creating-a-capsule.md)
+and select your language. The language profile below describes compiler and
+custom packaging details.
+
 The [authoring guide](../../docs/component-development/java-authoring.md) creates
 an editable Java project outside the runtime checkout, builds its actual source,
 packages it, and demonstrates signed admission and cleanup on a local node.

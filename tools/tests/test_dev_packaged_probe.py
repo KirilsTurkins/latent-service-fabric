@@ -362,10 +362,10 @@ class PackagedProbe(unittest.TestCase):
     def test_newcomer_walkthrough_requires_the_exact_staged_guide(self):
         from tools.dev_packaged_newcomer import reviewed_guide
         from tools.dev_packaged_process import digest
-        guide = self.root / 'windows-application.md'
+        guide = self.root / 'deliver-and-recover-a-capsule.md'
         guide.write_bytes(b'# Reviewed guide\n')
         config = {'faultProbe': str(self.root / 'dev_node_fault_probe.py'), 'conductorSourceCommit': 'a' * 40,
-            'newcomerGuide': {'path': 'docs/component-development/windows-application.md', 'sha256': digest(guide)}}
+            'newcomerGuide': {'path': 'docs/learn/deliver-and-recover-a-capsule.md', 'sha256': digest(guide)}}
         self.assertEqual(reviewed_guide(config)['execution'], 'automated-public-command-walkthrough')
         self.assertFalse(reviewed_guide(config)['interactiveEditorReview'])
         guide.write_bytes(b'# Changed after staging\n')

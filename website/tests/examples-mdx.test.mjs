@@ -28,6 +28,24 @@ test('the configured Docusaurus pipeline retains example selectors until extract
   assert.ok(!result.content.includes('lsf-example-begin'));
 });
 
+test('Markdown selectors can use the shared language switch without enabling prose execution', async t => {
+  const f = fixture(t);
+  const markdown = '# Example\n\nLiteral {notJavaScript}\n\n<!-- lsf-example: client/specimen invoke -->\n';
+  const requests = requestsFromTree(parseDocument(markdown, 'docs/specimen.md'));
+  const {bundle} = extractExamples(f.root, requests, f.identity());
+  const compiled = await compile(markdown, {format: 'md', outputFormat: 'function-body',
+    remarkPlugins: [() => remarkExamples({bundle, documentVersion: 'development', interactive: true})]});
+  const {default: Content} = await run(String(compiled), {...runtime, baseUrl: import.meta.url});
+  let selected;
+  const html = renderToStaticMarkup(runtime.jsx(Content, {components: {CodeExample: props => {
+    selected = props;
+    return runtime.jsx('div', {'data-language-switch': props.example});
+  }}}));
+  assert.deepEqual(selected, {example: 'client/specimen', region: 'invoke', documentVersion: 'development'});
+  assert.match(html, /Literal \{notJavaScript\}/);
+  assert.match(html, /data-language-switch="client\/specimen"/);
+});
+
 // Runs under the existing pinned website dependency graph, not a replacement
 // Markdown renderer. The fixture target deliberately throws if ever executed.
 test('actual Markdown/MDX compilation escapes six source variants as inert static code', async t => {

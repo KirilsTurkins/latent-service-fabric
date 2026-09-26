@@ -15,7 +15,7 @@ You need an independently installed **GitHub CLI 2.96.0 or newer** and network
 access for the download. Windows needs PowerShell, its `tar` command, x86-64
 hardware and working WSL2. Linux needs the supported Ubuntu 24.04 x86-64 host,
 Python 3.12 or newer and the helper prerequisites described in the
-[Linux workspace guide](../component-development/linux-workspace.md).
+[workspace setup](development-workspace.md#if-you-use-linux).
 If GitHub CLI asks you to sign in, finish its normal sign-in flow first.
 
 The commands authenticate the release selection before trusting its package
@@ -98,7 +98,7 @@ reports your host prerequisites. It does not claim a node is running yet.
 If a download fails, retain the failed directory for diagnosis and use a new
 directory for a fresh attempt; never execute a file whose verification failed.
 
-Continue with [Create and edit a Windows application](../component-development/windows-application.md).
+Continue with [workspace setup](development-workspace.md#if-you-use-windows).
 Use the `$Inputs` and `$Frontend` paths above. That guide creates one owned WSL
 distro and a private workspace, then builds and tests your greeting. For a
 different language, select its compiler here and follow the same versioned
@@ -167,7 +167,7 @@ PY
 "$PWD/frontend/bin/latent-dev" dev doctor
 ```
 
-Continue with [Select a Linux development workspace](../component-development/linux-workspace.md).
+Continue with [workspace setup](development-workspace.md#if-you-use-linux).
 Your host administrator supplies the pinned helper interpreter; an explicit SSH
 backend uses its own protected account and host key. No command above installs
 a system service or changes a remote machine.
@@ -178,4 +178,4 @@ The input directory contains tools, templates and public verification material,
 not project secrets or running-node state. Keep it to install another workspace
 without downloading again. Delete only that directory when you no longer need
 the offline packages. Node shutdown, workspace purge and WSL removal have
-separate commands in the platform guides; deleting downloads does none of them.
+separate commands in the developer command guide; deleting downloads does none of them.

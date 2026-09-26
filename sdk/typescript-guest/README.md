@@ -1,6 +1,10 @@
 # TypeScript guest SDK
 
-Use [Create your own TypeScript capsule](../../docs/component-development/typescript-authoring.md)
+For an application tutorial, use [Creating a compiler profile](../../docs/component-development/creating-a-capsule.md)
+and select your language. The language profile below describes compiler and
+custom packaging details.
+
+Use [TypeScript compiler profile](../../docs/component-development/typescript-authoring.md)
 for an editable project, package/sign/admit/deploy/invoke/cleanup path.
 This guest SDK is separate from the external Node client and closed Angular
 renderer. It does not embed Node, a browser, or application-owned host threads.

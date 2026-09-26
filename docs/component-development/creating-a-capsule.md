@@ -1,230 +1,216 @@
 # Creating a capsule
 
-Build three small programs and run them on your LSF node: greet a visitor,
-count words, and calculate a shipping price. Each has its own service name and
-purpose. Together they show how to accept input, return an answer and explain
-an invalid request.
+Create a small program and run it on your development node. Start with a greeting,
+then try a word counter or shipping calculator. Each accepts typed input and
+returns either an answer or a helpful application error.
 
-For your first project, use [application development](../start/application-development.md)
-and the [Windows edit/watch walkthrough](windows-application.md) or
-[Linux workspace](linux-workspace.md). Select `greeting`, `word-count` or
-`shipping` from the authenticated template index for your chosen language.
-`dev init`, `dev build` and `dev test --environment node` use the same project
-contract in all six languages.
+Complete [Get the developer tools](../start/developer-setup.md) and
+[Set up your workspace](../start/development-workspace.md) first. Keep its terminal
+open: it defines `dev`, your selected `$Language`, `$Workspace`, `$Project` and
+other tool paths. The steps below use those same variables on both operating systems.
 
-This page explains the three programs and also supplies the lower-level
-source-build/operator commands. Only that latter path needs the source-built
-node from the first-node tutorial.
-
-For the lower-level commands in steps 4–8, complete steps 1–7 of
-[Run your first node from source](../start/first-node.md) first.
-Keep that terminal open: this tutorial uses its running node, `cli`, `field`
-and `answer` helpers. Run commands from the same repository root.
-
-Select Rust, C, Go, TypeScript, Java or C# on each complete example below. They implement the same typed
-contract and behavior. The commands on this page build the in-checkout Rust
-tutorials. For independent projects with packaging and enforced admission,
-follow [Rust authoring](rust-authoring.md), [C authoring](c-authoring.md) or
-[Go authoring](go-authoring.md), [TypeScript authoring](typescript-authoring.md),
-[Java authoring](java-authoring.md), or
-[C# authoring](dotnet-authoring.md).
-The C# path compiles NativeAOT WebAssembly with an activation-owned heap, not a CLR process.
-The TypeScript path uses an embedded activation-owned JavaScript engine, not Node.
-Java requires the explicit bounded Java engine profile and runtime clock grants
-described in its guide.
-Go's runtime also requires explicit clock and
-entropy grants; its guide includes those bounded host policies.
-
-The [client SDK guide](../learn/use-a-client.mdx) offers Rust, TypeScript, Go,
-C, Java and C# examples for a different task: calling these programs from an
-application outside the node. Capsule compilation uses the separate guest SDKs
-and the selected language's compiler bundle. For C ownership and capability examples, see the
-[C guest examples](../../sdk/c-guest/README.md).
+Select **Rust**, **C**, **TypeScript**, **Go**, **Java** or **C# / .NET** above a code
+example. Your selection is shared across the examples. The build, deploy and test
+commands work the same way for every language; use the language you installed
+during setup.
 
 ## 1. A greeting capsule
 
-This capsule accepts a name and returns a greeting. An empty name produces a
-helpful error instead. Open
-[`component.rs`](../../tools/toolchain-smoke/examples/tutorial_greeting/component.rs)
-to see or edit the complete implementation:
+The first program accepts a name and returns a greeting. An empty name produces
+a helpful error instead. This is the complete implementation in your selected language:
 
 <!-- lsf-example: guest/tutorial-greeting capsule -->
 
-Its contract says the input is a string and the result is either a string
-answer or a string error:
+The WIT contract describes the input and the two possible kinds of answer:
 
 ```wit
 greet: func(name: string) -> result<string, string>;
 ```
 
-That line lives in
-[`world.wit`](../../tools/toolchain-smoke/examples/tutorial_greeting/world.wit).
-The `wit_bindgen` line generates the connection between this contract and the
-Rust function. The node uses the same contract to check incoming calls.
+You will find this contract under `app/wit` in your project. Generated bindings
+connect it to your language's function. For now, keep the contract unchanged.
 
-## 2. A word-count capsule
+## 2. Create the project
 
-This example processes a document instead of greeting a person. It counts
-groups of characters separated by spaces, tabs or newlines. An empty document
-contains zero words. Very long input returns a readable error.
+Choose the `greeting` template. These commands read its identity from the verified
+template index and create your project; you do not copy identifiers by hand.
+
+**If you use Windows**, run this in your PowerShell working terminal:
+
+```powershell
+$Example = 'greeting'
+$Templates = (dev acquire --bundle-directory (Join-Path $Inputs $Language) `
+    --publisher-policy $DeveloperPolicy --trusted-root $TrustedRoot `
+    --verifier $WindowsVerifier --verifier-sha256 $WindowsVerifierSha256 `
+    --version $Version --target linux-x86_64 --allow-candidate | ConvertFrom-Json).result
+$Bundle = $Templates.bundle
+$Index = Get-Content -LiteralPath (Join-Path $State "bundles/$Bundle/templates.json") -Raw | ConvertFrom-Json
+$TemplateIdentity = $Index.templates.PSObject.Properties[$Example].Value.identity
+dev init "$Project" --bundle $Bundle --template "$Language/$Example" --template-sha256 $TemplateIdentity
+```
+
+**If you use Linux**, run this in your Bash working terminal:
+
+```bash
+Example=greeting
+Version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$Inputs/developer-policy.json")
+VerifierIdentity="sha256:$(sha256sum "$Inputs/gh-linux" | cut -d' ' -f1)"
+dev acquire --bundle-directory "$Inputs/$Language" \
+    --publisher-policy "$Inputs/developer-policy.json" --trusted-root "$Inputs/trusted_root.jsonl" \
+    --verifier "$Inputs/gh-linux" --verifier-sha256 "$VerifierIdentity" \
+    --version "$Version" --target linux-x86_64 --allow-candidate > "$Inputs/template-acquisition.json"
+Bundle=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["result"]["bundle"])' "$Inputs/template-acquisition.json")
+TemplateIdentity=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["templates"][sys.argv[2]]["identity"])' "$State/bundles/$Bundle/templates.json" "$Example")
+dev init "$Project" --bundle "$Bundle" --template "$Language/$Example" --template-sha256 "$TemplateIdentity"
+```
+
+Open the project in your editor:
+
+| File or folder | What you do with it |
+| --- | --- |
+| `app` | Edit the source and its WIT contract |
+| `latent.project.json` | Review the compiler, build recipe and source files it can use |
+| `tests/scenarios.json` | Read the named test cases |
+| `tests/*-input.json`, `tests/*-expected.json` | See each input and its expected answer |
+
+## 3. Build and prepare the node
+
+After reviewing the project, run these commands in the same terminal on either OS:
+
+```bash
+dev trust --workspace "$Workspace" --project "$Project"
+dev build --workspace "$Workspace" --project "$Project"
+dev prepare-test --workspace "$Workspace" --consent-test-fixtures --admission "$Admission"
+```
+
+Expect `code: success` from each command. The compiler comes from the selected
+tool bundle. `prepare-test` prepares the stopped disposable node to accept this
+application. Setup selected `trusted-local` for Rust/C or `signed-fixture` for the
+other languages, including their required runtime permissions.
+
+A signed fixture lasts 30 minutes and binds one build. If you edit that build or
+the fixture expires, create a fresh disposable workspace before testing it. Use
+the [edit guide](../learn/deliver-and-recover-a-capsule.md) for the supported watch loop.
+
+## 4. Start, deploy and test
+
+Open a **second terminal** and start the node. Keep this command running.
+For the default paths from setup, use the following command; substitute your
+workspace name if you chose another one.
+
+**Windows (PowerShell):**
+
+```powershell
+& (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4/frontend/bin/latent-dev.exe') `
+    --state-root (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial') dev up --workspace test-my-greeting
+```
+
+**Linux (Bash):**
+
+```bash
+"$HOME/LSF-inputs-alpha4/frontend/bin/latent-dev" --state-root "$HOME/.latent-dev-tutorial" \
+    dev up --workspace test-my-greeting
+```
+
+Wait for the `ready` event. In your **first terminal**, publish the accepted build
+and run its tests with the same commands on either OS:
+
+```bash
+dev deploy --workspace "$Workspace"
+dev test --workspace "$Workspace" --environment node
+```
+
+Expect `passed: true` and every required case to report `status: passed`.
+`Ada` returns `Hello, Ada!`; an empty name produces the expected application error.
+Some language profiles include additional runtime cases, so their case counts differ.
+
+## 5. Send a request yourself
+
+The greeting's first input file contains `["Ada"]`. Call it directly:
+
+```bash
+dev invoke --workspace "$Workspace" --service examples/my-greeting --contract examples:greeting/api@1.0.0 --function greet --input "$Project/tests/0-input.json"
+```
+
+The response includes `category: success`, the selected deployment and an encoded
+payload. To display the typed answer, **on Windows**:
+
+```powershell
+$Reply = (dev invoke --workspace $Workspace --service examples/my-greeting `
+    --contract examples:greeting/api@1.0.0 --function greet `
+    --input (Join-Path $Project 'tests/0-input.json') | ConvertFrom-Json).result
+[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Reply.data.payload.data))
+```
+
+Or **on Linux**:
+
+```bash
+dev invoke --workspace "$Workspace" --service examples/my-greeting --contract examples:greeting/api@1.0.0 --function greet --input "$Project/tests/0-input.json" \
+    | python3 -c 'import base64,json,sys; print(base64.b64decode(json.load(sys.stdin)["result"]["data"]["payload"]["data"]).decode())'
+```
+
+Expected: `[{"ok":"Hello, Ada!"}]`. These are independent example calls. If a
+response is lost, use `dev recover --workspace "$Workspace"` to inspect that
+original call before making another one.
+
+## 6. Try a word counter
+
+This program counts groups separated by spaces, tabs or newlines. An empty
+document has zero words. Very long input produces a readable error.
 
 <!-- lsf-example: guest/tutorial-word-count capsule -->
-
-The [contract](../../tools/toolchain-smoke/examples/tutorial_word_count/world.wit)
-returns a whole number on success:
 
 ```wit
 count: func(text: string) -> result<u32, string>;
 ```
 
-## 3. A shipping calculator
+Stop the greeting with `dev down --workspace "$Workspace"`. Create another
+workspace and project using the [workspace setup](../start/development-workspace.md),
+for example `test-my-words` and `My words`. Reuse your downloads and existing WSL
+distro. In step 2 above set `$Example = 'word-count'` on Windows or
+`Example=word-count` on Linux, then follow the same build, start, deploy and test
+steps with that workspace name.
 
-This capsule accepts two arguments: the number of items and whether the
-customer chose express delivery. It returns a price in cents, so `650` means
-6.50 units of currency. This tutorial uses a simple example price rule:
-500 cents for standard delivery or 1200 for express, plus 75 per item.
+The tests send `LSF runs small programs` and expect `4`. Look in
+`tests/scenarios.json` for the service, contract and function to use in a direct call.
+
+## 7. Try a shipping calculator
+
+This program accepts an item count and whether delivery is express. It returns
+a price in cents: 500 for standard delivery or 1200 for express, plus 75 per item.
 
 <!-- lsf-example: guest/tutorial-shipping capsule -->
-
-The [contract](../../tools/toolchain-smoke/examples/tutorial_shipping/world.wit)
-accepts a whole number and a boolean:
 
 ```wit
 quote: func(items: u32, express: bool) -> result<u32, string>;
 ```
 
-These programs do not need network access, files, secrets or another running
-service. Start here before adding [capabilities](../learn/use-capabilities.md).
+Use another project and workspace, selecting `shipping` in step 2. Run the same
+build, start, deploy and test commands. Two items with standard delivery produce
+`650`; express delivery produces `1350`. Zero items produce
+`Choose between 1 and 100 items.` as a declared application error.
 
-## 4. Build the three capsules
-
-```bash
-python3 tools/build_tutorial_capsules.py
-TUTORIAL_PACKAGES="$PWD/target/tutorial-capsules"
-```
-
-Wait for `Ready: greeting`, `Ready: word-count` and `Ready: shipping`.
-Each output directory contains:
-
-| File | What it is for |
-| --- | --- |
-| `component.wasm` | The compiled program that the node runs |
-| `capsule.json` | Its name, exported contract and resource limits |
-| `contracts.json` | The machine-readable input and output types |
-| `deployment.json` | The service name used to reach this program |
-| `input.json` | An example call |
-
-The builder fills in the generated identifiers. You do not need to calculate
-or copy them. If you already built these examples, choose a fresh directory
-with `--output target/tutorial-capsules-second` and set `TUTORIAL_PACKAGES`
-to that directory.
-
-## 5. Publish and deploy each program
-
-The following helper repeats the publish and deploy steps from the first-node
-guide. It reads the publication returned by your node and puts it into the
-deployment file. Run it once per capsule:
-
-```bash
-deploy_tutorial() {
-    local name=$1 package="$TUTORIAL_PACKAGES/$1"
-    cli release publish --manifest "$package/capsule.json" \
-        --component "$package/component.wasm" --contracts "$package/contracts.json" \
-        >"$RESULTS/$name-published.json"
-    python3 - "$package/deployment.json" "$RESULTS/$name-published.json" \
-        "$RESULTS/$name-deployment.json" <<'PY'
-import json, sys
-deployment = json.load(open(sys.argv[1]))
-release = json.load(open(sys.argv[2]))["data"]["release"]
-deployment["spec"]["release"] = release["digest"]
-deployment["spec"]["publication"] = release["publication"]["id"]
-with open(sys.argv[3], "x") as output:
-    json.dump(deployment, output)
-PY
-    cli deployment apply "$RESULTS/$name-deployment.json" --expected-generation 0 \
-        >"$RESULTS/$name-applied.json"
-    printf 'Deployed %s\n' "$name"
-}
-deploy_tutorial greeting
-deploy_tutorial word-count
-deploy_tutorial shipping
-```
-
-Your one node can now answer calls to all three services.
-
-## 6. Try the inputs and see the answers
-
-Greet Ada:
-
-```bash
-cli invoke --service examples/greeting --contract examples:greeting/api@1.0.0 \
-    --function greet --activation-id tutorial-greeting \
-    --input "$TUTORIAL_PACKAGES/greeting/input.json" >"$RESULTS/greeting-answer.json"
-answer "$RESULTS/greeting-answer.json"
-```
-
-Expected: `[{"ok":"Hello, Ada!"}]`.
-
-Count the words in `LSF runs small programs`:
-
-```bash
-cli invoke --service examples/word-count --contract examples:word-count/api@1.0.0 \
-    --function count --activation-id tutorial-word-count \
-    --input "$TUTORIAL_PACKAGES/word-count/input.json" >"$RESULTS/words-answer.json"
-answer "$RESULTS/words-answer.json"
-```
-
-Expected: `[{"ok":4}]`.
-
-Calculate standard shipping for two items:
-
-```bash
-cli invoke --service examples/shipping --contract examples:shipping/api@1.0.0 \
-    --function quote --activation-id tutorial-shipping \
-    --input "$TUTORIAL_PACKAGES/shipping/input.json" >"$RESULTS/shipping-answer.json"
-answer "$RESULTS/shipping-answer.json"
-```
-
-Expected: `[{"ok":650}]`. To try express delivery, write `[2, true]` into
-a new input file and invoke with a new activation ID. The result is `1350`.
-
-Now request zero items to see how an application reports invalid input:
-
-```bash
-printf '[0, false]\n' >"$RESULTS/invalid-shipping.json"
-cli invoke --service examples/shipping --contract examples:shipping/api@1.0.0 \
-    --function quote --activation-id tutorial-invalid-shipping \
-    --input "$RESULTS/invalid-shipping.json" >"$RESULTS/invalid-answer.json" || test "$?" -eq 3
-answer "$RESULTS/invalid-answer.json"
-```
-
-Expected: `[{"err":"Choose between 1 and 100 items."}]`. The node is still
-running and can accept the next valid request.
-
-## 7. Change a program
-
-Open the greeting's `component.rs` and change `Hello` to `Welcome`.
-Build into a fresh directory:
-
-```bash
-python3 tools/build_tutorial_capsules.py --output target/tutorial-capsules-welcome
-```
-
-The new `greeting/component.wasm` contains your change. To replace the running
-version, continue with [delivery and updates](../learn/deliver-and-recover-a-capsule.md).
-A running deployment keeps its previous publication until you explicitly update it.
+The three programs need no network, files or secrets. Their compilers can still
+require explicitly granted runtime clocks or entropy. To add application access
+to an outside service, continue with [capabilities](../learn/use-capabilities.md).
 
 ## 8. Clean up
 
-When you finish, remove the three deployments:
+Stop the selected node and inspect its state:
 
 ```bash
-for name in greeting word-count shipping; do
-    generation=$(field "$RESULTS/$name-applied.json" data deployment generation)
-    cli deployment delete "tutorial-$name" --expected-generation "$generation"
-done
+dev down --workspace "$Workspace"
+dev status --workspace "$Workspace"
 ```
 
-You can keep the node running for another tutorial, or return to the
-[first-node cleanup](../start/first-node.md#8-continue-or-stop) to stop it.
-Your source files and built capsules remain available for the next experiment.
+Expect `state: stopped`. Starting `up` again retains the deployment without another
+deploy command. Keep this workspace if you are continuing with [editing and recovery](../learn/deliver-and-recover-a-capsule.md).
+When you no longer need its node data, remove that workspace explicitly:
+
+```bash
+dev purge --workspace "$Workspace" --confirm-workspace "$Workspace"
+```
+
+Your project source remains. Repeat cleanup for each workspace you created.
+The [developer command guide](../how-to/developer-commands.md#stop-and-remove-workspaces)
+also explains when to remove the shared LSF-owned WSL distro.

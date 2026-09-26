@@ -1,135 +1,115 @@
-# Try HTTP requests and object storage
+# Use capabilities in your capsule
 
-A capsule needs permission to contact another service or store data. In this
-walkthrough, run two example capsules: one requests a page from a local HTTP
-server; the other writes and reads a small object. Then see what happens when a
-request is denied and when you remove a previously granted permission.
+A capsule can calculate a result from its input without any outside access.
+To request an HTTP page, store an object or read a secret, it asks the node for
+a **capability**. The node checks the application's permission before doing that
+work. This keeps a program's authority separate from the language it is written in.
 
-The example script creates a temporary node, runs the requests, restarts that
-node, and stops it afterward. This gives you a complete local demonstration
-without a cloud account or changes to the node from your first tutorial.
+Start with [Creating a capsule](../component-development/creating-a-capsule.md).
+This page explains the next design and testing steps when you add an external
+dependency to your own project. For a ready-made source demonstration of HTTP
+and storage, see the [provider integration exercise](../development/provider-source-walkthrough.md).
 
-## 1. Prepare your checkout
+## Choose the operation your application needs
 
-Start with the source checkout and Linux environment from
-[Run your first node](../start/first-node.md). Run the commands below from the
-repository root in one terminal. The examples use the current checkout.
+| Your application needs to | Capability | SDK and behavior reference |
+| --- | --- | --- |
+| Request an HTTP service | Buffered HTTP | [HTTP requests](../runtime/outbound-http.md) |
+| Stream a large HTTP body | Streaming HTTP | [Streaming HTTP](../runtime/streaming-http.md) |
+| Store and read immutable data | Blob storage | [Immutable blobs](../runtime/local-blobs.md) |
+| Call another capsule | Local service calls | [Local invocation](../runtime/local-service-invocation.md) |
+| Read a named secret | Secrets | [Secrets](../runtime/local-secrets.md) |
+| Report measurements | Custom metrics | [Metrics](../runtime/custom-metrics.md) |
+| Read time or obtain randomness | Clocks or random bytes | [Guest SDK reference](../component-development/guest-sdk.md) |
 
-You also need the pinned `wit-bindgen` and Zig tools from the
-[toolchain setup](../development/toolchain.md). Zig builds the maintained C
-example alongside the Rust examples. Keep the Python virtual environment from
-the first-node guide active.
+Each language's guest SDK wraps these typed interfaces. The [guest SDK reference](../component-development/guest-sdk.md)
+links the Rust, C, TypeScript, Go, Java and C# APIs and explains how to release
+their resources. This is different from the client SDK used by a separate
+application to call your capsule.
 
-```bash
-set -euo pipefail
-umask 077
-export CARGO_TARGET_DIR="$PWD/target"
-mkdir -p "$CARGO_TARGET_DIR"
-CAPABILITY_DEMO=$(mktemp -d "$CARGO_TARGET_DIR/capability-demo.XXXXXXXX")
-cargo build --locked -p latent -p latentd
-python3 tools/build_guest_capsules.py --output "$CAPABILITY_DEMO/guests"
+## Import a capability and handle its result
+
+For example, a capsule that needs buffered HTTP imports this interface in its
+WIT world, alongside its own exported functions:
+
+```wit
+import latent:http/client@0.2.0;
 ```
 
-This builds LSF and the example capsules. The new directory keeps this attempt
-separate from previous attempts. The first build can take several minutes.
+Add the matching maintained WIT dependency and use your language's HTTP wrapper
+from the guest SDK. Handle its success and error results. A request can fail
+because the destination is denied, the service is unavailable, or a resource
+limit was reached. Do not treat those results as an empty successful response.
 
-## 2. Prepare the packages for the temporary node
+Three things must agree before the request can run:
 
-The example node checks who built and published each package. This command
-creates signed packages and the matching temporary policy:
+1. The node has an HTTP provider installed.
+2. Your deployed capsule has a grant for that capability.
+3. The grant permits the requested destination, method and path within its budget.
 
-```bash
-LSF_GUEST_CAPSULES="$CAPABILITY_DEMO/guests" \
-LSF_PHASE3_WORKFLOW_FIXTURE_ROOT="$CAPABILITY_DEMO/inputs" \
-  cargo test --locked -p latentd --test phase3_workflow_fixture -- \
-    export_signed_provider_workflow_fixtures --exact --ignored --nocapture
-```
+Importing the interface does not grant internet access. Likewise, a blob handle
+is not an arbitrary filesystem path, and a secret name is not permission to read
+every secret on the node.
 
-Expect `1 passed; 0 failed`. Run the next step immediately afterward: these
-demonstration signatures expire. The generated credentials and policy are only
-for this temporary example. For your own installed node, follow
-[package delivery](deliver-and-recover-a-capsule.md) and its trust configuration.
+## Test the project in a disposable workspace
 
-## 3. Run the example
-
-```bash
-python3 tools/run_phase3_management_workflow.py \
-  --cli "$CARGO_TARGET_DIR/debug/latent" \
-  --node "$CARGO_TARGET_DIR/debug/latentd" \
-  --fixture-root "$CAPABILITY_DEMO/inputs" \
-  > "$CAPABILITY_DEMO/result.json"
-```
-
-The script performs these actions in order:
-
-| Action | What you should learn |
-| --- | --- |
-| Request the allowed HTTP path | The node can send an authorized request on behalf of a capsule |
-| Request a different path | Permission for one destination does not allow every request |
-| Write, seal and read an object | An immutable object can be read after it is sealed; its contents cannot then be changed |
-| Restart the node and invoke again | The same deployments and their selected versions remain available |
-| Revoke the HTTP grant and invoke again | Removing permission prevents another request from reaching the server |
-| Stop the node and the local server | The script closes the resources it started |
-
-Show a short result summary:
+Continue using the same `dev` commands as the capsule tutorial. Create a fresh
+`test-` workspace for a project with capability tests, install its language tools,
+and review its recipe. Then build it:
 
 ```bash
-python3 - "$CAPABILITY_DEMO/result.json" <<'PY'
-import json, sys
-with open(sys.argv[1], encoding="utf-8") as source:
-    result = json.load(source)
-print("Authorized HTTP requests:", result["upstream"]["authorized"])
-print("Unexpected HTTP requests:", result["upstream"]["unexpected"])
-print("Revoked permission blocked further access:", result["grantsRevoked"])
-print("Selected deployments survived restart:", result["selectedRevisionPreservedAcrossRestart"])
-print("Clean shutdowns:", sum(node["record"]["report"]["providers"]["clean"]
-                               for node in result["shutdown"]))
-PY
+dev trust --workspace "$Workspace" --project "$Project"
+dev build --workspace "$Workspace" --project "$Project"
 ```
 
-Expect four authorized requests, zero unexpected requests, `True` for both
-permission revocation and restart, and two clean shutdowns. The denied calls
-are intentional parts of the example. If the script exits with an error, use
-[provider troubleshooting](../how-to/operate-capability-providers.md) before
-rerunning it with a fresh demo directory.
+For local tests, the developer toolkit can supply explicit HTTP, blob, secret,
+metric, local-service and event fixtures. Your project must contain a fixture
+configuration and scenarios that declare the fixture they need. Describe them
+using the [fixture format](../reference/developer-test-fixtures.md), including
+inputs and expected results for your own exported functions. The greeting
+template alone does not become an HTTP application by enabling a fixture.
 
-## 4. Follow the capsule code
-
-The [HTTP example](../../tools/toolchain-smoke/examples/guest_http/component.rs)
-requests the permitted URL. The
-[blob example](../../tools/toolchain-smoke/examples/guest_blob/component.rs)
-creates, writes, seals and reads an object. Both ask the host to do the work
-through an imported capability; they do not open arbitrary host files or sockets.
-
-Three pieces must agree for a request to work:
-
-1. The node installs a provider that can perform the operation.
-2. The deployment receives a grant for that capability.
-3. The current policy permits the particular request within its resource budget.
-
-For example, installing an HTTP provider does not grant every capsule internet
-access. The demonstration policy allows one local server and path. See
-[Configure standalone providers](../reference/standalone-providers.md) when
-you are ready to configure your own node.
-
-## 5. Finish or explore another provider
-
-The script stops its temporary node and HTTP server automatically. Its build
-outputs and result remain in the directory printed by:
+With an HTTP project's fixture saved at `tests/http-fixture.json`, prepare the
+stopped node **before its first deployment**:
 
 ```bash
-printf '%s\n' "$CAPABILITY_DEMO"
+dev prepare-test --workspace "$Workspace" --consent-test-fixtures --admission signed-fixture --fixtures "$Project/tests/http-fixture.json"
 ```
 
-You can remove that demo directory when you no longer need its files.
+This explicitly permits a disposable test setup and binds its selected build.
+Start foreground `up` in a second terminal as shown in the capsule tutorial,
+then deploy and test in your working terminal:
 
-The standalone configuration exposes buffered HTTP, local immutable blobs,
-activation clocks and [OS-backed randomness](../runtime/random.md) through
-explicit installations, bindings and grants. Other capabilities have their own
-integration paths:
-[streaming HTTP](../runtime/streaming-http.md),
-[local service calls](../runtime/local-service-invocation.md),
-[secrets](../runtime/local-secrets.md),
-and [custom metrics](../runtime/custom-metrics.md).
-For S3, Vault and NATS, continue with the
-[local provider examples](../how-to/exercise-provider-failure-and-recovery.md).
+```bash
+dev deploy --workspace "$Workspace"
+dev test --workspace "$Workspace" --environment node
+dev logs --workspace "$Workspace"
+```
+
+Check both allowed and denied cases. A denied destination should produce the
+expected error without contacting it. After a valid request, check the actual
+typed answer too; a successful connection alone is insufficient. Signed fixtures
+expire after 30 minutes and do not authorize a changed build. Use a fresh
+disposable workspace for either change.
+
+## Configure a persistent node
+
+Development fixtures are for repeatable local tests. To connect to a real service,
+use [standalone provider configuration](../reference/standalone-providers.md)
+and [provider operations](../how-to/operate-capability-providers.md). Keep provider
+credentials in protected node configuration, outside source files and capsule
+packages. Grant only the destinations and operations the application needs.
+
+A lost response can leave an operation's outcome unknown. Use the original
+operation's recovery path instead of sending the request again. See
+[developer recovery](../how-to/developer-commands.md#inspect-and-recover).
+
+## Stop your test node
+
+```bash
+dev down --workspace "$Workspace"
+dev status --workspace "$Workspace"
+```
+
+Expect the workspace to be stopped. The [cleanup guide](../how-to/developer-commands.md#stop-and-remove-workspaces)
+explains how to retain its data or purge the exact disposable workspace.

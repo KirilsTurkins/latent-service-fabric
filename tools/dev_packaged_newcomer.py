@@ -1,4 +1,4 @@
-"""Execute the Windows guide's greeting edits through the installed public frontend."""
+"""Execute the shared guide's greeting edits through the installed public frontend."""
 import base64
 import json
 import locale
@@ -15,8 +15,8 @@ else:
 
 def reviewed_guide(config):
     selected = config['newcomerGuide']
-    path = Path(config['faultProbe']).parent / 'windows-application.md'
-    require(selected['path'] == 'docs/component-development/windows-application.md'
+    path = Path(config['faultProbe']).parent / 'deliver-and-recover-a-capsule.md'
+    require(selected['path'] == 'docs/learn/deliver-and-recover-a-capsule.md'
         and path.is_file() and not path.is_symlink() and path.stat().st_size <= 65536
         and digest(path) == selected['sha256'], 'exact-reviewed-newcomer-guide-required')
     return {**selected, 'conductorSourceCommit': config['conductorSourceCommit'],

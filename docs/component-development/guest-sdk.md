@@ -1,17 +1,10 @@
-# Guest SDK: build and run a capsule
+# Guest SDK capability reference
 
-For a new independent project, follow [Create your own Rust capsule](rust-authoring.md)
-or [Create your own C capsule](c-authoring.md), or
-[Create your own Go capsule](go-authoring.md), or
-[Create your own TypeScript capsule](typescript-authoring.md), or
-[Create your own C# capsule](dotnet-authoring.md).
-The bounded [Java authoring profile](java-authoring.md) uses maintained TeaVM and
-typed WIT bindings; its [SDK reference](../../sdk/java-guest/README.md) documents
-the exact language, heap, clock-grant and ownership boundaries.
-That guide covers editable source, generated contracts, packaging, signing,
-enforced node admission and cleanup. This reference describes capability ownership.
+For your first application, follow [Creating a capsule](creating-a-capsule.md).
+It has one shared workflow and selectable examples for all six languages. This
+reference explains the SDKs' capability types, ownership and runtime limits.
 
-All six languages have guest SDKs. [Packaged application development](../start/application-development.md)
+[Packaged application development](../start/application-development.md)
 is the starting point for installing their compilers and creating a project.
 [Rust `latent-guest`](../../sdk/rust-guest/README.md) provides the Rust owners.
 The [C guest SDK](../../sdk/c-guest/README.md) provides explicit allocation and

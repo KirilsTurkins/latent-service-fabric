@@ -118,6 +118,20 @@ website maintenance.
 
 ## Markdown, links and approved assets
 
+Current navigation groups pages by the reader's task. Start contains setup;
+Learn contains capsule, client and web walkthroughs; How-to contains development
+and operator tasks; Reference contains command, language profile and protocol
+details. Each uses collapsible subsections defined in
+[`navigation.mjs`](../../website/lib/navigation.mjs). OS differences belong inside
+the relevant guide. Language implementations share selectable examples in the
+capsule guide; compiler integration recipes belong in the language profile
+subsection. Contribute remains for work on LSF itself.
+
+The same navigation builder creates current and newly frozen sidebars. Tests
+check that every published document belongs exactly once, the first application
+path stays ordered, and the six compiler profiles do not duplicate the learning
+path. Existing frozen release sidebars remain unchanged.
+
 The actual pinned compiler's `format: detect` distinguishes CommonMark/GFM `.md`
 from interactive `.mdx`. Upstream describes CommonMark detection as experimental;
 the fixture suite tests its actual behavior instead of assuming GitHub rendering

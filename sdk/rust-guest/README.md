@@ -1,5 +1,9 @@
 # Rust guest SDK
 
+For an application tutorial, use [Creating a compiler profile](../../docs/component-development/creating-a-capsule.md)
+and select your language. The language profile below describes compiler and
+custom packaging details.
+
 `latent-guest` provides typed capabilities inside a WebAssembly component.
 Its API is available on `wasm32`, uses the authoritative generated
 `latent-component-bindings` profile, and adds no executor, provider, grant or
