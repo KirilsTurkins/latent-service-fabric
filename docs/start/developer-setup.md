@@ -26,7 +26,7 @@ Keep the resulting directory for offline setup and future projects.
 ## Download your toolkit
 
 Save the setup file for your OS to **Downloads**, then run the short command
-below it. Replace `rust` with your language. You can expand **View the setup
+below it. Choose `rust`, `c`, `typescript`, `go`, `java` or `dotnet` (C#). You can expand **View the setup
 script** to read exactly what it does; you do not need to copy or edit the script.
 It keeps the publisher and package checks in place and stops if any check fails.
 
