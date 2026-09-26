@@ -1,16 +1,19 @@
 # Install or build LSF
 
-**Prebuilt native releases are not available yet.** Native publication is on
-hold for completion and review. To try LSF now, follow
-[Run your first node](start/first-node.md): it builds the node and CLI from source,
-starts a local node, and walks through deploying and invoking a service. The
-historical `0.1.0-alpha.3` release is source-only.
+Choose the **developer toolkit** to create and test an application, or the
+**native Linux runtime** for a persistent standalone server. Both are distributed
+with [0.1.0-alpha.4](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.4).
+The developer toolkit includes a disposable test node and six compiler choices;
+the server runtime has its own installer, security profiles and systemd service.
+The historical `0.1.0-alpha.3` release is source-only.
 
 ## Choose your starting point
 
 | What you want to do | Follow this guide |
 | --- | --- |
-| Try a local service for the first time | [Run your first node](start/first-node.md) |
+| Create and test a local application | [Get the developer tools](start/developer-setup.md), then [application development](start/application-development.md) |
+| Install a persistent Linux server | [Native installation below](#install-the-native-runtime) |
+| Build and inspect LSF itself | [Run your first node from source](start/first-node.md) |
 | Write a capsule after starting a node | [Create a capsule](component-development/creating-a-capsule.md) |
 | Connect an existing application | [Use a client SDK](learn/use-a-client.mdx) |
 | Serve a static or Angular website | [Static sites](component-development/static-sites.md) or [Angular walkthrough](learn/build-and-deliver-angular.mdx) |
@@ -29,16 +32,21 @@ protected files, dynamic libraries and host pressure observations under the
 intended node identity. External capsule execution also needs the approved
 Landlock ABI 3/seccomp compiler sandbox.
 
-The [native rehearsal record](evidence/native-upgrade-35821200294/README.md)
-records installation, reboot, recovery and upgrade checks for its exact candidate.
-It is not a downloadable, approved release and does not qualify every rebuild or
-newer source. Current runtime execution and security limits are described in
+The release includes authenticated acceptance receipts for the published
+archive: local and enforced profiles, reboot, retained deployment, recovery and
+the explicitly supported upgrade pair. Older
+[rehearsal records](evidence/native-upgrade-35821200294/README.md) keep their own
+source and artifact identities; they do not qualify newer builds. Current runtime execution and security limits are described in
 [execution profiles](runtime/execution-security-profiles.md).
 
 No container runtime is required for native installation. OCI registries distribute
 application packages independently of how you install LSF itself.
 
-## When an approved native bundle is available
+## Install the native runtime
+
+Download the archive, `release.json`, `lsf-install.pyz`, `SHA256SUMS` and
+`SHA256SUMS.sigstore.json` from the selected release. Do not use the `dev-native-`
+assets for a server: those belong to the disposable development toolkit.
 
 The [bundled installation instructions](../packaging/linux/INSTALL.md) cover the
 complete procedure, including exact command syntax and verification inputs:

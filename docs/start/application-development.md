@@ -5,11 +5,11 @@ WebAssembly component, and run it on an explicitly selected Linux development
 node. The frontend contains its own interpreter. You do not need to compile LSF,
 install a language SDK on Windows, or write node credentials.
 
-These tools currently ship as **nonpublishing candidates**. Obtain an exact
-candidate and independently approved publisher policies from your maintainer.
-A successful CI build alone is not approval. There is no public installer or
-`latest` download to substitute for that handoff. Public release availability
-is described in [installation](../installation.md).
+First [get the developer tools](developer-setup.md) for `0.1.0-alpha.4`.
+The published selection retains the exact qualified developer packages and
+their original signatures. The setup authenticates those packages before
+running them. The toolkit includes a disposable development-test node; use
+[native installation](../installation.md) for a persistent server.
 
 | Your environment | Follow this path | Where the component runs |
 | --- | --- | --- |
@@ -47,7 +47,9 @@ imply native Windows **compilation** support.
 
 The language pages explain the maintained recipes and source-level contracts;
 their contributor bootstrap commands are not prerequisites for the packaged
-workflow. Start with the Windows guide's Rust greeting to exercise edit/watch.
+workflow. [Build a packaged capsule in your language](../component-development/packaged-languages.md)
+supplies the common create/build/test path. Start with the Windows guide's Rust
+greeting to exercise edit/watch.
 Select another language's authenticated tool bundle to build and test its
 greeting. A signed test fixture binds one accepted build and expires after
 30 minutes: use a new disposable test workspace for changed builds or expired

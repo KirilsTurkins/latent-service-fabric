@@ -3,16 +3,32 @@
 This checklist gathers the 27 required outcomes from the
 [coverage inventory](../../website/content/coverage.json) for the maintainer's
 newcomer review. The execution receipts are already linked from that inventory;
-human review remains pending. Review the rendered development guides at one
+the maintainer confirmed completion on September 26, 2026. The accepted maintenance baseline is development `9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf`. The maintainer explicitly delegated the newer developer-workflow additions and their validation without another approval. This records acceptance of the guides, not a claim that the maintainer executed every command at that exact commit.
+
+For future reviews, review the rendered development guides at one
 identified source commit, then report the row IDs that pass and any corrections.
 The review can be completed in batches using the same source identity.
 
 The maintainer, KirilsTurkins, is the sole human guide reviewer. The attempted
 agent review could not access the site and supplies no review result. Keep each
 row pending until the maintainer explicitly reports its outcome; automated
-checks and assistant edits do not stand in for that review.
+checks and assistant edits do not stand in for that review. The September 26
+confirmation applies to all 27 rows. Subsequent setup and development-guide
+corrections are covered by the maintainer's explicit delegation and retain
+their own source, command and rendered-site validation.
 
 ## Record the version you reviewed
+
+### September 26 maintainer decision
+
+The maintainer reported: “Reviewed, though after recent changes, some additions
+might be required to introduce the easier dev workflow for the guides and setup.
+Dont need further approvement of me after your changes”. This accepts the
+27-topic review and delegates the additional setup/workflow corrections and
+their validation. The coverage inventory binds that maintenance decision to
+the then-current development head. It does not invent a per-command execution
+log or claim the maintainer viewed every recent commit in a browser. The
+existing exact-source walkthrough receipts and the new checks retain that role.
 
 For the public site, record the `revision` from its
 [site manifest](https://kirilsturkins.github.io/latent-service-fabric/site-manifest.json),
@@ -47,33 +63,33 @@ review metadata. An unchecked box means no review result has been recorded.
 
 | Reviewed | Outcome ID | Guide issue | Rendered learning paths |
 | --- | --- | --- | --- |
-| [ ] | `evaluate-boundary` | #357 | [Start with LSF](../start/index.md) |
-| [ ] | `install-auth-readiness` | #357 | [Run your first node](../start/first-node.md), [Native standalone installation](../installation.md) |
-| [ ] | `contributor-checks` | #357 | [Operate a local node and choose a contribution](../how-to/operate-and-contribute.md) |
-| [ ] | `author-capsule` | #357 | [Author your first capsule](../learn/author-your-first-capsule.md) |
-| [ ] | `package-sign-publish` | #357 | [Author your first capsule](../learn/author-your-first-capsule.md), [Deliver, invoke and recover a capsule](../learn/deliver-and-recover-a-capsule.md) |
-| [ ] | `rollout-uncertain-recovery` | #357 | [Deliver, invoke and recover a capsule](../learn/deliver-and-recover-a-capsule.md), [Operate a local node and choose a contribution](../how-to/operate-and-contribute.md) |
-| [ ] | `client-rust` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
-| [ ] | `client-typescript` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
-| [ ] | `client-go` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
-| [ ] | `client-c` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
-| [ ] | `client-java` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
-| [ ] | `client-dotnet` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
-| [ ] | `grants-bindings` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
-| [ ] | `http-streaming` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
-| [ ] | `local-s3-blobs` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Exercise provider denial, rotation and uncertain recovery](../how-to/exercise-provider-failure-and-recovery.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
-| [ ] | `local-vault-secrets` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Exercise provider denial, rotation and uncertain recovery](../how-to/exercise-provider-failure-and-recovery.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
-| [ ] | `nats-events-triggers` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Exercise provider denial, rotation and uncertain recovery](../how-to/exercise-provider-failure-and-recovery.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
-| [ ] | `local-calls-descendants` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
-| [ ] | `randomness-metrics` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
-| [ ] | `operator-security-recovery` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
-| [ ] | `angular-build-profile` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md), [Package an observed static site](../component-development/static-sites.md) |
-| [ ] | `angular-publication-routing` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md), [Package an observed static site](../component-development/static-sites.md) |
-| [ ] | `angular-browser-workflow` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md), [Package an observed static site](../component-development/static-sites.md) |
-| [ ] | `reference-contracts` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
-| [ ] | `trust-resource-architecture` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
-| [ ] | `retained-performance-evidence` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
-| [ ] | `later-phase-boundary` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
+| [x] | `evaluate-boundary` | #357 | [Start with LSF](../start/index.md) |
+| [x] | `install-auth-readiness` | #357 | [Run your first node](../start/first-node.md), [Native standalone installation](../installation.md) |
+| [x] | `contributor-checks` | #357 | [Operate a local node and choose a contribution](../how-to/operate-and-contribute.md) |
+| [x] | `author-capsule` | #357 | [Author your first capsule](../learn/author-your-first-capsule.md) |
+| [x] | `package-sign-publish` | #357 | [Author your first capsule](../learn/author-your-first-capsule.md), [Deliver, invoke and recover a capsule](../learn/deliver-and-recover-a-capsule.md) |
+| [x] | `rollout-uncertain-recovery` | #357 | [Deliver, invoke and recover a capsule](../learn/deliver-and-recover-a-capsule.md), [Operate a local node and choose a contribution](../how-to/operate-and-contribute.md) |
+| [x] | `client-rust` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
+| [x] | `client-typescript` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
+| [x] | `client-go` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
+| [x] | `client-c` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
+| [x] | `client-java` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
+| [x] | `client-dotnet` | #358 | [Invoke, cancel and recover with a client SDK](../learn/use-a-client.mdx) |
+| [x] | `grants-bindings` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
+| [x] | `http-streaming` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
+| [x] | `local-s3-blobs` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Exercise provider denial, rotation and uncertain recovery](../how-to/exercise-provider-failure-and-recovery.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
+| [x] | `local-vault-secrets` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Exercise provider denial, rotation and uncertain recovery](../how-to/exercise-provider-failure-and-recovery.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
+| [x] | `nats-events-triggers` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Exercise provider denial, rotation and uncertain recovery](../how-to/exercise-provider-failure-and-recovery.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
+| [x] | `local-calls-descendants` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
+| [x] | `randomness-metrics` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
+| [x] | `operator-security-recovery` | #359 | [Invoke capabilities and recognize denied authority](../learn/use-capabilities.md), [Diagnose provider failures and preserve recovery authority](../how-to/operate-capability-providers.md) |
+| [x] | `angular-build-profile` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md), [Package an observed static site](../component-development/static-sites.md) |
+| [x] | `angular-publication-routing` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md), [Package an observed static site](../component-development/static-sites.md) |
+| [x] | `angular-browser-workflow` | #361 | [Build an Angular application and deliver it through LSF](../learn/build-and-deliver-angular.mdx), [Diagnose Angular build, delivery and hydration failures](../how-to/diagnose-angular-delivery.md), [Package an observed static site](../component-development/static-sites.md) |
+| [x] | `reference-contracts` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
+| [x] | `trust-resource-architecture` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
+| [x] | `retained-performance-evidence` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
+| [x] | `later-phase-boundary` | #237 | [Read contracts, security limits and retained evidence](../learn/read-contracts-and-evidence.md) |
 
 ## Return review results
 
@@ -92,8 +108,8 @@ Reviewer: <name or GitHub handle>
 The maintainer records accepted rows in `website/content/coverage.json` with
 the review reference, exact commit and all ten criteria. Run `npm run check`
 and `npm run coverage:acceptance` from `website/` after recording results.
-The acceptance command continues to fail while any required row lacks a valid
-review or its required execution evidence. A PR merge alone does not supply
+The acceptance command checks all required review rows and execution evidence.
+It must fail if a future change removes required review or evidence. A PR merge alone does not supply
 that review.
 
 The relevant guide issues are #357, #358, #359 and #361, consumed by #237 and

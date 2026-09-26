@@ -5,10 +5,16 @@ count words, and calculate a shipping price. Each has its own service name and
 purpose. Together they show how to accept input, return an answer and explain
 an invalid request.
 
-For a packaged workflow without building LSF, start with
-[application development](../start/application-development.md) and the
-[Windows edit/watch walkthrough](windows-application.md). The commands below
-use the source-built node from the first-node tutorial.
+For your first project, use [application development](../start/application-development.md)
+and the [Windows edit/watch walkthrough](windows-application.md) or
+[Linux workspace](linux-workspace.md). Select `greeting`, `word-count` or
+`shipping` from the authenticated template index for your chosen language.
+`dev init`, `dev build` and `dev test --environment node` use the same project
+contract in all six languages.
+
+This page explains the three programs and also supplies the lower-level
+source-build/operator commands. Only that latter path needs the source-built
+node from the first-node tutorial.
 
 Complete steps 1–7 of [Run your first node](../start/first-node.md) first.
 Keep that terminal open: this tutorial uses its running node, `cli`, `field`

@@ -1,0 +1,324 @@
+{
+  "schemaVersion": "latent.developer-release-selection.v1",
+  "version": "0.1.0-alpha.4",
+  "purpose": "controlled-development-toolkit",
+  "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+  "qualificationRun": 36236145313,
+  "developerRun": 36231869466,
+  "nativeRun": 36231893626,
+  "policies": {
+    "developer": {
+      "purpose": "candidate",
+      "repository": "KirilsTurkins/latent-service-fabric",
+      "schemaVersion": "latent.native-publisher-policy.v1",
+      "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sourceRef": "refs/heads/feat/559-supervisor-shutdown",
+      "version": "0.1.0-alpha.4",
+      "workflow": ".github/workflows/developer-tools.yml"
+    },
+    "runtime": {
+      "purpose": "candidate",
+      "repository": "KirilsTurkins/latent-service-fabric",
+      "schemaVersion": "latent.native-publisher-policy.v1",
+      "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sourceRef": "refs/heads/feat/559-supervisor-shutdown",
+      "version": "0.1.0-alpha.4",
+      "workflow": ".github/workflows/native-runtime.yml"
+    }
+  },
+  "bundles": {
+    "c": {
+      "policy": "developer",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "8d3eccdf5fdbb0b05aa6deaf82da6e5bc418d64fb9239b2eb86bb6c2d1b2583c",
+          "size": 182745,
+          "asset": "dev-c-developer-bundle.json"
+        },
+        {
+          "name": "latent-dev-linux-x86_64-c-tools.zip",
+          "sha256": "a8df20026d609caf8b0a06c73711f13a4fffbf081f674c872fe4ff6bacf15360",
+          "size": 80948527,
+          "asset": "dev-c-latent-dev-linux-x86_64-c-tools.zip"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "f579a5b6d41693b19860707759901c084dc37c8356108813a7fd3337fe072de2",
+          "size": 190,
+          "asset": "dev-c-SHA256SUMS"
+        },
+        {
+          "name": "attestation.json",
+          "sha256": "53076f163ce88ea30b533c27dc41ae04af871a250c6659f7eeef379bf0c3fd6f",
+          "asset": "dev-c-attestation.json"
+        }
+      ]
+    },
+    "dotnet": {
+      "policy": "developer",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "9a821b768bc6a47c23eaab653b5a76611fd241cf024c3320f07caab4eaf2748e",
+          "size": 196686,
+          "asset": "dev-dotnet-developer-bundle.json"
+        },
+        {
+          "name": "latent-dev-linux-x86_64-dotnet-tools.zip",
+          "sha256": "540c7755e16be3962925000696d6a497db17f1375ccd6127016c00a223fb9e05",
+          "size": 859819817,
+          "asset": "dev-dotnet-latent-dev-linux-x86_64-dotnet-tools.zip"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "9e88b43035448adc1894754702482c073c5a0d6b2ebf218b823a79035adbac2e",
+          "size": 195,
+          "asset": "dev-dotnet-SHA256SUMS"
+        },
+        {
+          "name": "attestation.json",
+          "sha256": "edf5ff481dc8b952cc2930351b6dc0670878c98eb71458cda399980d08d18338",
+          "asset": "dev-dotnet-attestation.json"
+        }
+      ]
+    },
+    "go": {
+      "policy": "developer",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "7bc6125f4a9ca636ce31ef0db19c601564524998c468d433b47f7b010fbad1cb",
+          "size": 258420,
+          "asset": "dev-go-developer-bundle.json"
+        },
+        {
+          "name": "latent-dev-linux-x86_64-go-tools.zip",
+          "sha256": "f684831f58fed74d662f065700c6628168b5823a14e2fe919c0a82ad3f723d1f",
+          "size": 93501989,
+          "asset": "dev-go-latent-dev-linux-x86_64-go-tools.zip"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "a71087d40f92578f779f70ee5b4272376e6dacaa7598d0415c4c0296e94e92fc",
+          "size": 191,
+          "asset": "dev-go-SHA256SUMS"
+        },
+        {
+          "name": "attestation.json",
+          "sha256": "2667b82e0c3bf4246a9b9e1ec95c1f262b136bcaa60f4adb977df8ec7338d895",
+          "asset": "dev-go-attestation.json"
+        }
+      ]
+    },
+    "java": {
+      "policy": "developer",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "ebdadc2f0b047955fba47b0b43e03b0adb9eea52edd6e5534fb50306c35dbe5f",
+          "size": 195553,
+          "asset": "dev-java-developer-bundle.json"
+        },
+        {
+          "name": "latent-dev-linux-x86_64-java-tools.zip",
+          "sha256": "cd93139661b0c8dbbb64541ab7ff8c2a261999a7f997f91ee489889508a8fd06",
+          "size": 517066042,
+          "asset": "dev-java-latent-dev-linux-x86_64-java-tools.zip"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "c9791d9afee0f8b483e03c43be2f7ffb9a4da5da287698923ea17eb78bea65ff",
+          "size": 193,
+          "asset": "dev-java-SHA256SUMS"
+        },
+        {
+          "name": "attestation.json",
+          "sha256": "4d302bb3c38048bdc4bfdd90972d29c570fb0cb5ea5e7aadeeb46308fdb02f49",
+          "asset": "dev-java-attestation.json"
+        }
+      ]
+    },
+    "linux": {
+      "policy": "developer",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "4fbc3dd2e955141425ba759a4b20009aab1f7486c3149ca6f736cb6039f58ef6",
+          "size": 97973,
+          "asset": "dev-linux-developer-bundle.json"
+        },
+        {
+          "name": "latent-dev-linux-x86_64.zip",
+          "sha256": "e1e449ef75140f233680537bc525f41b479dd62591ea6313d32b8d170a14af97",
+          "size": 34257146,
+          "asset": "dev-linux-latent-dev-linux-x86_64.zip"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "560098ce3cd98ff2b9c0f0e720add7403a715055206a9f7a0d31176a501a8887",
+          "size": 182,
+          "asset": "dev-linux-SHA256SUMS"
+        },
+        {
+          "name": "attestation.json",
+          "sha256": "33be2e509fb45e6ed9cf1c6f4eff077e1039a08c1bd7edb481181a57657e132f",
+          "asset": "dev-linux-attestation.json"
+        }
+      ]
+    },
+    "native": {
+      "policy": "runtime",
+      "files": [
+        {
+          "name": "lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz",
+          "sha256": "dc3f3c49348f16b0324376789b51f04ed4db595fff102d3daec1b6524826486d",
+          "size": 29461685,
+          "asset": "dev-native-lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz"
+        },
+        {
+          "name": "lsf-install.pyz",
+          "sha256": "c37ddfb591b002e808f1cb74aa471e35e48594da1cbeed5056ce78e84510aa41",
+          "size": 25723,
+          "asset": "dev-native-lsf-install.pyz"
+        },
+        {
+          "name": "release.json",
+          "sha256": "6cf6e0014a71e8567a0c8007c69a040dd5d50ef9dabbc71adb1d071c85b6763e",
+          "size": 71226,
+          "asset": "dev-native-release.json"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "3147e82b3c33812d0092b84803715021e7d3f4d59749e369ba76d0953916ad34",
+          "size": 277,
+          "asset": "dev-native-SHA256SUMS"
+        },
+        {
+          "name": "SHA256SUMS.sigstore.json",
+          "sha256": "2c102de196496271c80eadbf4fd04b37f051464a159687964cd57a6a5548e938",
+          "asset": "dev-native-SHA256SUMS.sigstore.json"
+        }
+      ]
+    },
+    "rust": {
+      "policy": "developer",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "c4e80b164512d5766425ac3e5e03e18dc4e9df1ea0dc5511380475898d81d498",
+          "size": 299861,
+          "asset": "dev-rust-developer-bundle.json"
+        },
+        {
+          "name": "latent-dev-linux-x86_64-rust-tools.zip",
+          "sha256": "385a04b06b3950e9b1998668413846199ebdcb56dbac22fc5de3b4669aa36fa8",
+          "size": 331527965,
+          "asset": "dev-rust-latent-dev-linux-x86_64-rust-tools.zip"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "de87e9d7c68399faeb5ff59a812e4ee32f4d5f50e2fd5835b68fe22a96560d98",
+          "size": 193,
+          "asset": "dev-rust-SHA256SUMS"
+        },
+        {
+          "name": "attestation.json",
+          "sha256": "362a2c399f888cbe0529fadd280db73b5eba948cfaca0d99dae326a5f59275b5",
+          "asset": "dev-rust-attestation.json"
+        }
+      ]
+    },
+    "typescript": {
+      "policy": "developer",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "02ff385e0ddd00fca29b54d8b1ef88a5941619d33ecf70e0ed0e4d5c291af155",
+          "size": 187727,
+          "asset": "dev-typescript-developer-bundle.json"
+        },
+        {
+          "name": "latent-dev-linux-x86_64-typescript-tools.zip",
+          "sha256": "c360b85ac395c799f20b7558def65091e3a990621f0629693503b6c95f33c65f",
+          "size": 185918624,
+          "asset": "dev-typescript-latent-dev-linux-x86_64-typescript-tools.zip"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "4177adaee18fdcaf2de9c83e2d0f29f2981814abaf3566902a848f907cb9ac39",
+          "size": 199,
+          "asset": "dev-typescript-SHA256SUMS"
+        },
+        {
+          "name": "attestation.json",
+          "sha256": "9215e81adc3b2647e6f96162e366f6bb7313399819a0a7aa68c6d9cb421a9dab",
+          "asset": "dev-typescript-attestation.json"
+        }
+      ]
+    },
+    "windows": {
+      "policy": "developer",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "9d808782ec4ebd52b0902e95c4f0b6d51e87603b218dc101208ee9112c6be831",
+          "size": 93654,
+          "asset": "dev-windows-developer-bundle.json"
+        },
+        {
+          "name": "latent-dev-windows-x86_64.zip",
+          "sha256": "02df3699102c0a856037758dd64e3d0ebb334bd214725f9cd5fba4b393db6bb6",
+          "size": 18575022,
+          "asset": "dev-windows-latent-dev-windows-x86_64.zip"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "a1d984a91344749cf8d499d9c7e71ece7e6995ce97468f8e420c67e6d359957f",
+          "size": 184,
+          "asset": "dev-windows-SHA256SUMS"
+        },
+        {
+          "name": "attestation.json",
+          "sha256": "21d1fb9e6551da16be9262e5ceab698fb4a9f51be356fca56a010532721f3390",
+          "asset": "dev-windows-attestation.json"
+        }
+      ]
+    },
+    "wsl": {
+      "policy": "developer",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "e029d681ea81f54f4ca4a624117913e8a640152d7dfbbdf95dfb3c9631f62490",
+          "size": 26085,
+          "asset": "dev-wsl-developer-bundle.json"
+        },
+        {
+          "name": "latent-dev-linux-x86_64-wsl-rootfs.zip",
+          "sha256": "12704c5af77cc559636173757bc9b009a4921bb0e5ff2c1fcc05bc43e22e86c6",
+          "size": 68520247,
+          "asset": "dev-wsl-latent-dev-linux-x86_64-wsl-rootfs.zip"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "1515bab032ceaa73ef0b20d9db2a1d9f521e7b95bcb9672cce6195b0ba322124",
+          "size": 193,
+          "asset": "dev-wsl-SHA256SUMS"
+        },
+        {
+          "name": "attestation.json",
+          "sha256": "a5c2983b582fca6f4f15ed04e163a99e499aebf44b1c387c5b38a35a7c0b6b74",
+          "asset": "dev-wsl-attestation.json"
+        }
+      ]
+    }
+  },
+  "linuxVerifier": {
+    "version": "2.96.0",
+    "url": "https://github.com/cli/cli/releases/download/v2.96.0/gh_2.96.0_linux_amd64.tar.gz",
+    "sha256": "83d5c2ccad5498f58bf6368acb1ab32588cf43ab3a4b1c301bf36328b1c8bd60",
+    "member": "gh_2.96.0_linux_amd64/bin/gh"
+  },
+  "boundary": "The exact independently qualified developer distributions retain their original candidate signatures and explicit development-test policy. They are not the standalone server runtime. The public selection is authenticated by the final native release workflow."
+}

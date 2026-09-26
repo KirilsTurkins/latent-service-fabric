@@ -9,9 +9,23 @@ send it `hello`, and receive `hello` back. You will also restart the node and
 call the same deployment again. That gives you a working foundation for adding
 your own application functions.
 
-## Create your first node
+## Create your first application
 
-Open [Run your first node](first-node.md). It walks through every command:
+Start with [application development](application-development.md). You will
+install the selected tools, choose one of six languages, create a greeting,
+and run its tests on a node. The tools create private credentials for you.
+After changing `Hello` to `Welcome`, edit/watch builds and deploys the change;
+a compiler error leaves the last working version callable. You will also
+restart the node and see your deployment retained.
+
+Use [Windows and WSL2](../component-development/windows-application.md) or
+[Linux](../component-development/linux-workspace.md). You do not need an LSF
+source checkout or a host language compiler for this packaged workflow.
+
+## Run a node from source
+
+For contributor builds and a closer look at individual operator commands,
+open [Run your first node](first-node.md). It walks through every command:
 
 1. Download the source and build the two LSF programs.
 2. Create private node and client configuration files.
@@ -22,18 +36,18 @@ Open [Run your first node](first-node.md). It walks through every command:
 7. Stop the node when you finish.
 
 You need a Linux environment and a terminal that runs Bash. The walkthrough
-uses a node that only accepts connections from your own machine. A prebuilt
-installation release is being prepared; [installation](../installation.md)
-will explain that option when it is available.
+uses a node that only accepts connections from your own machine. For prebuilt
+developer tools or a persistent native server, use
+[installation](../installation.md) instead.
 
 ## Develop an application from selected packages
 
 For Windows/WSL2, direct Linux, an explicit SSH host or native Windows capsule
 tests, start with [Application development](application-development.md).
-That path uses independently approved candidate packages and generates private
+That path uses the qualified development toolkit and generates private
 workspace credentials. It covers authoring, testing, edit/watch, recovery and
-cleanup without building LSF. Candidate access is a maintainer handoff until a
-public developer release is approved.
+cleanup without building LSF. [Get the developer tools](developer-setup.md)
+before following your platform walkthrough.
 
 ## Build something of your own
 

@@ -5,7 +5,8 @@ without WSL, a Linux node or a VM. It is a controlled development test process,
 with a closed set of imports and execution controls. It is not a Windows
 production node and does not certify Linux isolation, admission or performance.
 
-Obtain an independently authenticated Windows developer bundle containing
+[Get the developer tools](../start/developer-setup.md#windows-download-and-verify).
+The authenticated Windows developer bundle contains
 `latent-portable-test-host.exe`, plus your application project and its compiled
 component, capsule manifest and contracts. Use the exact three files produced
 by that application's build, preserving the paths listed under `artifacts` in

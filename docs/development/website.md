@@ -165,7 +165,10 @@ required outcome rows across #345's six areas. Its
 [contract](../../website/content/coverage-contract.json) and
 [schema](../../website/content/coverage.schema.json) validate unique IDs, actual
 published pages, source/evidence paths, implementation prerequisites and delegated
-guide owners. All initial practical-guide reviews remain explicitly pending.
+guide owners. The maintainer accepted all 27 practical-guide outcomes on September 26, 2026,
+and delegated the newer developer-workflow additions without another approval.
+The [review record](phase3-guide-review.md) distinguishes that decision from
+command execution and site validation.
 Linked test sources are labelled available-not-run, not executed receipts.
 Guide/runbook owners and phase gates cannot be implementation prerequisites:
 #237 consumes the guides, not the other way around.
@@ -174,7 +177,7 @@ Guide/runbook owners and phase gates cannot be implementation prerequisites:
 npm run coverage:acceptance
 ```
 
-This command is expected to **fail while guide review remains pending**. The
+This command must pass before documentation-gate closure. The
 ordinary `check` verifies truthful metadata without claiming guide completion.
 Acceptance additionally requires an actual guide, all ten authoring criteria,
 human review of an exact commit and version-bound execution receipts. The

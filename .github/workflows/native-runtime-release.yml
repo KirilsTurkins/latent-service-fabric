@@ -123,10 +123,13 @@ jobs:
           subject-path: |
             ${{ env.NATIVE_WORKSPACE }}/target/native-release/SHA256SUMS
             ${{ env.NATIVE_WORKSPACE }}/target/native-test-tools/fixture-helper
+            ${{ env.NATIVE_WORKSPACE }}/packaging/dev/release-selection.json
       - name: Retain disconnected verification material
         env:
           ATTESTATION_BUNDLE: ${{ steps.attest.outputs.bundle-path }}
-        run: install -m 0644 "$ATTESTATION_BUNDLE" "$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json"
+        run: |
+          install -m 0644 "$ATTESTATION_BUNDLE" "$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json"
+          install -m 0644 "$NATIVE_WORKSPACE/packaging/dev/release-selection.json" "$NATIVE_WORKSPACE/target/native-release/developer-selection.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-runtime-release-${{ github.sha }}

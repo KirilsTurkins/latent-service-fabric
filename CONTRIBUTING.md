@@ -5,6 +5,10 @@ requests into `development`. Start with the step-by-step
 [contributor guide](docs/contribute/index.md), then use the rules below for the
 kind of change you are making.
 
+To build an application on LSF, use the [packaged developer workflow](docs/start/application-development.md).
+It includes the six guest-language toolchains, project templates and real-node
+tests. The contributor toolchain below is for changing LSF itself.
+
 Read the full issue and its existing pull requests before starting. Current
 implementation and documented supported contracts determine behavior; proposed
 interfaces and historical measurements do not establish a delivered feature.

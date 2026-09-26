@@ -5,82 +5,136 @@ watch/recovery controller and real-node tests as the
 [Windows walkthrough](windows-application.md). Select a backend explicitly;
 the frontend never guesses a host or uses ambient SSH agent credentials.
 
-Obtain the independently approved frontend/runtime/tool distributions and their
-verification inputs first. The selected host must be Ubuntu 24.04 x86-64, with
+[Download and verify the toolkit](../start/developer-setup.md#linux-download-and-verify)
+first. Use the resulting frontend/runtime/tool directories and policies below. The selected host must be Ubuntu 24.04 x86-64, with
 Linux 6.8 or newer and the controls required by the chosen node profile. A host
 administrator provisions the reviewed helper and Python 3.13.5. Connecting does
 not install an OS, grant privileges, or repair missing kernel controls.
 
 ## Direct Linux
 
-Run the authenticated Linux frontend as the intended unprivileged workspace
-owner. Select the exact installed helper and interpreter with a backend JSON
-file. Replace the helper digest with the independently verified bundle's digest:
+Use the authenticated Linux frontend and helper from the download directory.
+Your administrator supplies Python 3.13.5 at `/usr/local/bin/python3.13`.
+This walkthrough runs as your ordinary Linux account. Keep its input and state
+directories private; another workspace name under the same account is not an
+isolation boundary against that account.
 
-```json
-{
-  "kind": "linux",
-  "helperSha256": "sha256:REPLACE_WITH_SELECTED_HELPER_DIGEST",
-  "python": "/usr/local/bin/python3.13",
-  "helper": "/opt/latent-dev/helper.pyz"
-}
-```
+### 1. Select your language and create the installation inputs
 
-For example, save it as `/home/developer/lsf-inputs/direct-backend.json` and use:
+Keep this Bash terminal open. Choose the same language as in the download step:
+`rust`, `c`, `typescript`, `go`, `java` or `dotnet`. Use a new project and workspace
+name for each tutorial. Choose an unused loopback port if 18080 is already taken.
 
 ```bash
-Frontend=/opt/latent-dev/bin/latent-dev
+set -euo pipefail
+umask 077
+export Inputs="$HOME/LSF-inputs-alpha4"
+export Language=rust
+Frontend="$Inputs/frontend/bin/latent-dev"
 State="$HOME/.latent-dev-tutorial"
 Workspace=test-my-greeting
 Project="$HOME/Projects/My greeting"
-"$Frontend" --state-root "$State" dev doctor
-"$Frontend" --state-root "$State" dev connect --workspace "$Workspace" \
-  --backend-config "$HOME/lsf-inputs/direct-backend.json"
-"$Frontend" --state-root "$State" dev install --workspace "$Workspace" \
-  --runtime-inputs "$HOME/lsf-inputs/runtime.json"
-"$Frontend" --state-root "$State" dev install-tools --workspace "$Workspace" \
-  --tool-inputs "$HOME/lsf-inputs/rust-tools.json"
+mkdir -p "$HOME/Projects"
+python3 - <<'PY'
+import hashlib, json, os, pathlib, shutil
+root = pathlib.Path(os.environ['Inputs'])
+language = os.environ['Language']
+assert language in ('rust', 'c', 'typescript', 'go', 'java', 'dotnet')
+manifest = json.loads((root/'linux/developer-bundle.json').read_text())
+helper = next(file for file in manifest['files'] if file['path'] == 'helper.pyz')
+verifier = root/'gh-linux'
+shutil.copyfile(shutil.which('gh'), verifier)
+verifier.chmod(0o700)
+identity = 'sha256:'+hashlib.sha256(verifier.read_bytes()).hexdigest()
+def save(name, value):
+    (root/name).write_text(json.dumps(value)+'\n')
+save('direct-backend.json', dict(kind='linux', helperSha256=helper['sha256'],
+     python='/usr/local/bin/python3.13', helper=str(root/'frontend/helper.pyz')))
+common = dict(version=manifest['version'], trustedRoot=str(root/'trusted_root.jsonl'),
+              verifier=str(verifier), verifierSha256=identity, allowCandidate=True, consent=True)
+save('tutorial-runtime.json', dict(common, schemaVersion='latent.dev.install-inputs.v1',
+     releaseDirectory=str(root/'native'), publisherPolicy=str(root/'native-policy.json'),
+     profile='local-experimental-v1', port=18080))
+save('tutorial-tools.json', dict(common, schemaVersion='latent.dev.tool-inputs.v1',
+     bundleDirectory=str(root/language), publisherPolicy=str(root/'developer-policy.json'), language=language))
+PY
+lsf() { "$Frontend" --state-root "$State" dev "$@"; }
+lsf doctor
+lsf connect --workspace "$Workspace" --backend-config "$Inputs/direct-backend.json"
+lsf install --workspace "$Workspace" --runtime-inputs "$Inputs/tutorial-runtime.json"
+lsf install-tools --workspace "$Workspace" --tool-inputs "$Inputs/tutorial-tools.json"
 ```
 
-The installation selections have the same fields as Windows step 2, with
-absolute Linux paths to the selected offline distributions, approved policies,
-trusted roots and pinned Linux verifier. Choose an unused loopback port and
-`local-experimental-v1` for this controlled tutorial. The installer creates
-private node credentials; do not create a token or configuration by hand.
+Expect each operation to report `success`. The installer creates private node
+credentials. There is no token-copying or hand-written node configuration step.
+A port conflict is a failure; the controller does not stop its current owner.
 
-Authenticate the compiler/template bundle with `dev acquire --target linux-x86_64`
-and the explicit publisher/verifier inputs, then select `rust/greeting` and its
-identity from that authenticated bundle's `templates.json`. Use those returned
-values as `$TemplateBundle` and `$TemplateSha256`:
+### 2. Create and build a greeting
+
+Authenticate the templates with the same selected policy and independently
+installed verifier. The template index supplies the identity automatically:
 
 ```bash
-"$Frontend" --state-root "$State" dev init "$Project" --bundle "$TemplateBundle" \
-  --template rust/greeting --template-sha256 "$TemplateSha256"
-"$Frontend" --state-root "$State" dev trust --workspace "$Workspace" --project "$Project"
-"$Frontend" --state-root "$State" dev build --workspace "$Workspace" --project "$Project"
-"$Frontend" --state-root "$State" dev prepare-test --workspace "$Workspace" \
-  --consent-test-fixtures --admission trusted-local
-"$Frontend" --state-root "$State" dev up --workspace "$Workspace"
+Version=$(python3 -c 'import json,os; print(json.load(open(os.environ["Inputs"]+"/developer-policy.json"))["version"])')
+VerifierIdentity="sha256:$(sha256sum "$Inputs/gh-linux" | cut -d' ' -f1)"
+lsf acquire --bundle-directory "$Inputs/$Language" \
+  --publisher-policy "$Inputs/developer-policy.json" --trusted-root "$Inputs/trusted_root.jsonl" \
+  --verifier "$Inputs/gh-linux" --verifier-sha256 "$VerifierIdentity" \
+  --version "$Version" --target linux-x86_64 --allow-candidate > "$Inputs/template-acquisition.json"
+Bundle=$(python3 -c 'import json,os; print(json.load(open(os.environ["Inputs"]+"/template-acquisition.json"))["result"]["bundle"])')
+TemplateIdentity=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["templates"]["greeting"]["identity"])' "$State/bundles/$Bundle/templates.json")
+lsf init "$Project" --bundle "$Bundle" --template "$Language/greeting" --template-sha256 "$TemplateIdentity"
 ```
 
-Review the recipe before the trust command. Keep foreground up running and use
-another terminal with the same frontend/state/workspace values for `dev deploy`,
-`dev test --environment node`, `dev invoke`, `dev logs` and `dev down`. Follow
-Windows steps 4–6 for the same expected greeting, declared error, source edit,
-compiler failure and retained restart; Bash uses `\` for line continuation.
+Open `app` to see your editable code and WIT contract. Review
+`latent.project.json` before trusting its build recipe. `tests/scenarios.json`
+lists success and declared-error cases with their input and expected files.
 
-On a Linux authoring host with the pinned Rust 1.97.1 native toolchain and linker,
-run the greeting's business-logic unit test before the component build:
-`cargo +1.97.1 test --locked --manifest-path "$Project/app/Cargo.toml"`.
-The packaged compiler selection and the native host toolchain are separate.
-Record an unavailable native test as not run; building a component does not
-implicitly run it.
+```bash
+lsf trust --workspace "$Workspace" --project "$Project"
+lsf build --workspace "$Workspace" --project "$Project"
+lsf prepare-test --workspace "$Workspace" --consent-test-fixtures
+```
 
-The controller's private state belongs in a protected local home directory.
-Shared application source is synchronized as data; it does not become node
-state. Two mutually untrusted applications need separate Linux accounts, as the
-managed WSL adapter provides. Different workspace names under one Unix account
-are not a security boundary against that account itself.
+The signed disposable fixture binds this build and expires after 30 minutes.
+Use a fresh test workspace if the accepted build changes or the fixture expires.
+The selected profile supplies the language's declared clock/entropy imports;
+it does not supply a general JVM, CLR or Node.js operating environment.
+
+### 3. Start, deploy and test
+
+Open another Bash terminal and keep this foreground command running:
+
+```bash
+"$HOME/LSF-inputs-alpha4/frontend/bin/latent-dev" --state-root "$HOME/.latent-dev-tutorial" \
+  dev up --workspace test-my-greeting
+```
+
+Wait for the authenticated `ready` event. In the original terminal:
+
+```bash
+lsf deploy --workspace "$Workspace"
+lsf test --workspace "$Workspace" --environment node
+lsf logs --workspace "$Workspace"
+lsf down --workspace "$Workspace"
+lsf status --workspace "$Workspace"
+```
+
+Expect `passed: true` with all greeting cases passing: `Ada` returns
+`Hello, Ada!`, and an empty name returns the expected declared application error.
+`down` stops the owned node and retains its data. Starting foreground `up`
+again preserves the selected deployment without another deploy command.
+
+When finished, remove this disposable workspace explicitly:
+
+```bash
+lsf purge --workspace "$Workspace" --confirm-workspace "$Workspace"
+```
+
+Your project source remains in `$Project`. To try `word-count` or `shipping`,
+use a new project/workspace, select that template and its matching index entry,
+then follow the same build/test steps. The [language guide](packaged-languages.md)
+explains their expected results and supported execution profiles.
 
 ## An explicit SSH host
 

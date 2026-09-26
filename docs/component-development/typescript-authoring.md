@@ -1,5 +1,9 @@
 # Create your own TypeScript capsule
 
+For the packaged TypeScript workflow, start with [application development](../start/application-development.md) and select `typescript` when [getting the tools](../start/developer-setup.md). The controller builds your project on Linux or WSL, creates node credentials, and runs the real-node tests. You do not need to build LSF or install the language compiler on Windows.
+
+The commands below describe the language-owned source recipe, packaging and admission steps for readers who need to work at that level.
+
 Create an independent TypeScript project, edit its typed contract, and run its signed
 package on a local node. Your application lives outside the LSF checkout and
 uses a pinned copy of the maintained guest SDK.

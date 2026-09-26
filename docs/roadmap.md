@@ -115,6 +115,13 @@ identities, actual outcomes and failed or superseded attempts.
 
 ## Phase 3: capabilities and application hosting
 
+**Status: release completion in progress.**
+
+All six guest SDKs and the packaged developer workflow are implemented and
+qualified. The maintainer accepted the 27-topic guide review on September 26.
+The [completion gate](phase-3-gate-review.md) tracks the remaining exact-source
+native publication, complete-site deployment and final acceptance decision.
+
 [Epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
 tracks the capability and application-hosting implementation now in progress,
 including the architecture/security audit requirements and the retained

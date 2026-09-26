@@ -25,12 +25,17 @@
         {
           "path": "docs/reference/standalone-node.md",
           "role": "reference-only"
+        },
+        {
+          "path": "docs/start/application-development.md",
+          "role": "guide"
         }
       ],
       "sourceRefs": [
         "README.md",
         "SECURITY.md",
-        "docs/development/core-guide-validation.md"
+        "docs/development/core-guide-validation.md",
+        "docs/development/windows-qualification-handoff.md"
       ],
       "implementationPrerequisites": [
         308,
@@ -49,13 +54,31 @@
           "status": "executed",
           "sourceCommit": "bb2062afeeea8561c1403202a87b6ad4c63ddf83",
           "scope": "Linux execution of the documented repository, documentation and retained-evidence validators, expected missing-matrix failure, and contributor regressions. Validates the retained SDK/resource data; does not rerun those workloads or certify a native bundle or human review."
+        },
+        {
+          "path": "docs/development/windows-qualification-report.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+          "scope": "Authenticated packaged Windows/WSL, native Windows, direct Linux, explicit SSH and optional devcontainer qualification for all six language templates; retains actual failures and scope exclusions."
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -85,12 +108,17 @@
         {
           "path": "docs/runtime/protected-configuration.md",
           "role": "reference-only"
+        },
+        {
+          "path": "docs/start/application-development.md",
+          "role": "guide"
         }
       ],
       "sourceRefs": [
         "apps/latentd/src",
         "apps/latent/src",
-        "docs/development/core-guide-validation.md"
+        "docs/development/core-guide-validation.md",
+        "docs/development/windows-qualification-handoff.md"
       ],
       "implementationPrerequisites": [
         308,
@@ -136,13 +164,31 @@
           "status": "executed",
           "sourceCommit": "193d52c37635026de416feffd4a2dfd57d082451",
           "scope": "Authenticated alpha.4 enforced external-capsule profile at the exact tagged source: complete acceptance, actual rc.2 upgrade, reboot/retained invocation, unsupported downgrade rejection and recovery/removal. Protected publication and human review remain separate."
+        },
+        {
+          "path": "docs/development/windows-qualification-report.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+          "scope": "Authenticated packaged Windows/WSL, native Windows, direct Linux, explicit SSH and optional devcontainer qualification for all six language templates; retains actual failures and scope exclusions."
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -195,10 +241,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -224,13 +281,18 @@
         {
           "path": "docs/component-development/guest-sdk.md",
           "role": "reference-only"
+        },
+        {
+          "path": "docs/start/application-development.md",
+          "role": "guide"
         }
       ],
       "sourceRefs": [
         "sdk/rust-guest/src",
         "sdk/c-guest",
         "wit",
-        "docs/development/core-guide-validation.md"
+        "docs/development/core-guide-validation.md",
+        "docs/development/windows-qualification-handoff.md"
       ],
       "implementationPrerequisites": [
         221,
@@ -262,13 +324,31 @@
           "status": "executed",
           "sourceCommit": "21e03395d4f062d290fec21951439f9b09302cd8",
           "scope": "Actual generated echo invocation, declared error and authenticated restart; source-based scope with separately hashed artifacts."
+        },
+        {
+          "path": "docs/development/windows-qualification-report.json",
+          "kind": "execution-receipt",
+          "status": "executed",
+          "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+          "scope": "Authenticated packaged Windows/WSL, native Windows, direct Linux, explicit SSH and optional devcontainer qualification for all six language templates; retains actual failures and scope exclusions."
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -347,10 +427,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -418,10 +509,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/357",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -478,7 +580,7 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review is recorded separately."
         },
         {
           "path": "docs/evidence/phase3-integration-35818046307/sdk/rust.json",
@@ -496,10 +598,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -556,7 +669,7 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review is recorded separately."
         },
         {
           "path": "docs/evidence/phase3-integration-35818046307/sdk/typescript.json",
@@ -574,10 +687,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -634,7 +758,7 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review is recorded separately."
         },
         {
           "path": "docs/evidence/phase3-integration-35818046307/sdk/go.json",
@@ -652,10 +776,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -712,7 +847,7 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review is recorded separately."
         },
         {
           "path": "docs/evidence/phase3-integration-35818046307/sdk/c.json",
@@ -730,10 +865,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -790,7 +936,7 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review is recorded separately."
         },
         {
           "path": "docs/evidence/phase3-integration-35818046307/sdk/java.json",
@@ -808,10 +954,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -868,7 +1025,7 @@
           "kind": "execution-receipt",
           "status": "executed",
           "sourceCommit": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
-          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review remains pending."
+          "scope": "Earlier six-client guide execution at CI 35509915448; the original 18 variant/source checks remain historical. Current runtime execution is recorded separately below; human review is recorded separately."
         },
         {
           "path": "docs/evidence/phase3-integration-35818046307/sdk/dotnet.json",
@@ -886,10 +1043,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/358",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -966,10 +1134,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1035,10 +1214,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1128,10 +1318,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1215,10 +1416,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1301,10 +1513,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1369,10 +1592,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1443,10 +1677,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1540,10 +1785,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/359",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1642,10 +1898,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/361",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1749,10 +2016,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/361",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1851,10 +2129,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/361",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1916,10 +2205,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/237",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -1981,10 +2281,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/237",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -2047,10 +2358,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/237",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     },
     {
@@ -2107,10 +2429,21 @@
         }
       ],
       "review": {
-        "status": "pending",
-        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/237",
-        "reviewedCommit": null,
-        "criteria": []
+        "status": "approved",
+        "reference": "https://github.com/KirilsTurkins/latent-service-fabric/issues/345",
+        "reviewedCommit": "9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf",
+        "criteria": [
+          "outcome",
+          "version-profile",
+          "prerequisites",
+          "full-source",
+          "commands",
+          "expected-observations",
+          "failure-cases",
+          "cleanup",
+          "deeper-reference",
+          "validation-level"
+        ]
       }
     }
   ]

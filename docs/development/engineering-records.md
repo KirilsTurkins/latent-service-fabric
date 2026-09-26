@@ -6,8 +6,8 @@ For current runtime behavior, use [the architecture overview](../architecture/ov
 
 ## Current acceptance and publication
 
-- [Integration gate](../phase-3-gate-review.md): remaining requirements and the publication hold.
-- [Guide review checklist](phase3-guide-review.md): the maintainer's pending human review.
+- [Integration gate](../phase-3-gate-review.md): implementation, qualification and final publication requirements.
+- [Guide review checklist](phase3-guide-review.md): the maintainer's completed review and delegated developer-workflow additions.
 - [Native release gate](native-release-gate.md): installation and release qualification.
 - [Website publication](website-publication.md): building and deploying the reviewed site.
 - [Roadmap](../roadmap.md): planned work and dependency order.
