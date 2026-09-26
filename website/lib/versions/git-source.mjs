@@ -40,7 +40,7 @@ export function sourceReader(root, documentationRevision, sourceRevision = docum
   function readAt(ref, name, maximum = 2 * 1024 * 1024, optional = false) {
     canonicalPath(name);
     requireValue(/^(docs|adr|sdk|examples|tools|apps|crates|tests|website\/scripts)\//.test(name)
-      || /^benchmarks\/.+\.md$/.test(name)
+      || /^(benchmarks|packaging)\/.+\.md$/.test(name)
       || /^(README|ARCHITECTURE|CONTRIBUTING|VALIDATION|CHANGELOG|SECURITY)\.md$/.test(name), `Unapproved snapshot content root: ${name}`);
     const entry = tree(ref).get(name);
     if (optional && !entry) return null;
