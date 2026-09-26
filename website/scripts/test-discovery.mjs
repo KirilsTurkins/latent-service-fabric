@@ -107,6 +107,18 @@ try {
         await page.setViewportSize({width: 390, height: 844});
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), slug);
         await audit(`${slug}-mobile`);
+        if (slug === 'how-to/developer-commands') {
+          const tables = page.locator('main table');
+          for (let i = 0; i < await tables.count(); i++) {
+            const table = tables.nth(i);
+            if (await table.evaluate(node => node.scrollWidth > node.clientWidth + 1)) {
+              assert.equal(await table.getAttribute('tabindex'), '0');
+              await table.focus();
+              await page.keyboard.press('ArrowRight');
+              await page.waitForFunction(node => node.scrollLeft > 0, await table.elementHandle());
+            }
+          }
+        }
         await page.screenshot({path: path.join(output, `${variant}-${slug.replaceAll('/', '-')}-mobile.png`), fullPage: true});
         await page.setViewportSize({width: 1280, height: 900});
       }
