@@ -2,12 +2,14 @@
 
 #![forbid(unsafe_code)]
 
+mod binding;
 mod compatibility;
+pub use binding::BoundedBindingCompiler;
 #[doc(hidden)]
 pub use compatibility::Analysis;
 pub use compatibility::{
-    compare_descriptors, BoundedCompatibilityChecker, ComparisonLimits, ComparisonWork,
-    StructuralCompatibility, StructuralIssue, StructuralIssueCode, StructuralReport,
+    compare_descriptors, ComparisonLimits, ComparisonWork, StructuralCompatibility,
+    StructuralIssue, StructuralIssueCode, StructuralReport,
 };
 
 use latent_core::{BoxFuture, ContractId, FunctionId, InterfaceId, Metadata, PlatformError};
@@ -78,29 +80,6 @@ pub struct ContractDescriptor {
     pub digest: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CompatibilityLevel {
-    Identical,
-    BackwardCompatible,
-    ForwardCompatible,
-    BidirectionallyCompatible,
-    Breaking,
-    Unknown,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CompatibilityIssue {
-    pub path: String,
-    pub code: String,
-    pub message: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CompatibilityReport {
-    pub level: CompatibilityLevel,
-    pub issues: Vec<CompatibilityIssue>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BindingPlan {
     pub consumer: ContractId,
@@ -115,23 +94,12 @@ pub trait ContractRegistry: Send + Sync {
         id: &'a ContractId,
     ) -> BoxFuture<'a, Result<Option<ContractDescriptor>, PlatformError>>;
 
-    fn publish<'a>(
-        &'a self,
-        contract: ContractDescriptor,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn publish(&self, contract: ContractDescriptor) -> BoxFuture<'_, Result<(), PlatformError>>;
 
     fn list<'a>(
         &'a self,
         package_prefix: &'a str,
     ) -> BoxFuture<'a, Result<Vec<ContractDescriptor>, PlatformError>>;
-}
-
-pub trait CompatibilityChecker: Send + Sync {
-    fn compare(
-        &self,
-        consumer: &ContractDescriptor,
-        provider: &ContractDescriptor,
-    ) -> CompatibilityReport;
 }
 
 pub trait BindingCompiler: Send + Sync {

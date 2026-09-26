@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latent.dev/schemas/v1/build-observation.schema.json",
-  "title": "LSF v1 unsigned observed echo build",
+  "title": "LSF v1 unsigned bounded build observations",
   "$comment": "This shape confers no builder authority. Rust additionally checks raw bytes <=32768, unique material names, snapshot material equality, ordered timestamps within3600seconds, duplicate keys and integer token spelling. Repo is an operator assertion, not authenticated source ownership.",
   "type": "object",
   "additionalProperties": false,
@@ -24,7 +24,16 @@
       "const": 1
     },
     "buildType": {
-      "const": "https://latent.dev/build/echo-capsule/v1"
+      "enum": [
+        "https://latent.dev/build/echo-capsule/v1",
+        "https://latent.dev/build/rust-guest/v1",
+        "https://latent.dev/build/c-guest/v1",
+        "https://latent.dev/build/rust-capsule/v1",
+        "https://latent.dev/build/typescript-capsule/v1",
+        "https://latent.dev/build/go-capsule/v1",
+        "https://latent.dev/build/dotnet-capsule/v1",
+        "https://latent.dev/build/java-capsule/v1"
+      ]
     },
     "source": {
       "type": "object",
@@ -50,7 +59,10 @@
           "const": "operator-asserted"
         },
         "capture": {
-          "const": "git-archive-allowlist"
+          "enum": [
+            "git-archive-allowlist",
+            "explicit-input-files"
+          ]
         }
       }
     },
@@ -64,7 +76,7 @@
     },
     "materials": {
       "type": "array",
-      "minItems": 7,
+      "minItems": 6,
       "maxItems": 64,
       "uniqueItems": true,
       "items": {
@@ -95,6 +107,7 @@
       "allOf": [
         {
           "contains": {
+            "type": "object",
             "properties": {
               "name": {
                 "const": "source-snapshot"
@@ -109,20 +122,7 @@
         },
         {
           "contains": {
-            "properties": {
-              "name": {
-                "const": "dependency-lock"
-              }
-            },
-            "required": [
-              "name"
-            ]
-          },
-          "minContains": 1,
-          "maxContains": 1
-        },
-        {
-          "contains": {
+            "type": "object",
             "properties": {
               "name": {
                 "const": "build-recipe"
@@ -137,6 +137,7 @@
         },
         {
           "contains": {
+            "type": "object",
             "properties": {
               "name": {
                 "const": "toolchain-config"
@@ -151,34 +152,7 @@
         },
         {
           "contains": {
-            "properties": {
-              "name": {
-                "const": "cargo"
-              }
-            },
-            "required": [
-              "name"
-            ]
-          },
-          "minContains": 1,
-          "maxContains": 1
-        },
-        {
-          "contains": {
-            "properties": {
-              "name": {
-                "const": "rustc"
-              }
-            },
-            "required": [
-              "name"
-            ]
-          },
-          "minContains": 1,
-          "maxContains": 1
-        },
-        {
-          "contains": {
+            "type": "object",
             "properties": {
               "name": {
                 "const": "wasm-tools"
@@ -194,36 +168,7 @@
       ]
     },
     "parameters": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "cargoPackage",
-        "cargoExample",
-        "target",
-        "profile",
-        "locked",
-        "incremental"
-      ],
-      "properties": {
-        "cargoPackage": {
-          "const": "latent-toolchain-smoke"
-        },
-        "cargoExample": {
-          "const": "echo-capsule"
-        },
-        "target": {
-          "const": "wasm32-unknown-unknown"
-        },
-        "profile": {
-          "const": "release"
-        },
-        "locked": {
-          "const": true
-        },
-        "incremental": {
-          "const": false
-        }
-      }
+      "type": "object"
     },
     "startedAt": {
       "$ref": "#/$defs/time"
@@ -241,7 +186,10 @@
       "const": false
     },
     "dependencyCompleteness": {
-      "const": "lockfile-only"
+      "enum": [
+        "lockfile-only",
+        "declared-inputs-incomplete"
+      ]
     }
   },
   "$defs": {
@@ -271,5 +219,1247 @@
       "maxLength": 512,
       "pattern": "^https://(?=[^/]{1,253}/)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+(?:/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+)*(?![\\s\\S])"
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/echo-capsule/v1"
+          }
+        },
+        "required": [
+          "buildType"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "cargoPackage",
+              "cargoExample",
+              "target",
+              "profile",
+              "locked",
+              "incremental"
+            ],
+            "properties": {
+              "cargoPackage": {
+                "const": "latent-toolchain-smoke"
+              },
+              "cargoExample": {
+                "const": "echo-capsule"
+              },
+              "target": {
+                "const": "wasm32-unknown-unknown"
+              },
+              "profile": {
+                "const": "release"
+              },
+              "locked": {
+                "const": true
+              },
+              "incremental": {
+                "const": false
+              }
+            }
+          },
+          "source": {
+            "properties": {
+              "capture": {
+                "const": "git-archive-allowlist"
+              }
+            }
+          },
+          "dependencyCompleteness": {
+            "const": "lockfile-only"
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "dependency-lock"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "cargo"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "rustc"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/rust-guest/v1"
+          }
+        },
+        "required": [
+          "buildType"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "cargoPackage",
+              "cargoExample",
+              "target",
+              "profile",
+              "locked",
+              "incremental"
+            ],
+            "properties": {
+              "cargoPackage": {
+                "const": "latent-toolchain-smoke"
+              },
+              "cargoExample": {
+                "enum": [
+                  "guest-http",
+                  "guest-streaming",
+                  "guest-blob",
+                  "guest-secrets",
+                  "guest-events",
+                  "guest-random",
+                  "guest-metrics",
+                  "guest-service",
+                  "guest-callee"
+                ]
+              },
+              "target": {
+                "const": "wasm32-unknown-unknown"
+              },
+              "profile": {
+                "const": "release"
+              },
+              "locked": {
+                "const": true
+              },
+              "incremental": {
+                "const": false
+              }
+            }
+          },
+          "source": {
+            "properties": {
+              "capture": {
+                "const": "explicit-input-files"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+              }
+            }
+          },
+          "dependencyCompleteness": {
+            "const": "declared-inputs-incomplete"
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "dependency-lock"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "cargo"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "rustc"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "wit-bindgen"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/c-guest/v1"
+          }
+        },
+        "required": [
+          "buildType"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "compiler",
+              "fixture",
+              "target",
+              "optimization"
+            ],
+            "properties": {
+              "compiler": {
+                "const": "zig-cc"
+              },
+              "fixture": {
+                "enum": [
+                  "application",
+                  "blob",
+                  "callee",
+                  "events",
+                  "http",
+                  "metrics",
+                  "random",
+                  "secrets",
+                  "service",
+                  "streaming"
+                ]
+              },
+              "target": {
+                "const": "wasm32-wasi"
+              },
+              "optimization": {
+                "const": "O2"
+              }
+            }
+          },
+          "source": {
+            "properties": {
+              "capture": {
+                "const": "explicit-input-files"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+              }
+            }
+          },
+          "dependencyCompleteness": {
+            "const": "declared-inputs-incomplete"
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "zig"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "wit-bindgen"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/rust-capsule/v1"
+          }
+        },
+        "required": [
+          "buildType"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "cargoPackage",
+              "target",
+              "profile",
+              "locked",
+              "incremental",
+              "manifestPath",
+              "crateType"
+            ],
+            "properties": {
+              "cargoPackage": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$(?![\\s\\S])"
+              },
+              "target": {
+                "const": "wasm32-unknown-unknown"
+              },
+              "profile": {
+                "const": "release"
+              },
+              "locked": {
+                "const": true
+              },
+              "incremental": {
+                "const": false
+              },
+              "manifestPath": {
+                "const": "Cargo.toml"
+              },
+              "crateType": {
+                "const": "cdylib"
+              }
+            }
+          },
+          "source": {
+            "properties": {
+              "capture": {
+                "const": "explicit-input-files"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+              }
+            }
+          },
+          "dependencyCompleteness": {
+            "const": "declared-inputs-incomplete"
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "dependency-lock"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "cargo"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "rustc"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "wit-bindgen"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "contracts-tool"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "packager"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "package-inputs"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/typescript-capsule/v1"
+          }
+        },
+        "required": [
+          "buildType"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "compiler",
+              "bindings",
+              "language",
+              "target",
+              "runtime",
+              "ambientWasi"
+            ],
+            "properties": {
+              "compiler": {
+                "const": "componentize-js"
+              },
+              "bindings": {
+                "const": "jco"
+              },
+              "language": {
+                "const": "typescript"
+              },
+              "target": {
+                "const": "wasm32-component"
+              },
+              "runtime": {
+                "const": "spidermonkey"
+              },
+              "ambientWasi": {
+                "const": false
+              }
+            }
+          },
+          "source": {
+            "properties": {
+              "capture": {
+                "const": "explicit-input-files"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+              }
+            }
+          },
+          "dependencyCompleteness": {
+            "const": "declared-inputs-incomplete"
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "dependency-lock"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "node"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "compiler-inputs"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "contracts-tool"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "packager"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "package-inputs"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/go-capsule/v1"
+          }
+        },
+        "required": [
+          "buildType"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "goPackage",
+              "compiler",
+              "target",
+              "runtime",
+              "locked",
+              "ambientWasi"
+            ],
+            "properties": {
+              "goPackage": {
+                "type": "string",
+                "maxLength": 64,
+                "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$(?![\\s\\S])"
+              },
+              "compiler": {
+                "const": "componentize-go"
+              },
+              "target": {
+                "const": "wasm32-wasip1"
+              },
+              "runtime": {
+                "const": "go-component-async-v1"
+              },
+              "locked": {
+                "const": true
+              },
+              "ambientWasi": {
+                "const": false
+              }
+            }
+          },
+          "source": {
+            "properties": {
+              "capture": {
+                "const": "explicit-input-files"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+              }
+            }
+          },
+          "dependencyCompleteness": {
+            "const": "declared-inputs-incomplete"
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "go"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "componentize-go"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "dependency-lock"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "contracts-tool"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "packager"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "package-inputs"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/dotnet-capsule/v1"
+          }
+        },
+        "required": [
+          "buildType"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "compiler",
+              "bindings",
+              "language",
+              "target",
+              "runtime",
+              "locked",
+              "ambientWasi"
+            ],
+            "properties": {
+              "compiler": {
+                "const": "native-aot-llvm"
+              },
+              "bindings": {
+                "const": "wit-bindgen-csharp"
+              },
+              "language": {
+                "const": "csharp"
+              },
+              "target": {
+                "const": "wasi-wasm"
+              },
+              "runtime": {
+                "const": "native-aot"
+              },
+              "locked": {
+                "const": true
+              },
+              "ambientWasi": {
+                "const": false
+              }
+            }
+          },
+          "source": {
+            "properties": {
+              "capture": {
+                "const": "explicit-input-files"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+              }
+            }
+          },
+          "dependencyCompleteness": {
+            "const": "declared-inputs-incomplete"
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "dotnet"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "wit-bindgen"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "closed-runtime"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "compiler-inputs"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "dependency-lock"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "contracts-tool"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "packager"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "package-inputs"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "buildType": {
+            "const": "https://latent.dev/build/java-capsule/v1"
+          }
+        },
+        "required": [
+          "buildType"
+        ]
+      },
+      "then": {
+        "properties": {
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "compiler",
+              "entryPoint",
+              "target",
+              "bindings",
+              "optimization",
+              "javaHeapBytes"
+            ],
+            "properties": {
+              "compiler": {
+                "const": "teavm-c"
+              },
+              "entryPoint": {
+                "const": "dev.latent.app.Capsule"
+              },
+              "target": {
+                "const": "wasm32-wasip1"
+              },
+              "bindings": {
+                "const": "lsf-java-wit-v1"
+              },
+              "optimization": {
+                "const": "O2"
+              },
+              "javaHeapBytes": {
+                "const": 4194304
+              }
+            }
+          },
+          "source": {
+            "properties": {
+              "capture": {
+                "const": "explicit-input-files"
+              },
+              "revision": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+              }
+            }
+          },
+          "dependencyCompleteness": {
+            "const": "declared-inputs-incomplete"
+          },
+          "materials": {
+            "allOf": [
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "java"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "gradle"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "clang"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "wit-bindgen"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "compiler-closure"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "dependency-lock"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "generated-bindings"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "contracts-tool"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "packager"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              },
+              {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "const": "package-inputs"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
 }

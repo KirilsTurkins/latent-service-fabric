@@ -3,9 +3,11 @@
 - **Status:** Accepted
 - **Date:** 2026-08-17
 
-## Implementation status at Phase 1 completion
+## Current implementation
 
-Phase 1 executes supported Component Model guests with Wasmtime. The isolated native-binary fallback is architectural direction, not a delivered backend.
+LSF executes supported Component Model guests with Wasmtime. An isolated
+native-binary fallback remains architectural direction; it is not an installed
+backend. See the [execution profiles](../docs/runtime/execution-security-profiles.md).
 
 ## Context
 
@@ -17,4 +19,6 @@ Use Component Model binaries as the default capsule execution format.
 
 ## Consequences
 
-Guest languages require compatible toolchains. Arbitrary native binaries use an isolated fallback backend.
+Guest languages require compatible component toolchains. Arbitrary native
+binaries are unsupported until an isolated fallback backend is separately
+implemented and qualified.

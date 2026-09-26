@@ -21,9 +21,15 @@ pub(super) fn run(path: &Path) -> Result<(), Failure> {
     let threads = RuntimeThreads::default();
     let control_threads = Arc::clone(&threads.control);
     let invocation_threads = Arc::clone(&threads.invocation);
-    let control = runtime(settings.control_workers, "latent-control", &threads.control)?;
+    let control = runtime(
+        settings.control_workers,
+        settings.control_blocking_threads(),
+        "latent-control",
+        &threads.control,
+    )?;
     let invocation = match runtime(
         settings.runtime_workers,
+        1,
         "latent-invocation",
         &threads.invocation,
     ) {
@@ -50,6 +56,7 @@ pub(super) fn run(path: &Path) -> Result<(), Failure> {
 
 fn runtime(
     workers: usize,
+    blocking: usize,
     name: &'static str,
     counter: &Arc<AtomicUsize>,
 ) -> Result<Runtime, Failure> {
@@ -57,7 +64,7 @@ fn runtime(
     let stopped = Arc::clone(counter);
     Builder::new_multi_thread()
         .worker_threads(workers)
-        .max_blocking_threads(1)
+        .max_blocking_threads(blocking)
         .thread_name(name)
         .on_thread_start(move || {
             started.fetch_add(1, Ordering::SeqCst);
@@ -97,7 +104,7 @@ async fn serve(
     let ready = node
         .inventory()
         .is_ok_and(|inventory| inventory.health.ready);
-    let monitoring = match status::started(&node_id, node.endpoint(), ready) {
+    let monitoring = match status::started(&node_id, &node, ready) {
         Ok(()) => signals.wait(&node).await,
         Err(error) => Err(error),
     };

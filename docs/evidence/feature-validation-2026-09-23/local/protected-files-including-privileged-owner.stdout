@@ -1,0 +1,19 @@
+
+running 14 tests
+test rooted::tests::replacement_and_removal_during_read_never_return_old_bytes ... ok
+test tests::bounded_read_rejects_oversized_content ... ok
+test rooted::tests::rooted_reads_reject_unbounded_names_types_links_and_sizes ... ok
+test tests::fifo_is_rejected_without_waiting_for_a_writer ... ok
+test rooted::tests::content_or_permission_change_after_open_is_rejected ... ok
+test rooted::tests::retained_root_rejects_ancestor_replacement_and_permission_changes ... ok
+test tests::integrity_policy_allows_public_reads_but_not_untrusted_writes ... ok
+test tests::named_user_acl_cannot_hide_behind_a_trusted_service_group ... ok
+test tests::pathname_replacement_does_not_redirect_opened_descriptor ... ok
+test tests::secret_policy_accepts_owner_service_group_and_private_directory_reads ... ok
+test tests::unexpected_file_and_directory_owners_are_rejected ... ok
+test tests::secret_policy_rejects_public_reads_on_traversable_paths_and_writable_group_access ... ok
+test tests::content_change_after_snapshot_fails_closed ... ok
+test tests::symlinks_hardlinks_and_untrusted_ancestor_writes_fail_closed ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

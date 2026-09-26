@@ -1,5 +1,6 @@
 //! Closed typed projection; all protobuf u64 fields remain decimal strings.
 use super::{invalid_response, json, proto, Failure, Project, Tree, Value};
+mod capability;
 
 impl Project for proto::AuditActorIdentity {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
@@ -50,6 +51,44 @@ impl Project for proto::AuditCanaryDecision {
 impl Project for proto::AuditIdentities {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
+        if let Some(trigger) = &self.trigger {
+            b.text(trigger, 128)?;
+            if trigger.is_empty() || self.trigger_generation.is_none_or(|v| v == 0) {
+                return Err(invalid_response());
+            }
+        } else if self.trigger_generation.is_some() {
+            return Err(invalid_response());
+        }
+        if let Some(web) = &self.static_web {
+            web.validate(b)?;
+            if self.trigger.is_none()
+                || self.publication_id.is_none()
+                || self.component_digest.is_some()
+                || self.deployment.is_some()
+                || self.deployment_generation.is_some()
+                || self.revision.is_some()
+                || self.rollout.is_some()
+                || self.capability.is_some()
+            {
+                return Err(invalid_response());
+            }
+        }
+        if let Some(value) = &self.capability {
+            value.validate(b)?;
+        }
+        for value in [
+            &self.publication_id,
+            &self.base_publication_id,
+            &self.candidate_publication_id,
+        ]
+        .into_iter()
+        .flatten()
+        {
+            b.text(value, latent_core::PublicationId::TEXT_BYTES)?;
+            value
+                .parse::<latent_core::PublicationId>()
+                .map_err(|_| invalid_response())?;
+        }
         if let Some(value) = &self.package_digest {
             b.text(value, 4096)?;
         }
@@ -82,7 +121,14 @@ impl Project for proto::AuditIdentities {
     }
     fn project(self) -> Value {
         json!({
+        "trigger": self.trigger,
+        "triggerGeneration": self.trigger_generation.map(|value| value.to_string()),
+        "staticWeb": self.static_web.map(Project::project),
         "packageDigest": self.package_digest.map(|value| json!(value)),
+        "capability": self.capability.map(Project::project),
+        "publicationId": self.publication_id.map(|value| json!(value)),
+        "basePublicationId": self.base_publication_id,
+        "candidatePublicationId": self.candidate_publication_id,
         "componentDigest": self.component_digest.map(|value| json!(value)),
         "policies": self.policies.into_iter().map(Project::project).collect::<Vec<_>>(),
         "rollout": self.rollout.map(|value| json!(value)),
@@ -100,6 +146,26 @@ impl Project for proto::AuditIdentities {
         "canaryEvidenceDigest": self.canary_evidence_digest.map(|value| json!(value)),
         "rollbackTargetGeneration": self.rollback_target_generation.map(|value| json!(value.to_string())),
         })
+    }
+}
+
+impl Project for proto::AuditStaticWebTarget {
+    fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
+        b.message::<Self>()?;
+        for digest in [&self.web_manifest_digest, &self.assets_digest] {
+            b.text(digest, 71)?;
+            digest
+                .parse::<latent_core::ArtifactBlobDigest>()
+                .map_err(|_| invalid_response())?;
+        }
+        if self.web_generation == 0 {
+            return Err(invalid_response());
+        }
+        Ok(())
+    }
+    fn project(self) -> Value {
+        json!({"webManifestDigest":self.web_manifest_digest,
+            "assetsDigest":self.assets_digest,"webGeneration":self.web_generation.to_string()})
     }
 }
 

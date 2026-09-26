@@ -84,3 +84,57 @@ impl OwnedArtifactPreparationSource {
         self.repository.fetch_with_limits(release, limits)
     }
 }
+
+impl OwnedArtifactPreparationSource {
+    pub fn execution_eligibility_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<Option<crate::ReleaseUseEligibility>, PlatformError> {
+        self.repository
+            .selected_execution_eligibility(release, publication)
+            .map(Some)
+    }
+    pub fn identity_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<Option<ArtifactPreparationIdentity>, PlatformError> {
+        self.repository
+            .selected_preparation_identity(release, publication)
+    }
+    pub fn read_bounds_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<ArtifactPreparationReadBounds, PlatformError> {
+        self.repository.selected_read_bounds(release, publication)
+    }
+    pub fn fetch_blocking_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+        limits: ArtifactPreparationReadLimits,
+    ) -> Result<CapsuleArtifact, PlatformError> {
+        self.repository.selected_fetch(release, publication, limits)
+    }
+
+    /// Reads immutable bytes exactly once, allowing only failed pure currentness
+    /// observations to yield within the caller's finite worker-owned window.
+    /// The original publication grant is retained and rechecked, never renewed.
+    pub fn fetch_blocking_selected_with_wait(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+        limits: ArtifactPreparationReadLimits,
+        original: &crate::ReleaseUseEligibility,
+        wait: &dyn super::ArtifactPreparationReadWait,
+    ) -> Result<CapsuleArtifact, PlatformError> {
+        self.repository.selected_fetch_with_wait(
+            release,
+            publication,
+            limits,
+            Some(super::read_wait::ReadControl { original, wait }),
+        )
+    }
+}

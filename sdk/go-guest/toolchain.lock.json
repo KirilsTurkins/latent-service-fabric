@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "profile": "go-component-async-v1",
+  "status": "qualification-required",
+  "componentizeGo": {
+    "version": "0.4.3",
+    "repository": "https://github.com/bytecodealliance/componentize-go",
+    "revision": "148dba505f8c6c64ad84db777cfde5e34e25098b",
+    "bindingsRevision": "4f9a02d74cec9257c14ba9b160fa787a3523fd0b"
+  },
+  "go": {
+    "version": "go1.27.1",
+    "asyncPatch": "wasiOnIdle",
+    "release": "go1.27.1-wasi-on-idle",
+    "linuxAmd64": {
+      "url": "https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz",
+      "sha256": "4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c"
+    }
+  },
+  "hostAbi": "lsf-host-abi-phase3-v4",
+  "hostAbiSource": "wit/host-abi-phase3-v4.json",
+  "runtimeWorld": "wit/platform/runtime-phase3-blobs/world.wit",
+  "ambientWasiAllowed": false
+}

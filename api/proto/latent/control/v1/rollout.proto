@@ -37,6 +37,8 @@ message StartRolloutRequest {
   // Absent preserves the manual profile. Present policies are immutable and
   // require at least two stages plus configured observation capacity.
   RolloutCanaryPolicy canary_policy = 7;
+  // Optional checksum assertion. candidate.publication is always required.
+  optional string expected_candidate_component_digest = 8;
 }
 
 // Explicit thresholds, never a universal SLO or an observation proof.
@@ -316,6 +318,9 @@ message RolloutRelease {
   string component_digest = 2;
   // Absent for a trusted-local source with no real package identity.
   optional string package_digest = 3;
+  // Captured source ID, never a new admission or a component lookup.
+  // Tenant on the enclosing status scopes the operator state, not local-unscoped content.
+  optional string publication_id = 4;
 }
 
 message RolloutObjectVersion {
@@ -335,6 +340,7 @@ message RolloutStatus {
   repeated uint32 candidate_weights = 8;
   RolloutRelease base = 9;
   RolloutRelease candidate = 10;
+  // Current surviving managed objects (0..2); base/candidate remain historical.
   repeated RolloutObjectVersion objects = 11;
   uint64 route_generation = 12;
   uint64 state_version = 13;
@@ -351,6 +357,10 @@ message RolloutStatus {
 // Only committed operations have durable receipts. Replay returns these exact
 // fields; separate response flags describe replay and durability observations.
 message RolloutOperationReceipt {
+  // Immutable source associations from the retained plan. Historical receipt
+  // digests keep their existing canonical meaning; plan identity binds the pair.
+  optional string base_publication_id = 20;
+  optional string candidate_publication_id = 21;
   string rollout_id = 1;
   string tenant = 2;
   string operation_id = 3;

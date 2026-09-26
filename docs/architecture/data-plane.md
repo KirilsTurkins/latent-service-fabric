@@ -1,24 +1,22 @@
 # Data-plane architecture
 
-The delivered data plane is a standalone Linux stateless runtime. Phase 2 adds
-current catalog authority, bounded raw and native caches, isolated compilation
-and canary observations to the retained Phase 1 activation owner. Its
-[completion review](../phase-2-completion.md) records the accepted scope and
-bounded currentness/resource evidence. Historical
-[Phase 1 evidence](../phase-1-completion.md) and its
-[performance extension](../phase-1-extension-completion.md) retain their scope.
+The data plane runs stateless capsules on a standalone Linux node. It combines
+publication-aware routing, current capability authority, bounded preparation and
+provider I/O, fresh execution state and cleanup. Authenticated direct calls,
+configured HTTP routes and installed trigger adapters share these owners.
+Static-file delivery has a separate bounded path and creates no guest activation.
 
 ## Current invocation path
 
 ```text
-authenticated loopback invocation RPC
+authenticated invocation or configured trigger
   → pinned local route and execution policy
   → admission controller
   → bounded repository-backed preparation readiness
   → fair scheduler
   → cell assignment and prepared-use materialization
   → final current lifecycle/admission decision
-  → context/log/clock binding and fresh Wasmtime store
+  → current capability bindings and fresh Wasmtime store
   → execution and contained cleanup
   → cell release or quarantine, accounting, status and result
 ```
@@ -82,19 +80,22 @@ cross-node materialization remain future work.
 
 ## Capabilities and execution
 
-Declared imports, deployment grants and admitted policy constrain the supported
-context, structured log and monotonic/wall clock interfaces. Each activation has
-fresh host state. General HTTP, blob, secret, event and service-call providers
-remain unavailable until their Phase 3 implementations; a WIT declaration is
-not a host implementation. Capsules cannot acquire unrestricted filesystem,
-socket, process, environment or thread access.
+Declared imports, deployment grants and admitted policy constrain context,
+logging, clocks and installed HTTP, blob, secret, event, local-call, randomness
+and metric capabilities. Each activation has fresh host state. Provider calls
+recheck current policy, bindings and configured provider identity; a WIT
+package declaration does not install that implementation. See the
+[capability reference](../runtime/capabilities.md) and the
+[standalone provider configuration](../reference/standalone-providers.md).
+Capsules receive no unrestricted filesystem, socket, process, environment or
+thread access.
 
-Execution enforces CPU fuel, monotonic deadline/wall time, aggregate linear
-memory and accepted log-byte budgets, plus stack, context, transfer and canonical
-value limits. Unsupported budget dimensions must remain zero. Conserved
-descendant reservations and cancellation trees accompany Phase 3 local service
-calls, rather than being inferred from today's root activation budget. See
-[resource budgets](../runtime/resource-budgets.md).
+Execution enforces fuel, deadline, linear-memory, transfer and provider budgets.
+Async waits keep the activation's cell, guest memory and charges until cleanup.
+Local child calls use conserved descendant reservations and cancellation trees;
+a waiting parent cannot release its cell to manufacture capacity. Unsupported
+budget dimensions are rejected. See [resource budgets](../runtime/resource-budgets.md)
+and [local calls](../runtime/local-service-invocation.md).
 
 ## Observation and reclamation
 
@@ -111,12 +112,8 @@ one fixed supervisor keeps polling the same owner under its original deadline.
 A terminal response alone does not establish safe reuse, and dropping a waiter
 does not end underlying compiler, file or child-process work.
 
-## Later execution surfaces
+## Unsupported execution models
 
-Phase 3 adds one shared application HTTP ingress, external event consumers,
-bounded provider I/O and renderer execution profiles. Listeners, provider pools
-and consumers belong to shared node owners, never individual dormant services.
-Phase 4 adds transactional state and outboxes. Phase 5 adds remote routing and
-placement. Phase 6 adds durable workflow timers and continuations. Current
-stateless calls return output or typed failure without guest state commits,
+Transactional state, durable effect outboxes, remote cluster routing and durable
+workflow continuations are not implemented. Current stateless calls return output or typed failure without guest state commits,
 outboxes or durable suspension.

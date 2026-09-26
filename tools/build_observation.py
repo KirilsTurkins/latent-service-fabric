@@ -91,18 +91,19 @@ def _probe(command: list[str], root: Path, environment: dict[str, str]) -> str:
     return result.stdout.decode("utf-8").strip()
 
 
-def resolve_tools(toolchain: dict, root: Path, environment: dict[str, str]) -> tuple[dict, list[dict]]:
+def resolve_tools(toolchain: dict, root: Path, environment: dict[str, str], *,
+                  installed: Path | None = None) -> tuple[dict, list[dict]]:
     version = str(toolchain["rust"]["toolchain"])
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
         raise SnapshotError("invalid pinned Rust toolchain")
     rustup = shutil.which("rustup", path=environment.get("PATH"))
     wasm_tools = shutil.which("wasm-tools", path=environment.get("PATH"))
-    if not rustup or not wasm_tools:
+    if (installed is None and not rustup) or not wasm_tools:
         raise SnapshotError("required build tools are unavailable")
     paths = {}
     for name in ("cargo", "rustc"):
-        selected = _probe([rustup, "which", "--toolchain", version, name], root, environment)
-        path = Path(selected)
+        path = (Path(_probe([rustup, "which", "--toolchain", version, name], root, environment))
+                if installed is None else installed / name)
         if not path.is_absolute() or not path.is_file():
             raise SnapshotError("selected Rust tool is unavailable")
         paths[name] = path.resolve(strict=True)

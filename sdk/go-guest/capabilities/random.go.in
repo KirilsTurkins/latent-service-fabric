@@ -1,0 +1,9 @@
+package random
+
+import (
+	raw "wit_component/@raw@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+)
+
+func Bytes(length uint32) wit.Result[[]byte, RandomError] { return raw.Bytes(length) }
+func U64Value() wit.Result[uint64, RandomError] { return raw.U64Value() }

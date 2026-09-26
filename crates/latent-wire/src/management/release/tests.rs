@@ -11,6 +11,8 @@ use crate::management::ManagementLimits;
 
 fn entry() -> ArtifactCatalogEntry {
     ArtifactCatalogEntry {
+        publication: None,
+        package: None,
         descriptor: ArtifactDescriptor {
             reference: ArtifactReference("local:release:opaque".to_owned()),
             release_digest: ReleaseDigest(format!("sha256:{}", "a".repeat(64))),

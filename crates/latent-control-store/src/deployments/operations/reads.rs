@@ -123,10 +123,15 @@ impl DirectoryDeploymentRepository {
             512
         };
         let lease = self.operation_budget.read(bytes)?;
-        let deployment = record.map(|r| VersionedDeployment {
-            manifest: r.deployment.as_ref().clone(),
-            generation: current.routes.versions[id],
-        });
+        let deployment = record
+            .map(|r| -> Result<VersionedDeployment> {
+                Ok(VersionedDeployment {
+                    publication: r.publication_reference(self.artifacts.as_ref())?,
+                    manifest: r.deployment.as_ref().clone(),
+                    generation: current.routes.versions[id],
+                })
+            })
+            .transpose()?;
         Ok(DeploymentOperationRead::new(
             DeploymentOperationSnapshot {
                 deployment,

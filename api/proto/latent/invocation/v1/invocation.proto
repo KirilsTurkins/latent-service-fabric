@@ -95,6 +95,10 @@ message InvokeResponse {
   reserved 6;
   reserved "error";
   BudgetConsumption consumption = 7;
+  // Captured source publication, never an invocation authorization selector.
+  // Absent for legacy pins or failures before routing. Present empty/malformed
+  // IDs are invalid. release_digest remains the executable component digest.
+  optional string publication_id = 10;
 }
 
 message Success {

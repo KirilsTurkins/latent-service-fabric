@@ -10,6 +10,56 @@ use latent_wire::invocation::{
 use tokio::time::Instant;
 use tonic::Code;
 
+#[tokio::test(start_paused = true)]
+async fn native_adapter_retention_survives_drop_until_real_lifecycle_cleanup() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    struct Retention {
+        manager: latent_node::LocalActivationManager,
+        gone: Arc<AtomicBool>,
+    }
+    impl Drop for Retention {
+        fn drop(&mut self) {
+            assert_eq!(
+                self.manager.journal().snapshot().active,
+                0,
+                "lifecycle must retire before adapter bytes"
+            );
+            self.gone.store(true, Ordering::Release);
+        }
+    }
+    let h = Harness::standard();
+    let (_, owner) = supervised(&h, 1);
+    h.backend.gate.close();
+    let slot = owner.handle().reserve_activation().unwrap();
+    let handle = h
+        .manager
+        .start(super::model::request("retained-native"))
+        .unwrap();
+    let gone = Arc::new(AtomicBool::new(false));
+    let mut active = Box::pin(slot.own(
+        handle,
+        Retention {
+            manager: h.manager.clone(),
+            gone: gone.clone(),
+        },
+    ));
+    pending(active.as_mut()).await;
+    assert_eq!(h.manager.journal().snapshot().active, 1);
+    drop(active);
+    tokio::task::yield_now().await;
+    assert!(!gone.load(Ordering::Acquire));
+    assert_eq!(owner.snapshot().running, 1);
+    assert!(owner.handle().reserve_activation().is_err());
+    h.backend.gate.open();
+    completed(&owner.handle(), 1).await;
+    assert!(gone.load(Ordering::Acquire));
+    h.assert_idle();
+    owner
+        .shutdown(Instant::now() + Duration::from_secs(1))
+        .await
+        .unwrap();
+}
+
 use super::support::{
     authenticated, cancel, finish, pending, request, status, tenant, Adapter, Harness,
 };

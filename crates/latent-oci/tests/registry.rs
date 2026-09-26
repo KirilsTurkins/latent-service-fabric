@@ -1,4 +1,6 @@
 //! Exact byte distribution and independently approved publisher evidence; no guest execution.
+#[path = "registry/bearer.rs"]
+mod bearer;
 #[cfg(unix)]
 #[path = "registry/cache.rs"]
 mod cache;

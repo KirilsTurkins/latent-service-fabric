@@ -1,6 +1,6 @@
 use crate::{invalid, Result};
 pub(crate) mod canary;
-mod pending;
+pub(crate) mod pending;
 use latent_artifacts::{ReleaseActorKind, ReleaseAuditAck, ReleaseAuditStatus};
 use latent_audit::{
     AuditActorIdentity, AuditActorKind, AuditControlAction, AuditHandle, AuditIdentities,
@@ -28,6 +28,8 @@ pub(crate) fn digest(receipt: &RolloutOperationReceipt) -> Result<ArtifactBlobDi
 }
 fn identities(receipt: &RolloutOperationReceipt) -> AuditIdentities {
     let mut identities = AuditIdentities {
+        base_publication: receipt.base_publication.clone(),
+        candidate_publication: receipt.candidate_publication.clone(),
         rollout: Some(receipt.rollout_id.0.clone()),
         rollout_revision: Some(receipt.revision),
         rollout_step: Some(receipt.step),
@@ -90,6 +92,15 @@ pub(crate) fn attempt(
     })
 }
 pub(crate) fn matches(attempt: &AuditOperationAttempt, receipt: &RolloutOperationReceipt) -> bool {
+    let mut actual = identities(receipt);
+    // Old durable attempts retain their original identity representation. New
+    // attempts bind both captured IDs independently of canonical receipt bytes.
+    if attempt.identities.base_publication.is_none() {
+        actual.base_publication = None;
+    }
+    if attempt.identities.candidate_publication.is_none() {
+        actual.candidate_publication = None;
+    }
     attempt.action == action(receipt)
         && attempt.scope == AuditScope::Tenant(receipt.tenant.clone())
         && attempt.operation_id == receipt.operation_id
@@ -98,7 +109,7 @@ pub(crate) fn matches(attempt: &AuditOperationAttempt, receipt: &RolloutOperatio
         && attempt.preview_receipt_digest.is_some()
         && attempt.actor.kind == actor(receipt.actor.kind)
         && attempt.actor.subject == receipt.actor.subject
-        && attempt.identities == identities(receipt)
+        && attempt.identities == actual
         && attempt.expected_rollout_revision == Some(receipt.expected_revision)
         && attempt.expected_rollback_target_generation
             == receipt
@@ -208,7 +219,9 @@ pub async fn reconcile_rollout_audit(
                 Err(_) => terminal = conclusion(&pending.attempt, None),
             }
         }
-        let wait = audit.reconcile(pending.sequence, terminal)?.wait();
+        let wait = pending::reconcile(audit, pending.sequence, &terminal, expires)
+            .await?
+            .wait();
         tokio::time::timeout_at(expires.into(), wait)
             .await
             .map_err(|_| crate::deadline())??;

@@ -1,0 +1,19 @@
+# Opt-in correctness experiment, not selected by normal CI. Never pass this
+# configuration to release, calibration or historical-evidence collectors.
+# Cargo's two jobs bound concurrent compiler/linker processes, not OS threads.
+[build]
+jobs = 2
+
+[profile.dev]
+opt-level = 0
+debug = 1
+incremental = false
+debug-assertions = true
+overflow-checks = true
+
+[profile.test]
+opt-level = 0
+debug = 1
+incremental = false
+debug-assertions = true
+overflow-checks = true

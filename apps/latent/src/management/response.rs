@@ -9,7 +9,14 @@ use super::{invalid_response, node, prepare};
 
 pub(super) fn release(value: proto::ReleaseDescriptor) -> Result<Value, Failure> {
     let entry = release_descriptor_from_proto(value).map_err(|_| invalid_response())?;
+    let publication = entry.publication.as_ref().map(|id| {
+        json!({
+            "id": id.as_str(), "tenant": entry.tenant.as_ref().map(|tenant| &tenant.0),
+        })
+    });
     Ok(json!({
+        "publication": publication,
+        "packageDigest": entry.package.map(|digest| digest.to_string()),
         "digest": entry.descriptor.release_digest.0,
         "artifactReference": entry.descriptor.reference.0,
         "service": entry.service.0,
@@ -34,7 +41,14 @@ pub(super) fn deployment(value: proto::Deployment) -> Result<Value, Failure> {
         .encode_deployment(&versioned.manifest)
         .map_err(|_| invalid_response())?;
     let manifest: Value = serde_json::from_slice(&encoded).map_err(|_| invalid_response())?;
-    Ok(json!({"generation": versioned.generation.to_string(), "manifest": manifest}))
+    let publication = versioned.publication.as_ref().map(|id| {
+        json!({
+            "id": id.id.as_str(), "tenant": id.scope.tenant().map(|tenant| &tenant.0),
+        })
+    });
+    Ok(
+        json!({"generation": versioned.generation.to_string(), "manifest": manifest, "publication": publication}),
+    )
 }
 
 pub(super) fn published(value: proto::PublishReleaseResponse) -> Result<Outcome, Failure> {

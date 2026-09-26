@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "assets": [
+    {
+      "path": "docs/assets/phase0-gate-decision.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
+    },
+    {
+      "path": "docs/assets/phase0-resource-lifecycle.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
+    },
+    {
+      "path": "docs/assets/phase0-scope-boundary.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
+    },
+    {
+      "path": "docs/assets/phase1-delivery-boundary.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
+    },
+    {
+      "path": "docs/assets/phase2-delivery-boundary.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
+    },
+    {
+      "path": "docs/assets/package-delivery.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
+    },
+    {
+      "path": "docs/assets/activation-lifecycle.svg",
+      "kind": "illustration",
+      "maxBytes": 65536
+    }
+  ]
+}

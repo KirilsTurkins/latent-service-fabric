@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "exceptions": [
+    {
+      "scanner": "rustsec",
+      "finding": "RUSTSEC-2020-0071",
+      "path": "tools/security_fixtures/vulnerable.lock.fixture",
+      "package": "time@0.1.44",
+      "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+      "owner": "@KirilsTurkins",
+      "created": "2026-01-01",
+      "expires": "2026-01-02",
+      "review": "https://github.com/KirilsTurkins/latent-service-fabric/issues/282",
+      "rationale": "Non-executable, deliberately expired policy fixture; never an exception to a runtime dependency."
+    }
+  ]
+}

@@ -21,7 +21,7 @@ impl Measure {
 
     fn include(&mut self, child: Self, limits: SemanticLimits) -> Result<()> {
         self.depth = self.depth.max(child.depth.saturating_add(1));
-        charge(&mut self.work, child.work, limits.max_type_nodes)?;
+        charge(&mut self.work, child.work, limits.max_reference_work)?;
         if self.depth > limits.max_type_depth {
             return Err(exhausted("component-reference-depth-limit"));
         }
@@ -176,13 +176,13 @@ impl Guard {
     }
 
     fn record(&mut self, value: Measure) -> Result<()> {
-        charge(&mut self.work, value.work, self.limits.max_type_nodes)?;
+        charge(&mut self.work, value.work, self.limits.max_reference_work)?;
         let scope = self
             .scopes
             .last_mut()
             .ok_or_else(|| invalid("missing-component-scope"))?;
         scope.depth = scope.depth.max(value.depth);
-        charge(&mut scope.work, value.work, self.limits.max_type_nodes)
+        charge(&mut scope.work, value.work, self.limits.max_reference_work)
     }
 
     fn push(&mut self, kind: Kind, value: Measure) -> Result<()> {

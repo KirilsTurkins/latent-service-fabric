@@ -40,6 +40,7 @@ pub(super) fn artifact_config() -> DirectoryArtifactRepositoryConfig {
         max_metadata_bytes: MAX_DOCUMENT,
         max_component_bytes: MAX_COMPONENT,
         max_recovery_directories: 4,
+        ..DirectoryArtifactRepositoryConfig::default()
     }
 }
 

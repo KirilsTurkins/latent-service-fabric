@@ -1,0 +1,25 @@
+test_admission_saturation_preserves_actual_population_and_stops_mutating (tools.tests.test_phase3_resource.EvidenceTests.test_admission_saturation_preserves_actual_population_and_stops_mutating) ... ok
+test_counters_reject_null_bool_negative_and_lossy_json_number (tools.tests.test_phase3_resource.EvidenceTests.test_counters_reject_null_bool_negative_and_lossy_json_number) ... ok
+test_distribution_requires_nonempty_finite_observations (tools.tests.test_phase3_resource.EvidenceTests.test_distribution_requires_nonempty_finite_observations) ... ok
+test_dormant_density_does_not_create_per_deployment_provider_bindings (tools.tests.test_phase3_resource.EvidenceTests.test_dormant_density_does_not_create_per_deployment_provider_bindings) ... ok
+test_immutable_receipts_bind_exact_bytes_and_refuse_replacement (tools.tests.test_phase3_resource.EvidenceTests.test_immutable_receipts_bind_exact_bytes_and_refuse_replacement) ... ok
+test_inventory_is_bounded_nonempty_and_content_addressed (tools.tests.test_phase3_resource.EvidenceTests.test_inventory_is_bounded_nonempty_and_content_addressed) ... ok
+test_partial_provider_and_cell_observations_are_rejected (tools.tests.test_phase3_resource.EvidenceTests.test_partial_provider_and_cell_observations_are_rejected) ... ok
+test_refused_density_is_not_a_proven_capacity_ceiling_or_campaign_pass (tools.tests.test_phase3_resource.EvidenceTests.test_refused_density_is_not_a_proven_capacity_ceiling_or_campaign_pass) ... ok
+test_retained_active_owner_is_not_quiet (tools.tests.test_phase3_resource.EvidenceTests.test_retained_active_owner_is_not_quiet) ... ok
+test_unobserved_counters_are_not_treated_as_zero (tools.tests.test_phase3_resource.EvidenceTests.test_unobserved_counters_are_not_treated_as_zero) ... ok
+test_network_namespace_rows_must_match_owned_descriptor_inodes (tools.tests.test_phase3_resource.ProcTests.test_network_namespace_rows_must_match_owned_descriptor_inodes) ... ok
+test_real_owned_process_is_measured_then_reaped_not_adopted (tools.tests.test_phase3_resource.ProcTests.test_real_owned_process_is_measured_then_reaped_not_adopted) ... ok
+test_stat_uses_final_parenthesis_and_preserves_start_identity (tools.tests.test_phase3_resource.ProcTests.test_stat_uses_final_parenthesis_and_preserves_start_identity) ... ok
+test_exact_successful_cargo_artifact_is_required_not_a_binary_glob (tools.tests.test_phase3_resource.RustInventoryTests.test_exact_successful_cargo_artifact_is_required_not_a_binary_glob) ... ok
+test_rust_measurement_cannot_pass_empty_active_or_recovery_populations (tools.tests.test_phase3_resource.RustInventoryTests.test_rust_measurement_cannot_pass_empty_active_or_recovery_populations) ... ok
+test_deadline_closes_every_launched_process (tools.tests.test_phase3_resource.ScheduleTests.test_deadline_closes_every_launched_process) ... ok
+test_empty_fake_complete_and_omitted_arrivals_are_rejected (tools.tests.test_phase3_resource.ScheduleTests.test_empty_fake_complete_and_omitted_arrivals_are_rejected) ... ok
+test_late_launch_does_not_reset_the_arrival_origin (tools.tests.test_phase3_resource.ScheduleTests.test_late_launch_does_not_reset_the_arrival_origin) ... ok
+test_observation_failure_also_reaps_every_owner (tools.tests.test_phase3_resource.ScheduleTests.test_observation_failure_also_reaps_every_owner) ... ok
+test_overload_accounts_for_every_scheduled_arrival_without_unbounded_queue (tools.tests.test_phase3_resource.ScheduleTests.test_overload_accounts_for_every_scheduled_arrival_without_unbounded_queue) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.051s
+
+OK

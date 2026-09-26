@@ -4,6 +4,7 @@ use prost::Message;
 use super::*;
 
 mod bounds;
+mod publications;
 
 fn consumption() -> BudgetConsumption {
     BudgetConsumption {
@@ -68,6 +69,7 @@ fn response(outcome: ActivationOutcome) -> InvocationResponse {
             resolved_revision: Some(InvocationRevision {
                 revision_id: RevisionId("revision-1".into()),
                 release_digest: ReleaseDigest("sha256:1234".into()),
+                publication_id: None,
                 route_generation: RouteGeneration(0),
             }),
         },

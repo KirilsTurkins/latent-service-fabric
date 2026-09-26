@@ -256,11 +256,11 @@ fn pending_and_noncanonical_keys_never_supply_owned_read_bounds() {
     let upper = ReleaseDigest(release.0.to_ascii_uppercase());
     assert_eq!(
         owned.read_bounds(&upper).unwrap_err().code,
-        PlatformErrorCode::NotFound
+        PlatformErrorCode::InvalidArgument
     );
     let ceiling = limits(&owned, &release);
     assert_eq!(
         owned.fetch_blocking(&upper, ceiling).unwrap_err().code,
-        PlatformErrorCode::NotFound
+        PlatformErrorCode::InvalidArgument
     );
 }

@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "guest/rust-echo",
+  "title": "Bounded Rust echo guest",
+  "audience": "guest-author",
+  "target": "guest",
+  "variants": [{
+    "language": "rust",
+    "kind": "maintained",
+    "source": "tools/toolchain-smoke/examples/echo_capsule/component.rs",
+    "regions": ["echo"],
+    "validation": {
+      "target": "tools/build_echo_capsule.py",
+      "instructions": "examples/echo-contract/README.md",
+      "evidence": null
+    }
+  }]
+}

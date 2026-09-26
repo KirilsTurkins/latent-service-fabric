@@ -38,6 +38,25 @@ pub(super) fn admission(
             policy.allowed_principal_kinds.push(kind);
         }
     }
+    if let Some(super::HttpIngressConfig {
+        authentication: super::HttpAuthentication::PublicOrigins { origins },
+        ..
+    }) = &config.http_ingress
+    {
+        for origin in origins {
+            let tenant = tenants
+                .get_mut(&TenantId(origin.tenant.clone()))
+                .ok_or_else(|| invalid("httpIngress.publicOriginTenant"))?;
+            tenant.allowed_subjects.insert(origin.subject.clone());
+            if !tenant
+                .allowed_principal_kinds
+                .contains(&PrincipalKind::Trigger)
+            {
+                tenant.allowed_principal_kinds.push(PrincipalKind::Trigger);
+            }
+        }
+    }
+    local_service_principals(config, &mut tenants)?;
     let policy = NodeAdmissionPolicy {
         budget_ceiling: budget(config, capacity.maximum_memory),
         limits,
@@ -96,7 +115,9 @@ pub(super) fn admission(
         region: None,
         zone: None,
     };
-    policy.validate().map_err(|_| invalid("admission"))?;
+    policy
+        .validate_profile(config.budget_profile.profile())
+        .map_err(|_| invalid("admission"))?;
     Ok(policy)
 }
 
@@ -116,8 +137,44 @@ fn quota(config: &NodeConfig, capacity: &Capacity) -> Result<QuotaLimits, Platfo
     })
 }
 
-fn budget(config: &NodeConfig, memory: u64) -> ResourceBudget {
-    ResourceBudget {
+fn local_service_principals(
+    config: &NodeConfig,
+    tenants: &mut BTreeMap<TenantId, TenantAdmissionPolicy>,
+) -> Result<(), PlatformError> {
+    let Some(providers) = &config.providers else {
+        return Ok(());
+    };
+    let Some(local) = &providers.local_service else {
+        return Ok(());
+    };
+    let definitions = providers.definitions()?;
+    let tenant_id = TenantId(local.identity.tenant.clone());
+    let tenant = tenants
+        .get_mut(&tenant_id)
+        .ok_or_else(|| invalid("providers.localService.tenant"))?;
+    for binding in definitions {
+        if binding.manifest.mode == latent_manifest::BindingMode::IsolatedLocal {
+            let subject = InvocationPrincipal::local_service_subject(
+                &tenant_id,
+                &binding.manifest.consumer.service,
+            );
+            if subject.len() > IDENTIFIER_BYTES {
+                return Err(invalid("providers.localService.consumer"));
+            }
+            tenant.allowed_subjects.insert(subject);
+            if !tenant
+                .allowed_principal_kinds
+                .contains(&PrincipalKind::Service)
+            {
+                tenant.allowed_principal_kinds.push(PrincipalKind::Service);
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn budget(config: &NodeConfig, memory: u64) -> ResourceBudget {
+    let mut budget = ResourceBudget {
         cpu_fuel: config.execution.maximum_cpu_fuel,
         memory_bytes: memory,
         wall_time_limit_millis: Some(config.execution.maximum_wall_time_millis),
@@ -129,7 +186,9 @@ fn budget(config: &NodeConfig, memory: u64) -> ResourceBudget {
         blob_write_bytes: 0,
         log_bytes: config.execution.maximum_log_bytes,
         effect_count: 0,
-    }
+    };
+    config.budget_profile.apply(&mut budget);
+    budget
 }
 
 pub(super) fn principal(credential: &CredentialConfig) -> InvocationPrincipal {

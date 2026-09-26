@@ -1,0 +1,688 @@
+{
+  "sourceRevision": "8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+  "run": 35879906121,
+  "scope": "150 registered ignored cases: 124 traced to this CI run, one additional case executed locally, remaining 25 classified separately. This is execution tracing, not a test-completeness or performance claim.",
+  "uniquePassedTestNames": 2837,
+  "registeredIgnoredMatched": [
+    {
+      "suite": "latent-control-store.lib.latent-control-store",
+      "case": "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set"
+    },
+    {
+      "suite": "latent-oci.test.registry",
+      "case": "real_observed_build_provenance_roundtrip"
+    },
+    {
+      "suite": "latent-oci.test.registry",
+      "case": "real_tls_registry_roundtrips_tag_race_auth_and_referrers"
+    },
+    {
+      "suite": "latent-packaging.test.angular-build",
+      "case": "actual_angular_build_inputs_have_exact_renderer_assets_and_bound_inventory",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\renderer.json"
+    },
+    {
+      "suite": "latent-policy.lib.latent-policy",
+      "case": "supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture"
+    },
+    {
+      "suite": "latent-policy.lib.latent-policy",
+      "case": "supply_chain::tests::support::operator_fixture::export_publication_workflow_fixture"
+    },
+    {
+      "suite": "latent-policy.lib.latent-policy",
+      "case": "supply_chain::tests::support::operator_fixture::resources::export_phase2_resource_fixture"
+    },
+    {
+      "suite": "latent-policy.lib.latent-policy",
+      "case": "supply_chain::tests::web::actual_web_component_passes_signed_ssr_admission_and_restart"
+    },
+    {
+      "suite": "latent-policy.lib.latent-policy",
+      "case": "supply_chain::tests::web::angular_build::actual_observed_angular_package_authenticates_publisher_builder_sbom_and_restart",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\renderer.json"
+    },
+    {
+      "suite": "latent-policy.lib.latent-policy",
+      "case": "supply_chain::tests::web_catalog::actual_web_component_catalog_keeps_renderer_and_assets_exact_through_revocation_and_restart"
+    },
+    {
+      "suite": "latent-policy.lib.latent-policy",
+      "case": "supply_chain::tests::web_catalog::registry::authenticated_web_registry_admission_roundtrip"
+    },
+    {
+      "suite": "latent-wasmtime.test.angular-build",
+      "case": "actual_built_angular_application_renders_fresh_hydration_and_rejects_excess_data",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\renderer.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.angular-renderer",
+      "case": "fresh_angular_cells_recover_from_failure_and_cancel_without_retaining_applications",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\renderer.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.angular-renderer",
+      "case": "renderer_binary_profile_preserves_ordinary_and_public_wit_limits",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\renderer.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.async-application",
+      "case": "web::real_web_contract_transfers_maximum_body_and_keeps_host_principal_on_reuse"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "clocks::wall_adjustments_are_visible_monotonic_regressions_clamp_and_new_invocations_reset"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "context::default_context_filters_sensitive_maps_and_reuses_cell_without_identity_leakage"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "context::explicit_context_policy_exposes_only_exact_claims_and_baggage"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "context::remaining_budget_observes_live_guest_fuel_memory_and_host_logs"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "logging::exact_escaped_correlated_record_budget_accepts_at_boundary_only"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "logging::invalid_and_case_insensitive_reserved_fields_never_reach_sink_or_spend_budget"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "logging::sink_rejection_refunds_shared_budget_before_guest_retry"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "rejection::missing_clock_grant_is_rejected_before_store_creation"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "rejection::unsupported_or_uninstalled_imports_do_not_gain_ambient_authority"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "telemetry::closed_telemetry_preserves_default_guest_success_but_strict_mode_refunds"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "telemetry::full_telemetry_preserves_default_guest_success_but_strict_mode_refunds"
+    },
+    {
+      "suite": "latent-wasmtime.test.capabilities-backend",
+      "case": "telemetry::live_guest_logs_are_correlated_and_redacted_even_when_capture_evicts"
+    },
+    {
+      "suite": "latent-wasmtime.test.containment-backend",
+      "case": "contains_real_component_failures_and_reclaims_every_invocation_resource"
+    },
+    {
+      "suite": "latent-wasmtime.test.containment-backend",
+      "case": "healthy_activations_remain_correct_while_an_infinite_activation_times_out"
+    },
+    {
+      "suite": "latent-wasmtime.test.containment-backend",
+      "case": "healthy_activations_remain_correct_while_another_activation_traps"
+    },
+    {
+      "suite": "latent-wasmtime.test.containment-backend",
+      "case": "memory_pressure_stays_within_the_grant_while_healthy_activations_complete"
+    },
+    {
+      "suite": "latent-wasmtime.test.echo-backend",
+      "case": "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary"
+    },
+    {
+      "suite": "latent-wasmtime.test.echo-backend",
+      "case": "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel"
+    },
+    {
+      "suite": "latent-wasmtime.test.echo-backend",
+      "case": "owned_phase_zero_preparation_preserves_success_and_declared_error_framing"
+    },
+    {
+      "suite": "latent-wasmtime.test.echo-backend",
+      "case": "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "cache_lifetimes::evicted_last_runtime_remains_owned_until_native_trap_is_classified"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "cache_lifetimes::five_real_components_in_four_slots_keep_evicted_owner_executable_and_charged"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "cold_readiness::foreign_factory_materialization_drops_ready_bytes_without_taking_an_instance"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "cold_readiness::readiness_is_independent_of_instance_gate_and_pins_evicted_runtime_through_execution"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "containment::cancellation_reaches_running_guest_and_drops_the_live_probe"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "containment::canonical_post_return_failure_is_contained_before_cleanup_proof"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "containment::contains_direct_trap_fuel_and_memory_exports_then_recovers"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "containment::deadline_stops_non_cooperative_guest_while_another_activation_completes"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "containment::preserves_expired_admission_monotonic_deadline_when_unix_representation_is_future"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "containment::tightened_request_deadline_stops_before_store_despite_live_admission_deadline"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "dispatch::declared_errors_keep_the_complete_typed_result_and_generic_code"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "dispatch::each_activation_starts_with_fresh_guest_memory_and_releases_its_store"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "dispatch::lifts_and_lowers_every_supported_scalar_and_composite_family"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "dispatch::preserves_zero_results_and_unit_result_branches"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "dispatch::resolves_interface_and_function_names_and_multiple_parameters"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "engine_memory::fresh_memory_is_zero_after_success_trap_and_cancel_across_tenants_and_profiles"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "engine_memory::negative::unchanged_instance_detects_dirty_memory_instead_of_masking_it_with_initialization"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "engine_profiles::containment::every_profile_drops_pending_native_ownership_and_recovers_the_only_slot"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "engine_profiles::containment::every_profile_preserves_dispatch_traps_budgets_cancellation_and_fresh_state"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "engine_profiles::every_profile_bounds_affine_owners_and_refunds_capacity_before_recovery"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "engine_profiles::foreign_profile_prepared_ownership_is_rejected_before_native_instantiation"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "engine_profiles::insufficient_native_memory_pool_rejects_without_leaking_prepared_or_active_owners"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "owned_preparation::dropped_and_unwinding_pending_guests_preserve_unsampled_fuel_and_memory"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "owned_preparation::foreign_factory_changed_descriptor_and_foreign_guard_fail_before_store_creation"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "owned_preparation::normal_completion_and_store_drop_charge_the_same_fuel_only_once"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "owned_preparation::prepared_use_gate_is_refunded_on_unused_future_unwind_and_preparation_error"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "owned_preparation::prepared_use_survives_cache_eviction_and_release_without_a_second_permit"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "preparation::dormant_preparation_keeps_helper_threads_fixed_and_creates_no_stores"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "preparation::eviction_and_release_remove_preparation_without_breaking_later_healthy_calls"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "preparation::factory_backends_share_preparation_but_metadata_changes_cannot_reuse_old_budgets"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "preparation_source::runtime::delegated_reads_epochs_imports_and_evicted_factory_ownership_remain_distinct"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "preparation_source::runtime::warm_lookup_does_no_reads_and_owned_runtime_survives_release_and_disk_corruption"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "rejection::applies_input_and_output_byte_limits_with_reusable_cleanup"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "rejection::binds_existing_host_imports_per_activation_through_generic_dispatch"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "rejection::rejects_invalid_composite_shapes_without_entering_guest_code"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "rejection::rejects_manifest_surface_disagreement_unresolved_imports_and_resource_types"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "rejection::rejects_missing_exports_media_and_parameter_shapes_before_creating_a_store"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "request_ownership::invalid_input_precedes_zero_cell_memory_and_early_errors_drop_at_scope_exit"
+    },
+    {
+      "suite": "latent-wasmtime.test.generic-backend",
+      "case": "request_ownership::raw_input_is_gone_at_pending_guest_dispatch_while_native_owners_remain"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "all_rust_examples_are_exact_signed_phase2_packages"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "blob::rust_and_c_cancel_pending_import_without_refunding_another_owner"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "blob::rust_and_c_owned_chunks_closed_handles_abandonment_and_reuse"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "events::typed_event_receipt_denial_and_uncertainty_do_not_retry"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "http::buffered_http_success_and_denial_use_the_real_provider"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "metrics::generated_metric_kinds_and_typed_failure"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "random::generated_random_binding_and_reused_cell"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "secrets::secret_owner_typed_denial_cancellation_and_cell_recovery"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "service::typed_service_outcomes_use_node_admission_and_reused_cells"
+    },
+    {
+      "suite": "latent-wasmtime.test.guest-sdk",
+      "case": "streaming::streaming_ownership_and_independent_chunks_survive_body_drop"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-events",
+      "case": "audit::real_nats_audit_preserves_broker_ack_and_uncertainty_without_event_or_credentials",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-events",
+      "case": "faults::real_nats_lost_ack_cancelled_guest_outage_and_fresh_connection_recovery",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-events",
+      "case": "real_nats_credentials_tls_budget_and_retained_receipt_ownership",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-events",
+      "case": "real_nats_guest_ack_denial_duplicates_and_connection_reuse",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "acceptance::real_nats_declared_failure_terminates_and_transient_poison_exhausts_three_deliveries",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "acceptance::real_nats_idle_256_triggers_keep_two_connections_and_zero_guest_stores",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "acceptance::real_nats_invalid_payload_terminates_without_guest_execution",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "acceptance::real_nats_overload_reserves_before_pull_and_recovers_without_prefetch",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "acceptance::real_nats_routes_change_future_deliveries_and_revocation_is_tenant_scoped",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "real_nats_trigger_executes_two_tenants_and_reuses_bounded_connections",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "recovery::real_nats_lost_ack_receipt_remains_uncertain_when_the_broker_already_committed",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "recovery::real_nats_lost_ack_restart_redelivers_and_can_execute_the_guest_twice",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "recovery::real_nats_shutdown_during_guest_execution_keeps_ownership_through_cleanup",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.nats-triggers",
+      "case": "recovery::real_nats_shutdown_reclaims_pending_delivery_without_running_guest_or_acknowledging",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.s3-blobs",
+      "case": "real_s3_guest_multipart_ranges_credentials_and_restart",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.s3-blobs",
+      "case": "real_s3_wrong_credentials_are_not_retried",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.vault-secrets",
+      "case": "audit::real_vault_audit_and_status_redact_token_and_value_material",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.vault-secrets",
+      "case": "real_vault_versions_rotation_revocation_and_guest_cleanup",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent-wasmtime.test.vault-secrets",
+      "case": "transport::real_vault_transport_cancellation_outage_tls_and_healthy_reuse",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\provider.json"
+    },
+    {
+      "suite": "latent.test.standalone-cli",
+      "case": "outcomes::cli_separates_domain_trap_deadline_and_cancel_results_then_recovers"
+    },
+    {
+      "suite": "latent.test.standalone-cli",
+      "case": "workflow::cli_publishes_deploys_pages_invokes_and_recovers_without_client_artifact_files"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\renderer.json"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::http::assets::browser::actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\renderer.json"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::http::tests::angular::actual_angular_http_queue_disconnect_recovery_and_revocation",
+      "executionEvidence": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21\\renderer.json"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::http::tests::cache::actual_http_component_cache_preserves_admission_revocation_and_owner_reclamation"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::http::tests::lifecycle::actual_http_component_public_origin_deadline_and_forced_shutdown_reclaim_owners"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::http::tests::real::actual_http_component_authenticates_executes_cancels_and_recovers"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::http::tests::real_delivery::actual_http_component_pinned_cutover_and_revocation_use_current_authority"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::http::tests::real_delivery::actual_http_component_tls_body_and_slow_output_keep_owners_until_retirement"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::ownership_supervision::transferred_backend_input_retires_before_same_cell_reuse"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::start::tests::trust_currentness::profile::external_profile_preserves_cold_warm_and_restart_requirements"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::start::tests::trust_currentness::real_policy_expiry_denies_native_work_and_recovers_readable_negative_history"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::start::tests::trust_currentness::real_proof_age_expiry_denies_retained_native_work_with_a_current_clock_lease"
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::start::tests::trust_currentness::real_publisher_revocation_denies_native_work_without_any_registry_event"
+    },
+    {
+      "suite": "latentd.test.phase3-angular-fixture",
+      "case": "export_actual_angular_t1_fixtures"
+    },
+    {
+      "suite": "latentd.test.phase3-static-fixture",
+      "case": "export_actual_static_site_fixtures"
+    },
+    {
+      "suite": "latentd.test.phase3-workflow-fixture",
+      "case": "export_signed_provider_workflow_fixtures"
+    },
+    {
+      "suite": "latentd.test.standalone-node",
+      "case": "published_echo_executes_again_after_durable_restart"
+    },
+    {
+      "suite": "latentd.test.standalone-shutdown",
+      "case": "running_and_queued_owners_are_reclaimed_during_shutdown"
+    },
+    {
+      "suite": "latent-protected-files.lib.latent-protected-files",
+      "case": "tests::unexpected_file_and_directory_owners_are_rejected",
+      "executionEvidence": "local/protected-files-including-privileged-owner.stdout"
+    }
+  ],
+  "registeredIgnoredNotMatched": [
+    {
+      "suite": "latent-admission.lib.latent-admission",
+      "case": "tests::stress::admission_state_does_not_grow_with_100k_rejected_services",
+      "classification": "manual-large-scale",
+      "explanation": "Not selected in this run; the catalog-scale workflow input was false. No new 100,000-item claim."
+    },
+    {
+      "suite": "latent-artifacts.lib.latent-artifacts",
+      "case": "local_repository::tests::one_hundred_thousand_index_adoptions_are_bounded",
+      "classification": "manual-large-scale",
+      "explanation": "Not selected in this run; the catalog-scale workflow input was false. No new 100,000-item claim."
+    },
+    {
+      "suite": "latent-oci.lib.latent-oci",
+      "case": "http::network::tests::resource::bounded_oci_pool_resource_checkpoint",
+      "classification": "separate-resource-campaign",
+      "explanation": "Retained in docs/testing/phase3-resource-oci.md; not rerun here."
+    },
+    {
+      "suite": "latent-oci.test.registry",
+      "case": "bearer::real_harbor_bearer_roundtrip",
+      "classification": "separate-vendor-qualification",
+      "explanation": "Harbor retains its separately owned qualification. Current CI executes Zot and bounded DNS/redirect tests; no fresh Harbor claim."
+    },
+    {
+      "suite": "latent-optimization-bench.bin.optimization-container",
+      "case": "container::child::tests::child_waits_for_term",
+      "classification": "parent-owned-child",
+      "explanation": "The passing owned_child_receives_term_and_has_eof_after_actual_reap test invokes this child and checks readiness, SIGTERM, actual reap and pipe EOF."
+    },
+    {
+      "suite": "latent-scheduler.lib.latent-scheduler",
+      "case": "local::measurement::phase1_scheduler_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latent-wasmtime.lib.latent-wasmtime",
+      "case": "cache::measurement::cache_lookup_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latent-wasmtime.lib.latent-wasmtime",
+      "case": "values::tests::measurement::codec_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latent.test.phase1-conformance",
+      "case": "phase1_bounded_child_conformance",
+      "classification": "composite-conformance-receipt",
+      "explanation": "The bounded-conformance.json receipt records the separate RPC/adapter drivers and passed selected cases. This review does not invent an uncaptured child libtest line."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::budget::phase1_budget_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::cache::phase1_cache_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::catalog::phase1_catalog_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::catalog_mutations::phase1_catalog_mutation_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::cold::phase1_cold_preparation_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::engine::phase1_engine_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::ownership::phase1_ownership_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::phase1_comparison_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::recovery::phase1_recovery_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::comparison::revision::phase1_revision_backend_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::measurements::phase1_measurement_collector",
+      "classification": "measurement-owner",
+      "explanation": "No independent per-case trace added here. Small measurement-smoke CI passed; full physical/performance evidence retains its original campaign scope."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::parity::adapter_and_rpc_have_equivalent_selected_outcomes",
+      "classification": "composite-conformance-receipt",
+      "explanation": "The bounded-conformance.json receipt records the separate RPC/adapter drivers and passed selected cases. This review does not invent an uncaptured child libtest line."
+    },
+    {
+      "suite": "latentd.lib.latentd",
+      "case": "standalone::start::tests::provider_startup::configured_provider_startup_and_shutdown_remain_repeatable",
+      "classification": "supplied-configuration-diagnostic",
+      "explanation": "This arbitrary-configuration entry point was not selected. Ordinary protected_local_blob_provider_starts_and_reaps_thirty_two_times and protected_http_credential_bootstrap_starts_and_reaps_thirty_two_times tests passed."
+    },
+    {
+      "suite": "latentd.test.catalog-scale",
+      "case": "catalog_scale_child",
+      "classification": "manual-large-scale",
+      "explanation": "Not selected in this run; the catalog-scale workflow input was false. No new 100,000-item claim."
+    },
+    {
+      "suite": "latentd.test.catalog-scale",
+      "case": "production_catalog_100k",
+      "classification": "manual-large-scale",
+      "explanation": "Not selected in this run; the catalog-scale workflow input was false. No new 100,000-item claim."
+    },
+    {
+      "suite": "latentd.test.phase3-reference-fixture",
+      "case": "export_actual_angular_reference_fixtures",
+      "classification": "separate-reference-qualification",
+      "explanation": "Fixture exporter owned by the complete authenticated Angular reference workflow; retains its earlier qualification. Current CI independently executes the Angular T1 workflow."
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+package latent:events@0.2.0;
+
+// Immediate publication, separate from a future transactional durable outbox.
+interface publisher {
+    record event {
+        topic: string,
+        key: option<string>,
+        payload: list<u8>,
+        media-type: string,
+        attributes: list<tuple<string, string>>,
+        idempotency-key: string,
+    }
+
+    // A validated broker publication acknowledgement. This does not assert
+    // consumer processing, application commit or universal exactly-once delivery.
+    record publish-receipt {
+        event-id: string,
+        accepted-at-unix-millis: u64,
+        stream-name: string,
+        sequence: u64,
+        duplicate: bool,
+    }
+
+    variant event-error {
+        invalid-topic,
+        invalid-event,
+        permission-denied,
+        budget-exhausted,
+        deadline-exceeded,
+        cancelled,
+        unavailable,
+        // Publication may have reached the broker but no valid acknowledgement
+        // is available. The provider must not retry this outcome automatically.
+        uncertain,
+    }
+
+    // A synchronous guest ABI may use a cooperative asynchronous host bridge.
+    // The host must not block execution/control threads while awaiting the broker.
+    publish: func(event: event) -> result<publish-receipt, event-error>;
+}

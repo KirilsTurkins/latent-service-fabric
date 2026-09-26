@@ -1,0 +1,8 @@
+{
+  "name": "@latent-service-fabric/website-package-manager",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "npm": "11.19.1"
+  }
+}

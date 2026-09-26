@@ -13,6 +13,7 @@ impl ActivationHostContext {
         request: ExecutionRequest,
         deadline_unix_millis: Option<u64>,
     ) -> Self {
+        let publication = super::web_identity::selected(&request).cloned();
         let activation = request.activation;
         let mut principal = activation.principal;
         compact(&mut principal.subject);
@@ -36,7 +37,7 @@ impl ActivationHostContext {
             activation.trace.trace_flags,
             metadata(activation.trace.baggage),
             deadline_unix_millis,
-            metadata(activation.metadata),
+            metadata(super::web_identity::bind(activation.metadata, publication)),
         )
     }
 }

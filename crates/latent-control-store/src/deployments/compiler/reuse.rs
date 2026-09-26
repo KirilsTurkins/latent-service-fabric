@@ -100,6 +100,7 @@ pub(super) fn compatible(
 pub(super) fn prior_release<'a>(
     previous: Option<&'a CompiledCatalog>,
     release: &ReleaseDigest,
+    publication: Option<&latent_core::PublicationId>,
     stamp: Option<PreparationMetadataFingerprint>,
 ) -> Option<&'a RevisionRecord> {
     let previous = previous?;
@@ -108,11 +109,8 @@ pub(super) fn prior_release<'a>(
     let position = memo
         .releases
         .binary_search_by(|candidate| {
-            previous
-                .record(candidate.representative)
-                .deployment
-                .release
-                .cmp(release)
+            let record = previous.record(candidate.representative);
+            (&record.deployment.release, record.publication.as_ref()).cmp(&(release, publication))
         })
         .ok()?;
     let candidate = &memo.releases[position];

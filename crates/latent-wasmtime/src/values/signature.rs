@@ -20,6 +20,14 @@ pub(crate) fn validate_signature(
     limits: ValueCodecLimits,
     hostcall_fuel: usize,
 ) -> Result<SignaturePlan, PlatformError> {
+    validate_host_signature(types, limits, hostcall_fuel, &[])
+}
+pub(crate) fn validate_host_signature(
+    types: &[Type],
+    limits: ValueCodecLimits,
+    hostcall_fuel: usize,
+    resources: &[wasmtime::component::ResourceType],
+) -> Result<SignaturePlan, PlatformError> {
     limits.validate()?;
     if types.len() > limits.max_collection_items || hostcall_fuel == 0 {
         return Err(limit());
@@ -28,6 +36,7 @@ pub(crate) fn validate_signature(
         limits,
         remaining: limits.max_type_nodes,
         largest_element: NODE_BYTES,
+        resources,
     };
     let mut fixed = NODE_BYTES;
     for ty in types {
@@ -52,13 +61,14 @@ pub(crate) fn validate_signature(
     })
 }
 
-struct SchemaBudget {
+struct SchemaBudget<'a> {
+    resources: &'a [wasmtime::component::ResourceType],
     limits: ValueCodecLimits,
     remaining: usize,
     largest_element: usize,
 }
 
-impl SchemaBudget {
+impl SchemaBudget<'_> {
     fn name(&mut self, name: &str) -> Result<usize, PlatformError> {
         charge(&mut self.remaining, 1)?;
         if name.len()
@@ -165,6 +175,7 @@ impl SchemaBudget {
                 }
                 bytes = bytes.checked_add(largest).ok_or_else(limit)?;
             }
+            Type::Own(resource) | Type::Borrow(resource) if self.resources.contains(resource) => {}
             Type::Map(_)
             | Type::Own(_)
             | Type::Borrow(_)

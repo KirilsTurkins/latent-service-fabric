@@ -13,15 +13,36 @@ pub(in crate::management) fn wire(
     for value in [&deployment.id, &deployment.service] {
         id(value, budget, limits.max_id_bytes)?;
     }
-    id(
-        &deployment.release_digest,
-        budget,
-        limits.max_id_bytes.max(71),
-    )?;
+    if !deployment.release_digest.is_empty() || deployment.publication.is_none() {
+        id(
+            &deployment.release_digest,
+            budget,
+            limits.max_id_bytes.max(71),
+        )?;
+    } else {
+        budget.string(&deployment.release_digest, limits.max_id_bytes.max(71))?;
+    }
     let metadata = deployment
         .metadata
         .as_ref()
         .ok_or_else(|| invalid("deployment metadata is required"))?;
+    for reference in [&deployment.publication, &deployment.requested_publication]
+        .into_iter()
+        .flatten()
+    {
+        budget.allocation::<proto::PublicationRef>(1)?;
+        id(
+            &reference.id,
+            budget,
+            latent_core::PublicationId::TEXT_BYTES,
+        )?;
+        id(&reference.tenant, budget, limits.max_id_bytes)?;
+        if metadata.tenant.as_deref() != Some(reference.tenant.as_str())
+            || reference.id.parse::<latent_core::PublicationId>().is_err()
+        {
+            return Err(invalid("invalid deployment publication reference"));
+        }
+    }
     id(&metadata.name, budget, limits.max_id_bytes)?;
     for value in [metadata.tenant.as_ref(), metadata.namespace.as_ref()]
         .into_iter()
@@ -67,6 +88,37 @@ pub(super) fn domain(
     limits: &ManagementLimits,
 ) -> Result<(), Status> {
     let manifest = &deployment.manifest;
+    if manifest.publication.as_ref().is_some_and(|id| {
+        Some(id)
+            != deployment
+                .publication
+                .as_ref()
+                .map(|reference| &reference.id)
+    }) {
+        return Err(Status::internal(
+            "deployment publication association mismatch",
+        ));
+    }
+    if let Some(reference) = &deployment.publication {
+        if reference
+            .scope
+            .tenant()
+            .is_some_and(|scope| scope != tenant)
+            || (manifest.publication.is_some() && reference.scope.tenant().is_none())
+        {
+            return Err(Status::internal("deployment publication scope mismatch"));
+        }
+        budget.allocation::<u8>(reference.id.as_str().len())?;
+        if let Some(scope) = reference.scope.tenant() {
+            budget.allocation::<proto::PublicationRef>(1)?;
+            budget.string(&scope.0, limits.max_id_bytes)?;
+        }
+    }
+    if let Some(id) = &manifest.publication {
+        budget.allocation::<proto::PublicationRef>(1)?;
+        budget.allocation::<u8>(id.as_str().len())?;
+        budget.string(&tenant.0, limits.max_id_bytes)?;
+    }
     if manifest.metadata.tenant.as_ref() != Some(tenant) {
         return Err(Status::internal(
             "deployment repository returned an invalid scope",

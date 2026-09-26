@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "id": "browser/angular-hydration",
+  "title": "Hydrate the server-rendered Angular application",
+  "audience": "browser-developer",
+  "target": "browser",
+  "variants": [
+    {
+      "language": "typescript",
+      "kind": "maintained",
+      "source": "examples/angular-reference-application/client/main.ts",
+      "regions": [
+        "hydrate"
+      ],
+      "validation": {
+        "target": "tools/run_angular_reference_workflow.py",
+        "instructions": "docs/learn/build-and-deliver-angular.mdx",
+        "evidence": {
+          "path": "examples/guides/evidence/angular-hydration-typescript.json",
+          "sha256": "1e5ff8a2c6aaa9a8e837db4f5d085a270de063c69176379bf3144d1513aa77c3"
+        }
+      }
+    }
+  ]
+}

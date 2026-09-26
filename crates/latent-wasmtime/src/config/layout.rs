@@ -69,6 +69,31 @@ impl WasmtimeConfig {
         let layout = self.memory_layout();
         for (name, value) in [
             (
+                "java-guest-profile",
+                if self.java_guest {
+                    "teavm-c-v1"
+                } else {
+                    "disabled"
+                }
+                .to_owned(),
+            ),
+            ("wasm-gc", "false".to_owned()),
+            ("wasm-function-references", (!self.java_guest).to_string()),
+            ("wasm-exceptions", self.java_guest.to_string()),
+            (
+                "exception-heap-reservation-bytes",
+                if self.java_guest {
+                    super::JAVA_EXCEPTION_HEAP_BYTES
+                } else {
+                    0
+                }
+                .to_string(),
+            ),
+            (
+                "exception-heap-accounting",
+                "full-reservation-before-store-v1".to_owned(),
+            ),
+            (
                 "engine-layout-policy",
                 "wasmtime-47.0.4-bounded-v1".to_owned(),
             ),

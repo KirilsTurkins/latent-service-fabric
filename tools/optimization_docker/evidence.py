@@ -642,7 +642,9 @@ def seeds(suite, root, built, calls, publications):
     build_path = original_root(suite["build_path"])
     for density, value in zip(model.DENSITIES, suite["setup"]):
         fields(value, "schema density owner calls before after template template_path resources")
-        require(value["schema"] == model.PREFIX+"seed.v1" and value["density"] == density
+        # v1 remains an immutable archived measurement format; current provisioning emits v2.
+        explicit = value["schema"] == model.PREFIX + "seed.v2"
+        require(value["schema"] in (model.PREFIX + "seed.v1", model.PREFIX + "seed.v2") and value["density"] == density
                 and value["template_path"] == f"data/seed-d{density}", "docker-seed-shape")
         equal(value, read_json(root/f"seeds/{density}/seed.json"), "docker-seed-sidecar")
         app = app_resources(root, value["owner"], calls, suite["cleanup"], 0, None)
@@ -651,11 +653,14 @@ def seeds(suite, root, built, calls, publications):
         expected = [("inventory-before", ["node", "get", "optimization-node"], None)]
         for index in range(density):
             base = str(build_path/"fixtures")
+            selected = (str(original_root(suite["collection_path"]) / f"seeds/{density}/deployment-{index}.json")
+                        if explicit else f"{base}/deployment-{index}.json")
             expected += [(f"publish-{index}", ["release", "publish", "--manifest", f"{base}/capsule-{index}.json",
                 "--component", f"{base}/component-{index}.wasm", "--contracts", f"{base}/contracts.json"], index),
-                (f"apply-{index}", ["deployment", "apply", f"{base}/deployment-{index}.json"], index)]
+                (f"apply-{index}", ["deployment", "apply", selected], index)]
         expected.append(("inventory-after", ["node", "get", "optimization-node"], None))
         require(len(value["calls"]) == len(expected), "docker-seed-command-count")
+        selected_publications = {}
         for row, (name, arguments, index) in zip(value["calls"], expected):
             fields(row, "name arguments process log result")
             require(row["name"] == name, "docker-seed-command-order")
@@ -687,12 +692,22 @@ def seeds(suite, root, built, calls, publications):
                 require(release["digest"] == publication["release"] and release["service"] == model.SERVICES[index]
                         and release["tenant"] == model.TENANT and release["admitted"] is True
                         and result["data"]["admissionWarnings"] == [], "docker-seed-publication-result")
+                if explicit:
+                    selected_publications[index] = release["publication"]
+                    require(release["publication"]["tenant"] == model.TENANT
+                            and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", release["publication"]["id"]),
+                            "docker-seed-publication-identity")
             else:
                 deployment = result["data"]["deployment"]
                 require(uint(deployment["generation"]) == index+1 and result["data"]["warnings"] == [],
                         "docker-seed-deployment-generation")
-                equal(deployment["manifest"], applied_manifest(publications[model.SERVICES[index]]["deployment"]),
-                      "docker-seed-applied-manifest")
+                source = deepcopy(publications[model.SERVICES[index]]["deployment"])
+                if explicit:
+                    source["spec"]["publication"] = selected_publications[index]["id"]
+                    equal(read_json(root / f"seeds/{density}/deployment-{index}.json"), source,
+                          "docker-seed-selected-manifest")
+                    equal(deployment["publication"], selected_publications[index], "docker-seed-deployed-publication")
+                equal(deployment["manifest"], applied_manifest(source), "docker-seed-applied-manifest")
             total += 1
         for observed in (value["before"], value["after"]):
             node_inventory(observed, expected_entries=0, expected_grants=0)

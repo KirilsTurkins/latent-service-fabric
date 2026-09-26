@@ -3,6 +3,7 @@ use latent_audit as domain;
 use tonic::Status;
 
 mod canary;
+mod capability;
 
 pub(super) fn scope(
     records: &[domain::AuditStoredRecord],
@@ -28,6 +29,21 @@ fn scope_to_proto(value: domain::AuditScope) -> proto::AuditQueryScope {
 }
 pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentities {
     proto::AuditIdentities {
+        static_web: value.static_web.map(|web| proto::AuditStaticWebTarget {
+            web_manifest_digest: web.web_manifest_digest.into_string(),
+            assets_digest: web.assets_digest.into_string(),
+            web_generation: web.web_generation,
+        }),
+        trigger: value.trigger,
+        trigger_generation: value.trigger_generation,
+        capability: value.capability.map(capability::context),
+        base_publication_id: value
+            .base_publication
+            .map(latent_core::PublicationId::into_string),
+        candidate_publication_id: value
+            .candidate_publication
+            .map(latent_core::PublicationId::into_string),
+        publication_id: value.publication.map(|id| id.into_string()),
         package_digest: value.package.map(latent_core::PackageDigest::into_string),
         component_digest: value.component.map(|value| value.0),
         policies: value

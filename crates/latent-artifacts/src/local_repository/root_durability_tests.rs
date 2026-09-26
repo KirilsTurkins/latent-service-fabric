@@ -45,7 +45,7 @@ fn nested_root_initialization_syncs_every_ancestor_leaf_first() {
     let repo = open(&root).expect("nested root initialization");
     assert_eq!(guard.events(), ancestors(&root));
     assert!(root.join(".catalog.lock").is_file());
-    assert!(root.join("releases").is_dir());
+    assert!(root.join("publications").is_dir());
     assert!(root.join(".tmp").is_dir());
     assert!(block_on(repo.list(None, 1))
         .expect("empty catalog")
@@ -65,7 +65,7 @@ fn every_ancestor_failure_stops_initialization_and_retry_resyncs_existing_paths(
         assert_uncertain(&open(&root).expect_err("ancestor sync must fail open"));
         assert_eq!(guard.events(), expected[..=failed_index]);
         assert!(root.is_dir(), "failed creation remains available for retry");
-        for name in [".catalog.lock", "releases", ".tmp"] {
+        for name in [".catalog.lock", "publications", ".tmp"] {
             assert!(!root.join(name).exists(), "initialization must not proceed");
         }
         drop(guard);
@@ -136,14 +136,7 @@ fn existing_root_failure_preserves_release_and_exclusive_ownership_on_retry() {
     drop(guard);
     drop(first);
 
-    let release = root.join("releases").join(
-        expected
-            .descriptor
-            .release_digest
-            .0
-            .strip_prefix("sha256:")
-            .expect("SHA-256 digest"),
-    );
+    let release = super::release_dir(&root, &expected.descriptor.release_digest);
     let persisted = [
         "metadata.json",
         "manifest.json",

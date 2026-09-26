@@ -170,6 +170,10 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("reason", Known(ADMISSION_REASONS)),
         ],
         "scheduler.limit" => &[("reason", Known(SCHEDULER_REASONS))],
+        "admission.currentness" => &[(
+            "reason",
+            Known(latent_core::error::ADMISSION_CURRENTNESS_REASONS),
+        )],
         "activation.resource-exhausted" => &[
             ("dimension", Known(DIMENSIONS)),
             ("limit", Unsigned),

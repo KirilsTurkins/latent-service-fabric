@@ -1,0 +1,7 @@
+using Raw = @raw@;
+namespace Lsf.Guest;
+public static class Service
+{
+    public static Raw.InvocationOutcome Call(Raw.Target target, byte[] payload, string mediaType, Raw.CallOptions options) =>
+        Raw.Call(target, payload, mediaType, options);
+}

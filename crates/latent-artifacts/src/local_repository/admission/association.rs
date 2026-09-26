@@ -24,7 +24,12 @@ pub(in crate::local_repository) fn verify(
     if layout.digest() != &binding.package
         || layout.config().kind != PackageKind::Capsule
         || metadata.verified_digest() != &binding.release
-        || metadata.manifest().metadata.tenant.as_ref() != Some(&binding.tenant)
+        || metadata
+            .manifest()
+            .metadata
+            .tenant
+            .as_ref()
+            .is_some_and(|embedded| embedded != &binding.tenant)
         || upload.layers.len() != layout.config().layers.len()
     {
         return Err(corrupt("retained-package-association"));

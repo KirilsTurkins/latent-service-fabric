@@ -175,6 +175,7 @@ impl Fixture {
                         claims: Metadata::new(),
                     },
                     revision: ResolvedRevision {
+                        publication: None,
                         target: InvocationTarget {
                             tenant: TenantId("tenant".to_owned()),
                             service: ServiceId("dormant-service-name".to_owned()),

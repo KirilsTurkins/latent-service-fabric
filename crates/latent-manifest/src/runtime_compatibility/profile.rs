@@ -16,6 +16,7 @@ pub struct RuntimeCompatibilityProfile {
     cpu: Box<[Box<str>]>,
     maximum_memory_bytes: u64,
     maximum_fuel: u64,
+    renderer: Option<crate::RendererRequirement>,
     digest: [u8; 32],
 }
 
@@ -60,6 +61,7 @@ impl RuntimeCompatibilityProfile {
             cpu: cpu.into_boxed_slice(),
             maximum_memory_bytes,
             maximum_fuel,
+            renderer: None,
             digest: [0; 32],
         };
         profile.digest = profile.fingerprint();
@@ -69,6 +71,21 @@ impl RuntimeCompatibilityProfile {
     #[must_use]
     pub fn digest(&self) -> &[u8; 32] {
         &self.digest
+    }
+
+    /// The trusted adapter installs a renderer only after checking its engine
+    /// and resource policy. This does not grant any capsule permission to run.
+    pub fn with_renderer(
+        mut self,
+        renderer: crate::RendererRequirement,
+    ) -> Result<Self, PlatformError> {
+        renderer.validate()?;
+        if renderer != crate::RendererRequirement::angular() || self.version.as_ref() != "47.0.4" {
+            return Err(incompatible("renderer-profile-incompatible"));
+        }
+        self.renderer = Some(renderer);
+        self.digest = self.fingerprint();
+        Ok(self)
     }
     #[must_use]
     pub fn target_triple(&self) -> &str {
@@ -88,6 +105,24 @@ impl RuntimeCompatibilityProfile {
     pub fn check_capsule(&self, manifest: &CapsuleManifest) -> Result<(), PlatformError> {
         let requirements = &manifest.runtime_requirements;
         requirements.validate()?;
+        if let Some(renderer) = &requirements.renderer {
+            if self.renderer.as_ref() != Some(renderer) {
+                return Err(incompatible("renderer-profile-incompatible"));
+            }
+            let budget = &manifest.execution.resource_budget_ceiling;
+            if renderer.profile == crate::RendererProfile::AngularSsrComponentV1
+                && (manifest.execution.threading != ThreadingModel::SingleThreaded
+                    || budget.memory_bytes > 256 * 1024 * 1024
+                    || budget.cpu_fuel > 2_000_000_000
+                    || budget
+                        .wall_time_limit_millis
+                        .is_none_or(|value| value == 0 || value > 5000)
+                    || manifest.execution.snapshot_eligible
+                    || manifest.execution.fusion_eligible)
+            {
+                return Err(incompatible("renderer-resource-profile-incompatible"));
+            }
+        }
         if version(&manifest.minimum_fabric_version)? > version(PHASE1_FABRIC_VERSION)? {
             return Err(incompatible("fabric-contract-version-incompatible"));
         }
@@ -153,6 +188,15 @@ impl RuntimeCompatibilityProfile {
         }
         hash.update(self.maximum_memory_bytes.to_le_bytes());
         hash.update(self.maximum_fuel.to_le_bytes());
+        if let Some(renderer) = &self.renderer {
+            hash.update(b"renderer-requirement-v1\0");
+            hash.update([match renderer.profile {
+                crate::RendererProfile::WasmWebBufferedV1 => 0,
+                crate::RendererProfile::AngularSsrComponentV1 => 1,
+            }]);
+            hash.update((renderer.profile_digest.len() as u64).to_le_bytes());
+            hash.update(renderer.profile_digest.as_bytes());
+        }
         hash.finalize().into()
     }
 }

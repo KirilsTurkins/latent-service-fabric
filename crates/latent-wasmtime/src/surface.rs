@@ -12,6 +12,9 @@ use crate::config::WasmtimeConfig;
 use crate::containment::platform_error;
 use crate::values::validate_signature;
 
+pub(crate) mod blob;
+pub(crate) mod streaming;
+
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
 pub const LOG_IMPORT: &str = "latent:log/log@0.1.0";
 pub const MONOTONIC_CLOCK_IMPORT: &str = "latent:clock/monotonic@0.1.0";
@@ -51,11 +54,37 @@ fn lookup_function<'a, T>(
     Some(&functions[index].1)
 }
 
-pub(crate) fn validate(
+#[derive(Clone, Copy, Default)]
+pub(crate) struct Providers {
+    pub local_services: bool,
+    pub http: bool,
+    pub streaming_http: bool,
+    pub blobs: bool,
+    pub secrets: bool,
+    pub events: bool,
+    pub random: bool,
+    pub metrics: bool,
+}
+impl Providers {
+    fn supports(self, name: &str) -> bool {
+        (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+            || (self.random && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
+            || (self.metrics && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
+            || (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
+            || (self.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
+            || (self.local_services
+                && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
+            || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
+            || (self.streaming_http
+                && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
+    }
+}
+pub(crate) fn validate_with_providers(
     component: &Component,
     engine: &Engine,
     artifact: &CapsuleArtifact,
     config: &WasmtimeConfig,
+    providers: Providers,
 ) -> Result<Surface, PlatformError> {
     let component_type = component.component_type();
     let mut remaining = config.value_codec_limits.max_type_nodes;
@@ -68,6 +97,7 @@ pub(crate) fn validate(
         config,
         &mut remaining,
         &mut retained_bytes,
+        providers,
     )?;
 
     let declared_exports = artifact
@@ -101,19 +131,16 @@ pub(crate) fn validate(
             take_name(name, config, &mut remaining)?;
             match item.ty {
                 ComponentItem::ComponentFunc(function) => {
-                    let value_bytes = function
-                        .params()
-                        .len()
-                        .checked_add(function.results().len())
-                        .and_then(|count| count.checked_mul(std::mem::size_of::<Type>()))
-                        .ok_or_else(exhausted)?;
-                    let entry_bytes = value_bytes
-                        .checked_add(contract.len())
-                        .and_then(|bytes| bytes.checked_add(name.len()))
-                        .and_then(|bytes| bytes.checked_add(4096))
-                        .ok_or_else(exhausted)?;
+                    let entry_bytes = retained_function_bytes(&function, contract, name)?;
                     retain(entry_bytes, &mut retained_bytes, config)?;
-                    let (params, results) = signature(&function, config, &mut remaining)?;
+                    let (params, results) = signature(
+                        &function,
+                        // Application function kind is independent of provider
+                        // availability. Exact host imports remain checked above.
+                        function.async_(),
+                        config,
+                        &mut remaining,
+                    )?;
                     let (_, index) = component
                         .get_export(Some(&interface_index), name)
                         .ok_or_else(|| incompatible("component function index is unavailable"))?;
@@ -174,16 +201,21 @@ fn validate_imports(
     config: &WasmtimeConfig,
     remaining: &mut usize,
     retained_bytes: &mut usize,
+    providers: Providers,
 ) -> Result<BTreeSet<String>, PlatformError> {
     let mut imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
-        if !matches!(
-            name,
-            CONTEXT_IMPORT | LOG_IMPORT | MONOTONIC_CLOCK_IMPORT | WALL_CLOCK_IMPORT
-        ) {
+        let specification = latent_core::PHASE3_HOST_ABI_CURRENT
+            .interface(name)
+            .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
+        if specification.binding == latent_core::HostInterfaceBinding::Provider
+            && !providers.supports(name)
+        {
+            // Recognition is data-only. Providers require an installed trusted port;
+            // a label or a package manifest cannot install I/O.
             return Err(incompatible(
-                "component imports an unsupported host capability",
+                "required host capability provider is unavailable",
             ));
         }
         let ComponentItem::ComponentInstance(interface) = item.ty else {
@@ -191,15 +223,41 @@ fn validate_imports(
                 "host capabilities must be imported interfaces",
             ));
         };
+        let mut resources = Vec::new();
+        for (resource_name, item) in interface.exports(engine) {
+            if let ComponentItem::Resource(resource) = item.ty {
+                if !specification.resource_types().contains(&resource_name)
+                    || resources.len() >= 3
+                    || resources.contains(&resource)
+                {
+                    return Err(incompatible("unsupported host resource identity"));
+                }
+                resources.push(resource);
+            }
+        }
         for (name, item) in interface.exports(engine) {
             take_name(name, config, remaining)?;
             match item.ty {
                 ComponentItem::ComponentFunc(function) => {
-                    signature(&function, config, remaining)?;
+                    signature_with_resources(
+                        &function,
+                        specification.asynchronous,
+                        config,
+                        remaining,
+                        &resources,
+                    )?;
+                    if !specification.resource_types().is_empty() {
+                        match specification.interface {
+                            latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
+                            latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            _ => return Err(incompatible("unsupported host resource interface")),
+                        }
+                    }
                 }
                 ComponentItem::Type(ty) => {
-                    check_types(&[ty], config, remaining)?;
+                    check_host_types(&[ty], config, remaining, &resources)?;
                 }
+                ComponentItem::Resource(resource) if resources.contains(&resource) => {}
                 _ => {
                     return Err(incompatible(
                         "unsupported item in host capability interface",
@@ -281,12 +339,22 @@ fn register_functions(
 
 fn signature(
     function: &ComponentFunc,
+    asynchronous: bool,
     config: &WasmtimeConfig,
     remaining: &mut usize,
 ) -> Result<(Vec<Type>, Vec<Type>), PlatformError> {
-    if function.async_() {
+    signature_with_resources(function, asynchronous, config, remaining, &[])
+}
+fn signature_with_resources(
+    function: &ComponentFunc,
+    asynchronous: bool,
+    config: &WasmtimeConfig,
+    remaining: &mut usize,
+    resources: &[wasmtime::component::ResourceType],
+) -> Result<(Vec<Type>, Vec<Type>), PlatformError> {
+    if function.async_() != asynchronous {
         return Err(incompatible(
-            "asynchronous Component Model function types are not supported",
+            "Component Model function kind does not match the host/export profile",
         ));
     }
     let count = function
@@ -299,8 +367,8 @@ fn signature(
     let results = function.results().collect::<Vec<_>>();
     // Use the same fuel that the store will receive. Increasing it later to
     // accommodate host imports would invalidate the lifted-allocation proof.
-    check_types(&params, config, remaining)?;
-    check_types(&results, config, remaining)?;
+    check_host_types(&params, config, remaining, resources)?;
+    check_host_types(&results, config, remaining, resources)?;
     Ok((params, results))
 }
 
@@ -310,6 +378,24 @@ fn check_types(
     remaining: &mut usize,
 ) -> Result<(), PlatformError> {
     let plan = validate_signature(types, config.value_codec_limits, config.hostcall_fuel)?;
+    *remaining = remaining
+        .checked_sub(plan.examined_type_nodes)
+        .ok_or_else(exhausted)?;
+    Ok(())
+}
+
+fn check_host_types(
+    types: &[Type],
+    config: &WasmtimeConfig,
+    remaining: &mut usize,
+    resources: &[wasmtime::component::ResourceType],
+) -> Result<(), PlatformError> {
+    let plan = crate::values::validate_host_signature(
+        types,
+        config.value_codec_limits,
+        config.hostcall_fuel,
+        resources,
+    )?;
     *remaining = remaining
         .checked_sub(plan.examined_type_nodes)
         .ok_or_else(exhausted)?;
@@ -420,4 +506,23 @@ fn exhausted() -> PlatformError {
         "component interface exceeds its configured bound",
         false,
     )
+}
+
+fn retained_function_bytes(
+    function: &ComponentFunc,
+    contract: &str,
+    name: &str,
+) -> Result<usize, PlatformError> {
+    let value_bytes = function
+        .params()
+        .len()
+        .checked_add(function.results().len())
+        .and_then(|count| count.checked_mul(std::mem::size_of::<Type>()))
+        .ok_or_else(exhausted)?;
+    let bytes = value_bytes
+        .checked_add(contract.len())
+        .and_then(|bytes| bytes.checked_add(name.len()))
+        .and_then(|bytes| bytes.checked_add(4096))
+        .ok_or_else(exhausted)?;
+    Ok(bytes)
 }

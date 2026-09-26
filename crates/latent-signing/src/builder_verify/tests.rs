@@ -1,6 +1,7 @@
 mod authorization;
 mod currentness;
 mod support;
+mod web;
 
 use super::*;
 use crate::{

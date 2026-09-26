@@ -1,34 +1,59 @@
 use super::{Code, Level, Walker};
 use latent_contracts::Analysis;
 use latent_core::PlatformError;
-use wit_parser::{Function, FunctionKind, InterfaceId, Resolve, Type, TypeDefKind, TypeOwner};
+use wit_parser::{
+    Function, FunctionKind, Handle, InterfaceId, Resolve, Type, TypeDefKind, TypeId, TypeOwner,
+};
 
 pub(super) fn inspect_interface(
     resolve: &Resolve,
     id: InterfaceId,
     a: &mut Analysis,
 ) -> Result<(), PlatformError> {
+    inspect_interface_inner(resolve, id, a, false)
+}
+pub(super) fn inspect_host_interface(
+    resolve: &Resolve,
+    id: InterfaceId,
+    a: &mut Analysis,
+) -> Result<(), PlatformError> {
+    let resources = resolve.id_of(id).is_some_and(|name| {
+        latent_core::PHASE3_HOST_ABI_CURRENT
+            .interface(&name)
+            .is_some_and(|profile| !profile.resource_types().is_empty())
+    });
+    inspect_interface_inner(resolve, id, a, resources)
+}
+fn inspect_interface_inner(
+    resolve: &Resolve,
+    id: InterfaceId,
+    a: &mut Analysis,
+    resources: bool,
+) -> Result<(), PlatformError> {
     let interface = &resolve.interfaces[id];
     a.node(1)?;
     for (name, id) in &interface.types {
         a.name(name)?;
         a.edge(1)?;
-        inspect_type(resolve, Type::Id(*id), a, 1)?;
+        inspect_type(resolve, Type::Id(*id), a, 1, resources)?;
     }
     for (name, function) in &interface.functions {
         a.node(1)?;
         a.name(name)?;
-        if function.kind != FunctionKind::Freestanding {
+        if !matches!(
+            function.kind,
+            FunctionKind::Freestanding | FunctionKind::AsyncFreestanding
+        ) {
             a.issue(Level::Unsupported, Code::UnsupportedType, &[name]);
         }
         for parameter in &function.params {
             a.name(&parameter.name)?;
             a.edge(1)?;
-            inspect_type(resolve, parameter.ty, a, 1)?;
+            inspect_type(resolve, parameter.ty, a, 1, resources)?;
         }
         if let Some(result) = function.result {
             a.edge(1)?;
-            inspect_type(resolve, result, a, 1)?;
+            inspect_type(resolve, result, a, 1, resources)?;
         }
     }
     Ok(())
@@ -38,6 +63,7 @@ fn inspect_type(
     ty: Type,
     a: &mut Analysis,
     depth: usize,
+    resources: bool,
 ) -> Result<(), PlatformError> {
     a.node(depth)?;
     let Type::Id(id) = ty else {
@@ -53,13 +79,13 @@ fn inspect_type(
     match &ty.kind {
         TypeDefKind::Type(inner) | TypeDefKind::List(inner) | TypeDefKind::Option(inner) => {
             a.edge(1)?;
-            inspect_type(resolve, *inner, a, depth + 1)?;
+            inspect_type(resolve, *inner, a, depth + 1, resources)?;
         }
         TypeDefKind::Record(record) => {
             for field in &record.fields {
                 a.name(&field.name)?;
                 a.edge(1)?;
-                inspect_type(resolve, field.ty, a, depth + 1)?;
+                inspect_type(resolve, field.ty, a, depth + 1, resources)?;
             }
         }
         TypeDefKind::Variant(variant) => {
@@ -67,7 +93,7 @@ fn inspect_type(
                 a.name(&case.name)?;
                 a.edge(1)?;
                 if let Some(ty) = case.ty {
-                    inspect_type(resolve, ty, a, depth + 1)?;
+                    inspect_type(resolve, ty, a, depth + 1, resources)?;
                 }
             }
         }
@@ -80,14 +106,19 @@ fn inspect_type(
         TypeDefKind::Tuple(tuple) => {
             for ty in &tuple.types {
                 a.edge(1)?;
-                inspect_type(resolve, *ty, a, depth + 1)?;
+                inspect_type(resolve, *ty, a, depth + 1, resources)?;
             }
         }
         TypeDefKind::Result(result) => {
             for ty in [result.ok, result.err].into_iter().flatten() {
                 a.edge(1)?;
-                inspect_type(resolve, ty, a, depth + 1)?;
+                inspect_type(resolve, ty, a, depth + 1, resources)?;
             }
+        }
+        TypeDefKind::Resource if resources && resource_allowed(resolve, id, a)? => (),
+        TypeDefKind::Handle(Handle::Own(id) | Handle::Borrow(id)) if resources => {
+            a.edge(1)?;
+            inspect_type(resolve, Type::Id(*id), a, depth + 1, resources)?;
         }
         _ => a.issue(Level::Unsupported, Code::UnsupportedType, &[]),
     }
@@ -156,6 +187,14 @@ impl Walker<'_, '_> {
                     }
                 }
                 match (&old.kind, &new.kind) {
+                    (TypeDefKind::Resource, TypeDefKind::Resource) if self.resources => {
+                        self.resource(left, right)
+                    }
+                    (TypeDefKind::Handle(Handle::Own(a)), TypeDefKind::Handle(Handle::Own(b)))
+                    | (
+                        TypeDefKind::Handle(Handle::Borrow(a)),
+                        TypeDefKind::Handle(Handle::Borrow(b)),
+                    ) if self.resources => self.ty(Type::Id(*a), Type::Id(*b), depth + 1),
                     (TypeDefKind::Record(old), TypeDefKind::Record(new)) => {
                         if old.fields.len() != new.fields.len() {
                             return Ok(false);
@@ -219,6 +258,14 @@ impl Walker<'_, '_> {
             (left, right) => Ok(left == right),
         }
     }
+    fn resource(&mut self, left: TypeId, right: TypeId) -> Result<bool, PlatformError> {
+        let old = &self.left.types[left];
+        let new = &self.right.types[right];
+        Ok(resource_allowed(self.left, left, self.analysis)?
+            && resource_allowed(self.right, right, self.analysis)?
+            && old.name == new.name
+            && owner_equal(self.left, old.owner, self.right, new.owner, self.analysis)?)
+    }
     fn optional(
         &mut self,
         left: Option<Type>,
@@ -267,3 +314,28 @@ fn owner_equal(
         _ => Ok(false),
     }
 }
+
+fn resource_allowed(
+    resolve: &Resolve,
+    id: TypeId,
+    a: &mut Analysis,
+) -> Result<bool, PlatformError> {
+    let value = &resolve.types[id];
+    let TypeOwner::Interface(interface) = value.owner else {
+        return Ok(false);
+    };
+    let Some(name) = value.name.as_deref() else {
+        return Ok(false);
+    };
+    let Some(interface) = resolve.id_of(interface) else {
+        return Ok(false);
+    };
+    a.name(name)?;
+    a.name(&interface)?;
+    Ok(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(&interface)
+        .is_some_and(|profile| profile.resource_types().contains(&name)))
+}
+
+#[cfg(test)]
+mod tests;

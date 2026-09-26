@@ -155,7 +155,7 @@ def _inspect(path: Path):
     except (YAMLError, ValueError, RecursionError) as error:
         return [], [Finding(path, 1, f"cannot inspect workflow YAML: {error}")]
     for reference in references:
-        if reference.value.startswith("./"):
+        if reference.value.startswith(("./", "$/")):
             findings.extend(_validate_local(path, reference.line, reference.value))
         else:
             findings.extend(
@@ -207,7 +207,7 @@ def validate_repository(root: Path = ROOT) -> tuple[int, int, list[Finding]]:
         reference_count += len(references)
         findings.extend(workflow_findings)
         for reference in references:
-            if reference.value.startswith("./") and not _validate_local(path, reference.line, reference.value):
+            if reference.value.startswith(("./", "$/")) and not _validate_local(path, reference.line, reference.value):
                 try:
                     pending.append(_local_dependency(root, reference.value))
                 except (OSError, ValueError) as error:

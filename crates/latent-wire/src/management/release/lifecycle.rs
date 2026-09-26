@@ -1,4 +1,4 @@
-mod conversion;
+pub(super) mod conversion;
 mod publication;
 mod requests;
 mod response;
@@ -19,6 +19,8 @@ use super::super::{errors::platform_status, proto, ManagementLimits, ManagementS
 /// Captures an immutable, fully budgeted response before either a successful
 /// mutation or a rejected-operation receipt may be persisted.
 struct Preflight<'a> {
+    publication: Option<latent_core::PublicationId>,
+    selected: Option<latent_core::PublicationId>,
     audit_enabled: bool,
     tenant: &'a TenantId,
     limits: &'a ManagementLimits,
@@ -43,6 +45,8 @@ impl<'a> Preflight<'a> {
         action: ReleaseLifecycleAction,
     ) -> Self {
         Self {
+            publication: None,
+            selected: None,
             audit_enabled: false,
             tenant,
             limits,
@@ -63,61 +67,69 @@ impl<'a> Preflight<'a> {
         let result = if self.response.is_some() || self.rejected.is_some() {
             Err(Status::internal("release operation preflight repeated"))
         } else {
-            self.operation_response(preview.receipt).and_then(|value| {
-                if preview.receipt.actor != self.actor
-                    || preview.receipt.action != self.action
-                    || self
-                        .operation_id
-                        .as_ref()
-                        .is_some_and(|v| v != &preview.receipt.operation_id)
-                    || (self.operation_id.is_some()
-                        && preview.receipt.expected_generation != self.expected_generation)
-                    || self
-                        .release
-                        .as_ref()
-                        .is_some_and(|v| preview.receipt.component_digest.as_ref() != Some(v))
-                {
-                    return Err(Status::internal(
-                        "release operation preview changed the request identity",
-                    ));
-                }
-                if let Some(failure) = preview.failure {
-                    if preview.receipt.disposition
-                        != latent_artifacts::ReleaseOperationDisposition::Rejected
-                    {
-                        return Err(Status::internal("release failure preview is not rejected"));
-                    }
-                    self.failure = Some(response::failure(
-                        failure,
-                        &value,
-                        &self.response_limits()?,
-                    )?);
-                } else if preview.receipt.disposition
-                    != latent_artifacts::ReleaseOperationDisposition::Committed
-                {
-                    return Err(Status::internal("release success preview is not committed"));
-                }
-                if preview.failure.is_none()
-                    && (self.package.as_ref().is_some_and(|package| {
-                        preview
-                            .receipt
-                            .record
+            self.operation_response(preview.receipt, preview.publication)
+                .and_then(|value| {
+                    if preview.receipt.actor != self.actor
+                        || self
+                            .selected
                             .as_ref()
-                            .and_then(|record| record.package.as_ref())
-                            != Some(package)
-                    }) || self
-                        .reason
-                        .is_some_and(|reason| preview.receipt.reason != reason))
-                {
-                    return Err(Status::internal(
-                        "release operation preview changed the requested transition",
-                    ));
-                }
-                Ok(value)
-            })
+                            .is_some_and(|id| Some(id) != preview.publication)
+                        || preview.receipt.action != self.action
+                        || self
+                            .operation_id
+                            .as_ref()
+                            .is_some_and(|v| v != &preview.receipt.operation_id)
+                        || (self.operation_id.is_some()
+                            && preview.receipt.expected_generation != self.expected_generation)
+                        || self
+                            .release
+                            .as_ref()
+                            .is_some_and(|v| preview.receipt.component_digest.as_ref() != Some(v))
+                    {
+                        return Err(Status::internal(
+                            "release operation preview changed the request identity",
+                        ));
+                    }
+                    if let Some(failure) = preview.failure {
+                        if preview.receipt.disposition
+                            != latent_artifacts::ReleaseOperationDisposition::Rejected
+                        {
+                            return Err(Status::internal(
+                                "release failure preview is not rejected",
+                            ));
+                        }
+                        self.failure = Some(response::failure(
+                            failure,
+                            &value,
+                            &self.response_limits()?,
+                        )?);
+                    } else if preview.receipt.disposition
+                        != latent_artifacts::ReleaseOperationDisposition::Committed
+                    {
+                        return Err(Status::internal("release success preview is not committed"));
+                    }
+                    if preview.failure.is_none()
+                        && (self.package.as_ref().is_some_and(|package| {
+                            preview
+                                .receipt
+                                .record
+                                .as_ref()
+                                .and_then(|record| record.package.as_ref())
+                                != Some(package)
+                        }) || self
+                            .reason
+                            .is_some_and(|reason| preview.receipt.reason != reason))
+                    {
+                        return Err(Status::internal(
+                            "release operation preview changed the requested transition",
+                        ));
+                    }
+                    Ok(value)
+                })
         };
         match result {
             Ok(value) => {
+                self.publication = preview.publication.cloned();
                 self.response = Some(value);
                 Ok(())
             }
@@ -131,9 +143,10 @@ impl<'a> Preflight<'a> {
     fn operation_response(
         &self,
         receipt: &ReleaseOperationReceipt,
+        publication: Option<&latent_core::PublicationId>,
     ) -> Result<proto::ReleaseOperationReceipt, Status> {
         let limits = self.response_limits()?;
-        let value = response::operation(receipt, self.tenant, &limits)?;
+        let value = response::operation(receipt, publication, self.tenant, &limits)?;
         if self.audit_enabled && self.action != ReleaseLifecycleAction::Publish {
             super::super::control_audit::operation_preflight(&value, self.limits)?;
         }
@@ -167,13 +180,29 @@ impl<'a> Preflight<'a> {
         let expected = self
             .response
             .ok_or_else(|| Status::internal("release operation omitted preflight"))?;
-        let actual = response::operation(&actual, self.tenant, self.limits)?;
+        let actual =
+            response::operation(&actual, self.publication.as_ref(), self.tenant, self.limits)?;
         if actual != expected {
             return Err(Status::internal(
                 "release operation receipt changed after preflight",
             ));
         }
         Ok(expected)
+    }
+
+    fn finish_selected(
+        self,
+        result: Result<latent_artifacts::PublicationOperationReceipt, PlatformError>,
+    ) -> Result<proto::ReleaseOperationReceipt, Status> {
+        if result
+            .as_ref()
+            .is_ok_and(|actual| actual.publication != self.publication)
+        {
+            return Err(Status::internal(
+                "operation publication changed after preflight",
+            ));
+        }
+        self.finish(result.map(|value| value.operation))
     }
 }
 

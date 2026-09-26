@@ -62,6 +62,7 @@ impl DirectoryDeploymentRepository {
                         return Err(conflict());
                     }
                     Some(VersionedDeployment {
+                        publication: receipt.publication.clone(),
                         manifest,
                         generation: receipt.object_generation,
                     })
@@ -115,12 +116,13 @@ impl DirectoryDeploymentRepository {
         let timestamp = super::super::now()?;
         let mut desired = previous.routes.deployments.clone();
         let mut versions = previous.routes.versions.clone();
-        let (apply_result, manifest_digest, component, object_generation) =
+        let (mut apply_result, manifest_digest, component, object_generation) =
             if let Some(manifest) = manifest {
                 let encoded = super::super::rollouts::table::manifest(&manifest)?;
                 let digest = codec::hash(encoded.as_bytes());
                 let component = manifest.release.clone();
                 let result = VersionedDeployment {
+                    publication: None,
                     manifest: manifest.clone(),
                     generation: route_generation.0,
                 };
@@ -140,6 +142,13 @@ impl DirectoryDeploymentRepository {
                 versions.remove(&id);
                 (None, digest, component, generation)
             };
+        // Authenticated control preparation may refresh its finite durable
+        // clock lease. A busy control worker cannot rely on a sampler tick
+        // having run between consecutive catalog mutations. This performs no
+        // deployment effect and never retries preparation or an uncertain write.
+        if let Some(authority) = &self.admission {
+            authority.renew_control_lease()?;
+        }
         let next_routes = Arc::new(
             compile_catalog_with_runtime(
                 desired,
@@ -152,10 +161,23 @@ impl DirectoryDeploymentRepository {
                 &mut Work::default(),
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
+                self.admission.as_deref(),
             )
             .await?,
         );
+        let publication = if apply_result.is_some() {
+            &next_routes
+        } else {
+            &previous.routes
+        }
+        .record_by_id(&id)
+        .ok_or_else(crate::deployment_operations::corrupt)?
+        .publication_reference(self.artifacts.as_ref())?;
+        if let Some(result) = &mut apply_result {
+            result.publication.clone_from(&publication);
+        }
         let mut receipt = DeploymentOperationReceipt {
+            publication: publication.clone(),
             format_version: 1,
             tenant: context.tenant,
             actor: context.actor,
@@ -181,12 +203,13 @@ impl DirectoryDeploymentRepository {
         receipts.extend(old.receipts.iter().skip(skip).cloned());
         let sequence = old.operation_sequence.checked_add(1).ok_or_else(capacity)?;
         receipts.push(StoredReceipt {
+            publication,
             sequence,
             receipt: receipt.clone(),
         });
         let next_operations = OperationTable::from_reserved(
             TableData {
-                format_version: 1,
+                format_version: 2,
                 receipt_slots: old.receipt_slots,
                 operation_sequence: sequence,
                 receipts,
@@ -199,6 +222,7 @@ impl DirectoryDeploymentRepository {
             transaction_version: state_version,
             rollouts: &previous.rollouts.data,
             deployment_operations: Some(&next_operations.data),
+            http_routes: previous.http.enabled.then_some(&previous.http.data),
         };
         let bytes = persistence::encode_combined(
             &next_routes,

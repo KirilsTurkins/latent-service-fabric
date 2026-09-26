@@ -44,6 +44,17 @@ pub struct NativeAotSettings {
 }
 
 impl NativeAotSettings {
+    /// Check the actual approved child and sandbox without creating caches,
+    /// sending a capsule, loading native output or cloning authentication keys.
+    /// This synchronous startup/check-config operation owns at most one child;
+    /// it retains that owner through termination and reap, even after timeout.
+    pub fn verify_compiler_readiness(
+        &self,
+        config: &crate::WasmtimeConfig,
+    ) -> Result<(), PlatformError> {
+        crate::aot::supervisor::verify_readiness(self, config)
+    }
+
     pub fn validate(&self) -> Result<(), PlatformError> {
         self.process.validate()?;
         self.cache.raw.validate()?;

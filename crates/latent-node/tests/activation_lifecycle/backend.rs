@@ -13,7 +13,7 @@ use latent_core::{
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionCancellationProbe, ExecutionReport,
     ExecutionRequest, GuestInterruptionKind, GuestOutcome, GuestTrap, PreparationKey,
-    PreparedComponent, PreparedUse,
+    PreparationReadWait, PreparedActivation, PreparedComponent, PreparedReadiness, PreparedUse,
 };
 
 use super::support::{error, Gate, LiveGuard};
@@ -30,6 +30,8 @@ pub const DROP_PANIC: u8 = 7;
 pub struct Backend {
     pub gate: Gate,
     pub prepare_gate: Gate,
+    pub materialize_gate: Gate,
+    pub materialization_calls: AtomicUsize,
     pub mode: AtomicU8,
     pub entered: AtomicUsize,
     pub preparation_calls: AtomicUsize,
@@ -46,6 +48,8 @@ impl Default for Backend {
         Self {
             gate: Gate::new(true),
             prepare_gate: Gate::new(true),
+            materialize_gate: Gate::new(true),
+            materialization_calls: AtomicUsize::new(0),
             mode: AtomicU8::new(SUCCESS),
             entered: AtomicUsize::new(0),
             preparation_calls: AtomicUsize::new(0),
@@ -75,6 +79,7 @@ impl ExecutionBackend for Backend {
 
     fn preparation_key(&self, release: &ReleaseDigest) -> Result<PreparationKey, PlatformError> {
         Ok(PreparationKey {
+            publication: None,
             release: release.clone(),
             engine_version: "fixture-1".to_owned(),
             engine_configuration_digest: "fixture-config".to_owned(),
@@ -100,6 +105,18 @@ impl ExecutionBackend for Backend {
                 _ => {}
             }
             Ok(PreparedUse::new(prepared, pin))
+        })
+    }
+
+    fn materialize_ready_with_wait<'a>(
+        &'a self,
+        ready: PreparedReadiness,
+        _wait: &'a dyn PreparationReadWait,
+    ) -> BoxFuture<'a, Result<PreparedActivation, PlatformError>> {
+        Box::pin(async move {
+            self.materialization_calls.fetch_add(1, Ordering::Relaxed);
+            self.materialize_gate.wait().await;
+            self.materialize_ready(ready)
         })
     }
 

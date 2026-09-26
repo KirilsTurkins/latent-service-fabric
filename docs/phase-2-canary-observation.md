@@ -1,12 +1,9 @@
-# Phase 2 canary outcome observation
+# Observe canary outcomes
 
-`latent-telemetry::BoundedPhase2CanaryOutcomeWindow` collects bounded activation
-outcomes for control-registered rollout cohorts. The activation manager now owns
-capture through terminal publication. The [rollout coordinator](phase-2-rollouts.md)
+Canary windows collect activation outcomes for a registered rollout cohort.
+The node captures each outcome through terminal publication. The [rollout coordinator](phase-2-rollouts.md)
 and [canary evaluator](phase-2-canary-promotion.md) use this primitive with explicit
 policies. There is no public outcome-submission RPC.
-The implementation evolves the outcome classes, finite labels, bounds and tests
-contributed in PR176.
 
 ## Registration and exact attribution
 
@@ -118,7 +115,7 @@ unfinished Drop likewise never disappear as healthy missing samples. Counts of
 unknown dropped calls are intentionally not guessed. Structured exporter loss
 is independent: the affine capture path neither depends on exporter delivery nor
 creates a durable audit record per Invoke. Rollout decision audit records belong
-to the control owner and the separate [Phase 2 audit](phase-2-audit.md) journal.
+to the control owner and the separate [durable audit](phase-2-audit.md) journal.
 
 | Resource | Default | Hard ceiling |
 | --- | ---: | ---: |

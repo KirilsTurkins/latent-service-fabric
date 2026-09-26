@@ -35,6 +35,10 @@ impl Server {
                     authenticate,
                 ))
                 .add_service(InterceptedService::new(
+                    adapter.clone().trigger_server(),
+                    authenticate,
+                ))
+                .add_service(InterceptedService::new(
                     adapter.clone().route_server(),
                     authenticate,
                 ))
@@ -46,7 +50,14 @@ impl Server {
                     adapter.clone().rollout_server(),
                     authenticate,
                 ))
-                .add_service(InterceptedService::new(adapter.node_server(), authenticate))
+                .add_service(InterceptedService::new(
+                    adapter.clone().node_server(),
+                    authenticate,
+                ))
+                .add_service(InterceptedService::new(
+                    adapter.clone().capability_server(),
+                    authenticate,
+                ))
                 .serve_with_incoming_shutdown(incoming, async {
                     let _ = stopped.await;
                 }),

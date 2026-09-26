@@ -58,6 +58,19 @@ fn apply_and_delete_keep_absent_zero_and_maximum_preconditions() {
         "deployment.json",
         include_bytes!("../../../../../examples/echo-contract/deployment.json"),
     );
+    let command = Command::Deployment(DeploymentCommand::Apply(ApplyArgs {
+        operation: DeploymentOperationArgs::default(),
+        file: file.clone(),
+        expected_generation: None,
+    }));
+    let failure = prepare::prepare(&command, &config()).err().unwrap();
+    assert_eq!(failure.error["code"], "missing-publication");
+    assert!(!failure.request_dispatched);
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
+    manifest["spec"]["publication"] =
+        serde_json::json!(format!("publication:sha256:{}", "a".repeat(64)));
+    fs::write(&file, serde_json::to_vec(&manifest).unwrap()).unwrap();
     for expected_generation in [None, Some(0), Some(u64::MAX)] {
         let command = Command::Deployment(DeploymentCommand::Apply(ApplyArgs {
             operation: DeploymentOperationArgs::default(),

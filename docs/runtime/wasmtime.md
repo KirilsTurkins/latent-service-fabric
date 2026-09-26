@@ -24,6 +24,12 @@ Contract and function lookup use the component's actual exported interfaces;
 the generic dispatcher contains no echo function or containment-control-string
 selection. Components with no imports are supported.
 
+The configured [local service profile](local-service-invocation.md) accepts
+freestanding async application exports with exact source/binary/metadata function
+kinds. Such exports can wait for canonical async service calls while retaining
+their Store and cell. Preparation rejects this profile when its node-owned
+adapter is absent; synchronous callees remain supported.
+
 The generic payload media type is
 `application/vnd.latent.wit-values.v1+json`. Parameters and results use positional
 JSON arrays with the canonical scalar, record, tuple, list, option, result,

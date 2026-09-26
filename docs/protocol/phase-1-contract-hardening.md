@@ -260,13 +260,10 @@ for publication versus required positive generations for later mutations.
 outcomes and renewal semantics. Generated Rust struct literals require the
 additive fields; no generated source or new management-language SDK is checked in.
 
-Phase 2 audit #152 adds `AuditService.QueryPhase2Audit` with explicit query scope,
-typed records, bounded pagination and coverage. The existing `QueryAudit` RPC
-keeps its original request/response fields and service signature; its optional
-standalone implementation is a bounded tenant-scoped projection. Node-wide typed
-queries require the existing trusted operator claim. These services extend the
-Phase 1 subset described above; omission of audit configuration preserves the
-unaudited embedding surface.
+`AuditService.QueryPhase2Audit` requires explicit query scope and returns typed
+records, bounded pagination and coverage. Node-wide queries require the trusted
+operator claim. The obsolete untyped audit projection has been removed. Omission
+of audit configuration leaves this optional service unavailable.
 
 Optional `audit_ack` fields are additive: `PublishReleaseResponse` field 4,
 `ChangeReleaseLifecycleResponse` and `RenewReleaseEvidenceResponse` field 2,
@@ -351,3 +348,166 @@ by the normal `CI` workflow and the path-filtered `Phase 0 runtime regression`
 workflow, including Phase 1 descriptor/SDK checks and retained executable
 containment coverage. The Phase 0 full completion gate and heavy catalog scale
 probe require explicit manual selection; see [validation](../../VALIDATION.md).
+
+### Explicit publication references (#267)
+
+The additive `PublicationRef` carries an exact ID and tenant. Release Get and
+lifecycle requests add it at field 2; lifecycle changes and renewal add it at
+field 5. Release descriptors add publication/package fields 13/14, lifecycle
+records add publication field 12 and release operation receipts add field 14.
+Audit identity field 18 records the captured publication ID. Existing component
+fields retain their meanings, and legacy receipts keep their canonical bytes.
+
+Deployment adds `publication` at 11 and output-only `requested_publication` at
+12. Apply adds an optional component assertion at 4, and managed operation
+receipts add the captured publication at 17. Requests choose one selector;
+results may describe component and publication together. Old generated clients
+ignore new result fields and can still address a unique component association.
+New clients sending exact selection to an older server cannot fall back: the
+legacy component selector is empty and the older server rejects the request.
+
+See [public selection and recovery](../reference/publication-api.md) for
+ambiguity, unscoped local compatibility, original manifest preservation and the
+deployment operation-table upgrade. The descriptor golden deliberately records
+these additions without changing any existing field number or RPC signature.
+
+StartRollout adds optional candidate component assertion field 8. RolloutRelease
+adds optional captured publication field 4, and RolloutOperationReceipt adds
+base/candidate publication fields 20/21. AuditIdentities adds base/candidate
+publication fields 19/20. InvokeResponse adds optional publication field 10;
+its component field 3 and generation field 4 retain their meaning. These result
+IDs describe captured sources and never provide execution authority. Present
+invalid IDs cannot be normalized to absent legacy values. All six SDK interfaces
+include corresponding presence-aware models and executable contract fixtures.
+
+### Phase 3 capability policy control addition (#203)
+
+`latent.control.v1.PolicyService` now has a concrete bounded implementation.
+All original field numbers/types and RPC signatures remain unchanged. Additions
+identify the closed policy language, policy/provider-binding record kind,
+content digest and revocation state; mutations carry explicit operation IDs and
+receipts. `ListPolicies` adds scoped opaque pagination and `GetPolicyOperation`
+adds bounded historical outcome recovery. Explanation adds exact service,
+publication, capability operation, typed resource and required policy/binding IDs.
+
+The previously descriptive generic policy requests do not constitute a supported
+executable language. The concrete profile requires kind/language, operation ID
+and present expected generation; unsafe legacy omissions reject. Old generic
+explanation subject/action/resource/attribute overrides must be empty, because
+identity comes from the trusted transport context. No existing field is silently
+reinterpreted as publication identity. Full semantics and limits are in
+[durable capability policies](../runtime/capability-policies.md).
+
+The normalized descriptor baseline deliberately records these additive changes.
+They do not change the guest WIT ABI or install a new provider.
+
+### Phase 3 capability audit and inspection (#210)
+
+The descriptor baseline records additive capability audit and inspection fields.
+`AuditIdentities` field 21 carries bounded, redacted capability provenance;
+`AuditControlAction` value 10 and `Phase2AuditEventKind` values 16 through 18
+identify capability calls, grant decisions and provider outcomes. New typed
+context, revision, digest and outcome messages distinguish observed provider
+acceptance from audit durability. Historical records omit the new context and
+retain their canonical bytes. Existing field numbers and types are unchanged.
+
+`CapabilityService` keeps its RPC signatures. List request fields 4/5 select a
+deployment and optional node usage; response fields 3 through 6 expose revision,
+tenant/node counters and sampled state. Descriptor field 6 adds binding
+inspection. Explain request fields 6/7 provide a bounded typed resource and
+optional hypothetical subject; response fields 5 through 8 expose revision,
+binding inspection, required-audit policy and ceilings.
+
+The formerly descriptive surface now has a closed executable profile: List
+requires a deployment, tenant scope comes from authentication, and shared node
+usage requires the trusted operator claim. Explain rejects the legacy principal
+and attribute overrides; hypothetical subjects inherit the authenticated tenant
+and cannot supply claims. Descriptions and sampled currentness are not grants.
+The [capability audit and inspection contract](../runtime/capability-audit.md)
+defines redaction, pagination, resource ownership and failure behavior. These
+additions do not change the guest WIT ABI.
+
+### Phase 3 HTTP trigger control (#223)
+
+`TriggerService` now implements a closed HTTP profile. Existing RPC signatures
+and field numbers are unchanged; `DeleteTrigger` still returns Empty with bounded
+receipt/audit metadata. `TriggerTarget` fields 5?7 add explicit publication,
+content revision and deployment object generation. Apply/Delete add an operation
+ID and present global-state CAS. Responses add receipts, state/route generations,
+catalog durability and audit acknowledgement; `GetTriggerOperation` adds bounded
+historical reconciliation. A trigger's output generation is not a mutation CAS.
+
+`AuditIdentities` fields 22/23 and action values 11/12 identify trigger operations
+and object versions. Historical audit records omit these additions and retain
+their canonical bytes. The descriptor baseline deliberately records the additive
+changes. This delivery changes no guest WIT definitions.
+
+Profile-less Phase 1 trigger declarations remain structurally decodable but are
+not executable. The concrete HTTP profile requires all target pins, six closed
+configuration fields and explicit CAS; it never reinterprets a component digest
+as a publication selector. See the [HTTP trigger contract](../reference/http-triggers.md)
+for authorization, finite ownership, replay, recovery and listener boundaries.
+
+### Phase 3 first-class static web targets (#495)
+
+`TriggerTarget` adds the `TriggerTargetKind` discriminator at field 8 while
+preserving application fields 1 through 7. Both variants require an explicit
+discriminator; omitted, unspecified and unknown kinds are rejected. `STATIC_WEB` carries only the exact
+publication and rejects application-only fields, so older buffered-v1 clients
+retain their wire shape and new static targets cannot synthesize deployment or
+component identity.
+
+Trigger operation receipts add the tagged `TriggerReceiptTarget` at field 21
+and its closed target-kind enum. Obsolete format-v1 fields 14 through 18 and
+their names are reserved after removal. Only format-v2 tagged receipts are
+accepted; static receipts have no application execution identity. There is no
+compatibility reader or automatic upgrade. Current field numbers and RPC
+signatures remain unchanged.
+The normalized descriptor golden deliberately records the new enums, messages,
+and fields. See [ADR-0043](../../adr/0043-select-static-web-publications-as-first-class-http-targets.md)
+and the [HTTP trigger reference](../reference/http-triggers.md).
+
+`AuditIdentities.static_web` at field 24 adds the exact static web manifest,
+asset-layout digest and positive web generation. Static trigger records preserve
+their publication and trigger identities and omit component, deployment and
+revision identities. An untouched application-route generation of zero remains
+valid for static-only nodes. Older application audit records omit the new field
+and retain their bytes; no existing field or enum is renumbered. The descriptor
+golden deliberately includes this additive message and field.
+
+### Phase 3 componentless web control (#226)
+
+The descriptor baseline adds six `ReleaseService` methods: `PublishWebPackage`,
+`GetWebPublication`, `GetWebOperation`, `ChangeWebLifecycle`, `RenewWebEvidence`
+and `PrepareWebPublication`. All existing descriptors, field numbers, enum values
+and RPC signatures remain unchanged. The web methods use their own typed
+request/response messages rather than reinterpret legacy component selectors.
+
+`WebOperationReceipt` records publication, authenticated actor, exact operation
+ID, action/reason, expected/resulting lifecycle generations, request digest and
+replay state. The three mutation response types preserve `operation` at field 1
+and `audit_ack` at field 2; their payload bytes and owned sizes match the common
+preflight representation. Web lifecycle state remains distinct from sampled
+eligibility and the optional renderer descriptor.
+
+Preparation requires the exact publication, positive lifecycle generation and
+an explicit bounded wait. Its response reports the selected component and ready
+state, not a capsule admission grant or activation permission. Web management
+does not by itself enable Angular T1, additional renderer imports or providers.
+The [management reference](../reference/management-services.md#web-publication-and-preparation)
+defines the trust fence, finite ownership and uncertainty boundary.
+
+## Alpha removal of component-only release selectors
+
+Release get, lifecycle inspection, revoke/retire and evidence renewal now require
+an exact authenticated-tenant `PublicationRef`. Their obsolete request `digest`
+field 1 is removed and reserved by number and name. The CLI requires
+`--publication ID`; positional component digests fail before dispatch. An old
+wire message containing only field 1 decodes without a publication and is
+rejected rather than resolved through a unique-component fallback.
+
+Output component digests remain checksums. Publication/operation identities,
+mutation preconditions, tenant isolation and current authority checks remain
+explicit. See the [current publication API](../reference/publication-api.md).
+This alpha change supersedes the earlier release-selector compatibility record;
+no deprecation interval or obsolete client compatibility is promised.

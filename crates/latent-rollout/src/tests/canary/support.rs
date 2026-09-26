@@ -13,6 +13,24 @@ use latent_telemetry::{
 };
 use std::sync::atomic::{AtomicU64, Ordering};
 
+pub(super) async fn retired(handle: &RolloutHandle) {
+    // Keep response leases alive while checking the previous command's owner.
+    // Completion delivery now follows request retirement; the bounded wait also
+    // supports callers that deliberately observe a command before its reply.
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let snapshot = handle.snapshot();
+            if snapshot.active_commands == 0 && snapshot.queued_commands == 0 {
+                assert_eq!(snapshot.retained_request_bytes, 0);
+                return;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("rollout command worker retired");
+}
+
 pub(super) struct Clock {
     base: Instant,
     millis: AtomicU64,
@@ -149,22 +167,7 @@ pub(super) fn successes(fixture: &Fixture, count: u64) {
 }
 
 pub(super) async fn summaries(fixture: &Fixture) -> Vec<latent_audit::AuditCanaryDecision> {
-    let page = fixture
-        .audit
-        .query(
-            latent_audit::AuditQueryRequest {
-                scope: latent_audit::AuditScope::Tenant(TenantId("alice".into())),
-                filter: latent_audit::AuditFilter::default(),
-                cursor: None,
-                limit: 32,
-                maximum_bytes: 32768,
-            },
-            expires(),
-        )
-        .unwrap()
-        .wait()
-        .await
-        .unwrap();
+    let page = fixture.audit_page(32).await;
     page.records()
         .iter()
         .filter_map(|record| match &record.data {

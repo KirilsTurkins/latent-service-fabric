@@ -2,6 +2,7 @@
 
 mod input;
 mod process;
+pub(in crate::aot) use process::verify_readiness;
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 pub(crate) use input::tests::Fixture as InputFixture;
@@ -168,6 +169,14 @@ impl IsolatedAotCompiler {
         source: OwnedArtifactPreparationSource,
         release: &ReleaseDigest,
     ) -> Result<AotCompilationJob, PlatformError> {
+        self.reserve_selected(source, release, None)
+    }
+    pub fn reserve_selected(
+        &self,
+        source: OwnedArtifactPreparationSource,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<AotCompilationJob, PlatformError> {
         let state = &self.owner.state;
         if state.closed.load(Ordering::Acquire) {
             return Err(cancelled());
@@ -178,12 +187,20 @@ impl IsolatedAotCompiler {
         // ReleaseDigest is an older public String wrapper. Never retain excess
         // caller capacity or let a malformed identity reach filesystem access.
         let _: latent_core::ArtifactBlobDigest = release.0.parse().map_err(|_| invalid())?;
-        let bounds = source.read_bounds(release)?;
+        let eligibility = source
+            .execution_eligibility_selected(release, publication)?
+            .ok_or_else(mismatch)?;
+        eligibility.check_current()?;
+        if eligibility.release() != release || eligibility.retained_bytes() > 64 * 1024 {
+            return Err(mismatch());
+        }
+        let publication = Some(eligibility.lifecycle().publication());
+        let bounds = source.read_bounds_selected(release, publication)?;
         let component = usize::try_from(bounds.component_bytes).map_err(|_| exhausted())?;
         if component == 0 || component > state.limits.maximum_component_bytes {
             return Err(exhausted());
         }
-        if let Some(identity) = source.identity(release)? {
+        if let Some(identity) = source.identity_selected(release, publication)? {
             if identity.metadata().charged_bytes() > state.limits.maximum_metadata_bytes
                 || identity.metadata().required_type_depth() > 32
             {
@@ -210,13 +227,6 @@ impl IsolatedAotCompiler {
             documents,
             state.limits.compiler.maximum_output_bytes,
         )?;
-        let eligibility = source
-            .execution_eligibility(release)?
-            .ok_or_else(mismatch)?;
-        eligibility.check_current()?;
-        if eligibility.release() != release || eligibility.retained_bytes() > 64 * 1024 {
-            return Err(mismatch());
-        }
         let job = AotCompilationJob {
             source,
             release: ReleaseDigest(release.0.as_str().into()),
@@ -273,8 +283,15 @@ impl AotCompilationJob {
     }
     pub(crate) fn read(self) -> Result<AotPreparedInput, PlatformError> {
         self.check()?;
-        let authentication = self.source.identity(&self.release)?;
-        let artifact = self.source.fetch_blocking(&self.release, self.limits)?;
+        let authentication = self.source.identity_selected(
+            &self.release,
+            Some(self.eligibility.lifecycle().publication()),
+        )?;
+        let artifact = self.source.fetch_blocking_selected(
+            &self.release,
+            Some(self.eligibility.lifecycle().publication()),
+            self.limits,
+        )?;
         self.check()?;
         let source = self.checked_source(&artifact, authentication.as_ref())?;
         let key = AotCompatibilityKey::from_source(
@@ -326,6 +343,9 @@ impl AotCompilationJob {
             32,
         )?;
         if let Some(identity) = authentication {
+            if identity.publication() != self.eligibility.lifecycle().publication() {
+                return Err(mismatch());
+            }
             identity.verify_metadata(artifact, self.state.limits.maximum_metadata_bytes, 32)?;
         }
         Ok(CheckedAotSource {
@@ -345,6 +365,9 @@ pub(crate) struct CheckedAotSource {
     metadata_digest: [u8; 32],
 }
 impl CheckedAotSource {
+    pub(crate) fn publication(&self) -> &latent_core::PublicationId {
+        self.eligibility.lifecycle().publication()
+    }
     pub(crate) fn scope(&self) -> &LifecycleScope {
         self.eligibility.scope()
     }

@@ -3,7 +3,7 @@
 This document describes the maintained clean-checkout build foundation introduced
 in Phase 1 and used by the completed Phase 2 delivery surface. It turns the
 checked-in Rust, Protobuf, and WIT interfaces into compilable generated surfaces
-while preserving the Phase 0 execution and evidence paths.
+while retaining Phase 0 evidence as historical artifacts rather than live execution paths.
 
 ## Scope
 
@@ -33,7 +33,7 @@ The exact dependency baseline is recorded in both the root `Cargo.toml` and `too
 | Vendored `protoc` | 3.2.0 |
 | Tracing / tracing-subscriber | 0.1.44 / 0.3.23 |
 | Wasmtime | 47.0.4 |
-| `wit-bindgen` | 0.60.0 |
+| `wit-bindgen` | 0.62.0 |
 
 The committed root `Cargo.lock` is authoritative. Local commands and CI use `--locked`; they do not silently replace the dependency graph.
 
@@ -64,7 +64,13 @@ It emits bindings into `OUT_DIR` and exposes:
 - `latent_component_bindings::host::echo`;
 - `latent_component_bindings::guest::runtime` on Wasm targets.
 
-`latent-wasmtime` consumes the shared aggregate-runtime host bindings for its allowed context, log, and clock imports, and the shared echo host bindings for the retained Phase 0 signature check. Generic guest calls use Wasmtime's validated dynamic export indices. `latent-toolchain-smoke` consumes the shared aggregate runtime bindings for compile probes; its executable fixtures generate canonical ABI exports in their final guest crates from maintained WIT.
+`latent-wasmtime` consumes the shared aggregate-runtime host bindings for its allowed context, log, and clock imports, plus the Phase 3 binding types for configured async local-service and HTTP adapters, and the shared echo host bindings for the retained Phase 0 signature check. Generic guest calls use Wasmtime's validated dynamic export indices. `latent-toolchain-smoke` consumes the shared aggregate runtime bindings for compile probes; its executable fixtures generate canonical ABI exports in their final guest crates from maintained WIT.
+
+`latent-angular-renderer-adapter` is a fixed Wasm-only guest crate. It generates
+the public async web export and its private composition interface from maintained
+WIT. Handwritten code denies unsafe operations; a source tripwire permits only
+the exact generated ABI module to relax that lint. This guest exception does not
+add a native deserializer or weaken the audited Wasmtime loader boundary.
 
 ## Generated-output boundary
 
@@ -135,26 +141,17 @@ followed by bounded Phase 2 operator, native-currentness, offline and resource
 workflows. Separate jobs verify the MSRV, repository contracts, catalog/routing
 regressions, OCI TLS/observed-build integration and all language SDK surfaces.
 
-`CI / Repository contracts` builds the maintained echo and containment fixtures
-through `tools/validate_contracts.sh`, then runs the executable outcome/recovery
-matrix against those same outputs. The separate `Phase 0 runtime regression`
-workflow is manual-only and retains its deterministic smoke baseline and matrix;
-the full Phase 0 gate remains a separate manual workflow. See the
-[CI layout](../testing/phase0-ci-layout.md). The durable 100,000-release catalog
-probe runs only when `CI` is dispatched with `run_catalog_scale: true`; ordinary
-checks leave it ignored.
+`CI / Repository contracts` builds the maintained contract fixtures and runs the current repository contract checks. The retired Phase 0 executable outcome matrix and dedicated Phase 0 workflows are no longer part of current CI. The durable 100,000-release catalog probe still runs only when `CI` is dispatched with `run_catalog_scale: true`; ordinary checks leave it ignored.
 
-## Phase 0 continuity
+## Historical Phase 0 evidence
 
-The Phase 0 feasibility result is closed and authorizes Phase 1. The following commands remain supported:
+The Phase 0 feasibility result remains part of the project history, but its spike, baseline, soak, calibration and gate runners are no longer maintained execution surfaces in the current tree. The checked-in evidence under `benchmarks/phase0`, together with its validators and aggregation code under `tools/`, remains available for integrity checks without being compiled into `latentd` or executed by normal CI.
+
+The maintained echo fixture and reproducibility commands remain supported because current contract, supply-chain and integration tests still consume that fixture:
 
 | Command | Status | Purpose |
 | --- | --- | --- |
-| `make echo-capsule` | retained | Build and validate the maintained echo component |
-| `make echo-capsule-reproducibility` | retained | Verify same-host byte reproducibility |
-| `make phase0-spike-demo` | retained | Exercise the local feasibility path |
-| `make phase0-gate-smoke` | retained | Validate the lightweight Phase 0 gate path |
-| `make phase0-gate` | retained | Validate the complete retained evidence receipt |
-| legacy per-crate binding build scripts | replaced | Centralized in `latent-component-bindings` |
+| `make echo-capsule` | maintained | Build and validate the maintained echo component |
+| `make echo-capsule-reproducibility` | maintained | Verify same-host byte reproducibility |
 
-The retained benchmark/evidence tooling remains under `benchmarks/phase0` and `tools/`. This foundation does not reinterpret the Phase 0 measurements; it promotes the proven echo/WIT/Wasmtime path into maintained build ownership.
+Reproducing an original Phase 0 workload requires checking out the exact source revision recorded by the corresponding retained evidence.

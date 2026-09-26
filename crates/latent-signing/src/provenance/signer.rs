@@ -82,23 +82,47 @@ impl LocalBuilderSigner {
         };
         let payload = json::encode(&statement, limits.max_payload_bytes)?;
         drop(decode_statement(&payload, limits)?);
+        let envelope = self.sign_payload(&payload, limits)?;
+        ProvenanceEvidence::from_envelope(subject, &envelope, limits)
+    }
+
+    /// Attest observed supplied-file assembly under its separately approved build
+    /// type. This does not claim to have compiled the renderer or its dependencies.
+    pub fn sign_web_build(
+        &self,
+        subject: &PackageSigningSubject,
+        observation: &crate::WebBuildObservation,
+        validity: SignatureValidity,
+        limits: ProvenanceLimits,
+    ) -> SignatureResult<ProvenanceEvidence> {
+        let payload = crate::web_provenance::statement_bytes(
+            subject,
+            &self.builder_id,
+            observation,
+            validity,
+            limits,
+        )?;
+        let envelope = self.sign_payload(&payload, limits)?;
+        ProvenanceEvidence::from_web_envelope(subject, &envelope, limits)
+    }
+
+    fn sign_payload(&self, payload: &[u8], limits: ProvenanceLimits) -> SignatureResult<Vec<u8>> {
         let signature = self
             .key
             .sign(&dsse::pae(
                 PROVENANCE_PAYLOAD_TYPE,
-                &payload,
+                payload,
                 limits.max_payload_bytes,
             )?)
             .to_bytes();
-        let envelope = dsse::encode(
+        dsse::encode(
             PROVENANCE_PAYLOAD_TYPE,
-            &payload,
+            payload,
             signature,
             &self.fingerprint,
             limits.max_envelope_bytes,
             limits.max_payload_bytes,
-        )?;
-        ProvenanceEvidence::from_envelope(subject, &envelope, limits)
+        )
     }
 }
 impl fmt::Debug for LocalBuilderSigner {

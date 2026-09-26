@@ -5,6 +5,9 @@ mod operator_fixture;
 mod packaging;
 #[path = "../../../../latent-packaging/tests/sbom_association/support.rs"]
 mod sbom;
+#[path = "web_fixture.rs"]
+mod web_fixture;
+pub use web_fixture::web_input;
 
 use super::super::{SupplyChainClock, SupplyChainPolicy};
 use base64::{engine::general_purpose::STANDARD, Engine};
@@ -38,6 +41,8 @@ pub struct Fixture {
     bundle: PackageBundle,
     signature: SignatureEvidence,
     provenance: ProvenanceEvidence,
+    publisher_signer: LocalSigner,
+    builder_signer: LocalBuilderSigner,
 }
 impl Fixture {
     pub fn new() -> Self {
@@ -116,6 +121,8 @@ impl Fixture {
                 ProvenanceLimits::default(),
             )
             .unwrap();
+        let publisher_signer = publisher;
+        let builder_signer = builder;
         let publisher = json!({"formatVersion":1,"scope":"tests","generation":1,"validFrom":900,"validUntil":3000,
             "maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":60,
             "keys":[{"publisherId":"publisher-a","publicKey":STANDARD.encode(publisher_public),"validFrom":900,"validUntil":3000}]});
@@ -148,6 +155,8 @@ impl Fixture {
             bundle,
             signature,
             provenance,
+            publisher_signer,
+            builder_signer,
         }
     }
     pub fn approved(&self) -> SupplyChainPolicy {
@@ -191,6 +200,73 @@ impl Fixture {
         upload.layers = bundle.layers;
         upload
     }
+
+    pub fn neutral_inventory_upload(&self, corrected: bool) -> PackageAdmissionUpload {
+        let mut input = packaging::capsule(packaging::component::Options::default());
+        packaging::mutate_json(&mut input, "capsule.json", |manifest| {
+            manifest["metadata"]
+                .as_object_mut()
+                .unwrap()
+                .remove("tenant");
+            manifest["metadata"]
+                .as_object_mut()
+                .unwrap()
+                .remove("namespace");
+            manifest["metadata"]["name"] = json!("packaging");
+        });
+        let mut inventory = sbom::inventory(&input);
+        if corrected {
+            inventory.entries[0].license_expression = Some("MIT".into());
+        }
+        let bundle = build_package_with_sbom(input, inventory, PackagingLimits::default())
+            .unwrap()
+            .into_input();
+        let subject = PackageSigningSubject::from_package(
+            &bundle.manifest,
+            &bundle.configuration,
+            PackageLimits::default(),
+        )
+        .unwrap();
+        let signature = self
+            .publisher_signer
+            .sign_package(
+                &subject,
+                SignatureValidity {
+                    issued_at: 1000,
+                    expires_at: 2000,
+                },
+                SignatureLimits::default(),
+            )
+            .unwrap();
+        let provenance = self
+            .builder_signer
+            .sign_build(
+                &subject,
+                &observation(&subject),
+                SignatureValidity {
+                    issued_at: 1000,
+                    expires_at: 2000,
+                },
+                ProvenanceLimits::default(),
+            )
+            .unwrap();
+        PackageAdmissionUpload {
+            manifest: bundle.manifest,
+            configuration: bundle.configuration,
+            layers: bundle.layers,
+            signatures: vec![AdmissionEvidence {
+                manifest: signature.manifest_bytes().to_vec(),
+                configuration: b"{}".to_vec(),
+                payload: signature.payload_bytes().to_vec(),
+            }],
+            provenance: vec![AdmissionEvidence {
+                manifest: provenance.manifest_bytes().to_vec(),
+                configuration: b"{}".to_vec(),
+                payload: provenance.payload_bytes().to_vec(),
+            }],
+            sboms: vec![],
+        }
+    }
 }
 fn observation(subject: &PackageSigningSubject) -> BuildObservation {
     let digest = artifact_blob_digest(b"bounded source fixture").to_string();
@@ -222,14 +298,14 @@ fn observation(subject: &PackageSigningSubject) -> BuildObservation {
             size: 1,
         })
         .collect(),
-        parameters: BuildParameters {
+        parameters: BuildRecipe::Rust(BuildParameters {
             cargo_package: "latent-toolchain-smoke".into(),
             cargo_example: "echo-capsule".into(),
             target: "wasm32-unknown-unknown".into(),
             profile: "release".into(),
             locked: true,
             incremental: false,
-        },
+        }),
         started_at: 900,
         finished_at: 1000,
         reproducibility: "not-checked".into(),

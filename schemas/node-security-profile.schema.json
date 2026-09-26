@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/node-security-profile.schema.json",
+  "title": "Standalone securityProfile configuration member",
+  "$comment": "Omission selects local-experimental-v1. Null and unknown identities fail. External selection additionally requires protected files, enforced admission, the reviewed host ABI/runtime, successful isolated compiler readiness and the persistent data-directory requirement; JSON Schema cannot establish those runtime controls.",
+  "type": "string",
+  "enum": [
+    "local-experimental-v1",
+    "external-capsule-v1"
+  ],
+  "default": "local-experimental-v1"
+}

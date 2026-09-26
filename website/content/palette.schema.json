@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "modes"],
+  "properties": {
+    "schema": {"const": 1},
+    "modes": {
+      "type": "object", "additionalProperties": false, "required": ["light", "dark"],
+      "properties": {"light": {"$ref": "#/definitions/mode"}, "dark": {"$ref": "#/definitions/mode"}}
+    }
+  },
+  "definitions": {
+    "mode": {
+      "type": "object",
+      "minProperties": 40,
+      "maxProperties": 40,
+      "propertyNames": {"enum": ["canvas", "surface", "raised", "text", "muted", "link", "linkHover", "accent", "accentInk", "focus", "border", "selection", "selectionInk", "codeSurface", "codeText", "codeComment", "codeKeyword", "codeString", "codeNumber", "codeFunction", "codeVariable", "controlSurface", "controlText", "controlHover", "disabledSurface", "disabledText", "tabSurface", "tabText", "successSurface", "successText", "successBorder", "warningSurface", "warningText", "warningBorder", "dangerSurface", "dangerText", "dangerBorder", "infoSurface", "infoText", "infoBorder"]},
+      "additionalProperties": {"type": "string", "pattern": "^#[0-9A-F]{6}$"}
+    }
+  }
+}

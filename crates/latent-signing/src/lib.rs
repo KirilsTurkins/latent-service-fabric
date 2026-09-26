@@ -19,12 +19,13 @@ mod provenance;
 mod signer;
 mod subject;
 mod verify;
+mod web_provenance;
 
 pub use builder_policy::{
     BuilderKeyConfig, BuilderPolicy, BuilderPolicyConfig, BuilderRequirement,
     BuilderRevocationSnapshot, BuilderRevocationSnapshotConfig, BuilderTrust, BuilderTrustStateId,
 };
-pub use builder_verify::{BuilderVerifier, VerifiedBuildProvenance};
+pub use builder_verify::{BuilderVerifier, VerifiedBuildProvenance, VerifiedWebBuildProvenance};
 pub use error::{SignatureError, SignatureFailure, SignatureResult};
 pub use evidence::{SignatureEvidence, SignatureEvidenceRef};
 pub use format::{
@@ -38,13 +39,22 @@ pub use policy::{
 };
 pub use provenance::{
     decode_build_observation, inspect_provenance, BuildMaterial, BuildObservation, BuildParameters,
-    BuildSource, LocalBuilderSigner, ProvenanceEvidence, ProvenanceEvidenceRef, ProvenanceLimits,
-    UnverifiedProvenance, PROVENANCE_BUILD_TYPE, PROVENANCE_PAYLOAD_TYPE,
-    PROVENANCE_PREDICATE_TYPE,
+    BuildRecipe, BuildSource, CBuildParameters, DotnetCapsuleBuildParameters,
+    GoCapsuleBuildParameters, JavaCapsuleBuildParameters, LocalBuilderSigner, ProvenanceEvidence,
+    ProvenanceEvidenceRef, ProvenanceLimits, RustCapsuleBuildParameters,
+    TypeScriptCapsuleBuildParameters, UnverifiedProvenance, C_GUEST_BUILD_TYPE,
+    DOTNET_CAPSULE_BUILD_TYPE, GO_CAPSULE_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE,
+    PROVENANCE_BUILD_TYPE, PROVENANCE_PAYLOAD_TYPE, PROVENANCE_PREDICATE_TYPE,
+    RUST_CAPSULE_BUILD_TYPE, RUST_GUEST_BUILD_TYPE, TYPESCRIPT_CAPSULE_BUILD_TYPE,
 };
 pub use signer::LocalSigner;
 pub use subject::PackageSigningSubject;
 pub use verify::{PublisherVerifier, VerifiedPackageSignature};
+pub use web_provenance::{
+    decode_web_build_observation, inspect_web_provenance, AngularBuildRecipe,
+    UnverifiedWebProvenance, WebAssemblyRecipe, WebBuildObservation, WebBuildRecipe,
+    ANGULAR_BUILD_TYPE, WEB_ASSEMBLY_BUILD_TYPE, WEB_PROVENANCE_PREDICATE_TYPE,
+};
 
 /// The v1 signature profile's maximum lifetime, in seconds.
 pub const MAX_SIGNATURE_LIFETIME_SECONDS: u64 = 31 * 24 * 60 * 60;

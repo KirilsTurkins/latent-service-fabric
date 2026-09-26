@@ -12,6 +12,16 @@ mod resources;
 #[test]
 #[ignore = "Explicit fixture exporter for tools/run_phase2_operator_workflow.py"]
 fn export_operator_workflow_fixture() {
+    export_fixture(false);
+}
+
+#[test]
+#[ignore = "Explicit fixture exporter for tools/run_publication_workflow.py"]
+fn export_publication_workflow_fixture() {
+    export_fixture(true);
+}
+
+fn export_fixture(publications: bool) {
     let root = std::env::var_os("LSF_OPERATOR_FIXTURE_ROOT").expect("explicit fixture output root");
     let root = Path::new(&root);
     // Never overwrite an operator directory or emit fixtures during ordinary tests.
@@ -36,14 +46,27 @@ fn export_operator_workflow_fixture() {
         builder_public,
     )
     .unwrap();
-    let policy = fresh_policy(now, &publisher_public, &builder_public);
+    let mut policy = fresh_policy(now, &publisher_public, &builder_public);
+    if publications {
+        policy["tenants"].as_array_mut().unwrap().push(json!({
+            "tenant": "other", "publishers": ["publisher-a"]
+        }));
+    }
     write_json(&root.join("policy.json"), &policy);
     let approved = SupplyChainPolicy::from_json(&serde_json::to_vec(&policy).unwrap()).unwrap();
     for (name, alternate) in [("blue", false), ("green", true)] {
         let directory = root.join(name);
         std::fs::create_dir(&directory).unwrap();
         let mut input = packaging::capsule(packaging::component::Options::default());
-        if alternate {
+        if publications {
+            packaging::mutate_json(&mut input, "capsule.json", |manifest| {
+                let metadata = manifest["metadata"].as_object_mut().unwrap();
+                metadata.remove("tenant");
+                metadata.remove("namespace");
+                metadata.insert("name".into(), json!("packaging"));
+            });
+        }
+        if alternate && !publications {
             let component = input
                 .layers
                 .iter_mut()
@@ -56,7 +79,11 @@ fn export_operator_workflow_fixture() {
                 manifest["component"]["digest"] = json!(digest);
             });
         }
-        let inventory = sbom::inventory(&input);
+        let mut inventory = sbom::inventory(&input);
+        if publications && alternate {
+            // Correct authenticated inventory without changing executable or capsule metadata.
+            inventory.entries[0].license_expression = Some("MIT".into());
+        }
         export_source(&directory, &input, &inventory);
         let bundle = build_package_with_sbom(input, inventory, PackagingLimits::default()).unwrap();
         let subject = PackageSigningSubject::from_package(
@@ -65,37 +92,17 @@ fn export_operator_workflow_fixture() {
             PackageLimits::default(),
         )
         .unwrap();
-        let validity = SignatureValidity {
-            issued_at: now - 1,
-            expires_at: now + 1800,
-        };
-        let signature = publisher
-            .sign_package(&subject, validity, SignatureLimits::default())
-            .unwrap();
-        let mut observation = observation(&subject);
-        observation.started_at = now - 3;
-        observation.finished_at = now - 2;
-        let provenance = builder
-            .sign_build(
-                &subject,
-                &observation,
-                validity,
-                ProvenanceLimits::default(),
+        let evidence = signed_evidence(&subject, &publisher, &builder, now, now + 1800);
+        if publications {
+            let renewed = signed_evidence(&subject, &publisher, &builder, now, now + 1799);
+            latent_packaging::write_package_evidence(
+                bundle.layout().digest(),
+                &renewed,
+                &directory.join("renewed-evidence"),
+                16 * 1024 * 1024,
             )
             .unwrap();
-        let evidence = ReleaseEvidenceUpload {
-            signatures: vec![AdmissionEvidence {
-                manifest: signature.manifest_bytes().to_vec(),
-                configuration: b"{}".to_vec(),
-                payload: signature.payload_bytes().to_vec(),
-            }],
-            provenance: vec![AdmissionEvidence {
-                manifest: provenance.manifest_bytes().to_vec(),
-                configuration: b"{}".to_vec(),
-                payload: provenance.payload_bytes().to_vec(),
-            }],
-            sboms: vec![],
-        };
+        }
         crate::supply_chain::verify_package_once(
             &approved,
             crate::supply_chain::PackageVerificationRequest {
@@ -119,7 +126,11 @@ fn export_operator_workflow_fixture() {
         ))
         .unwrap();
         deployment["metadata"] = json!({"name":name,"tenant":"tests"});
-        deployment["spec"]["service"] = json!("tests/packaging");
+        deployment["spec"]["service"] = json!(if publications {
+            "packaging"
+        } else {
+            "tests/packaging"
+        });
         deployment["spec"]["release"] = json!(subject.component_digest().unwrap().to_string());
         deployment["spec"]["grants"] = json!([
             {"capability":packaging::component::CLOCK,"policy":"tests/clock"}
@@ -129,7 +140,8 @@ fn export_operator_workflow_fixture() {
     write_json(
         &root.join("fixture.json"),
         &json!({
-            "formatVersion":1,"tenant":"tests","service":"tests/packaging",
+            "formatVersion":1,"tenant":"tests","service":if publications { "packaging" } else { "tests/packaging" },
+            "publicationWorkflow":publications,
             "contract":packaging::component::CONTRACT,"function":"inspect",
             "input":[{"count":7,"outcome":{"ok":{"case":"empty"}}}],
             "expiresAtUnixSeconds":(now+1800).to_string(),
@@ -139,6 +151,41 @@ fn export_operator_workflow_fixture() {
             "provenance":"synthetic signed test observation; no actual build provenance claim"
         }),
     );
+}
+
+fn signed_evidence(
+    subject: &PackageSigningSubject,
+    publisher: &LocalSigner,
+    builder: &LocalBuilderSigner,
+    now: u64,
+    expires_at: u64,
+) -> ReleaseEvidenceUpload {
+    let validity = SignatureValidity {
+        issued_at: now - 1,
+        expires_at,
+    };
+    let signature = publisher
+        .sign_package(subject, validity, SignatureLimits::default())
+        .unwrap();
+    let mut observation = observation(subject);
+    observation.started_at = now - 3;
+    observation.finished_at = now - 2;
+    let provenance = builder
+        .sign_build(subject, &observation, validity, ProvenanceLimits::default())
+        .unwrap();
+    ReleaseEvidenceUpload {
+        signatures: vec![AdmissionEvidence {
+            manifest: signature.manifest_bytes().to_vec(),
+            configuration: b"{}".to_vec(),
+            payload: signature.payload_bytes().to_vec(),
+        }],
+        provenance: vec![AdmissionEvidence {
+            manifest: provenance.manifest_bytes().to_vec(),
+            configuration: b"{}".to_vec(),
+            payload: provenance.payload_bytes().to_vec(),
+        }],
+        sboms: vec![],
+    }
 }
 
 fn fresh_policy(now: u64, publisher: &[u8; 32], builder: &[u8; 32]) -> Value {

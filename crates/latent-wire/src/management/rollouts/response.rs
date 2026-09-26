@@ -25,6 +25,15 @@ pub(super) fn preflight(
     let mut budget = RequestBudget::for_response::<proto::StartRolloutResponse>(limits)?;
     budget.allocation::<proto::RolloutOperationReceipt>(1)?;
     budget.allocation::<proto::ReleaseActor>(1)?;
+    for id in [
+        &preview.receipt.base_publication,
+        &preview.receipt.candidate_publication,
+    ]
+    .into_iter()
+    .flatten()
+    {
+        budget.allocation::<u8>(id.as_str().len())?;
+    }
     for value in [
         &preview.receipt.rollout_id.0,
         &preview.receipt.tenant.0,

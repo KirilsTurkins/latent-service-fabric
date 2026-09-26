@@ -1,0 +1,28 @@
+{
+  "candidateExecuted": false,
+  "cleanup": "exact-owned-peer-stopped-private-volume-retained",
+  "clientUid": 10001,
+  "failedSetupAttempt": {
+    "candidateExecuted": false,
+    "containerCreated": false,
+    "correction": "verified-existing-local-image-tag-before-and-after-os-build",
+    "reason": "buildkit-treated-bare-local-image-digest-as-registry-name",
+    "stage": "os-image-build"
+  },
+  "helper": "unexecuted-placeholder",
+  "passed": true,
+  "peerSourceSha256": "sha256:c77a1c088c92cbbd1857f079938bfda3ef41c6f4bdfd9675daa48cc3ce6ffcb8",
+  "qualificationComplete": false,
+  "retainedReceiptSha256": "sha256:e8ddc479f6408663b9545c9d316948d838d719ad6f9cd6cab12e63f2d424bbdb",
+  "schemaVersion": "latent.dev.devcontainer-isolation-os-observation.v1",
+  "serverObservations": [
+    {
+      "otherHomeDenied": true,
+      "uid": 23002
+    },
+    {
+      "otherHomeDenied": true,
+      "uid": 23001
+    }
+  ]
+}

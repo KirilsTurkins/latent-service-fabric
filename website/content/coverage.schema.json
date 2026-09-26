@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent-service-fabric.invalid/website/coverage.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "gate", "rows"],
+  "properties": {
+    "schema": {"const": 1},
+    "gate": {"const": 345},
+    "rows": {"type": "array", "minItems": 1, "maxItems": 100, "items": {"$ref": "#/$defs/row"}}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1500},
+    "path": {"type": "string", "maxLength": 1024, "pattern": "^(?!.*(?:^|/)\\.\\.?/)(?!.*[\\\\:])(?:[A-Za-z0-9_. -]+/)*[A-Za-z0-9_. -]+$"},
+    "commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "reviewReference": {"type": "string", "pattern": "^https://github.com/KirilsTurkins/latent-service-fabric/(issues|pull)/[1-9][0-9]*(#issuecomment-[0-9]+)?$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "area", "guideIssue", "owner", "audience", "outcomes", "pages", "sourceRefs", "implementationPrerequisites", "evidence", "review"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"},
+        "area": {"$ref": "#/$defs/text"},
+        "guideIssue": {"type": "integer", "minimum": 1},
+        "owner": {"type": "string", "pattern": "^@[A-Za-z0-9-]{1,39}$"},
+        "audience": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["evaluator", "operator", "contributor", "capsule-author", "client-developer", "web-developer"]}},
+        "outcomes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "pages": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "object", "additionalProperties": false, "required": ["path", "role"], "properties": {"path": {"$ref": "#/$defs/path"}, "role": {"enum": ["reference-only", "guide", "evidence"]}}}
+        },
+        "sourceRefs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/path"}},
+        "implementationPrerequisites": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+        "evidence": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["path", "kind", "status", "scope"],
+            "properties": {"path": {"$ref": "#/$defs/path"}, "kind": {"enum": ["test-source", "execution-receipt"]}, "status": {"enum": ["available-not-run", "executed"]}, "scope": {"$ref": "#/$defs/text"}, "sourceCommit": {"$ref": "#/$defs/commit"}},
+            "allOf": [
+              {"if": {"properties": {"kind": {"const": "test-source"}}}, "then": {"properties": {"status": {"const": "available-not-run"}}}},
+              {"if": {"properties": {"kind": {"const": "execution-receipt"}}}, "then": {"required": ["sourceCommit"], "properties": {"sourceCommit": {"$ref": "#/$defs/commit"}, "status": {"const": "executed"}}}}
+            ]
+          }
+        },
+        "review": {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "reference", "reviewedCommit", "criteria"],
+          "properties": {"status": {"enum": ["pending", "approved"]}, "reference": {"$ref": "#/$defs/reviewReference"}, "reviewedCommit": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/commit"}]}, "criteria": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}}},
+          "allOf": [
+            {"if": {"properties": {"status": {"const": "approved"}}}, "then": {"properties": {"reviewedCommit": {"$ref": "#/$defs/commit"}}}},
+            {"if": {"properties": {"status": {"const": "pending"}}}, "then": {"properties": {"reviewedCommit": {"type": "null"}, "criteria": {"type": "array", "maxItems": 0}}}}
+          ]
+        }
+      }
+    }
+  }
+}

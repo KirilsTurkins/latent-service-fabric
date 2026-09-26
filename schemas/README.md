@@ -12,7 +12,7 @@ JSON value can enter a typed manifest model. Any model/schema divergence must
 be resolved in favor of the schema or recorded as an API-versioned schema
 change.
 
-The capsule's closed optional runtime/target/CPU requirements are described in
+The capsule's closed optional runtime/target/CPU/renderer requirements are described in
 [release compatibility](../docs/reference/release-compatibility.md). Schema
 success checks their shape; actual host support and structural old/candidate
 comparison require the corresponding Rust checks.
@@ -35,10 +35,16 @@ Optional standalone node members have their own closed schemas:
 
 | Schema | Configuration member |
 | --- | --- |
+| [node-renderer-profile.schema.json](node-renderer-profile.schema.json) | `rendererProfile`: optional closed Angular engine shape; separate from security selection and resource grants. |
+| [node-http-ingress.schema.json](node-http-ingress.schema.json) | Optional shared HTTP/TLS listener, explicit principal/proxy adapters and finite connection/exchange deadlines and reservations. |
 | [node-isolated-aot.schema.json](node-isolated-aot.schema.json) | `isolatedAot`: bounded native compiler/cache configuration and protected host-key path. |
 | [node-audit.schema.json](node-audit.schema.json) | `audit`: optional durable audit resource limits. |
 | [node-rollouts.schema.json](node-rollouts.schema.json) | `rollouts`: shared coordinator and optional canary observation limits, requiring the same enabled audit owner. |
 | [rollout-canary-policy.schema.json](rollout-canary-policy.schema.json) | Explicit immutable observation duration, candidate sample minimum and outcome/latency thresholds; never evidence of health. |
+| [capability-policy.schema.json](capability-policy.schema.json) | Closed exact capability policy v1; required scopes default deny and matching allow ceilings intersect. |
+| [capability-provider-binding.schema.json](capability-provider-binding.schema.json) | Tenant-scoped provider profile/configuration identity and additional narrowing; no credentials or installation authority. |
+| [capability-policy-resource.schema.json](capability-policy-resource.schema.json) | Typed descriptive target for authenticated policy explanation, never proof of an actual provider destination. |
+| [capability-policy-config.schema.json](capability-policy-config.schema.json) | Optional Linux node policy-owner configuration and finite retention/control/read limits. |
 
 The node decoder additionally rejects duplicate members and explicit null
 enablement. Runtime derivation checks cross-field resource relationships and
@@ -68,6 +74,11 @@ The package schemas describe a separate immutable artifact format:
 | [package-sbom-policy.schema.json](package-sbom-policy.schema.json) | Explicit embedded/detached presence and per-role attribution requirements. |
 | [package-admission-upload.schema.json](package-admission-upload.schema.json) | Closed JSON projection of authenticated package publication and exact evidence bytes. |
 | [package-admission-receipt.schema.json](package-admission-receipt.schema.json) | Bounded historical admission identities and policy generations; never an executable grant. |
+| [web-application.schema.json](web-application.schema.json) | Closed public asset, route and exact renderer associations inside a browser/SSR package. |
+| [angular-build.schema.json](angular-build.schema.json) | Closed source, public asset and route inputs for the maintained Angular compiler adapter. |
+| [web-build-observation.schema.json](web-build-observation.schema.json) | Distinct supplied-file assembly and actual Angular composition assertions without synthetic component identity. |
+| [web-provenance-statement.schema.json](web-provenance-statement.schema.json) | Separately versioned web provenance binding a complete package and ordered output descriptors. |
+| [web-admission-receipt.schema.json](web-admission-receipt.schema.json) | Historical componentless admission through the shared publisher/builder/SBOM authority. |
 | [supply-chain-policy.schema.json](supply-chain-policy.schema.json) | Complete approved publisher/builder/revocation/SBOM snapshots and tenant authorization. |
 | [node-supply-chain.schema.json](node-supply-chain.schema.json) | Standalone `supplyChain` member selecting local compatibility or enforced admission. |
 | [node-isolated-aot.schema.json](node-isolated-aot.schema.json) | Opt-in standalone `isolatedAot` member selecting an approved isolated compiler, protected local key and bounded native caches. |

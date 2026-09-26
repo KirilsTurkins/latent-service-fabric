@@ -19,6 +19,14 @@ pub(super) trait WireText: Sized {
     fn text(&self) -> &str;
     fn parse(s: String) -> std::result::Result<Self, ()>;
 }
+impl WireText for latent_core::PublicationId {
+    fn text(&self) -> &str {
+        self.as_str()
+    }
+    fn parse(s: String) -> std::result::Result<Self, ()> {
+        s.parse().map_err(|_| ())
+    }
+}
 impl WireText for ArtifactBlobDigest {
     fn text(&self) -> &str {
         self.as_str()
@@ -135,6 +143,39 @@ pub(super) fn actor(v: &AuditActorIdentity) -> Result<()> {
     token(&v.subject, 512)
 }
 pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
+    if let Some(web) = &v.static_web {
+        if web.web_generation == 0
+            || v.trigger.is_none()
+            || v.publication.is_none()
+            || v.component.is_some()
+            || v.deployment.is_some()
+            || v.deployment_generation.is_some()
+            || v.revision.is_some()
+            || v.rollout.is_some()
+            || v.capability.is_some()
+        {
+            return Err(invalid());
+        }
+    }
+    if let Some(trigger) = &v.trigger {
+        token(trigger, 128)?;
+    }
+    if v.trigger.is_some() != v.trigger_generation.is_some() || v.trigger_generation == Some(0) {
+        return Err(invalid());
+    }
+    if let Some(capability) = &v.capability {
+        capability.validate()?;
+        if v.publication.is_none()
+            || v.component.is_none()
+            || v.revision.is_none()
+            || v.lifecycle_generation
+                .is_none_or(|generation| generation == 0)
+            || v.route_generation
+                .is_none_or(|generation| generation.0 == 0)
+        {
+            return Err(invalid());
+        }
+    }
     if v.policies.len() > 8 {
         return Err(invalid());
     }
@@ -160,7 +201,10 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
         || v.state_version == Some(0)
         || v.rollout_step.is_some_and(|step| step >= 64)
         || (v.rollout.is_none() && (v.rollout_revision.is_some() || v.rollout_step.is_some()))
-        || (v.state_version.is_some() && v.rollout.is_none() && v.deployment.is_none())
+        || (v.state_version.is_some()
+            && v.rollout.is_none()
+            && v.deployment.is_none()
+            && v.static_web.is_none())
     {
         return Err(invalid());
     }
@@ -180,7 +224,61 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     scope(&v.scope)?;
     actor(&v.actor)?;
     token(&v.operation_id, 128)?;
-    if v.expected_state_version.is_some()
+    let trigger = matches!(
+        v.action,
+        AuditControlAction::TriggerApply | AuditControlAction::TriggerDelete
+    );
+    if trigger {
+        if !matches!(v.scope, AuditScope::Tenant(_))
+            || v.identities.trigger.is_none()
+            || v.identities.publication.is_none()
+            || (v.identities.static_web.is_none()
+                && (v.identities.component.is_none()
+                    || v.identities.revision.is_none()
+                    || v.identities.deployment.is_none()
+                    || v.identities.deployment_generation.is_none_or(|g| g == 0)))
+            || v.identities.route_generation.is_none()
+            || (v.identities.static_web.is_none()
+                && v.identities.route_generation == Some(latent_core::RouteGeneration(0)))
+            || v.identities.state_version.is_none()
+            || v.expected_state_version.is_none()
+            || v.expected_generation.is_none()
+            || v.expected_deployment_generation != v.identities.deployment_generation
+            || v.expected_rollout_revision.is_some()
+            || v.expected_rollback_target_generation.is_some()
+            || v.preview_receipt_digest.is_none()
+            || (v.action == AuditControlAction::TriggerDelete && v.expected_generation == Some(0))
+        {
+            return Err(invalid());
+        }
+    } else if v.identities.trigger.is_some() {
+        return Err(invalid());
+    }
+    if v.action == AuditControlAction::CapabilityCall {
+        let context = v.identities.capability.as_ref().ok_or_else(invalid)?;
+        if !context.required
+            || context.provider_outcome.is_some()
+            || !context.request.as_ref().is_some_and(|request| {
+                request.scope == super::AuditCapabilityDigestScope::ProviderRequest
+                    && request.digest == v.request_digest
+            })
+            || !matches!(v.scope, AuditScope::Tenant(_))
+            || v.identities.deployment.is_none()
+            || v.replay
+            || v.preview_receipt_digest.is_some()
+            || v.expected_generation.is_some()
+            || v.expected_deployment_generation.is_some()
+            || v.expected_rollout_revision.is_some()
+            || v.expected_state_version.is_some()
+            || v.expected_rollback_target_generation.is_some()
+        {
+            return Err(invalid());
+        }
+    } else if v.identities.capability.is_some() {
+        return Err(invalid());
+    }
+    if !trigger
+        && v.expected_state_version.is_some()
         && (!matches!(
             v.action,
             AuditControlAction::DeploymentApply | AuditControlAction::DeploymentDelete
@@ -225,6 +323,19 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
 }
 pub(super) fn conclusion(v: &AuditOperationConclusion) -> Result<()> {
     identities(&v.identities)?;
+    if let Some(context) = &v.identities.capability {
+        use super::AuditProviderOutcome as P;
+        let outcome = context.provider_outcome.ok_or_else(invalid)?;
+        let result = match outcome {
+            P::NotStarted => AuditOperationResult::NotStarted,
+            P::Unknown => AuditOperationResult::Unknown,
+            P::Rejected => AuditOperationResult::Rejected,
+            _ => AuditOperationResult::Committed,
+        };
+        if v.result != result || v.replay || v.canary_decision.is_some() {
+            return Err(invalid());
+        }
+    }
     if let Some(decision) = &v.canary_decision {
         decision.validate()?;
         if v.identities.rollout.is_none()
@@ -246,11 +357,50 @@ pub(super) fn conclusion(v: &AuditOperationConclusion) -> Result<()> {
     }
     Ok(())
 }
+/// Capability terminal facts must belong to the exact admitted attempt. A
+/// provider outcome can change; captured authority and request identity cannot.
+pub(super) fn capability_pair(
+    a: &AuditOperationAttempt,
+    c: &AuditOperationConclusion,
+) -> Result<()> {
+    match (&a.identities.capability, &c.identities.capability) {
+        (None, None) => Ok(()),
+        (Some(_), Some(terminal)) => {
+            let mut expected = a.identities.clone();
+            expected
+                .capability
+                .as_mut()
+                .expect("present")
+                .provider_outcome = terminal.provider_outcome;
+            if expected != c.identities {
+                return Err(invalid());
+            }
+            Ok(())
+        }
+        _ => Err(invalid()),
+    }
+}
 pub(super) fn observation(v: &AuditObservation) -> Result<()> {
     use crate::{AuditOutcome as O, Phase2AuditEventKind as K};
     scope(&v.scope)?;
     actor(&v.actor)?;
     identities(&v.identities)?;
+    let capability = matches!(
+        v.kind,
+        K::CapabilityGrantAllowed | K::CapabilityGrantDenied | K::CapabilityProviderOutcome
+    );
+    if capability != v.identities.capability.is_some() {
+        return Err(invalid());
+    }
+    if let Some(context) = &v.identities.capability {
+        if !matches!(v.scope, AuditScope::Tenant(_))
+            || (v.kind == K::CapabilityProviderOutcome) != context.provider_outcome.is_some()
+            || (v.kind == K::CapabilityGrantAllowed && v.outcome != O::Succeeded)
+            || (v.kind == K::CapabilityGrantDenied && v.outcome != O::Denied)
+        {
+            return Err(invalid());
+        }
+    }
     let cache = matches!(v.kind, K::CacheHit | K::CacheMiss | K::CacheCorruption);
     if cache != v.cache_kind.is_some() {
         return Err(invalid());

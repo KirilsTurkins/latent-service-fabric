@@ -176,24 +176,34 @@ fn revoke(
     release: &ReleaseDigest,
     operation: &str,
 ) {
-    run(repository.change_release_lifecycle(
-        ReleaseMutationContext {
-            scope,
-            actor: ReleaseActor {
-                subject: "rollback-test".into(),
-                kind: ReleaseActorKind::Host,
+    let tenant = scope
+        .tenant()
+        .cloned()
+        .unwrap_or_else(|| TenantId("tests".into()));
+    let publication = repository
+        .select_execution_publication(&tenant, release, None)
+        .unwrap()
+        .unwrap();
+    assert_eq!(publication.scope, scope);
+    repository
+        .change_publication_lifecycle(
+            ReleaseMutationContext {
+                scope,
+                actor: ReleaseActor {
+                    subject: "rollback-test".into(),
+                    kind: ReleaseActorKind::Host,
+                },
+                operation: Some(ReleaseOperationPrecondition {
+                    operation_id: operation.into(),
+                    expected_generation: 1,
+                }),
             },
-            operation: Some(ReleaseOperationPrecondition {
-                operation_id: operation.into(),
-                expected_generation: 1,
-            }),
-        },
-        release,
-        ReleaseLifecycleAction::Revoke,
-        ReleaseLifecycleReason::OperatorRevocation,
-        &mut |_| Ok(()),
-    ))
-    .unwrap();
+            &publication,
+            ReleaseLifecycleAction::Revoke,
+            ReleaseLifecycleReason::OperatorRevocation,
+            &mut |_| Ok(()),
+        )
+        .unwrap();
 }
 
 #[test]

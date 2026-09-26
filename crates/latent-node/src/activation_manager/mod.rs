@@ -1,7 +1,10 @@
 //! One lifecycle owner from accepted identity through terminal publication.
 
+mod admission_wait;
 mod control;
+mod inbound;
 mod lifecycle;
+mod local_service;
 mod observation;
 mod preparation;
 mod probes;
@@ -37,6 +40,7 @@ use crate::{
     LocalActivationJournalConfig,
 };
 use control::{error, CatchPanic};
+pub use inbound::InboundActivationReservation;
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
@@ -148,10 +152,47 @@ impl Future for ActivationHandle {
     }
 }
 
+fn handle(
+    inner: Arc<Inner>,
+    envelope: ActivationEnvelope,
+    lifecycle: Lifecycle,
+) -> ActivationHandle {
+    let activation_id = envelope.activation_id.clone();
+    let transport_stop = lifecycle.transport_stop.clone();
+    let completion = Box::pin(async move {
+        let mut lifecycle = lifecycle;
+        let result = CatchPanic::new(inner.drive(envelope, &mut lifecycle)).await;
+        let outcome = match result {
+            Ok(outcome) => outcome,
+            Err(()) => failure_for_platform_error(
+                error(
+                    PlatformErrorCode::Internal,
+                    "activation execution or cleanup panicked",
+                ),
+                BudgetConsumption::default(),
+            ),
+        };
+        let resolved_revision = lifecycle.resolved.clone();
+        let activation_id = lifecycle.activation_id().clone();
+        let outcome = lifecycle.complete(outcome);
+        ActivationReceipt {
+            activation_id,
+            resolved_revision,
+            outcome,
+        }
+    });
+    ActivationHandle {
+        activation_id,
+        completion,
+        transport_stop,
+    }
+}
+
 struct Inner {
     config: LocalActivationManagerConfig,
     dependencies: LocalActivationDependencies,
     clock: Arc<dyn ActivationClock>,
+    ids: Arc<dyn ActivationIdSource>,
     requests: ActivationRequestBuilder,
     journal: LocalActivationJournal,
     cancellations: ActivationCancellationRegistry,
@@ -183,7 +224,11 @@ impl LocalActivationManager {
                 "invalid activation cleanup grace",
             ));
         }
-        let requests = ActivationRequestBuilder::new(config.requests, services.ids)?;
+        let requests = ActivationRequestBuilder::with_profile(
+            config.requests,
+            services.ids.clone(),
+            dependencies.admission.quotas().budget_profile(),
+        )?;
         let journal = LocalActivationJournal::new(config.journal, Arc::clone(&services.clock))?;
         let cancellations =
             ActivationCancellationRegistry::new(config.maximum_cancellation_reason_bytes)?;
@@ -214,6 +259,7 @@ impl LocalActivationManager {
                 config,
                 dependencies,
                 clock: services.clock,
+                ids: services.ids,
                 requests,
                 journal,
                 cancellations,
@@ -259,34 +305,7 @@ impl LocalActivationManager {
             deadline,
         );
         lifecycle.begin_observation(self.inner.observations.as_ref(), &envelope);
-        let inner = Arc::clone(&self.inner);
-        let completion = Box::pin(async move {
-            let mut lifecycle = lifecycle;
-            let result = CatchPanic::new(inner.drive(envelope, &mut lifecycle)).await;
-            let outcome = match result {
-                Ok(outcome) => outcome,
-                Err(()) => failure_for_platform_error(
-                    error(
-                        PlatformErrorCode::Internal,
-                        "activation execution or cleanup panicked",
-                    ),
-                    BudgetConsumption::default(),
-                ),
-            };
-            let resolved_revision = lifecycle.resolved.clone();
-            let activation_id = lifecycle.activation_id().clone();
-            let outcome = lifecycle.complete(outcome);
-            ActivationReceipt {
-                activation_id,
-                resolved_revision,
-                outcome,
-            }
-        });
-        Ok(ActivationHandle {
-            activation_id,
-            completion,
-            transport_stop,
-        })
+        Ok(handle(self.inner.clone(), envelope, lifecycle))
     }
 
     pub fn status(

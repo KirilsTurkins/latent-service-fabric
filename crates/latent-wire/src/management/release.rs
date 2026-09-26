@@ -4,12 +4,14 @@ mod package;
 #[cfg(test)]
 mod package_tests;
 mod publication;
+mod selector;
 #[cfg(test)]
 mod tests;
 mod validation;
+mod web;
 
-use latent_artifacts::ArtifactCatalogPageRequest;
-use latent_core::{ReleaseDigest, ServiceId};
+use latent_artifacts::{ArtifactCatalogPageRequest, LifecycleScope};
+use latent_core::ServiceId;
 use tonic::{Request, Response, Status};
 
 use super::{
@@ -17,9 +19,64 @@ use super::{
 };
 
 pub use conversion::{release_descriptor_from_proto, release_descriptor_to_proto};
+pub use web::{
+    MAX_WEB_MUTATION_WAIT_MILLIS, MAX_WEB_PREPARATION_WAIT_MILLIS, WEB_EVIDENCE_RPC_PATH,
+    WEB_PREPARATION_RPC_PATH, WEB_PUBLICATION_RPC_PATH,
+};
 
 #[tonic::async_trait]
 impl proto::release_service_server::ReleaseService for ManagementServiceAdapter {
+    async fn prepare_web_publication(
+        &self,
+        request: Request<proto::PrepareWebPublicationRequest>,
+    ) -> Result<Response<proto::PrepareWebPublicationResponse>, Status> {
+        self.web_prepare(request).await
+    }
+    async fn publish_web_package(
+        &self,
+        request: Request<proto::PublishWebPackageRequest>,
+    ) -> Result<Response<proto::PublishWebPackageResponse>, Status> {
+        self.web_publish(request).await.map(|response| {
+            response.map(|value| proto::PublishWebPackageResponse {
+                operation: value.operation,
+                audit_ack: value.audit_ack,
+            })
+        })
+    }
+    async fn get_web_publication(
+        &self,
+        request: Request<proto::GetWebPublicationRequest>,
+    ) -> Result<Response<proto::GetWebPublicationResponse>, Status> {
+        self.web_get(request)
+    }
+    async fn get_web_operation(
+        &self,
+        request: Request<proto::GetWebOperationRequest>,
+    ) -> Result<Response<proto::GetWebOperationResponse>, Status> {
+        self.web_operation(request)
+    }
+    async fn change_web_lifecycle(
+        &self,
+        request: Request<proto::ChangeWebLifecycleRequest>,
+    ) -> Result<Response<proto::ChangeWebLifecycleResponse>, Status> {
+        self.web_change(request).await.map(|response| {
+            response.map(|value| proto::ChangeWebLifecycleResponse {
+                operation: value.operation,
+                audit_ack: value.audit_ack,
+            })
+        })
+    }
+    async fn renew_web_evidence(
+        &self,
+        request: Request<proto::RenewWebEvidenceRequest>,
+    ) -> Result<Response<proto::RenewWebEvidenceResponse>, Status> {
+        self.web_renew(request).await.map(|response| {
+            response.map(|value| proto::RenewWebEvidenceResponse {
+                operation: value.operation,
+                audit_ack: value.audit_ack,
+            })
+        })
+    }
     async fn publish_release(
         &self,
         mut request: Request<proto::PublishReleaseRequest>,
@@ -65,20 +122,28 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
             .tenant
             .expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::GetReleaseRequest>(&self.limits)?;
-        validation::digest(&request.get_ref().digest, &mut budget, &self.limits)?;
+        let selector = selector::request(
+            request.get_ref().publication.as_ref(),
+            &tenant,
+            &mut budget,
+            &self.limits,
+        )?;
         self.check_encoded(request.get_ref())?;
-        let digest = ReleaseDigest(request.into_inner().digest);
+        drop(request);
         let entry = self
             .services
             .artifacts
-            .get_catalog_entry(&tenant, &digest)
+            .get_selected_catalog_entry(&LifecycleScope::Tenant(tenant.clone()), &selector)
             .await
             .map_err(|error| platform_status(error, &self.limits))?;
+        if entry.is_none() {
+            return Err(Status::not_found("publication not found"));
+        }
         let mut budget = RequestBudget::for_response::<proto::GetReleaseResponse>(&self.limits)?;
         let release = entry
             .map(|entry| {
                 validation::entry(&entry, &tenant, &mut budget, &self.limits)?;
-                if entry.descriptor.release_digest != digest {
+                if !selector::matches(&selector, entry.publication.as_ref()) {
                     return Err(Status::internal(
                         "artifact repository returned a different release",
                     ));
@@ -127,20 +192,28 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
             page.next_page_token.as_ref(),
             self.limits.max_page_token_bytes,
         )?;
+        // Components may repeat. Explicit publication IDs carry the ordering
+        // contract; legacy third-party repositories can omit these new fields.
         let mut previous = None;
         for entry in &page.entries {
             validation::entry(entry, &tenant, &mut budget, &self.limits)?;
+            if let Some(id) = entry.publication.as_ref() {
+                if previous.is_some_and(|previous| previous >= id) {
+                    return Err(Status::internal(
+                        "artifact repository returned an unordered publication page",
+                    ));
+                }
+                previous = Some(id);
+            }
             if query
                 .service
                 .as_ref()
                 .is_some_and(|service| service != &entry.service)
-                || previous.is_some_and(|digest| digest >= &entry.descriptor.release_digest)
             {
                 return Err(Status::internal(
                     "artifact repository returned an invalid page",
                 ));
             }
-            previous = Some(&entry.descriptor.release_digest);
         }
         if page.entries.is_empty() && page.next_page_token.is_some() {
             return Err(Status::internal(

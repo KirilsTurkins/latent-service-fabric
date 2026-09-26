@@ -14,6 +14,7 @@ workspace = true
 latent-activation = { path = "../latent-activation" }
 latent-admission = { path = "../latent-admission" }
 latent-artifacts = { path = "../latent-artifacts" }
+latent-capabilities = { path = "../latent-capabilities" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
 latent-routing = { path = "../latent-routing" }

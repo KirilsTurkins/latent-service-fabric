@@ -9,6 +9,8 @@ use sha2::{Digest, Sha256};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AotCompatibilityKey {
+    #[serde(serialize_with = "publication")]
+    publication: latent_core::PublicationId,
     scope: LifecycleScope,
     #[serde(serialize_with = "package", skip_serializing_if = "Option::is_none")]
     package: Option<PackageDigest>,
@@ -34,6 +36,7 @@ impl AotCompatibilityKey {
         sandbox_digest: [u8; 32],
     ) -> Result<Self, PlatformError> {
         Self::checked_parts(
+            source.publication(),
             source.scope(),
             source.package(),
             *source.component_digest(),
@@ -46,6 +49,7 @@ impl AotCompatibilityKey {
     }
     #[allow(clippy::too_many_arguments)]
     fn checked_parts(
+        publication: &latent_core::PublicationId,
         scope: &LifecycleScope,
         package: Option<&PackageDigest>,
         component: [u8; 32],
@@ -70,6 +74,7 @@ impl AotCompatibilityKey {
         let package =
             package.map(|value| value.as_str().parse().expect("validated package digest"));
         Ok(Self {
+            publication: publication.clone(),
             scope,
             package,
             component: blob(component),
@@ -82,6 +87,10 @@ impl AotCompatibilityKey {
             compiler_digest,
             sandbox_digest,
         })
+    }
+    #[must_use]
+    pub fn publication(&self) -> &latent_core::PublicationId {
+        &self.publication
     }
     #[must_use]
     pub fn scope(&self) -> &LifecycleScope {
@@ -130,7 +139,8 @@ impl AotCompatibilityKey {
     #[must_use]
     pub fn digest(&self) -> ArtifactBlobDigest {
         let mut digest = Sha256::new();
-        digest.update(b"lsf-aot-compatibility-v2\0");
+        digest.update(b"lsf-aot-compatibility-v3\0");
+        frame(&mut digest, self.publication.as_str().as_bytes());
         match &self.scope {
             LifecycleScope::LocalUnscoped => frame(&mut digest, b"local-unscoped"),
             LifecycleScope::Tenant(tenant) => {
@@ -177,10 +187,19 @@ fn package<S: Serializer>(value: &Option<PackageDigest>, serializer: S) -> Resul
 fn artifact<S: Serializer>(value: &ArtifactBlobDigest, serializer: S) -> Result<S::Ok, S::Error> {
     value.as_str().serialize(serializer)
 }
+fn publication<S: Serializer>(
+    value: &latent_core::PublicationId,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    value.as_str().serialize(serializer)
+}
 
 #[cfg(test)]
 pub(super) fn fixture(profile: &ValidatedAotProfile) -> AotCompatibilityKey {
     AotCompatibilityKey::checked_parts(
+        &format!("publication:sha256:{}", "01".repeat(32))
+            .parse()
+            .unwrap(),
         &LifecycleScope::LocalUnscoped,
         None,
         [2; 32],
@@ -210,6 +229,9 @@ mod tests {
         let package = PackageDigest::try_from(text).unwrap();
         let tenant = LifecycleScope::Tenant(TenantId("tenant".into()));
         let packaged = AotCompatibilityKey::checked_parts(
+            &format!("publication:sha256:{}", "02".repeat(32))
+                .parse()
+                .unwrap(),
             &tenant,
             Some(&package),
             [2; 32],
@@ -221,11 +243,19 @@ mod tests {
         )
         .unwrap();
         assert_ne!(packaged.digest(), local.digest());
+        let mut other_publication = packaged.clone();
+        other_publication.publication = format!("publication:sha256:{}", "03".repeat(32))
+            .parse()
+            .unwrap();
+        assert_ne!(other_publication.digest(), packaged.digest());
         let mut changed = packaged.clone();
         changed.metadata_digest[0] ^= 1;
         assert_ne!(changed.digest(), packaged.digest());
         assert_eq!(packaged.package.unwrap().into_string().capacity(), 71);
         assert!(AotCompatibilityKey::checked_parts(
+            &format!("publication:sha256:{}", "02".repeat(32))
+                .parse()
+                .unwrap(),
             &LifecycleScope::LocalUnscoped,
             Some(&package),
             [2; 32],

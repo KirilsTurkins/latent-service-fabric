@@ -11,6 +11,7 @@ mod tests;
 #[derive(Debug, Clone, PartialEq)]
 pub enum TelemetryRecord {
     Metric(MetricPoint),
+    CustomMetric(crate::custom::CustomMetricPoint),
     Log(LogRecord),
     Span(SpanRecord),
 }
@@ -133,6 +134,14 @@ impl StructuredLocalSink {
     }
 }
 impl TelemetrySink for StructuredLocalSink {
+    fn emit_custom_metric(
+        &self,
+        point: crate::custom::CustomMetricPoint,
+    ) -> BoxFuture<'_, Result<(), PlatformError>> {
+        Box::pin(std::future::ready(
+            self.push(TelemetryRecord::CustomMetric(point)),
+        ))
+    }
     fn emit_metric(&self, point: MetricPoint) -> BoxFuture<'_, Result<(), PlatformError>> {
         Box::pin(std::future::ready(
             self.push(TelemetryRecord::Metric(point)),

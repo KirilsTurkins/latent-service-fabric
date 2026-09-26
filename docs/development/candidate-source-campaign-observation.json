@@ -1,0 +1,303 @@
+{
+  "schemaVersion": "latent.dev.candidate-source-campaign.v1",
+  "sourceCommit": "f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+  "workflowRun": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36121262149",
+  "mergedImplementation": "https://github.com/KirilsTurkins/latent-service-fabric/pull/589",
+  "publisherAuthenticatedInstallation": false,
+  "cleanHostQualification": false,
+  "qualificationComplete": false,
+  "execution": "actual-source-built-nodes-and-native-components-before-candidate-installation",
+  "receipts": [
+    {
+      "artifact": "developer-blob-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "41a3fe2b237c2e065b5a3245674c322c12c90c35772b35f80f82dcacc8fced4e",
+      "schemaVersion": "latent.dev.blob-node-probe.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped-live-provider-counters-zero-private-workspace-purged"
+    },
+    {
+      "artifact": "developer-clock-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "07a5af88cf3bcd2f3c54acfc923be81609c1376021e26dee534db7837e043f44",
+      "schemaVersion": "latent.dev.clock-node-portable-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-and-portable-processes-reaped"
+    },
+    {
+      "artifact": "developer-event-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "3780880349e0113f12fefbfa8f5aeb0037c5d973e0a58cd5cc5e12ca46d6225b",
+      "schemaVersion": "latent.dev.event-node-probe.v1",
+      "passed": true,
+      "cleanup": "owned-processes-peer-and-private-material-purged"
+    },
+    {
+      "artifact": "developer-failure-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "53f416a7fd916a094204ad166e0a549b98436054eafeb6de72a2b9a31e8fea53",
+      "schemaVersion": "latent.dev.failure-node-portable-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-and-portable-processes-reaped"
+    },
+    {
+      "artifact": "developer-http-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "a6624f96c6f252fe13fb9c13c73dbc4acb45023d32e000044164b89380409c5e",
+      "schemaVersion": "latent.dev.http-node-portable-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-peer-and-portable-processes-reaped"
+    },
+    {
+      "artifact": "developer-local-service-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "3c209e62a9f5bfa0cd715f5ad63ff608b684399e92701956d2311a8a60bceaf6",
+      "schemaVersion": "latent.dev.local-service-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-and-client-processes-reaped-private-pair-workspace-purged"
+    },
+    {
+      "artifact": "developer-metric-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "5f5892a3db65e37d2dd9786460b34662dece46c21e7c1c0c7eaaead3c327e3ba",
+      "schemaVersion": "latent.dev.metric-node-portable-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-and-native-processes-reaped-exporter-joined-queue-drained"
+    },
+    {
+      "artifact": "developer-recovery-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "06fb1024c3ca672b7f2111da5c3807b55329fee4df7edf60b8921b3e0bfd3961",
+      "schemaVersion": "latent.dev.recovery-source-probe.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped-private-state-retained",
+      "phase": "complete",
+      "seconds": 59.08
+    },
+    {
+      "artifact": "developer-secret-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "f0656adbe21bcb32f5185cb44357c9291b1a666b9492664a38fc22dbd6e34074",
+      "schemaVersion": "latent.dev.secret-node-probe.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped-secret-generations-released-private-workspace-purged"
+    },
+    {
+      "artifact": "developer-watch-fixtures-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "62fc0fe28012b86a7f6e4b4a2fcdf97897cdf6b6fe5ebe1369f7ee8983bb912c",
+      "schemaVersion": "latent.dev.watch-source-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained",
+      "phase": "complete",
+      "seconds": 263.588
+    },
+    {
+      "artifact": "developer-workspace-isolation-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "observation.json",
+      "receiptSha256": "77aa2b3a73b7bead6680359e9355b156b7b9142615b765b91b6be58fd0663da5",
+      "schemaVersion": "latent.dev.workspace-isolation-source-probe.v1",
+      "passed": true,
+      "cleanup": "owned-nodes-reaped-private-original-intent-and-workspaces-retained",
+      "phase": "complete",
+      "seconds": 107.136
+    },
+    {
+      "artifact": "linux-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-c-applications.json",
+      "receiptSha256": "a8ce7c9efd1e6afdf96ab280c4813fb0106f1e0a1b9b01b343ad2d2f69dcd2c0",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "linux-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-dotnet-applications.json",
+      "receiptSha256": "8c386522da5f8594e4d131236026c3115899bac936b220b6c55632f5164e23ec",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "linux-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-go-applications.json",
+      "receiptSha256": "a7c9ea5bbd400d10bdbbeab103c452549535840b4ab91fd329f86cf859654ca4",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "linux-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-java-applications.json",
+      "receiptSha256": "b94f494e947b7496c0dfc7a667f9a247c17727546c0c669af8da6b7ce5af949b",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "linux-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-rust-applications.json",
+      "receiptSha256": "93d0850e5699fdbd0663c487f43eec48a8c8224731d306a924c24bbd24025d24",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "linux-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-typescript-applications.json",
+      "receiptSha256": "56a6be5957d5ac8a642827bb355942da0725f72568035e728a7bf9c90375f59a",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "portable-differential-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "c-differential.json",
+      "receiptSha256": "10200ec72ea4b753c62c00f0c4c697e804e94e00a2fe308d5227bde29cd59236",
+      "schemaVersion": "latent.dev.portable-differential.v1",
+      "passed": true
+    },
+    {
+      "artifact": "portable-differential-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dotnet-differential.json",
+      "receiptSha256": "96c4b3eef4af4a60a7aa6a7c49fa6f5eda5baebeab5122475121b491d3558851",
+      "schemaVersion": "latent.dev.portable-differential.v1",
+      "passed": true
+    },
+    {
+      "artifact": "portable-differential-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "go-differential.json",
+      "receiptSha256": "1e7e89e593026c4c65c6b483b4cb24eab3cc1e52abf52501bbfe72fc898dfeab",
+      "schemaVersion": "latent.dev.portable-differential.v1",
+      "passed": true
+    },
+    {
+      "artifact": "portable-differential-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "java-differential.json",
+      "receiptSha256": "3a9571e89c7792485fdff17c3cbc4f7e965718bc01a76ee78212682e6ae87ead",
+      "schemaVersion": "latent.dev.portable-differential.v1",
+      "passed": true
+    },
+    {
+      "artifact": "portable-differential-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "rust-differential.json",
+      "receiptSha256": "29207c747e0be300bb5a254821bbcbe895e7c100c6c1eee5d7d32ca1182c5129",
+      "schemaVersion": "latent.dev.portable-differential.v1",
+      "passed": true
+    },
+    {
+      "artifact": "portable-differential-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "typescript-differential.json",
+      "receiptSha256": "f83f35b934cd50216d763d7f4d0fb2fefe71abebaab42ba97bd61ed211d2dc2e",
+      "schemaVersion": "latent.dev.portable-differential.v1",
+      "passed": true
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-c-applications.json",
+      "receiptSha256": "50e3f620db72cd745e3c04bc8ff3ef3b89ebd6e841c4e38071806b985ab7eaf0",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-c-smoke.json",
+      "receiptSha256": "757284367b1afa6404b20fd390367e8a20e920166ab319f0148254098f621167",
+      "schemaVersion": "latent.dev.portable-c-smoke.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-clock-comparison.json",
+      "receiptSha256": "855b4550f078a0cb09a019a8406518b149542bbc3b23a0aa3d4626276895f4ff",
+      "schemaVersion": "latent.dev.windows-clock-comparison.v1",
+      "passed": true,
+      "cleanup": "owned-native-hosts-reaped"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-dotnet-applications.json",
+      "receiptSha256": "f7be9e97f0dc4ad597e2f7128578b1fcfdc151914e6a26ab66e53250fd809577",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-failure-comparison.json",
+      "receiptSha256": "55bc825d9e183a9f2aec93d4b90914b5a87432d22b87b121fe4aa8c839049487",
+      "schemaVersion": "latent.dev.windows-failure-comparison.v1",
+      "passed": true,
+      "cleanup": "owned-native-host-reaped"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-go-applications.json",
+      "receiptSha256": "48b1a9672306aef663d694b442cb8a8b34cd4a7a53cd58656522116330a1a3c6",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-http-comparison.json",
+      "receiptSha256": "47ea37003361d17d57fe04a03139e506c621aaafec1d56cd4ac085e49608eeb0",
+      "schemaVersion": "latent.dev.windows-http-comparison.v1",
+      "passed": true,
+      "cleanup": "owned-native-host-and-peer-reaped"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-java-applications.json",
+      "receiptSha256": "c047bc83c8a8579b9f906bbe3ccca9e9630904f360862c5e55c20adfcc80f9cf",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-metric-comparison.json",
+      "receiptSha256": "95f550e9ac6cd7075c1e3457d26a5148a4284d194499d2a77761eee5f7c58cdb",
+      "schemaVersion": "latent.dev.windows-metric-comparison.v1",
+      "passed": true,
+      "cleanup": "owned-native-host-reaped-exporter-joined-queue-drained"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-rust-applications.json",
+      "receiptSha256": "5352ee2c8a42b02eb9be5c5fb9c4a1e4a66f72883be86c39cab8894800d40b2a",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    },
+    {
+      "artifact": "windows-portable-subset-f5d556d3d154253b0cda2d3bb2076f9e4268540b",
+      "path": "dev-portable-typescript-applications.json",
+      "receiptSha256": "f3945944662ecb5002708fee74fcdbcaf9a429d6488f4f935023bf02a98c8140",
+      "schemaVersion": "latent.dev.portable-applications.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped",
+      "phase": "complete"
+    }
+  ],
+  "failedAttemptHistory": [
+    "http-port-regression-observation.json",
+    "watch-fuel-regression-observation.json",
+    "watch-failure-source-observation.json",
+    "final-source-campaign-observation.json"
+  ]
+}

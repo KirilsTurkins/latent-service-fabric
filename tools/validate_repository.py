@@ -15,6 +15,13 @@ from pathlib import Path
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
 
+try:
+    from svg_references import svg_reference_errors
+except ModuleNotFoundError as exc:
+    if exc.name != "svg_references":
+        raise
+    from tools.svg_references import svg_reference_errors
+
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
 WARNINGS: list[str] = []
@@ -41,6 +48,7 @@ SCHEMA_EXAMPLES: dict[str, tuple[str, ...]] = {
     "binding.schema.json": ("examples/bindings/*.json",),
     "capsule-manifest.schema.json": ("examples/**/capsule.json",),
     "deployment.schema.json": ("examples/**/deployment.json",),
+    "host-abi-profile.schema.json": ("wit/host-abi-*.json",),
     "package-config.schema.json": ("examples/package-format/*/config.json",),
     "package-evidence.schema.json": ("examples/package-format/evidence/*-manifest.json",),
     "package-manifest.schema.json": ("examples/package-format/*/manifest.json",),
@@ -66,8 +74,6 @@ PRIVATE_SCHEMA_FILES = {
 }
 
 SVG_UNSAFE_ELEMENTS = frozenset({"embed", "foreignObject", "iframe", "image", "object", "script"})
-SVG_NONLOCAL_URL = re.compile(r"url\(\s*['\"]?\s*(?!#)", re.IGNORECASE)
-SVG_CSS_IMPORT = re.compile(r"@import\b", re.IGNORECASE)
 
 
 def fail(message: str) -> None:
@@ -84,11 +90,17 @@ def is_generated_directory(path: Path, root: Path) -> bool:
 
     relative = path.relative_to(root)
     parts = relative.parts
+    if len(parts) == 2 and parts[0] == "website" and parts[1] in {"build", ".docusaurus", ".generated"}:
+        return True
     if parts[:2] == ("sdk", "typescript-client") and path.name == "dist":
         return True
     if parts[:2] == ("sdk", "java-client") and path.name == "build":
         return True
     if parts[:2] == ("sdk", "dotnet") and path.name in {"bin", "obj"}:
+        return True
+    if parts[:2] == ("examples", "renderer-profile") and (
+        path.name in {"compiled", "dist"} or path.name.startswith("transpiled")
+    ):
         return True
     return False
 
@@ -147,7 +159,7 @@ def validate_svg(root: Path = ROOT) -> None:
     """Enforce the project SVG safety and accessibility baseline."""
 
     for path in files_with_suffix(".svg", root):
-        relative = path.relative_to(root)
+        relative = path.relative_to(root).as_posix()
         try:
             document = ElementTree.parse(path)
         except (ElementTree.ParseError, OSError) as exc:
@@ -202,26 +214,12 @@ def validate_svg(root: Path = ROOT) -> None:
             local_name = _xml_local_name(element.tag)
             if local_name in SVG_UNSAFE_ELEMENTS:
                 fail(f"SVG contains disallowed <{local_name}>: {relative}")
-            for attribute, value in element.attrib.items():
+            for attribute in element.attrib:
                 attribute_name = _xml_local_name(attribute)
                 if attribute_name.lower().startswith("on"):
                     fail(f"SVG contains event handler {attribute_name}: {relative}")
-                if (
-                    attribute_name in {"href", "src"}
-                    and (value or "").strip()
-                    and not value.strip().startswith("#")
-                ):
-                    fail(f"SVG contains non-local reference in {attribute_name}: {relative}")
-                if SVG_NONLOCAL_URL.search(value or ""):
-                    fail(f"SVG contains non-local URL reference: {relative}")
-
-        style_text = "\n".join(
-            "".join(element.itertext())
-            for element in elements
-            if isinstance(element.tag, str) and _xml_local_name(element.tag) == "style"
-        )
-        if SVG_CSS_IMPORT.search(style_text):
-            fail(f"SVG contains external CSS import: {relative}")
+        for error in svg_reference_errors(elements, identifiers):
+            fail(f"{error}: {relative}")
 
 
 def validate_workspace() -> None:
@@ -246,6 +244,10 @@ def validate_workspace() -> None:
         if not package.get("name"):
             fail(f"workspace member has no package name: {member}")
         source = directory / "src" / ("main.rs" if member.startswith("apps/") else "lib.rs")
+        # Tools can be reusable libraries or standalone qualification commands.
+        # Keep the existing library/application conventions for product crates.
+        if member.startswith("tools/") and not source.is_file():
+            source = directory / "src" / "main.rs"
         if not source.is_file():
             fail(f"workspace member source missing: {source.relative_to(ROOT)}")
 
@@ -382,7 +384,8 @@ def validate_proto() -> None:
 
 
 def validate_wit() -> None:
-    wit_files = list((ROOT / "wit").rglob("*.wit")) + list((ROOT / "examples").rglob("*.wit"))
+    wit_files = [path for path in files_with_suffix(".wit", ROOT)
+                 if path.relative_to(ROOT).parts[0] in {"wit", "examples"}]
     if not wit_files:
         fail("no WIT definitions found")
         return

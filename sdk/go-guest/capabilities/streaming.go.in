@@ -1,0 +1,62 @@
+package streaming
+
+import (
+	raw "wit_component/@raw@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+	"wit_component/lsf/ownership"
+)
+
+type Upload struct { owner ownership.Owner[*raw.Upload] }
+type Body struct { owner ownership.Owner[*raw.Body] }
+type Chunk struct { owner ownership.Owner[*raw.Chunk] }
+type Response struct {
+	Status uint16
+	Headers []Header
+	BodyMediaType wit.Option[string]
+	Body *Body
+}
+
+func Open(request Request) wit.Result[*Upload, HttpError] {
+	r := raw.Open(request)
+	if r.IsErr() { return wit.Err[*Upload, HttpError](r.Err()) }
+	return wit.Ok[*Upload, HttpError](&Upload{ownership.New(r.Ok())})
+}
+func (u *Upload) Write(bytes []byte) wit.Result[wit.Unit, HttpError] {
+	v, release := u.owner.Borrow(); defer release()
+	return raw.Write(v, bytes)
+}
+func (u *Upload) Finish() wit.Result[Response, HttpError] {
+	v := u.owner.Take(); defer v.Drop()
+	r := raw.Finish(v)
+	if r.IsErr() { return wit.Err[Response, HttpError](r.Err()) }
+	value := r.Ok()
+	return wit.Ok[Response, HttpError](Response{value.Status, value.Headers, value.BodyMediaType,
+		&Body{ownership.New(value.Body)}})
+}
+func (u *Upload) Abort() wit.Result[wit.Unit, HttpError] {
+	v := u.owner.Take(); defer v.Drop()
+	return raw.AbortUpload(v)
+}
+// Close synchronously drops the WIT resource. It starts no async abort task.
+func (u *Upload) Close() { u.owner.Close(func(v *raw.Upload) { v.Drop() }) }
+func (b *Body) Read(maximum uint32) wit.Result[wit.Option[*Chunk], HttpError] {
+	v, release := b.owner.Borrow(); defer release()
+	r := raw.Read(v, maximum)
+	if r.IsErr() { return wit.Err[wit.Option[*Chunk], HttpError](r.Err()) }
+	if r.Ok().IsNone() { return wit.Ok[wit.Option[*Chunk], HttpError](wit.None[*Chunk]()) }
+	return wit.Ok[wit.Option[*Chunk], HttpError](wit.Some(&Chunk{ownership.New(r.Ok().Some())}))
+}
+func (b *Body) Trailers() wit.Result[[]Header, HttpError] {
+	v, release := b.owner.Borrow(); defer release()
+	return raw.Trailers(v)
+}
+func (b *Body) Abort() wit.Result[wit.Unit, HttpError] {
+	v := b.owner.Take(); defer v.Drop()
+	return raw.AbortBody(v)
+}
+func (b *Body) Close() { b.owner.Close(func(v *raw.Body) { v.Drop() }) }
+func (c *Chunk) Bytes() wit.Result[[]byte, HttpError] {
+	v := c.owner.Take(); defer v.Drop()
+	return raw.ChunkBytes(v)
+}
+func (c *Chunk) Close() { c.owner.Close(func(v *raw.Chunk) { v.Drop() }) }

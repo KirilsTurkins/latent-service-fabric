@@ -122,11 +122,7 @@ fn incompatible_restart_retains_exact_history_but_no_live_eligibility() {
         .unwrap()
         .binding()
         .clone();
-    let complete_path = catalog
-        .root()
-        .join("releases")
-        .join(release.0.strip_prefix("sha256:").unwrap())
-        .join("COMPLETE");
+    let complete_path = super::catalog::publication_directory(&catalog, &release).join("COMPLETE");
     let complete = std::fs::read(&complete_path).unwrap();
     drop(catalog);
     authority.retire();

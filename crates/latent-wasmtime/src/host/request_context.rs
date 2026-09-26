@@ -91,6 +91,9 @@ pub(crate) fn context_charge(
         )?;
         budget.string(&revision.revision.0)?;
         budget.string(&revision.release.0)?;
+        if let Some(publication) = &revision.publication {
+            budget.string(publication.as_str())?;
+        }
         budget.metadata(&revision.attributes)?;
     }
     for value in [
@@ -105,6 +108,14 @@ pub(crate) fn context_charge(
         request.cell.class.as_str(),
     ] {
         budget.string(value)?;
+    }
+    if let Some(publication) = &request.prepared.key.publication {
+        budget.string(publication.as_str())?;
+    }
+    if let Some(publication) = super::web_identity::selected(request) {
+        budget.charge(MAP_ENTRY_BYTES)?;
+        budget.string(super::web_identity::KEY)?;
+        budget.string(publication.as_str())?;
     }
     budget.collection(request.imports.len(), IMPORT_ENTRY_BYTES)?;
     for import in &request.imports {

@@ -225,9 +225,9 @@ fn every_policy_durability_cut_halts_current_authority_and_preserves_restart_flo
         let authority = owner(&fixture, directory.path());
         authority
             .inner
+            .ledger
             .lock()
             .unwrap()
-            .ledger
             .fault
             .store(cut, std::sync::atomic::Ordering::SeqCst);
         fixture.policy["generation"] = serde_json::json!(2);

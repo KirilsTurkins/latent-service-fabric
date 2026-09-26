@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "latent.sdk.provider.workflow.input.v1",
+  "language": "java",
+  "endpoint": "http://127.0.0.1:7162",
+  "tenant": "tests",
+  "credentialFile": "/private/client-token",
+  "upstreamUrl": "http://localhost:8080/allowed",
+  "targets": {
+    "http": {
+      "service": "http",
+      "route": "guest-http",
+      "contract": "REPLACE_WITH_ADMITTED_HTTP_CONTRACT",
+      "function": "run",
+      "publication": "REPLACE_WITH_ADMITTED_PUBLICATION_ID",
+      "componentDigest": "REPLACE_WITH_ADMITTED_COMPONENT_DIGEST"
+    },
+    "blob": {
+      "service": "blob",
+      "route": "guest-blob",
+      "contract": "REPLACE_WITH_ADMITTED_BLOB_CONTRACT",
+      "function": "run",
+      "publication": "REPLACE_WITH_ADMITTED_PUBLICATION_ID",
+      "componentDigest": "REPLACE_WITH_ADMITTED_COMPONENT_DIGEST"
+    }
+  }
+}

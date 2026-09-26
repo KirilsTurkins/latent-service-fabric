@@ -5,6 +5,8 @@
 mod component;
 #[path = "isolated_aot/ownership.rs"]
 mod ownership;
+#[path = "isolated_aot/prepared_negative.rs"]
+mod prepared_negative;
 #[path = "isolated_aot/source.rs"]
 mod source;
 #[path = "isolated_aot/support.rs"]

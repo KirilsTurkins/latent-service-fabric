@@ -1,6 +1,13 @@
 use std::path::PathBuf;
 
-use clap::Args;
+use clap::{Args, ValueEnum};
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
+pub enum InvokeBudgetProfile {
+    #[default]
+    Phase1,
+    Phase3,
+}
 
 #[derive(Args)]
 pub struct InvokeArgs {
@@ -11,7 +18,7 @@ pub struct InvokeArgs {
     #[arg(long)]
     pub function: String,
     /// Payload file, or '-' for standard input.
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub input: PathBuf,
     #[arg(long)]
     pub route: Option<String>,
@@ -31,8 +38,10 @@ pub struct InvokeArgs {
     pub idempotency_key: Option<String>,
     #[arg(long, value_name = "KEY=VALUE")]
     pub metadata: Vec<String>,
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub budget: Option<PathBuf>,
+    #[arg(long, value_enum, default_value = "phase1")]
+    pub budget_profile: InvokeBudgetProfile,
     #[arg(long)]
     pub cpu_fuel: Option<u64>,
     #[arg(long)]
@@ -42,6 +51,6 @@ pub struct InvokeArgs {
     #[arg(long)]
     pub log_bytes: Option<u64>,
     /// Create a new file containing the returned payload's raw bytes.
-    #[arg(long, value_name = "FILE")]
+    #[arg(long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub payload_output: Option<PathBuf>,
 }

@@ -85,6 +85,8 @@ pub(super) fn publish(
         budget.optional_string(release.tenant.as_ref(), limits.max_id_bytes)?;
         budget.metadata(&release.annotations, limits)?;
         if !release.artifact_reference.is_empty()
+            || release.publication.is_some()
+            || release.package_digest.is_some()
             || !release.publisher.is_empty()
             || release.created_at_unix_millis != 0
             || release.admitted
@@ -112,6 +114,10 @@ pub(super) fn entry(
         &entry.tenant.as_ref().expect("matching tenant").0,
         limits.max_id_bytes,
     )?;
+    super::selector::charge(entry.publication.as_ref(), tenant, budget, limits)?;
+    if let Some(package) = &entry.package {
+        budget.allocation::<u8>(package.as_str().len())?;
+    }
     for value in [&entry.semantic_version, &entry.world.0] {
         budget.string(value, limits.max_string_bytes.max(85))?;
         identifier(value, limits.max_string_bytes.max(85))?;

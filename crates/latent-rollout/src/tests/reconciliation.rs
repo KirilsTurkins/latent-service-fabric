@@ -10,6 +10,8 @@ use std::os::unix::fs::PermissionsExt;
 pub(super) fn receipt() -> RolloutOperationReceipt {
     let digest: ArtifactBlobDigest = format!("sha256:{}", "a".repeat(64)).parse().unwrap();
     RolloutOperationReceipt {
+        base_publication: None,
+        candidate_publication: None,
         rollout_id: RolloutId("rollout".into()),
         tenant: TenantId("alice".into()),
         operation_id: "start".into(),
@@ -118,4 +120,34 @@ fn expired_reconciliation_does_not_read_or_change_audit_state() {
         assert_eq!(snapshot, fixture.audit.snapshot());
         fixture.shutdown().await;
     });
+}
+
+#[test]
+fn rollout_audit_binds_publication_pair_without_rewriting_legacy_attempts() {
+    let mut value = receipt();
+    let legacy = crate::audit::attempt(&value, false).unwrap();
+    let canonical = value.canonical_bytes().unwrap();
+    value.base_publication = Some(
+        format!("publication:sha256:{}", "a".repeat(64))
+            .parse()
+            .unwrap(),
+    );
+    value.candidate_publication = Some(
+        format!("publication:sha256:{}", "b".repeat(64))
+            .parse()
+            .unwrap(),
+    );
+    assert_eq!(canonical, value.canonical_bytes().unwrap());
+    assert!(crate::audit::matches(&legacy, &value));
+    let current = crate::audit::attempt(&value, false).unwrap();
+    assert!(crate::audit::matches(&current, &value));
+    assert_eq!(current.identities.base_publication, value.base_publication);
+    assert_eq!(
+        current.identities.candidate_publication,
+        value.candidate_publication
+    );
+    value.candidate_publication = value.base_publication.clone();
+    assert!(!crate::audit::matches(&current, &value));
+    value.candidate_publication = None;
+    assert!(!crate::audit::matches(&current, &value));
 }

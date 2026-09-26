@@ -7,6 +7,7 @@ mod activation_runner;
 mod budgeted_activation;
 mod budgeted_execution;
 mod cancellation;
+mod currentness_read_timer;
 mod inventory;
 mod journal;
 
@@ -15,8 +16,8 @@ use latent_routing::RouteSnapshot;
 
 pub use activation_manager::{
     ActivationHandle, ActivationObservationSnapshot, ActivationReceipt,
-    ActivationTransportInterruption, LocalActivationDependencies, LocalActivationManager,
-    LocalActivationManagerConfig, LocalActivationServices,
+    ActivationTransportInterruption, InboundActivationReservation, LocalActivationDependencies,
+    LocalActivationManager, LocalActivationManagerConfig, LocalActivationServices,
 };
 pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,
@@ -30,6 +31,7 @@ pub use cancellation::{
     ActivationCancellationRegistry, CancellationHandle, CancellationRegistration,
     CancellationRegistrySnapshot, CancellationToken,
 };
+pub use currentness_read_timer::CurrentnessReadTimer;
 pub use journal::{
     ActivationJournalSnapshot, LocalActivationJournal, LocalActivationJournalConfig,
 };

@@ -59,6 +59,31 @@ def normalize_temurin_runtime(version: str) -> str:
     return version.removesuffix("-LTS")
 
 
+def validate_java_runtime(output: str, expected: str, tool: str) -> None:
+    if not re.search(r"^\s*java\.vendor\s*=\s*Eclipse Adoptium\s*$", output, re.MULTILINE):
+        raise VersionError(f"{tool} distribution mismatch: expected Eclipse Adoptium Temurin")
+    require_exact(tool, normalize_temurin_runtime(java_runtime_version(output)), expected)
+
+
+def validate_java(expected: str, java_home: Path | None = None) -> None:
+    """Check both launchers, including the compiler's own vendor/runtime build."""
+    def executable(name: str) -> str:
+        if java_home is None:
+            return name
+        suffix = ".exe" if sys.platform == "win32" else ""
+        return str(java_home / "bin" / (name + suffix))
+
+    compiler = run([executable("javac"), "-J-XshowSettings:properties", "-version"], "javac")
+    require_exact(
+        "javac",
+        extract(r"^javac\s+(\S+)$", compiler, "javac"),
+        expected.split("+", maxsplit=1)[0],
+    )
+    validate_java_runtime(compiler, expected, "javac runtime")
+    runtime = run([executable("java"), "-XshowSettings:properties", "-version"], "Java runtime")
+    validate_java_runtime(runtime, expected, "Java runtime")
+
+
 def validate() -> None:
     baseline = tomllib.loads(BASELINE.read_text(encoding="utf-8"))
     contracts = baseline["contracts"]
@@ -81,21 +106,7 @@ def validate() -> None:
         sdk["typescript"],
     )
 
-    expected_java = sdk["java"]
-    expected_javac = expected_java.split("+", maxsplit=1)[0]
-    require_exact(
-        "javac",
-        extract(r"^javac\s+(\S+)$", run(["javac", "-version"], "javac"), "javac"),
-        expected_javac,
-    )
-    java_settings = run(["java", "-XshowSettings:properties", "-version"], "Java runtime")
-    if not re.search(r"^\s*java\.vendor\s*=\s*Eclipse Adoptium\s*$", java_settings, re.MULTILINE):
-        raise VersionError("Java distribution mismatch: expected Eclipse Adoptium Temurin")
-    require_exact(
-        "Java runtime",
-        normalize_temurin_runtime(java_runtime_version(java_settings)),
-        expected_java,
-    )
+    validate_java(sdk["java"])
 
     require_exact(".NET", run(["dotnet", "--version"], ".NET"), sdk["dotnet"])
     require_exact("Zig", run(["zig", "version"], "Zig"), sdk["zig"])

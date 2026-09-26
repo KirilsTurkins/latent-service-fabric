@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "results": [
+    {
+      "variant": "project",
+      "source": "499a6db25d8ed178f71a47749f17117ad773c0c7",
+      "dirty": false,
+      "baseUrl": "/latent-service-fabric/",
+      "pages": 185,
+      "checkedLinks": 13338,
+      "checkedSourceLinks": 467,
+      "publicJavaScript": {
+        "files": 269,
+        "bytes": 8708671
+      },
+      "nestedReloads": 5,
+      "approvedAssetBytes": "unchanged",
+      "mermaid": "rendered",
+      "browserErrors": 0,
+      "screenshots": [
+        "project-home.png",
+        "project-mobile.png"
+      ]
+    },
+    {
+      "variant": "root",
+      "source": "499a6db25d8ed178f71a47749f17117ad773c0c7",
+      "dirty": false,
+      "baseUrl": "/",
+      "pages": 185,
+      "checkedLinks": 13338,
+      "checkedSourceLinks": 467,
+      "publicJavaScript": {
+        "files": 269,
+        "bytes": 8654685
+      },
+      "nestedReloads": 5,
+      "approvedAssetBytes": "unchanged",
+      "mermaid": "rendered",
+      "browserErrors": 0,
+      "screenshots": [
+        "root-home.png",
+        "root-mobile.png"
+      ]
+    }
+  ]
+}

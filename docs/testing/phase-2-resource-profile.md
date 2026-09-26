@@ -1,9 +1,14 @@
 # Phase 2 resource profile
 
-`phase2-dormant-32-r1` is a fixed Linux resource experiment for gate #158.
+`phase2-dormant-32-r3` is a fixed Linux resource experiment for gate #158.
 A profile definition
 is not a passing result. The gate remains pending until its retained evidence
 has been reviewed alongside the other Phase 2 checks.
+
+Revision 2 records the fixed load sampler's transient descriptor separately.
+Its workload, deadlines and resource ceilings remain the same. Historical
+revision 1 receipts retain their original identity and require their pinned
+collector/validator; this revision does not rewrite those measurements.
 
 The runner starts an actual `latentd`, uses actual authenticated `latent`
 commands, and owns every process through exit and reap. It does not build,
@@ -34,6 +39,7 @@ observation does not authorize raising a limit.
 | Audit | One durable owner: 512 records, 8 MiB disk, queue 8, query owners 2 |
 | Rollouts | One shared coordinator: active 2, retained 8, stages 4, receipts 32, metadata 1 MiB, queue 2 / 256 KiB, response owners 2 |
 | Canary | Windows 2, starts/window 32, total starts 64, live samples 4, snapshot owners 2; no active plan in this experiment |
+| Executable identity reads | At most 512 MiB per supplied binary, including the live node executable |
 | Receipt | At most 256 KiB, new file only |
 | Fixture inventory | At most 2,048 visited entries / 8 MiB of ordinary files |
 | Process observation | At most 256 tasks / 4,096 descriptors; each sample at most 2 seconds / 4 MiB of proc data |
@@ -88,10 +94,27 @@ observation may each occupy at most one slot; these are reported explicitly.
 OS sampling occurs after the inventory caller has exited and been reaped.
 The node PID, start ticks, group/session and executable identity must still
 match. Task children must be absent. There must be exactly one listening TCP
-socket. Threads, tasks, descriptor count, socket count, listener count and
-descendant count must match the warm baseline across all twelve samples.
-No missing observation is converted to zero. A raced, inaccessible or
-oversized proc observation fails the experiment instead of extending its bounds.
+socket. Threads, tasks, retained descriptor count, socket count, listener count
+and descendant count must match the warm baseline across all twelve samples.
+The raw `fdCount` is preserved. `loadSamplerFdCount` separately identifies at
+most one read-only `/proc/pressure/cpu` or `/proc/pressure/memory` descriptor
+held by the fixed load sampler. Its exact link and Linux access flags must be
+observed consistently. `clockLeaseFdCount` identifies the same fixed control
+owner's admission clock renewal: the exact private `supply-chain` directory
+(read-only), its `floor.pending.json` (write-only, at most 4096 bytes), or its
+`INITIALIZED` marker (read-only, at most 4096 bytes). The opened descriptor and
+named object must agree on device/inode, type, link and access mode. The two
+counts together may not exceed one because renewal and pressure reads are
+sequential. Only these positively identified counts are subtracted for the
+retained-descriptor comparison. The authority lock, unrelated files, sockets,
+additional descriptors and changed objects remain subject to the original
+checks. Quiet invocation inventory does not suspend these periodic operations.
+No missing observation is converted to zero. If a proc entry disappears while
+it is read, the collector discards the entire partial observation and starts
+another complete snapshot of the same still-owned process. At most three
+attempts share the original two-second and four-MiB read budgets. Continuous
+churn, changed process identity, other I/O failures and oversized observations
+still fail the experiment. This does not retry an Invoke or control command.
 
 The configured topology and all non-observation active owner counts must also
 match the warm baseline. Preparation-cache misses must not increase after
@@ -120,6 +143,21 @@ The output root must not exist. Run within the first five minutes of export:
 publisher/builder proof age is 600 seconds, and the runner requires at least
 300 seconds of remaining proof freshness. These clocks are not extended by
 the experiment.
+
+CI prepares separate `latent` and `latentd` copies with `objcopy --strip-debug`
+in its private `resource-bin` directory before exporting the fresh resource
+fixture. Debug information can otherwise make an unstripped workspace binary
+exceed the frozen 512 MiB executable-hash ceiling. The originals in
+`target/debug`, including any hard-linked Cargo artifacts, remain untouched;
+there is no rebuild or release-profile substitution. `buildProfile: "debug"`
+continues to describe the compilation profile, not the presence of debug sections.
+
+Both the build identity and the runner's `--cli` / `--node` arguments select
+those same stripped copies. Full-file hashing and the live `/proc/<pid>/exe`
+byte/inode checks remain enabled. A stripped copy that still exceeds the ceiling
+is rejected; neither the profile revision nor any resource limit is increased.
+A failed copy stops the CI step without falling back to the original binary,
+and the existing fixture-owner cleanup removes the temporary copies.
 
 The build owner supplies a closed identity file describing the actual supplied
 binaries, using lowercase SHA-256 values with the `sha256:` prefix:

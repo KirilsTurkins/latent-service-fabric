@@ -2,13 +2,22 @@
 
 mod aot;
 mod audit;
+mod budgets;
+mod capability_policies;
 mod derive;
+#[cfg(feature = "development-test-node")]
+mod development;
 mod engine;
+pub(crate) mod http;
 mod input;
 mod model;
 mod policy;
+mod protected_file;
+pub(crate) mod providers;
+mod renderer;
 mod rollouts;
 mod runtime;
+mod security;
 mod supply_chain;
 #[cfg(test)]
 mod tests;
@@ -21,13 +30,26 @@ use latent_core::{PlatformError, PlatformErrorCode};
 
 pub use aot::{AotCacheConfig, AotImageConfig, AotProcessConfig, IsolatedAotConfig};
 pub use audit::AuditConfig;
+pub use budgets::BudgetConfig;
+pub use capability_policies::CapabilityPolicyConfig;
+#[cfg(feature = "development-test-node")]
+pub use development::DevelopmentTestConfig;
+pub use http::{
+    HttpAuthentication, HttpIngressConfig, HttpIngressLimits, HttpOrigin, HttpTransport,
+};
+pub use latent_wasmtime::ExecutionIsolationProfile;
 pub use model::{
     CacheConfig, CatalogConfig, CellConfig, CredentialConfig, CredentialRole, EngineAllocator,
     EngineConfig, EngineOptimization, ExecutionConfig, LimitConfig, NodeConfig, RetentionConfig,
     SupplyChainConfig, TelemetryConfig, WorkerConfig,
 };
+pub use providers::{
+    BlobInstallation, ConfiguredProviders, HostBinding, HttpInstallation, LocalServiceInstallation,
+    ProviderIdentity, ProviderSecretFile, SecretInstallation,
+};
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
+pub use security::ExecutionProfileReport;
 pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
@@ -35,6 +57,7 @@ pub(crate) use supply_chain::SupplyChainSettings;
 /// plan passed to startup. This type intentionally has no `Debug` implementation
 /// because its transport configuration contains credentials.
 pub struct NodeSettings {
+    pub(crate) credentials_from_protected_file: bool,
     pub(crate) data_directory: PathBuf,
     pub(crate) node: latent_node::NodeDescriptor,
     pub(crate) runtime_workers: usize,
@@ -45,7 +68,11 @@ pub struct NodeSettings {
     pub(crate) isolated_aot: Option<latent_wasmtime::NativeAotSettings>,
     pub(crate) audit: Option<latent_audit::AuditLimits>,
     pub(crate) rollouts: Option<RolloutSettings>,
+    pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
+    pub(crate) providers: Option<Box<ConfiguredProviders>>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
+    pub(crate) budget_profile: latent_core::BudgetProfile,
+    pub(crate) delegation_limits: latent_core::DelegationLimits,
     pub(crate) scheduler: latent_scheduler::LocalSchedulerConfig,
     pub(crate) wasmtime: latent_wasmtime::WasmtimeConfig,
     pub(crate) runtime_profile: std::sync::Arc<latent_manifest::RuntimeCompatibilityProfile>,
@@ -57,11 +84,23 @@ pub struct NodeSettings {
     pub(crate) observer: latent_telemetry::SharedActivationObserverConfig,
     pub(crate) inventory: latent_node::StandaloneInventoryConfig,
     pub(crate) transport: crate::standalone::transport::TransportConfig,
+    pub(crate) http: Option<http::HttpSettings>,
     pub(crate) shutdown_grace: Duration,
     pub(crate) load_sample_interval: Duration,
 }
 
 impl NodeSettings {
+    pub(crate) fn persist_execution_profile(&self) -> Result<(), PlatformError> {
+        security::persist(self)
+    }
+
+    /// Verify actual startup requirements without opening catalogs or listeners.
+    /// Configured isolated compilation uses one bounded, reaped readiness probe.
+    pub fn check_config(&self) -> Result<ExecutionProfileReport, PlatformError> {
+        capability_policies::check_existing(self)?;
+        security::check(self)
+    }
+
     /// Fixed invocation/network runtime worker count for the embedding owner.
     #[must_use]
     pub const fn runtime_workers(&self) -> usize {
@@ -82,8 +121,10 @@ impl NodeSettings {
 }
 
 impl NodeConfig {
-    /// Reads at most 64 KiB plus an overflow sentinel. Relative data directories
-    /// are anchored to the configuration file's absolute parent exactly once.
+    /// Reads at most 64 KiB plus an overflow sentinel. On supported Linux `x86_64`
+    /// hosts the credential-bearing file is descriptor-anchored and must satisfy
+    /// the protected secret-file policy before bytes are decoded. Relative data
+    /// directories are anchored to the configuration file's absolute parent once.
     pub fn load(path: &Path) -> Result<Self, PlatformError> {
         input::load(path)
     }
@@ -91,6 +132,16 @@ impl NodeConfig {
     /// Validates settings without creating directories, listeners, or workers.
     pub fn derive(&self) -> Result<NodeSettings, PlatformError> {
         derive::settings(self)
+    }
+}
+
+impl NodeSettings {
+    #[must_use]
+    pub fn control_blocking_threads(&self) -> usize {
+        1 + usize::from(
+            self.rollouts.is_some()
+                && (self.capability_policies.is_some() || self.providers.is_some()),
+        )
     }
 }
 

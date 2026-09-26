@@ -17,6 +17,7 @@ pub(super) fn wasmtime(
     capacity: &Capacity,
 ) -> Result<WasmtimeConfig, PlatformError> {
     let mut runtime = WasmtimeConfig {
+        execution_isolation_profile: config.security_profile,
         instance_allocator: match config.engine.allocator {
             EngineAllocator::OnDemand => InstanceAllocator::OnDemand,
             EngineAllocator::Pooling => InstanceAllocator::Pooling,
@@ -44,6 +45,10 @@ pub(super) fn wasmtime(
         invocation_log_maximum_bytes: 16 * 1024,
         ..WasmtimeConfig::default()
     };
+    #[cfg(feature = "development-test-node")]
+    if let Some(fixtures) = &config.development_test {
+        runtime.development_clock_readings = Some(fixtures.clock_readings(config)?);
+    }
     if runtime.instance_allocator == InstanceAllocator::Pooling {
         // Capacity has passed checked aggregation across every cell class.
         // Keep the inactive on-demand pool setting at its historical default.
@@ -51,6 +56,27 @@ pub(super) fn wasmtime(
     }
     runtime.value_codec_limits.max_input_bytes = config.limits.maximum_payload_bytes;
     runtime.value_codec_limits.max_output_bytes = config.limits.maximum_payload_bytes;
+    if config.engine.java_guest {
+        runtime.install_java_guest();
+    }
+    if config.renderer_profile.is_some() {
+        if config.renderer_profile != Some(latent_manifest::RendererProfile::AngularSsrComponentV1)
+        {
+            return Err(invalid("rendererProfile"));
+        }
+        runtime.install_angular_renderer();
+    }
+    if config.http_ingress.is_some() || config.renderer_profile.is_some() {
+        if config.limits.maximum_payload_bytes < latent_ingress::http::MAX_WIRE_BYTES {
+            return Err(invalid("limits.maximumPayloadBytes"));
+        }
+        // Explicit buffered HTTP profile; these settings participate in engine
+        // identity before catalog compatibility or authenticated AOT loading.
+        runtime.hostcall_fuel = 2 * MIB;
+        runtime.value_codec_limits.max_nodes = latent_ingress::http::MAX_JSON_NODES;
+        runtime.value_codec_limits.max_string_bytes = 512 * 1024;
+        runtime.value_codec_limits.max_lifted_bytes = 64 * MIB;
+    }
     runtime.validate().map_err(|_| invalid("wasmtime"))?;
     Ok(runtime)
 }
@@ -78,7 +104,13 @@ pub(super) fn invocation(
     config: &NodeConfig,
     capacity: &Capacity,
 ) -> Result<InvocationLimits, PlatformError> {
+    let budget = super::policy::budget(config, capacity.maximum_memory);
     let limits = InvocationLimits {
+        budget_profile: config.budget_profile.profile(),
+        max_child_calls: budget.child_calls,
+        max_outbound_requests: budget.outbound_requests,
+        max_blob_read_bytes: budget.blob_read_bytes,
+        max_blob_write_bytes: budget.blob_write_bytes,
         max_payload_bytes: config.limits.maximum_payload_bytes,
         max_id_bytes: IDENTIFIER_BYTES,
         max_cancel_reason_bytes: 256,

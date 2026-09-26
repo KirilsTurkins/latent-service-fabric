@@ -55,6 +55,7 @@ impl ManagementServiceAdapter {
             let mut callback = |preview: ReleaseOperationPreview<'_>| {
                 (|| {
                     preflight.preview(ReleaseOperationPreview {
+                        publication: preview.publication,
                         replay: preview.replay,
                         receipt: preview.receipt,
                         release: preview.release,
@@ -110,7 +111,10 @@ impl ManagementServiceAdapter {
         let actual = result
             .map_err(|error| control_audit::status(platform_status(error, &self.limits), ack))?;
         preflight
-            .finish(Ok(actual.operation))
+            .finish_selected(Ok(latent_artifacts::PublicationOperationReceipt {
+                publication: Some(actual.publication.id.clone()),
+                operation: actual.operation,
+            }))
             .map_err(|error| control_audit::status(error, ack))?;
         let mut expected =
             prepared.ok_or_else(|| Status::internal("publication omitted release preflight"))?;
@@ -159,7 +163,16 @@ impl ManagementServiceAdapter {
         }
         validation::entry(release, tenant, &mut budget, &self.limits)?;
         validation::entry(release, tenant, &mut budget, &self.limits)?;
-        response::charge_operation(preview.receipt, tenant, &mut budget, &self.limits)?;
+        response::charge_operation(
+            preview.receipt,
+            preview.publication,
+            tenant,
+            &mut budget,
+            &self.limits,
+        )?;
+        if release.publication.as_ref() != preview.publication {
+            return Err(Status::internal("publication summary identity mismatch"));
+        }
         if preview.receipt.component_digest.as_ref() != Some(&release.descriptor.release_digest) {
             return Err(Status::internal(
                 "publication operation does not bind release summary",

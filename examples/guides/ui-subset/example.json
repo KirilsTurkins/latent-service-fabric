@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "id": "client/ui-subset",
+  "title": "Synthetic language control specimen",
+  "audience": "client-developer",
+  "target": "client",
+  "variants": [
+    {
+      "language": "rust",
+      "kind": "synthetic",
+      "source": "examples/website-ui/specimen.rs",
+      "regions": [
+        "specimen"
+      ],
+      "validation": {
+        "target": "website/scripts/test-examples.mjs",
+        "instructions": "docs/development/website-code-examples.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "go",
+      "kind": "synthetic",
+      "source": "examples/website-ui/specimen.go",
+      "regions": [
+        "specimen"
+      ],
+      "validation": {
+        "target": "website/scripts/test-examples.mjs",
+        "instructions": "docs/development/website-code-examples.mdx",
+        "evidence": null
+      }
+    }
+  ]
+}

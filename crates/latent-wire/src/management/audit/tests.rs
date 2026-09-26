@@ -119,27 +119,15 @@ fn query_bounds_reject_hidden_capacity_unknown_kind_bad_time_and_oversized_curso
 }
 
 #[test]
-fn legacy_omission_means_authenticated_tenant_and_unsupported_filters_are_explicit() {
-    let limits = ManagementLimits::default();
-    let mut value = proto::QueryAuditRequest::default();
+fn typed_query_requires_an_explicit_scope() {
     assert_eq!(
-        validation::legacy(&value, &principal(false), &limits).unwrap(),
-        AuditScope::Tenant(TenantId("acme".into()))
-    );
-    value.tenant = Some("other".into());
-    assert_eq!(
-        validation::legacy(&value, &principal(true), &limits)
-            .unwrap_err()
-            .code(),
-        tonic::Code::PermissionDenied
-    );
-    value.tenant = None;
-    value.resource_prefix = Some("anything".into());
-    assert_eq!(
-        validation::legacy(&value, &principal(false), &limits)
-            .unwrap_err()
-            .code(),
+        validation::typed(
+            &proto::QueryPhase2AuditRequest::default(),
+            &principal(false),
+            &ManagementLimits::default(),
+        )
+        .unwrap_err()
+        .code(),
         tonic::Code::InvalidArgument
     );
-    assert!(enums::kind_from_name("made-up").is_err());
 }

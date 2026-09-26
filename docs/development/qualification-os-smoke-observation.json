@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "latent.dev.qualification-os-smoke.v1",
+  "passed": true,
+  "candidateInstalled": false,
+  "qualificationComplete": false,
+  "controllerUid": 23001,
+  "sshUid": 23002,
+  "hostCompilersPresent": false,
+  "network": "none",
+  "privateKeyContentsRead": false,
+  "osImage": "sha256:91a336d6f4a6d1750d7649eacb4511c21bc9aa82f53cc0baebb628d8e41bae34",
+  "entrypointSha256": "sha256:040f4eee3f41abf17c96987914c8d0134c62703a753fa953da2faf1488809a8d",
+  "exactStoppedContainer": "lsf-dev559-qualification-os-smoke-20260925-v2",
+  "noLsfCandidateExecuted": true,
+  "priorAttempt": {
+    "stage": "OS-smoke-image-build",
+    "failure": "Dockerfile FROM treated bare content ID as a registry name",
+    "candidateExecuted": false,
+    "containerStarted": false
+  }
+}

@@ -1,0 +1,11 @@
+package tests:http@1.0.0;
+
+interface api {
+    // 0..6 select GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS.
+    // Returns status + 1000 * body length, or 1000 + the typed error index.
+    run: async func(which: u32) -> u32;
+}
+world service {
+    import latent:http/client@0.2.0;
+    export api;
+}

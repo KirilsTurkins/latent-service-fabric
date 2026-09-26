@@ -3,6 +3,12 @@ use latent_control_store::rollouts as domain;
 
 pub(super) fn receipt(value: domain::RolloutOperationReceipt) -> proto::RolloutOperationReceipt {
     proto::RolloutOperationReceipt {
+        base_publication_id: value
+            .base_publication
+            .map(latent_core::PublicationId::into_string),
+        candidate_publication_id: value
+            .candidate_publication
+            .map(latent_core::PublicationId::into_string),
         rollout_id: value.rollout_id.0,
         tenant: value.tenant.0,
         operation_id: value.operation_id,
@@ -65,6 +71,9 @@ pub(super) fn status(value: domain::RolloutStatus) -> proto::RolloutStatus {
 }
 fn release(value: domain::RolloutRelease) -> proto::RolloutRelease {
     proto::RolloutRelease {
+        publication_id: value
+            .publication
+            .map(latent_core::PublicationId::into_string),
         deployment_id: value.deployment_id.0,
         component_digest: value.component.0,
         package_digest: value.package.map(latent_core::PackageDigest::into_string),

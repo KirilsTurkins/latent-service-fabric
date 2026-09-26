@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "latent.native-merge-evidence.v1",
+  "scope": "reviewed-candidate-integrated-by-squash-not-version-pair-acceptance",
+  "observedAtUtc": "2026-09-19T17:32:54.062372+00:00",
+  "repository": "KirilsTurkins/latent-service-fabric",
+  "merge": {
+    "pullRequest": "https://github.com/KirilsTurkins/latent-service-fabric/pull/360",
+    "reviewedCommit": "edec84fa17460b11e166cbb25a9e51f7ea15e78b",
+    "developmentSquashCommit": "f4231d0785ca9538878d6c3c72573ed837aaa5cf",
+    "mergedAtUtc": "2026-09-19T17:16:25Z",
+    "identicalGitTree": "966c9a148bb22922374a1888d3c5cd10cd762dfa",
+    "guideIntegrationCommit": "1a04aeb1553b070c158b3e90af7bc3f7440e09e6",
+    "sameCommitClaimed": false,
+    "boundary": "identical source trees do not change the executed or attested commit identity"
+  },
+  "ci": {
+    "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35454985599",
+    "conclusion": "success",
+    "event": "pull_request",
+    "reviewedHead": "edec84fa17460b11e166cbb25a9e51f7ea15e78b",
+    "runtimeCheckout": "05360c50eb6c40212111ad0d87198db5dead78a5"
+  },
+  "security": {
+    "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35454985745",
+    "conclusion": "success",
+    "scannedCheckout": "05360c50eb6c40212111ad0d87198db5dead78a5",
+    "rustsecJob": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35454985745/job/105928612272",
+    "findingCount": 0,
+    "exceptionCount": 0,
+    "databaseCommit": "d5c17953a895cf19e8d3ce66eaa42b6fcfe1fb16",
+    "databaseVerifiedAtUtc": "2026-09-19T16:27:41.732185+00:00",
+    "locks": [
+      {"path": "Cargo.lock", "sha256": "59b2b6ad36257d13ffd951e8aa0405275c8273b41cec96faf6801447a74f8327", "packages": 432},
+      {"path": "tools/native-fixture/Cargo.lock", "sha256": "1fa9a1693bba27927ebc5fdfc2a331a65d0b485a952486f44ca0ad2db8e4fc28", "packages": 115}
+    ],
+    "boundary": "dated all-lock RustSec and aggregate security success, not indefinite advisory clearance or scheduled monitoring activation"
+  },
+  "native": {
+    "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35455114202",
+    "conclusion": "success",
+    "event": "workflow_dispatch",
+    "workflow": ".github/workflows/native-runtime.yml",
+    "sourceCommit": "edec84fa17460b11e166cbb25a9e51f7ea15e78b",
+    "harnessSourceCommit": "edec84fa17460b11e166cbb25a9e51f7ea15e78b",
+    "version": "0.1.0-alpha.3",
+    "purpose": "candidate",
+    "focusedLinuxTestsPassed": 37,
+    "focusedLinuxTestsSkipped": 0,
+    "candidateArtifactId": 10587593767,
+    "reportedArtifactZipSha256": "9754fe3d446301d9782dfac1946883dc74cb105de7b8d7fa64428b172fe58b01"
+  },
+  "archive": {
+    "name": "lsf-0.1.0-alpha.3-x86_64-unknown-linux-gnu.tar.gz",
+    "sha256": "db92630f55eeb7521b7a3fc8ae4e5418e37c621f2f209c24cc25bb8624a84fda",
+    "size": 27064465,
+    "bootstrapSha256": "c5edd4b6c6a4b0266d61c63d56a972aff1173dfddf72cf6e0a37dda970d0a86e",
+    "manifestSha256": "af8460134f6dffcd4320ef6bc453d7d6c455f2636cba02bcf3d64c5c890dbddd",
+    "compilerSha256": "ffe93e7a7eb396a55c98358c61b88e8165b00efebed97a9fd33bd7a54be830fd",
+    "hostAbiProfile": "lsf-host-abi-phase3-v4",
+    "wasmtimeVersion": "47.0.4",
+    "rustVersion": "1.97.1",
+    "upgradeFrom": []
+  },
+  "authentication": {
+    "certificateIdentity": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime.yml@refs/heads/feat/308-native-runtime-bundle",
+    "issuer": "https://token.actions.githubusercontent.com",
+    "sourceAndSignerDigest": "edec84fa17460b11e166cbb25a9e51f7ea15e78b",
+    "githubHostedRunnerRequired": true,
+    "checksumsSha256": "50ca5752379d538ca38d83998a80aaf42a3d43fcc7693f5a9735e1cef7500987",
+    "attestationSha256": "be2a76bb06c41e7a6529ca642835c8f1ade850420f120711356e47a894c020dd",
+    "trustedRootSha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+    "guestVerifierVersion": "2.100.0",
+    "guestVerifierSha256": "553949e2efa12842771efe6012aa4de21f1d591530ec17fc435f610f10e017ee",
+    "boundary": "candidate branch authority, never release tag authority or a newly provisioned operator trust policy"
+  },
+  "environment": {
+    "distribution": "ubuntu-24.04",
+    "imageUrl": "https://cloud-images.ubuntu.com/noble/20260911/noble-server-cloudimg-amd64.img",
+    "imageSha256": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+    "acceleration": "kvm",
+    "hostKernel": "6.17.0-1022-azure",
+    "guestKernel": "6.8.0-139-generic",
+    "guestPython": "3.12.3",
+    "noGuestPackageInstallation": true,
+    "guestContainerRuntimeRequired": false,
+    "ghTrustedBeforeBundle": true,
+    "sshHostKeyPinnedBeforeBoot": true
+  },
+  "profiles": {
+    "local-experimental-v1": {
+      "artifactId": 10587429105,
+      "receiptSha256": "4ecb6782a98688daa899609e6507bb7c990631d99c145afa9560b46de0506c30",
+      "passed": true,
+      "acceptanceComplete": false,
+      "gaps": ["declared-compatible-native-version-pair-not-yet-selected"],
+      "initialBootId": "e7c8da00-2c1d-4994-85d1-7faee3f5c157",
+      "rebootedBootId": "d5c5a775-3535-4f65-ace2-69fbc33646ae",
+      "passedPhases": ["initial", "retained", "rootless"],
+      "retainedPublicationId": "publication:sha256:2bc0504805fb80bf33bc50b7d9d41de8a1b6b149a587b20cb8ea5c4cdba0f4c0",
+      "rootlessUid": 1000
+    },
+    "external-capsule-v1": {
+      "artifactId": 10588536850,
+      "receiptSha256": "e74ab86c49ed4f3863a8329d0becc290e7c07aac7af9430622a6ff8488e99414",
+      "passed": true,
+      "acceptanceComplete": false,
+      "gaps": ["declared-compatible-native-version-pair-not-yet-selected"],
+      "initialBootId": "bc5cc614-7b8d-43fd-b033-0a1e5ccacf33",
+      "rebootedBootId": "9c97e438-85a1-48ac-b1e1-947995724611",
+      "passedPhases": ["initial", "retained"],
+      "retainedPublicationId": "publication:sha256:19812b93be232b41b81dc271581d6ffdd365a4459ab1f1dfc54c5b18a6ce57ef"
+    }
+  },
+  "executedVmScope": [
+    "offline publisher authentication before downloaded bootstrap and tamper, unsigned, wrong repository and wrong source rejection",
+    "protected credentials and external-profile AOT key, interrupted unactivated external install resumed without replacing its key",
+    "actual packaged echo publication and invocation through non-root loopback systemd node",
+    "same-version configuration, credentials, key and process preservation",
+    "actual changed boot identity and retained invocation without republishing",
+    "invocation-scoped clean stop and process reaping, stopped consistent backup and exact-set restore",
+    "removal retaining state, reinstall recovering the exact publication and separately confirmed resumable purge",
+    "unprivileged rootless foreground invocation, serialization and clean shutdown without systemd"
+  ],
+  "independentWindowsRecheck": {
+    "ghVersion": "2.96.0",
+    "rootProvisioning": "separate independently installed gh attestation trusted-root command, outside artifact staging",
+    "exactCertificateIdentityAccepted": true,
+    "wrongSourceDigestRejected": true,
+    "authenticatedAssetHashesChecked": 3,
+    "receiptFileHashesChecked": 2,
+    "receiptDelivery": "GitHub Actions artifact download; content hashes are not standalone publisher attestation of the VM receipts",
+    "networkIsolationClaimed": false,
+    "downloadedInstallerExecuted": false,
+    "newVmRunClaimed": false
+  },
+  "notExecutedByTheseRuns": [
+    "genuine 0.1.0-alpha.4-rc.1 to 0.1.0-alpha.4 compatible upgrade",
+    "unsupported cross-version binary downgrade rejection",
+    "native VM or release-identity qualification at the development squash commit or a future version commit",
+    "protected release publication or maintained default-branch schedule activation"
+  ],
+  "historicalReleaseChanged": false,
+  "secretsRetained": false,
+  "issue308AcceptanceClaimed": false
+}

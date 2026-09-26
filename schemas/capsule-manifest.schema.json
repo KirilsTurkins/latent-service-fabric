@@ -245,7 +245,7 @@
     },
     "compatibility": {
       "type": "object",
-      "maxProperties": 4,
+      "maxProperties": 5,
       "additionalProperties": false,
       "required": [
         "minimumFabricVersion"
@@ -316,6 +316,26 @@
               "aarch64.fp16",
               "aarch64.dotprod"
             ]
+          }
+        },
+        "renderer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "profile",
+            "profileDigest"
+          ],
+          "properties": {
+            "profile": {
+              "enum": [
+                "wasm-web-buffered-v1",
+                "angular-ssr-component-v1"
+              ]
+            },
+            "profileDigest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+            }
           }
         }
       }

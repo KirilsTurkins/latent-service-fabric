@@ -1,6 +1,7 @@
 //! A sealed historical metadata read, explicitly separate from permission to run.
 
-use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest, TenantId};
+use latent_core::{PlatformError, PlatformErrorCode, PublicationId, ReleaseDigest, TenantId};
+use std::sync::Arc;
 
 use crate::{
     LifecycleAuthorityHandle, LifecycleScope, ReleaseUseEligibility, VerifiedArtifactMetadata,
@@ -11,6 +12,12 @@ use crate::{
 pub struct HistoricalExecutionSnapshot {
     metadata: VerifiedArtifactMetadata,
     state: HistoricalExecutionState,
+    web: Option<HistoricalWebLayout>,
+}
+
+struct HistoricalWebLayout {
+    layout: Arc<crate::web::CheckedWebLayout>,
+    _retention: Arc<crate::web::WebReadPermit>,
 }
 
 #[derive(Clone)]
@@ -26,6 +33,7 @@ pub struct HistoricalReleaseDenial {
     owner: LifecycleAuthorityHandle,
     scope: LifecycleScope,
     release: ReleaseDigest,
+    publication: PublicationId,
     failure: PlatformError,
 }
 
@@ -34,24 +42,34 @@ impl HistoricalExecutionSnapshot {
         Self {
             metadata,
             state: HistoricalExecutionState::Unmanaged,
+            web: None,
         }
     }
 
     pub(crate) fn directory(
         metadata: VerifiedArtifactMetadata,
+        publication: crate::PublicationRef,
         owner: LifecycleAuthorityHandle,
         eligibility: Result<ReleaseUseEligibility, PlatformError>,
     ) -> Result<Self, PlatformError> {
-        let scope = metadata
+        let scope = publication.scope;
+        if metadata
             .manifest()
             .metadata
             .tenant
-            .clone()
-            .map_or(LifecycleScope::LocalUnscoped, LifecycleScope::Tenant);
+            .as_ref()
+            .is_some_and(|tenant| scope.tenant() != Some(tenant))
+        {
+            return Err(error(
+                PlatformErrorCode::CorruptArtifact,
+                "historical-execution-scope-mismatch",
+            ));
+        }
         let release = metadata.verified_digest().clone();
         let state = match eligibility {
             Ok(token) => {
                 if token.release() != &release
+                    || token.lifecycle().publication() != &publication.id
                     || token.scope() != &scope
                     || !token.belongs_to_catalog(&owner)
                 {
@@ -76,16 +94,61 @@ impl HistoricalExecutionSnapshot {
                     owner,
                     scope,
                     release,
+                    publication: publication.id,
                     failure: error(failure.code, message),
                 })
             }
         };
-        Ok(Self { metadata, state })
+        Ok(Self {
+            metadata,
+            state,
+            web: None,
+        })
+    }
+
+    pub(crate) fn directory_web(
+        metadata: VerifiedArtifactMetadata,
+        publication: crate::PublicationRef,
+        owner: LifecycleAuthorityHandle,
+        eligibility: Result<ReleaseUseEligibility, PlatformError>,
+        layout: Arc<crate::web::CheckedWebLayout>,
+        retention: Arc<crate::web::WebReadPermit>,
+    ) -> Result<Self, PlatformError> {
+        if !metadata.is_web_execution_projection()
+            || layout
+                .manifest()
+                .renderer
+                .as_ref()
+                .is_none_or(|renderer| renderer.digest != metadata.verified_digest().0)
+            || publication
+                != crate::PublicationRef::package(publication.scope.clone(), layout.package())?
+        {
+            return Err(error(
+                PlatformErrorCode::CorruptArtifact,
+                "historical-web-association-mismatch",
+            ));
+        }
+        let mut snapshot = Self::directory(metadata, publication, owner, eligibility)?;
+        snapshot.web = Some(HistoricalWebLayout {
+            layout,
+            _retention: retention,
+        });
+        Ok(snapshot)
     }
 
     #[must_use]
     pub fn metadata(&self) -> &VerifiedArtifactMetadata {
         &self.metadata
+    }
+
+    #[must_use]
+    pub fn state(&self) -> &HistoricalExecutionState {
+        &self.state
+    }
+
+    #[must_use]
+    pub fn web_layout(&self) -> Option<&crate::web::CheckedWebLayout> {
+        self.web.as_ref().map(|web| web.layout.as_ref())
     }
 
     #[must_use]
@@ -95,6 +158,10 @@ impl HistoricalExecutionSnapshot {
 }
 
 impl HistoricalReleaseDenial {
+    #[must_use]
+    pub fn publication(&self) -> &PublicationId {
+        &self.publication
+    }
     #[must_use]
     pub fn release(&self) -> &ReleaseDigest {
         &self.release
@@ -115,6 +182,7 @@ impl HistoricalReleaseDenial {
             .saturating_add(128)
             .saturating_add(scope)
             .saturating_add(self.release.0.capacity())
+            .saturating_add(PublicationId::TEXT_BYTES)
             .saturating_add(self.failure.message.capacity())
     }
 

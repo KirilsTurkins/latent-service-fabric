@@ -1,0 +1,1130 @@
+{
+  "cases": [
+    {
+      "activationId": "dev-570b207cf45a4e76d58309a8238c432c",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "cold-seal",
+      "inputSha256": "sha256:d0bca111f8628137adc4c16f123496dcdd1d590d06cb5d9acd68b39fe656fb97",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:0e5b96c0aaf7d37b171e575a6421a5163b8a04317045726eb0cbec3f2bc91e84",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-6f8d628ca3a1e9fd696907f256c2e57a",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "warm-read",
+      "inputSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:0e5b96c0aaf7d37b171e575a6421a5163b8a04317045726eb0cbec3f2bc91e84",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-b911795e5ab6e65c6ee3e01ee536d981",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "abandon-writer",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-bfc86d7157ea56508444c83871c7137d",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "after-writer",
+      "inputSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:0e5b96c0aaf7d37b171e575a6421a5163b8a04317045726eb0cbec3f2bc91e84",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-d477f40c6c6e67e03469f87b9858172b",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "closed-writer",
+      "inputSha256": "sha256:46b1884167c4edd308bcf0c04163dd02d05c9742b35e86b57b5f7ed1b82f3850",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-d658dd4663d7dda59965109944d338e9",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "drop-chunk",
+      "inputSha256": "sha256:06d033ece6645de592db973644cf7357255f24536ff7b03c3b2ace10736f7636",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:26a6ce94f8d2ece150a6caa06e71f7d032764e0638a47b58e868257bb3dea578",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-923fe57c90c09c31f87ab7d6b1f52734",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "abandon-reader-chunk",
+      "inputSha256": "sha256:1ae3592f8248c3f879b56afe3f2ce6aad45ba898434796d35c565684397fb3e6",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:5e3322c682b4e46a737ec3a18be48fc20ba87309ae7f942cef08eb51f2a6537e",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-f4d3ad517cae2a3fce16e25c304dbf6b",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-0",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-587e39ce6996d9700a351b0cb9d54672",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-1",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-dd7947c8058a57186390397d851ccc76",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-2",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-9f5f9d42cf794b2eb4d3a2f9e24907d5",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-3",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-4bf9a109080bcba82e2ceb11496f084f",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-4",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-5f135b74a7a8208f435b44e5b9ab3428",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-5",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-714bfbf34f6f672261f694dde95719bf",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-6",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-d58e8d1e77fedfde350e36717b51d674",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-7",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-8a0b357c5235579ec0a135e44ff73f32",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-8",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-cd2feef9266d84eb14786a944b484638",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-9",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-99383fd6d8db5bf8ca460e317ca740eb",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-10",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-3d66442a5020478493add670205d3f65",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-11",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-61a7e4d740d7b977c926cd34094cd5e6",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-12",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-048791ecbbdebfdcfa46b519fe83ba0a",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-13",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-17c9616ad87a72f4506c99d5348691e1",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-14",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-525cf3927c1f6df1ab1adfbf56bca4a0",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-15",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-1daaaa8d99632e4fa2b61d5c49dc6b7b",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-16",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-b77e57bc0951b2280ffa33d5a55ed008",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "retired-stage-17",
+      "inputSha256": "sha256:038966de9f6b9a901b20b4c6ca8b2a46009feebe031babc842d43690c0bc222b",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "3"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-3335380f2fd1e26269c74f5c764d230a",
+      "category": "success",
+      "execution": {
+        "deniedCapabilities": [
+          "latent:blob/blob@0.2.0"
+        ],
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "policy-denied",
+      "inputSha256": "sha256:fe94b827f0455bee6f4a6a265286f827f18748ede569565ee827058085bad146",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:9649340520a48723d2ba8d1fc3070723da24d08685d5dac3b1df6754950f635a",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:2d38411142c155007d0b074175d36a868efbb1169dd9108600932dc6eb8ddafc",
+        "routeGeneration": "4"
+      },
+      "status": "passed",
+      "targetMatches": true
+    },
+    {
+      "activationId": "dev-1c0cc5a9a0ad6cb03e1283391f26419f",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "after-denial",
+      "inputSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:0e5b96c0aaf7d37b171e575a6421a5163b8a04317045726eb0cbec3f2bc91e84",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "5"
+      },
+      "status": "passed",
+      "targetMatches": true
+    }
+  ],
+  "cleanHost": false,
+  "cleanup": "owned-processes-reaped-live-provider-counters-zero-private-workspace-purged",
+  "exclusions": [
+    "final-publisher-authenticated-candidates",
+    "clean-Windows-WSL-installation",
+    "portable-blob-support",
+    "unmeasured-cross-workspace-isolation",
+    "Mac-out-of-scope"
+  ],
+  "failedAttempts": [
+    {
+      "actualShutdown": {
+        "blobHandles": 0,
+        "blobStages": 2,
+        "blobWork": 0,
+        "calls": 0,
+        "clean": true,
+        "cleanupJobs": 0,
+        "connections": 0,
+        "controlOwners": 0,
+        "failedCleanup": 0,
+        "handles": 0,
+        "ioCalls": 0,
+        "ioRetainedBytes": 0,
+        "pendingRequests": 0,
+        "results": 0,
+        "runningRequests": 0,
+        "sessions": 0,
+        "workers": 0
+      },
+      "allInvocationsPassed": true,
+      "attempt": "blob1",
+      "disposition": "owned-node-reaped-private-workspace-retained-no-replay",
+      "failure": "probe-incorrectly-required-zero-durable-stages",
+      "invocations": 10
+    }
+  ],
+  "identity": {
+    "admission": "enforced",
+    "architecture": "x86_64",
+    "artifacts": {
+      "capsule": "sha256:53866ebb388b6294e7cf16ff7a1cc7262a456a7de8f61770efb9523477021ca1",
+      "component": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+      "contracts": "sha256:5a0d79028d46778875389b296daa72517b5a6290f4124cbe8fef109a6ebf9de4",
+      "deployment": "sha256:ddd7af52a06419fae1ca165997ff8352ca704e470ca9e6599718bc460e276778",
+      "evidence": "sha256:1de6f9e01efd20e8434a975255f4b0b43cad6d9a3c43ec194e784cfffd55fb0d",
+      "packageSource": "sha256:b824aa7e077bedcba557bb641a3e70d5961b7f538dc9703ca7bd4b740518a859"
+    },
+    "deployment": {
+      "attempt": "58e23f6945ce4cbc725753e2047b2286",
+      "buildKey": "sha256:23a37dac5a75274da4aa03ad2529511095a2f4461ff59dcd4b37e1da8009e9be",
+      "componentDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+      "deployment": "my-greeting",
+      "generation": "5",
+      "operation": "dev-9493865ab4b5a4e5e85c2f82e4d74102",
+      "publication": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+      "publicationInput": "sha256:6cdd7ff3d75e51a8a3495afa62b4ed81dc4ba9206f4bc57cbc18ea2ad3250e68",
+      "source": "sha256:4ccc8ec47887e734d5caf04c175fe366095f40197bc05b89a82230e248f495d6"
+    },
+    "expectedRevision": {
+      "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+      "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+      "routeGeneration": "5"
+    },
+    "fixtureCheck": {
+      "configurationSha256": "sha256:939792a4d98c30279a2545ced196cde7ea462de332bc86b0f37a5dd6aa564ba6",
+      "guestClock": null,
+      "ordinaryNodeClock": "unchanged"
+    },
+    "fixtureConfiguration": {
+      "blob": {
+        "namespace": "dev-blobs"
+      }
+    },
+    "fixtureProviders": {
+      "blob": {
+        "capability": "latent:blob/blob@0.2.0",
+        "configurationDigest": "sha256:12b01f81d1ef5454b40ae99035ab01ac2e943e7c2fc0ea6e4850f909692a9924",
+        "configurationEpoch": "1",
+        "id": "blob",
+        "profile": "linux-immutable-blobs-v1",
+        "service": "runtime-host-blob",
+        "tenant": "examples"
+      }
+    },
+    "fixtureRuntime": {},
+    "hostAbi": "lsf-host-abi-phase3-v4",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "node": "lsf-3c45dc7c1e1412db",
+    "os": "linux",
+    "package": {
+      "componentDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+      "executionAuthorized": false,
+      "kind": "capsule",
+      "layerBytes": "101645",
+      "layers": 7,
+      "name": "my-greeting",
+      "packageDigest": "sha256:3ea5dd3d679957fea13cce079815316a29fb8c7d6f2398f499d7b96a1887356b",
+      "sbomInventoryDigest": null,
+      "trustEvaluated": false,
+      "version": "1.0.0",
+      "webBuildOutputs": null
+    },
+    "profile": "local-experimental-v1",
+    "runtime": {
+      "binaries": {
+        "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+        "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+        "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+      },
+      "buildProfile": {
+        "compiledBinary": "latentd",
+        "debugInfo": 0,
+        "features": [
+          "latentd/development-test-node"
+        ],
+        "incremental": false,
+        "name": "dev",
+        "retainedOperatorAndAotSource": {
+          "binaries": {
+            "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+            "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+            "latentd": "sha256:894d9d2d309717506cf85c8c57f4add3f8b8519c6158adcacdd60c393486ffa7"
+          },
+          "path": "/build/dev559-node-kit3"
+        }
+      },
+      "controllerSourceCommit": "0c0c05426b77fb364f5cc68291d9038a9ad98259",
+      "controllerSourceDirty": true,
+      "engine": {
+        "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+        "hostAbiProfile": "lsf-host-abi-phase3-v4",
+        "wasmtimeVersion": "47.0.4"
+      },
+      "fixtureProbeSha256": "sha256:a6db24af71eac4ade98f70e1441ad981f58b2fb33ed3526fc20c1b8ec39a314f",
+      "helperSha256": "sha256:7e5d0b73dce6d1fcf3a40a56d1ec908a855bca18f46fae076ba9218e2e6601d6",
+      "publisherAuthenticated": false,
+      "purpose": "source-application-node-tests",
+      "sourceCommit": "e212bcc800ec0939715c2ee92de8e581e8ee69d4",
+      "sourceDirty": true,
+      "version": "0.1.0-alpha.4"
+    },
+    "source": "sha256:4ccc8ec47887e734d5caf04c175fe366095f40197bc05b89a82230e248f495d6",
+    "testSigning": {
+      "attempt": "58e23f6945ce4cbc725753e2047b2286",
+      "component": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+      "expiresAtUnixSeconds": 1790297562,
+      "inventory": "sha256:8b7ae17f8bea85cc6fc3eefb8f658e146b03c06a21aeb4b841d1a6df0e8dce2d",
+      "name": "my-greeting",
+      "packageDigest": "sha256:693c68082832b7fd78e3fd67e8612aa6bb757c2eac6ad39d28f073a7a2b89f49",
+      "policySha256": "sha256:5c42083d030a1eba82b651dd55ee50a44a6f6fcac9a78e6c19a56f0e85e7c122",
+      "signer": "sha256:96162b792023201d38971c7f836d8a6158045dec65d1d72a0b9c419479b3392d",
+      "source": "sha256:4ccc8ec47887e734d5caf04c175fe366095f40197bc05b89a82230e248f495d6",
+      "toolInventory": "sha256:d77d6240a78404c9718e3e06f2e05869066d7c571486c2f08823ce2d49dc5c43",
+      "trust": "isolated-short-lived-demo-only"
+    }
+  },
+  "maximumSeconds": 900,
+  "passed": true,
+  "publisherAuthenticated": false,
+  "purpose": "actual-signed-linux-node-blob-fixture-source-observation",
+  "qualificationComplete": false,
+  "retainedBlobReadWithoutWrite": true,
+  "retainedCases": [
+    {
+      "activationId": "dev-e9c0bb68840077f81f0c6e74aa5a4bd0",
+      "category": "success",
+      "execution": {
+        "grants": [
+          "latent:blob/blob@0.2.0"
+        ]
+      },
+      "fixtures": [
+        {
+          "configuration": "tests/blob-fixture.json",
+          "id": "blob",
+          "identity": "sha256:4a868f520e66bbbff67dfb53a0c911c70046712127c5333e2131ba3b11c43801",
+          "kind": "real-provider"
+        }
+      ],
+      "id": "warm-read",
+      "inputSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:0e5b96c0aaf7d37b171e575a6421a5163b8a04317045726eb0cbec3f2bc91e84",
+      "platformCode": null,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+        "releaseDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+        "revisionId": "revision-v1:sha256:a3b0b25160328bdc78a10f5feace653a984558d81bd036d36b1376ef5208f985",
+        "routeGeneration": "5"
+      },
+      "status": "passed",
+      "targetMatches": true
+    }
+  ],
+  "retainedDeployment": {
+    "attempt": "58e23f6945ce4cbc725753e2047b2286",
+    "buildKey": "sha256:23a37dac5a75274da4aa03ad2529511095a2f4461ff59dcd4b37e1da8009e9be",
+    "componentDigest": "sha256:f2341d15d51bf1b4f3b8cffcdd8842d18b04eb9f95028568e98e5db3e12a286e",
+    "deployment": "my-greeting",
+    "generation": "5",
+    "operation": "dev-9493865ab4b5a4e5e85c2f82e4d74102",
+    "publication": "publication:sha256:94ec17e5e6fac4cf4fb16ab00204ed4dd401b5236ec9799dc5bb92c6a80ab757",
+    "publicationInput": "sha256:6cdd7ff3d75e51a8a3495afa62b4ed81dc4ba9206f4bc57cbc18ea2ad3250e68",
+    "source": "sha256:4ccc8ec47887e734d5caf04c175fe366095f40197bc05b89a82230e248f495d6"
+  },
+  "retainedDurableStages": {
+    "count": 16,
+    "disposition": "charged-until-bounded-reclamation-or-explicit-workspace-purge",
+    "limit": 16
+  },
+  "schemaVersion": "latent.dev.blob-source-observation.v1",
+  "scope": "windows-only",
+  "seconds": 16.41,
+  "shutdown": {
+    "cleanShutdown": true,
+    "dataRetained": true,
+    "guestInstance": {
+      "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+      "initStartTicks": "11874867",
+      "pidNamespace": "4026532461"
+    },
+    "node": "lsf-3c45dc7c1e1412db",
+    "profile": "local-experimental-v1",
+    "providerShutdown": {
+      "blobHandles": 0,
+      "blobStages": 16,
+      "blobWork": 0,
+      "calls": 0,
+      "clean": true,
+      "cleanupJobs": 0,
+      "connections": 0,
+      "controlOwners": 0,
+      "failedCleanup": 0,
+      "handles": 0,
+      "ioCalls": 0,
+      "ioRetainedBytes": 0,
+      "pendingRequests": 0,
+      "results": 0,
+      "runningRequests": 0,
+      "sessions": 0,
+      "workers": 0
+    },
+    "providers": [
+      {
+        "capability": "latent:blob/blob@0.2.0",
+        "configurationDigest": "sha256:12b01f81d1ef5454b40ae99035ab01ac2e943e7c2fc0ea6e4850f909692a9924",
+        "configurationEpoch": "1",
+        "id": "blob",
+        "profile": "linux-immutable-blobs-v1",
+        "service": "runtime-host-blob",
+        "tenant": "examples"
+      }
+    ],
+    "readiness": {
+      "activationReady": true,
+      "authenticated": true,
+      "profile": "local-experimental-v1",
+      "schemaVersion": "latent.native-readiness.v1"
+    },
+    "reaped": true,
+    "state": "stopped"
+  },
+  "shutdownBeforeRestart": {
+    "cleanShutdown": true,
+    "dataRetained": true,
+    "guestInstance": {
+      "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+      "initStartTicks": "11874867",
+      "pidNamespace": "4026532461"
+    },
+    "node": "lsf-3c45dc7c1e1412db",
+    "profile": "local-experimental-v1",
+    "providerShutdown": {
+      "blobHandles": 0,
+      "blobStages": 16,
+      "blobWork": 0,
+      "calls": 0,
+      "clean": true,
+      "cleanupJobs": 0,
+      "connections": 0,
+      "controlOwners": 0,
+      "failedCleanup": 0,
+      "handles": 0,
+      "ioCalls": 0,
+      "ioRetainedBytes": 0,
+      "pendingRequests": 0,
+      "results": 0,
+      "runningRequests": 0,
+      "sessions": 0,
+      "workers": 0
+    },
+    "providers": [
+      {
+        "capability": "latent:blob/blob@0.2.0",
+        "configurationDigest": "sha256:12b01f81d1ef5454b40ae99035ab01ac2e943e7c2fc0ea6e4850f909692a9924",
+        "configurationEpoch": "1",
+        "id": "blob",
+        "profile": "linux-immutable-blobs-v1",
+        "service": "runtime-host-blob",
+        "tenant": "examples"
+      }
+    ],
+    "readiness": {
+      "activationReady": true,
+      "authenticated": true,
+      "profile": "local-experimental-v1",
+      "schemaVersion": "latent.native-readiness.v1"
+    },
+    "reaped": true,
+    "state": "stopped"
+  },
+  "sourceReceiptSha256": "sha256:94e0d6d03fd7fca7d8b07b364a91840487b7d5df98b63144a7cf5736142c56e5"
+}

@@ -284,6 +284,7 @@ fn nested_flat_chains_and_result_diamonds_are_bounded_before_validator() {
     let bytes = root.finish();
     let limits = SemanticLimits {
         max_type_nodes: 128,
+        max_reference_work: 128,
         ..SemanticLimits::default()
     };
     assert_eq!(
@@ -291,4 +292,71 @@ fn nested_flat_chains_and_result_diamonds_are_bounded_before_validator() {
         PlatformErrorCode::ResourceExhausted
     );
     assert!(validate(&bytes, limits).is_err());
+}
+
+#[test]
+fn conservative_alias_expansion_has_an_independent_finite_ceiling() {
+    use wasm_encoder::{
+        Alias, ComponentAliasSection, ComponentExportKind, ComponentImportSection,
+        ComponentTypeRef, ComponentTypeSection, InstanceType, PrimitiveValType,
+    };
+    let mut instance = InstanceType::new();
+    instance
+        .ty()
+        .function()
+        .params([("value", PrimitiveValType::U32)])
+        .result(Some(PrimitiveValType::U32.into()));
+    for index in 0..32 {
+        instance.export(&format!("operation-{index}"), ComponentTypeRef::Func(0));
+    }
+    let mut types = ComponentTypeSection::new();
+    types.instance(&instance);
+    let mut imports = ComponentImportSection::new();
+    imports.import("wide-interface", ComponentTypeRef::Instance(0));
+    let mut aliases = ComponentAliasSection::new();
+    for _ in 0..64 {
+        aliases.alias(Alias::InstanceExport {
+            instance: 0,
+            kind: ComponentExportKind::Func,
+            name: "operation-0",
+        });
+    }
+    let mut root = Component::new();
+    root.section(&types).section(&imports).section(&aliases);
+    let bytes = root.finish();
+    let limits = SemanticLimits {
+        max_type_nodes: 2048,
+        max_reference_work: 16_384,
+        ..SemanticLimits::default()
+    };
+    validate(&bytes, limits).unwrap();
+    for lowered in [
+        SemanticLimits {
+            max_reference_work: 2048,
+            ..limits
+        },
+        SemanticLimits {
+            max_type_nodes: 32,
+            ..limits
+        },
+    ] {
+        assert_eq!(
+            validate(&bytes, lowered).unwrap_err().code,
+            PlatformErrorCode::ResourceExhausted
+        );
+    }
+    for invalid in [0, SemanticLimits::default().max_reference_work + 1] {
+        assert_eq!(
+            validate(
+                &bytes,
+                SemanticLimits {
+                    max_reference_work: invalid,
+                    ..limits
+                }
+            )
+            .unwrap_err()
+            .code,
+            PlatformErrorCode::InvalidArgument
+        );
+    }
 }

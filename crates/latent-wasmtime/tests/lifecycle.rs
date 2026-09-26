@@ -83,8 +83,13 @@ impl Fixture {
             .unwrap()
     }
     async fn revoke(&self) {
+        let publication = self
+            .repository
+            .select_execution_publication(&TenantId("tests".into()), &self.key().release, None)
+            .unwrap()
+            .unwrap();
         self.repository
-            .change_release_lifecycle(
+            .change_publication_lifecycle(
                 ReleaseMutationContext {
                     scope: LifecycleScope::Tenant(TenantId("tests".into())),
                     actor: ReleaseActor {
@@ -96,12 +101,11 @@ impl Fixture {
                         expected_generation: 1,
                     }),
                 },
-                &self.key().release,
+                &publication,
                 ReleaseLifecycleAction::Revoke,
                 ReleaseLifecycleReason::OperatorRevocation,
                 &mut |_| Ok(()),
             )
-            .await
             .unwrap();
     }
     fn idle(&self) {

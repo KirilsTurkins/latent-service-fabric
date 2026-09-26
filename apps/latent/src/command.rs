@@ -48,17 +48,40 @@ pub fn main_entry() -> ExitCode {
             ));
         }
     };
+    exit(dispatch(
+        &cli,
+        &mut std::io::stdout(),
+        &mut std::io::stderr(),
+        execute,
+    ))
+}
+
+fn dispatch(
+    cli: &Cli,
+    stdout: &mut dyn Write,
+    stderr: &mut dyn Write,
+    ordinary: impl FnOnce(&Cli) -> i32,
+) -> i32 {
+    if let Command::Completions { shell } = &cli.command {
+        // This branch deliberately precedes even ordinary argument validation:
+        // no credential/package inputs, runtime, network or outcome envelope.
+        return crate::completions::execute(*shell, cli.output, stdout, stderr);
+    }
+    ordinary(cli)
+}
+
+fn execute(cli: &Cli) -> i32 {
     let command = name(&cli.command);
     let result = match cli.validate() {
         Err(failure) => failure.into(),
         Ok(()) => match &cli.command {
-            Command::Package(command) => crate::package::execute(&cli, command),
+            Command::Package(command) => crate::package::execute(cli, command),
             Command::Validate(command) => management::validate(command).unwrap_or_else(Into::into),
             _ => match tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
             {
-                Ok(runtime) => runtime.block_on(remote(&cli)),
+                Ok(runtime) => runtime.block_on(remote(cli)),
                 Err(_) => {
                     Failure::local("runtime-unavailable", "The client runtime could not start.")
                         .into()
@@ -66,7 +89,7 @@ pub fn main_entry() -> ExitCode {
             },
         },
     };
-    exit(output::emit(result, command, cli.output, cli.quiet))
+    output::emit(result, command, cli.output, cli.quiet)
 }
 fn exit(code: i32) -> ExitCode {
     ExitCode::from(u8::try_from(code).unwrap_or(2))
@@ -127,7 +150,9 @@ async fn remote_inner(cli: &Cli) -> Result<Outcome, Failure> {
             if is_invocation {
                 invocation::execute(operation, &session).await
             } else {
-                management::execute(operation, &session).await
+                // One bounded CLI management operation owns its larger DTO
+                // future on the heap rather than growing every command's stack.
+                Box::pin(management::execute(operation, &session)).await
             }
         };
         let result = tokio::select! {
@@ -192,6 +217,11 @@ fn name(command: &Command) -> &'static str {
         RouteCommand as Route, ValidateCommand as V,
     };
     match command {
+        Command::Web(command) => command.name(),
+        Command::Completions { .. } => "completions",
+        Command::Trigger(command) => command.name(),
+        Command::Capability(command) => command.name(),
+        Command::Policy(command) => command.name(),
         Command::Package(command) => command.name(),
         Command::Validate(V::Capsule(_)) => "validate capsule",
         Command::Validate(V::Deployment(_)) => "validate deployment",
@@ -235,6 +265,46 @@ fn name(command: &Command) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn completions_bypass_the_entire_ordinary_execution_boundary() {
+        for shell in ["bash", "zsh", "fish", "powershell"] {
+            let cli = Cli::try_parse_from([
+                "latent",
+                "--config",
+                "/nonexistent/credentials.json",
+                "--profile",
+                "invalid profile",
+                "--endpoint",
+                "not an endpoint",
+                "completions",
+                shell,
+            ])
+            .unwrap();
+            assert!(cli.validate().is_err());
+            let mut stdout = Vec::new();
+            let mut stderr = Vec::new();
+            assert_eq!(
+                dispatch(&cli, &mut stdout, &mut stderr, |_| {
+                    panic!("ordinary validation, config resolution and runtime must be unreachable")
+                }),
+                0
+            );
+            assert!(!stdout.is_empty());
+            assert!(stderr.is_empty());
+        }
+    }
+
+    #[test]
+    fn ordinary_commands_retain_their_execution_path_and_exit_code() {
+        let cli = Cli::try_parse_from(["latent", "node", "list"]).unwrap();
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        assert_eq!(dispatch(&cli, &mut stdout, &mut stderr, |_| 7), 7);
+        assert!(stdout.is_empty());
+        assert!(stderr.is_empty());
+    }
+
     #[test]
     fn payload_output_preserves_existing_files() {
         let directory = tempfile::tempdir().unwrap();

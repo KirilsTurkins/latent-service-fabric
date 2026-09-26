@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/host-abi-profile.schema.json",
+  "title": "LSF frozen host ABI build matrix; not capability authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "id", "world", "digest", "wasmtimeVersion", "guestGenerator", "interfaces"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "id": {"type": "string", "pattern": "^lsf-host-abi-phase3-v[1-9][0-9]*$", "maxLength": 64},
+    "world": {"type": "string", "maxLength": 128},
+    "digest": {"$ref": "#/$defs/digest"},
+    "wasmtimeVersion": {"type": "string", "maxLength": 32},
+    "guestGenerator": {"type": "string", "maxLength": 64},
+    "interfaces": {
+      "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["interface", "package", "source", "sourceSha256", "binding", "asynchronous", "installed"],
+        "properties": {
+          "interface": {"type": "string", "maxLength": 256},
+          "package": {"type": "string", "maxLength": 128},
+          "source": {"type": "string", "maxLength": 256, "pattern": "^wit/platform/[a-z][a-z0-9-]*/package\\.wit$"},
+          "sourceSha256": {"$ref": "#/$defs/digest"},
+          "binding": {"enum": ["built-in", "provider"]},
+          "asynchronous": {"type": "boolean"},
+          "installed": {"type": "boolean"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$", "maxLength": 71}
+  }
+}

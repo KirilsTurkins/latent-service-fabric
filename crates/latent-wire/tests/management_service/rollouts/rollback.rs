@@ -275,8 +275,14 @@ async fn revoked_target_rejection_has_audit_but_no_rollback_receipt_or_route_cha
     client.start_rollout(request("alice", input)).await.unwrap();
     let before = status(&mut client).await;
     let target = before.rollback_target.as_ref().unwrap();
-    let digest = before.base.as_ref().unwrap().component_digest.clone();
-    revoke_target(&harness.channel, digest).await;
+    let publication = before
+        .base
+        .as_ref()
+        .unwrap()
+        .publication_id
+        .clone()
+        .unwrap();
+    revoke_target(&harness.channel, publication).await;
     let rejected = client
         .change_rollout(request(
             "alice",
@@ -317,13 +323,16 @@ async fn revoked_target_rejection_has_audit_but_no_rollback_receipt_or_route_cha
         .unwrap());
 }
 
-async fn revoke_target(channel: &tonic::transport::Channel, digest: String) {
+async fn revoke_target(channel: &tonic::transport::Channel, publication: String) {
     let mut client = proto::release_service_client::ReleaseServiceClient::new(channel.clone());
     let generation = client
         .get_release_lifecycle(request(
             "alice",
             proto::GetReleaseLifecycleRequest {
-                digest: digest.clone(),
+                publication: Some(proto::PublicationRef {
+                    id: publication.clone(),
+                    tenant: "acme".into(),
+                }),
             },
         ))
         .await
@@ -338,7 +347,10 @@ async fn revoke_target(channel: &tonic::transport::Channel, digest: String) {
         .change_release_lifecycle(request(
             "alice",
             proto::ChangeReleaseLifecycleRequest {
-                digest,
+                publication: Some(proto::PublicationRef {
+                    id: publication,
+                    tenant: "acme".into(),
+                }),
                 action: proto::ReleaseLifecycleAction::Revoke as i32,
                 operation: Some(proto::ReleaseOperationPrecondition {
                     operation_id: "revoke-rollback-target".into(),

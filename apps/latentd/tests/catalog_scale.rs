@@ -285,12 +285,17 @@ fn catalog_scale_child() {
     assert_eq!(baseline.generic_cells, 2);
     let started = Instant::now();
     eprintln!("{mode}: opening/rebuilding production repository");
-    let repo = DirectoryArtifactRepository::open(
+    let repo = DirectoryArtifactRepository::open_with_lifecycle_limits(
         root,
         DirectoryArtifactRepositoryConfig {
             max_index_entries: RELEASE_COUNT as usize,
-            max_index_bytes: 1024 * 1024 * 1024,
+            max_index_bytes: 3 * 1024 * 1024 * 1024,
+            max_content_index_bytes: 2 * 1024 * 1024 * 1024,
             ..DirectoryArtifactRepositoryConfig::default()
+        },
+        latent_artifacts::LifecycleLimits {
+            max_total_metadata_bytes: 1024 * 1024 * 1024,
+            ..latent_artifacts::LifecycleLimits::default()
         },
     )
     .expect("open or rebuild production repository");
@@ -341,7 +346,7 @@ fn production_catalog_100k() {
     fs::create_dir_all(&logs).expect("persistent diagnostic directory");
     run_child(root.path(), "publish", &logs.join("publish.log"));
     assert_eq!(
-        fs::read_dir(root.path().join("releases"))
+        fs::read_dir(root.path().join("publications"))
             .expect("completed directories")
             .count(),
         RELEASE_COUNT as usize

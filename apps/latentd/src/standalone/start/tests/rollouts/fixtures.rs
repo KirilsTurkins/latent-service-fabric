@@ -87,6 +87,8 @@ pub(in super::super) fn deployment(
     digest: &ReleaseDigest,
 ) -> proto::Deployment {
     proto::Deployment {
+        publication: None,
+        requested_publication: None,
         id: id.to_owned(),
         metadata: Some(proto::ObjectMetadata {
             name: id.to_owned(),

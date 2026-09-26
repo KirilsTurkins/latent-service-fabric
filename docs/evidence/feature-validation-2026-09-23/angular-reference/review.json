@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "latent.feature-validation.angular-review.v1",
+  "sourceRevision": "8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+  "passed": true,
+  "preparation": [
+    "Used the exact Git-verified Linux source copy and fresh CLI from the main execution review.",
+    "Reused an existing release dependency cache, touched local Rust sources and rebuilt the optimized compiler from selected source.",
+    "Built the maintained green and blue Angular application sources separately with the locked provisioned toolchain.",
+    "Initial fixture compilation failed because the audit source copy omitted benchmarks/phase1/cases.json; the preserved diagnostic records this setup error.",
+    "Restored that one tracked compile-time case manifest from the same immutable commit and reran the unchanged fixture exporter successfully.",
+    "Cargo fixture preparation rebuilt latentd; the workflow records its own resulting binary digest, distinct from the earlier CLI/node-only build.",
+    "Ran the maintained complete workflow without changing runtime, fixture, browser or assertion code.",
+    "Reverified all 4,361 original Git blobs and the added tracked case manifest after execution; every source byte remained unchanged."
+  ],
+  "execution": {
+    "fixtureExporterCases": 1,
+    "cliProcesses": 124,
+    "nodeIncarnations": 3,
+    "outerOwner": {
+      "exit": 0,
+      "cleaned": true,
+      "reaped": 8,
+      "elapsedMs": 182458.34279200016,
+      "sourceRevision": "8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21"
+    },
+    "finalQuotas": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    },
+    "browser": "153.0.8010.52",
+    "nodejs": "v24.19.0"
+  },
+  "limits": {
+    "reproducibility": "not-checked",
+    "dependencyCompleteness": "declared-inputs-incomplete",
+    "humanGuideReview": false,
+    "releaseAuthorization": false,
+    "newSdkAuthoringQualification": false
+  },
+  "retainedFiles": [
+    {
+      "path": "reference-receipt.json",
+      "bytes": 54825,
+      "sha256": "7e9363192dd689db36b6fb8185ca76c06a6d26f7a15d932ed01276aebe0821b5"
+    },
+    {
+      "path": "execution-owner.json",
+      "bytes": 149,
+      "sha256": "c5750fdfdaf93931503ba328f91c1e7bdfea236c5f57b98347454968b2375956"
+    },
+    {
+      "path": "fixture-diagnostic.log",
+      "bytes": 528,
+      "sha256": "02c13bf7430a64a5e1fd14d25721429fc8c6a3ac2a67c3e33a57d37126f54a9f"
+    },
+    {
+      "path": "preparation-receipt.json",
+      "bytes": 1153,
+      "sha256": "df7b4eb431dc85098196cb4088879ee6656760813899c4fb889951b874fe9f33"
+    },
+    {
+      "path": "current-optimized-compiler.stderr",
+      "bytes": 1671,
+      "sha256": "a1ff5f7cb52fcd4ca7035ac674fa87f8e21fd08539cbf74f1dacfa33bb68ed5d"
+    },
+    {
+      "path": "two-actual-angular-builds.stdout",
+      "bytes": 1330,
+      "sha256": "ab94c44c502f333c68ae9a6cc99226a07c8784285a22e2043b6b4e7571c6f4be"
+    },
+    {
+      "path": "two-actual-angular-builds.stderr",
+      "bytes": 61,
+      "sha256": "07c8b7a4f351ef0b947f7a80591ac3b28d1cdc86599578864f0d30a4fb1250d6"
+    },
+    {
+      "path": "source-after-execution.json",
+      "bytes": 481,
+      "sha256": "3e6b3202aaef23aeabec71dbc77b2752b5d5fdf5b6685e8cce6a37543cdd2aa8"
+    },
+    {
+      "path": "failed-fixture-diagnostic.log",
+      "bytes": 893,
+      "sha256": "91e73bbae0212a75703624d64c23448cb50e9f2a8891b44abdd1db12002b4259"
+    },
+    {
+      "path": "source-extension.json",
+      "bytes": 338,
+      "sha256": "379c414b0521ea8b3a4d56e0b77e8d3d33e9ed1f024992b278eb3141c90a1e88"
+    }
+  ]
+}

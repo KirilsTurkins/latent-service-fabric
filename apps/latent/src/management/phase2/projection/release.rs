@@ -1,6 +1,29 @@
 //! Closed typed projection; all protobuf u64 fields remain decimal strings.
 use super::{invalid_response, json, proto, Failure, Project, Tree, Value};
 
+impl Project for proto::PublicationRef {
+    fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
+        b.message::<Self>()?;
+        b.text(&self.id, latent_core::PublicationId::TEXT_BYTES)?;
+        b.text(&self.tenant, 512)?;
+        self.id
+            .parse::<latent_core::PublicationId>()
+            .map_err(|_| invalid_response())?;
+        if self.tenant.is_empty()
+            || self
+                .tenant
+                .chars()
+                .any(|c| c.is_control() || c.is_whitespace())
+        {
+            return Err(invalid_response());
+        }
+        Ok(())
+    }
+    fn project(self) -> Value {
+        json!({"id": self.id, "tenant": self.tenant})
+    }
+}
+
 impl Project for proto::ChangeReleaseLifecycleResponse {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
@@ -76,6 +99,12 @@ impl Project for proto::ReleaseActor {
 impl Project for proto::ReleaseLifecycleRecord {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
+        if let Some(value) = &self.publication {
+            value.validate(b)?;
+            if value.tenant != self.tenant {
+                return Err(invalid_response());
+            }
+        }
         b.text(&self.tenant, 4096)?;
         b.text(&self.component_digest, 4096)?;
         if let Some(value) = &self.package_digest {
@@ -102,6 +131,7 @@ impl Project for proto::ReleaseLifecycleRecord {
     fn project(self) -> Value {
         json!({
         "tenant": json!(self.tenant),
+        "publication": self.publication.map(Project::project),
         "componentDigest": json!(self.component_digest),
         "packageDigest": self.package_digest.map(|value| json!(value)),
         "state": json!(proto::ReleaseLifecycleState::try_from(self.state).expect("validated enum").as_str_name()),
@@ -146,6 +176,19 @@ impl Project for proto::ReleaseLifecycleStatus {
 impl Project for proto::ReleaseOperationReceipt {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
+        if let Some(value) = &self.publication {
+            value.validate(b)?;
+            if value.tenant != self.tenant {
+                return Err(invalid_response());
+            }
+        }
+        if self
+            .record
+            .as_ref()
+            .is_some_and(|record| record.publication != self.publication)
+        {
+            return Err(invalid_response());
+        }
         b.text(&self.operation_id, 4096)?;
         b.text(&self.request_digest, 4096)?;
         b.text(&self.tenant, 4096)?;
@@ -182,6 +225,7 @@ impl Project for proto::ReleaseOperationReceipt {
         "operationId": json!(self.operation_id),
         "requestDigest": json!(self.request_digest),
         "tenant": json!(self.tenant),
+        "publication": self.publication.map(Project::project),
         "actor": self.actor.map(Project::project),
         "action": json!(proto::ReleaseLifecycleAction::try_from(self.action).expect("validated enum").as_str_name()),
         "disposition": json!(proto::ReleaseOperationDisposition::try_from(self.disposition).expect("validated enum").as_str_name()),

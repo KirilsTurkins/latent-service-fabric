@@ -83,14 +83,23 @@ telemetry drop counters. Explicit `fail_on_drop` is a test option and may return
 host-log unavailability. The existing bounded runtime capture remains a local
 diagnostic facility, separate from redacted export.
 
-Metric dimensions come from fixed enumerations: lifecycle stage, outcome class,
+Built-in runtime metric dimensions come from fixed enumerations: lifecycle stage, outcome class,
 platform error code, resource, severity, cancellation/disposition result, and
 configured cell class. Activation/tenant/service/release identifiers and guest
-values are never metric labels. Metrics include lifecycle/outcome counts,
+values are never built-in runtime metric labels. Metrics include lifecycle/outcome counts,
 monotonic latency and queue wait, granted/final consumption, observed resource
 limits reached, cancellation and cleanup. Floating-point metrics are approximate;
 terminal logs preserve exact integer consumption. Reaching a grant is separate
 from the terminal resource-exhaustion error classification.
+
+## Guest custom metrics
+
+The configured [custom metric provider](runtime/custom-metrics.md) uses this same
+pipeline with a sealed custom record type, exact per-tenant descriptor and label
+allowlists, bounded shared aggregation, and node/tenant/activation quotas. It
+assigns trusted tenant/service/revision labels from the activation plan. This
+separate validated path does not relax built-in runtime dimension restrictions.
+Queue acceptance remains distinct from export success or durable audit.
 
 ## Export pipeline and local sink
 
@@ -169,7 +178,7 @@ winner. [Canary observation windows](phase-2-canary-observation.md) retain fixed
 outcome counts and latency buckets, with explicit open, draining, missing-sample,
 and incomplete coverage. Lost or unattributable outcomes cannot establish a
 healthy rollout. Window identities belong to bounded records, not metric labels;
-the metric dimension rules above remain unchanged.
+the built-in metric dimension rules above remain unchanged.
 
 ## Validation
 

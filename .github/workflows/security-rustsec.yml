@@ -6,6 +6,10 @@ on:
       source-ref:
         required: true
         type: string
+      controls-ref:
+        description: Reviewed scanner revision, independent of the scan input
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -21,7 +25,7 @@ jobs:
         with:
           path: controls
           persist-credentials: false
-          ref: e852442ab2801388e06d420ca6c389031c8bdd14 # reviewed scanner controls
+          ref: ${{ inputs.controls-ref }}
       - name: Check out scan input, never execute it
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

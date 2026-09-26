@@ -1,0 +1,33 @@
+
+running 28 tests
+test local::tests::capacities::stage_and_work_saturation_reject_without_hidden_queues ... ok
+test local::tests::failures::interrupted_stage_is_recovered_with_actual_bytes_and_never_resumed ... ok
+test local::tests::security::insecure_roots_and_symlink_ancestors_are_rejected ... ok
+test local::tests::capacities::empty_objects_cannot_bypass_disk_sidecar_reservations ... ok
+test local::tests::failures::cancellation_after_a_physical_write_poisoned_the_writer_but_keeps_stage_charge ... ok
+test local::tests::failures::cancellation_and_shutdown_keep_running_file_work_until_the_worker_retires ... ok
+test local::tests::failures::closing_owner_does_not_release_root_lock_until_actual_handles_retire ... ok
+test local::tests::exact_size_and_sequential_writes_reserve_before_staging ... ok
+test local::tests::failures::concurrent_duplicate_seals_reject_promptly_and_explicit_retry_converges ... ok
+test local::tests::security::namespace_is_owned_and_unknown_root_inventory_is_never_adopted ... ok
+test local::tests::pinned_released_object_is_not_reclaimed_and_drop_does_no_deletion ... ok
+test s3::signing::tests::aws_published_get_vector_and_encoded_query ... ok
+test s3::xml::tests::fields_entities_and_fail_closed_xml ... ok
+test local::tests::capacities::admission_reclamation_preserves_released_objects_and_checkpoint_failure ... ok
+test local::tests::exact_empty_and_ranged_data_survive_reopen ... ok
+test local::tests::security::unknown_entries_and_replaced_directories_are_preserved ... ok
+test local::tests::duplicate_publication_and_tenant_authority_are_independent ... ok
+test local::tests::security::replacement_cannot_redirect_an_open_reader_or_reclamation ... ok
+test local::tests::capacities::object_disk_handle_and_metadata_ceilings_are_independent ... ok
+test s3::inventory::tests::stage_and_handle_drop_do_not_wait_for_inventory_io ... ok
+test s3::inventory::tests::crash_sidecars_recover_without_replaying_a_remote_mutation ... ok
+test local::tests::failures::uncertain_publication_recovers_the_physical_inventory_without_refund ... ok
+test s3::inventory::tests::sealed_receipts_are_tenant_scoped_and_pinned_to_exact_versions ... ok
+test s3::inventory::tests::unsafe_inventory_files_fail_closed_without_deleting_unknown_entries ... ok
+test s3::inventory::tests::uncertain_inventory_survives_restart_and_refuses_duplicate_upload ... ok
+test local::tests::capacities::saturated_stages_recover_one_retired_writer_without_growing_the_limit ... ok
+test local::tests::security::corrupted_or_missing_payload_never_becomes_a_successful_read ... ok
+test local::tests::failures::failed_unlink_or_sync_does_not_refund_and_reopens_as_unreferenced ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+

@@ -121,11 +121,20 @@ impl std::error::Error for SignatureError {}
 
 impl From<SignatureError> for PlatformError {
     fn from(error: SignatureError) -> Self {
+        let reason = error.reason.code();
+        let details = if latent_core::error::ADMISSION_CURRENTNESS_REASONS.contains(&reason) {
+            vec![latent_core::ErrorDetail {
+                kind: "admission.currentness".into(),
+                fields: [("reason".into(), reason.into())].into(),
+            }]
+        } else {
+            Vec::new()
+        };
         Self {
             code: error.reason.platform_code(),
-            message: error.reason.code().to_owned(),
+            message: reason.to_owned(),
             retryable: false,
-            details: Vec::new(),
+            details,
         }
     }
 }

@@ -11,7 +11,8 @@ import unittest
 
 from tools.validate_phase1_conformance import (
     ConformanceValidationError, MANIFEST, PARITY_INPUTS, PARITY_PAIRS, ZERO_SHUTDOWN_FIELDS, canonical_json, file_digest,
-    load_bounded, sha256, validate_report, verify_adapter_input_files, verify_input_files,
+    load_bounded, sha256, validate_report, verify_adapter_input_files, verify_input_files, invocation_failure,
+    verify_wall,
 )
 
 
@@ -498,6 +499,22 @@ class ConformanceValidatorTests(unittest.TestCase):
         for change in changes:
             self.rejects_case("persistent-wall-ceiling", change)
 
+    def test_wall_policy_changes_preserve_the_exact_tenant_publication(self) -> None:
+        value = copy.deepcopy(next(case["observations"] for case in self.report["cases"]
+                                   if case["id"] == "persistent-wall-ceiling"))
+        reference = {"id": "publication:sha256:" + "1" * 64, "tenant": "tests"}
+        for key in ("original", "applied", "persistedBefore", "persistedAfter"):
+            value["deploymentCeiling"][key]["data"]["deployment"]["publication"] = reference.copy()
+        value["restored"]["data"]["deployment"]["publication"] = reference.copy()
+        verify_wall(value, self.report)
+        for publication in [None, {}, {"id": "sha256:" + "1" * 64, "tenant": "tests"},
+                            reference | {"tenant": "other"}, reference | {"unknown": True},
+                            reference | {"id": "publication:sha256:" + "2" * 64}]:
+            candidate = copy.deepcopy(value)
+            candidate["restored"]["data"]["deployment"]["publication"] = publication
+            with self.subTest(publication=publication), self.assertRaises(ConformanceValidationError):
+                verify_wall(candidate, self.report)
+
     def test_capability_pairs_require_exact_context_trace_and_retained_ownership(self) -> None:
         changes = [lambda value: value["capability_pairs"].pop(),
                    lambda value: value["capability_pairs"][0].update(name="clocks"),
@@ -623,6 +640,28 @@ class ConformanceValidatorTests(unittest.TestCase):
         self.rejects_parity(lambda value: value.update(retained_metric_points="1025"))
         self.rejects_parity(lambda value: value.update(inventory_cache_entries="0"))
         self.rejects_parity(lambda value: value.update(inventory_cache_entries="1"))
+
+
+class InvocationPublicationTests(unittest.TestCase):
+    def test_legacy_absence_and_optional_canonical_publication_are_valid(self):
+        for present, publication in [(False, None), (True, None),
+                                     (True, "publication:sha256:" + "1" * 64)]:
+            result = invoke("cancelled-call", terminal="cancelled")
+            if present:
+                result["data"]["resolvedRevision"]["publicationId"] = publication
+            invocation_failure(result, "cancelled-call", "cancelled", "cancelled")
+
+    def test_publication_never_accepts_another_digest_or_unknown_receipt_fields(self):
+        for publication in ["", "sha256:" + "1" * 64, "publication:sha256:" + "A" * 64,
+                            "publication:sha256:" + "1" * 63, 7, {}]:
+            result = invoke("cancelled-call", terminal="cancelled")
+            result["data"]["resolvedRevision"]["publicationId"] = publication
+            with self.assertRaises(ConformanceValidationError):
+                invocation_failure(result, "cancelled-call", "cancelled", "cancelled")
+        result = invoke("cancelled-call", terminal="cancelled")
+        result["data"]["resolvedRevision"]["unknown"] = "value"
+        with self.assertRaises(ConformanceValidationError):
+            invocation_failure(result, "cancelled-call", "cancelled", "cancelled")
 
 
 if __name__ == "__main__":

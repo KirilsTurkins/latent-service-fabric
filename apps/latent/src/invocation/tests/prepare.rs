@@ -136,3 +136,32 @@ fn payload_bytes_are_never_interpreted_as_phase0_controls_and_cancel_is_explicit
     )
     .is_err());
 }
+
+#[test]
+fn phase3_budget_requires_explicit_selection_and_keeps_state_effects_unsupported() {
+    let directory = tempfile::tempdir().unwrap();
+    let budget = directory.path().join("budget.json");
+    fs::write(
+        &budget,
+        br#"{"childCalls":2,"outboundRequests":8,"blobReadBytes":65536,"blobWriteBytes":65536}"#,
+    )
+    .unwrap();
+    let mut args = invoke(directory.path().join("unread-payload"));
+    args.budget = Some(budget.clone());
+    assert!(super::super::budget::resolve(&args).is_err());
+    args.budget_profile = crate::args::InvokeBudgetProfile::Phase3;
+    let accepted = super::super::budget::resolve(&args).ok().unwrap();
+    assert_eq!(accepted.child_calls, 2);
+    assert_eq!(accepted.outbound_requests, 8);
+    assert_eq!(accepted.blob_read_bytes, 65536);
+    assert_eq!(accepted.blob_write_bytes, 65536);
+    for document in [
+        br#"{"stateReadBytes":1}"#.as_slice(),
+        br#"{"stateWriteBytes":1}"#,
+        br#"{"effectCount":1}"#,
+        br#"{"outboundRequests":1,"outboundRequests":2}"#,
+    ] {
+        fs::write(&budget, document).unwrap();
+        assert!(super::super::budget::resolve(&args).is_err());
+    }
+}

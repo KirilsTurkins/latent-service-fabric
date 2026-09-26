@@ -3,9 +3,10 @@ use super::{path, Harness, Package};
 pub(super) fn deployment_pages(
     harness: &Harness,
     package: &Package,
+    publication: &str,
 ) -> (std::path::PathBuf, String) {
-    let first = package.deployment("echo-a");
-    let second = package.deployment("echo-b");
+    let first = package.deployment("echo-a", publication);
+    let second = package.deployment("echo-b", publication);
     let applied = harness.call(
         "operator",
         &[

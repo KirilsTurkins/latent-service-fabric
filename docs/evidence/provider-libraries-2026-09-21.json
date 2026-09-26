@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "latent.provider-guide.library-evidence.v1",
+  "sourceCommit": "061cad145c6bfeb452c584b75144d316db88afc4",
+  "sourceClean": true,
+  "date": "2026-09-21",
+  "hostProfile": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "rust": "1.97.1",
+    "cpuQuota": 3,
+    "memoryLimitBytes": 6442450944,
+    "sharedHost": true
+  },
+  "command": "cargo test --locked -p latent-wasmtime --test http --test streaming_http --test local_blobs --test local_secrets --test local_service --test random --test metrics -- --nocapture",
+  "passed": true,
+  "totalPassedCases": 79,
+  "additionalIsolatedChildExecutions": 1,
+  "suites": [
+    {
+      "target": "http",
+      "cases": [
+        "guest_cancellation_closes_inflight_io_and_reclaims_store",
+        "guest_denial_and_trap_preserve_transport_and_store_cleanup",
+        "maintained_http_capsule_has_exact_wit_package_and_async_metadata",
+        "real_guest_executes_every_method_and_reclaims_the_same_warm_cell",
+        "revoked_policy_and_missing_provider_cannot_use_prepared_http_imports"
+      ],
+      "passedCases": 5,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "1e6e23573e671ab98927df8d91d90baf9370d06302090eaa681dd8ddf2e29fa6",
+      "isolatedChildRuns": []
+    },
+    {
+      "target": "local_blobs",
+      "cases": [
+        "a_previous_activation_numeric_handle_cannot_be_reused",
+        "dormant_blob_deployments_allocate_no_store_provider_work_or_file_handles",
+        "guest_handle_abandonment_wrong_kind_and_trap_reclaim_actual_owners",
+        "guest_writes_seals_and_reads_exact_bounded_chunks",
+        "provider::chunks_and_file_handles_keep_independent_ownership_until_real_drop",
+        "provider::closed_session_cannot_reauthorize_retained_writer",
+        "provider::cumulative_byte_budgets_reject_before_further_physical_io",
+        "provider::missing_provider_rejects_preparation_before_creating_a_store",
+        "provider::package_binding_preserves_owned_blob_chunks_and_value_only_exports",
+        "provider::retained_writer_rechecks_revocation_before_physical_write"
+      ],
+      "passedCases": 10,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "a6ff3ae3f186785e05d9fffef6bef054c220b2c174ff56048ea31a286d8f08fe",
+      "isolatedChildRuns": []
+    },
+    {
+      "target": "local_secrets",
+      "cases": [
+        "audit::real_secret_audit_and_status_contain_no_plaintext_or_value_digest",
+        "cancellation_stale_sessions_revocation_and_traps_release_reads",
+        "dormant_deployments_acquire_no_secret_owner_or_provider_work",
+        "environment::bounded_initial_environment_capture_uses_only_allowlisted_names",
+        "environment::initial_environment_child",
+        "expiry_is_checked_at_disclosure_and_cannot_be_undone_by_clock_rollback",
+        "failed_reload_preserves_generation_and_current_guest_value",
+        "guest_read_version_errors_rotation_and_cell_reuse",
+        "held_read_is_rejected_after_rotation_and_keeps_old_generation_charged",
+        "limits::invalid_sources_counts_and_capacity_preserve_the_current_generation",
+        "ownership::a_queued_read_selects_current_material_and_rechecks_revocation",
+        "ownership::abandoned_reload_does_not_refund_or_commit_its_still_running_worker",
+        "ownership::actual_guest_waiting_for_a_read_rejects_rotation_and_cancellation",
+        "ownership::closing_the_store_fences_retained_reads_and_a_candidate_worker",
+        "startup::expired_or_abandoned_reload_reclaims_candidate_without_generation_change",
+        "startup::explicit_open_deadline_and_unpolled_drop_preserve_existing_credentials",
+        "tls_credentials::protocol_purpose_and_destination_cannot_be_substituted_or_retained_after_rotation"
+      ],
+      "passedCases": 17,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "2f0b09eefe02125e7d76b240d73911ef9e0ab87a56dc4782e76483ea6a645e53",
+      "isolatedChildRuns": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "target": "local_service",
+      "cases": [
+        "acceptance::abandoning_parent_awaiter_still_drives_child_cleanup",
+        "acceptance::cancellation_during_child_execution_reclaims_both_stores_and_reservations",
+        "acceptance::changed_route_requires_a_new_plan_and_revocation_denies_cached_target",
+        "acceptance::concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_call_grant",
+        "acceptance::declared_failure_is_distinct_from_a_platform_failure",
+        "acceptance::denied_service_publication_never_starts_a_child",
+        "acceptance::explicit_cross_tenant_policy_and_fresh_activation_identity",
+        "acceptance::oversized_input_unknown_targets_and_expired_deadline_never_start_children",
+        "acceptance::parent_occupying_the_only_cell_rejects_children_promptly_and_keeps_running",
+        "acceptance::required_audit_records_real_local_acceptance_and_denies_full_sink_before_child_admission",
+        "asynchronous_application_export_waits_for_the_canonical_async_service_import",
+        "both_real_components_have_checked_packages_and_exact_async_metadata",
+        "declared_service_import_without_a_node_adapter_has_no_execution_authority",
+        "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
+      ],
+      "passedCases": 14,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "98af73cee12ae3f2831ac90a06d473b6054b6604dea3b6ec03a9999e58ff331a",
+      "isolatedChildRuns": []
+    },
+    {
+      "target": "metrics",
+      "cases": [
+        "activation_allowance_resets_but_shared_cardinality_does_not",
+        "all_four_kinds_use_shared_export_and_host_owned_identity_on_reused_cells",
+        "audit::required_audit_records_capture_acceptance_and_rejection_but_not_export_durability",
+        "closed_exporter_is_typed_unavailable_and_denied_principals_cannot_emit",
+        "isolation::cancelled_guest_and_retired_provider_do_not_emit_or_retain_store_resources",
+        "isolation::identical_components_in_different_tenants_cannot_share_identity_or_aggregation",
+        "isolation::uninstalled_metrics_import_is_rejected_before_a_store_is_created",
+        "nonfinite_conflicting_and_injected_observations_never_create_series",
+        "ownership::abandoned_work_refunds_activation_series_observations_and_record_bytes",
+        "ownership::fuel_exhaustion_and_cancelled_pending_work_never_touch_aggregation",
+        "ownership::identical_configuration_on_another_pipeline_does_not_borrow_the_installed_grant",
+        "ownership::queue_failure_refunds_a_pending_activation_and_does_not_create_its_series"
+      ],
+      "passedCases": 12,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "29d269d63974907cc1f7ad7b37ba4bc8393cde72f5fdbeffd825acc843a9c60f",
+      "isolatedChildRuns": []
+    },
+    {
+      "target": "random",
+      "cases": [
+        "audit::required_audit_records_operations_and_outcomes_without_generated_bytes_or_digests",
+        "both_os_methods_execute_on_a_reused_cell_and_have_no_dormant_entropy_owner",
+        "cancellation_before_and_after_entropy_prevents_delivery_and_reclaims_the_store",
+        "denied_principal_and_retired_provider_never_access_entropy",
+        "failed_entropy_never_returns_partial_bytes_and_does_not_refund_attempted_bytes",
+        "ownership::a_second_provider_with_identical_metadata_cannot_borrow_the_installed_grant",
+        "ownership::abandoned_pending_calls_refund_aggregate_but_started_failures_spend_it",
+        "ownership::fuel_and_buffer_capacity_are_reserved_before_entropy_or_result_allocation",
+        "ownership::original_output_owner_outlives_closed_session_and_cancelled_pending_work_skips_entropy",
+        "ownership::uninstalled_random_import_is_rejected_before_any_store",
+        "revocation_after_one_guest_call_denies_the_next_without_reusing_cached_authority",
+        "zero_max_overflow_and_shared_aggregate_return_exact_typed_results"
+      ],
+      "passedCases": 12,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "a71d27c4f42fbd36ef452f4f9c81ce8e6dd19fff6f2f16cba068eef986461530",
+      "isolatedChildRuns": []
+    },
+    {
+      "target": "streaming_http",
+      "cases": [
+        "a_revoked_grant_blocks_a_new_stream_before_any_network_work",
+        "abort_or_trap_before_upload_finishes_reclaims_the_connection",
+        "cancellation_of_a_suspended_guest_read_closes_socket_and_all_resources",
+        "dormant_streaming_deployments_create_no_provider_or_activation_owners",
+        "guest_reads_before_full_body_and_store_drop_closes_the_stream",
+        "no_streaming_provider_means_no_prepared_stream_import",
+        "resource_guest_drains_chunks_and_trailers_then_reclaims_all_owners",
+        "streaming_package_preserves_exact_owned_resources_and_value_only_exports",
+        "traps_wrong_kind_stale_handles_and_abort_close_real_owners"
+      ],
+      "passedCases": 9,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "a6c6e2fe1acdd6498cf7d4053055fc0283690002c448b12decbbf9a97ff5aafb",
+      "isolatedChildRuns": []
+    }
+  ],
+  "logSha256": "bc9faf339c311841b228ccea53e3685a91a2c6e730048f7c2d6540a37e1051ce",
+  "scope": "Actual Wasm guest/provider embedding tests from the documented command, including admission denial, cancellation, descendant conservation, bounded randomness/metrics and owned cleanup assertions. Separate-node HTTP/blob and external S3/Vault/NATS evidence is retained separately. This is not human guide review."
+}

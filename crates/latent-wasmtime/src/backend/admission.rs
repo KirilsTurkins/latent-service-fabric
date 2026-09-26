@@ -19,7 +19,13 @@ impl PreparationContext {
         &self,
         eligibility: Option<&ReleaseUseEligibility>,
         release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
     ) -> Result<(), PlatformError> {
+        if publication
+            .is_some_and(|id| eligibility.is_none_or(|token| token.lifecycle().publication() != id))
+        {
+            return Err(denied("prepared-publication-mismatch"));
+        }
         if let Some(owner) = &self.lifecycle {
             eligibility
                 .ok_or_else(|| denied("prepared-lifecycle-required"))?
@@ -47,6 +53,7 @@ impl PreparationContext {
         self.check_eligibility(
             runtime.eligibility.as_ref(),
             &runtime.descriptor.key.release,
+            runtime.descriptor.key.publication.as_ref(),
         )
     }
 
@@ -58,6 +65,17 @@ impl PreparationContext {
         self.check_runtime(runtime)?;
         if runtime.descriptor != request.prepared {
             return Err(denied("prepared-admission-descriptor-mismatch"));
+        }
+        if request
+            .activation
+            .resolved_revision
+            .as_ref()
+            .is_some_and(|revision| {
+                revision.release != runtime.descriptor.key.release
+                    || revision.publication != runtime.descriptor.key.publication
+            })
+        {
+            return Err(denied("prepared-route-publication-mismatch"));
         }
         let mut accepted = None;
         if let Some(eligibility) = &runtime.eligibility {

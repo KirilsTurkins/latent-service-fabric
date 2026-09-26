@@ -4,9 +4,11 @@
 
 use std::sync::Arc;
 
+mod preparation_read_wait;
 mod prepared_activation;
 mod prepared_readiness;
 mod prepared_use;
+pub use preparation_read_wait::PreparationReadWait;
 pub use prepared_activation::PreparedActivation;
 pub use prepared_readiness::PreparedReadiness;
 pub use prepared_use::PreparedUse;
@@ -22,6 +24,8 @@ use latent_core::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PreparationKey {
     pub release: ReleaseDigest,
+    /// Exact catalog association. None is a legacy selector or unmanaged input.
+    pub publication: Option<latent_core::PublicationId>,
     pub engine_version: String,
     pub engine_configuration_digest: String,
     pub target_triple: String,
@@ -252,6 +256,20 @@ pub trait ExecutionBackend: Send + Sync {
         })
     }
 
+    /// Opts into finite waits around failed, read-only currentness observations.
+    /// The caller supplies its executor's clock/timer and retains the original
+    /// deadline, cancellation and ownership of this one preparation future.
+    /// This does not authorize replaying compilation, materialization or guest
+    /// execution. Backends which do not support it preserve their old behavior.
+    fn prepare_ready_from_repository_with_wait<'a>(
+        &'a self,
+        repository: Arc<dyn ArtifactRepository>,
+        key: PreparationKey,
+        _wait: &'a dyn PreparationReadWait,
+    ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
+        self.prepare_ready_from_repository(repository, key)
+    }
+
     /// Converts the same readiness pin into activation ownership after a cell
     /// is assigned. It must not repeat repository lookup or compilation.
     fn materialize_ready(
@@ -261,6 +279,20 @@ pub trait ExecutionBackend: Send + Sync {
         ready
             .into_activation()
             .map_err(|_| owned_preparation_unsupported())
+    }
+
+    /// Retains the same readiness owner while an opt-in backend waits only for
+    /// its final read-only currentness check, before materializing exactly once.
+    /// The caller must bound this future by its original deadline/cancellation.
+    /// The default calls the synchronous method once and never consults the
+    /// timer or retries a failed materialization. Dropping even an unpolled
+    /// future releases the readiness owner.
+    fn materialize_ready_with_wait<'a>(
+        &'a self,
+        ready: PreparedReadiness,
+        _wait: &'a dyn PreparationReadWait,
+    ) -> BoxFuture<'a, Result<PreparedActivation, PlatformError>> {
+        Box::pin(async move { self.materialize_ready(ready) })
     }
 
     /// Consumes one prepared-state owner. The returned future owns synchronous

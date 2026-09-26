@@ -1,0 +1,477 @@
+# TypeScript capsule qualification
+
+This is developer execution evidence for #546, separate from the beginner
+[TypeScript authoring guide](../component-development/typescript-authoring.md).
+All eight exact-head workflows passed at `aa269c04`, with independently verified
+SDK, signed-node and printed-guide evidence below. PR #555 was nevertheless held
+at that checkpoint: separate Go qualification exposed two shared-runtime
+contention failures. Their corrections require new source-bound qualification
+before delivery; the passing older head cannot qualify a changed source tree.
+This report does not authorize a release or replace newcomer review #345.
+
+## Reviewed candidate and shared-runtime hold
+
+[TypeScript run 35987595334](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595334)
+and [broad CI 35987595415](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595415)
+passed at `aa269c04e8dd6b4737bf4b55d28670aba8ace7be`, alongside the other
+five language workflows and security. CI merge
+`96484337eaad1b5a20cfd70ce3c9cc848f4663a7` has the same tree
+`ad9ebc6053399b6f0b4af7ea738af51862f4e364` and includes the actual completed
+.NET development squash `8f08f7a95dbd68aebc525120645a27dc5ab85e14`.
+
+[Execution artifact 10804506508](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595334/artifacts/10804506508)
+matches 2,360 captured Git inputs, with identical before/after source and host
+tool identities. The 2,207 runtime inputs total 13,853,493 bytes, digest
+`03c93ebf6c9b2cce7cdf7e603792e4aea2e4f950499c6dbfc60d4d0c455d3c95`.
+All ten actual SDK cases passed in 671.65 seconds, including the real component
+aggregate/full-width integer, resource-drop, fuel and fresh-Store recovery
+probes. Thirty-two supplementary model cases are recorded separately, not
+substituted for those actual component tests.
+
+The signed node completed 27 invocations, 111 CLI calls and 24 resource samples.
+The 5/9/17 dormant populations each retained one process, seven threads and one
+listener, with zero active guest or reserved execution owners. All seventeen
+single-attempt deployment deletions succeeded in a summed 127.575103477 seconds.
+The first-to-final OS sample span was 741.200084119 seconds, not a claimed
+whole-owner duration. All six unchanged printed Bash steps passed in 60.987635
+seconds, including one known-success deletion. Node and guide stopped cleanly
+and were reaped; compiler and cleanup workers joined, all 23 checked owner
+fields were zero, and all three held HTTP connections physically closed.
+Qualification SHA-256 is
+`d24f9af0e185faff1b1499f8fd23bd506a16c1122e0832d5947f20448a762ab2`.
+
+The separate [source archive 10802945856](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595334/artifacts/10802945856)
+matches 4,123 selected Git files and modes (40,290,202 bytes), SHA-256
+`6f1dc64897597b6715886439ff106f750ccf985b1466e1148e44408cd0198ac9`.
+The capture remains non-hermetic and does not attest implicit compiler inputs
+or general byte-for-byte reproducibility. Post-job cache cleanup reported two
+missing generated-cache paths after successful evidence upload; all job steps,
+including cache saving, completed successfully.
+
+The separate Go candidate's [cross-TypeScript run 35987802537](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987802537)
+also passed all ten SDK cases (885.64 seconds), 27 node outcomes, 24 samples,
+seventeen single-attempt deletes and six guide steps (80.8664 seconds), with
+unchanged source/tools and clean/reaped owners. Its [execution artifact 10804369143](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987802537/artifacts/10804369143)
+matches the same runtime-source digest. These successes do not override the
+[retained compiler-worker and active-clock Go failures](go-capsule-qualification.md#current-integration-gate-and-retained-contention-failures)
+or qualify their pending corrections. The two remaining ticket PRs require
+fresh exact-head CI and final delivery audits after integration.
+
+## Supported experiment
+
+The compiler uses Node 24.19.0, TypeScript 7.0.2, ComponentizeJS 0.22.0,
+jco 1.34.0, esbuild 0.28.2 and weval 0.5.0 with the checked-in dependency lock.
+Node is a build tool, not an application-owned runtime process. The component
+contains SpiderMonkey; each activation owns its heap, module state and pending
+microtasks. No timer, worker, process, DOM, ambient clock, entropy, filesystem
+or network capability is added. Effects use declared, host-authorized imports.
+
+The project builder captures the editable TypeScript and authoritative WIT,
+vendored SDK and compiler recipe; checks generated declarations and projected
+type-graph identity; compiles the captured source; and records the actual
+component, package and tool inputs. It does not claim authenticated source,
+hermeticity, complete transitive dependencies or reproducibility. The reviewed
+async adapter changes only the JavaScript implementation calling convention;
+the component exposes the authoritative async contract to Wasmtime.
+
+The supported guest ceiling is 128 MiB, one billion fuel and 120 seconds for
+cold invocation. The deliberate multi-operation SDK cases use ten billion
+fuel. The nested service SDK caller explicitly reserves 240 seconds; its callee
+and all other SDK components retain 120 seconds. Production still delegates
+only half the parent's remaining wall time and does not extend either deadline.
+These are bounded experimental limits, not performance guarantees.
+Dormant services must own no process, OS thread, event loop, listener, execution
+cell, provider pool or initialized guest heap. Shared compiler/cache ownership
+is measured separately from active guest state.
+
+Authoritative contract derivation runs before guest compiler execution and
+rejects public RPC resource parameters/results, including nested owned/borrowed
+values. The production packaging regressions exercise this rejection; the
+TypeScript builder regression requires failure before invoking the JavaScript
+compiler. Declared blob and streaming host resource imports remain supported.
+A native builder attempt with a nested `list<own<handle>>` public result and
+an intentionally absent JavaScript compiler stopped at the real contract tool
+with `unsupported-resource-identity`; no component or completion marker was
+produced. This is explicit negative authoring evidence, not runtime admission.
+
+## Verified integrated full run
+
+[Run 35963178639](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35963178639)
+passed at `a880cfd731f82194c36265886a65a1374d0313fb`. Artifact `10794941119`
+retains the complete result. All ten actual SDK tests passed in 883.43 seconds.
+The signed node completed 27 invocations, 111 CLI calls and 24 resource samples,
+including the tutorial results, denied authority, deadline/cancellation and
+disconnect recovery, traps, fuel/memory exhaustion and subsequent fresh state.
+Each of the three samples at 5, 9 and 17 dormant deployments observed one
+process, seven threads and one listener, with zero active/queued activations,
+reserved fuel/memory and service-resident execution owners.
+
+All seventeen single-attempt deployment deletions succeeded in a summed
+150.476252123 seconds. The measured interval from the first empty-node OS scan
+start through the final after-delete scan finish was 921.197677609 seconds.
+This is a sample span, not an invented whole-owner duration; it already exceeds
+the old 900-second owner and confirms why the isolated 1,200-second bound was
+needed. The 120-second activation, 125-second RPC, 130-second process,
+30-second binding preparation and 1,800-second demo-proof limits were unchanged.
+The peer retained eight authorized requests, no unexpected request and three
+physically closed holds. The node stopped cleanly and was reaped, with guest,
+provider, admission and cleanup owners reclaimed and compiler workers joined.
+
+All six unchanged printed guide blocks passed in 80.117363 seconds. They
+returned the expected greeting and declared error, performed one known-success
+deletion and completed the bounded stop/wait path. The guide retained one clean
+stopped record with zero live guest and admission owners. No failed operation
+from an earlier attempt was replayed or reclassified by this success.
+
+Independent verification matched all 2,339 retained source inputs to Git,
+including 2,185 runtime inputs totaling 13,727,494 bytes. Runtime source identity
+was `sha256:ce7ae39f77472a059e8a76139a070bafcfa20aa4edd452e04dc447300e64c005`.
+Before/after source and captured tool identities were unchanged; no generated
+SDK output was counted as a reviewed Git source. The final qualification marker
+SHA-256 was `d65d968b0cc3b8284ca61dfc6fcc21544dc0c05cf75a2e2a2aae8a0f1b06a9ef`;
+the node receipt was `5597f5da212f77afd03ee58cfb49aa385e6e5638cfad266f2442e0db8ab77fe9`.
+
+Source artifact `10793445258` separately matched all 4,101 selected Git blobs
+and 40,105,953 bytes; its archive SHA-256 was
+`fb994f5b4588ca5d4d1f42fbd75a7e3851b34c9644ff23b00b242287909d2441`.
+CI merge `6f8a00cea1b00540c67f7aed53585308818518a6` had the same tree
+`a5c2f893805d286d9726d2a27d64172872ed9c7d` as the reviewed head.
+The evidence remains explicitly non-hermetic and does not attest implicit
+compiler inputs or general byte-for-byte reproducibility. This integrated
+checkpoint establishes the peer/owner correction; it does not replace the
+final PR #555 qualification of its newer TypeScript builder, probe and SDK
+changes, or the required PR/issue evidence links before closure.
+
+## Retained attempts and compiler boundary fixes
+
+[Run 35942901312](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901312)
+at `9f51c60cdd686eb23aab5408f5dde75b4e7f7d09` passed all ten SDK cases in
+872.12 seconds. The real node then passed all 5/9/17 dormant samples, all twelve
+valid/invalid/warm tutorial calls and seven trap, memory, fuel and fresh-state
+recovery calls. Dormant samples retained one node process, seven threads and one
+listener, with no service-resident execution owner. This is useful partial
+execution evidence, not complete node, cancellation, shutdown or guide evidence.
+
+The first allowed HTTP request instead returned the declared `connection-failed`
+error, with a known outcome, after 47.920462878 seconds. No request was retried.
+Artifact `10786577160` retains the failed receipt and observations. Its 63 prior
+controls took 535.478681897 seconds and the nineteen prior invocations took
+191.372620856 seconds, a sequential lower bound of 726.851302753 seconds before
+that HTTP request. The fixture listener had started before those operations but
+had an independent, hard-coded 300-second lifetime. Its private exit diagnostic
+was not captured, so fixture expiry is supported by source and measured timing,
+not a recovered private socket failure reason.
+
+The fixture now receives an absolute monotonic expiry bounded by its caller's
+owner. Process startup cannot extend it, and accept/read/send/held-socket
+waits are clipped to it. Ordinary peers retain their 300-second default, 32-request
+limit, two-second socket-I/O ceiling and three-second physical-close ceiling.
+Failed authoring attempts now retain bounded peer exit/reaping/cleanup facts and
+only closed diagnostic tokens; observation, cleanup or cancellation failures
+cannot erase the original failed receipt or turn it into a pass.
+
+The same measurements also leave at most 125.228234369 seconds of the old
+900-second qualification owner after the first HTTP attempt. Eighteen actual
+deployment applies took 471.348 seconds: the first five grew from 5.915 to
+29.451 seconds, and subsequent five-package preparations remained about
+29.45 seconds. The unchanged deletion path performs 26 remaining distinct-package
+inspections; the actual Go cleanup sequence confirms that count. Applying the
+measured TypeScript inspection cost estimates about 153 seconds for deletion
+alone. That estimate is not an observed TypeScript deletion result. The isolated
+TypeScript qualification owner now explicitly allows 1,200 seconds, including
+its fixture peer; other languages' owner bounds are unchanged. The 120-second
+activation limit, 125-second operator wait, 130-second process watchdog,
+30-second binding preparation ceiling, 1,800-second demo proof window and all
+case counts, policies and production limits remain unchanged. At this failed
+checkpoint, actual TypeScript deletion and complete workflow evidence remained
+unobserved; the later integrated full run above records the subsequent measurements.
+
+Source artifact `10786025098` independently matched all 4,098 selected Git blobs
+and 40,106,559 source bytes at that head; archive SHA-256 was
+`2e4e47dca66b6d21eff08dfb845fb515b3bcd4d5e3b68c127c42155aed27f27a`.
+Its CI merge commit `b8fbb53c0d72072c40b65286a2a3210885eb53b8` had exactly
+the reviewed tree. The same head's
+[broad Linux run 35942901770](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35942901770)
+passed the three slow-binding-preparation regressions and all seventeen local
+service cases, including deterministic fresh/stale nested-child observations.
+These checks do not convert the retained HTTP failure into completed delivery.
+
+The integrated cross-check
+[run 35938546318](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938546318)
+at `0c08d3f175f8cb58546208abe7f797cd27d6b61b` passed nine SDK cases in
+1,007.91 seconds but failed its first permitted nested service call. The child
+stopped at `Resolved` with `DependencyFailed` / `Unavailable` and zero recorded
+consumption; the parent assertion trapped after 67.452685681 seconds. Artifact
+`10784514997` retains the failed attempt. Its child private rejection reason
+was not captured. The fixture refreshed its synthetic healthy load only at root
+request construction, while normal admission rejects a sample older than
+60 seconds. Stale load at child admission is therefore an evidence-backed
+inference, not a recovered private cause.
+
+This fixture now samples the same explicitly synthetic healthy profile at each
+admission, including nested children. No production health source, 60-second
+freshness limit, quota, invocation budget or retry behavior changes. Three
+registered regressions check per-read timestamps and run real parent/child WAT
+components with deterministic fresh and 61-second-old child observations. They
+require exactly one admission per activation, reproduce zero-consumption stale
+child rejection, and check cleanup. The native test bodies typechecked before
+the authoritative Linux execution recorded above.
+
+[Run 35938383435](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383435)
+at `f65820c5ac7a7265569e15fee52a3695a812c505` passed all ten SDK tests
+in 879.58 seconds. The nested service succeeded cold in 94.410 seconds, with
+9,502,720 bytes observed for the child and 19,005,440 bytes for the caller's
+aggregate peak. The node admitted its first signed greeting package, then the
+first deployment apply, control 006, failed after a directly measured
+6.179590237 seconds with `unavailable` / `admission-clock-lease-uncovered`.
+The new timing receipt confirms the explicit 125-second RPC and 130-second
+process bounds were selected; this is not the previous 15-second timeout.
+The mutation's `outcomeKnown` remained false, the read-only operation lookup
+reported `UNKNOWN`, and a complete eight-record audit retained the rejection.
+No mutation was retried. Artifact `10784737181` preserves the failed attempt;
+it provides no dormant population, printed-guide or final-cleanup pass.
+
+The exact retained greeting component SHA-256 was
+`a4e7d661cc418c466749e7ca3061d8a9766c826f70bcbe7a9b87e86c0b4ae7a1`.
+Its package passed an independent native inspection in 5.401 seconds. The
+inspecting binary SHA-256 was
+`c2209dfa0b91fd2f7e06ca57ee77625da5f7ead1a5635342abd934d5b6a3a5ea9`;
+this Windows measurement is diagnostic evidence, not Linux node qualification.
+Binding preparation already renewed before each package read, but its later
+broker checks could see an expired lease after one slow structural inspection.
+The explicit authenticated-control path now also renews after each successful,
+identity-matched inspection. The five-second lease, 30-second binding deadline,
+single preparation owner and latest policy/lifecycle checks are unchanged.
+Startup, recovery, invocation and historical replay do not gain this renewal.
+Three registered real-package regressions advance a fake clock by six seconds
+and cover cancellation/owner release, revoked or expired proofs despite a
+renewed clock, and startup without renewal. Their actual bodies typechecked
+locally with the Linux module temporarily exposed, then its platform guard was
+restored. They subsequently passed in the authoritative Linux run recorded
+above; native catalog durability is unavailable, and a zero-case Windows
+command is not a pass.
+
+Source artifact `10783384481` matched all 4,096 selected Git blobs and
+40,094,211 source bytes at that exact head; its archive SHA-256 was
+`fd692386dc56d0e3d356195bb95c35d37ff62ae0cd78b8fa0295452a999e7d72`.
+The CI merge tree also exactly matched the head tree. The corrected Go
+[cross-language run 35938383432](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35938383432)
+passed its complete SDK, node, recovery and printed-guide qualification on
+the same head. Neither that cross-language success nor exact source identity
+converts this TypeScript node failure into successful delivery.
+
+[Run 35934224469](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224469)
+at `cb3aab64377eea4a5cb26220a6593b5ca2f8351d` passed all ten actual SDK
+tests in 680.29 seconds. The real node then admitted all four attempted signed
+packages and committed the greeting, HTTP-status and recovery deployments.
+The fourth deployment, shipping at control 015, returned `rpc-failed` /
+`cancelled`, with `requestDispatched: true` and `outcomeKnown: false`. One
+read-only operation lookup and one audit query both returned `resource-exhausted`;
+the retained audit is explicitly incomplete. No mutation was retried and no
+eventual commit, dormant population, printed-guide or clean-shutdown success
+is claimed. Artifact `10782897442` retains this failed attempt.
+
+Shipping publication was recorded at `2026-09-24T00:02:29.024Z`; the failing
+apply, both diagnostic reads and cleanup had ended by `00:02:44.937Z`, 15.913
+seconds later. The automated operator had still used the common 15-second RPC
+profile and 25-second process watchdog, while this TypeScript node already
+allowed 120 seconds. This supports a caller-timeout mismatch, but the failed
+receipt alone does not prove the server's final outcome. Only the TypeScript
+experiment now explicitly selects the printed guide's existing 125-second
+operator wait and a 130-second process watchdog. The 900-second overall limit,
+120-second node ceiling, production control leases, binding compilation limits
+and ordinary-language waits are unchanged. A separate bounded timing record
+now accompanies every control attempt, including read-only failure diagnostics;
+the closed CLI receipt is not modified. Four regressions cover default waits,
+shorter overall deadlines, count/output bounds and one-attempt failures. The
+next complete run must validate this evidence-backed inference.
+
+The corresponding source archive `10781944148` contained 4,062 files and
+39,728,405 source bytes, all independently matched to that exact Git tree;
+its SHA-256 was
+`30af4f50d936ec6fc1e2d6b4a66b515ee310258e5226693236c9e35e86212aaf`.
+The separate Phase 3 security receipt passed all 27 entries, including the
+concurrent local-service acceptance test; artifact `10782532920` retains it.
+These checks do not convert the failed full-node qualification into a pass.
+
+[Run 35930223705](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223705)
+at `e40fc4bc89aa2bd302489bb3575ee4286d90ee5d` passed all ten actual SDK tests
+in 890.74 seconds, including the compiled secret zeroization/copy checks and
+opaque resource owners. The nested service succeeded cold in 95.002 seconds
+and warm in 7.852 and 6.933 milliseconds. Denied service invocations remained
+denied. Both CI memory diagnostics ran three fresh Stores, with 9,502,720 bytes
+initial and peak linear memory for each caller and callee. Caller compilation
+took 41.189 seconds and callee compilation 41.324 seconds; diagnostic fuel was
+5,484,599 and 2,018,628 respectively. Their SHA-256 identities were
+`e75e45ed21b7ccea85fad2f92d001d59f7c83c9f65e3fad5de1d4fc0fb3eaf4f` and
+`1a1c2605a5dde43598d16b0b1c19a6bdc1f7f5c6cf781cf5fcd868c1bf4fcfed`.
+
+That run subsequently failed the real node's first signed publication at
+control 004 with `unavailable`, `outcomeKnown: false` and `audit-unavailable`;
+the bounded diagnostic query retained four audit records, including the
+expected unsigned denial and the signed verification failure. No mutation was
+retried. Artifact `10781926229` retains the failed run, which reached neither
+dormant-service measurements nor the printed guide. This is distinct from the
+Go demo-proof failure below. Capsule structural inspection held the authority's
+currentness fence across component decoding, preventing the sampler from
+renewing its unchanged five-second durable lease. Capsule admission and recovery
+now follow the existing web path: one bounded verification reservation owns
+structural work outside the fence, then current policy/signatures are checked
+under the renewed finite control lease before any grant is created. Retained
+receipt and epoch association remain fenced; invocation paths never renew.
+Five deterministic regression cases cover preparation beyond five seconds,
+shared ownership, policy replacement and both role revocations, expiry,
+retirement, clock regression, failed durability and invalid-input cleanup.
+The registered cases compiled natively and passed in the authoritative Linux
+workspace test step of [run 35934224754](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224754)
+at `cb3aab64377eea4a5cb26220a6593b5ca2f8351d`. The separate TypeScript
+full-node qualifier progressed to the later control failure recorded above.
+
+The next [Go cross-gate run 35934224433](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35934224433)
+passed all ten SDK cases in 82.46 seconds, all 5/9/17 dormant checks, the tutorials
+and trap/memory recovery. Its old continuous four-goroutine scheduling fixture
+then trapped at 734,111,290 fuel instead of exhausting the one-billion budget;
+artifact `10782339103` retains that failed strict classification. The corrected
+fixture rendezvouses with four workers and retains their blocked channels while
+the main goroutine exhausts fuel, avoiding unrelated unbounded clock-call churn.
+It keeps the same fuel/grants, actual blocked-worker cleanup and strict node
+classification. The correction requires a new complete cross-language run.
+The Go-only qualifier additionally checks the actual compiled recovery component
+for fresh state, a genuine `OutOfFuel` trap and another fresh state, with bounded
+clock/random import counts. This diagnostic supplements, not replaces, the
+strict admitted node cases. The paired probe WIT and host check also retain
+signed/unsigned full-width integers, embedded NUL and empty/nonempty bytes.
+
+The shared Go cross-language gate on the TypeScript branch,
+[run 35930223804](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223804),
+passed all ten SDK tests in 153.94 seconds and progressed past initial deployment
+compilation. Its dormant expansion failed at control 034 with
+`signature-stale-proof`; artifact `10780923203` retains the known failed outcome
+and audit without retry. The isolated demo policy had allowed proofs for only
+60 seconds although its signatures and documented experiment last 30 minutes.
+Both demo proof ceilings now use the same finite 1,800-second signature window.
+Real publisher/builder cryptographic regressions accept 61, 900 and 1,799 seconds,
+reject currentness and signature verification at 1,800, and retain independent
+role ceilings. Production proof limits, revocation and finite control leases
+are unchanged. This correction still requires successful full-node execution.
+
+[Security run 35930223945](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35930223945)
+caught a stale dependency-inventory digest after the obsolete synthetic runtime
+export was removed from the SDK manifest. The manifest still declares no
+external packages; its reviewed digest now covers only the real capabilities
+and text exports. The fail-closed security assertion remains unchanged, and
+all 60 security regressions pass locally (one platform-specific test skipped).
+
+[Run 35926422583](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35926422583)
+at `27f0bb21111fbdf778ad9ecb759b213734d95e4f` passed the first cold nested
+service invocation in 82.891 seconds, including a successful child in 42.388
+seconds. The child's observed peak was 9,502,720 bytes and the caller's aggregate
+peak, including the child, was 19,005,440 bytes. The next request correctly
+failed admission because the test fixture's one-shot synthetic load sample was
+older than the unchanged 60-second admission limit. That candidate refreshed
+its synthetic current load at each new root request, like its missing node
+monitor; it neither retried the failed request nor weakened production freshness
+checks. The later nested-child failure above exposes that correction's limit.
+The attempt passed nine of ten SDK tests in 669.71 seconds, but remained failed
+before full-node or guide qualification. Artifact `10779964328` retains it.
+
+[Run 35922509041](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922509041)
+at `cf6767285352ad8b5508f0675fa612cde175aa87` built all fourteen components and
+passed nine of ten admitted SDK cases, including opaque blob and streaming
+owners. Only the child-service case failed, returning a typed deadline error.
+Its actual random and blob diagnostics measured cold compilation at 42.046 and
+41.809 seconds. A 120-second caller spending about 42 seconds on compilation
+leaves a child share below 39 seconds, insufficient for another cold engine
+compile. The explicit service-caller reservation above covers both cold
+components without changing the production half-remaining delegation rule.
+Caller/child terminal observations and per-invocation elapsed time are retained
+in subsequent SDK logs. This failed attempt remains distinct from success.
+
+A Windows diagnostic ran the retained Linux-built caller and callee in three
+fresh successful Stores each. Both initialized and peaked at 9,502,720 linear
+memory bytes; caller fuel was 13,949,625 and callee fuel was 10,485,358. The
+caller component SHA-256 was
+`128601601beea2d0dcaa53acba955846953d6a0e0fdda37c161f9e4bb9db4b1b`;
+the callee was
+`ee99027302b1da43cb01ddff38d064daa1eb0e7d102a6afa12a4fe3724744886`.
+With a 128 MiB parent, the unchanged half-remaining memory grant exceeds the
+observed child memory, so no TypeScript memory ceiling was raised. The first
+caller diagnostic incorrectly registered a synchronous component signature
+and failed before instantiation; the corrected diagnostic uses the original
+async signature. Its synthetic reply is only for memory measurement, not
+admission or authorization proof. CI retains the same two actual-component
+memory probes in addition to the production caller/child terminal observations.
+
+The matching [broad CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35922509604)
+also caught an unintended expansion of ordinary buffered-web parser limits when
+the larger TypeScript capsule envelope was introduced. Web profile selection
+now preserves the original two-million-operator and 65,536-type-node ceilings;
+the separately reviewed Angular binary envelope is unchanged. The existing
+actual Angular rejection regression remains required, in addition to the new
+unit boundary test. No failing assertion was removed or weakened.
+
+[Run 35916800437](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35916800437)
+at `15295c4cd7a1caaca74f904a7cc35b10c77779d4` built all five standalone and
+nine SDK components. Seven of ten actual admitted SDK cases passed: signed
+admission, blob cancellation, events, buffered HTTP, metrics, random and secrets.
+Blob ownership, streaming ownership and child-service invocation still failed;
+the run is failed evidence, not a completed guest SDK qualification.
+
+The pinned ComponentizeJS embedding needed signed i64 bit patterns and signed
+core i32 representations for WIT unsigned lowering. WIT types and lifting were
+not narrowed. The actual random SDK diagnostic checks unsigned maxima and a
+declared error crossing the generator's separate JavaScript realm. Error
+wrappers recognize only the generated error shape and closed declared payload;
+ordinary exceptions still trap.
+
+The obsolete draft synthetic-broker runtime export was removed. Its value and
+ownership models remain under `tests/model` solely for supplementary regression
+tests; independent projects vendor only the real capability wrappers and text
+helpers. The unused ambient-API guard was removed. The checksum-pinned compiler
+disables ambient runtime features and rejects surviving WASI imports.
+
+Inspection of actual generated blob glue found references to opaque resource
+classes that the generator had not defined. A pinned-shape adapter supplies
+only those exact owners and one-shot canonical destructors. It invalidates
+before effects, accepts resource representation zero, never retries a throwing
+drop and performs no GC-triggered host effect. Unrecognized generator shapes
+are rejected. Generated glue is retained for diagnosis. Ten owner/lowering
+regressions pass locally, and an actual compiled blob SDK diagnostic returns
+the expected values in three fresh Stores with exactly-once drop observed
+before Store destruction. This diagnostic is not production admission proof.
+
+The shared child-service fixture now permits only the exact child service
+principal for its callee publication where a managed runtime requires clocks.
+Production authorization is unchanged. The Go qualification additionally
+keeps its explicit runtime entropy budget; TypeScript does not acquire ambient
+runtime entropy or clocks through this fixture.
+
+## Required final evidence
+
+The final gate must pass all ten actual provider/ownership cases, covering
+buffered/streaming HTTP, blobs, secrets, events, local service invocation,
+randomness and metrics. Owners must release normally and on failure, denial,
+budget exhaustion and cancellation without retrying uncertain effects.
+The actual secret component observes zeroization of its owned bytes, unchanged
+application copies, idempotent close and rejection of post-close access; these
+checks do not rely only on the supplementary ownership model.
+
+The signed real node must reject unsigned publication, enforce source-bound
+builder approval, execute valid/invalid tutorials and allowed/denied HTTP,
+and recover with fresh state after deadline/cancellation/disconnect, trap,
+fuel and memory exhaustion. Startup, active owners, bounded shared caches and
+dormant populations of 5, 9 and 17 must be measured, followed by deletion and
+clean shutdown. All six printed Bash guide steps must execute unchanged.
+
+After the guide's pinned prerequisites, reproduce in a fresh output directory:
+
+```sh
+python3 tools/qualify_typescript_capsules.py --tools "$LSF_TYPESCRIPT_TOOLS" \
+  --output "$(mktemp -d)/typescript-authoring"
+```
+
+Only `qualification.json` with `status: passed` after every stage, retained
+source-bound receipts and passing exact-head PR CI approve delivery. Failed
+attempts remain failed. Final PR and issue evidence must identify the source
+and successful run; this document does not qualify release publication,
+100k deployment scale, clusters or transactional state. #345 remains separate.

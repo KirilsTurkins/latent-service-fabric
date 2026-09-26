@@ -1,0 +1,1788 @@
+{
+  "cleanHost": false,
+  "controllerSourceCommit": "5cd48526966e9a150bb9a12b8550a4fe78c0b4ee",
+  "controllerSourceDirty": true,
+  "exclusions": [
+    "authenticated-final-distribution",
+    "clean-windows-wsl-installation",
+    "external-HTTP-service",
+    "cross-user-WSL-qualification",
+    "streaming-HTTP-ownership",
+    "production-security-profile"
+  ],
+  "executedNativeLinuxSha256": "sha256:31964a89287d1eb27316c5ec4ea2cf20bc23f31b4349b02068c4e0103a488c37",
+  "failedAttempts": [
+    {
+      "actualPeerConnections": 0,
+      "cleanShutdown": true,
+      "explanation": "The greeting recipe declared outboundRequests=0. The provider correctly prevented every network request. The authored HTTP recipe now explicitly declares one outbound request per activation.",
+      "name": "http1-zero-outbound-budget",
+      "ownedProcessesReaped": true,
+      "result": "four-allowed-expectations-failed-two-denials-passed",
+      "stage": "authored-scenarios"
+    }
+  ],
+  "limits": "Six sequential shared invocations per host, one retained node invocation; no load or soak test",
+  "linux": {
+    "cleanHost": false,
+    "cleanup": "owned-node-peer-and-portable-processes-reaped",
+    "comparison": {
+      "artifacts": {
+        "capsule": "sha256:32bdf47f4b0006a4f45d7b27203bd17ec5c957de973c0580d3171278c1928388",
+        "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+        "contracts": "sha256:e3fbe9a47cc1bdf6dbf659e823b2f716ca1d29f5dedf01a696ebfeda312efc63"
+      },
+      "guestClockCompared": false,
+      "httpFixtureCompared": true,
+      "nativeOs": "linux",
+      "nodeAdmission": "enforced",
+      "nodeProfile": "local-experimental-v1",
+      "nodeReportSha256": "sha256:ab402255cad79b45d522cdc3b8fc633e42a2773754f9c3a3e3466416fdb61ff1",
+      "passed": true,
+      "portableExcludedChecks": [
+        "authentication",
+        "compiler-isolation",
+        "deployment",
+        "native-cache",
+        "pressure",
+        "protected-files",
+        "restart",
+        "running-cancellation"
+      ],
+      "portableReportSha256": "sha256:8fea2924b60b08e571a9787419dbfa7cd519ba2c03ea90a736eea26354761d15",
+      "qualificationComplete": false,
+      "results": [
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "cold",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "warm",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "head",
+          "inputSha256": "sha256:50151836f4e422d8bbf1052de3c3f5b7aca1fb99e1c333798372562e2fdc2f32",
+          "payloadSha256": "sha256:4d83a1f3e47b09a57f011d4bd69c80eaaed35d7122fbd598fca53a56f2f82d95",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "path-denied",
+          "inputSha256": "sha256:708fcca6cbb99741dd0bbd618fc066faaebc95721f0f88b89456c5b40318d668",
+          "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "deniedCapabilities": [
+              "latent:http/client@0.2.0"
+            ],
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "policy-denied",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "after-denial",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null
+        }
+      ],
+      "reviewedDifferences": [
+        "node-only-publication-admission-and-routing",
+        "host-os-and-architecture",
+        "bounded-cold-node-preparation-deadline",
+        "system-clock-and-entropy-not-compared"
+      ],
+      "schemaVersion": "latent.dev.node-portable-comparison.v1",
+      "scope": "selected-typed-application-values",
+      "selection": [
+        "cold",
+        "warm",
+        "head",
+        "path-denied",
+        "policy-denied",
+        "after-denial"
+      ]
+    },
+    "nativeHostSha256": "sha256:31964a89287d1eb27316c5ec4ea2cf20bc23f31b4349b02068c4e0103a488c37",
+    "node": {
+      "cleanHost": false,
+      "cleanup": "owned-node-and-client-processes-reaped",
+      "language": "rust",
+      "maximumSeconds": 900,
+      "passed": true,
+      "pendingOperation": null,
+      "phase": "complete",
+      "profile": {
+        "admission": "signed-fixture",
+        "capabilitiesGranted": false,
+        "configurationSha256": "sha256:99d3da85cdd95972fa5fec3bd4ba27c8027961b04823032b4519df81f16d8463",
+        "fixtureCheck": {
+          "configurationSha256": "sha256:99d3da85cdd95972fa5fec3bd4ba27c8027961b04823032b4519df81f16d8463",
+          "guestClock": null,
+          "ordinaryNodeClock": "unchanged"
+        },
+        "fixtures": {
+          "http": {
+            "exchanges": [
+              {
+                "method": "GET",
+                "path": "/fixture",
+                "requestBody": "cGF5bG9hZA==",
+                "responseBody": "aHR0cC1kZXY=",
+                "status": 200
+              },
+              {
+                "method": "HEAD",
+                "path": "/fixture",
+                "requestBody": "cGF5bG9hZA==",
+                "responseBody": "aHR0cC1kZXY=",
+                "status": 200
+              }
+            ],
+            "port": 54341
+          }
+        },
+        "profile": "local-experimental-v1",
+        "providers": {
+          "http": [
+            "latent:http/client@0.2.0",
+            "bounded-http-v1",
+            "send",
+            "http"
+          ]
+        },
+        "scope": {
+          "language": "rust",
+          "service": "examples/my-greeting",
+          "tenant": "examples"
+        },
+        "signing": {
+          "attempt": "63da83572d9392510051ebea76f0c225",
+          "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+          "expiresAtUnixSeconds": 1790295774,
+          "inventory": "sha256:9d760987146c71f1f315a23c43e9002c96ba64e5390b5d1c45ca95c3610f0d4e",
+          "name": "my-greeting",
+          "packageDigest": "sha256:ebe1275d35a2a7a05987b7dc5af0d498a8af440b717a0adee640014ab769a3f0",
+          "policySha256": "sha256:c04bd604f24e73386440fea883ba009fafaef1f918be236657abcd676450c5a7",
+          "signer": "sha256:96162b792023201d38971c7f836d8a6158045dec65d1d72a0b9c419479b3392d",
+          "source": "sha256:5ce57a9d051a1ef7b756735028e11a5e030d624c3f9fc1b292cc153359d8951a",
+          "toolInventory": "sha256:d77d6240a78404c9718e3e06f2e05869066d7c571486c2f08823ce2d49dc5c43",
+          "trust": "isolated-short-lived-demo-only"
+        },
+        "state": "configured-node-stopped"
+      },
+      "publisherAuthenticated": false,
+      "qualificationComplete": false,
+      "retained": {
+        "cleanup": "invocation-results-received-node-retained",
+        "environment": "node",
+        "excludedChecks": [],
+        "identity": {
+          "admission": "enforced",
+          "architecture": "x86_64",
+          "artifacts": {
+            "capsule": "sha256:32bdf47f4b0006a4f45d7b27203bd17ec5c957de973c0580d3171278c1928388",
+            "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "contracts": "sha256:e3fbe9a47cc1bdf6dbf659e823b2f716ca1d29f5dedf01a696ebfeda312efc63",
+            "deployment": "sha256:0d14f06b6f3d77139ecc674b263528b638d688fa131cfc25cf556888a4026cfc",
+            "evidence": "sha256:d1de4b9bc2f9685a46c986a0f2ad7bf0fe94f39933fb8863720132e8353d6eca",
+            "packageSource": "sha256:da89e9cc10969f4921e39b18719c761aca3b2e0b469bbe198ca938c06b269828"
+          },
+          "deployment": {
+            "attempt": "63da83572d9392510051ebea76f0c225",
+            "buildKey": "sha256:e8e97e9c2a9d34f993d4e8e55ea21712bf24beb9bf66853cc266f2dabe99f23c",
+            "componentDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "deployment": "my-greeting",
+            "generation": "5",
+            "operation": "dev-6ea13a554ab3defd4319062a8cd069b0",
+            "publication": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+            "publicationInput": "sha256:ce566da7cc76da7cf9e4c967674a49dcea57cd909eb6b1bd6b5537055555799e",
+            "source": "sha256:5ce57a9d051a1ef7b756735028e11a5e030d624c3f9fc1b292cc153359d8951a"
+          },
+          "expectedRevision": {
+            "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+            "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "routeGeneration": "5"
+          },
+          "fixtureCheck": {
+            "configurationSha256": "sha256:99d3da85cdd95972fa5fec3bd4ba27c8027961b04823032b4519df81f16d8463",
+            "guestClock": null,
+            "ordinaryNodeClock": "unchanged"
+          },
+          "fixtureConfiguration": {
+            "http": {
+              "exchanges": [
+                {
+                  "method": "GET",
+                  "path": "/fixture",
+                  "requestBody": "cGF5bG9hZA==",
+                  "responseBody": "aHR0cC1kZXY=",
+                  "status": 200
+                },
+                {
+                  "method": "HEAD",
+                  "path": "/fixture",
+                  "requestBody": "cGF5bG9hZA==",
+                  "responseBody": "aHR0cC1kZXY=",
+                  "status": 200
+                }
+              ],
+              "port": 54341
+            }
+          },
+          "fixtureProviders": {
+            "http": {
+              "capability": "latent:http/client@0.2.0",
+              "configurationDigest": "sha256:ea795fd8279a67c95f2b9f5bff1a3d0933a918fbea7fa5bd354ae85a8fb5d49b",
+              "configurationEpoch": "1",
+              "id": "http",
+              "profile": "bounded-http-v1",
+              "service": "runtime-host",
+              "tenant": "examples"
+            }
+          },
+          "fixtureRuntime": {
+            "http": {
+              "acceptedConnections": 0,
+              "authentication": "private-provider-credential",
+              "completedRequests": 0,
+              "configurationSha256": "sha256:fe9f4603878c2c53d7b4f12c1f8beef84c09e0f89b5259d129e6dc45fd9a0cf3",
+              "credentialReference": "dev-http-peer",
+              "failure": null,
+              "kind": "controlled-peer",
+              "maximumConnections": 4,
+              "maximumRequests": 128,
+              "maximumSeconds": 900,
+              "openConnections": 0,
+              "rejectedUnauthenticatedRequests": 0,
+              "requestTimeoutMillis": 2000,
+              "state": "ready"
+            }
+          },
+          "fixtureRuntimeAfter": {
+            "http": {
+              "acceptedConnections": 1,
+              "authentication": "private-provider-credential",
+              "completedRequests": 1,
+              "configurationSha256": "sha256:fe9f4603878c2c53d7b4f12c1f8beef84c09e0f89b5259d129e6dc45fd9a0cf3",
+              "credentialReference": "dev-http-peer",
+              "failure": null,
+              "kind": "controlled-peer",
+              "maximumConnections": 4,
+              "maximumRequests": 128,
+              "maximumSeconds": 900,
+              "openConnections": 0,
+              "rejectedUnauthenticatedRequests": 0,
+              "requestTimeoutMillis": 2000,
+              "state": "ready"
+            }
+          },
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "kernel": "6.18.33.2-microsoft-standard-WSL2",
+          "node": "lsf-2440e9e5848fe5b1",
+          "os": "linux",
+          "package": {
+            "componentDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "executionAuthorized": false,
+            "kind": "capsule",
+            "layerBytes": "60171",
+            "layers": 7,
+            "name": "my-greeting",
+            "packageDigest": "sha256:febad8d58c915927a16e2a8ccd59bd64e4f68480fe0bdfde326fb358803f075a",
+            "sbomInventoryDigest": null,
+            "trustEvaluated": false,
+            "version": "1.0.0",
+            "webBuildOutputs": null
+          },
+          "profile": "local-experimental-v1",
+          "runtime": {
+            "binaries": {
+              "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+              "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+              "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+            },
+            "buildProfile": {
+              "compiledBinary": "latentd",
+              "debugInfo": 0,
+              "features": [
+                "latentd/development-test-node"
+              ],
+              "incremental": false,
+              "name": "dev",
+              "retainedOperatorAndAotSource": {
+                "binaries": {
+                  "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+                  "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+                  "latentd": "sha256:894d9d2d309717506cf85c8c57f4add3f8b8519c6158adcacdd60c393486ffa7"
+                },
+                "path": "/build/dev559-node-kit3"
+              }
+            },
+            "controllerSourceCommit": "5cd48526966e9a150bb9a12b8550a4fe78c0b4ee",
+            "controllerSourceDirty": true,
+            "engine": {
+              "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "wasmtimeVersion": "47.0.4"
+            },
+            "helperSha256": "sha256:fa5be9c3ce97ca633a84bcab8f9244510b5da72d292154ee4a1362ac4b908b8a",
+            "publisherAuthenticated": false,
+            "purpose": "source-application-node-tests",
+            "sourceCommit": "e212bcc800ec0939715c2ee92de8e581e8ee69d4",
+            "sourceDirty": true,
+            "version": "0.1.0-alpha.4"
+          },
+          "source": "sha256:5ce57a9d051a1ef7b756735028e11a5e030d624c3f9fc1b292cc153359d8951a",
+          "testSigning": {
+            "attempt": "63da83572d9392510051ebea76f0c225",
+            "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "expiresAtUnixSeconds": 1790295774,
+            "inventory": "sha256:9d760987146c71f1f315a23c43e9002c96ba64e5390b5d1c45ca95c3610f0d4e",
+            "name": "my-greeting",
+            "packageDigest": "sha256:ebe1275d35a2a7a05987b7dc5af0d498a8af440b717a0adee640014ab769a3f0",
+            "policySha256": "sha256:c04bd604f24e73386440fea883ba009fafaef1f918be236657abcd676450c5a7",
+            "signer": "sha256:96162b792023201d38971c7f836d8a6158045dec65d1d72a0b9c419479b3392d",
+            "source": "sha256:5ce57a9d051a1ef7b756735028e11a5e030d624c3f9fc1b292cc153359d8951a",
+            "toolInventory": "sha256:d77d6240a78404c9718e3e06f2e05869066d7c571486c2f08823ce2d49dc5c43",
+            "trust": "isolated-short-lived-demo-only"
+          }
+        },
+        "passed": true,
+        "pendingOperation": null,
+        "results": [
+          {
+            "activationId": "dev-636d3cb3820153de5d0f3d094d7c397b",
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:http/client@0.2.0"
+              ]
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "routeGeneration": "5"
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/http-fixture.json",
+                "id": "http",
+                "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+                "kind": "controlled-peer"
+              }
+            ],
+            "id": "cold",
+            "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "revisionId": "revision-v1:sha256:6d3d257e2aef532838a1d31fafaae6480f7055eef7f4108ee503916dc08095e8",
+              "routeGeneration": "5"
+            },
+            "status": "passed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          }
+        ],
+        "schemaVersion": "latent.dev.test-report.v1",
+        "selection": [
+          "cold"
+        ]
+      },
+      "retainedDeployment": {
+        "attempt": "63da83572d9392510051ebea76f0c225",
+        "buildKey": "sha256:e8e97e9c2a9d34f993d4e8e55ea21712bf24beb9bf66853cc266f2dabe99f23c",
+        "componentDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+        "deployment": "my-greeting",
+        "generation": "5",
+        "operation": "dev-6ea13a554ab3defd4319062a8cd069b0",
+        "publication": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+        "publicationInput": "sha256:ce566da7cc76da7cf9e4c967674a49dcea57cd909eb6b1bd6b5537055555799e",
+        "source": "sha256:5ce57a9d051a1ef7b756735028e11a5e030d624c3f9fc1b292cc153359d8951a"
+      },
+      "runtime": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+        },
+        "buildProfile": {
+          "compiledBinary": "latentd",
+          "debugInfo": 0,
+          "features": [
+            "latentd/development-test-node"
+          ],
+          "incremental": false,
+          "name": "dev",
+          "retainedOperatorAndAotSource": {
+            "binaries": {
+              "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+              "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+              "latentd": "sha256:894d9d2d309717506cf85c8c57f4add3f8b8519c6158adcacdd60c393486ffa7"
+            },
+            "path": "/build/dev559-node-kit3"
+          }
+        },
+        "controllerSourceCommit": "5cd48526966e9a150bb9a12b8550a4fe78c0b4ee",
+        "controllerSourceDirty": true,
+        "engine": {
+          "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "hostAbiProfile": "lsf-host-abi-phase3-v4",
+          "wasmtimeVersion": "47.0.4"
+        },
+        "helperSha256": "sha256:fa5be9c3ce97ca633a84bcab8f9244510b5da72d292154ee4a1362ac4b908b8a",
+        "publisherAuthenticated": false,
+        "purpose": "source-application-node-tests",
+        "sourceCommit": "e212bcc800ec0939715c2ee92de8e581e8ee69d4",
+        "sourceDirty": true,
+        "version": "0.1.0-alpha.4"
+      },
+      "schemaVersion": "latent.dev.application-node-probe.v1",
+      "seconds": 13.568,
+      "shutdown": {
+        "cleanShutdown": true,
+        "dataRetained": true,
+        "fixtures": {
+          "http": {
+            "acceptedConnections": 1,
+            "authentication": "private-provider-credential",
+            "cleanup": "owned-listener-and-connections-closed",
+            "completedRequests": 1,
+            "configurationSha256": "sha256:fe9f4603878c2c53d7b4f12c1f8beef84c09e0f89b5259d129e6dc45fd9a0cf3",
+            "credentialReference": "dev-http-peer",
+            "failure": null,
+            "kind": "controlled-peer",
+            "maximumConnections": 4,
+            "maximumRequests": 128,
+            "maximumSeconds": 900,
+            "openConnections": 0,
+            "rejectedUnauthenticatedRequests": 0,
+            "requestTimeoutMillis": 2000,
+            "state": "stopped"
+          }
+        },
+        "guestInstance": {
+          "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+          "initStartTicks": "11696002",
+          "pidNamespace": "4026532461"
+        },
+        "node": "lsf-2440e9e5848fe5b1",
+        "profile": "local-experimental-v1",
+        "providers": [
+          {
+            "capability": "latent:http/client@0.2.0",
+            "configurationDigest": "sha256:ea795fd8279a67c95f2b9f5bff1a3d0933a918fbea7fa5bd354ae85a8fb5d49b",
+            "configurationEpoch": "1",
+            "id": "http",
+            "profile": "bounded-http-v1",
+            "service": "runtime-host",
+            "tenant": "examples"
+          }
+        ],
+        "readiness": {
+          "activationReady": true,
+          "authenticated": true,
+          "profile": "local-experimental-v1",
+          "schemaVersion": "latent.native-readiness.v1"
+        },
+        "reaped": true,
+        "state": "stopped"
+      },
+      "startup": {
+        "fixtures": {
+          "http": {
+            "acceptedConnections": 0,
+            "authentication": "private-provider-credential",
+            "completedRequests": 0,
+            "configurationSha256": "sha256:fe9f4603878c2c53d7b4f12c1f8beef84c09e0f89b5259d129e6dc45fd9a0cf3",
+            "credentialReference": "dev-http-peer",
+            "failure": null,
+            "kind": "controlled-peer",
+            "maximumConnections": 4,
+            "maximumRequests": 128,
+            "maximumSeconds": 900,
+            "openConnections": 0,
+            "rejectedUnauthenticatedRequests": 0,
+            "requestTimeoutMillis": 2000,
+            "state": "ready"
+          }
+        },
+        "guestInstance": {
+          "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+          "initStartTicks": "11696002",
+          "pidNamespace": "4026532461"
+        },
+        "node": "lsf-2440e9e5848fe5b1",
+        "profile": "local-experimental-v1",
+        "providers": [
+          {
+            "capability": "latent:http/client@0.2.0",
+            "configurationDigest": "sha256:ea795fd8279a67c95f2b9f5bff1a3d0933a918fbea7fa5bd354ae85a8fb5d49b",
+            "configurationEpoch": "1",
+            "id": "http",
+            "profile": "bounded-http-v1",
+            "service": "runtime-host",
+            "tenant": "examples"
+          }
+        ],
+        "readiness": {
+          "activationReady": true,
+          "authenticated": true,
+          "profile": "local-experimental-v1",
+          "schemaVersion": "latent.native-readiness.v1"
+        },
+        "state": "ready"
+      },
+      "tests": {
+        "cleanup": "invocation-results-received-node-retained",
+        "environment": "node",
+        "excludedChecks": [],
+        "identity": {
+          "admission": "enforced",
+          "architecture": "x86_64",
+          "artifacts": {
+            "capsule": "sha256:32bdf47f4b0006a4f45d7b27203bd17ec5c957de973c0580d3171278c1928388",
+            "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "contracts": "sha256:e3fbe9a47cc1bdf6dbf659e823b2f716ca1d29f5dedf01a696ebfeda312efc63",
+            "deployment": "sha256:0d14f06b6f3d77139ecc674b263528b638d688fa131cfc25cf556888a4026cfc",
+            "evidence": "sha256:d1de4b9bc2f9685a46c986a0f2ad7bf0fe94f39933fb8863720132e8353d6eca",
+            "packageSource": "sha256:da89e9cc10969f4921e39b18719c761aca3b2e0b469bbe198ca938c06b269828"
+          },
+          "deployment": {
+            "attempt": "63da83572d9392510051ebea76f0c225",
+            "buildKey": "sha256:e8e97e9c2a9d34f993d4e8e55ea21712bf24beb9bf66853cc266f2dabe99f23c",
+            "componentDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "deployment": "my-greeting",
+            "generation": "5",
+            "operation": "dev-6ea13a554ab3defd4319062a8cd069b0",
+            "publication": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+            "publicationInput": "sha256:ce566da7cc76da7cf9e4c967674a49dcea57cd909eb6b1bd6b5537055555799e",
+            "source": "sha256:5ce57a9d051a1ef7b756735028e11a5e030d624c3f9fc1b292cc153359d8951a"
+          },
+          "expectedRevision": {
+            "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+            "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "routeGeneration": "5"
+          },
+          "fixtureCheck": {
+            "configurationSha256": "sha256:99d3da85cdd95972fa5fec3bd4ba27c8027961b04823032b4519df81f16d8463",
+            "guestClock": null,
+            "ordinaryNodeClock": "unchanged"
+          },
+          "fixtureConfiguration": {
+            "http": {
+              "exchanges": [
+                {
+                  "method": "GET",
+                  "path": "/fixture",
+                  "requestBody": "cGF5bG9hZA==",
+                  "responseBody": "aHR0cC1kZXY=",
+                  "status": 200
+                },
+                {
+                  "method": "HEAD",
+                  "path": "/fixture",
+                  "requestBody": "cGF5bG9hZA==",
+                  "responseBody": "aHR0cC1kZXY=",
+                  "status": 200
+                }
+              ],
+              "port": 54341
+            }
+          },
+          "fixtureProviders": {
+            "http": {
+              "capability": "latent:http/client@0.2.0",
+              "configurationDigest": "sha256:ea795fd8279a67c95f2b9f5bff1a3d0933a918fbea7fa5bd354ae85a8fb5d49b",
+              "configurationEpoch": "1",
+              "id": "http",
+              "profile": "bounded-http-v1",
+              "service": "runtime-host",
+              "tenant": "examples"
+            }
+          },
+          "fixtureRuntime": {
+            "http": {
+              "acceptedConnections": 0,
+              "authentication": "private-provider-credential",
+              "completedRequests": 0,
+              "configurationSha256": "sha256:fe9f4603878c2c53d7b4f12c1f8beef84c09e0f89b5259d129e6dc45fd9a0cf3",
+              "credentialReference": "dev-http-peer",
+              "failure": null,
+              "kind": "controlled-peer",
+              "maximumConnections": 4,
+              "maximumRequests": 128,
+              "maximumSeconds": 900,
+              "openConnections": 0,
+              "rejectedUnauthenticatedRequests": 0,
+              "requestTimeoutMillis": 2000,
+              "state": "ready"
+            }
+          },
+          "fixtureRuntimeAfter": {
+            "http": {
+              "acceptedConnections": 4,
+              "authentication": "private-provider-credential",
+              "completedRequests": 4,
+              "configurationSha256": "sha256:fe9f4603878c2c53d7b4f12c1f8beef84c09e0f89b5259d129e6dc45fd9a0cf3",
+              "credentialReference": "dev-http-peer",
+              "failure": null,
+              "kind": "controlled-peer",
+              "maximumConnections": 4,
+              "maximumRequests": 128,
+              "maximumSeconds": 900,
+              "openConnections": 0,
+              "rejectedUnauthenticatedRequests": 0,
+              "requestTimeoutMillis": 2000,
+              "state": "ready"
+            }
+          },
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "kernel": "6.18.33.2-microsoft-standard-WSL2",
+          "node": "lsf-2440e9e5848fe5b1",
+          "os": "linux",
+          "package": {
+            "componentDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "executionAuthorized": false,
+            "kind": "capsule",
+            "layerBytes": "60171",
+            "layers": 7,
+            "name": "my-greeting",
+            "packageDigest": "sha256:febad8d58c915927a16e2a8ccd59bd64e4f68480fe0bdfde326fb358803f075a",
+            "sbomInventoryDigest": null,
+            "trustEvaluated": false,
+            "version": "1.0.0",
+            "webBuildOutputs": null
+          },
+          "profile": "local-experimental-v1",
+          "runtime": {
+            "binaries": {
+              "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+              "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+              "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+            },
+            "buildProfile": {
+              "compiledBinary": "latentd",
+              "debugInfo": 0,
+              "features": [
+                "latentd/development-test-node"
+              ],
+              "incremental": false,
+              "name": "dev",
+              "retainedOperatorAndAotSource": {
+                "binaries": {
+                  "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+                  "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+                  "latentd": "sha256:894d9d2d309717506cf85c8c57f4add3f8b8519c6158adcacdd60c393486ffa7"
+                },
+                "path": "/build/dev559-node-kit3"
+              }
+            },
+            "controllerSourceCommit": "5cd48526966e9a150bb9a12b8550a4fe78c0b4ee",
+            "controllerSourceDirty": true,
+            "engine": {
+              "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "wasmtimeVersion": "47.0.4"
+            },
+            "helperSha256": "sha256:fa5be9c3ce97ca633a84bcab8f9244510b5da72d292154ee4a1362ac4b908b8a",
+            "publisherAuthenticated": false,
+            "purpose": "source-application-node-tests",
+            "sourceCommit": "e212bcc800ec0939715c2ee92de8e581e8ee69d4",
+            "sourceDirty": true,
+            "version": "0.1.0-alpha.4"
+          },
+          "source": "sha256:5ce57a9d051a1ef7b756735028e11a5e030d624c3f9fc1b292cc153359d8951a",
+          "testSigning": {
+            "attempt": "63da83572d9392510051ebea76f0c225",
+            "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+            "expiresAtUnixSeconds": 1790295774,
+            "inventory": "sha256:9d760987146c71f1f315a23c43e9002c96ba64e5390b5d1c45ca95c3610f0d4e",
+            "name": "my-greeting",
+            "packageDigest": "sha256:ebe1275d35a2a7a05987b7dc5af0d498a8af440b717a0adee640014ab769a3f0",
+            "policySha256": "sha256:c04bd604f24e73386440fea883ba009fafaef1f918be236657abcd676450c5a7",
+            "signer": "sha256:96162b792023201d38971c7f836d8a6158045dec65d1d72a0b9c419479b3392d",
+            "source": "sha256:5ce57a9d051a1ef7b756735028e11a5e030d624c3f9fc1b292cc153359d8951a",
+            "toolInventory": "sha256:d77d6240a78404c9718e3e06f2e05869066d7c571486c2f08823ce2d49dc5c43",
+            "trust": "isolated-short-lived-demo-only"
+          }
+        },
+        "passed": true,
+        "pendingOperation": null,
+        "results": [
+          {
+            "activationId": "dev-6fea9f4c474a2f1edbc35ed29d050353",
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:http/client@0.2.0"
+              ]
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "routeGeneration": "3"
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/http-fixture.json",
+                "id": "http",
+                "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+                "kind": "controlled-peer"
+              }
+            ],
+            "id": "cold",
+            "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "revisionId": "revision-v1:sha256:6d3d257e2aef532838a1d31fafaae6480f7055eef7f4108ee503916dc08095e8",
+              "routeGeneration": "3"
+            },
+            "status": "passed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          },
+          {
+            "activationId": "dev-3ad38782fd465e45c370910744bf6825",
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:http/client@0.2.0"
+              ]
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "routeGeneration": "3"
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/http-fixture.json",
+                "id": "http",
+                "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+                "kind": "controlled-peer"
+              }
+            ],
+            "id": "warm",
+            "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "revisionId": "revision-v1:sha256:6d3d257e2aef532838a1d31fafaae6480f7055eef7f4108ee503916dc08095e8",
+              "routeGeneration": "3"
+            },
+            "status": "passed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          },
+          {
+            "activationId": "dev-8398bd2a18b823c74e54b7a62ad0f414",
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:http/client@0.2.0"
+              ]
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "routeGeneration": "3"
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/http-fixture.json",
+                "id": "http",
+                "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+                "kind": "controlled-peer"
+              }
+            ],
+            "id": "head",
+            "inputSha256": "sha256:50151836f4e422d8bbf1052de3c3f5b7aca1fb99e1c333798372562e2fdc2f32",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:4d83a1f3e47b09a57f011d4bd69c80eaaed35d7122fbd598fca53a56f2f82d95",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "revisionId": "revision-v1:sha256:6d3d257e2aef532838a1d31fafaae6480f7055eef7f4108ee503916dc08095e8",
+              "routeGeneration": "3"
+            },
+            "status": "passed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          },
+          {
+            "activationId": "dev-39a689f73a63b1d36b52b566d0c1228b",
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:http/client@0.2.0"
+              ]
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "routeGeneration": "3"
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/http-fixture.json",
+                "id": "http",
+                "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+                "kind": "controlled-peer"
+              }
+            ],
+            "id": "path-denied",
+            "inputSha256": "sha256:708fcca6cbb99741dd0bbd618fc066faaebc95721f0f88b89456c5b40318d668",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "revisionId": "revision-v1:sha256:6d3d257e2aef532838a1d31fafaae6480f7055eef7f4108ee503916dc08095e8",
+              "routeGeneration": "3"
+            },
+            "status": "passed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          },
+          {
+            "activationId": "dev-ce22e2a5b05009fccf2ff74e43f3c2dd",
+            "category": "success",
+            "execution": {
+              "deniedCapabilities": [
+                "latent:http/client@0.2.0"
+              ],
+              "grants": [
+                "latent:http/client@0.2.0"
+              ]
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "routeGeneration": "4"
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/http-fixture.json",
+                "id": "http",
+                "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+                "kind": "controlled-peer"
+              }
+            ],
+            "id": "policy-denied",
+            "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "revisionId": "revision-v1:sha256:184abfbe14300b98e4521df53be51a496a0448e362d41bd22dcddb90f2b68cbf",
+              "routeGeneration": "4"
+            },
+            "status": "passed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          },
+          {
+            "activationId": "dev-b40b43824ff86b4e69da2d9b8d56a5b8",
+            "category": "success",
+            "execution": {
+              "grants": [
+                "latent:http/client@0.2.0"
+              ]
+            },
+            "expectedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "routeGeneration": "5"
+            },
+            "fixtures": [
+              {
+                "configuration": "tests/http-fixture.json",
+                "id": "http",
+                "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+                "kind": "controlled-peer"
+              }
+            ],
+            "id": "after-denial",
+            "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+            "outcomeKnown": true,
+            "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+            "platformCode": null,
+            "required": true,
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:87e13cb8653e5ab99e3f77ba394f5250951058fec3457ebd5c65747ff09d6d11",
+              "releaseDigest": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "revisionId": "revision-v1:sha256:6d3d257e2aef532838a1d31fafaae6480f7055eef7f4108ee503916dc08095e8",
+              "routeGeneration": "5"
+            },
+            "status": "passed",
+            "targetMatches": true,
+            "timeoutMillis": 5000
+          }
+        ],
+        "schemaVersion": "latent.dev.test-report.v1",
+        "selection": [
+          "cold",
+          "warm",
+          "head",
+          "path-denied",
+          "policy-denied",
+          "after-denial"
+        ]
+      }
+    },
+    "passed": true,
+    "portable": {
+      "cleanup": "owned-native-host-reaped",
+      "environment": "portable",
+      "excludedChecks": [
+        "authentication",
+        "compiler-isolation",
+        "deployment",
+        "native-cache",
+        "pressure",
+        "protected-files",
+        "restart",
+        "running-cancellation"
+      ],
+      "identity": {
+        "artifacts": {
+          "capsule": "sha256:32bdf47f4b0006a4f45d7b27203bd17ec5c957de973c0580d3171278c1928388",
+          "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+          "contracts": "sha256:e3fbe9a47cc1bdf6dbf659e823b2f716ca1d29f5dedf01a696ebfeda312efc63"
+        },
+        "host": {
+          "kind": "explicit-local-test-build",
+          "sha256": "sha256:31964a89287d1eb27316c5ec4ea2cf20bc23f31b4349b02068c4e0103a488c37"
+        },
+        "hostAbi": "lsf-host-abi-phase3-v4",
+        "productionNode": false,
+        "runtime": {
+          "execution": "actual-component-production-wasmtime",
+          "runs": [
+            {
+              "architecture": "x86_64",
+              "category": "success",
+              "clock": "system-clock-nondeterministic",
+              "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "controlClock": "system-clock-nondeterministic",
+              "entropy": "system-entropy-nondeterministic",
+              "environment": "portable",
+              "excludedChecks": [
+                "node-admission",
+                "deployment",
+                "management-authentication",
+                "linux-protected-files",
+                "PSI",
+                "isolated-compilation",
+                "native-cache",
+                "production-performance"
+              ],
+              "fixtures": {
+                "clock": null,
+                "http": {
+                  "exchanges": [
+                    {
+                      "method": "GET",
+                      "path": "/fixture",
+                      "requestBody": "cGF5bG9hZA==",
+                      "responseBody": "aHR0cC1kZXY=",
+                      "status": 200
+                    },
+                    {
+                      "method": "HEAD",
+                      "path": "/fixture",
+                      "requestBody": "cGF5bG9hZA==",
+                      "responseBody": "aHR0cC1kZXY=",
+                      "status": 200
+                    }
+                  ],
+                  "port": 54341
+                },
+                "metrics": false,
+                "random": false,
+                "sha256": "sha256:8ac06006238d0ed6e538754f60f04472f6c04ea92eb80c65128cfd281a48158f"
+              },
+              "httpFixtureAuthentication": "private-provider-credential",
+              "httpFixtureRequests": 4,
+              "metrics": null,
+              "os": "linux",
+              "productionNode": false,
+              "runtimeProfile": "standard-v1",
+              "schemaVersion": "latent.dev.portable-result.v1",
+              "supportedImports": [
+                "latent:context/context@0.1.0",
+                "latent:log/log@0.1.0",
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0",
+                "latent:random/random@0.1.0",
+                "latent:telemetry/custom@0.1.0",
+                "latent:http/client@0.2.0"
+              ],
+              "trust": "controlled-development-test",
+              "wasmtime": "47.0.4"
+            }
+          ]
+        },
+        "trust": "controlled-development-test"
+      },
+      "passed": true,
+      "results": [
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "cold",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "warm",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "head",
+          "inputSha256": "sha256:50151836f4e422d8bbf1052de3c3f5b7aca1fb99e1c333798372562e2fdc2f32",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:4d83a1f3e47b09a57f011d4bd69c80eaaed35d7122fbd598fca53a56f2f82d95",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "path-denied",
+          "inputSha256": "sha256:708fcca6cbb99741dd0bbd618fc066faaebc95721f0f88b89456c5b40318d668",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "deniedCapabilities": [
+              "latent:http/client@0.2.0"
+            ],
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "policy-denied",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "after-denial",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        }
+      ],
+      "schemaVersion": "latent.dev.test-report.v1",
+      "selection": [
+        "cold",
+        "warm",
+        "head",
+        "path-denied",
+        "policy-denied",
+        "after-denial"
+      ]
+    },
+    "publisherAuthenticated": false,
+    "qualificationComplete": false,
+    "schemaVersion": "latent.dev.http-node-portable-probe.v1"
+  },
+  "passed": true,
+  "publisherAuthenticated": false,
+  "qualificationComplete": false,
+  "schemaVersion": "latent.dev.http-source-observation.v1",
+  "sourceReportSha256": {
+    "linux": "sha256:c3dc88d289498da9112fafda4696a348aecc3a6db63bbff0469c766505254493",
+    "windows": "sha256:d7a4389eecd6a880dd1886c2404970b57dc4ad078a20f87e8985afbc61b8609b"
+  },
+  "windows": {
+    "cleanHost": false,
+    "cleanup": "owned-native-host-and-peer-reaped",
+    "comparison": {
+      "artifacts": {
+        "capsule": "sha256:32bdf47f4b0006a4f45d7b27203bd17ec5c957de973c0580d3171278c1928388",
+        "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+        "contracts": "sha256:e3fbe9a47cc1bdf6dbf659e823b2f716ca1d29f5dedf01a696ebfeda312efc63"
+      },
+      "guestClockCompared": false,
+      "httpFixtureCompared": true,
+      "nativeOs": "windows",
+      "nodeAdmission": "enforced",
+      "nodeProfile": "local-experimental-v1",
+      "nodeReportSha256": "sha256:ab402255cad79b45d522cdc3b8fc633e42a2773754f9c3a3e3466416fdb61ff1",
+      "passed": true,
+      "portableExcludedChecks": [
+        "authentication",
+        "compiler-isolation",
+        "deployment",
+        "native-cache",
+        "pressure",
+        "protected-files",
+        "restart",
+        "running-cancellation"
+      ],
+      "portableReportSha256": "sha256:96ec1481446412f4f0584f1c859506f1377f6907fdc3114666c1cfbf3a90db76",
+      "qualificationComplete": false,
+      "results": [
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "cold",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "warm",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "head",
+          "inputSha256": "sha256:50151836f4e422d8bbf1052de3c3f5b7aca1fb99e1c333798372562e2fdc2f32",
+          "payloadSha256": "sha256:4d83a1f3e47b09a57f011d4bd69c80eaaed35d7122fbd598fca53a56f2f82d95",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "path-denied",
+          "inputSha256": "sha256:708fcca6cbb99741dd0bbd618fc066faaebc95721f0f88b89456c5b40318d668",
+          "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "deniedCapabilities": [
+              "latent:http/client@0.2.0"
+            ],
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "policy-denied",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+          "platformCode": null
+        },
+        {
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "after-denial",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null
+        }
+      ],
+      "reviewedDifferences": [
+        "node-only-publication-admission-and-routing",
+        "host-os-and-architecture",
+        "bounded-cold-node-preparation-deadline",
+        "system-clock-and-entropy-not-compared"
+      ],
+      "schemaVersion": "latent.dev.node-portable-comparison.v1",
+      "scope": "selected-typed-application-values",
+      "selection": [
+        "cold",
+        "warm",
+        "head",
+        "path-denied",
+        "policy-denied",
+        "after-denial"
+      ]
+    },
+    "hostSha256": "sha256:9523d6a5a910f85d8bef8c1a8caa869ce9ad4dd62479eb8fa5c773a1161c1ddb",
+    "passed": true,
+    "portable": {
+      "cleanup": "owned-native-host-reaped",
+      "environment": "portable",
+      "excludedChecks": [
+        "authentication",
+        "compiler-isolation",
+        "deployment",
+        "native-cache",
+        "pressure",
+        "protected-files",
+        "restart",
+        "running-cancellation"
+      ],
+      "identity": {
+        "artifacts": {
+          "capsule": "sha256:32bdf47f4b0006a4f45d7b27203bd17ec5c957de973c0580d3171278c1928388",
+          "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+          "contracts": "sha256:e3fbe9a47cc1bdf6dbf659e823b2f716ca1d29f5dedf01a696ebfeda312efc63"
+        },
+        "host": {
+          "kind": "explicit-local-test-build"
+        },
+        "hostAbi": "lsf-host-abi-phase3-v4",
+        "productionNode": false,
+        "runtime": {
+          "execution": "actual-component-production-wasmtime",
+          "runs": [
+            {
+              "architecture": "x86_64",
+              "category": "success",
+              "clock": "system-clock-nondeterministic",
+              "component": "sha256:76dc0239be7f948783c76536b92ff495bfe8fc8f372d3778688af7aa8d2c796b",
+              "controlClock": "system-clock-nondeterministic",
+              "entropy": "system-entropy-nondeterministic",
+              "environment": "portable",
+              "excludedChecks": [
+                "node-admission",
+                "deployment",
+                "management-authentication",
+                "linux-protected-files",
+                "PSI",
+                "isolated-compilation",
+                "native-cache",
+                "production-performance"
+              ],
+              "fixtures": {
+                "clock": null,
+                "http": {
+                  "exchanges": [
+                    {
+                      "method": "GET",
+                      "path": "/fixture",
+                      "requestBody": "cGF5bG9hZA==",
+                      "responseBody": "aHR0cC1kZXY=",
+                      "status": 200
+                    },
+                    {
+                      "method": "HEAD",
+                      "path": "/fixture",
+                      "requestBody": "cGF5bG9hZA==",
+                      "responseBody": "aHR0cC1kZXY=",
+                      "status": 200
+                    }
+                  ],
+                  "port": 54341
+                },
+                "metrics": false,
+                "random": false,
+                "sha256": "sha256:8ac06006238d0ed6e538754f60f04472f6c04ea92eb80c65128cfd281a48158f"
+              },
+              "httpFixtureAuthentication": "private-provider-credential",
+              "httpFixtureRequests": 4,
+              "metrics": null,
+              "os": "windows",
+              "productionNode": false,
+              "runtimeProfile": "standard-v1",
+              "schemaVersion": "latent.dev.portable-result.v1",
+              "supportedImports": [
+                "latent:context/context@0.1.0",
+                "latent:log/log@0.1.0",
+                "latent:clock/monotonic@0.1.0",
+                "latent:clock/wall@0.1.0",
+                "latent:random/random@0.1.0",
+                "latent:telemetry/custom@0.1.0",
+                "latent:http/client@0.2.0"
+              ],
+              "trust": "controlled-development-test",
+              "wasmtime": "47.0.4"
+            }
+          ]
+        },
+        "trust": "controlled-development-test"
+      },
+      "passed": true,
+      "results": [
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "cold",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "warm",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "head",
+          "inputSha256": "sha256:50151836f4e422d8bbf1052de3c3f5b7aca1fb99e1c333798372562e2fdc2f32",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:4d83a1f3e47b09a57f011d4bd69c80eaaed35d7122fbd598fca53a56f2f82d95",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "path-denied",
+          "inputSha256": "sha256:708fcca6cbb99741dd0bbd618fc066faaebc95721f0f88b89456c5b40318d668",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "deniedCapabilities": [
+              "latent:http/client@0.2.0"
+            ],
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "policy-denied",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        },
+        {
+          "activationId": null,
+          "category": "success",
+          "execution": {
+            "grants": [
+              "latent:http/client@0.2.0"
+            ]
+          },
+          "expectedRevision": null,
+          "fixtures": [
+            {
+              "configuration": "tests/http-fixture.json",
+              "id": "http",
+              "identity": "sha256:4a20fba07480b2c93af39291cfc5c40f14bda7178e8971ae6f0617ebe58cbb8b",
+              "kind": "controlled-peer"
+            }
+          ],
+          "id": "after-denial",
+          "inputSha256": "sha256:50ba6d4d6a1f80d3cb0b091b9f8888cc7b82d8e1c66967acda98471c4a504aab",
+          "outcomeKnown": true,
+          "payloadSha256": "sha256:271b089d886319d0670be7ee5c848f6aeb21fb0d31ca1347aec4d3de933211e0",
+          "platformCode": null,
+          "required": true,
+          "resolvedRevision": null,
+          "status": "passed",
+          "targetMatches": true,
+          "timeoutMillis": 5000
+        }
+      ],
+      "schemaVersion": "latent.dev.test-report.v1",
+      "selection": [
+        "cold",
+        "warm",
+        "head",
+        "path-denied",
+        "policy-denied",
+        "after-denial"
+      ]
+    },
+    "publisherAuthenticated": false,
+    "qualificationComplete": false,
+    "schemaVersion": "latent.dev.windows-http-comparison.v1"
+  }
+}

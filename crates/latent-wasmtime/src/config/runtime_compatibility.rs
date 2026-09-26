@@ -8,14 +8,19 @@ impl WasmtimeConfig {
     /// configurable `cpu_feature_set` label supplies no hardware authority.
     pub fn detected_runtime_profile(&self) -> Result<RuntimeCompatibilityProfile, PlatformError> {
         self.validate()?;
-        RuntimeCompatibilityProfile::new(
+        let profile = RuntimeCompatibilityProfile::new(
             "wasmtime",
             WASMTIME_VERSION,
             env!("LATENT_WASMTIME_HOST_TARGET"),
             &detected_cpu_features(),
             self.maximum_memory_bytes,
             self.maximum_fuel,
-        )
+        )?;
+        if self.angular_renderer {
+            profile.with_renderer(latent_manifest::RendererRequirement::angular())
+        } else {
+            Ok(profile)
+        }
     }
 }
 

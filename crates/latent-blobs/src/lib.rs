@@ -55,10 +55,10 @@ pub trait BlobStore: Send + Sync {
         bytes: Vec<u8>,
     ) -> BoxFuture<'a, Result<u64, PlatformError>>;
 
-    fn seal<'a>(
-        &'a self,
+    fn seal(
+        &self,
         session: BlobWriteSession,
-    ) -> BoxFuture<'a, Result<BlobReference, PlatformError>>;
+    ) -> BoxFuture<'_, Result<BlobReference, PlatformError>>;
 
     fn read<'a>(
         &'a self,
@@ -81,7 +81,7 @@ pub trait BlobLeaseManager: Send + Sync {
         ttl_millis: u64,
     ) -> BoxFuture<'a, Result<BlobLease, PlatformError>>;
 
-    fn revoke<'a>(&'a self, lease: BlobLease) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn revoke(&self, lease: BlobLease) -> BoxFuture<'_, Result<(), PlatformError>>;
 }
 
 pub trait BlobTransfer: Send + Sync {
@@ -90,3 +90,15 @@ pub trait BlobTransfer: Send + Sync {
         reference: &'a BlobReference,
     ) -> BoxFuture<'a, Result<BlobReference, PlatformError>>;
 }
+
+/// The local durable filesystem profile requires Linux descriptor-relative I/O.
+#[cfg(target_os = "linux")]
+pub mod local;
+
+/// Capability-governed adapter on the configured shared blocking owner.
+#[cfg(target_os = "linux")]
+pub mod provider;
+
+/// Authenticated, version-pinned S3 blobs with a finite private cleanup inventory.
+#[cfg(target_os = "linux")]
+pub mod s3;

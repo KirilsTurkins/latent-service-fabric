@@ -1,0 +1,318 @@
+//! Real cryptographic admission of compiled guests; keys live only in this test.
+//! The builder signs the bounded build driver's actual input/output observation.
+#![allow(dead_code)]
+use base64::{engine::general_purpose::STANDARD, Engine};
+use latent_artifacts::{
+    package::PackageLimits, AdmissionEvidence, ArtifactRepository, DirectoryArtifactRepository,
+    LifecycleScope, ManagedPublicationReceipt, ManagedPublicationUpload, PackageAdmissionUpload,
+    ReleaseActor, ReleaseActorKind, ReleaseEvidenceUpload, ReleaseMutationContext,
+    ReleaseOperationPrecondition,
+};
+use latent_core::{PlatformError, PublisherId, ReleaseDigest, TenantId};
+use latent_packaging::{PackageBundle, PackagingLimits};
+use latent_policy::supply_chain::{
+    SupplyChainAuthority, SupplyChainClock, SupplyChainPolicy, SystemSupplyChainClock,
+};
+use latent_signing::*;
+use serde_json::json;
+use sha2::{Digest, Sha256};
+use std::{
+    io::Read,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
+#[path = "../../../latent-packaging/tests/sbom_association/support.rs"]
+mod sbom;
+
+pub type Publication = (
+    Arc<DirectoryArtifactRepository>,
+    ReleaseDigest,
+    ManagedPublicationReceipt,
+);
+
+pub fn input(name: &str) -> PathBuf {
+    let root = std::env::var_os("LSF_GUEST_CAPSULES").expect("run the guest contract gate");
+    Path::new(&root).join(name)
+}
+
+pub fn observation(name: &str) -> BuildObservation {
+    let directory = input(name);
+    let standalone = name.starts_with("go-")
+        || name.starts_with("typescript-")
+        || name.starts_with("dotnet-")
+        || name.starts_with("java-");
+    let root = if standalone {
+        &directory
+    } else {
+        directory.parent().unwrap()
+    };
+    let marker: serde_json::Value =
+        serde_json::from_slice(&read(&root.join("BUILD-COMPLETE.json"), 65536)).unwrap();
+    assert_eq!(marker["formatVersion"], 1);
+    let bytes = read(&directory.join("build-observation.json"), 65536);
+    assert_eq!(
+        (if standalone {
+            &marker["observationDigest"]
+        } else {
+            &marker["observations"][name]
+        })
+        .as_str()
+        .expect("completed build observation digest"),
+        format!("sha256:{:x}", Sha256::digest(&bytes))
+    );
+    let observation = decode_build_observation(&bytes, ProvenanceLimits::default()).unwrap();
+    let inputs = read(&root.join("source-inputs.json"), 1024 * 1024);
+    assert_eq!(
+        observation.source.snapshot_digest,
+        format!("sha256:{:x}", Sha256::digest(inputs))
+    );
+    observation
+}
+
+pub fn bundle(path: &Path) -> PackageBundle {
+    let limits = PackagingLimits::default();
+    let source = latent_packaging::decode_package_source(
+        &read(&path.join("package-source.json"), 65536),
+        limits,
+    )
+    .unwrap();
+    let input = latent_packaging::read_package_input(path, &source, limits).unwrap();
+    let inventory = sbom::inventory(&input);
+    latent_packaging::build_package_with_sbom(input, inventory, limits).unwrap()
+}
+
+fn read(path: &Path, maximum: usize) -> Vec<u8> {
+    let mut bytes = vec![];
+    std::fs::File::open(path)
+        .unwrap()
+        .take(maximum as u64 + 1)
+        .read_to_end(&mut bytes)
+        .unwrap();
+    assert!(bytes.len() <= maximum);
+    bytes
+}
+
+pub struct Signers {
+    publisher: LocalSigner,
+    builder: LocalBuilderSigner,
+    pub policy: SupplyChainPolicy,
+    pub policy_document: Vec<u8>,
+    now: u64,
+}
+impl Signers {
+    pub fn new(build_type: &str) -> Self {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let publisher_key = generate_signing_key().unwrap();
+        let publisher_public = *publisher_key.public_key();
+        let publisher = LocalSigner::from_pkcs8(
+            publisher_key.into_pkcs8(),
+            PublisherId("guest-publisher".into()),
+            publisher_public,
+        )
+        .unwrap();
+        let builder_key = generate_signing_key().unwrap();
+        let builder_public = *builder_key.public_key();
+        let builder = LocalBuilderSigner::from_pkcs8(
+            builder_key.into_pkcs8(),
+            "guest-builder".into(),
+            builder_public,
+        )
+        .unwrap();
+        let policy_document = policy_document(now, &publisher_public, &builder_public, build_type);
+        Self {
+            publisher,
+            builder,
+            policy: SupplyChainPolicy::from_json(&policy_document).unwrap(),
+            policy_document,
+            now,
+        }
+    }
+    pub fn upload(
+        &self,
+        bundle: &PackageBundle,
+        observation: &BuildObservation,
+    ) -> PackageAdmissionUpload {
+        let subject = PackageSigningSubject::from_package(
+            bundle.manifest_bytes(),
+            bundle.config_bytes(),
+            PackageLimits::default(),
+        )
+        .unwrap();
+        let validity = SignatureValidity {
+            issued_at: self.now,
+            expires_at: self.now + 1200,
+        };
+        let signature = self
+            .publisher
+            .sign_package(&subject, validity, SignatureLimits::default())
+            .unwrap();
+        let provenance = self
+            .builder
+            .sign_build(&subject, observation, validity, ProvenanceLimits::default())
+            .unwrap();
+        let evidence = ReleaseEvidenceUpload {
+            signatures: vec![AdmissionEvidence {
+                manifest: signature.manifest_bytes().to_vec(),
+                configuration: b"{}".to_vec(),
+                payload: signature.payload_bytes().to_vec(),
+            }],
+            provenance: vec![AdmissionEvidence {
+                manifest: provenance.manifest_bytes().to_vec(),
+                configuration: b"{}".to_vec(),
+                payload: provenance.payload_bytes().to_vec(),
+            }],
+            sboms: vec![],
+        };
+        latent_policy::supply_chain::verify_package_once(
+            &self.policy,
+            latent_policy::supply_chain::PackageVerificationRequest {
+                tenant: &TenantId("tests".into()),
+                package: bundle,
+                evidence: &evidence,
+                unix_seconds: self.now,
+            },
+        )
+        .unwrap();
+        PackageAdmissionUpload {
+            manifest: bundle.manifest_bytes().to_vec(),
+            configuration: bundle.config_bytes().to_vec(),
+            layers: bundle
+                .layers()
+                .iter()
+                .map(|b| (b.path().into(), b.bytes().to_vec()))
+                .collect(),
+            signatures: evidence.signatures,
+            provenance: evidence.provenance,
+            sboms: evidence.sboms,
+        }
+    }
+}
+
+pub async fn publish(root: &Path, name: &str) -> Publication {
+    let bundle = bundle(&input(name));
+    let observation = observation(name);
+    let signers = Signers::new(&observation.build_type);
+    let upload = signers.upload(&bundle, &observation);
+    let release = bundle.layout().component_release().unwrap();
+    let memory_ceiling = (name == "dotnet-service").then_some(256 * 1024 * 1024);
+    let catalog = catalog(root, signers.policy, memory_ceiling);
+    let receipt = catalog
+        .publish_managed(
+            ReleaseMutationContext {
+                scope: LifecycleScope::Tenant(TenantId(
+                    if (name.starts_with("go-")
+                        || name.starts_with("typescript-")
+                        || name.starts_with("dotnet-")
+                        || name.starts_with("java-"))
+                        && (name.ends_with("-service") || name.ends_with("-callee"))
+                    {
+                        "tenant-a"
+                    } else {
+                        "tests"
+                    }
+                    .into(),
+                )),
+                actor: ReleaseActor {
+                    subject: "guest-sdk-contract-gate".into(),
+                    kind: ReleaseActorKind::Host,
+                },
+                operation: Some(ReleaseOperationPrecondition {
+                    operation_id: "publish-guest".into(),
+                    expected_generation: 0,
+                }),
+            },
+            ManagedPublicationUpload::Package(upload),
+            &mut |_| Ok(()),
+        )
+        .await
+        .unwrap();
+    assert!(catalog
+        .execution_eligibility_selected(&release, Some(&receipt.publication.id))
+        .unwrap()
+        .is_some());
+    (catalog, release, receipt)
+}
+
+fn policy_document(
+    now: u64,
+    publisher: &[u8; 32],
+    builder: &[u8; 32],
+    build_type: &str,
+) -> Vec<u8> {
+    let publisher = json!({"formatVersion":1,"scope":"tests","generation":1,"validFrom":now - 60,"validUntil":now + 3600,
+            "maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":60,
+            "keys":[{"publisherId":"guest-publisher","publicKey":STANDARD.encode(publisher),"validFrom":now - 60,"validUntil":now + 3600}]});
+    let builder = json!({"formatVersion":1,"scope":"tests","generation":1,"validFrom":now - 60,"validUntil":now + 3600,
+            "maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":60,
+            "keys":[{"builderId":"guest-builder","publicKey":STANDARD.encode(builder),"validFrom":now - 60,"validUntil":now + 3600}],
+            "requirements":[{"builderId":"guest-builder","buildType":build_type,"sourceRepository":"https://github.com/KirilsTurkins/latent-service-fabric","requireReproducible":false}]});
+    let publisher_digest = PublisherPolicy::from_json(
+        &serde_json::to_vec(&publisher).unwrap(),
+        SignatureLimits::default(),
+    )
+    .unwrap()
+    .digest()
+    .to_string();
+    let builder_digest = BuilderPolicy::from_json(
+        &serde_json::to_vec(&builder).unwrap(),
+        ProvenanceLimits::default(),
+    )
+    .unwrap()
+    .digest()
+    .to_string();
+    let policy = json!({"formatVersion":1,"generation":1,"scope":"tests","validFrom":now - 60,"validUntil":now + 3600,
+            "tenants":[{"tenant":"tests","publishers":["guest-publisher"]},{"tenant":"tenant-a","publishers":["guest-publisher"]}], "publisher":publisher,"builder":builder,
+            "publisherRevocations":{"formatVersion":1,"scope":"tests","policyDigest":publisher_digest,"generation":1,"validFrom":now - 60,"validUntil":now + 3600,"revokedKeys":[],"revokedPublishers":[]},
+            "builderRevocations":{"formatVersion":1,"scope":"tests","policyDigest":builder_digest,"generation":1,"validFrom":now - 60,"validUntil":now + 3600,"revokedKeys":[],"revokedBuilders":[]},
+            "sbom":{"formatVersion":1,"embedded":"required","detached":"optional","requireSource":[],"requireLicense":[]}});
+    serde_json::to_vec(&policy).unwrap()
+}
+
+// These direct-library SDK fixtures have no node control loop to renew a clock
+// lease. Keep their trusted admission time fixed while testing guest ownership
+// and provider semantics; clock expiry and renewal have their own policy tests.
+struct FixtureClock(u64);
+
+impl SupplyChainClock for FixtureClock {
+    fn now(&self) -> Result<u64, PlatformError> {
+        Ok(self.0)
+    }
+}
+
+pub fn catalog(
+    root: &Path,
+    policy: SupplyChainPolicy,
+    memory_ceiling: Option<u64>,
+) -> Arc<DirectoryArtifactRepository> {
+    let clock = Arc::new(FixtureClock(SystemSupplyChainClock.now().unwrap()));
+    let mut runtime = super::support::config();
+    if let Some(memory_ceiling) = memory_ceiling {
+        // Match the separately configured service fixture's explicit ceiling.
+        // In particular, a NativeAOT caller reserves 256 MiB to fund a child;
+        // ordinary SDK packages retain their original 128 MiB profile.
+        runtime.maximum_memory_bytes = memory_ceiling;
+    }
+    let authority = Arc::new(
+        SupplyChainAuthority::open_with_runtime(
+            &root.join("trust"),
+            policy,
+            clock,
+            5,
+            Arc::new(runtime.detected_runtime_profile().unwrap()),
+        )
+        .unwrap(),
+    );
+    Arc::new(
+        DirectoryArtifactRepository::open_enforced(
+            root.join("catalog"),
+            latent_artifacts::DirectoryArtifactRepositoryConfig::default(),
+            latent_artifacts::AdmissionStorageLimits::default(),
+            authority,
+        )
+        .unwrap(),
+    )
+}

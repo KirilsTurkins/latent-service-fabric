@@ -1,7 +1,7 @@
 CARGO ?= cargo
 PYTHON ?= python3
 
-.PHONY: check help rpc-bindings component-bindings guest-bindings echo-capsule echo-capsule-reproducibility phase0-spike-demo phase0-calibration phase0-gate phase0-gate-smoke phase1-foundation fmt fmt-check clippy test schemas repository-tests contracts sdks validate tree
+.PHONY: check help rpc-bindings component-bindings guest-bindings echo-capsule echo-capsule-reproducibility phase1-foundation fmt fmt-check clippy test schemas repository-tests contracts sdks validate tree
 
 check:
 	$(CARGO) check --workspace --all-targets --all-features --locked
@@ -30,12 +30,6 @@ help:
 		'  echo-capsule                  Build the maintained echo capsule fixture (manual generated build).' \
 		'  echo-capsule-reproducibility  Verify two clean echo builds are byte-identical (manual fixture check).' \
 		'' \
-		'Retained Phase 0 evidence commands (historical/manual):' \
-		'  phase0-spike-demo             Run the retained Phase 0 executable spike demo.' \
-		'  phase0-calibration            Run retained native Phase 0 calibration.' \
-		'  phase0-gate                   Run the retained full Phase 0 authorization gate.' \
-		'  phase0-gate-smoke             Run the deterministic retained Phase 0 smoke gate.' \
-		'' \
 		'Utility:' \
 		'  tree                          List tracked source-controlled files; omit untracked/ignored files.'
 
@@ -55,18 +49,6 @@ echo-capsule:
 
 echo-capsule-reproducibility:
 	$(PYTHON) tools/build_echo_capsule.py --verify-reproducible
-
-phase0-spike-demo:
-	tools/run_phase0_spike.sh
-
-phase0-calibration:
-	tools/run_phase0_calibration.sh
-
-phase0-gate:
-	tools/run_phase0_gate.sh full
-
-phase0-gate-smoke:
-	tools/run_phase0_gate.sh smoke
 
 fmt:
 	$(CARGO) fmt --all

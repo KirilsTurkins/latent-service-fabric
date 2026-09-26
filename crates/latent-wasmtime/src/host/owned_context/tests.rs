@@ -7,6 +7,81 @@ use crate::host::request_context::{context_charge, validate_request_context};
 
 mod fixture;
 
+fn web_request() -> latent_executor::ExecutionRequest {
+    let mut request = fixture::request();
+    request.activation.target.contract.0 = latent_artifacts::web::WEB_CONTRACT.into();
+    request.activation.target.function.0 = "handle".into();
+    let publication = format!("publication:sha256:{}", "a".repeat(64))
+        .parse()
+        .unwrap();
+    request.prepared.key.publication = Some(publication);
+    request.activation.resolved_revision = Some(latent_routing::ResolvedRevision {
+        target: request.activation.target.clone(),
+        revision: latent_core::RevisionId("web-revision".into()),
+        release: request.prepared.key.release.clone(),
+        publication: request.prepared.key.publication.clone(),
+        route_generation: latent_core::RouteGeneration(1),
+        attributes: Metadata::new(),
+    });
+    request.activation.metadata.insert(
+        crate::host::web_identity::KEY.into(),
+        "caller-cannot-select-hydration-publication".into(),
+    );
+    request
+}
+
+#[test]
+fn web_asset_identity_comes_from_the_prepared_revision_not_caller_metadata() {
+    let request = web_request();
+    let expected = request
+        .prepared
+        .key
+        .publication
+        .as_ref()
+        .unwrap()
+        .to_string();
+    let charge = context_charge(&request, usize::MAX).unwrap().charged_bytes;
+    validate_request_context(&request, charge).unwrap();
+    assert!(validate_request_context(&request, charge - 1).is_err());
+    let context = ActivationHostContext::from_request(request, None);
+    assert_eq!(context.metadata[crate::host::web_identity::KEY], expected);
+    assert_eq!(context.metadata["metadata"], "value");
+}
+
+#[test]
+fn unselected_or_mismatched_execution_cannot_spoof_the_reserved_web_identity() {
+    for variant in 0..4 {
+        let mut request = web_request();
+        match variant {
+            0 => request.activation.target.contract.0 = "tests:other/api@1.0.0".into(),
+            1 => request.prepared.key.publication = None,
+            2 => request.activation.resolved_revision = None,
+            _ => {
+                request
+                    .activation
+                    .resolved_revision
+                    .as_mut()
+                    .unwrap()
+                    .publication = None
+            }
+        }
+        let context = ActivationHostContext::from_request(request, None);
+        assert!(!context
+            .metadata
+            .contains_key(crate::host::web_identity::KEY));
+        assert_eq!(context.metadata["metadata"], "value");
+    }
+}
+
+#[test]
+fn web_identity_map_entry_is_charged_before_context_ownership_transfer() {
+    let mut request = web_request();
+    let selected = context_charge(&request, usize::MAX).unwrap().charged_bytes;
+    request.activation.target.function.0 = "other!".into();
+    let unselected = context_charge(&request, usize::MAX).unwrap().charged_bytes;
+    assert!(selected >= unselected + 4096);
+}
+
 fn allocation(value: &String) -> (usize, usize) {
     (value.as_ptr() as usize, value.capacity())
 }

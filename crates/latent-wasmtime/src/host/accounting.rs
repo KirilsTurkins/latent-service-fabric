@@ -3,7 +3,7 @@
 use std::time::Instant;
 
 use latent_core::{
-    ActivationBudget, ActivationClock, BudgetDimension, BudgetError, ClockSample,
+    ActivationBudget, ActivationClock, BudgetDimension, BudgetError, BudgetProfile, ClockSample,
     EffectiveActivationBudget, EffectiveDeadline, PlatformError, PlatformErrorCode, ResourceBudget,
 };
 use latent_executor::{ExecutionCancellation, ExecutionRequest};
@@ -16,6 +16,7 @@ pub(crate) struct InvocationAccounting {
     deadline: EffectiveDeadline,
     initial_fuel: u64,
     last_remaining_fuel: u64,
+    observed_native_fuel: u64,
     confirmed_peak_memory: u64,
 }
 
@@ -33,9 +34,11 @@ impl InvocationAccounting {
         if request.budget != request.activation.budget {
             return Err(invalid("execution-budget-grant-mismatch"));
         }
-        request
-            .budget
-            .validate_phase1_request()
+        let profile = cancellation
+            .budget_accounting()
+            .map_or(BudgetProfile::Phase1, ActivationBudget::profile);
+        profile
+            .validate_request(&request.budget)
             .map_err(|error| error.to_platform_error())?;
         let (budget, deadline) = if let Some(budget) = cancellation.budget_accounting() {
             if budget.granted() != &request.budget {
@@ -54,14 +57,14 @@ impl InvocationAccounting {
             {
                 // Only a genuinely tighter explicit request needs conversion.
                 // The ordinary path preserves the original precise deadline.
-                deadline = grant(request, Some(&deadline), clock)?.deadline;
+                deadline = grant(profile, request, Some(&deadline), clock)?.deadline;
             }
             if let Some(supplied) = cancellation.effective_deadline() {
                 tighten(&mut deadline, supplied);
             }
             (budget.clone(), deadline)
         } else {
-            let grant = grant(request, cancellation.effective_deadline(), clock)?;
+            let grant = grant(profile, request, cancellation.effective_deadline(), clock)?;
             let deadline = grant.deadline.clone();
             (ActivationBudget::new(grant), deadline)
         };
@@ -92,6 +95,7 @@ impl InvocationAccounting {
             deadline,
             initial_fuel,
             last_remaining_fuel: initial_fuel,
+            observed_native_fuel: 0,
             confirmed_peak_memory: 0,
         })
     }
@@ -104,6 +108,16 @@ impl InvocationAccounting {
     }
     pub(crate) fn initial_fuel(&self) -> u64 {
         self.initial_fuel
+    }
+    /// A native counter adjustment after child delegation is not guest work.
+    /// Call only after observing the previous counter and successfully setting
+    /// the Store counter to the original ledger's current remaining capacity.
+    pub(crate) fn reset_fuel_watermark(&mut self, remaining: u64) {
+        self.last_remaining_fuel = remaining;
+    }
+    pub(crate) fn native_fuel_consumed(&self, remaining: u64) -> u64 {
+        self.observed_native_fuel
+            .saturating_add(self.last_remaining_fuel.saturating_sub(remaining))
     }
 
     /// Call at store-aware host checkpoints and once after execution. Memory
@@ -132,6 +146,7 @@ impl InvocationAccounting {
         // Both ledger dimensions commit together. Failed observations leave
         // both watermarks unchanged, so a valid retry charges exactly once.
         self.last_remaining_fuel = remaining_fuel;
+        self.observed_native_fuel += fuel;
         self.confirmed_peak_memory = self.confirmed_peak_memory.max(confirmed_peak_memory);
         Ok(())
     }
@@ -157,6 +172,7 @@ impl InvocationAccounting {
 }
 
 fn grant(
+    profile: BudgetProfile,
     request: &ExecutionRequest,
     original: Option<&EffectiveDeadline>,
     clock: &dyn ActivationClock,
@@ -175,7 +191,8 @@ fn grant(
             .and_then(EffectiveDeadline::unix_millis)
             .is_none_or(|current| *requested < current)
     });
-    let mut grant = EffectiveActivationBudget::admit_at(
+    let mut grant = EffectiveActivationBudget::admit_profile_at(
+        profile,
         &request.budget,
         &request.budget,
         &request.budget,

@@ -48,6 +48,11 @@ fn duplicate_members_and_oversized_documents_fail_before_derivation() {
 #[test]
 fn relative_key_and_future_roots_anchor_without_creating_storage() {
     let directory = TempDir::new().unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    }
     let mut value = document(directory.path());
     value["dataDirectory"] = json!("future-data");
     value["isolatedAot"]["keyFile"] = json!("private/key");

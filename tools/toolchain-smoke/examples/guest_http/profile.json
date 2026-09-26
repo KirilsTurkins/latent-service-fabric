@@ -1,0 +1,9 @@
+{
+  "name": "http",
+  "package": "tests:http@1.0.0",
+  "contract": "tests:http/api@1.0.0",
+  "capability": "latent:http/client@0.2.0",
+  "world": "tests:http/service@1.0.0",
+  "witDirectory": "http-v2",
+  "asynchronous": true
+}

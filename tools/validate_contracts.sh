@@ -23,14 +23,22 @@ wasm-tools validate "${OUTPUT}/wit/value-types.wasm"
 
 while IFS= read -r package; do
     name="$(basename "${package}")"
-    if [[ "${name}" == "runtime" ]]; then
+    if [[ "${name}" == "runtime" || "${name}" == "runtime-phase3" || "${name}" == "runtime-phase3-streaming" || "${name}" == "runtime-phase3-blobs" ]]; then
         continue
     fi
-    wasm-tools component wit "${package}" --json > "${OUTPUT}/wit/platform-${name}.json"
+    staged="${OUTPUT}/platform-${name}"
+    python3 tools/stage_runtime_wit.py "${staged}" --source "${package}"
+    wasm-tools component wit "${staged}" --json > "${OUTPUT}/wit/platform-${name}.json"
 done < <(find "${ROOT}/wit/platform" -mindepth 1 -maxdepth 1 -type d | sort)
 
 python3 tools/stage_runtime_wit.py "${OUTPUT}/runtime-wit"
 wasm-tools component wit "${OUTPUT}/runtime-wit" --json > "${OUTPUT}/wit/platform-runtime.json"
+python3 tools/stage_runtime_wit.py "${OUTPUT}/phase3-wit" --source wit/platform/runtime-phase3
+wasm-tools component wit "${OUTPUT}/phase3-wit" --json > "${OUTPUT}/wit/platform-runtime-phase3.json"
+python3 tools/stage_runtime_wit.py "${OUTPUT}/streaming-wit" --source wit/platform/runtime-phase3-streaming
+wasm-tools component wit "${OUTPUT}/streaming-wit" --json > "${OUTPUT}/wit/platform-runtime-phase3-streaming.json"
+python3 tools/stage_runtime_wit.py "${OUTPUT}/blob-wit" --source wit/platform/runtime-phase3-blobs
+wasm-tools component wit "${OUTPUT}/blob-wit" --json > "${OUTPUT}/wit/platform-runtime-phase3-blobs.json"
 
 while IFS= read -r package; do
     relative="${package#"${ROOT}/"}"
@@ -143,6 +151,31 @@ LSF_CAPABILITIES_COMPONENT="${CAPABILITIES_COMPONENT}" \
     cargo test -p latent-wasmtime --test capabilities_backend --locked -- \
         --ignored --nocapture --test-threads=1
 
+# Generated Rust/C guests, real providers and enforced package admission.
+python3 tools/build_guest_capsules.py --output "${TARGET_ROOT}/guest-capsules"
+LSF_GUEST_CAPSULES="${TARGET_ROOT}/guest-capsules" \
+    cargo test -p latent-wasmtime --test guest_sdk --locked -- \
+        --ignored --nocapture --test-threads=1
+
+# Actual inbound HTTP WIT lowering/lifting, context authority and maximum body.
+# This tiny contract fixture does not add a builder-provenance recipe.
+cargo build -p latent-toolchain-smoke --example web-contract \
+    --target wasm32-unknown-unknown --release --locked
+WEB_COMPONENT="${TARGET_ROOT}/capsules/web-contract/component.wasm"
+mkdir -p "$(dirname "${WEB_COMPONENT}")"
+wasm-tools component new "${TARGET_ROOT}/wasm32-unknown-unknown/release/examples/web_contract.wasm" \
+    -o "${WEB_COMPONENT}"
+wasm-tools validate "${WEB_COMPONENT}"
+LSF_WEB_COMPONENT="${WEB_COMPONENT}" \
+    cargo test -p latent-wasmtime --test async_application --locked -- \
+        --ignored --nocapture --test-threads=1
+LSF_WEB_COMPONENT="${WEB_COMPONENT}" \
+    cargo test -p latent-policy --lib --locked -- \
+        actual_web_component --ignored --nocapture --test-threads=1
+LSF_WEB_COMPONENT="${WEB_COMPONENT}" \
+    cargo test -p latentd --lib --locked -- \
+        actual_http_component --ignored --nocapture --test-threads=1
+
 # Two real node invocations across a durable restart; no scale workload.
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
 LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
@@ -160,6 +193,22 @@ LSF_SHUTDOWN_COMPONENT="${SHUTDOWN_COMPONENT}" \
 
 # Small real CLI/node workflows, including explicit cancellation; no scale workload.
 cargo build -p latent -p latentd --locked
+bash tools/run_sdk_provider_matrix.sh build
+(
+    PHASE3_FIXTURE="$(mktemp -d "${TARGET_ROOT}/phase3-provider-fixture.XXXXXX")"
+    trap 'rm -rf -- "${PHASE3_FIXTURE}"' EXIT
+    LSF_GUEST_CAPSULES="${TARGET_ROOT}/guest-capsules" \
+    LSF_PHASE3_WORKFLOW_FIXTURE_ROOT="${PHASE3_FIXTURE}/inputs" \
+        timeout 180 cargo test -p latentd --test phase3_workflow_fixture --locked -- \
+            export_signed_provider_workflow_fixtures --exact --ignored --nocapture --test-threads=1
+    mkdir -p "${TARGET_ROOT}/phase3-management"
+    timeout 360 python3 tools/run_phase3_management_workflow.py \
+        --cli "${TARGET_ROOT}/debug/latent" --node "${TARGET_ROOT}/debug/latentd" \
+        --fixture-root "${PHASE3_FIXTURE}/inputs" \
+        > "${TARGET_ROOT}/phase3-management/provider-receipt.json"
+    bash tools/run_sdk_provider_matrix.sh run "${TARGET_ROOT}/debug/latent" \
+        "${TARGET_ROOT}/debug/latentd" "${PHASE3_FIXTURE}/inputs"
+)
 LSF_LATENTD_BIN="${TARGET_ROOT}/debug/latentd" \
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
 LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \

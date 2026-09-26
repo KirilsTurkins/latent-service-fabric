@@ -26,6 +26,10 @@ fn validate_response(
         // Generated catalog identities have their own fixed-size allowance;
         // a short caller-name bound must not reject every genuine revision.
         let maximum = limits.max_id_bytes.max(83);
+        if let Some(publication) = &pin.publication_id {
+            // PublicationId owns an exactly bounded Box<str>, without spare capacity.
+            bytes.charge(publication.as_str().len())?;
+        }
         for value in [&pin.revision_id.0, &pin.release_digest.0] {
             bytes.string(value, maximum)?;
             identifier(value, maximum)?;

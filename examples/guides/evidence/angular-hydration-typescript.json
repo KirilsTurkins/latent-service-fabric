@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "scenario": "browser/angular-hydration",
+  "language": "typescript",
+  "sourceRevision": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+  "sourceSha256": "54b76f1ca7657f19aafab655fd01c4a43d5fd200544bed620e5017241d7773fe",
+  "validationSha256": "af4cb766ac8b7976d372674215a05f81a94049fa0a90b2df1697265ca2e7e59c",
+  "level": "real-node",
+  "execution": "real-node",
+  "passed": true,
+  "toolchain": "Linux x86_64; Rust 1.97.1; Node.js 24.19.0; Chromium 153.0.8010.52; exact binary/build identities in the receipt",
+  "run": "docs/evidence/angular-guide-2026-09-20.json",
+  "scope": "Complete separately owned enforced-node Angular workflow: real HTTP/browser hydration and navigation, scoped provider calls, cancellation, canary, revocation, same-port restart and rollback."
+}

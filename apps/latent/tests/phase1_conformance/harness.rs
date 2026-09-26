@@ -42,6 +42,10 @@ impl Harness {
         let (private, public_config) = configuration::node();
         std::fs::write(&config, serde_json::to_vec(&private).expect("node JSON"))
             .expect("node configuration");
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&config, std::fs::Permissions::from_mode(0o600)).unwrap();
+        }
         Self {
             config,
             public_config,

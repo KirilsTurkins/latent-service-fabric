@@ -19,8 +19,34 @@ pub(in crate::deployments) struct RecordIndex(pub(in crate::deployments) usize);
 pub(in crate::deployments) struct RevisionRecord {
     pub deployment: Arc<DeploymentManifest>,
     pub revision: RevisionId,
+    pub publication: Option<latent_core::PublicationId>,
     pub attributes: Metadata,
     pub execution: ExecutionRequirements,
+}
+
+impl RevisionRecord {
+    /// Preserve the stored scope; a local-unscoped source is not tenant admission.
+    pub fn publication_reference(
+        &self,
+        artifacts: &dyn latent_artifacts::ArtifactRepository,
+    ) -> Result<Option<latent_artifacts::PublicationRef>, latent_core::PlatformError> {
+        let Some(id) = &self.publication else {
+            return Ok(None);
+        };
+        let tenant = self
+            .deployment
+            .metadata
+            .tenant
+            .as_ref()
+            .ok_or_else(crate::deployment_operations::corrupt)?;
+        let selected = artifacts
+            .select_execution_publication(tenant, &self.deployment.release, Some(id))?
+            .ok_or_else(crate::deployment_operations::corrupt)?;
+        if selected.id != *id || selected.scope.tenant().is_some_and(|scope| scope != tenant) {
+            return Err(crate::deployment_operations::corrupt());
+        }
+        Ok(Some(selected))
+    }
 }
 
 impl CompiledCatalog {

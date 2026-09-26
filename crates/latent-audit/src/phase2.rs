@@ -35,6 +35,9 @@ pub enum Phase2AuditEventKind {
     PromotionRejected,
     RollbackAccepted,
     RollbackRejected,
+    CapabilityGrantAllowed,
+    CapabilityGrantDenied,
+    CapabilityProviderOutcome,
 }
 
 impl Phase2AuditEventKind {
@@ -56,6 +59,9 @@ impl Phase2AuditEventKind {
             Self::PromotionRejected => "promotion-rejected",
             Self::RollbackAccepted => "rollback-accepted",
             Self::RollbackRejected => "rollback-rejected",
+            Self::CapabilityGrantAllowed => "capability-grant-allowed",
+            Self::CapabilityGrantDenied => "capability-grant-denied",
+            Self::CapabilityProviderOutcome => "capability-provider-outcome",
         }
     }
 }

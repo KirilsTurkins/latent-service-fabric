@@ -1,0 +1,9 @@
+{
+  "name": "random",
+  "package": "tests:random@1.0.0",
+  "contract": "tests:random/api@1.0.0",
+  "capability": "latent:random/random@0.1.0",
+  "world": "tests:random/service@1.0.0",
+  "witDirectory": "random",
+  "asynchronous": false
+}

@@ -1,0 +1,75 @@
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling rustix v1.1.4
+   Compiling synstructure v0.13.2
+   Compiling smallvec v1.15.2
+   Compiling serde_json v1.0.150
+   Compiling serde_derive v1.0.229
+   Compiling zerofrom-derive v0.1.7
+   Compiling yoke-derive v0.8.2
+   Compiling zerofrom v0.1.8
+   Compiling zerovec-derive v0.11.6
+   Compiling yoke v0.8.3
+   Compiling displaydoc v0.2.7
+   Compiling zerovec v0.11.8
+   Compiling zerotrie v0.2.5
+   Compiling serde v1.0.229
+   Compiling tokio-macros v2.7.2
+   Compiling tinystr v0.8.4
+   Compiling icu_locale_core v2.3.0
+   Compiling latent-manifest v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-manifest)
+   Compiling ipnet v2.12.2
+   Compiling potential_utf v0.1.6
+   Compiling icu_collections v2.3.0
+   Compiling icu_provider v2.3.1
+   Compiling tokio v1.53.1
+   Compiling hashbrown v0.17.1
+   Compiling fs-set-times v0.20.3
+   Compiling latent-audit v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-audit)
+   Compiling latent-contracts v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-contracts)
+   Compiling rustix-linux-procfs v0.1.1
+   Compiling anyhow v1.0.104
+   Compiling cap-primitives v4.0.3
+   Compiling latent-artifacts v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-artifacts)
+   Compiling indexmap v2.14.1
+   Compiling icu_normalizer v2.3.0
+   Compiling icu_properties v2.3.0
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling curve25519-dalek v5.0.0
+   Compiling idna_adapter v1.2.2
+   Compiling wasmparser v0.252.0
+   Compiling cap-std v4.0.3
+   Compiling latent-routing v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-routing)
+   Compiling thiserror v2.0.20
+   Compiling percent-encoding v2.3.2
+   Compiling form_urlencoded v1.2.2
+   Compiling latent-activation v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-activation)
+   Compiling ed25519-dalek v3.0.0
+   Compiling cap-fs-ext v4.0.3
+   Compiling idna v1.1.0
+   Compiling thiserror-impl v2.0.20
+   Compiling spdx v0.13.5
+   Compiling crc32fast v1.5.1
+   Compiling latent-signing v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-signing)
+   Compiling wit-parser v0.252.0
+   Compiling tracing v0.1.44
+   Compiling url v2.5.8
+   Compiling futures-channel v0.3.34
+   Compiling hickory-proto v0.26.3
+   Compiling hyper v1.11.1
+   Compiling latent-packaging v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-packaging)
+   Compiling latent-executor v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-executor)
+   Compiling latent-telemetry v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-telemetry)
+   Compiling time-macros v0.2.32
+   Compiling latent-policy v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-policy)
+   Compiling flate2 v1.1.10
+   Compiling tokio-rustls v0.26.5
+   Compiling latent-network v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-network)
+   Compiling hyper-util v0.1.20
+   Compiling time v0.3.55
+   Compiling tempfile v3.27.0
+   Compiling latent-capabilities v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-capabilities)
+   Compiling latent-http v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-http)
+   Compiling latent-blobs v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-blobs)
+    Finished `test` profile [unoptimized] target(s) in 30.00s
+     Running unittests src/lib.rs (target/debug/deps/latent_blobs-709d43d7917528b8)

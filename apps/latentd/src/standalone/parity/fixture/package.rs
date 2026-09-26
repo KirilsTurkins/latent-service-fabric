@@ -136,6 +136,7 @@ fn create(
             }),
         },
         deployment: deployment_to_proto(&VersionedDeployment {
+            publication: None,
             manifest: deployment,
             generation: 0,
         })

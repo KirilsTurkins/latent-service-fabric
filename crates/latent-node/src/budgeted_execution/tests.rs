@@ -14,6 +14,7 @@ use super::*;
 use crate::{ActivationBudgetPolicy, BudgetedActivationManager};
 
 mod owned;
+mod preparation_wait;
 mod support;
 use support::{budget, request};
 

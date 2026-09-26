@@ -16,8 +16,10 @@ use super::{
 };
 
 pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformError> {
+    super::security::validate(config)?;
     let capacity = validation::validate(config)?;
     let admission = policy::admission(config, &capacity)?;
+    let delegation_limits = config.budget_profile.limits()?;
     let invocation = runtime::invocation(config, &capacity)?;
     let management = runtime::management(config, &invocation)?;
     let classes = config
@@ -34,6 +36,8 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     };
     telemetry.validate().map_err(|_| invalid("telemetry"))?;
     let wasmtime = runtime::wasmtime(config, &capacity)?;
+    let http = super::http::derive(config, capacity.reservations as usize)?;
+    let providers = super::providers::derive(config)?;
     let runtime_profile = std::sync::Arc::new(wasmtime.detected_runtime_profile()?);
     let artifacts = artifact_limits(config, management.max_page_size);
     let isolated_aot = config
@@ -48,11 +52,14 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         .map(ToString::to_string)
         .collect();
     Ok(NodeSettings {
+        credentials_from_protected_file: config.credentials_from_protected_file,
         data_directory: config.data_directory.as_path().to_path_buf(),
         supply_chain: super::supply_chain::derive(&config.supply_chain)?,
         isolated_aot,
         audit: super::audit::derive(config.audit.as_ref())?,
         rollouts: super::rollouts::derive(config.rollouts.as_ref(), config.audit.is_some())?,
+        capability_policies: super::capability_policies::derive(config.capability_policies)?,
+        providers,
         node,
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,
@@ -66,6 +73,8 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             ..DirectoryDeploymentRepositoryConfig::default()
         },
         admission,
+        budget_profile: config.budget_profile.profile(),
+        delegation_limits,
         scheduler: LocalSchedulerConfig {
             node: NodeId(config.node_id.clone()),
             queue_capacity_per_class: classes.clone(),
@@ -92,6 +101,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             ..StandaloneInventoryConfig::default()
         },
         transport,
+        http,
         shutdown_grace: Duration::from_millis(config.shutdown_grace_millis),
         load_sample_interval: Duration::from_millis(250),
     })
@@ -99,6 +109,10 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
 
 fn artifact_limits(config: &NodeConfig, page_size: u32) -> DirectoryArtifactRepositoryConfig {
     DirectoryArtifactRepositoryConfig {
+        max_storage_bytes: config.catalogs.publication_storage_bytes,
+        max_content_index_bytes: config.catalogs.content_index_bytes,
+        max_content_blobs: config.catalogs.content_blobs,
+        max_publication_files: config.catalogs.publication_files,
         max_index_entries: config.catalogs.release_entries,
         max_index_bytes: config.catalogs.release_index_bytes,
         max_component_bytes: config.limits.maximum_component_bytes,
@@ -134,7 +148,14 @@ fn transport(config: &NodeConfig, maximum_rpcs: usize) -> TransportConfig {
         maximum_control_jobs: config.workers.control,
         maximum_header_bytes: 16 * 1024,
         maximum_streams_per_connection: 32,
+        unauthenticated_timeout: Duration::from_millis(
+            config.limits.unauthenticated_connection_timeout_millis,
+        ),
         request_timeout: Duration::from_millis(config.execution.maximum_wall_time_millis),
+        maximum_connection_age: Duration::from_millis(config.limits.maximum_connection_age_millis),
+        connection_drain_timeout: Duration::from_millis(
+            config.limits.connection_drain_timeout_millis,
+        ),
         shutdown_timeout: Duration::from_millis(config.shutdown_grace_millis),
         credentials: config
             .credentials

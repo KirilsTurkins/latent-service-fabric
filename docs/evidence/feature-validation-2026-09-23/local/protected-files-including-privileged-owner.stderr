@@ -1,0 +1,5 @@
+   Compiling rustix v1.1.4
+   Compiling tempfile v3.27.0
+   Compiling latent-protected-files v0.1.0-alpha.4 (/tmp/lsf-feature-validation-8eea5c73/crates/latent-protected-files)
+    Finished `test` profile [unoptimized] target(s) in 2.49s
+     Running unittests src/lib.rs (target/debug/deps/latent_protected_files-d2ae756c71587524)

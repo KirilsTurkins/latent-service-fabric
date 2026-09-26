@@ -93,11 +93,22 @@ impl DeploymentIndex {
                 .get("lsf.deployment")
                 .ok_or_else(invalid_versions)?;
             let digits = usize::try_from(version.ilog10() + 1).map_err(|_| page_byte_limit())?;
-            // Exact compact JSON record accounting, independent of RPC transport framing.
+            // Compact manifest accounting plus a conservative full publication-reference allowance; independent of RPC framing.
             let bytes = encoded
                 .len()
                 .checked_add(b"{\"manifest\":,\"generation\":}".len())
                 .and_then(|bytes| bytes.checked_add(digits))
+                .and_then(|bytes| {
+                    bytes.checked_add(record.publication.as_ref().map_or(0, |id| {
+                        id.as_str().len()
+                            + 128
+                            + 2 * manifest
+                                .metadata
+                                .tenant
+                                .as_ref()
+                                .map_or(0, |tenant| tenant.0.len())
+                    }))
+                })
                 .ok_or_else(page_byte_limit)?;
             by_tenant.push(RecordIndex(position));
             encoded_bytes.push(bytes);
@@ -251,6 +262,9 @@ impl DirectoryDeploymentRepository {
             #[cfg(test)]
             instrumentation::cloned();
             page.deployments.push(VersionedDeployment {
+                publication: catalog
+                    .record(*index)
+                    .publication_reference(self.artifacts.as_ref())?,
                 manifest: (**manifest).clone(),
                 generation: version,
             });

@@ -34,7 +34,7 @@ pub(crate) struct Job<I, O> {
     pub expires: Instant,
     pub maximum: usize,
     pub lease: Option<ResponseLease>,
-    // Input, queued reply and response ownership are released before this charge.
+    // Input and untransferred response ownership are released before this charge.
     pub charge: RequestCharge,
 }
 pub(crate) enum Command {
@@ -61,7 +61,13 @@ impl<I, O> Job<I, O> {
                 lease: self.lease.take().expect("reserved reply allowance"),
             })
             .map_err(|error| RolloutFailure::new(error, self.control.ack()));
-        if let Some(reply) = self.reply.take() {
+        let reply = self.reply.take();
+        // Retire input and request accounting before waking the client. The
+        // completed value owns its separate response lease through delivery.
+        // Otherwise an immediate next command can race the charge's mutex and
+        // receive Busy even when it is the only client and capacity is free.
+        drop(self);
+        if let Some(reply) = reply {
             let _ = reply.send(result);
         }
     }

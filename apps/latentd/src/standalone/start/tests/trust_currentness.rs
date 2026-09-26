@@ -8,6 +8,9 @@
 )]
 mod runtime;
 
+#[path = "trust_currentness/profile.rs"]
+mod profile;
+
 use latent_artifacts::{
     package::{inspect_package, PackageLimits},
     AdmissionEvidence, AdmissionStorageLimits, ArtifactRepository, DirectoryArtifactRepository,
@@ -110,7 +113,11 @@ impl Fixture {
             policy["validUntil"] = json!(now + 60);
         }
         let file = fs::symlink_metadata(&compiler).unwrap();
-        assert!(file.is_file() && file.len() <= 256 * 1024 * 1024);
+        assert!(
+            file.is_file() && file.len() > 0 && file.len() <= 256 * 1024 * 1024,
+            "AOT fixture requires a regular compiler executable of at most 256 MiB; got {} bytes",
+            file.len()
+        );
         let mut executable = File::open(&compiler).unwrap();
         let mut hash = Sha256::new();
         let mut chunk = [0_u8; 16 * 1024];
@@ -267,6 +274,7 @@ fn evidence(root: &Path, entries: &Value) -> Vec<AdmissionEvidence> {
 
 fn config() -> WasmtimeConfig {
     WasmtimeConfig {
+        execution_isolation_profile: latent_wasmtime::ExecutionIsolationProfile::ExternalCapsule,
         maximum_component_bytes: COMPONENT_BYTES,
         maximum_memory_bytes: 4 * 1024 * 1024,
         maximum_fuel: 1_000_000,
@@ -284,6 +292,14 @@ struct Session {
 }
 impl Session {
     fn new(fixture: &Fixture, repository: Arc<DirectoryArtifactRepository>) -> Self {
+        Self::with_config(fixture, repository, config())
+    }
+
+    fn with_config(
+        fixture: &Fixture,
+        repository: Arc<DirectoryArtifactRepository>,
+        config: WasmtimeConfig,
+    ) -> Self {
         let mut process = AotProcessLimits::default();
         process.compiler.maximum_output_bytes = OUTPUT_BYTES;
         process.resources.maximum_jobs = 1;
@@ -337,8 +353,16 @@ impl Session {
                 maximum_total_bytes: 2 * OUTPUT_BYTES,
             },
         };
+        settings.verify_compiler_readiness(&config).unwrap();
+        assert!(
+            fs::read_to_string("/proc/thread-self/children")
+                .unwrap()
+                .trim()
+                .is_empty(),
+            "the real readiness child is terminated and reaped"
+        );
         let factory = WasmtimeComponentEngineFactory::with_catalog_and_aot(
-            config(),
+            config,
             WasmtimeHostServices::default(),
             repository,
             settings,
@@ -513,8 +537,12 @@ async fn schedule(cause: Cause) {
         // Fresh catalog recovery may legitimately renew proof-age-only grants;
         // expired policy and revoked publishers must instead retain denied history.
         let scope = LifecycleScope::Tenant(TenantId("tests".into()));
+        let publication = repository
+            .select_execution_publication(&TenantId("tests".into()), &release, None)
+            .unwrap()
+            .unwrap();
         let previous = repository
-            .get_release_lifecycle(&scope, &release)
+            .get_selected_lifecycle(&scope, &publication)
             .await
             .unwrap()
             .unwrap();
@@ -526,7 +554,7 @@ async fn schedule(cause: Cause) {
         let authority = fixture.authority(clock.clone());
         let repository = fixture.repository(authority.clone());
         let recovered = repository
-            .get_release_lifecycle(&scope, &release)
+            .get_selected_lifecycle(&scope, &publication)
             .await
             .unwrap()
             .unwrap();

@@ -127,18 +127,20 @@ async fn get(request: proto::GetDeploymentRequest, session: &Session) -> Result<
 }
 
 async fn apply(
-    request: proto::ApplyDeploymentRequest,
+    mut request: proto::ApplyDeploymentRequest,
     session: &Session,
 ) -> Result<Outcome, Failure> {
+    let expected_manifest = request_manifest(&mut request)?;
     let deployment = request.deployment.as_ref().ok_or_else(invalid_input)?;
     let id = deployment.id.clone();
-    let component = deployment.release_digest.clone();
+    let component = request
+        .expected_component_digest
+        .as_ref()
+        .unwrap_or(&deployment.release_digest)
+        .clone();
+    let publication = deployment.publication.clone();
     let expected = request.expected_generation;
     let op = request.operation.clone();
-    let expected_manifest = op
-        .as_ref()
-        .map(|_| manifest_digest(deployment))
-        .transpose()?;
     let mut client = client(session);
     let value = session
         .call(client.apply_deployment(session.request(request)?))
@@ -146,13 +148,7 @@ async fn apply(
         .into_inner();
     bounds::checked(&value, session.max_response_bytes())?;
     association::deployment(value.deployment.as_ref(), session.tenant(), Some(&id), None)?;
-    if value
-        .deployment
-        .as_ref()
-        .is_some_and(|value| value.release_digest != component)
-    {
-        return Err(invalid_response());
-    }
+    check_publication(&value, &component, publication.as_ref())?;
     if let Some(receipt) = &value.receipt {
         receipt_scope(receipt, session, &receipt.operation_id, Some(&id))?;
     }
@@ -161,7 +157,7 @@ async fn apply(
         check_manifest(
             value.deployment.as_ref().ok_or_else(invalid_response)?,
             receipt,
-            expected_manifest.as_deref().ok_or_else(invalid_response)?,
+            &expected_manifest,
         )?;
         receipt_scope(receipt, session, &op.operation_id, Some(&id))?;
         if receipt.action != proto::DeploymentOperationAction::Apply as i32
@@ -189,6 +185,48 @@ async fn apply(
     );
     output.outcome_known = state != Some("uncertain");
     Ok(output)
+}
+
+/// Reconstruct the original manifest for hashing without changing the selector
+/// sent over the wire. CLI manifests always assert the executable digest.
+fn request_manifest(request: &mut proto::ApplyDeploymentRequest) -> Result<String, Failure> {
+    let value = request.deployment.as_mut().ok_or_else(invalid_input)?;
+    if value.requested_publication.is_some() {
+        return Err(invalid_input());
+    }
+    match (&value.publication, &request.expected_component_digest) {
+        (Some(reference), Some(component)) if value.release_digest.is_empty() => {
+            if component.len() != 71 || reference.id.len() != 83 || reference.tenant.len() > 512 {
+                return Err(invalid_input());
+            }
+            value.release_digest = component.clone();
+            value.requested_publication = Some(reference.clone());
+            let result = manifest_digest(value);
+            value.release_digest.clear();
+            value.requested_publication = None;
+            result
+        }
+        _ => Err(invalid_input()),
+    }
+}
+
+fn check_publication(
+    response: &proto::ApplyDeploymentResponse,
+    component: &str,
+    selected: Option<&proto::PublicationRef>,
+) -> Result<(), Failure> {
+    let value = response.deployment.as_ref().ok_or_else(invalid_response)?;
+    if value.release_digest != component
+        || value.requested_publication.as_ref() != selected
+        || selected.is_some_and(|expected| value.publication.as_ref() != Some(expected))
+        || response
+            .receipt
+            .as_ref()
+            .is_some_and(|receipt| receipt.publication != value.publication)
+    {
+        return Err(invalid_response());
+    }
+    Ok(())
 }
 
 fn manifest_digest(value: &proto::Deployment) -> Result<String, Failure> {

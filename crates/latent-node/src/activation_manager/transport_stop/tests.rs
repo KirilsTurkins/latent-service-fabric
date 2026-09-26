@@ -62,7 +62,7 @@ fn raw_disconnect_stops_both_probes_without_accepting_explicit_cancellation() {
     let registry = ActivationCancellationRegistry::default();
     let registration = registry.register(ActivationId("raw-stop".into())).unwrap();
     let stop = Arc::new(TransportStop::default());
-    let probe = ActivationControl::new(&registration, stop.clone());
+    let probe = ActivationControl::new(&registration, stop.clone(), false);
     let mut waiting = SchedulingCancellation::cancelled(&probe);
     assert!(poll(waiting.as_mut()).is_pending());
     stop.mark(ActivationTransportInterruption::Disconnected);
@@ -85,7 +85,7 @@ fn deadline_mark_is_not_a_cancellation_probe_or_a_repeating_ready_wait() {
         .register(ActivationId("deadline-stop".into()))
         .unwrap();
     let stop = Arc::new(TransportStop::default());
-    let probe = ActivationControl::new(&registration, stop.clone());
+    let probe = ActivationControl::new(&registration, stop.clone(), false);
     let mut waiting = SchedulingCancellation::cancelled(&probe);
     assert!(poll(waiting.as_mut()).is_pending());
     stop.mark(ActivationTransportInterruption::DeadlineExceeded);

@@ -32,6 +32,7 @@ pub use aot::{
     AotResourceLimits, AotResourceSnapshot, AotSandboxLimits, IsolatedAotCompiler,
     NativeAotCacheConfig, NativeAotSettings, NativeAotSnapshot, NativeImageLimits,
     NativeImageSnapshot, TrustedAotCompilerAuthority, TrustedAotOutput, ValidatedAotProfile,
+    ISOLATED_AOT_SANDBOX_PROFILE,
 };
 pub use backend::{PreparationActivitySnapshot, WasmtimeBackend};
 pub use cache::{
@@ -39,9 +40,11 @@ pub use cache::{
     PreparedRuntimePopulation, PreparedRuntimeSnapshot,
 };
 pub use compiler::CompilerObserver;
+#[cfg(feature = "development-clock-fixture")]
+pub use config::DevelopmentClockReadings;
 pub use config::{
-    CompilerOptimization, InstanceAllocator, Phase0InstanceAllocator, Phase0WasmtimeConfig,
-    WasmtimeConfig, GENERIC_BACKEND_ID, WASMTIME_VERSION,
+    CompilerOptimization, ExecutionIsolationProfile, InstanceAllocator, Phase0InstanceAllocator,
+    Phase0WasmtimeConfig, WasmtimeConfig, GENERIC_BACKEND_ID, WASMTIME_VERSION,
 };
 pub use containment::RuntimeResourceSnapshot;
 pub use factory::WasmtimeComponentEngineFactory;

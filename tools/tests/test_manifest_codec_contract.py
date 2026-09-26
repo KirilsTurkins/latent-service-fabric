@@ -87,6 +87,19 @@ class ManifestCodecContractTests(unittest.TestCase):
         for schema_name in SCHEMA_EXAMPLES:
             self.assertIn(f'include_str!("../../../schemas/{schema_name}")', source)
 
+    def test_buffered_http_profile_is_closed_and_requires_exact_target_pins(self) -> None:
+        document = json.loads((ROOT / "examples/http-application/trigger.json").read_text())
+        validator = Draft202012Validator(self.schema("trigger.schema.json"))
+        self.assertTrue(validator.is_valid(document))
+        for field in ("publication", "revision", "deploymentGeneration", "route"):
+            missing = copy.deepcopy(document)
+            del missing["spec"]["target"][field]
+            self.assertFalse(validator.is_valid(missing), field)
+        for field, value in (("profile", "future"), ("method", "get"), ("extra", "ignored")):
+            invalid = copy.deepcopy(document)
+            invalid["spec"]["configuration"][field] = value
+            self.assertFalse(validator.is_valid(invalid), field)
+
 
 if __name__ == "__main__":
     unittest.main()

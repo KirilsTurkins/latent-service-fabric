@@ -85,6 +85,8 @@ pub(super) fn prepare(
         annotations,
     };
     let summary = ArtifactCatalogEntry {
+        publication: None,
+        package: None,
         descriptor: descriptor.clone(),
         tenant: manifest.metadata.tenant.clone(),
         service: ServiceId(manifest.metadata.name.clone()),

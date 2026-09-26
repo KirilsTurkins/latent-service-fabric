@@ -126,7 +126,7 @@ impl Package {
         }
     }
 
-    pub fn deployment(&self, id: &str) -> PathBuf {
+    pub fn deployment(&self, id: &str, publication: &str) -> PathBuf {
         let mut deployment: Value = serde_json::from_slice(include_bytes!(
             "../../../../examples/echo-contract/deployment.json"
         ))
@@ -137,6 +137,7 @@ impl Package {
         deployment["metadata"]["tenant"] = json!(self.tenant);
         deployment["spec"]["service"] = json!(self.service);
         deployment["spec"]["release"] = json!(self.digest);
+        deployment["spec"]["publication"] = json!(publication);
         deployment["spec"]["resources"] = capsule["execution"]["limits"].clone();
         deployment["spec"]["grants"] = json!(capsule["imports"]
             .as_array()

@@ -11,7 +11,11 @@ description = "Interface contracts for latent-ingress."
 workspace = true
 
 [dependencies]
+base64.workspace = true
 latent-core = { path = "../latent-core" }
 latent-activation = { path = "../latent-activation" }
 latent-identity = { path = "../latent-identity" }
 latent-triggers = { path = "../latent-triggers" }
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true

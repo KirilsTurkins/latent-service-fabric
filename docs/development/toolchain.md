@@ -12,32 +12,100 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 
 ## Selected versions
 
-| Area | Version | Purpose |
-| --- | ---: | --- |
-| Rust toolchain | 1.97.1 | Default formatter, compiler, Clippy, tests, code generation, and component build |
-| Rust MSRV | 1.94.1 | Oldest compiler checked for all native workspace targets |
-| Rust binding-check target | `wasm32-wasip2` | Compile generated Rust guest bindings against Preview 2 |
-| Rust component-core target | `wasm32-unknown-unknown` | Build self-contained cores before explicit componentization |
-| Tokio | 1.53.1 | Fixed node runtimes, async adapters, and explicit test runtimes |
-| Prost | 0.14.4 | Generated Protobuf message implementation |
-| Tonic / `tonic-prost` | 0.14.6 / 0.14.6 | Generated RPC clients, servers, and Prost codec |
-| `tonic-prost-build` | 0.14.6 | Build-time Rust generation from every authoritative `.proto` |
-| `protoc-bin-vendored` | 3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
-| Tracing / tracing-subscriber | 0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
-| Wasmtime | 47.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
-| `wit-bindgen` | 0.60.0 | Guest bindings and canonical ABI exports generated from WIT |
-| Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
-| TOML | 1.1.4 | Configuration parsing and serialization |
-| BLAKE3 / SHA-256 | 1.8.5 / 0.10.9 | Cache/prepared identity and artifact digest verification |
-| Clap / `tempfile` | 4.6.4 / 3.27.0 | CLI surfaces and test-only temporary storage |
-| `wasm-tools` | 1.254.0 | WIT parsing, validation, componentization, and interface extraction |
-| Buf | 1.72.0 | Protobuf linting and independent descriptor-set generation |
-| Python / `jsonschema` | 3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
-| Go / Node / TypeScript / .NET | 1.23.2 / 22.16.0 / 5.8.3 / 8.0.423 | Cross-language interface compilation |
-| Eclipse Temurin JDK | 21.0.11+10 | Java SDK compilation |
+| Area |                              Version | Purpose |
+| --- |-------------------------------------:| --- |
+| Rust toolchain |                               1.97.1 | Default formatter, compiler, Clippy, tests, code generation, and component build |
+| Rust MSRV |                               1.94.1 | Oldest compiler checked for all native workspace targets |
+| Rust binding-check target |                      `wasm32-wasip2` | Compile generated Rust guest bindings against Preview 2 |
+| Rust component-core target |             `wasm32-unknown-unknown` | Build self-contained cores before explicit componentization |
+| Tokio |                               1.53.1 | Fixed node runtimes, async adapters, and explicit test runtimes |
+| Prost |                               0.14.4 | Generated Protobuf message implementation |
+| Tonic / `tonic-prost` |                      0.14.6 / 0.14.6 | Generated RPC clients, servers, and Prost codec |
+| `tonic-prost-build` |                               0.14.6 | Build-time Rust generation from every authoritative `.proto` |
+| `protoc-bin-vendored` |                                3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
+| Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
+| Wasmtime |                               47.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
+| `wit-bindgen` |                               0.62.0 | Guest bindings and canonical ABI exports generated from WIT |
+| Serde / `serde_json` |                    1.0.229 / 1.0.150 | Rust contract serialization |
+| TOML |                                1.1.4 | Configuration parsing and serialization |
+| BLAKE3 / SHA-256 |                       1.8.7 / 0.10.9 | Cache/prepared identity and artifact digest verification |
+| Clap / `tempfile` |                       4.6.4 / 3.27.0 | CLI surfaces and test-only temporary storage |
+| `wasm-tools` |                              1.254.0 | WIT parsing, validation, componentization, and interface extraction |
+| Buf |                               1.72.0 | Protobuf linting and independent descriptor-set generation |
+| Python / `jsonschema` |                      3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
+| Go / Node / TypeScript / .NET |   1.27.1 / 24.19.0 / 7.0.2 / 8.0.425 | Cross-language interfaces and bounded native clients |
+| Eclipse Temurin JDK |                           25.0.4.1+1 | Java SDK build and runtime qualification; Java 25 minimum runtime |
+| Gradle (optional Java build) |                                9.1.0 | Java 25-compatible Gradle path; distribution SHA-256 pinned in `tools/toolchain.toml` |
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
 
 Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.4`; the resolved package may display `1.1.4+spec-1.1.0` in `Cargo.lock`.
+
+## Shell completion tests
+
+The Linux CLI completion suite executes generated scripts in Bash and Fish.
+Install both shells before `cargo test -p latent --test completions`; on the
+Ubuntu CI image, Fish is installed with `apt-get install fish`. The regression
+also passes with Fish 3.6.0. No interactive shell profile is loaded or changed.
+Generating Zsh or PowerShell output alone does not qualify its execution.
+
+## Java 25 SDK baseline and migration
+
+The Java SDK now targets Java 25, including generated protocol classes, tests
+and packaged SDK classes. Java 21 cannot load the new SDK JAR. Consumers must
+upgrade their application build/runtime to Java 25 before adopting it; changing
+only the CI launcher while retaining `--release 21` is not this migration.
+The minimum class-file runtime is Java 25, while repository qualification uses
+the exact Temurin patch/build above. This does not qualify every later JDK,
+Android or a Java guest runtime, and does not change the public SDK or wire API.
+
+Set `JAVA_HOME` to that Temurin installation and put its `bin` first on `PATH`.
+The standalone helper chooses `JAVA_HOME`, or resolves `java` from `PATH` when
+it is unset, then uses that one installation's `javac`, `java` and `jar`.
+A wrong explicit installation fails rather than falling back. Both the compiler's
+own runtime and the runtime launcher must match the exact vendor and build;
+only the Temurin `-LTS` suffix is normalized. Every probe retains its 30-second
+limit. Gradle disables automatic discovery/downloads and uses `JAVA_HOME` with
+the same exact identity check and explicitly selected execution launcher.
+
+`tools/toolchain.toml` distinguishes runtime `25.0.4.1+1` from the exact
+`actions/setup-java` selector `25.0.4+101.0.LTS`. Adoptium's SemVer metadata
+encodes the fourth version component as `100 * patch + build`; here it is 101.
+Do not substitute a floating major, omit the build metadata, or pass the
+four-component runtime string as a SemVer selector. See the
+[Temurin release](https://github.com/adoptium/temurin25-binaries/releases/tag/jdk-25.0.4.1%2B1)
+and [Gradle compatibility matrix](https://docs.gradle.org/current/userguide/compatibility.html).
+Gradle 9.1.0 is the pinned CI version; Java 25 requires Gradle 9.1.0 or newer.
+CI verifies the distribution against the committed SHA-256 before extraction.
+
+From the repository root, with the selected JDK and Python available:
+
+```sh
+python3 sdk/java-client/tools/java_toolchain.py check
+python3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain
+python3 sdk/java-client/tools/generate_bridge.py --check
+python3 sdk/java-client/tools/build.py test
+python3 sdk/java-client/tools/build.py build
+python3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar
+# Optional separate build path; JAVA_HOME must identify the selected Temurin JDK.
+gradle --no-daemon -p sdk/java-client clean check
+```
+
+Standalone builds do not require Gradle or Maven. Both paths verify every SDK
+class header as major 69, minor 0, rejecting empty outputs, Java 21 classes and
+preview bytecode. Existing locked dependencies and generators are unchanged.
+The small Python tests use mocked probes and synthetic class headers; they are
+not evidence of Java compilation or a real-node transport run.
+
+The existing SDK CI job executes Gradle and standalone semantic/transport/JAR
+checks on `ubuntu-24.04` and retains `java-sdk-qualification-<source-sha>` with
+source/JDK/Gradle/OS identities, logs, class-file checks and the standalone JAR
+digest. The existing repository-contract job runs the Java participant in the
+[separate-node provider workflow](../testing/sdk-provider-workflow.md), retaining
+its receipts in the existing `phase-1-bounded-conformance-<source-sha>` artifact.
+Use successful results from the same reviewed source revision; configuration
+alone is not a qualification pass. Historical Java 21 release documentation and
+retained Windows tests compiled with `--release 21` remain historical evidence,
+not Java 25-targeted Windows qualification. No milestone or phase gate is added.
 
 ## Reproducibility boundary
 
@@ -62,10 +130,9 @@ make validate
 
 `make validate` executes formatting, locked workspace checks, Clippy, tests, repository/foundation/contract validation, retained echo and containment integration, and all SDK compilation. `make phase1-foundation` runs the Rust and contract subset. A missing or stale `Cargo.lock` fails all locked commands.
 
-Routine PR CI runs the executable Phase 0 outcome/recovery matrix immediately
-after fixture generation in `CI / Repository contracts`. The separate runtime
-regression workflow collects a smoke baseline only on manual dispatch; it is not
-an additional path-filtered PR check. See [CI ownership](../testing/phase0-ci-layout.md).
+Routine PR CI runs maintained runtime contracts, SDK checks and retained evidence
+validators. The Phase 0 executable collectors and their workflows are retired;
+historical receipts remain checked in. See [CI ownership](../testing/ci-lanes.md).
 Fresh Phase 2 evidence uses the bounded commands in
 [offline validation](../testing/phase-2-offline-validation.md) and the
 [operator walkthrough](standalone-quickstart.md#bounded-phase-2-operator-workflow).
@@ -81,10 +148,10 @@ Install the remaining contract tools at their selected versions, for example `ca
 
 ## Linux and evidence boundary
 
-Linux or WSL may run `make validate`, `make phase0-gate-smoke`, and `make phase0-gate`.
-Only a clean native-Linux host or VM may create replacement **Phase 0**
-calibration, profiling or resource-soak evidence; those wrappers reject WSL and
-containers because their measurements establish a native-host reference.
+Linux or WSL may run `make validate`. Historical **Phase 0** calibration,
+profiling and resource-soak commands belong to their recorded source revisions;
+their wrappers required a clean native-Linux host or VM and rejected WSL and
+containers because their measurements established a native-host reference.
 The separate Phase 1 collectors record their actual supported environment.
 The completed [extension comparisons](../phase-1-extension-completion.md),
 including Docker and Kubernetes, ran on the documented Docker Desktop/WSL2
@@ -117,3 +184,17 @@ Executable capsule binaries and generated transport source are not checked in. T
 ## Allocation boundary
 
 Build and validation code starts compiler/validator subprocesses only when a command explicitly runs. Linking generated bindings creates no engine, store, listener, socket, process, service thread, execution cell, or service-owned async runtime. `latent-testkit::block_on` polls on the calling thread; `AsyncTestRuntime` is explicitly constructed for tests and uses Tokio's current-thread scheduler without a worker pool.
+
+## Phase 3 guest contract tools
+
+The full contract gate also builds the Rust guest SDK examples and the C
+canonical ABI fixture. Install the pinned `wit-bindgen` 0.60.0 CLI and Zig
+0.16.0 alongside the existing Rust, Python and wasm-tools pins. On Linux x86_64,
+`python3 tools/install_guest_bindgen.py "$HOME/.local/lsf-guest-tools"` installs
+the SHA-verified upstream generator into a new directory; add that directory
+to `PATH`. CI uses this same verifier and the existing pinned Zig setup action.
+The installer refuses to overwrite an existing executable.
+
+Generated source, components and observations stay under the selected target
+root. See the [guest SDK workflow](../component-development/guest-sdk.md) for
+build, signed admission and actual Rust/C runtime checks.

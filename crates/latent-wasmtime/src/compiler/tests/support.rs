@@ -220,6 +220,7 @@ pub(super) fn source() -> (Directory, Arc<DirectoryArtifactRepository>, Coalesci
         .unwrap()
         .unwrap();
     let key = PreparationKey {
+        publication: None,
         release,
         engine_version: "test".to_owned(),
         engine_configuration_digest: "test".to_owned(),

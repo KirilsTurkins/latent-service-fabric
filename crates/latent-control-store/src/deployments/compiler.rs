@@ -2,6 +2,8 @@ mod admission;
 pub(super) mod execution;
 mod fingerprint;
 mod index;
+#[cfg(test)]
+pub(in crate::deployments) mod ownership;
 mod packing;
 mod records;
 mod reuse;
@@ -30,7 +32,15 @@ pub(super) use index::RouteView;
 use index::{EndpointRow, RouteRow, WeightedCandidate};
 pub(super) use records::{DesiredDeployments, ObjectVersions, RecordIndex, RevisionRecord};
 
+#[cfg(not(test))]
+type CompilationMetadata = VerifiedArtifactMetadata;
+#[cfg(test)]
+type CompilationMetadata = ownership::Owned<VerifiedArtifactMetadata>;
+
+pub(super) type PublicationPins = BTreeMap<latent_core::DeploymentId, latent_core::PublicationId>;
+
 pub(super) struct CompiledCatalog {
+    pub bindings: super::bindings::BindingCatalog,
     pub deployments: DesiredDeployments,
     pub versions: ObjectVersions,
     pub generation: RouteGeneration,
@@ -103,6 +113,7 @@ pub(super) async fn compile_versioned(
         false,
         None,
         None,
+        None,
     )
     .await
 }
@@ -135,6 +146,7 @@ pub(super) async fn compile_versioned_with_runtime(
         false,
         runtime_profile,
         lifecycle,
+        None,
     )
     .await
 }
@@ -155,6 +167,7 @@ pub(super) async fn compile_versioned_inner(
     recovery: bool,
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
     lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+    pins: Option<&PublicationPins>,
 ) -> Result<super::persistence::EncodedCatalog, PlatformError> {
     let result = compile_catalog_inner(
         deployments,
@@ -168,6 +181,9 @@ pub(super) async fn compile_versioned_inner(
         recovery,
         runtime_profile,
         lifecycle,
+        pins,
+        true,
+        None,
     )
     .await
     .and_then(|catalog| super::persistence::encode(catalog, config, work));
@@ -179,7 +195,7 @@ pub(super) async fn compile_versioned_inner(
 /// compiled owner so its final v3 envelope is encoded once after that metadata exists.
 #[expect(
     clippy::too_many_arguments,
-    reason = "same closed compiler inputs as legacy encoding"
+    reason = "same closed compiler inputs as ordinary encoding"
 )]
 pub(super) async fn compile_catalog_with_runtime(
     deployments: DesiredDeployments,
@@ -192,6 +208,42 @@ pub(super) async fn compile_catalog_with_runtime(
     work: &mut Work,
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
     lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+    control_authority: Option<&dyn latent_artifacts::AdmissionAuthority>,
+) -> Result<CompiledCatalog, PlatformError> {
+    compile_catalog_with_pins(
+        deployments,
+        versions,
+        generation,
+        generated_at_unix_millis,
+        artifacts,
+        config,
+        previous,
+        work,
+        runtime_profile,
+        lifecycle,
+        None,
+        control_authority,
+    )
+    .await
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "exact captured publications accompany the existing bounded compiler inputs"
+)]
+pub(super) async fn compile_catalog_with_pins(
+    deployments: DesiredDeployments,
+    versions: ObjectVersions,
+    generation: RouteGeneration,
+    generated_at_unix_millis: u64,
+    artifacts: &dyn ArtifactRepository,
+    config: DirectoryDeploymentRepositoryConfig,
+    previous: Option<&CompiledCatalog>,
+    work: &mut Work,
+    runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+    lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+    pins: Option<&PublicationPins>,
+    control_authority: Option<&dyn latent_artifacts::AdmissionAuthority>,
 ) -> Result<CompiledCatalog, PlatformError> {
     let result = compile_catalog_inner(
         deployments,
@@ -205,6 +257,49 @@ pub(super) async fn compile_catalog_with_runtime(
         false,
         runtime_profile,
         lifecycle,
+        pins,
+        true,
+        control_authority,
+    )
+    .await;
+    finish_compilation(&result, work);
+    result
+}
+
+/// Compile routes for an explicit binding replacement without reserving a
+/// second, immediately discarded set of inherited binding plans.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "same bounded compiler inputs as route updates"
+)]
+pub(super) async fn compile_catalog_for_bindings(
+    deployments: DesiredDeployments,
+    versions: ObjectVersions,
+    generation: RouteGeneration,
+    generated_at_unix_millis: u64,
+    artifacts: &dyn ArtifactRepository,
+    config: DirectoryDeploymentRepositoryConfig,
+    previous: &CompiledCatalog,
+    work: &mut Work,
+    runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+    lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+    control_authority: Option<&dyn latent_artifacts::AdmissionAuthority>,
+) -> Result<CompiledCatalog, PlatformError> {
+    let result = compile_catalog_inner(
+        deployments,
+        versions,
+        generation,
+        generated_at_unix_millis,
+        artifacts,
+        config,
+        Some(previous),
+        work,
+        false,
+        runtime_profile,
+        lifecycle,
+        None,
+        false,
+        control_authority,
     )
     .await;
     finish_compilation(&result, work);
@@ -248,6 +343,7 @@ pub(super) async fn compile_for_publication(
             work,
             runtime_profile,
             lifecycle,
+            None,
         )
         .await
         .map(super::persistence::PublicationCandidate::Combined)
@@ -265,7 +361,7 @@ pub(super) async fn compile_for_publication(
             lifecycle,
         )
         .await
-        .map(super::persistence::PublicationCandidate::Legacy)
+        .map(super::persistence::PublicationCandidate::Encoded)
     }
 }
 
@@ -285,6 +381,9 @@ async fn compile_catalog_inner(
     recovery: bool,
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
     lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+    pins: Option<&PublicationPins>,
+    inherit_bindings: bool,
+    control_authority: Option<&dyn latent_artifacts::AdmissionAuthority>,
 ) -> Result<CompiledCatalog, PlatformError> {
     count!(work, compiler_calls, 1);
     work.generation(generation.0);
@@ -306,19 +405,61 @@ async fn compile_catalog_inner(
             ));
         }
         let codec = JsonManifestCodec::default();
+        let mut metadata_budget = config.max_state_bytes;
+        for id in versions.keys() {
+            charge(&mut metadata_budget, 128)?;
+            charge(&mut metadata_budget, id.0.len())?;
+        }
         // Group references, not cloned artifacts. At most one release's verified
         // metadata is alive; repository verification owns any component bytes.
-        let mut ordered = deployments
-            .values()
-            .enumerate()
-            .map(|(index, manifest)| (RecordIndex(index), manifest))
-            .collect::<Vec<_>>();
-        ordered.sort_unstable_by(|(_, left), (_, right)| {
-            left.release
-                .cmp(&right.release)
-                .then_with(|| left.id.cmp(&right.id))
+        let mut ordered = Vec::with_capacity(deployments.len());
+        for (index, manifest) in deployments.values().enumerate() {
+            let tenant = manifest
+                .metadata
+                .tenant
+                .as_ref()
+                .ok_or_else(|| error(PlatformErrorCode::InvalidArgument, "missing-tenant"))?;
+            let captured = pins.and_then(|pins| pins.get(&manifest.id)).or_else(|| {
+                previous
+                    .and_then(|catalog| catalog.record_by_id(&manifest.id))
+                    .filter(|record| {
+                        record.deployment.release == manifest.release
+                            && record.deployment.metadata.tenant == manifest.metadata.tenant
+                            && record.deployment.publication == manifest.publication
+                    })
+                    .and_then(|record| record.publication.as_ref())
+            });
+            if captured
+                .zip(manifest.publication.as_ref())
+                .is_some_and(|(a, b)| a != b)
+            {
+                return Err(error(
+                    PlatformErrorCode::CorruptArtifact,
+                    "deployment-publication-mismatch",
+                ));
+            }
+            let selected = artifacts
+                .select_execution_publication(
+                    tenant,
+                    &manifest.release,
+                    manifest.publication.as_ref().or(captured),
+                )?
+                .map(|value| value.id);
+            if let Some(publication) = &selected {
+                // Charge the temporary ordering owner and retained record before
+                // accumulating another selected publication.
+                charge(&mut metadata_budget, 2 * publication.as_str().len())?;
+            }
+            ordered.push((RecordIndex(index), manifest, selected));
+        }
+        ordered.sort_unstable_by(|(_, left, lp), (_, right, rp)| {
+            (&left.release, lp, &left.id).cmp(&(&right.release, rp, &right.id))
         });
-        let mut release: Option<(ReleaseDigest, VerifiedArtifactMetadata)> = None;
+        let mut release: Option<(
+            ReleaseDigest,
+            Option<latent_core::PublicationId>,
+            CompilationMetadata,
+        )> = None;
         let compatible = reuse::compatible(previous, config);
         let mut memo = reuse::MemoBuilder::new(deployments.len(), config);
         let mut release_surface = None;
@@ -327,18 +468,13 @@ async fn compile_catalog_inner(
         let mut contracts = BTreeMap::new();
         let mut indexes = index::IndexBudget::default();
         let mut revision_ids = BTreeSet::new();
-        let mut metadata_budget = config.max_state_bytes;
         let mut eligibility = Vec::new();
         let mut inactive = Vec::new();
         let mut local_releases = 0;
-        for id in versions.keys() {
-            charge(&mut metadata_budget, 128)?;
-            charge(&mut metadata_budget, id.0.len())?;
-        }
 
         // The existing per-version allowance also covers bounded record/order slots.
         let mut records = vec![None; deployments.len()];
-        for (position, deployment) in ordered {
+        for (position, deployment, publication) in ordered {
             Phase1ManifestValidator
                 .validate_deployment(deployment)
                 .map_err(manifest_error)?;
@@ -392,22 +528,34 @@ async fn compile_catalog_inner(
                     ));
                 }
             }
-            if release
-                .as_ref()
-                .is_none_or(|(digest, _)| digest != &deployment.release)
-            {
+            if release.as_ref().is_none_or(|(digest, selected, _)| {
+                digest != &deployment.release || selected != &publication
+            }) {
                 // Drop before awaiting the next fetch, not after its result is allocated.
                 drop(release.take());
                 drop(release_surface.take());
                 fingerprints.clear();
+                // This opt-in owner exists only for authenticated control
+                // preparation. Each distinct package is read and verified once
+                // within a fresh finite durable lease; a catalog of individually
+                // bounded reads may exceed one window in total. No invocation,
+                // recovery, cache lookup or historical replay renews here.
+                // Failure leaves this private catalog unpublished, and commit
+                // still rechecks every grant under its existing currentness fence.
+                if let Some(authority) = control_authority {
+                    authority.renew_control_lease()?;
+                }
                 let (artifact, execution) = execution::load(
                     artifacts,
                     &deployment.release,
+                    publication.as_ref(),
                     recovery,
                     runtime_profile,
                     lifecycle,
                 )
                 .await?;
+                #[cfg(test)]
+                let artifact = ownership::metadata(artifact);
                 match execution {
                     execution::Execution::Eligible(grant) => {
                         charge(&mut metadata_budget, grant.retained_bytes())?;
@@ -450,22 +598,27 @@ async fn compile_catalog_inner(
                 }
                 let stamp = reuse::metadata_stamp(&artifact);
                 memo.push(position, stamp);
-                release_surface = reuse::prior_release(compatible, &deployment.release, stamp)
-                    .map(reuse::Surface::new)
-                    .transpose()?;
-                release = Some((deployment.release.clone(), artifact));
+                release_surface = reuse::prior_release(
+                    compatible,
+                    &deployment.release,
+                    publication.as_ref(),
+                    stamp,
+                )
+                .map(reuse::Surface::new)
+                .transpose()?;
+                release = Some((deployment.release.clone(), publication.clone(), artifact));
             }
-            let artifact = &release.as_ref().expect("current release was fetched").1;
-            if let Some(grant) = eligibility
-                .last()
-                .filter(|grant| grant.release() == &deployment.release)
-            {
+            let artifact = &release.as_ref().expect("current release was fetched").2;
+            if let Some(grant) = eligibility.last().filter(|grant| {
+                grant.release() == &deployment.release
+                    && Some(grant.publication()) == publication.as_ref()
+            }) {
                 grant.authorize_tenant(tenant)?;
             }
-            if let Some(denied) = inactive
-                .last()
-                .filter(|entry| entry.release() == &deployment.release)
-            {
+            if let Some(denied) = inactive.last().filter(|entry| {
+                entry.release() == &deployment.release
+                    && Some(entry.publication()) == publication.as_ref()
+            }) {
                 denied.authorize_tenant(tenant)?;
                 let unchanged = previous.is_some_and(|old| {
                     old.versions.get(&deployment.id) == versions.get(&deployment.id)
@@ -478,9 +631,14 @@ async fn compile_catalog_inner(
                     return Err(denied.error());
                 }
             }
-            Phase1ManifestValidator
-                .validate_deployment_against_capsule(deployment, artifact.manifest())
-                .map_err(manifest_error)?;
+            if artifact.is_web_execution_projection() {
+                Phase1ManifestValidator
+                    .validate_web_execution_projection(deployment, artifact.manifest())
+            } else {
+                Phase1ManifestValidator
+                    .validate_deployment_against_capsule(deployment, artifact.manifest())
+            }
+            .map_err(manifest_error)?;
             let mut descriptors = BTreeMap::new();
             if release_surface.is_none() {
                 for descriptor in artifact.contracts() {
@@ -629,13 +787,21 @@ async fn compile_catalog_inner(
                     })?
                 };
                 count!(work, record_derivations, 1);
+                let mut attributes = Metadata::from([
+                    ("lsf.deployment".to_owned(), deployment_json),
+                    ("lsf.exports".to_owned(), exports_json),
+                ]);
+                if let Some(publication) = &publication {
+                    attributes.insert(
+                        "lsf.publication".to_owned(),
+                        publication.as_str().to_owned(),
+                    );
+                }
                 let candidate = RevisionRecord {
                     deployment: Arc::clone(deployment),
                     revision: revision_id,
-                    attributes: Metadata::from([
-                        ("lsf.deployment".to_owned(), deployment_json),
-                        ("lsf.exports".to_owned(), exports_json),
-                    ]),
+                    publication: publication.clone(),
+                    attributes,
                     execution: artifact.manifest().execution.clone(),
                 };
                 previous
@@ -669,7 +835,8 @@ async fn compile_catalog_inner(
         let packed = packing::assemble(&records, compatible, work)?;
         let paging_index = DeploymentIndex::build(&records, &versions, config, metadata_budget)?;
         charge(&mut metadata_budget, paging_index.retained_bytes())?;
-        let catalog = CompiledCatalog {
+        let mut catalog = CompiledCatalog {
+            bindings: super::bindings::BindingCatalog::default(),
             deployments,
             versions,
             generation,
@@ -685,6 +852,11 @@ async fn compile_catalog_inner(
             candidates: packed.candidates,
             reuse: memo.finish(config, &mut metadata_budget),
         };
+        if inherit_bindings {
+            catalog.bindings =
+                super::bindings::inherit(&catalog, previous, artifacts, control_authority).await?;
+        }
+        charge(&mut metadata_budget, catalog.bindings.retained_bytes())?;
         Ok(catalog)
     }
     .await;

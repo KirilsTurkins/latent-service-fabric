@@ -54,6 +54,7 @@ fn budget() -> ResourceBudget {
 
 fn revision(index: u32) -> ResolvedRevision {
     ResolvedRevision {
+        publication: None,
         target: InvocationTarget {
             tenant: tenant(index),
             service: ServiceId("scheduler".to_owned()),

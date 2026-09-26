@@ -485,6 +485,7 @@ fn legacy_runner() -> (Arc<Phase0ActivationRunner>, FixedCellPool) {
 fn prepared(backend: &str) -> PreparedComponent {
     PreparedComponent {
         key: PreparationKey {
+            publication: None,
             release: ReleaseDigest("sha256:test".to_owned()),
             engine_version: "test".to_owned(),
             engine_configuration_digest: "sha256:test-config".to_owned(),

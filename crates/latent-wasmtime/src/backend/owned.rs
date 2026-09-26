@@ -29,9 +29,6 @@ impl WasmtimeBackend {
         handle: &str,
     ) -> Result<(ActiveInstancePermit, Arc<PreparedRuntime>), PlatformError> {
         if let Some(prepared) = prepared {
-            self.shared
-                .preparation_context
-                .check_runtime(&prepared.runtime)?;
             Ok((prepared.permit, prepared.runtime))
         } else {
             let permit = self.shared.instances.try_acquire()?;
@@ -42,7 +39,6 @@ impl WasmtimeBackend {
                     true,
                 )
             })?;
-            self.shared.preparation_context.check_runtime(&runtime)?;
             Ok((permit, runtime))
         }
     }
@@ -60,6 +56,7 @@ impl WasmtimeBackend {
 
     pub(super) fn key_for_release(&self, release: &ReleaseDigest) -> PreparationKey {
         PreparationKey {
+            publication: None,
             release: release.clone(),
             engine_version: self.profile.wasmtime_version.clone(),
             engine_configuration_digest: self.profile.configuration["configuration-digest"].clone(),
@@ -118,11 +115,10 @@ impl WasmtimeBackend {
             Err(error) => return ExecutionReport::reusable(Err(error)),
         };
         let activation_id = request.activation.activation_id.clone();
-        let outcome = self
+        let report = self
             .invoke_inner(request, cancellation, Some(ownership))
             .await;
         let proof_started = Instant::now();
-        let report = ExecutionReport::reusable(outcome);
         self.lock_timings()
             .update_reusable_proof(&activation_id.0, elapsed_micros(proof_started));
         report
@@ -142,9 +138,9 @@ impl WasmtimeBackend {
         {
             return Err(invalid_owner());
         }
-        self.shared
-            .preparation_context
-            .check_runtime(&ownership.runtime)?;
+        // Currentness is checked at the single guarded activation-start
+        // boundary, after this affine owner has been transferred exactly once.
+        // This structural validation never grants execution by itself.
         Ok(ownership)
     }
 }

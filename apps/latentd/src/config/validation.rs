@@ -35,6 +35,24 @@ pub(super) fn validate(config: &NodeConfig) -> Result<Capacity, PlatformError> {
         1024,
         "limits.maximumConnections",
     )?;
+    range64(
+        config.limits.unauthenticated_connection_timeout_millis,
+        100,
+        60_000,
+        "limits.unauthenticatedConnectionTimeoutMillis",
+    )?;
+    range64(
+        config.limits.maximum_connection_age_millis,
+        config.limits.unauthenticated_connection_timeout_millis,
+        86_400_000,
+        "limits.maximumConnectionAgeMillis",
+    )?;
+    range64(
+        config.limits.connection_drain_timeout_millis,
+        1,
+        60_000,
+        "limits.connectionDrainTimeoutMillis",
+    )?;
     range(
         config.limits.maximum_component_bytes,
         1,
@@ -44,7 +62,11 @@ pub(super) fn validate(config: &NodeConfig) -> Result<Capacity, PlatformError> {
     range(
         config.limits.maximum_payload_bytes,
         1,
-        MIB,
+        if config.http_ingress.is_some() || config.renderer_profile.is_some() {
+            latent_ingress::http::MAX_WIRE_BYTES
+        } else {
+            MIB
+        },
         "limits.maximumPayloadBytes",
     )?;
     range64(
@@ -72,9 +94,38 @@ pub(super) fn validate(config: &NodeConfig) -> Result<Capacity, PlatformError> {
         "shutdownGraceMillis",
     )?;
     credentials(config)?;
+    content_limits(config)?;
     let capacity = cells(config)?;
     retained(config, &capacity)?;
     Ok(capacity)
+}
+
+fn content_limits(config: &NodeConfig) -> Result<(), PlatformError> {
+    range64(
+        config.catalogs.publication_storage_bytes,
+        1,
+        1 << 50,
+        "catalogs.publicationStorageBytes",
+    )?;
+    range(
+        config.catalogs.content_index_bytes,
+        1,
+        1024 * MIB,
+        "catalogs.contentIndexBytes",
+    )?;
+    range(
+        config.catalogs.content_blobs,
+        1,
+        1_000_000,
+        "catalogs.contentBlobs",
+    )?;
+    range(
+        config.catalogs.publication_files,
+        1,
+        1024,
+        "catalogs.publicationFiles",
+    )?;
+    Ok(())
 }
 
 fn cells(config: &NodeConfig) -> Result<Capacity, PlatformError> {

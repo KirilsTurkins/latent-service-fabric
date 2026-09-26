@@ -86,6 +86,7 @@ def materialize(component: Path, directory: Path) -> list[dict]:
 def node_config(directory: Path, data_directory: Path) -> Path:
     path = directory / "node.json"
     write(path, node_configuration(data_directory))
+    path.chmod(0o600)
     return path
 
 

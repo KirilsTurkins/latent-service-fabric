@@ -1,0 +1,2845 @@
+{
+  "schemaVersion": "latent.dev.qualification-evidence.v1",
+  "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+  "conductorCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+  "qualificationRun": 36236145313,
+  "developerRun": 36231869466,
+  "nativeRun": 36231893626,
+  "approvedPolicyFiles": {
+    "developer-policy.json": "sha256:9377e91ea0d92ea4918428b265acd13aed9ea7a6d3d8e0a81313f8140b5a4c6d",
+    "native-policy.json": "sha256:b015f4359424a2acb7e537c60d1de828dd6bf821c0b0aeeae021d4bc669773d0"
+  },
+  "artifactInventory": [
+    {
+      "artifact": "c",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "8d3eccdf5fdbb0b05aa6deaf82da6e5bc418d64fb9239b2eb86bb6c2d1b2583c",
+          "size": 182745
+        },
+        {
+          "name": "latent-dev-linux-x86_64-c-tools.zip",
+          "sha256": "a8df20026d609caf8b0a06c73711f13a4fffbf081f674c872fe4ff6bacf15360",
+          "size": 80948527
+        }
+      ],
+      "attestationSha256": "53076f163ce88ea30b533c27dc41ae04af871a250c6659f7eeef379bf0c3fd6f"
+    },
+    {
+      "artifact": "dotnet",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "9a821b768bc6a47c23eaab653b5a76611fd241cf024c3320f07caab4eaf2748e",
+          "size": 196686
+        },
+        {
+          "name": "latent-dev-linux-x86_64-dotnet-tools.zip",
+          "sha256": "540c7755e16be3962925000696d6a497db17f1375ccd6127016c00a223fb9e05",
+          "size": 859819817
+        }
+      ],
+      "attestationSha256": "edf5ff481dc8b952cc2930351b6dc0670878c98eb71458cda399980d08d18338"
+    },
+    {
+      "artifact": "go",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "7bc6125f4a9ca636ce31ef0db19c601564524998c468d433b47f7b010fbad1cb",
+          "size": 258420
+        },
+        {
+          "name": "latent-dev-linux-x86_64-go-tools.zip",
+          "sha256": "f684831f58fed74d662f065700c6628168b5823a14e2fe919c0a82ad3f723d1f",
+          "size": 93501989
+        }
+      ],
+      "attestationSha256": "2667b82e0c3bf4246a9b9e1ec95c1f262b136bcaa60f4adb977df8ec7338d895"
+    },
+    {
+      "artifact": "java",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "ebdadc2f0b047955fba47b0b43e03b0adb9eea52edd6e5534fb50306c35dbe5f",
+          "size": 195553
+        },
+        {
+          "name": "latent-dev-linux-x86_64-java-tools.zip",
+          "sha256": "cd93139661b0c8dbbb64541ab7ff8c2a261999a7f997f91ee489889508a8fd06",
+          "size": 517066042
+        }
+      ],
+      "attestationSha256": "4d302bb3c38048bdc4bfdd90972d29c570fb0cb5ea5e7aadeeb46308fdb02f49"
+    },
+    {
+      "artifact": "linux",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "4fbc3dd2e955141425ba759a4b20009aab1f7486c3149ca6f736cb6039f58ef6",
+          "size": 97973
+        },
+        {
+          "name": "latent-dev-linux-x86_64.zip",
+          "sha256": "e1e449ef75140f233680537bc525f41b479dd62591ea6313d32b8d170a14af97",
+          "size": 34257146
+        }
+      ],
+      "attestationSha256": "33be2e509fb45e6ed9cf1c6f4eff077e1039a08c1bd7edb481181a57657e132f"
+    },
+    {
+      "artifact": "native",
+      "files": [
+        {
+          "name": "lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz",
+          "sha256": "dc3f3c49348f16b0324376789b51f04ed4db595fff102d3daec1b6524826486d",
+          "size": 29461685
+        },
+        {
+          "name": "lsf-install.pyz",
+          "sha256": "c37ddfb591b002e808f1cb74aa471e35e48594da1cbeed5056ce78e84510aa41",
+          "size": 25723
+        },
+        {
+          "name": "release.json",
+          "sha256": "6cf6e0014a71e8567a0c8007c69a040dd5d50ef9dabbc71adb1d071c85b6763e",
+          "size": 71226
+        }
+      ],
+      "attestationSha256": "2c102de196496271c80eadbf4fd04b37f051464a159687964cd57a6a5548e938"
+    },
+    {
+      "artifact": "rust",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "c4e80b164512d5766425ac3e5e03e18dc4e9df1ea0dc5511380475898d81d498",
+          "size": 299861
+        },
+        {
+          "name": "latent-dev-linux-x86_64-rust-tools.zip",
+          "sha256": "385a04b06b3950e9b1998668413846199ebdcb56dbac22fc5de3b4669aa36fa8",
+          "size": 331527965
+        }
+      ],
+      "attestationSha256": "362a2c399f888cbe0529fadd280db73b5eba948cfaca0d99dae326a5f59275b5"
+    },
+    {
+      "artifact": "typescript",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "02ff385e0ddd00fca29b54d8b1ef88a5941619d33ecf70e0ed0e4d5c291af155",
+          "size": 187727
+        },
+        {
+          "name": "latent-dev-linux-x86_64-typescript-tools.zip",
+          "sha256": "c360b85ac395c799f20b7558def65091e3a990621f0629693503b6c95f33c65f",
+          "size": 185918624
+        }
+      ],
+      "attestationSha256": "9215e81adc3b2647e6f96162e366f6bb7313399819a0a7aa68c6d9cb421a9dab"
+    },
+    {
+      "artifact": "windows",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "9d808782ec4ebd52b0902e95c4f0b6d51e87603b218dc101208ee9112c6be831",
+          "size": 93654
+        },
+        {
+          "name": "latent-dev-windows-x86_64.zip",
+          "sha256": "02df3699102c0a856037758dd64e3d0ebb334bd214725f9cd5fba4b393db6bb6",
+          "size": 18575022
+        }
+      ],
+      "attestationSha256": "21d1fb9e6551da16be9262e5ceab698fb4a9f51be356fca56a010532721f3390"
+    },
+    {
+      "artifact": "wsl",
+      "files": [
+        {
+          "name": "developer-bundle.json",
+          "sha256": "e029d681ea81f54f4ca4a624117913e8a640152d7dfbbdf95dfb3c9631f62490",
+          "size": 26085
+        },
+        {
+          "name": "latent-dev-linux-x86_64-wsl-rootfs.zip",
+          "sha256": "12704c5af77cc559636173757bc9b009a4921bb0e5ff2c1fcc05bc43e22e86c6",
+          "size": 68520247
+        }
+      ],
+      "attestationSha256": "a5c2983b582fca6f4f15ed04e163a99e499aebf44b1c387c5b38a35a7c0b6b74"
+    }
+  ],
+  "rawReceipts": {
+    "windows": {
+      "sha256": "sha256:86e0ac0adfa3636a63622a306c9b50c53553a390d9190aa6d0ff630049745bb0",
+      "path": "windows/packaged-observation/observation.json",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36236145313/artifacts/10905341527",
+      "seconds": 2465.009,
+      "cleanup": "owned-workspaces-and-distribution-purged-author-source-retained"
+    },
+    "recovery": {
+      "sha256": "sha256:aeceddf59850814b3e30ae978a517898924a0ce0520d0cd872c1d7ddfb3ac98b",
+      "path": "windows/packaged-recovery/observation.json",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36236145313/artifacts/10905341527",
+      "seconds": 377.481,
+      "cleanup": "owned-nodes-and-distro-stopped-private-original-intents-retained"
+    },
+    "linux": {
+      "sha256": "sha256:f6e5a0961b481aa003f8bc1e74adc11882f3d2208554e502d0d39b536a88dd1e",
+      "path": "linux/packaged-linux/observation.json",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36236145313/artifacts/10905790153",
+      "seconds": 2570.441,
+      "cleanup": "both-owned-node-workspaces-purged-author-source-retained"
+    },
+    "devcontainer": {
+      "sha256": "sha256:bb0315172c3e62ed37dd124145c4fa50865221433d720f6f397f43593ac9ed64",
+      "path": "linux/packaged-devcontainer/observation.json",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36236145313/artifacts/10905790153",
+      "seconds": 1767.815,
+      "cleanup": "owned-remote-node-reaped-workspace-purged-client-state-retained"
+    }
+  },
+  "newcomer": {
+    "guide": {
+      "conductorSourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "execution": "automated-public-command-walkthrough",
+      "interactiveEditorReview": false,
+      "path": "docs/component-development/windows-application.md",
+      "sha256": "sha256:c06d3235ed59cbf87275cb34c491e6ba77c65aa36ab0e5ae36b00d231cf7425b"
+    },
+    "secondsIncludedInWindowsSchedule": true,
+    "nativeBusinessTest": {
+      "executed": false,
+      "reason": "no-native-host-toolchain-selected"
+    },
+    "diagnostics": {
+      "bytes": 266,
+      "editorUiObserved": false,
+      "failedBatchEncoding": "cp1252",
+      "failedBuildVisibleWhileWatchRunning": true,
+      "restoredBatchEncoding": "utf-8",
+      "restoredBatchHasNoErrors": true
+    },
+    "interactiveEditorReview": false,
+    "sourceEditorEvidence": "editor-task-integration.md",
+    "separateNativeBusinessAndBrowserEvidence": "application-guide-validation.md",
+    "reviewKind": "agent-review-of-executed-public-command-walkthrough",
+    "observedGreetings": {
+      "hello": [
+        {
+          "ok": "Hello, Ada!"
+        }
+      ],
+      "welcome": [
+        {
+          "ok": "Welcome, Ada!"
+        }
+      ],
+      "failedBuildStillCallable": [
+        {
+          "ok": "Welcome, Ada!"
+        }
+      ],
+      "retainedGreeting": [
+        {
+          "ok": "Welcome, Ada!"
+        }
+      ]
+    },
+    "nodeCases": {
+      "environment": "node",
+      "selection": [
+        "greeting-0",
+        "greeting-1",
+        "greeting-2"
+      ],
+      "cleanup": "invocation-results-received-node-retained",
+      "cases": {
+        "greeting-0": {
+          "status": "passed",
+          "category": "success",
+          "platformCode": null,
+          "required": true
+        },
+        "greeting-1": {
+          "status": "passed",
+          "category": "success",
+          "platformCode": null,
+          "required": true
+        },
+        "greeting-2": {
+          "status": "passed",
+          "category": "declared-error",
+          "platformCode": null,
+          "required": true
+        }
+      },
+      "excludedChecks": []
+    },
+    "credentialsAuthoredByUser": false,
+    "foregroundExitCode": 0,
+    "recoveryState": "no-pending-operation",
+    "finalState": "stopped",
+    "purgeState": "purged",
+    "preservedAuthorSource": {
+      "files": 57,
+      "unchanged": true
+    },
+    "editorImplementationUnchangedSince": "d8bf53383fea87d9f43c9e9a8921d8ec045e22ea"
+  },
+  "sourceCampaigns": [
+    {
+      "artifact": "developer-blob-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:0bd5713740f4f725533becb1dd4ef66e122896562fedd323571e38236c80b64d",
+      "schemaVersion": "latent.dev.blob-node-probe.v1",
+      "cleanup": "owned-processes-reaped-live-provider-counters-zero-private-workspace-purged",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-clock-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:0b3c22f18b9c78c9e92ba9eb4ca33022f950d84adc02b02b4f9154627151c9f2",
+      "schemaVersion": "latent.dev.clock-node-portable-probe.v1",
+      "cleanup": "owned-node-and-portable-processes-reaped",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-event-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:6bc825184c603460a24b15018faa2f58a2a8832810e344523a9f1564587b7230",
+      "schemaVersion": "latent.dev.event-node-probe.v1",
+      "cleanup": "owned-processes-peer-and-private-material-purged",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-failure-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:db57d1274d810e6d7e18990883bcfd0f149586930785cf9087ad7ce0200dfc3e",
+      "schemaVersion": "latent.dev.failure-node-portable-probe.v1",
+      "cleanup": "owned-node-and-portable-processes-reaped",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-http-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:7e8919ee9d8335bc199988bca682be85074c078702a3367ac873c3b157fd9dd8",
+      "schemaVersion": "latent.dev.http-node-portable-probe.v1",
+      "cleanup": "owned-node-peer-and-portable-processes-reaped",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-local-service-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:c1408da5a84c8533573c881ceaade557b771be4278dd103618b1fa8e7fa09380",
+      "schemaVersion": "latent.dev.local-service-probe.v1",
+      "cleanup": "owned-node-and-client-processes-reaped-private-pair-workspace-purged",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-metric-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:86a66013d686a89e85e554321ea3bf43a6cc979ce294773683320285136619ed",
+      "schemaVersion": "latent.dev.metric-node-portable-probe.v1",
+      "cleanup": "owned-node-and-native-processes-reaped-exporter-joined-queue-drained",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-recovery-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:e5f067755493a3eed6b6f1cec77336cfddbbc823b312fe02edc8cd5230a9ab34",
+      "schemaVersion": "latent.dev.recovery-source-probe.v1",
+      "cleanup": "owned-processes-reaped-private-state-retained",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-secret-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:1193f929e561f0e668c755faaa395389bcd879371a9ec76bdcaffc68f7310c7e",
+      "schemaVersion": "latent.dev.secret-node-probe.v1",
+      "cleanup": "owned-processes-reaped-secret-generations-released-private-workspace-purged",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-watch-fixtures-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:da578ac464950551ce0867ad873eaeab0d94ece8b062aaceecaf500f0c07ce0d",
+      "schemaVersion": "latent.dev.watch-source-probe.v1",
+      "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    },
+    {
+      "artifact": "developer-workspace-isolation-8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+      "sha256": "sha256:204827b68fe60a252267401dfa32d7d62127924e08dbf5e5cc2d1576f0f39682",
+      "schemaVersion": "latent.dev.workspace-isolation-source-probe.v1",
+      "cleanup": "owned-nodes-reaped-private-original-intent-and-workspaces-retained",
+      "cleanHost": false,
+      "publisherAuthenticatedInstallation": false
+    }
+  ],
+  "limitations": [
+    "nonpublishing-candidates",
+    "controlled-development-workloads",
+    "physical-host-suspend-not-executed-owned-WSL-lifecycle-used",
+    "native-cancel-is-before-start",
+    "external-capsule-profile-not-qualified",
+    "no-mac-lima-arm64-or-production-windows-node"
+  ],
+  "windowsPrerequisites": {
+    "defaultDistributionChanges": false,
+    "distributionCount": 0,
+    "host": "windows-x86_64",
+    "kernelChanges": false,
+    "nodeReadiness": "not-checked",
+    "windows": "10.0.26100",
+    "wslVersionOutput": "WSL version: 2.7.14.0\r\nKernel version: 6.18.33.2-2\r\nWSLg version: 1.0.73.2\r\nMSRDC version: 1.2.7214\r\nDirect3D version: 1.611.1-81528511\r\nDXCore version: 10.0.26100.1-240331-1435.ge-release\r\nWindows version: 10.0.26100.33438"
+  },
+  "entries": {
+    "windows-wsl2": {
+      "languages": {
+        "c": {
+          "helperSha256": "sha256:4c2af0140064147bcc1ca18ffe0a1c9c4550e6ab36176f6cb365bfcab059d338",
+          "runtime": {
+            "developmentTest": {
+              "features": [
+                "latentd/development-test-node"
+              ],
+              "fixtures": [
+                "guest-clock-v1"
+              ],
+              "formatVersion": 1,
+              "purpose": "disposable-development-tests"
+            },
+            "engine": {
+              "compilerSha256": "2657cba53251f4c917543814372d5a1723b95d7167ea51354342878548574cee",
+              "dynamicDependencies": [
+                "ld-linux-x86-64.so.2",
+                "libc.so.6",
+                "libgcc_s.so.1",
+                "libm.so.6"
+              ],
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "wasmtimeVersion": "47.0.4"
+            },
+            "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+            "target": "x86_64-unknown-linux-gnu",
+            "toolchain": {
+              "lockSha256": "657ec4172a141851a0d2c484852c9dd92c03faef20d3fe74063d5005e6aaca37",
+              "rust": "1.97.1"
+            },
+            "version": "0.1.0-alpha.4"
+          },
+          "componentAndBuild": {
+            "artifacts": {
+              "capsule": "sha256:f83ed67c0022cfe5c74266c3a76ef093233e9f78934913ad9ca0973b75a19bee",
+              "component": "sha256:801752498a3afc8418d8400830cd8e803e0a7039a9fd5fe9b7da8ee924f35dcd",
+              "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+              "deployment": "sha256:e44597bfd5590373df33e0e63ac87a1eb44c3a3403bdc1ef6cf0c0e2cbc1cdf1",
+              "evidence": "sha256:be36244241cd0cee73266939e045eceab5e27673d314140642f98b7070847c34",
+              "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+            },
+            "source": "sha256:e0efa5b3f16a6caea02e0af728ce7ff7f572c54319084aca1d3016fae8bab66a",
+            "recipe": "sha256:f37d8d1fdb12c3dcd5d400853142f866b36d31e8a0504098318f2491c9dc8c31",
+            "template": {
+              "ownerIssue": 545,
+              "revision": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+              "sha256": "sha256:e0efa5b3f16a6caea02e0af728ce7ff7f572c54319084aca1d3016fae8bab66a"
+            },
+            "toolInventory": "sha256:b52b091e8d835329993e42696a7b19850fad21fe7c7dd72f154b7dac3e5ea6c8",
+            "tools": [
+              {
+                "name": "python",
+                "path": "sdk/bin/python",
+                "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+                "version": "3.13.5"
+              },
+              {
+                "name": "recipe",
+                "path": "recipe/tools/dev_guest_recipe.py",
+                "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+                "version": "1"
+              },
+              {
+                "name": "contracts",
+                "path": "sdk/bin/capsule-contracts",
+                "sha256": "sha256:ef84d977563898a3b6a84369c81329d91c17c78bc1c692d41ccd445d4c636e6a",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "test-signer",
+                "path": "sdk/bin/capsule-test-signer",
+                "sha256": "sha256:e140b413d395f02961e3696660e449b9da83812cb6f9ba2613ad1ba77876d10b",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "wasm-tools",
+                "path": "sdk/bin/wasm-tools",
+                "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+                "version": "1.254.0"
+              },
+              {
+                "name": "wit-bindgen",
+                "path": "sdk/bin/wit-bindgen",
+                "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+                "version": "0.62.0"
+              }
+            ],
+            "packager": "sha256:f3055a13e7779d1b62f05b0b4541ef713d2ad14e8ccd75e98fe24b3bc8ff5237",
+            "hostAbi": "lsf-host-abi-phase3-v4",
+            "target": "wasm-component"
+          },
+          "nodeId": "lsf-80a2d3afe49332a9",
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "compilerBundle": "a8df20026d609caf8b0a06c73711f13a4fffbf081f674c872fe4ff6bacf15360",
+          "testCases": {
+            "environment": "node",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2"
+            ],
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-1": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-2": {
+                "status": "passed",
+                "category": "declared-error",
+                "platformCode": null,
+                "required": true
+              }
+            },
+            "excludedChecks": []
+          },
+          "privateCredentialMode": 384,
+          "sourceCredentialsExcluded": true,
+          "purge": {
+            "state": "purged",
+            "sourceTreeRetained": true
+          }
+        },
+        "dotnet": {
+          "helperSha256": "sha256:4c2af0140064147bcc1ca18ffe0a1c9c4550e6ab36176f6cb365bfcab059d338",
+          "runtime": {
+            "developmentTest": {
+              "features": [
+                "latentd/development-test-node"
+              ],
+              "fixtures": [
+                "guest-clock-v1"
+              ],
+              "formatVersion": 1,
+              "purpose": "disposable-development-tests"
+            },
+            "engine": {
+              "compilerSha256": "2657cba53251f4c917543814372d5a1723b95d7167ea51354342878548574cee",
+              "dynamicDependencies": [
+                "ld-linux-x86-64.so.2",
+                "libc.so.6",
+                "libgcc_s.so.1",
+                "libm.so.6"
+              ],
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "wasmtimeVersion": "47.0.4"
+            },
+            "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+            "target": "x86_64-unknown-linux-gnu",
+            "toolchain": {
+              "lockSha256": "657ec4172a141851a0d2c484852c9dd92c03faef20d3fe74063d5005e6aaca37",
+              "rust": "1.97.1"
+            },
+            "version": "0.1.0-alpha.4"
+          },
+          "componentAndBuild": {
+            "artifacts": {
+              "capsule": "sha256:3eea04c2ee1a92bca7630e51abeadc5eb26fed73b77d259a8e0c78b143a76e96",
+              "component": "sha256:c5436205e67173c2da74128cc22b48c8a228f4cf04b6e12216285aaf182f57c1",
+              "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+              "deployment": "sha256:858277349a59910a520f9e4fa67ebec896f4536ff174d193694b13596dd032ad",
+              "evidence": "sha256:250ed933fe6ae1544b7d221d91be05ba7cc6cc56163b41aa3f47f5621f5aaf77",
+              "packageSource": "sha256:d0eb26e4254efdab41b9044ac4325af531d5b64a244f434f5946a35ab84f8a46"
+            },
+            "source": "sha256:5ae68b92fb1d90577c7ea5f57753dc688a48a286b9f5ed8e28362c0a330ccf45",
+            "recipe": "sha256:d07e510b1a3f27e98ada4e4a4d880269cf26639a22ea825aabd9abd867ca7183",
+            "template": {
+              "ownerIssue": 549,
+              "revision": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+              "sha256": "sha256:5ae68b92fb1d90577c7ea5f57753dc688a48a286b9f5ed8e28362c0a330ccf45"
+            },
+            "toolInventory": "sha256:86664f45275b5cc718cf2eb2008bccc3085bebcdf40ff029ec288227fa67f5c3",
+            "tools": [
+              {
+                "name": "python",
+                "path": "sdk/bin/python",
+                "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+                "version": "3.13.5"
+              },
+              {
+                "name": "recipe",
+                "path": "recipe/tools/dev_guest_recipe.py",
+                "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+                "version": "1"
+              },
+              {
+                "name": "contracts",
+                "path": "sdk/bin/capsule-contracts",
+                "sha256": "sha256:ef84d977563898a3b6a84369c81329d91c17c78bc1c692d41ccd445d4c636e6a",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "test-signer",
+                "path": "sdk/bin/capsule-test-signer",
+                "sha256": "sha256:e140b413d395f02961e3696660e449b9da83812cb6f9ba2613ad1ba77876d10b",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "wasm-tools",
+                "path": "sdk/bin/wasm-tools",
+                "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+                "version": "1.254.0"
+              },
+              {
+                "name": "wit-bindgen",
+                "path": "sdk/bin/wit-bindgen",
+                "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+                "version": "0.62.0"
+              }
+            ],
+            "packager": "sha256:f3055a13e7779d1b62f05b0b4541ef713d2ad14e8ccd75e98fe24b3bc8ff5237",
+            "hostAbi": "lsf-host-abi-phase3-v4",
+            "target": "wasm-component"
+          },
+          "nodeId": "lsf-49d5db0d560cdc56",
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "compilerBundle": "540c7755e16be3962925000696d6a497db17f1375ccd6127016c00a223fb9e05",
+          "testCases": {
+            "environment": "node",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2",
+              "greeting-runtime-denied",
+              "greeting-after-runtime-denial"
+            ],
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-1": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-2": {
+                "status": "passed",
+                "category": "declared-error",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-runtime-denied": {
+                "status": "passed",
+                "category": "platform-failure",
+                "platformCode": "guest-trap",
+                "required": true
+              },
+              "greeting-after-runtime-denial": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              }
+            },
+            "excludedChecks": []
+          },
+          "privateCredentialMode": 384,
+          "sourceCredentialsExcluded": true,
+          "purge": {
+            "state": "purged",
+            "sourceTreeRetained": true
+          }
+        },
+        "go": {
+          "helperSha256": "sha256:4c2af0140064147bcc1ca18ffe0a1c9c4550e6ab36176f6cb365bfcab059d338",
+          "runtime": {
+            "developmentTest": {
+              "features": [
+                "latentd/development-test-node"
+              ],
+              "fixtures": [
+                "guest-clock-v1"
+              ],
+              "formatVersion": 1,
+              "purpose": "disposable-development-tests"
+            },
+            "engine": {
+              "compilerSha256": "2657cba53251f4c917543814372d5a1723b95d7167ea51354342878548574cee",
+              "dynamicDependencies": [
+                "ld-linux-x86-64.so.2",
+                "libc.so.6",
+                "libgcc_s.so.1",
+                "libm.so.6"
+              ],
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "wasmtimeVersion": "47.0.4"
+            },
+            "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+            "target": "x86_64-unknown-linux-gnu",
+            "toolchain": {
+              "lockSha256": "657ec4172a141851a0d2c484852c9dd92c03faef20d3fe74063d5005e6aaca37",
+              "rust": "1.97.1"
+            },
+            "version": "0.1.0-alpha.4"
+          },
+          "componentAndBuild": {
+            "artifacts": {
+              "capsule": "sha256:990e25bda57ad8e4ab806c5349c64e95f18d0786919b3c3efb0dc98c3cf88c5f",
+              "component": "sha256:64ed42ad04187eab5fa9d71f0a432fce020000ba20c7a9b6fd659e833d786d22",
+              "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+              "deployment": "sha256:a418d9bf7d7b5c90912278a89241164d775b31e5cdd25afe2886a9462ac55760",
+              "evidence": "sha256:9cce2511b78659a132add16f549fdc46a9db3d04900149a3b74acfe6bb1dabe7",
+              "packageSource": "sha256:2831cbe72d106d111cb6d79a00f379921369259fc730d51e1203c9c5d79f5817"
+            },
+            "source": "sha256:8ff693d330536656037b03617608eca39c5cabb9c5772f1d05aab9690315b924",
+            "recipe": "sha256:07849cd21f5349c147278b69a1a7a2c6cf61077b81e0e2ff6eb2051b3754430e",
+            "template": {
+              "ownerIssue": 547,
+              "revision": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+              "sha256": "sha256:8ff693d330536656037b03617608eca39c5cabb9c5772f1d05aab9690315b924"
+            },
+            "toolInventory": "sha256:d4175d2845bb98a6ee493334ec44bf314a0059948c5e65067f8b1160ce517383",
+            "tools": [
+              {
+                "name": "python",
+                "path": "sdk/bin/python",
+                "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+                "version": "3.13.5"
+              },
+              {
+                "name": "recipe",
+                "path": "recipe/tools/dev_guest_recipe.py",
+                "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+                "version": "1"
+              },
+              {
+                "name": "contracts",
+                "path": "sdk/bin/capsule-contracts",
+                "sha256": "sha256:ef84d977563898a3b6a84369c81329d91c17c78bc1c692d41ccd445d4c636e6a",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "test-signer",
+                "path": "sdk/bin/capsule-test-signer",
+                "sha256": "sha256:e140b413d395f02961e3696660e449b9da83812cb6f9ba2613ad1ba77876d10b",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "wasm-tools",
+                "path": "sdk/bin/wasm-tools",
+                "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+                "version": "1.254.0"
+              },
+              {
+                "name": "wit-bindgen",
+                "path": "sdk/bin/wit-bindgen",
+                "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+                "version": "0.62.0"
+              }
+            ],
+            "packager": "sha256:f3055a13e7779d1b62f05b0b4541ef713d2ad14e8ccd75e98fe24b3bc8ff5237",
+            "hostAbi": "lsf-host-abi-phase3-v4",
+            "target": "wasm-component"
+          },
+          "nodeId": "lsf-af804a97e2220e26",
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "compilerBundle": "f684831f58fed74d662f065700c6628168b5823a14e2fe919c0a82ad3f723d1f",
+          "testCases": {
+            "environment": "node",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2",
+              "greeting-runtime-denied",
+              "greeting-after-runtime-denial"
+            ],
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-1": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-2": {
+                "status": "passed",
+                "category": "declared-error",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-runtime-denied": {
+                "status": "passed",
+                "category": "platform-failure",
+                "platformCode": "guest-trap",
+                "required": true
+              },
+              "greeting-after-runtime-denial": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              }
+            },
+            "excludedChecks": []
+          },
+          "privateCredentialMode": 384,
+          "sourceCredentialsExcluded": true,
+          "purge": {
+            "state": "purged",
+            "sourceTreeRetained": true
+          }
+        },
+        "java": {
+          "helperSha256": "sha256:4c2af0140064147bcc1ca18ffe0a1c9c4550e6ab36176f6cb365bfcab059d338",
+          "runtime": {
+            "developmentTest": {
+              "features": [
+                "latentd/development-test-node"
+              ],
+              "fixtures": [
+                "guest-clock-v1"
+              ],
+              "formatVersion": 1,
+              "purpose": "disposable-development-tests"
+            },
+            "engine": {
+              "compilerSha256": "2657cba53251f4c917543814372d5a1723b95d7167ea51354342878548574cee",
+              "dynamicDependencies": [
+                "ld-linux-x86-64.so.2",
+                "libc.so.6",
+                "libgcc_s.so.1",
+                "libm.so.6"
+              ],
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "wasmtimeVersion": "47.0.4"
+            },
+            "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+            "target": "x86_64-unknown-linux-gnu",
+            "toolchain": {
+              "lockSha256": "657ec4172a141851a0d2c484852c9dd92c03faef20d3fe74063d5005e6aaca37",
+              "rust": "1.97.1"
+            },
+            "version": "0.1.0-alpha.4"
+          },
+          "componentAndBuild": {
+            "artifacts": {
+              "capsule": "sha256:ef07e1edb4ac6b63cf7c372dfd1ef794e4a8ed9f6c1c57a38f7a22ec64263baf",
+              "component": "sha256:c84b7840a9f3d134d3dc3e22347a1f5c45ff997c65d34c21e02096a0755b1855",
+              "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+              "deployment": "sha256:5325667382c51aee85788812942cc6cd5203da88b5f0f628741db458b97f4570",
+              "evidence": "sha256:2a246a424ddf9cc72bef1b8599d01a23f1de6288ce6c86348be906d66ceac033",
+              "packageSource": "sha256:5abcc71ad55a59cb8d46686d0a8fb3270eb1e2e24dab2cd306e3cf547b785a71"
+            },
+            "source": "sha256:29371bb04b9c3ebc5f2d521998fc6825e587d3d2b76fb00281de56a7063cfa93",
+            "recipe": "sha256:3ee2bfdadb61d64314abae16c1a7cd0c6fd5b45ea208fc685c95e18cfee76229",
+            "template": {
+              "ownerIssue": 548,
+              "revision": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+              "sha256": "sha256:29371bb04b9c3ebc5f2d521998fc6825e587d3d2b76fb00281de56a7063cfa93"
+            },
+            "toolInventory": "sha256:bf6dbe6661b4306e66404ab6b04a0f92777b12a0bb95ab471039a5a6869406fd",
+            "tools": [
+              {
+                "name": "python",
+                "path": "sdk/bin/python",
+                "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+                "version": "3.13.5"
+              },
+              {
+                "name": "recipe",
+                "path": "recipe/tools/dev_guest_recipe.py",
+                "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+                "version": "1"
+              },
+              {
+                "name": "contracts",
+                "path": "sdk/bin/capsule-contracts",
+                "sha256": "sha256:ef84d977563898a3b6a84369c81329d91c17c78bc1c692d41ccd445d4c636e6a",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "test-signer",
+                "path": "sdk/bin/capsule-test-signer",
+                "sha256": "sha256:e140b413d395f02961e3696660e449b9da83812cb6f9ba2613ad1ba77876d10b",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "wasm-tools",
+                "path": "sdk/bin/wasm-tools",
+                "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+                "version": "1.254.0"
+              },
+              {
+                "name": "wit-bindgen",
+                "path": "sdk/bin/wit-bindgen",
+                "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+                "version": "0.62.0"
+              }
+            ],
+            "packager": "sha256:f3055a13e7779d1b62f05b0b4541ef713d2ad14e8ccd75e98fe24b3bc8ff5237",
+            "hostAbi": "lsf-host-abi-phase3-v4",
+            "target": "wasm-component"
+          },
+          "nodeId": "lsf-2ed5cc9ac44f9bcc",
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "compilerBundle": "cd93139661b0c8dbbb64541ab7ff8c2a261999a7f997f91ee489889508a8fd06",
+          "testCases": {
+            "environment": "node",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2",
+              "greeting-runtime-denied",
+              "greeting-after-runtime-denial"
+            ],
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-1": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-2": {
+                "status": "passed",
+                "category": "declared-error",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-runtime-denied": {
+                "status": "passed",
+                "category": "platform-failure",
+                "platformCode": "guest-trap",
+                "required": true
+              },
+              "greeting-after-runtime-denial": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              }
+            },
+            "excludedChecks": []
+          },
+          "privateCredentialMode": 384,
+          "sourceCredentialsExcluded": true,
+          "purge": {
+            "state": "purged",
+            "sourceTreeRetained": true
+          }
+        },
+        "rust": {
+          "helperSha256": "sha256:4c2af0140064147bcc1ca18ffe0a1c9c4550e6ab36176f6cb365bfcab059d338",
+          "runtime": {
+            "developmentTest": {
+              "features": [
+                "latentd/development-test-node"
+              ],
+              "fixtures": [
+                "guest-clock-v1"
+              ],
+              "formatVersion": 1,
+              "purpose": "disposable-development-tests"
+            },
+            "engine": {
+              "compilerSha256": "2657cba53251f4c917543814372d5a1723b95d7167ea51354342878548574cee",
+              "dynamicDependencies": [
+                "ld-linux-x86-64.so.2",
+                "libc.so.6",
+                "libgcc_s.so.1",
+                "libm.so.6"
+              ],
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "wasmtimeVersion": "47.0.4"
+            },
+            "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+            "target": "x86_64-unknown-linux-gnu",
+            "toolchain": {
+              "lockSha256": "657ec4172a141851a0d2c484852c9dd92c03faef20d3fe74063d5005e6aaca37",
+              "rust": "1.97.1"
+            },
+            "version": "0.1.0-alpha.4"
+          },
+          "componentAndBuild": {
+            "artifacts": {
+              "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+              "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+              "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+              "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+              "evidence": "sha256:e51636c0ac23f4f698b6dd526b680678b21a517e0fdae006bddb490cdd692c27",
+              "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+            },
+            "source": "sha256:4365fc6bb999874ed5a13943fd243f8fa354ffadad0180fb28a5bd079e696f9f",
+            "recipe": "sha256:f890b82bb490e4e566a098ddc8a2d9ecf89b30644eec24b433b745ba1dce7dbe",
+            "template": {
+              "ownerIssue": 544,
+              "revision": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+              "sha256": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+            },
+            "toolInventory": "sha256:f7306df6eced3f48c59eef0d442ca6b881b42a8754e378fa3f8e819bf2f9206d",
+            "tools": [
+              {
+                "name": "python",
+                "path": "sdk/bin/python",
+                "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+                "version": "3.13.5"
+              },
+              {
+                "name": "recipe",
+                "path": "recipe/tools/dev_guest_recipe.py",
+                "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+                "version": "1"
+              },
+              {
+                "name": "contracts",
+                "path": "sdk/bin/capsule-contracts",
+                "sha256": "sha256:ef84d977563898a3b6a84369c81329d91c17c78bc1c692d41ccd445d4c636e6a",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "test-signer",
+                "path": "sdk/bin/capsule-test-signer",
+                "sha256": "sha256:e140b413d395f02961e3696660e449b9da83812cb6f9ba2613ad1ba77876d10b",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "wasm-tools",
+                "path": "sdk/bin/wasm-tools",
+                "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+                "version": "1.254.0"
+              },
+              {
+                "name": "wit-bindgen",
+                "path": "sdk/bin/wit-bindgen",
+                "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+                "version": "0.62.0"
+              },
+              {
+                "name": "cargo",
+                "path": "sdk/rust/bin/cargo",
+                "sha256": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+                "version": "1.97.1"
+              },
+              {
+                "name": "rustc",
+                "path": "sdk/rust/bin/rustc",
+                "sha256": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+                "version": "1.97.1"
+              }
+            ],
+            "packager": "sha256:f3055a13e7779d1b62f05b0b4541ef713d2ad14e8ccd75e98fe24b3bc8ff5237",
+            "hostAbi": "lsf-host-abi-phase3-v4",
+            "target": "wasm-component"
+          },
+          "nodeId": "lsf-5b18290e69887850",
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "compilerBundle": "385a04b06b3950e9b1998668413846199ebdcb56dbac22fc5de3b4669aa36fa8",
+          "testCases": {
+            "environment": "node",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2"
+            ],
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-1": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-2": {
+                "status": "passed",
+                "category": "declared-error",
+                "platformCode": null,
+                "required": true
+              }
+            },
+            "excludedChecks": []
+          },
+          "privateCredentialMode": 384,
+          "sourceCredentialsExcluded": true,
+          "purge": {
+            "state": "purged",
+            "sourceTreeRetained": true
+          }
+        },
+        "typescript": {
+          "helperSha256": "sha256:4c2af0140064147bcc1ca18ffe0a1c9c4550e6ab36176f6cb365bfcab059d338",
+          "runtime": {
+            "developmentTest": {
+              "features": [
+                "latentd/development-test-node"
+              ],
+              "fixtures": [
+                "guest-clock-v1"
+              ],
+              "formatVersion": 1,
+              "purpose": "disposable-development-tests"
+            },
+            "engine": {
+              "compilerSha256": "2657cba53251f4c917543814372d5a1723b95d7167ea51354342878548574cee",
+              "dynamicDependencies": [
+                "ld-linux-x86-64.so.2",
+                "libc.so.6",
+                "libgcc_s.so.1",
+                "libm.so.6"
+              ],
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "wasmtimeVersion": "47.0.4"
+            },
+            "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+            "target": "x86_64-unknown-linux-gnu",
+            "toolchain": {
+              "lockSha256": "657ec4172a141851a0d2c484852c9dd92c03faef20d3fe74063d5005e6aaca37",
+              "rust": "1.97.1"
+            },
+            "version": "0.1.0-alpha.4"
+          },
+          "componentAndBuild": {
+            "artifacts": {
+              "capsule": "sha256:3efbca01c112fedc1e0b8b9b02fdf100ca11e2ee1f5e8f7b3e1ce4883269bb4d",
+              "component": "sha256:5e1bbcc7dedd40806ced96d6cabb6cac56d609c8635a9178e01aecbfc2ac850d",
+              "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+              "deployment": "sha256:090d19eb5a16b5fe68b7cc4e8cea6f22610b85f882199ea947f39d1744e9309d",
+              "evidence": "sha256:f3bf6b6c53b09216e74e1592e3346dad78b6a6ad4d72fca0da65c125cda58a8b",
+              "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+            },
+            "source": "sha256:98d0300ce55d3ffa526320b1a88b062c75f9a01d4a5d58e6122620a53aa57b88",
+            "recipe": "sha256:17bc426974419378b02b50b863795a57c05dce3473f572c0b55ed50b8482fd72",
+            "template": {
+              "ownerIssue": 546,
+              "revision": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+              "sha256": "sha256:98d0300ce55d3ffa526320b1a88b062c75f9a01d4a5d58e6122620a53aa57b88"
+            },
+            "toolInventory": "sha256:f83d2023de680c826ad090418e7797f85fa10f125d8ce4fb0bedf578e6003124",
+            "tools": [
+              {
+                "name": "python",
+                "path": "sdk/bin/python",
+                "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+                "version": "3.13.5"
+              },
+              {
+                "name": "recipe",
+                "path": "recipe/tools/dev_guest_recipe.py",
+                "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+                "version": "1"
+              },
+              {
+                "name": "contracts",
+                "path": "sdk/bin/capsule-contracts",
+                "sha256": "sha256:ef84d977563898a3b6a84369c81329d91c17c78bc1c692d41ccd445d4c636e6a",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "test-signer",
+                "path": "sdk/bin/capsule-test-signer",
+                "sha256": "sha256:e140b413d395f02961e3696660e449b9da83812cb6f9ba2613ad1ba77876d10b",
+                "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+              },
+              {
+                "name": "wasm-tools",
+                "path": "sdk/bin/wasm-tools",
+                "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+                "version": "1.254.0"
+              },
+              {
+                "name": "wit-bindgen",
+                "path": "sdk/bin/wit-bindgen",
+                "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+                "version": "0.62.0"
+              }
+            ],
+            "packager": "sha256:f3055a13e7779d1b62f05b0b4541ef713d2ad14e8ccd75e98fe24b3bc8ff5237",
+            "hostAbi": "lsf-host-abi-phase3-v4",
+            "target": "wasm-component"
+          },
+          "nodeId": "lsf-eb80145a55427400",
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "compilerBundle": "c360b85ac395c799f20b7558def65091e3a990621f0629693503b6c95f33c65f",
+          "testCases": {
+            "environment": "node",
+            "selection": [
+              "greeting-0",
+              "greeting-1",
+              "greeting-2"
+            ],
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-1": {
+                "status": "passed",
+                "category": "success",
+                "platformCode": null,
+                "required": true
+              },
+              "greeting-2": {
+                "status": "passed",
+                "category": "declared-error",
+                "platformCode": null,
+                "required": true
+              }
+            },
+            "excludedChecks": []
+          },
+          "privateCredentialMode": 384,
+          "sourceCredentialsExcluded": true,
+          "purge": {
+            "state": "purged",
+            "sourceTreeRetained": true
+          }
+        }
+      },
+      "watch": {
+        "passed": true,
+        "firstPublication": "publication:sha256:7ee9681adfd9cfe730aa88ceee8192f4fc58ae0c40247b9efc6c6ed824e52570",
+        "replacementPublication": "publication:sha256:4af834ea0ec1f3d3f58183e81c01fab27a2fa7de71ce96dd0560d84c05652618",
+        "inflightOldRevisionRetained": true,
+        "invokeCalls": 1,
+        "cancelCalls": 1,
+        "supersededChildReaped": true,
+        "latestValue": 501,
+        "compileFailureCode": "guest-build-failed-last-deployment-retained",
+        "lastGoodStillCallable": "success",
+        "retention": {
+          "attempts": 4,
+          "maximumAttempts": 4,
+          "ownedBytes": 2076984615
+        },
+        "focusedFailureVisible": true,
+        "automaticRollback": false,
+        "revokedRestore": {
+          "controllerDeploymentUnchanged": true,
+          "serverDeploymentUnchanged": true
+        },
+        "finalDownReaped": true
+      },
+      "closedProfile": {
+        "clock": {
+          "environment": "node",
+          "selection": [
+            "clock-zero-cold",
+            "clock-zero-warm",
+            "clock-zero-denied",
+            "clock-zero-fresh"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "clock-zero-cold": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-warm": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-denied": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "clock-zero-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        },
+        "failure": {
+          "environment": "node",
+          "selection": [
+            "cold-fresh",
+            "warm-fresh",
+            "declared",
+            "trap",
+            "after-trap",
+            "fuel",
+            "after-fuel",
+            "memory",
+            "after-memory",
+            "deadline",
+            "after-deadline",
+            "running-cancel",
+            "after-cancel"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "cold-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "warm-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "declared": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            },
+            "trap": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "after-trap": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "fuel": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "resource-exhausted",
+              "required": true
+            },
+            "after-fuel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "memory": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "resource-exhausted",
+              "required": true
+            },
+            "after-memory": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "deadline": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "deadline-exceeded",
+              "required": true
+            },
+            "after-deadline": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "running-cancel": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "cancelled",
+              "required": true
+            },
+            "after-cancel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        }
+      },
+      "actualOwnedWslLifecyclePassed": true
+    },
+    "windows-portable": {
+      "execution": "native-windows-after-owned-wsl-distribution-purge",
+      "languages": {
+        "c": {
+          "environment": "portable",
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ],
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-1": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-2": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": [
+            "authentication",
+            "compiler-isolation",
+            "deployment",
+            "immediate-event-fixture",
+            "immutable-blob-fixture",
+            "local-service-fixture",
+            "native-cache",
+            "pressure",
+            "protected-files",
+            "restart",
+            "running-cancellation",
+            "scoped-secret-fixture"
+          ]
+        },
+        "dotnet": {
+          "environment": "portable",
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2",
+            "greeting-runtime-denied",
+            "greeting-after-runtime-denial"
+          ],
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-1": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-2": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-runtime-denied": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "greeting-after-runtime-denial": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": [
+            "authentication",
+            "compiler-isolation",
+            "deployment",
+            "immediate-event-fixture",
+            "immutable-blob-fixture",
+            "local-service-fixture",
+            "native-cache",
+            "pressure",
+            "protected-files",
+            "restart",
+            "running-cancellation",
+            "scoped-secret-fixture"
+          ]
+        },
+        "go": {
+          "environment": "portable",
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2",
+            "greeting-runtime-denied",
+            "greeting-after-runtime-denial"
+          ],
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-1": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-2": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-runtime-denied": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "greeting-after-runtime-denial": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": [
+            "authentication",
+            "compiler-isolation",
+            "deployment",
+            "immediate-event-fixture",
+            "immutable-blob-fixture",
+            "local-service-fixture",
+            "native-cache",
+            "pressure",
+            "protected-files",
+            "restart",
+            "running-cancellation",
+            "scoped-secret-fixture"
+          ]
+        },
+        "java": {
+          "environment": "portable",
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2",
+            "greeting-runtime-denied",
+            "greeting-after-runtime-denial"
+          ],
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-1": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-2": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-runtime-denied": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "greeting-after-runtime-denial": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": [
+            "authentication",
+            "compiler-isolation",
+            "deployment",
+            "immediate-event-fixture",
+            "immutable-blob-fixture",
+            "local-service-fixture",
+            "native-cache",
+            "pressure",
+            "protected-files",
+            "restart",
+            "running-cancellation",
+            "scoped-secret-fixture"
+          ]
+        },
+        "rust": {
+          "environment": "portable",
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ],
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-1": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-2": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": [
+            "authentication",
+            "compiler-isolation",
+            "deployment",
+            "immediate-event-fixture",
+            "immutable-blob-fixture",
+            "local-service-fixture",
+            "native-cache",
+            "pressure",
+            "protected-files",
+            "restart",
+            "running-cancellation",
+            "scoped-secret-fixture"
+          ]
+        },
+        "typescript": {
+          "environment": "portable",
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ],
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-1": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-2": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": [
+            "authentication",
+            "compiler-isolation",
+            "deployment",
+            "immediate-event-fixture",
+            "immutable-blob-fixture",
+            "local-service-fixture",
+            "native-cache",
+            "pressure",
+            "protected-files",
+            "restart",
+            "running-cancellation",
+            "scoped-secret-fixture"
+          ]
+        }
+      },
+      "closedProfile": {
+        "clock": {
+          "environment": "portable",
+          "selection": [
+            "clock-zero-cold",
+            "clock-zero-warm",
+            "clock-zero-denied",
+            "clock-zero-fresh"
+          ],
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "clock-zero-cold": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-warm": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-denied": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "clock-zero-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": [
+            "authentication",
+            "compiler-isolation",
+            "deployment",
+            "immediate-event-fixture",
+            "immutable-blob-fixture",
+            "local-service-fixture",
+            "native-cache",
+            "pressure",
+            "protected-files",
+            "restart",
+            "running-cancellation",
+            "scoped-secret-fixture"
+          ]
+        },
+        "failure": {
+          "environment": "portable",
+          "selection": [
+            "cold-fresh",
+            "warm-fresh",
+            "declared",
+            "trap",
+            "after-trap",
+            "fuel",
+            "after-fuel",
+            "memory",
+            "after-memory",
+            "deadline",
+            "after-deadline",
+            "after-cancel"
+          ],
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "cold-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "warm-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "declared": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            },
+            "trap": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "after-trap": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "fuel": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "fuel-exhausted",
+              "required": true
+            },
+            "after-fuel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "memory": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "memory-exhausted",
+              "required": true
+            },
+            "after-memory": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "deadline": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "deadline-exceeded",
+              "required": true
+            },
+            "after-deadline": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "after-cancel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": [
+            "authentication",
+            "compiler-isolation",
+            "deployment",
+            "immediate-event-fixture",
+            "immutable-blob-fixture",
+            "local-service-fixture",
+            "native-cache",
+            "pressure",
+            "protected-files",
+            "restart",
+            "running-cancellation",
+            "scoped-secret-fixture"
+          ]
+        }
+      },
+      "cancellationBeforeStart": {
+        "environment": "portable",
+        "selection": [
+          "native-cancel-before-start"
+        ],
+        "cleanup": "owned-native-host-reaped",
+        "cases": {
+          "native-cancel-before-start": {
+            "status": "passed",
+            "category": "platform-failure",
+            "platformCode": "cancelled",
+            "required": true
+          }
+        },
+        "excludedChecks": [
+          "authentication",
+          "compiler-isolation",
+          "deployment",
+          "immediate-event-fixture",
+          "immutable-blob-fixture",
+          "local-service-fixture",
+          "native-cache",
+          "pressure",
+          "protected-files",
+          "restart",
+          "running-cancellation",
+          "scoped-secret-fixture"
+        ]
+      },
+      "requiredRunningCancellationRejectedWithoutExecution": true
+    },
+    "linux-direct": {
+      "application": {
+        "helperSha256": "sha256:4c2af0140064147bcc1ca18ffe0a1c9c4550e6ab36176f6cb365bfcab059d338",
+        "runtime": {
+          "developmentTest": {
+            "features": [
+              "latentd/development-test-node"
+            ],
+            "fixtures": [
+              "guest-clock-v1"
+            ],
+            "formatVersion": 1,
+            "purpose": "disposable-development-tests"
+          },
+          "engine": {
+            "compilerSha256": "2657cba53251f4c917543814372d5a1723b95d7167ea51354342878548574cee",
+            "dynamicDependencies": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6"
+            ],
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "wasmtimeVersion": "47.0.4"
+          },
+          "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+          "target": "x86_64-unknown-linux-gnu",
+          "toolchain": {
+            "lockSha256": "657ec4172a141851a0d2c484852c9dd92c03faef20d3fe74063d5005e6aaca37",
+            "rust": "1.97.1"
+          },
+          "version": "0.1.0-alpha.4"
+        },
+        "componentAndBuild": {
+          "artifacts": {
+            "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+            "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+            "evidence": "sha256:92d7dd5f15db675b9f33882e6ade1ef632d4c25f8309ea7a3325f1cdc1fb9b6d",
+            "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+          },
+          "source": "sha256:4365fc6bb999874ed5a13943fd243f8fa354ffadad0180fb28a5bd079e696f9f",
+          "recipe": "sha256:f890b82bb490e4e566a098ddc8a2d9ecf89b30644eec24b433b745ba1dce7dbe",
+          "template": {
+            "ownerIssue": 544,
+            "revision": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+            "sha256": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+          },
+          "toolInventory": "sha256:f7306df6eced3f48c59eef0d442ca6b881b42a8754e378fa3f8e819bf2f9206d",
+          "tools": [
+            {
+              "name": "python",
+              "path": "sdk/bin/python",
+              "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+              "version": "3.13.5"
+            },
+            {
+              "name": "recipe",
+              "path": "recipe/tools/dev_guest_recipe.py",
+              "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+              "version": "1"
+            },
+            {
+              "name": "contracts",
+              "path": "sdk/bin/capsule-contracts",
+              "sha256": "sha256:ef84d977563898a3b6a84369c81329d91c17c78bc1c692d41ccd445d4c636e6a",
+              "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+            },
+            {
+              "name": "test-signer",
+              "path": "sdk/bin/capsule-test-signer",
+              "sha256": "sha256:e140b413d395f02961e3696660e449b9da83812cb6f9ba2613ad1ba77876d10b",
+              "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+            },
+            {
+              "name": "wasm-tools",
+              "path": "sdk/bin/wasm-tools",
+              "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+              "version": "1.254.0"
+            },
+            {
+              "name": "wit-bindgen",
+              "path": "sdk/bin/wit-bindgen",
+              "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+              "version": "0.62.0"
+            },
+            {
+              "name": "cargo",
+              "path": "sdk/rust/bin/cargo",
+              "sha256": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+              "version": "1.97.1"
+            },
+            {
+              "name": "rustc",
+              "path": "sdk/rust/bin/rustc",
+              "sha256": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+              "version": "1.97.1"
+            }
+          ],
+          "packager": "sha256:f3055a13e7779d1b62f05b0b4541ef713d2ad14e8ccd75e98fe24b3bc8ff5237",
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "target": "wasm-component"
+        },
+        "nodeId": "lsf-99a07388193ff5ee",
+        "profile": "local-experimental-v1",
+        "admission": "enforced",
+        "compilerBundle": "385a04b06b3950e9b1998668413846199ebdcb56dbac22fc5de3b4669aa36fa8",
+        "testCases": {
+          "environment": "node",
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "greeting-0": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-1": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-2": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        },
+        "privateCredentialMode": 384,
+        "sourceCredentialsExcluded": true,
+        "purge": {
+          "state": "purged",
+          "sourceTreeRetained": true
+        }
+      },
+      "watch": {
+        "passed": true,
+        "firstPublication": "publication:sha256:a79ceb6bc5937247df935b566d319e85f2a47850b42c55f0ad752150f93fab1d",
+        "replacementPublication": "publication:sha256:9b77c08ffe2b1d621e6bf302c3fa38da27e2ea9b6d451df251839ec3d59d0065",
+        "inflightOldRevisionRetained": true,
+        "invokeCalls": 1,
+        "cancelCalls": 1,
+        "supersededChildReaped": true,
+        "latestValue": 501,
+        "compileFailureCode": "guest-build-failed-last-deployment-retained",
+        "lastGoodStillCallable": "success",
+        "retention": {
+          "attempts": 4,
+          "maximumAttempts": 4,
+          "ownedBytes": 2077082939
+        },
+        "focusedFailureVisible": true,
+        "automaticRollback": false,
+        "revokedRestore": {
+          "controllerDeploymentUnchanged": true,
+          "serverDeploymentUnchanged": true
+        },
+        "finalDownReaped": true
+      },
+      "closedProfile": {
+        "clock": {
+          "environment": "node",
+          "selection": [
+            "clock-zero-cold",
+            "clock-zero-warm",
+            "clock-zero-denied",
+            "clock-zero-fresh"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "clock-zero-cold": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-warm": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-denied": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "clock-zero-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        },
+        "failure": {
+          "environment": "node",
+          "selection": [
+            "cold-fresh",
+            "warm-fresh",
+            "declared",
+            "trap",
+            "after-trap",
+            "fuel",
+            "after-fuel",
+            "memory",
+            "after-memory",
+            "deadline",
+            "after-deadline",
+            "running-cancel",
+            "after-cancel"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "cold-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "warm-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "declared": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            },
+            "trap": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "after-trap": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "fuel": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "resource-exhausted",
+              "required": true
+            },
+            "after-fuel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "memory": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "resource-exhausted",
+              "required": true
+            },
+            "after-memory": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "deadline": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "deadline-exceeded",
+              "required": true
+            },
+            "after-deadline": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "running-cancel": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "cancelled",
+              "required": true
+            },
+            "after-cancel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        }
+      },
+      "otherOwnerHomeDenied": true
+    },
+    "linux-ssh": {
+      "application": {
+        "helperSha256": "sha256:4c2af0140064147bcc1ca18ffe0a1c9c4550e6ab36176f6cb365bfcab059d338",
+        "runtime": {
+          "developmentTest": {
+            "features": [
+              "latentd/development-test-node"
+            ],
+            "fixtures": [
+              "guest-clock-v1"
+            ],
+            "formatVersion": 1,
+            "purpose": "disposable-development-tests"
+          },
+          "engine": {
+            "compilerSha256": "2657cba53251f4c917543814372d5a1723b95d7167ea51354342878548574cee",
+            "dynamicDependencies": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6"
+            ],
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "wasmtimeVersion": "47.0.4"
+          },
+          "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+          "target": "x86_64-unknown-linux-gnu",
+          "toolchain": {
+            "lockSha256": "657ec4172a141851a0d2c484852c9dd92c03faef20d3fe74063d5005e6aaca37",
+            "rust": "1.97.1"
+          },
+          "version": "0.1.0-alpha.4"
+        },
+        "componentAndBuild": {
+          "artifacts": {
+            "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+            "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+            "evidence": "sha256:1a4c79bca4303af8f21a5edeb2328479e26caa95575baa7eaf502663b04cd135",
+            "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+          },
+          "source": "sha256:4365fc6bb999874ed5a13943fd243f8fa354ffadad0180fb28a5bd079e696f9f",
+          "recipe": "sha256:f890b82bb490e4e566a098ddc8a2d9ecf89b30644eec24b433b745ba1dce7dbe",
+          "template": {
+            "ownerIssue": 544,
+            "revision": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+            "sha256": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+          },
+          "toolInventory": "sha256:f7306df6eced3f48c59eef0d442ca6b881b42a8754e378fa3f8e819bf2f9206d",
+          "tools": [
+            {
+              "name": "python",
+              "path": "sdk/bin/python",
+              "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+              "version": "3.13.5"
+            },
+            {
+              "name": "recipe",
+              "path": "recipe/tools/dev_guest_recipe.py",
+              "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+              "version": "1"
+            },
+            {
+              "name": "contracts",
+              "path": "sdk/bin/capsule-contracts",
+              "sha256": "sha256:ef84d977563898a3b6a84369c81329d91c17c78bc1c692d41ccd445d4c636e6a",
+              "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+            },
+            {
+              "name": "test-signer",
+              "path": "sdk/bin/capsule-test-signer",
+              "sha256": "sha256:e140b413d395f02961e3696660e449b9da83812cb6f9ba2613ad1ba77876d10b",
+              "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+            },
+            {
+              "name": "wasm-tools",
+              "path": "sdk/bin/wasm-tools",
+              "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+              "version": "1.254.0"
+            },
+            {
+              "name": "wit-bindgen",
+              "path": "sdk/bin/wit-bindgen",
+              "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+              "version": "0.62.0"
+            },
+            {
+              "name": "cargo",
+              "path": "sdk/rust/bin/cargo",
+              "sha256": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+              "version": "1.97.1"
+            },
+            {
+              "name": "rustc",
+              "path": "sdk/rust/bin/rustc",
+              "sha256": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+              "version": "1.97.1"
+            }
+          ],
+          "packager": "sha256:f3055a13e7779d1b62f05b0b4541ef713d2ad14e8ccd75e98fe24b3bc8ff5237",
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "target": "wasm-component"
+        },
+        "nodeId": "lsf-3b9ab2381dd856cb",
+        "profile": "local-experimental-v1",
+        "admission": "enforced",
+        "compilerBundle": "385a04b06b3950e9b1998668413846199ebdcb56dbac22fc5de3b4669aa36fa8",
+        "testCases": {
+          "environment": "node",
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "greeting-0": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-1": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-2": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        },
+        "privateCredentialMode": 384,
+        "sourceCredentialsExcluded": true,
+        "purge": {
+          "state": "purged",
+          "sourceTreeRetained": true
+        }
+      },
+      "watch": {
+        "passed": true,
+        "firstPublication": "publication:sha256:0f6539ecbc3a07d04d5625263982da301ec0a7713ac106b884f946185abdbb5f",
+        "replacementPublication": "publication:sha256:4f26c83999bebab9e89781eb1f5dab4bce8985747cb02b5421cd6025a3b0597d",
+        "inflightOldRevisionRetained": true,
+        "invokeCalls": 1,
+        "cancelCalls": 1,
+        "supersededChildReaped": true,
+        "latestValue": 501,
+        "compileFailureCode": "guest-build-failed-last-deployment-retained",
+        "lastGoodStillCallable": "success",
+        "retention": {
+          "attempts": 4,
+          "maximumAttempts": 4,
+          "ownedBytes": 2077088769
+        },
+        "focusedFailureVisible": true,
+        "automaticRollback": false,
+        "revokedRestore": {
+          "controllerDeploymentUnchanged": true,
+          "serverDeploymentUnchanged": true
+        },
+        "finalDownReaped": true
+      },
+      "closedProfile": {
+        "clock": {
+          "environment": "node",
+          "selection": [
+            "clock-zero-cold",
+            "clock-zero-warm",
+            "clock-zero-denied",
+            "clock-zero-fresh"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "clock-zero-cold": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-warm": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-denied": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "clock-zero-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        },
+        "failure": {
+          "environment": "node",
+          "selection": [
+            "cold-fresh",
+            "warm-fresh",
+            "declared",
+            "trap",
+            "after-trap",
+            "fuel",
+            "after-fuel",
+            "memory",
+            "after-memory",
+            "deadline",
+            "after-deadline",
+            "running-cancel",
+            "after-cancel"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "cold-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "warm-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "declared": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            },
+            "trap": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "after-trap": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "fuel": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "resource-exhausted",
+              "required": true
+            },
+            "after-fuel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "memory": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "resource-exhausted",
+              "required": true
+            },
+            "after-memory": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "deadline": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "deadline-exceeded",
+              "required": true
+            },
+            "after-deadline": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "running-cancel": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "cancelled",
+              "required": true
+            },
+            "after-cancel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        }
+      },
+      "otherOwnerHomeDenied": true
+    },
+    "devcontainer": {
+      "application": {
+        "helperSha256": "sha256:4c2af0140064147bcc1ca18ffe0a1c9c4550e6ab36176f6cb365bfcab059d338",
+        "runtime": {
+          "developmentTest": {
+            "features": [
+              "latentd/development-test-node"
+            ],
+            "fixtures": [
+              "guest-clock-v1"
+            ],
+            "formatVersion": 1,
+            "purpose": "disposable-development-tests"
+          },
+          "engine": {
+            "compilerSha256": "2657cba53251f4c917543814372d5a1723b95d7167ea51354342878548574cee",
+            "dynamicDependencies": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6"
+            ],
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "wasmtimeVersion": "47.0.4"
+          },
+          "sourceCommit": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+          "target": "x86_64-unknown-linux-gnu",
+          "toolchain": {
+            "lockSha256": "657ec4172a141851a0d2c484852c9dd92c03faef20d3fe74063d5005e6aaca37",
+            "rust": "1.97.1"
+          },
+          "version": "0.1.0-alpha.4"
+        },
+        "componentAndBuild": {
+          "artifacts": {
+            "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+            "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+            "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+            "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+            "evidence": "sha256:8c2accffa97d98ecdb329fd80cf6d01b35bafc8a1571799e4a47ec5e1ce2ded6",
+            "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+          },
+          "source": "sha256:4365fc6bb999874ed5a13943fd243f8fa354ffadad0180fb28a5bd079e696f9f",
+          "recipe": "sha256:f890b82bb490e4e566a098ddc8a2d9ecf89b30644eec24b433b745ba1dce7dbe",
+          "template": {
+            "ownerIssue": 544,
+            "revision": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4",
+            "sha256": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+          },
+          "toolInventory": "sha256:f7306df6eced3f48c59eef0d442ca6b881b42a8754e378fa3f8e819bf2f9206d",
+          "tools": [
+            {
+              "name": "python",
+              "path": "sdk/bin/python",
+              "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+              "version": "3.13.5"
+            },
+            {
+              "name": "recipe",
+              "path": "recipe/tools/dev_guest_recipe.py",
+              "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+              "version": "1"
+            },
+            {
+              "name": "contracts",
+              "path": "sdk/bin/capsule-contracts",
+              "sha256": "sha256:ef84d977563898a3b6a84369c81329d91c17c78bc1c692d41ccd445d4c636e6a",
+              "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+            },
+            {
+              "name": "test-signer",
+              "path": "sdk/bin/capsule-test-signer",
+              "sha256": "sha256:e140b413d395f02961e3696660e449b9da83812cb6f9ba2613ad1ba77876d10b",
+              "version": "8b6dc33fc64fee1e04519c4c0ab6fb55632d58a4"
+            },
+            {
+              "name": "wasm-tools",
+              "path": "sdk/bin/wasm-tools",
+              "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+              "version": "1.254.0"
+            },
+            {
+              "name": "wit-bindgen",
+              "path": "sdk/bin/wit-bindgen",
+              "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+              "version": "0.62.0"
+            },
+            {
+              "name": "cargo",
+              "path": "sdk/rust/bin/cargo",
+              "sha256": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+              "version": "1.97.1"
+            },
+            {
+              "name": "rustc",
+              "path": "sdk/rust/bin/rustc",
+              "sha256": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+              "version": "1.97.1"
+            }
+          ],
+          "packager": "sha256:f3055a13e7779d1b62f05b0b4541ef713d2ad14e8ccd75e98fe24b3bc8ff5237",
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "target": "wasm-component"
+        },
+        "nodeId": "lsf-817cebff4edbca3b",
+        "profile": "local-experimental-v1",
+        "admission": "enforced",
+        "compilerBundle": "385a04b06b3950e9b1998668413846199ebdcb56dbac22fc5de3b4669aa36fa8",
+        "testCases": {
+          "environment": "node",
+          "selection": [
+            "greeting-0",
+            "greeting-1",
+            "greeting-2"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "greeting-0": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-1": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "greeting-2": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        },
+        "privateCredentialMode": 384,
+        "sourceCredentialsExcluded": true,
+        "purge": {
+          "state": "purged",
+          "sourceTreeRetained": true
+        }
+      },
+      "watch": {
+        "passed": true,
+        "firstPublication": "publication:sha256:97e6956355400362459ffce5cb31d13acd4eaad29afb57368a27932ace31f16d",
+        "replacementPublication": "publication:sha256:efbaa6d8e56c57bc66a033ec3ca993eba62f5972b23229ee8e2971ef29fdc9ef",
+        "inflightOldRevisionRetained": true,
+        "invokeCalls": 1,
+        "cancelCalls": 1,
+        "supersededChildReaped": true,
+        "latestValue": 501,
+        "compileFailureCode": "guest-build-failed-last-deployment-retained",
+        "lastGoodStillCallable": "success",
+        "retention": {
+          "attempts": 4,
+          "maximumAttempts": 4,
+          "ownedBytes": 1557907009
+        },
+        "focusedFailureVisible": true,
+        "automaticRollback": false,
+        "revokedRestore": {
+          "controllerDeploymentUnchanged": true,
+          "serverDeploymentUnchanged": true
+        },
+        "finalDownReaped": true
+      },
+      "closedProfile": {
+        "clock": {
+          "environment": "node",
+          "selection": [
+            "clock-zero-cold",
+            "clock-zero-warm",
+            "clock-zero-denied",
+            "clock-zero-fresh"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "clock-zero-cold": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-warm": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "clock-zero-denied": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "clock-zero-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        },
+        "failure": {
+          "environment": "node",
+          "selection": [
+            "cold-fresh",
+            "warm-fresh",
+            "declared",
+            "trap",
+            "after-trap",
+            "fuel",
+            "after-fuel",
+            "memory",
+            "after-memory",
+            "deadline",
+            "after-deadline",
+            "running-cancel",
+            "after-cancel"
+          ],
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "cold-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "warm-fresh": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "declared": {
+              "status": "passed",
+              "category": "declared-error",
+              "platformCode": null,
+              "required": true
+            },
+            "trap": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "guest-trap",
+              "required": true
+            },
+            "after-trap": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "fuel": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "resource-exhausted",
+              "required": true
+            },
+            "after-fuel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "memory": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "resource-exhausted",
+              "required": true
+            },
+            "after-memory": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "deadline": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "deadline-exceeded",
+              "required": true
+            },
+            "after-deadline": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            },
+            "running-cancel": {
+              "status": "passed",
+              "category": "platform-failure",
+              "platformCode": "cancelled",
+              "required": true
+            },
+            "after-cancel": {
+              "status": "passed",
+              "category": "success",
+              "platformCode": null,
+              "required": true
+            }
+          },
+          "excludedChecks": []
+        }
+      },
+      "workspaceIsolationPassed": true,
+      "devcontainerCliVersion": "0.89.0",
+      "editorAutomaticExecution": false
+    }
+  }
+}

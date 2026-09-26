@@ -68,24 +68,28 @@ fn raw_eviction_never_deletes_authoritative_content_or_restores_revoked_eligibil
     assert_eq!(ready(repository.fetch(release)).unwrap(), artifact);
     eligibility.check_current().unwrap();
 
-    ready(repository.change_release_lifecycle(
-        ReleaseMutationContext {
-            scope: LifecycleScope::Tenant(TenantId("examples".into())),
-            actor: ReleaseActor {
-                subject: "cache-test-host".into(),
-                kind: ReleaseActorKind::Host,
+    let publication = repository
+        .select_execution_publication(&TenantId("examples".into()), release, None)
+        .unwrap();
+    repository
+        .change_publication_lifecycle(
+            ReleaseMutationContext {
+                scope: LifecycleScope::Tenant(TenantId("examples".into())),
+                actor: ReleaseActor {
+                    subject: "cache-test-host".into(),
+                    kind: ReleaseActorKind::Host,
+                },
+                operation: Some(ReleaseOperationPrecondition {
+                    operation_id: "revoke-cache-independent".into(),
+                    expected_generation: 1,
+                }),
             },
-            operation: Some(ReleaseOperationPrecondition {
-                operation_id: "revoke-cache-independent".into(),
-                expected_generation: 1,
-            }),
-        },
-        release,
-        ReleaseLifecycleAction::Revoke,
-        ReleaseLifecycleReason::OperatorRevocation,
-        &mut |_| Ok(()),
-    ))
-    .unwrap();
+            &publication,
+            ReleaseLifecycleAction::Revoke,
+            ReleaseLifecycleReason::OperatorRevocation,
+            &mut |_| Ok(()),
+        )
+        .unwrap();
     let pin = put(&cache, &artifact.component_bytes);
     let bytes = pin
         .reserve_read(artifact.component_bytes.len() as u64)

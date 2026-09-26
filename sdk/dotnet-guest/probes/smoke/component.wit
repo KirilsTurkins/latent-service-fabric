@@ -1,0 +1,25 @@
+package example:dotnetprobe@1.0.0;
+
+interface operations {
+    record item {
+        text: string,
+        amount: u64,
+    }
+    record packet {
+        text: string,
+        unsigned: u64,
+        signed: s64,
+        maybe: option<u64>,
+        items: list<item>,
+    }
+    echo: async func(value: string) -> string;
+    wide: func(value: u64) -> u64;
+    mirror: async func(value: packet) -> result<packet, string>;
+    profile: func() -> u32;
+    reflection: func() -> u32;
+    next: func() -> u32;
+}
+
+world probe {
+    export operations;
+}

@@ -1,0 +1,986 @@
+{
+  "cleanHost": false,
+  "controllerSourceCommit": "b78fbf029237101e4a1e4a77b5b2a549ad58ca86",
+  "controllerSourceDirty": true,
+  "excludedClaims": [
+    "final-publisher-identity",
+    "clean-host-installation",
+    "cross-user-isolation",
+    "other-provider-fixtures",
+    "portable-running-cancellation",
+    "all-six-language-failure-matrix"
+  ],
+  "execution": "actual-authored-rust-capsule-on-signed-linux-node-and-native-portable-hosts",
+  "failedAttempts": [
+    {
+      "cleanup": "owned-node-and-client-processes-reaped",
+      "correction": "declared exact per-environment code mappings; same failure categories remain required",
+      "failure": "expected engine resource detail at the public node API",
+      "fuelAndMemoryActual": "resource-exhausted",
+      "otherElevenCases": "passed",
+      "phase": "first-node-scenarios",
+      "runningCancellation": "confirmed"
+    },
+    {
+      "correction": "retained failed observation; a fresh independent staging attempt verified and passed",
+      "failure": "source-changed-during-read",
+      "hostStarted": false,
+      "phase": "first-windows-host-staging"
+    }
+  ],
+  "language": "rust",
+  "linuxComparison": {
+    "artifacts": {
+      "capsule": "sha256:6653a3e01d00ebccc8d109f8b72c130fa00750052fe51724ab0f33d2a6640192",
+      "component": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+      "contracts": "sha256:b7653f2f72139c822a836cef8684dba2ce9cf53de4896d5fd65a4f1ca3534d1c"
+    },
+    "guestClockCompared": false,
+    "nativeOs": "linux",
+    "nodeAdmission": "enforced",
+    "nodeProfile": "local-experimental-v1",
+    "nodeReportSha256": "sha256:df49ffd0976e568df13901a0361eb54c93d5699893c1ed89d5efc9ee234297f0",
+    "passed": true,
+    "portableExcludedChecks": [
+      "authentication",
+      "compiler-isolation",
+      "deployment",
+      "native-cache",
+      "pressure",
+      "protected-files",
+      "restart",
+      "running-cancellation"
+    ],
+    "portableReportSha256": "sha256:3c86e7cc0e5d653ac506af9b30b69595b115ba35464bffd29d44238f8068d0b7",
+    "qualificationComplete": false,
+    "results": [
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "cold-fresh",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "warm-fresh",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "declared-error",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "declared",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:d79ff6a1767386a06a5f85d2b2235f26f3c5efa3ab7750d6c17ac8d01318883a",
+        "platformCode": null
+      },
+      {
+        "category": "platform-failure",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "trap",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": null,
+        "platformCode": "guest-trap"
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-trap",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "platform-failure",
+        "execution": {
+          "fuel": "10000",
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "fuel",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": null,
+        "platformCode": "resource-exhausted",
+        "platformCodes": {
+          "node": "resource-exhausted",
+          "portable": "fuel-exhausted"
+        }
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-fuel",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "platform-failure",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "memory",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": null,
+        "platformCode": "resource-exhausted",
+        "platformCodes": {
+          "node": "resource-exhausted",
+          "portable": "memory-exhausted"
+        }
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-memory",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "platform-failure",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "deadline",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": null,
+        "platformCode": "deadline-exceeded"
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-deadline",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-cancel",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      }
+    ],
+    "reviewedDifferences": [
+      "node-only-publication-admission-and-routing",
+      "host-os-and-architecture",
+      "bounded-cold-node-preparation-deadline",
+      "system-clock-and-entropy-not-compared",
+      "node-public-resource-code-and-portable-engine-detail"
+    ],
+    "schemaVersion": "latent.dev.node-portable-comparison.v1",
+    "scope": "selected-typed-application-values",
+    "selection": [
+      "cold-fresh",
+      "warm-fresh",
+      "declared",
+      "trap",
+      "after-trap",
+      "fuel",
+      "after-fuel",
+      "memory",
+      "after-memory",
+      "deadline",
+      "after-deadline",
+      "after-cancel"
+    ]
+  },
+  "linuxHostSha256": "sha256:70515f97e93745ece3abca67ca87a5223a2aba449fe717f020eefc8ee1739d74",
+  "node": {
+    "admission": "enforced",
+    "architecture": "x86_64",
+    "artifacts": {
+      "capsule": "sha256:6653a3e01d00ebccc8d109f8b72c130fa00750052fe51724ab0f33d2a6640192",
+      "component": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+      "contracts": "sha256:b7653f2f72139c822a836cef8684dba2ce9cf53de4896d5fd65a4f1ca3534d1c",
+      "deployment": "sha256:ac1ef61630168c67ab2dc0eabdd2d0dc28dae30efa00d570eaee8fc72773d414",
+      "evidence": "sha256:421e3b7d1deee363437b90021282f7c3a9b870c72e0e853df91f3e7911184b86",
+      "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+    },
+    "hostAbi": "lsf-host-abi-phase3-v4",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "node": "lsf-3d344cee18707a4f",
+    "package": {
+      "componentDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+      "executionAuthorized": false,
+      "kind": "capsule",
+      "layerBytes": "23943",
+      "layers": 6,
+      "name": "my-greeting",
+      "packageDigest": "sha256:fbdbbd4787bf9cbb92f5aa7f81f24801de10cb5ccd8df868391ea967c49ea217",
+      "sbomInventoryDigest": null,
+      "trustEvaluated": false,
+      "version": "1.0.0",
+      "webBuildOutputs": null
+    },
+    "profile": "local-experimental-v1",
+    "source": "sha256:6339935c87f408b2c9d88785a861c54077ce26242173fb32babe88b68c364a11"
+  },
+  "nodeCleanup": "owned-node-and-client-processes-reaped",
+  "nodeResults": [
+    {
+      "activationId": "dev-9ee26204b89d22a65c1abf3f3db90d1a",
+      "category": "success",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "cold-fresh",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "platformCode": null,
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-8acc3e9feff7978a700d2da0a005027a",
+      "category": "success",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "warm-fresh",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "platformCode": null,
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-c8a3ad38407c91ca5b573a1bfb8f4269",
+      "category": "declared-error",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "declared",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:d79ff6a1767386a06a5f85d2b2235f26f3c5efa3ab7750d6c17ac8d01318883a",
+      "platformCode": null,
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-05cd7584d62710562a5f25a10e732ff6",
+      "category": "platform-failure",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "trap",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": null,
+      "platformCode": "guest-trap",
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-2e19c71ad67616b7608b1ccc5363b0eb",
+      "category": "success",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "after-trap",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "platformCode": null,
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-db65f28efbf555b0085e1b9384b77e8d",
+      "category": "platform-failure",
+      "execution": {
+        "fuel": "10000",
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "fuel",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": null,
+      "platformCode": "resource-exhausted",
+      "platformCodes": {
+        "node": "resource-exhausted",
+        "portable": "fuel-exhausted"
+      },
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-8dfe7992f39453cd13e20aa2501deb0f",
+      "category": "success",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "after-fuel",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "platformCode": null,
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-4b92e130c78523d4ade844a491af9b2b",
+      "category": "platform-failure",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "memory",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": null,
+      "platformCode": "resource-exhausted",
+      "platformCodes": {
+        "node": "resource-exhausted",
+        "portable": "memory-exhausted"
+      },
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-07119f491124033a9eca3b22c133c84e",
+      "category": "success",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "after-memory",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "platformCode": null,
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-907b054322381b334bc53998e0a23889",
+      "category": "platform-failure",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "deadline",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": null,
+      "platformCode": "deadline-exceeded",
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 20
+    },
+    {
+      "activationId": "dev-80acd46be969bd101822ce309cf130ea",
+      "category": "success",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "after-deadline",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "platformCode": null,
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-6b278e54b5c4e08e555be0f0c1ba67a6",
+      "cancellation": {
+        "activationId": "dev-6b278e54b5c4e08e555be0f0c1ba67a6",
+        "cancelCalls": 1,
+        "confirmed": true,
+        "disposition": "accepted",
+        "lookups": 2,
+        "runningObserved": true,
+        "terminalState": "cancelled",
+        "trigger": "observed-running"
+      },
+      "category": "platform-failure",
+      "execution": {
+        "cancelWhenRunning": true,
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "running-cancel",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": null,
+      "platformCode": "cancelled",
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    },
+    {
+      "activationId": "dev-97b5187981669d0aa97981cddec31dd6",
+      "category": "success",
+      "execution": {
+        "grants": []
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "routeGeneration": "1"
+      },
+      "fixtures": [],
+      "id": "after-cancel",
+      "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outcomeKnown": true,
+      "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+      "platformCode": null,
+      "required": true,
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+        "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+        "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+        "routeGeneration": "1"
+      },
+      "status": "passed",
+      "targetMatches": true,
+      "timeoutMillis": 5000
+    }
+  ],
+  "observedInvocations": {
+    "linuxNode": 14,
+    "linuxPortable": 12,
+    "windowsPortable": 12
+  },
+  "portableRequiredRunningCancellation": {
+    "linux": {
+      "case": {
+        "id": "running-cancel",
+        "missing": [
+          "running-cancellation"
+        ],
+        "required": true,
+        "status": "unsupported",
+        "unavailableFixtures": []
+      },
+      "cleanup": "no-native-host-started",
+      "passed": false
+    },
+    "windows": {
+      "case": {
+        "id": "running-cancel",
+        "missing": [
+          "running-cancellation"
+        ],
+        "required": true,
+        "status": "unsupported",
+        "unavailableFixtures": []
+      },
+      "cleanup": "no-native-host-started",
+      "passed": false
+    }
+  },
+  "publisherAuthenticated": false,
+  "qualificationComplete": false,
+  "rawReportDigests": {
+    "linux": "sha256:c58f33150f3b42e7018cdbd4b560a26985ce7f9d880f4452af609eb47a33baa1",
+    "windows": "sha256:323a0be807858f759aa2995d472db632c356b916f3d4ed6dce1a45ddb6221aaf"
+  },
+  "retainedRestart": {
+    "deployment": {
+      "attempt": "19e2c4742d4eb61ee0087e7b25f8fce3",
+      "buildKey": "sha256:9e070cb0f20bf86cd037ff905bd6d089e4a526cab9a6452626f3b82eddb7d399",
+      "componentDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+      "deployment": "my-greeting",
+      "generation": "1",
+      "operation": "dev-9e7ae2b993aa44c81ce62ca961e364d2",
+      "publication": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+      "publicationInput": "sha256:302d5ed8d614e77dd13cb6b45eb65f3a47d54e32745f320e8e812853689f7e5c",
+      "source": "sha256:6339935c87f408b2c9d88785a861c54077ce26242173fb32babe88b68c364a11"
+    },
+    "passed": true,
+    "results": [
+      {
+        "activationId": "dev-3f1de84c7b8525499b9a6a74ff47a50d",
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "expectedRevision": {
+          "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+          "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+          "routeGeneration": "1"
+        },
+        "fixtures": [],
+        "id": "cold-fresh",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "outcomeKnown": true,
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null,
+        "required": true,
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:eb7fa7d990a79a20d7662fefd253f13e04c582efff291dc669455bcb5568beac",
+          "releaseDigest": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+          "revisionId": "revision-v1:sha256:c4b916c793bde8864fad821196e274ef0134a3515acd4569c717b38a51181ad1",
+          "routeGeneration": "1"
+        },
+        "status": "passed",
+        "targetMatches": true,
+        "timeoutMillis": 5000
+      }
+    ]
+  },
+  "scenarioContract": "latent.dev.scenarios.v1",
+  "schemaVersion": "latent.dev.failure-source-observation.v1",
+  "scope": [
+    "trap",
+    "fuel",
+    "memory",
+    "deadline",
+    "running-cancellation",
+    "subsequent-fresh-state",
+    "typed-declared-error",
+    "cold-warm",
+    "retained-restart"
+  ],
+  "shutdown": {
+    "cleanShutdown": true,
+    "dataRetained": true,
+    "guestInstance": {
+      "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+      "initStartTicks": "11285305",
+      "pidNamespace": "4026532461"
+    },
+    "node": "lsf-3d344cee18707a4f",
+    "profile": "local-experimental-v1",
+    "providers": [],
+    "readiness": {
+      "activationReady": true,
+      "authenticated": true,
+      "profile": "local-experimental-v1",
+      "schemaVersion": "latent.native-readiness.v1"
+    },
+    "reaped": true,
+    "state": "stopped"
+  },
+  "sourceRuntime": {
+    "binaries": {
+      "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+      "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+    },
+    "buildProfile": {
+      "compiledBinary": "latentd",
+      "debugInfo": 0,
+      "features": [
+        "latentd/development-test-node"
+      ],
+      "incremental": false,
+      "name": "dev",
+      "retainedOperatorAndAotSource": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "latentd": "sha256:894d9d2d309717506cf85c8c57f4add3f8b8519c6158adcacdd60c393486ffa7"
+        },
+        "path": "/build/dev559-node-kit3"
+      }
+    },
+    "controllerSourceCommit": "b78fbf029237101e4a1e4a77b5b2a549ad58ca86",
+    "controllerSourceDirty": true,
+    "engine": {
+      "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "wasmtimeVersion": "47.0.4"
+    },
+    "helperSha256": "sha256:448ba98e11001be75bb3dfd5b0880e3cc8527aa4fef4e6f74c1ff6ffe59d03bd",
+    "publisherAuthenticated": false,
+    "purpose": "source-application-node-tests",
+    "sourceCommit": "e212bcc800ec0939715c2ee92de8e581e8ee69d4",
+    "sourceDirty": true,
+    "version": "0.1.0-alpha.4"
+  },
+  "windowsComparison": {
+    "artifacts": {
+      "capsule": "sha256:6653a3e01d00ebccc8d109f8b72c130fa00750052fe51724ab0f33d2a6640192",
+      "component": "sha256:5b9d9121814c7c2567e3cdd4df2d7c93b387f2dc90338256a46f1514c2db3cbf",
+      "contracts": "sha256:b7653f2f72139c822a836cef8684dba2ce9cf53de4896d5fd65a4f1ca3534d1c"
+    },
+    "guestClockCompared": false,
+    "nativeOs": "windows",
+    "nodeAdmission": "enforced",
+    "nodeProfile": "local-experimental-v1",
+    "nodeReportSha256": "sha256:df49ffd0976e568df13901a0361eb54c93d5699893c1ed89d5efc9ee234297f0",
+    "passed": true,
+    "portableExcludedChecks": [
+      "authentication",
+      "compiler-isolation",
+      "deployment",
+      "native-cache",
+      "pressure",
+      "protected-files",
+      "restart",
+      "running-cancellation"
+    ],
+    "portableReportSha256": "sha256:e90a853bccaea2c02445a5e946a03dd84364b85233740f29982168f6ba7da45d",
+    "qualificationComplete": false,
+    "results": [
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "cold-fresh",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "warm-fresh",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "declared-error",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "declared",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:d79ff6a1767386a06a5f85d2b2235f26f3c5efa3ab7750d6c17ac8d01318883a",
+        "platformCode": null
+      },
+      {
+        "category": "platform-failure",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "trap",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": null,
+        "platformCode": "guest-trap"
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-trap",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "platform-failure",
+        "execution": {
+          "fuel": "10000",
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "fuel",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": null,
+        "platformCode": "resource-exhausted",
+        "platformCodes": {
+          "node": "resource-exhausted",
+          "portable": "fuel-exhausted"
+        }
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-fuel",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "platform-failure",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "memory",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": null,
+        "platformCode": "resource-exhausted",
+        "platformCodes": {
+          "node": "resource-exhausted",
+          "portable": "memory-exhausted"
+        }
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-memory",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "platform-failure",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "deadline",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": null,
+        "platformCode": "deadline-exceeded"
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-deadline",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      },
+      {
+        "category": "success",
+        "execution": {
+          "grants": []
+        },
+        "fixtures": [],
+        "id": "after-cancel",
+        "inputSha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "payloadSha256": "sha256:080a9ed428559ef602668b4c00f114f1a11c3f6b02a435f0bdc154578e4d7f22",
+        "platformCode": null
+      }
+    ],
+    "reviewedDifferences": [
+      "node-only-publication-admission-and-routing",
+      "host-os-and-architecture",
+      "bounded-cold-node-preparation-deadline",
+      "system-clock-and-entropy-not-compared",
+      "node-public-resource-code-and-portable-engine-detail"
+    ],
+    "schemaVersion": "latent.dev.node-portable-comparison.v1",
+    "scope": "selected-typed-application-values",
+    "selection": [
+      "cold-fresh",
+      "warm-fresh",
+      "declared",
+      "trap",
+      "after-trap",
+      "fuel",
+      "after-fuel",
+      "memory",
+      "after-memory",
+      "deadline",
+      "after-deadline",
+      "after-cancel"
+    ]
+  },
+  "windowsHostSha256": "sha256:6674ca8ada67edeeba1d8ec19c6dad376f3277ebecdaaf8305d4a66de70c1e3d"
+}

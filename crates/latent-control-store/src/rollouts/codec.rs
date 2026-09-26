@@ -52,6 +52,14 @@ macro_rules! digest {
 }
 digest!(ArtifactBlobDigest);
 digest!(PackageDigest);
+impl Text for latent_core::PublicationId {
+    fn value(&self) -> &str {
+        self.as_str()
+    }
+    fn parse(value: String) -> Result<Self> {
+        value.parse().map_err(|_| corrupt())
+    }
+}
 pub(crate) mod text {
     use super::{serde, Deserialize, Text};
     pub fn serialize<S: serde::Serializer, T: Text>(

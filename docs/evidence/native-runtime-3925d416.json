@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "latent.native-validation-evidence.v1",
+  "scope": "cross-revision-candidate-native-vm-not-release-acceptance",
+  "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35451109956",
+  "artifactRunUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35450192265",
+  "sourceCommit": "260c3e4ef14a8afe0818ce9a9ed56f05c3833b17",
+  "harnessSourceCommit": "3925d4163f0a7af12ce2541d23fa5c09d4fc2856",
+  "version": "0.1.0-alpha.3",
+  "historicalReleaseModified": false,
+  "nativeBuildPassed": true,
+  "archiveSha256": "1f14b0cdd4669d062437959a404befe9e4383d24d70d25b9d5ae2f8bb9f2ed9e",
+  "publisher": {
+    "method": "github-artifact-attestation",
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "workflow": ".github/workflows/native-runtime.yml",
+    "sourceRef": "refs/heads/feat/308-native-runtime-bundle",
+    "purpose": "candidate",
+    "oidcIssuer": "https://token.actions.githubusercontent.com",
+    "githubHostedRunnerRequired": true,
+    "attestationSha256": "942ae2ec8376ca5eac0f48800fa2a98a480de90db892726c62df30ba1f97805f",
+    "checksumsSha256": "63a6f502f7a4924c00c371306c804d15e730e2678ce547fcd97bf3406cfc6b4c",
+    "trustedRootSha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+    "verifierSha256": "553949e2efa12842771efe6012aa4de21f1d591530ec17fc435f610f10e017ee",
+    "verifierVersion": "2.100.0"
+  },
+  "vmEnvironment": {
+    "imageSha256": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+    "distribution": "ubuntu-24.04",
+    "guestKernel": "6.8.0-139-generic",
+    "hostKernel": "6.17.0-1022-azure",
+    "acceleration": "kvm",
+    "python": "3.12.3",
+    "guestPackageInstallation": false,
+    "containerRuntimeRequired": false,
+    "sshHostKeyPinnedBeforeBoot": true,
+    "publisherVerificationBeforeDownloadedCode": true,
+    "verificationWithNetworkDenied": true
+  },
+  "passedChecksInBothProfiles": [
+    "offline-crypto-rejects-tamper-unsigned-wrong-repository-and-commit",
+    "unsafe-installation-path-refused-without-outside-mutation",
+    "root-protected-native-binaries-loopback-management-and-reaped-compiler-children",
+    "protected-credentials-unsupported-profile-and-failed-authenticated-readiness",
+    "same-version-configuration-key-credential-and-process-preservation",
+    "non-root-systemd-node-enabled-for-real-reboot",
+    "actual-changed-boot-id-and-retained-deployment",
+    "systemd-invocation-scoped-clean-shutdown-and-process-reap",
+    "stopped-consistent-backup-and-exact-compatible-set-restore",
+    "remove-retain-reinstall-recovers-exact-publication",
+    "separate-purge-validates-id-and-paths-and-resumes-without-outside-deletion"
+  ],
+  "profiles": {
+    "local-experimental-v1": {
+      "receiptSha256": "0c8bd7521acf8a7a2e0f1da8146b91cf3023476956c1201a9c6a01d026e10b62",
+      "initialBootId": "d834458f-f063-4da9-b70d-0692c1d5103f",
+      "rebootedBootId": "8e077fe1-f673-4972-8056-1a924a763510",
+      "retainedPublicationId": "publication:sha256:2bc0504805fb80bf33bc50b7d9d41de8a1b6b149a587b20cb8ea5c4cdba0f4c0",
+      "initialPhasePassed": true,
+      "retainedPhasePassed": true,
+      "rootlessPhasePassed": true,
+      "rootlessUid": 1000,
+      "rootlessLiveRemovalRejectedAsBusy": true,
+      "rootlessRemoveAndPurgePassed": true,
+      "overallPassed": true,
+      "acceptanceComplete": false
+    },
+    "external-capsule-v1": {
+      "receiptSha256": "10c0e1e56a34a6fcd13958baf3dcf05813ade58d00d49c730c3180f6976a304b",
+      "initialBootId": "027f0df8-8e9b-401c-a3e6-7dc0a06795f3",
+      "rebootedBootId": "81e3c677-4350-4a4d-b752-8cd2aecf685a",
+      "retainedPublicationId": "publication:sha256:19812b93be232b41b81dc271581d6ffdd365a4459ab1f1dfc54c5b18a6ce57ef",
+      "initialPhasePassed": true,
+      "retainedPhasePassed": true,
+      "interruptedUnactivatedInstallResumedWithSameKey": true,
+      "protectedAotKeyRejectedWithoutRegeneration": true,
+      "overallPassed": true,
+      "acceptanceComplete": false
+    }
+  },
+  "maintainedCi": {
+    "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35450998693",
+    "headCommit": "3925d4163f0a7af12ce2541d23fa5c09d4fc2856",
+    "conclusion": "success"
+  },
+  "fastTests": {
+    "linuxSourceCommit": "260c3e4ef14a8afe0818ce9a9ed56f05c3833b17",
+    "linuxRunUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35450192265",
+    "linuxPassed": 37,
+    "linuxSkipped": 0,
+    "windowsSourceCommit": "3925d4163f0a7af12ce2541d23fa5c09d4fc2856",
+    "windowsPassed": 16,
+    "windowsLinuxOnlySkipped": 21
+  },
+  "completeAcceptance": false,
+  "compatibleUpgradeTested": false,
+  "unsupportedBinaryDowngradeTestedInVm": false,
+  "releasePublished": false,
+  "gaps": [
+    "declared-compatible-native-version-pair-not-yet-selected",
+    "artifact-and-harness-commits-differ-in-this-diagnostic-run",
+    "release-tag-workflow-identity-and-publication-not-exercised"
+  ],
+  "secretsRetainedInEvidence": false
+}

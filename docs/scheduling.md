@@ -94,6 +94,27 @@ or dormant deployments. Sequence allocation is checked and fails rather than
 wrapping. If every cell in a class is quarantined, queued work fails explicitly
 instead of waiting for permanently unusable capacity.
 
+### Descendant waits under saturation
+
+[ADR-0028](../adr/0028-retain-activation-ownership-across-asynchronous-waits.md)
+adds a Phase 3 progress constraint for isolated-local descendant calls. A parent
+that awaits a child remains an accepted running activation and keeps its cell,
+Store and execution quota. The ordinary fair queue therefore cannot by itself
+prove progress when every compatible cell is held by waiting ancestors.
+
+Before #209 lets a child call block its parent, it must either establish progress
+inside the already configured fixed capacity or reject that call promptly with
+a finite resource/backpressure result. Any reservation used to establish
+progress remains bounded and charged to the descendant budget tree from #208.
+The implementation may not add hidden cells or workers, overcommit a class,
+wait indefinitely for capacity held by its own ancestor chain, or release the
+parent assignment before the parent activation is actually cleaned.
+
+This is a child-call admission rule, not a change to the existing scheduler's
+independent-work fairness algorithm. Deterministic all-cells-occupied schedules
+belong to #209 and integrated #238 conformance; a test watchdog is only a finite
+failure bound, not proof that capacity or cleanup was reclaimed.
+
 ## Ownership, deadlines, and cleanup
 
 `ActivationScheduler::enqueue` consumes an `AdmittedSchedulingRequest` holding
@@ -108,6 +129,13 @@ activation ID. Its result is an affine `ScheduledActivation`, not a detached
 | Accepted | `ScheduledActivation` privately retains `CellLease` and `ExecutionPermit`. Only immutable lease/permit accessors are exposed. |
 | Proven cleanup | The execution owner calls `ScheduledActivation::release().await`; quota stays owned through the pool disposition. |
 | Uncertain cleanup | The execution owner calls `quarantine(reason).await`. Dropping an accepted assignment without disposition conservatively abandons/quarantines the lease before refunding quota. |
+
+An accepted activation remains in the `Accepted` ownership row while its guest
+future is waiting on a provider or child. Yielding the shared runtime thread does
+not create a scheduler release transition. Provider operation leases, staged
+buffers and descendant reservations remain with their owning Phase 3 subsystems
+until actual retirement or an explicit safe affine transfer; scheduler quota is
+not refunded on the strength of cancellation acceptance or a timeout alone.
 
 Before selection and acceptance, scheduling checks the permit's original
 monotonic deadline and cancellation. The admission-to-execution transition

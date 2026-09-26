@@ -17,6 +17,7 @@ pub(super) struct Receipt {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct WireKey {
+    publication: String,
     scope: LifecycleScope,
     #[serde(default, deserialize_with = "present")]
     package: Option<String>,
@@ -32,7 +33,8 @@ pub(super) struct WireKey {
 }
 impl WireKey {
     pub(super) fn matches(&self, expected: &AotCompatibilityKey) -> bool {
-        self.scope == *expected.scope()
+        self.publication == expected.publication().as_str()
+            && self.scope == *expected.scope()
             && self.package.as_deref() == expected.package().map(latent_core::PackageDigest::as_str)
             && self.component == expected.component().as_str()
             && self.component_bytes == expected.component_bytes()

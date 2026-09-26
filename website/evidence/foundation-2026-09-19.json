@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "observedDate": "2026-09-19",
+  "sourceCommit": "6f237c81d7179452b20a19375ce32dce40312a9d",
+  "implementationBase": "5b8b0cbc37c75aacb8261ff2191ccc28c2117191",
+  "host": "Windows, Node 24.19.0, npm 12.0.1, Playwright Chromium headless shell 153.0.8010.12",
+  "scope": "Local website source/type/unit/compiler/production/browser validation; not runtime, release snapshot, guide acceptance or deployment evidence",
+  "commands": ["npm ci --ignore-scripts --no-audit --no-fund", "npm run check", "npm test", "npm run build", "npm run build:root", "npm run browser:install", "npm run test:build", "python tools/validate_docs.py"],
+  "unitTests": {"passed": 19, "failed": 0, "skipped": 1, "skipReason": "Windows host cannot create file symlinks; native directory-junction escape rejection passed"},
+  "production": {"sourceBackedPages": 167, "pagesWithHome": 168, "approvedAssets": 5, "copiedBytesUnchanged": true, "basePaths": ["/latent-service-fabric/", "/"], "internalLinksPerVariant": 11867, "nestedReloadsPerVariant": 5, "mermaid": "rendered", "browserErrors": 0, "privateBuildPathsInPublicJavaScript": 0},
+  "repositoryDocs": {"documents": 300, "localLinks": 1984, "anchors": 90, "svgs": 5, "errors": 0},
+  "coverage": {"rows": 27, "pendingHumanReview": 27, "accepted": false},
+  "dependencies": {
+    "lockSha256": "5abd10b03b303c6e47259b72d7524d1778c27fd4a4c1deaa4a492b4460409e8b",
+    "resolvedEntries": 1399,
+    "scope": "All locked runtime, development, optional and platform dependencies; no exceptions",
+    "npm": {"endpoint": "https://registry.npmjs.org", "command": "npm audit --json --registry=https://registry.npmjs.org", "vulnerabilities": 0, "reportSha256": "d82c871d5f32f00bceb40851b255b39d76df79676727be99c8e327f927c7f428"},
+    "osv": {"endpoint": "https://api.osv.dev/v1/querybatch", "startedAt": "2026-09-19T15:34:47.453Z", "finishedAt": "2026-09-19T15:34:51.958Z", "uniquePackageVersions": 1272, "requests": 13, "findings": 0, "reportSha256": "b3a117424a6e05672eacd4a42674670f4e689f480576b670bf8129d94ba4a6c7"},
+    "osvCanary": {"package": "serialize-javascript@6.0.2", "queryOnlyNeverInstalled": true, "serverDate": "Sat, 19 Sep 2026 15:42:18 GMT", "findings": ["GHSA-5c6j-r48x-rmvq", "GHSA-qj8w-gfj5-8c6v"]}
+  },
+  "limits": ["One file-symlink fixture requires a capable host; no Linux-host result is claimed", "ADR acceptance remains a maintainer decision", "No other #345 child or product implementation is completed by these checks", "Reports are dated observations; current source and advisory data must be revalidated"]
+}

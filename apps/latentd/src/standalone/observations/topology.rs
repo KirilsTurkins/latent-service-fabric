@@ -16,9 +16,11 @@ pub(in crate::standalone) struct TopologySource {
     scheduler: Arc<LocalScheduler>,
     transport: TransportHandle,
     cleanup: ActivationCleanupHandle,
+    http: Option<crate::standalone::http::HttpHandle>,
     invocation_threads: Arc<AtomicUsize>,
     control_threads: Arc<AtomicUsize>,
     rollouts: Option<latent_rollout::RolloutHandle>,
+    policies: Option<latent_policy::capability::PolicyControlHandle>,
 }
 
 impl TopologySource {
@@ -52,9 +54,11 @@ impl TopologySource {
             scheduler,
             transport,
             cleanup,
+            http: None,
             invocation_threads: threads.invocation,
             control_threads: threads.control,
             rollouts: None,
+            policies: None,
         }
     }
 
@@ -65,10 +69,53 @@ impl TopologySource {
         self.rollouts = rollouts;
         self
     }
+    pub(in crate::standalone) fn with_http(
+        mut self,
+        http: Option<crate::standalone::http::HttpHandle>,
+    ) -> Self {
+        self.http = http;
+        self
+    }
+    pub(in crate::standalone) fn with_policies(
+        mut self,
+        policies: Option<latent_policy::capability::PolicyControlHandle>,
+    ) -> Self {
+        self.policies = policies;
+        self
+    }
+    fn policy_rows(&self, writer: &mut NodeTopologyWriter<'_>) -> Result<bool, PlatformError> {
+        if let Some(handle) = &self.policies {
+            if !write_rows(
+                writer,
+                [
+                    row(
+                        "capability-policy-control-jobs",
+                        "command",
+                        ResourceOwnership::NodeFixed,
+                        count(handle.maximum_jobs()),
+                        Some(count(handle.active_jobs())),
+                    ),
+                    row(
+                        "capability-policy-read-owners",
+                        "response-or-snapshot",
+                        ResourceOwnership::NodeFixed,
+                        count(handle.store().limits().maximum_read_owners + 4),
+                        Some(count(handle.store().retained_read_owners())),
+                    ),
+                ],
+            )? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
 }
 
 impl NodeTopologySource for TopologySource {
     fn snapshot(&self, writer: &mut NodeTopologyWriter<'_>) -> Result<bool, PlatformError> {
+        if !self.http_rows(writer)? {
+            return Ok(false);
+        }
         // All five possible classes form a fixed bound, including disabled ones.
         let cell_leases = [
             CellClass::Tiny,
@@ -95,6 +142,9 @@ impl NodeTopologySource for TopologySource {
             cleanup_slots: count(cleanup.reserved) + count(cleanup.queued) + count(cleanup.running),
         };
         if !write_rows(writer, rows(self.limits, observed))? {
+            return Ok(false);
+        }
+        if !self.policy_rows(writer)? {
             return Ok(false);
         }
         if let Some(handle) = &self.rollouts {
@@ -409,3 +459,54 @@ fn write_rows(
 
 #[cfg(test)]
 mod tests;
+
+impl TopologySource {
+    fn http_rows(&self, writer: &mut NodeTopologyWriter<'_>) -> Result<bool, PlatformError> {
+        if let Some(http) = &self.http {
+            let s = http.snapshot();
+            if !write_rows(
+                writer,
+                [
+                    row(
+                        "http-listener",
+                        "listener",
+                        ResourceOwnership::NodeFixed,
+                        1,
+                        Some(u64::from(s.listener_alive)),
+                    ),
+                    row(
+                        "http-owner",
+                        "task",
+                        ResourceOwnership::NodeFixed,
+                        1,
+                        Some(u64::from(s.owner_alive)),
+                    ),
+                    row(
+                        "http-connections",
+                        "connection",
+                        ResourceOwnership::NodeFixed,
+                        count(s.maximum_connections),
+                        Some(count(s.connections)),
+                    ),
+                    row(
+                        "http-exchanges",
+                        "exchange",
+                        ResourceOwnership::NodeFixed,
+                        count(s.maximum_exchanges),
+                        Some(count(s.exchanges)),
+                    ),
+                    row(
+                        "http-buffer-reservations",
+                        "byte",
+                        ResourceOwnership::NodeFixed,
+                        count(s.maximum_buffer_bytes),
+                        Some(count(s.reserved_buffer_bytes)),
+                    ),
+                ],
+            )? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+}

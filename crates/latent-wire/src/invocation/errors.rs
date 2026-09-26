@@ -2,25 +2,7 @@ use latent_core::{PlatformError, PlatformErrorCode};
 use tonic::{Code, Status};
 
 pub(crate) fn tonic_code(code: PlatformErrorCode) -> Code {
-    match code {
-        PlatformErrorCode::Unavailable | PlatformErrorCode::RouteUnavailable => Code::Unavailable,
-        PlatformErrorCode::DeadlineExceeded => Code::DeadlineExceeded,
-        PlatformErrorCode::Cancelled => Code::Cancelled,
-        PlatformErrorCode::ResourceExhausted | PlatformErrorCode::AdmissionRejected => {
-            Code::ResourceExhausted
-        }
-        PlatformErrorCode::PermissionDenied => Code::PermissionDenied,
-        PlatformErrorCode::Unauthenticated => Code::Unauthenticated,
-        PlatformErrorCode::InvalidArgument => Code::InvalidArgument,
-        PlatformErrorCode::NotFound => Code::NotFound,
-        PlatformErrorCode::AlreadyExists => Code::AlreadyExists,
-        PlatformErrorCode::IncompatibleContract | PlatformErrorCode::DependencyFailed => {
-            Code::FailedPrecondition
-        }
-        PlatformErrorCode::StateConflict => Code::Aborted,
-        PlatformErrorCode::CorruptArtifact => Code::DataLoss,
-        _ => Code::Internal,
-    }
+    latent_rpc::platform_error::grpc_code(code)
 }
 
 pub(crate) fn public_platform_message(code: PlatformErrorCode) -> &'static str {

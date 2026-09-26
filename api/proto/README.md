@@ -6,6 +6,11 @@ Rust message types plus Tonic client and server surfaces are generated at build 
 
 WIT remains authoritative for typed component-to-component calls. The generic invocation API carries encoded payloads for tooling and gateways; generated RPC types do not implement service semantics.
 
+Phase 3 [capability audit and inspection](../../docs/runtime/capability-audit.md)
+adds typed broker evidence to `AuditService` and bounded `CapabilityService`
+list/explain methods. Inspection requires a configured broker/catalog source and
+policy owner; explanatory responses never grant execution permission.
+
 `latent-wire` now implements the bounded Phase 1 invocation and management
 adapters. See the [management service reference](../../docs/reference/management-services.md)
 for typed release uploads, tenant authorization, atomic deployment generations,
@@ -21,9 +26,21 @@ Completed Phase 2 also exposes managed deployment operation receipts, scoped
 durable audit queries and rollout/canary/promotion/rollback operations. See the
 [operator workflows](../../docs/phase-2-operator-workflows.md) and generated
 management reference for exact current methods and recovery semantics.
+Phase 3 adds [explicit publication selection](../../docs/reference/publication-api.md)
+to release, deployment and rollout RPCs, and captured source IDs to invocation
+receipts and audit. Release-management requests require an exact publication;
+the obsolete component-only request field is removed and its wire number/name
+are reserved. Component fields in output receipts keep their checksum meaning.
 The [standalone Linux node](../../docs/reference/standalone-node.md) serves this
 subset through a bounded loopback listener with configured credentials.
-Generated trigger, provider, clustered registration/watch and other later-phase
-services remain declarations until their implementations are delivered.
+Phase 3 [HTTP trigger management](../../docs/reference/http-triggers.md) now
+implements scoped Apply/Get/List/Delete and operation lookup on this listener.
+It requires exact publication, deployment revision and object-generation pins.
+The [componentless web methods](../../docs/reference/management-services.md#web-publication-and-preparation)
+add exact web publication/lifecycle control and one bounded shared preparation
+wait. These methods preserve the legacy release protocol and never turn a web
+receipt or digest into capsule admission authority.
+Other trigger kinds, the public application listener and clustered
+registration/watch remain separate later deliveries.
 
 The Phase 1 pre-stabilization compatibility record and checked-in descriptor contract are in [`docs/protocol/phase-1-contract-hardening.md`](../../docs/protocol/phase-1-contract-hardening.md) and `phase1-descriptor-contract.json`, which is validated from a Buf-built `FileDescriptorSet` by `tools/validate_phase1_descriptor.py`.

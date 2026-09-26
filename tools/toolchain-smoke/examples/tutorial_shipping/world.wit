@@ -1,0 +1,9 @@
+package examples:shipping@1.0.0;
+
+interface api {
+    quote: func(items: u32, express: bool) -> result<u32, string>;
+}
+
+world service {
+    export api;
+}

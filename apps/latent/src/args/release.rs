@@ -19,16 +19,18 @@ pub struct ReleaseMutation {
 
 #[derive(Args)]
 pub struct ChangeReleaseArgs {
-    pub digest: String,
+    #[command(flatten)]
+    pub selector: super::management::PublicationArgs,
     #[command(flatten)]
     pub operation: ReleaseMutation,
 }
 
 #[derive(Args)]
 pub struct PublishPackageArgs {
+    #[arg(value_hint = clap::ValueHint::DirPath)]
     pub directory: PathBuf,
     /// Bounded sibling evidence index. Omission submits no detached evidence.
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub evidence: Option<PathBuf>,
     #[arg(long)]
     pub operation_id: String,
@@ -38,10 +40,11 @@ pub struct PublishPackageArgs {
 
 #[derive(Args)]
 pub struct RenewEvidenceArgs {
-    pub digest: String,
+    #[command(flatten)]
+    pub selector: super::management::PublicationArgs,
     #[arg(long)]
     pub package_digest: String,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub evidence: PathBuf,
     #[command(flatten)]
     pub operation: ReleaseMutation,

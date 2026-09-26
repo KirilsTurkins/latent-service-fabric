@@ -1,6 +1,79 @@
 use super::*;
 
 #[test]
+fn native_fuel_adjustments_do_not_double_charge_child_work_or_refunds() {
+    struct Open;
+    impl latent_core::BudgetCancellationProbe for Open {
+        fn is_cancelled(&self) -> bool {
+            false
+        }
+        fn cancelled(&self) -> latent_core::BoxFuture<'_, ()> {
+            Box::pin(std::future::pending())
+        }
+        fn mark_terminal(&self) {}
+    }
+    let mut request = request();
+    request.budget.child_calls = 4;
+    request.activation.budget = request.budget.clone();
+    let clock = Clock::new();
+    let sample = ClockSample::new(1000, clock.admitted);
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase3,
+        &request.budget,
+        &request.budget,
+        &request.budget,
+        Some(1050),
+        sample,
+    )
+    .unwrap();
+    let budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap();
+    budget
+        .enable_descendants(
+            latent_core::DelegationLimits::default(),
+            std::sync::Arc::new(Open),
+        )
+        .unwrap();
+    let cancellation = Cancellation {
+        id: request.activation.activation_id.clone(),
+        budget: Some(budget.clone()),
+        deadline: None,
+    };
+    let mut accounting = InvocationAccounting::new(&request, &cancellation, &clock).unwrap();
+    accounting.observe_runtime(90, 32).unwrap();
+    let mut child_grant = request.budget.clone();
+    child_grant.cpu_fuel = 30;
+    child_grant.memory_bytes = 256;
+    child_grant.child_calls = 0;
+    child_grant.log_bytes = 0;
+    let child = budget
+        .delegate_at(&child_grant, &child_grant, &child_grant, None, sample)
+        .unwrap();
+    let child_grant = child.grant();
+    let child = child
+        .accept(&child_grant, std::sync::Arc::new(Open), sample.monotonic())
+        .unwrap();
+    assert_eq!(budget.remaining_at(sample.monotonic()).cpu_fuel, 60);
+    accounting.reset_fuel_watermark(60);
+    accounting.observe_runtime(55, 64).unwrap();
+    child.accounting().observe_runtime_usage(10, 128).unwrap();
+    let _ = child.finish(None, sample.monotonic());
+    assert_eq!(budget.remaining_at(sample.monotonic()).cpu_fuel, 75);
+    accounting.reset_fuel_watermark(75);
+    accounting.observe_runtime(70, 64).unwrap();
+    assert_eq!(accounting.native_fuel_consumed(70), 20);
+    let final_report = budget.finalize_at(
+        Some(&BudgetConsumption {
+            cpu_fuel: 20,
+            peak_memory_bytes: 64,
+            ..Default::default()
+        }),
+        sample.monotonic(),
+    );
+    assert_eq!(final_report.consumption().cpu_fuel, 30);
+    assert_eq!(final_report.consumption().child_calls, 1);
+}
+
+#[test]
 fn invalid_native_observations_leave_both_watermarks_and_ledger_unchanged() {
     let request = request();
     let clock = Clock::new();

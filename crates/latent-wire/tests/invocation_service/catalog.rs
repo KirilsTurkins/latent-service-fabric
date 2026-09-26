@@ -80,6 +80,7 @@ impl RouteResolver for Catalog {
         // has repository tests; this proves the manager supplies varying keys.
         let bucket = key.bytes().fold(0_u8, u8::wrapping_add) % 2;
         Ok(ResolvedRevision {
+            publication: None,
             target: target.clone(),
             revision: RevisionId(format!("revision-{}-{bucket}", self.generation)),
             release: model::artifact(self.generation, bucket)

@@ -22,6 +22,46 @@ impl std::fmt::Debug for TelemetryHandle {
     }
 }
 impl TelemetryHandle {
+    pub(crate) fn install_custom(&self) -> Result<(), crate::custom::CustomMetricError> {
+        if self.is_closed()
+            || self.config.maximum_record_bytes < crate::custom::registry::RECORD_BYTES
+            || self.config.maximum_attributes < 11
+            || self.config.maximum_attribute_name_bytes < 64
+            || self.config.maximum_attribute_value_bytes < 128
+        {
+            return Err(crate::custom::CustomMetricError::Unavailable);
+        }
+        self.counters
+            .custom_installed
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| crate::custom::CustomMetricError::Unavailable)?;
+        Ok(())
+    }
+    pub(crate) fn reserve_custom(
+        &self,
+    ) -> Result<mpsc::OwnedPermit<PipelineCommand>, crate::custom::CustomMetricError> {
+        use crate::custom::CustomMetricError as E;
+        if self.is_closed() {
+            increment(&self.counters.dropped_queue_closed);
+            return Err(E::Unavailable);
+        }
+        self.sender
+            .clone()
+            .try_reserve_owned()
+            .map_err(|error| match error {
+                mpsc::error::TrySendError::Full(_) => {
+                    increment(&self.counters.dropped_queue_full);
+                    E::BudgetExhausted
+                }
+                mpsc::error::TrySendError::Closed(_) => {
+                    increment(&self.counters.dropped_queue_closed);
+                    E::Unavailable
+                }
+            })
+    }
+    pub(crate) fn accepted_custom(&self) {
+        increment(&self.counters.accepted);
+    }
     pub fn try_emit_metric(&self, point: MetricPoint) -> Result<bool, PlatformError> {
         self.try_submit(TelemetryRecord::Metric(point))
     }

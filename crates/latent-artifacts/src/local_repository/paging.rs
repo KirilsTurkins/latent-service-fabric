@@ -1,13 +1,13 @@
 use std::hash::BuildHasher;
 use std::ops::Bound::{Excluded, Unbounded};
 
-use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest, TenantId};
+use latent_core::{PlatformError, PlatformErrorCode, PublicationId, ReleaseDigest, TenantId};
 
 use super::{error, lock_error, DirectoryArtifactRepository};
 use crate::{ArtifactCatalogEntry, ArtifactCatalogPage, ArtifactCatalogPageRequest};
 
 /// Scope is fingerprinted rather than embedded, so arbitrary accepted scope lengths
-/// do not enlarge tokens. a1, generation, SHA-256 hex, and per-open fingerprint.
+/// do not enlarge tokens. a2, generation, SHA-256 hex, and per-open fingerprint.
 const TOKEN_BYTES: usize = 101;
 
 impl DirectoryArtifactRepository {
@@ -24,10 +24,8 @@ impl DirectoryArtifactRepository {
             )
         })?;
         let index = self.index.read().map_err(lock_error)?;
-        let Some(entry) = index
-            .by_digest
-            .get(digest)
-            .filter(|entry| entry.value.tenant.as_ref() == Some(tenant))
+        let Some(entry) =
+            index.legacy_component(Some(&crate::LifecycleScope::Tenant(tenant.clone())), digest)?
         else {
             return Ok(None);
         };
@@ -76,25 +74,22 @@ impl DirectoryArtifactRepository {
             .as_ref()
             .map_or(Unbounded, |cursor| Excluded(&cursor.1));
         let mut used = 0_usize;
+        let mut last_id = None;
         for digest in rows.range((start, Unbounded)) {
             #[cfg(test)]
             instrumentation::selected();
             let entry = index
-                .by_digest
+                .by_publication
                 .get(digest)
                 .expect("scoped index and immutable entries install together");
             let next = used.checked_add(entry.page_bytes);
             if page.entries.len() == page_size
                 || next.is_none_or(|bytes| bytes > self.config.max_page_bytes)
             {
-                let Some(last) = page.entries.last() else {
+                let Some(last) = last_id else {
                     return Err(page_limit());
                 };
-                page.next_page_token = Some(self.encode_token(
-                    request,
-                    index.generation,
-                    &last.descriptor.release_digest,
-                ));
+                page.next_page_token = Some(self.encode_token(request, index.generation, last));
                 break;
             }
             // The row charge includes its owned DTO slot. Exact growth avoids an
@@ -105,6 +100,7 @@ impl DirectoryArtifactRepository {
             #[cfg(test)]
             instrumentation::cloned();
             page.entries.push(entry.value.clone());
+            last_id = Some(digest);
             used = next.expect("accepted bounded row");
         }
         Ok(page)
@@ -128,7 +124,7 @@ impl DirectoryArtifactRepository {
     fn tag(&self, request: &ArtifactCatalogPageRequest, generation: u64, hex: &str) -> u64 {
         // Opaque-token fingerprint, not a cryptographic MAC or authorization grant.
         self.pagination_fingerprint.hash_one((
-            "artifact-page-v1",
+            "artifact-page-v2",
             generation,
             &request.tenant,
             &request.service,
@@ -140,11 +136,11 @@ impl DirectoryArtifactRepository {
         &self,
         request: &ArtifactCatalogPageRequest,
         generation: u64,
-        digest: &ReleaseDigest,
+        digest: &PublicationId,
     ) -> String {
-        let hex = &digest.0[7..]; // Only verified canonical digests enter this index.
+        let hex = digest.hex(); // Only verified canonical digests enter this index.
         format!(
-            "a1:{generation:016x}:{hex}:{:016x}",
+            "a2:{generation:016x}:{hex}:{:016x}",
             self.tag(request, generation, hex)
         )
     }
@@ -153,12 +149,12 @@ impl DirectoryArtifactRepository {
         &self,
         raw: &str,
         request: &ArtifactCatalogPageRequest,
-    ) -> Result<(u64, ReleaseDigest), PlatformError> {
+    ) -> Result<(u64, PublicationId), PlatformError> {
         if raw.len() != TOKEN_BYTES {
             return Err(invalid_token());
         }
         let mut fields = raw.split(':');
-        if fields.next() != Some("a1") {
+        if fields.next() != Some("a2") {
             return Err(invalid_token());
         }
         let generation = number(fields.next().ok_or_else(invalid_token)?)?;
@@ -170,7 +166,12 @@ impl DirectoryArtifactRepository {
         if fields.next().is_some() || tag != self.tag(request, generation, hex) {
             return Err(invalid_token());
         }
-        Ok((generation, ReleaseDigest(format!("sha256:{hex}"))))
+        Ok((
+            generation,
+            format!("publication:sha256:{hex}")
+                .parse()
+                .map_err(|_| invalid_token())?,
+        ))
     }
 }
 

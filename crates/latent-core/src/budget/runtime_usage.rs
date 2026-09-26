@@ -14,18 +14,9 @@ impl ActivationBudget {
     ) -> Result<(), BudgetError> {
         let mut state = self.lock_state();
         Self::ensure_mutable(&state)?;
-        let limit = self.inner.granted.memory_bytes;
-        if confirmed_peak > limit {
-            return Err(BudgetError::Exhausted {
-                dimension: BudgetDimension::MemoryBytes,
-                limit,
-                consumed: state.consumption.peak_memory_bytes,
-                requested: confirmed_peak,
-            });
-        }
+        self.check_owned_memory(&state, confirmed_peak)?;
         self.consume_locked(&mut state, BudgetDimension::CpuFuel, fuel_delta)?;
-        state.consumption.peak_memory_bytes =
-            state.consumption.peak_memory_bytes.max(confirmed_peak);
+        self.record_owned_memory(&mut state, confirmed_peak);
         Ok(())
     }
 }

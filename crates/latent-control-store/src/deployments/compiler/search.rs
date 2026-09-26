@@ -72,6 +72,7 @@ impl CompiledCatalog {
         let index = candidates.partition_point(|candidate| candidate.cumulative_weight <= bucket);
         let record = self.record(candidates[index].record);
         Ok(ResolvedRevision {
+            publication: record.publication.clone(),
             target: target.clone(),
             revision: record.revision.clone(),
             release: record.deployment.release.clone(),

@@ -120,23 +120,17 @@ async fn worker(
     while let Some(command) = receiver.recv().await {
         match command {
             PipelineCommand::Record(record) => {
-                let export = async {
-                    match record {
-                        TelemetryRecord::Metric(point) => sink.emit_metric(point).await,
-                        TelemetryRecord::Log(record) => sink.emit_log(record).await,
-                        TelemetryRecord::Span(span) => sink.emit_span(span).await,
-                    }
-                };
-                match tokio::time::timeout(
-                    config.export_timeout,
-                    CatchExport::new(export, Arc::clone(&counters)),
+                export_record(record, None, &sink, &config, &counters).await;
+            }
+            PipelineCommand::CustomMetric(point, charge) => {
+                export_record(
+                    TelemetryRecord::CustomMetric(point),
+                    Some(charge),
+                    &sink,
+                    &config,
+                    &counters,
                 )
-                .await
-                {
-                    Ok(Ok(Ok(()))) => increment(&counters.exported),
-                    Ok(_) => increment(&counters.sink_failures),
-                    Err(_) => increment(&counters.sink_timeouts),
-                }
+                .await;
             }
             PipelineCommand::Flush(acknowledge) => {
                 let _ = acknowledge.send(());
@@ -150,6 +144,33 @@ async fn worker(
     if let Some(acknowledge) = shutdown_acknowledge {
         let _ = acknowledge.send(());
     }
+}
+async fn export_record(
+    record: TelemetryRecord,
+    charge: Option<crate::custom::registry::QueueCharge>,
+    sink: &Arc<dyn TelemetrySink>,
+    config: &TelemetryPipelineConfig,
+    counters: &Arc<PipelineCounters>,
+) {
+    let export = async {
+        match record {
+            TelemetryRecord::Metric(point) => sink.emit_metric(point).await,
+            TelemetryRecord::CustomMetric(point) => sink.emit_custom_metric(point).await,
+            TelemetryRecord::Log(record) => sink.emit_log(record).await,
+            TelemetryRecord::Span(span) => sink.emit_span(span).await,
+        }
+    };
+    match tokio::time::timeout(
+        config.export_timeout,
+        CatchExport::new(export, Arc::clone(counters)),
+    )
+    .await
+    {
+        Ok(Ok(Ok(()))) => increment(&counters.exported),
+        Ok(_) => increment(&counters.sink_failures),
+        Err(_) => increment(&counters.sink_timeouts),
+    }
+    drop(charge);
 }
 struct CloseOnDrop(Arc<PipelineCounters>);
 impl Drop for CloseOnDrop {

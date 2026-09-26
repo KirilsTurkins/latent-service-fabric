@@ -1,0 +1,28 @@
+using System.Collections.Generic;
+using @root@;
+using Raw = @raw@;
+namespace Lsf.Guest;
+
+public sealed class HttpUploadKind { private HttpUploadKind() {} }
+public sealed class HttpBodyKind { private HttpBodyKind() {} }
+public sealed class HttpChunkKind { private HttpChunkKind() {} }
+
+public static class Streaming
+{
+    public readonly record struct Response(ushort Status, List<Raw.Header> Headers, string? BodyMediaType,
+        Owner<Raw.Body, HttpBodyKind> Body);
+    public static Result<Owner<Raw.Upload, HttpUploadKind>, Raw.HttpError> Open(Raw.Request request) =>
+        Results.Map(Raw.Open(request), value => new Owner<Raw.Upload, HttpUploadKind>(value, item => item.Dispose()));
+    public static Result<None, Raw.HttpError> Write(Owner<Raw.Upload, HttpUploadKind> upload, byte[] bytes) =>
+        upload.Borrow(value => Raw.Write(value, bytes));
+    public static Result<Response, Raw.HttpError> Finish(Owner<Raw.Upload, HttpUploadKind> upload) =>
+        Results.Map(upload.Consume(Raw.Finish), value => new Response(value.status, value.headers, value.bodyMediaType,
+            new Owner<Raw.Body, HttpBodyKind>(value.body, item => item.Dispose())));
+    public static Result<Owner<Raw.Chunk, HttpChunkKind>?, Raw.HttpError> Read(Owner<Raw.Body, HttpBodyKind> body, uint maximumBytes) =>
+        Results.Map(body.Borrow(value => Raw.Read(value, maximumBytes)), value => value is null ? null :
+            new Owner<Raw.Chunk, HttpChunkKind>(value, item => item.Dispose()));
+    public static Result<byte[], Raw.HttpError> ChunkBytes(Owner<Raw.Chunk, HttpChunkKind> chunk) => chunk.Borrow(Raw.ChunkBytes);
+    public static Result<List<Raw.Header>, Raw.HttpError> Trailers(Owner<Raw.Body, HttpBodyKind> body) => body.Borrow(Raw.Trailers);
+    public static Result<None, Raw.HttpError> AbortUpload(Owner<Raw.Upload, HttpUploadKind> upload) => upload.Consume(Raw.AbortUpload);
+    public static Result<None, Raw.HttpError> AbortBody(Owner<Raw.Body, HttpBodyKind> body) => body.Consume(Raw.AbortBody);
+}

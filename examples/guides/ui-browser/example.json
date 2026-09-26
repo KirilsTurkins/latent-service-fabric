@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "id": "browser/ui-syntax",
+  "title": "Synthetic language control specimen",
+  "audience": "browser-developer",
+  "target": "browser",
+  "variants": [
+    {
+      "language": "typescript",
+      "kind": "synthetic",
+      "source": "examples/website-ui/specimen.ts",
+      "regions": [
+        "specimen"
+      ],
+      "validation": {
+        "target": "website/scripts/test-examples.mjs",
+        "instructions": "docs/development/website-code-examples.mdx",
+        "evidence": null
+      }
+    }
+  ]
+}

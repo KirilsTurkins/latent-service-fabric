@@ -4,12 +4,46 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORM_WIT = ROOT / "wit" / "platform"
 DEFAULT_SOURCE = PLATFORM_WIT / "runtime"
+PACKAGE = re.compile(r"\bpackage\s+([^\s;]+)\s*;")
+REFERENCE = re.compile(r"\b([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/[a-z][a-z0-9-]*@([0-9][a-zA-Z0-9.+-]*)")
+
+
+def source_text(source: Path) -> str:
+    return "\n".join(re.sub(r"//[^\n]*", "", path.read_text(encoding="utf-8"))
+                     for path in sorted(source.rglob("*.wit")))
+
+
+def dependencies(source: Path, platform_wit: Path) -> list[Path]:
+    """Stage only referenced versions; unrelated versions rename generated modules.
+
+    This is a repository build helper. The real WIT parser remains the contract
+    authority and rejects unresolved or malformed sources after staging.
+    """
+    available = {}
+    for package in sorted(path for path in platform_wit.iterdir() if path.is_dir()):
+        if package.name in {"runtime", "runtime-phase3", "runtime-phase3-streaming", "runtime-phase3-blobs"} or package.resolve() == source:
+            continue
+        text = source_text(package)
+        identity = PACKAGE.search(text)
+        if identity is not None:
+            available[identity[1]] = (package, text)
+    pending = [source_text(source)]
+    selected = {}
+    while pending:
+        for package, version in REFERENCE.findall(pending.pop()):
+            identity = f"{package}@{version}"
+            if identity in available and identity not in selected:
+                path, text = available[identity]
+                selected[identity] = path
+                pending.append(text)
+    return sorted(selected.values())
 
 
 def copy_wit_tree(source: Path, destination: Path) -> None:
@@ -46,9 +80,7 @@ def stage(destination: Path, source: Path = DEFAULT_SOURCE) -> None:
     (destination / "deps").mkdir(parents=True)
 
     copy_wit_tree(source, destination)
-    for package in sorted(path for path in platform_wit.iterdir() if path.is_dir()):
-        if package.name == "runtime" or package.resolve() == source:
-            continue
+    for package in dependencies(source, platform_wit):
         copy_wit_tree(package, destination / "deps" / package.name)
 
 

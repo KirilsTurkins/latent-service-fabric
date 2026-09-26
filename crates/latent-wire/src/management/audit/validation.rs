@@ -98,28 +98,3 @@ pub(super) fn typed(
         _ => Err(Status::invalid_argument("invalid audit scope")),
     }
 }
-pub(super) fn legacy(
-    request: &proto::QueryAuditRequest,
-    principal: &InvocationPrincipal,
-    configured: &ManagementLimits,
-) -> Result<AuditScope, Status> {
-    let limits = limits(configured);
-    let mut budget = RequestBudget::new::<proto::QueryAuditRequest>(&limits)?;
-    for value in [
-        request.tenant.as_ref(),
-        request.actor.as_ref(),
-        request.action.as_ref(),
-        request.resource_prefix.as_ref(),
-    ] {
-        text(&mut budget, value, limits.max_id_bytes.min(512))?;
-    }
-    times(request.from_unix_millis, request.to_unix_millis)?;
-    budget.page(request.page.as_ref(), &limits)?;
-    encoded(request, limits.max_request_bytes)?;
-    if request.resource_prefix.is_some() {
-        return Err(Status::invalid_argument(
-            "resource-prefix audit filtering is unsupported",
-        ));
-    }
-    tenant(principal, request.tenant.as_deref())
-}

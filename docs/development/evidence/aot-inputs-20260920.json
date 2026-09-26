@@ -1,0 +1,310 @@
+{
+  "artifact": {
+    "full_observations_sha256": "63bd67f798defab868fbec9f49c55692b463270f47826428656bf524fd24e279",
+    "id": 10606843397,
+    "name": "aot-input-observations",
+    "sha256": "a38f4d2ef67d1a659f329f63f593bc66e108d3ccbf190d8fb3a5f93cad37381a"
+  },
+  "build": {
+    "elapsed_ns": 109675194621,
+    "note": "Observed one-time Cargo no-run cost. Cache state not measured; not a cold-build claim.",
+    "profile": "debug/all-features",
+    "status": 0,
+    "targets": [
+      "aot_supervisor",
+      "isolated_aot",
+      "native_aot_cache",
+      "aot_sandbox"
+    ]
+  },
+  "cargo_lock": {
+    "bytes": 108385,
+    "sha256": "77d5ae190bbe051bdff39b2a1f3728de9361244750b6c1f620f04cb887b21b95"
+  },
+  "case_names": {
+    "aot_supervisor": [
+      "active-shutdown",
+      "cancel-running-prefix",
+      "diagnostic-overflow",
+      "fragmented-success",
+      "healthy-after-failures",
+      "inherited-descriptor",
+      "last-owner-drop",
+      "launch-mismatch",
+      "malformed-readiness",
+      "nonzero-exit",
+      "oversized",
+      "probe-launch-mismatch",
+      "probe-stalled-launch",
+      "readiness-malformed",
+      "readiness-relative-path",
+      "readiness-success",
+      "readiness-wrong-digest",
+      "running-deadline",
+      "stalled-launch",
+      "trailing",
+      "truncated-body",
+      "truncated-header",
+      "zero"
+    ],
+    "isolated_aot": [
+      "ownership::cancelled_unstarted_job_retains_its_reservation_until_consumed",
+      "ownership::queued_deadline_is_not_restarted_when_the_job_runs",
+      "ownership::real_compile_binds_exact_source_and_keeps_output_capacity_until_drop",
+      "ownership::shutdown_does_not_refund_a_held_job_and_closes_admission",
+      "prepared_negative::prepared_missing_and_modified_executables_are_rejected",
+      "prepared_negative::prepared_wrong_digest_profile_and_stale_identities_are_rejected",
+      "prepared_negative::prepared_wrong_role_and_symlinks_are_rejected",
+      "prepared_negative::replacement_after_configuration_is_rejected_and_compilation_recovers",
+      "source::compiler_binary_digest_and_actual_engine_profile_are_checked",
+      "source::invalid_portable_bytes_fail_in_the_child_without_a_trusted_output",
+      "source::over_budget_and_noncanonical_sources_fail_before_fresh_io",
+      "source::queued_job_cannot_upgrade_its_revoked_lifecycle_capability",
+      "source::tampered_component_is_rejected_by_the_fresh_catalog_read"
+    ],
+    "native_aot_cache": [
+      "ownership::evicted_ready_handle_keeps_its_image_and_revocation_never_recovers_from_native_cache",
+      "reopen::identical_component_after_restart_requires_its_exact_engine_before_native_reuse",
+      "reopen::real_miss_invokes_then_reopened_native_hit_verifies_source_without_compiling",
+      "tamper::replaced_bytes_with_matching_sha_and_wrong_host_key_never_reach_the_loader"
+    ]
+  },
+  "executable_identities": {
+    "aot_supervisor": {
+      "original": {
+        "bytes": 358651024,
+        "sha256": "e6ab57c11e39cbc88c37e5878b1bdb59d28ca0c050a22dce5c4d1126b56f3608"
+      },
+      "prepared": {
+        "bytes": 94617088,
+        "sha256": "fc6600009deae8f5752082d2da2906ea2a735a256143e107aeb372f38c59734a"
+      }
+    },
+    "compiler": {
+      "original": {
+        "bytes": 319016904,
+        "sha256": "707a71ebf6f398c5d1f6f4a88bba30fd5fa80fd02f97ccffca901adf9d6e966f"
+      },
+      "prepared": {
+        "bytes": 58191480,
+        "sha256": "207814a89bec82c5d754ce9e6bddeb77173740cac53f6cac0fb441e34f8a2427"
+      }
+    },
+    "isolated_aot": {
+      "original": {
+        "bytes": 324038464,
+        "sha256": "20f47d2cd6666957f5b986c15e38db677be0e07b6805d25288268b852912f0eb"
+      }
+    },
+    "native_aot_cache": {
+      "original": {
+        "bytes": 363386960,
+        "sha256": "8a944d432492a9dc465bc4d231c5444812536bd55287b8df25950272d7fe4df4"
+      }
+    }
+  },
+  "initial_validation_ns": 1075582797,
+  "job": 106093276824,
+  "observation_scope": "Stage totals below are derived from the full per-scenario records in the identified artifact. Nested spans overlap. Compilation includes transfer and intentional waits, not isolated compiler CPU. Initial native-cache fixture/session spans were added after this measured commit, so those times are not claimed here.",
+  "passed": true,
+  "preparation_ns": {
+    "aot_supervisor_expected_digest_ns": 67072709,
+    "aot_supervisor_strip_ns": 430212709,
+    "compiler_expected_digest_ns": 41171036,
+    "compiler_strip_ns": 427546504,
+    "inventory_and_original_hash_ns": 1557317831
+  },
+  "preparation_total_ns": 3029437523,
+  "purpose": "Single Linux x86_64 same-job test-input A/B/reuse observation, not security qualification or a historical baseline comparison.",
+  "runs": [
+    {
+      "execution_total_ns": 767789403229,
+      "mode": "original",
+      "suites": {
+        "aot_supervisor": {
+          "case_count": 23,
+          "execution_ns": 409388473998,
+          "stage_ns": {
+            "bootstrap-readiness": 185541550,
+            "compilation-and-output-transfer": 9495847751,
+            "compiler-construction-and-verification": 167348736238,
+            "engine-profile": 1864549,
+            "exit-eof-and-reap": 2212216,
+            "expected-digest-and-input-validation": 20017098478,
+            "fixture-creation": 272227042,
+            "fixture-teardown": 13539795,
+            "input-rendezvous": 42541432464,
+            "kill-and-reap": 6174967,
+            "production-executable-verification": 378210623299,
+            "readiness-probe": 53968407437,
+            "scenario": 409384146593,
+            "startup-launch": 1079052628
+          }
+        },
+        "isolated_aot": {
+          "case_count": 13,
+          "execution_ns": 155746531727,
+          "stage_ns": {
+            "bootstrap-readiness": 6499237,
+            "compilation-and-output-transfer": 22608731,
+            "compiler-construction-and-verification": 86841847070,
+            "engine-profile": 16393995,
+            "exit-eof-and-reap": 82113,
+            "expected-digest-and-input-validation": 9706630499,
+            "fixture-creation": 293446883,
+            "fixture-teardown": 23494469,
+            "kill-and-reap": 438920,
+            "production-executable-verification": 145081353478,
+            "startup-launch": 18382309
+          }
+        },
+        "native_aot_cache": {
+          "case_count": 4,
+          "execution_ns": 202654397504,
+          "stage_ns": {
+            "bootstrap-readiness": 19581258,
+            "compilation-and-output-transfer": 97546165,
+            "exit-eof-and-reap": 2474376,
+            "expected-digest-and-input-validation": 9371390909,
+            "fixture-teardown": 5567531,
+            "production-executable-verification": 192851158440,
+            "startup-launch": 40574075
+          }
+        }
+      },
+      "validation_ns": 1076442431
+    },
+    {
+      "execution_total_ns": 226896271482,
+      "mode": "prepared",
+      "suites": {
+        "aot_supervisor": {
+          "case_count": 23,
+          "execution_ns": 142370955957,
+          "stage_ns": {
+            "bootstrap-readiness": 184508183,
+            "compilation-and-output-transfer": 17273365150,
+            "compiler-construction-and-verification": 43444931811,
+            "engine-profile": 1858677,
+            "exit-eof-and-reap": 2203028,
+            "expected-digest-and-input-validation": 24273118591,
+            "fixture-creation": 277684152,
+            "fixture-teardown": 12939065,
+            "input-rendezvous": 11146583597,
+            "kill-and-reap": 5634233,
+            "production-executable-verification": 99157521236,
+            "readiness-probe": 14999700608,
+            "scenario": 142366536520,
+            "startup-launch": 1078807141
+          }
+        },
+        "isolated_aot": {
+          "case_count": 13,
+          "execution_ns": 38125744375,
+          "stage_ns": {
+            "bootstrap-readiness": 6570688,
+            "compilation-and-output-transfer": 22632478,
+            "compiler-construction-and-verification": 15861583690,
+            "engine-profile": 16392567,
+            "exit-eof-and-reap": 93193,
+            "expected-digest-and-input-validation": 11294218659,
+            "fixture-creation": 152722282,
+            "fixture-teardown": 10613157,
+            "kill-and-reap": 470608,
+            "production-executable-verification": 26496676218,
+            "startup-launch": 18359950
+          }
+        },
+        "native_aot_cache": {
+          "case_count": 4,
+          "execution_ns": 46399571150,
+          "stage_ns": {
+            "bootstrap-readiness": 19497356,
+            "compilation-and-output-transfer": 94819445,
+            "exit-eof-and-reap": 2474508,
+            "expected-digest-and-input-validation": 11417212506,
+            "fixture-teardown": 5528304,
+            "production-executable-verification": 34555225617,
+            "startup-launch": 40632330
+          }
+        }
+      },
+      "validation_ns": 1069069638
+    },
+    {
+      "execution_total_ns": 227236390769,
+      "mode": "reused",
+      "suites": {
+        "aot_supervisor": {
+          "case_count": 23,
+          "execution_ns": 142496058527,
+          "stage_ns": {
+            "bootstrap-readiness": 184611551,
+            "compilation-and-output-transfer": 17264010682,
+            "compiler-construction-and-verification": 43507636550,
+            "engine-profile": 1848971,
+            "exit-eof-and-reap": 4344055,
+            "expected-digest-and-input-validation": 24560651101,
+            "fixture-creation": 272824228,
+            "fixture-teardown": 13168365,
+            "input-rendezvous": 11170035890,
+            "kill-and-reap": 5631808,
+            "production-executable-verification": 99006770233,
+            "readiness-probe": 15016510167,
+            "scenario": 142491506251,
+            "startup-launch": 1078526676
+          }
+        },
+        "isolated_aot": {
+          "case_count": 13,
+          "execution_ns": 38327629430,
+          "stage_ns": {
+            "bootstrap-readiness": 6492326,
+            "compilation-and-output-transfer": 20467531,
+            "compiler-construction-and-verification": 15916504346,
+            "engine-profile": 16411895,
+            "exit-eof-and-reap": 2199138,
+            "expected-digest-and-input-validation": 11420077275,
+            "fixture-creation": 155250485,
+            "fixture-teardown": 10270884,
+            "kill-and-reap": 392422,
+            "production-executable-verification": 26571581804,
+            "startup-launch": 18170480
+          }
+        },
+        "native_aot_cache": {
+          "case_count": 4,
+          "execution_ns": 46412702812,
+          "stage_ns": {
+            "bootstrap-readiness": 19517883,
+            "compilation-and-output-transfer": 96275501,
+            "exit-eof-and-reap": 1375378,
+            "expected-digest-and-input-validation": 11493018586,
+            "fixture-teardown": 5586923,
+            "production-executable-verification": 34486351639,
+            "startup-launch": 40630224
+          }
+        }
+      },
+      "validation_ns": 1073261008
+    }
+  ],
+  "rust_toolchain_file": {
+    "bytes": 140,
+    "sha256": "7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc"
+  },
+  "schema": "latent.aot-test-retained-observations.v1",
+  "separate_checks": {
+    "cargo_fmt": "passed",
+    "focused_clippy": "passed",
+    "production_sandbox": "passed on same commit; unchanged real aot_sandbox target"
+  },
+  "source_commit": "e8fee1fa1eb7aa3dbd2b5807df75ce6926f6e069",
+  "target": [
+    "Linux",
+    "x86_64"
+  ],
+  "unexpected_build_tool_calls": 0,
+  "workflow_attempt": 1,
+  "workflow_run": 35516517404
+}

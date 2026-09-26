@@ -1,0 +1,49 @@
+{
+  "schema": "latent.phase3.management.evidence.v1",
+  "ticket": 226,
+  "scope": "typed trigger and capability CLI milestone, not full Phase 3 qualification",
+  "environment": {
+    "runner": "lsf-phase0-gate:local",
+    "system": "Linux x86_64, Docker Desktop WSL2",
+    "rustc": "1.97.1",
+    "isolatedTargetVolume": "lsf-phase3-226-target"
+  },
+  "checks": [
+    {
+      "command": "cargo check -p latent -p latent-wire --all-targets --all-features --locked",
+      "result": "passed before final resource-parser hardening"
+    },
+    {
+      "command": "cargo test -p latent -p latent-wire --lib --locked management",
+      "result": "passed after resource-parser hardening",
+      "cliTests": 49,
+      "wireTests": 62,
+      "ignoredInSelectedTests": 0
+    },
+    {
+      "command": "cargo build -p latentd --all-features --locked",
+      "result": "passed before provider startup integration"
+    },
+    {
+      "command": "cargo fmt -p latent -p latent-wire -p latent-control-store; git diff --check",
+      "result": "passed on Windows host"
+    },
+    {
+      "command": "cargo clippy -p latent -p latent-wire --all-targets --all-features --locked -- -D warnings",
+      "result": "not completed: Docker Desktop daemon returned HTTP 500"
+    }
+  ],
+  "remaining": [
+    "real separate-node provider-backed workflow",
+    "web publication management and sealed selected-publication execution projection",
+    "full Angular T1 qualification, including dependency assets/cache paths",
+    "exact-head CI and central acceptance review"
+  ],
+  "ciFollowup": {
+    "run": "35446101805",
+    "job": "105905209402",
+    "initialHead": "49d03ace",
+    "result": "Clippy reported eight style/size findings; fixed in follow-up, exact-head rerun pending",
+    "otherCompletedJobs": ["Rust MSRV 1.94.1", "Cross-language SDK surfaces", "Documentation and SVGs", "Durable catalog acceptance"]
+  }
+}

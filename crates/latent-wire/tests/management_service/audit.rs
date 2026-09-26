@@ -157,7 +157,6 @@ async fn actual_audit_clients_enforce_scopes_and_bound_cursor_reuse() {
         .query_phase2_audit(request("bob", foreign))
         .await
         .is_err());
-    check_legacy_projection(&mut client).await;
     drop(client);
     harness.shutdown().await;
     handle.close();
@@ -166,42 +165,16 @@ async fn actual_audit_clients_enforce_scopes_and_bound_cursor_reuse() {
         .unwrap());
 }
 
-async fn check_legacy_projection(
-    client: &mut proto::audit_service_client::AuditServiceClient<tonic::transport::Channel>,
-) {
-    let legacy = client
-        .query_audit(request("alice", proto::QueryAuditRequest::default()))
-        .await
-        .unwrap()
-        .into_inner();
-    assert_eq!(legacy.events.len(), 1);
-    assert_eq!(
-        legacy.events[0].actor.as_ref().unwrap().tenant.as_deref(),
-        Some("acme")
-    );
-    assert_eq!(legacy.events[0].action, "cache-miss");
-    assert_eq!(legacy.events[0].outcome, "succeeded");
-    let unsupported = proto::QueryAuditRequest {
-        resource_prefix: Some("sha256:".into()),
-        ..Default::default()
-    };
-    assert_eq!(
-        client
-            .query_audit(request("alice", unsupported))
-            .await
-            .unwrap_err()
-            .code(),
-        Code::InvalidArgument
-    );
-}
-
 #[tokio::test]
 async fn disabled_audit_is_explicit_and_does_not_bypass_authentication() {
     let harness = Harness::new(ManagementLimits::default()).await;
     let mut client = proto::audit_service_client::AuditServiceClient::new(harness.channel.clone());
     assert_eq!(
         client
-            .query_audit(request("alice", proto::QueryAuditRequest::default()))
+            .query_phase2_audit(request(
+                "alice",
+                query(proto::AuditScopeKind::Tenant, Some("acme"))
+            ))
             .await
             .unwrap_err()
             .code(),
@@ -209,7 +182,10 @@ async fn disabled_audit_is_explicit_and_does_not_bypass_authentication() {
     );
     assert_eq!(
         client
-            .query_audit(tonic::Request::new(proto::QueryAuditRequest::default()))
+            .query_phase2_audit(tonic::Request::new(query(
+                proto::AuditScopeKind::Tenant,
+                Some("acme")
+            )))
             .await
             .unwrap_err()
             .code(),

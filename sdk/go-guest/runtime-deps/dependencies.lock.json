@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "module": "wit_component",
+  "goVersion": "1.27.1",
+  "manifestSha256": "3a06f3e92cb853ada87d2df9b4350f659846d906745194ce47719ed0ef262bd8",
+  "sumSha256": "73ad28498d9e4d29465f668e1c6b85cd69fc638380054d1f4537e82301e9bd44",
+  "modules": [
+    {
+      "path": "go.bytecodealliance.org/pkg",
+      "version": "v0.2.3",
+      "sum": "h1:So9zHg8ahW+TH1JmgBHgIYuKHcinLiEcpV1tqVEZvLA=",
+      "goModSum": "h1:OjA+V8g3uUFixeCKFfamm6sYhTJdg8fvwEdJ2GO0GSk="
+    }
+  ],
+  "tools": []
+}

@@ -6,10 +6,14 @@ rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 autotests = false
-description = "Data-plane node runtime and explicit Phase 0 spike composition root."
+description = "Data-plane node runtime and standalone service composition root."
 
 [lib]
 path = "src/lib_root.rs"
+
+[features]
+# Explicit developer artifact only. Ordinary node builds reject these inputs.
+development-test-node = ["latent-wasmtime/development-clock-fixture"]
 
 [lints]
 workspace = true
@@ -20,19 +24,29 @@ latent-activation = { path = "../../crates/latent-activation" }
 latent-admission = { path = "../../crates/latent-admission" }
 latent-artifacts = { path = "../../crates/latent-artifacts" }
 latent-audit = { path = "../../crates/latent-audit" }
+latent-blobs = { path = "../../crates/latent-blobs" }
 latent-control-store = { path = "../../crates/latent-control-store" }
 latent-core = { path = "../../crates/latent-core" }
+latent-capabilities = { path = "../../crates/latent-capabilities" }
 latent-executor = { path = "../../crates/latent-executor" }
+latent-ingress = { path = "../../crates/latent-ingress" }
+latent-http = { path = "../../crates/latent-http" }
 latent-manifest = { path = "../../crates/latent-manifest" }
+latent-nats = { path = "../../crates/latent-nats" }
 latent-node = { path = "../../crates/latent-node" }
+latent-protected-files = { path = "../../crates/latent-protected-files" }
 latent-policy = { path = "../../crates/latent-policy" }
 latent-routing = { path = "../../crates/latent-routing" }
 latent-rollout = { path = "../../crates/latent-rollout" }
 latent-scheduler = { path = "../../crates/latent-scheduler" }
+latent-secrets = { path = "../../crates/latent-secrets" }
 latent-telemetry = { path = "../../crates/latent-telemetry" }
 latent-wasmtime = { path = "../../crates/latent-wasmtime" }
 latent-wire = { path = "../../crates/latent-wire" }
 http-body.workspace = true
+httparse = "=1.10.1"
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std"] }
+tokio-rustls = { version = "=0.26.5", default-features = false, features = ["ring"] }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
@@ -45,17 +59,16 @@ zeroize = { version = "=1.9.0", features = ["alloc"] }
 rustix = { version = "=1.1.4", features = ["fs", "process", "param"] }
 
 [dev-dependencies]
+base64.workspace = true
 latent-control-store = { path = "../../crates/latent-control-store", features = ["catalog-observation"] }
 latent-optimization-workloads = { path = "../../tools/optimization-workloads" }
+latent-packaging = { path = "../../crates/latent-packaging" }
+latent-signing = { path = "../../crates/latent-signing" }
 latent-testkit = { path = "../../crates/latent-testkit" }
 tempfile.workspace = true
 tokio = { workspace = true, features = ["test-util"] }
 wasm-encoder.workspace = true
 wasmparser.workspace = true
-
-[[test]]
-name = "phase0_spike_e2e"
-path = "tests/phase0_spike_e2e_root.rs"
 
 [[test]]
 name = "catalog_scale"
@@ -72,3 +85,19 @@ path = "tests/standalone_command.rs"
 [[test]]
 name = "standalone_shutdown"
 path = "tests/standalone_shutdown.rs"
+
+[[test]]
+name = "phase3_workflow_fixture"
+path = "tests/phase3_workflow_fixture.rs"
+
+[[test]]
+name = "phase3_angular_fixture"
+path = "tests/phase3_angular_fixture.rs"
+
+[[test]]
+name = "phase3_reference_fixture"
+path = "tests/phase3_reference_fixture.rs"
+
+[[test]]
+name = "phase3_static_fixture"
+path = "tests/phase3_static_fixture.rs"

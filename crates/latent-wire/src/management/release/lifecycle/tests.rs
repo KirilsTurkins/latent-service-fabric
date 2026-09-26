@@ -90,7 +90,7 @@ fn historical_operation_output_rejects_foreign_scope_and_spare_capacity() {
     let tenant = TenantId("acme".to_owned());
     let limits = ManagementLimits::default();
     let original = receipt();
-    let wire = response::operation(&original, &tenant, &limits).unwrap();
+    let wire = response::operation(&original, None, &tenant, &limits).unwrap();
     assert_eq!(wire.actor.unwrap().subject, "alice");
     assert!(wire.component_digest.is_none() && wire.record.is_none());
     for scope in [
@@ -100,7 +100,7 @@ fn historical_operation_output_rejects_foreign_scope_and_spare_capacity() {
         let mut value = receipt();
         value.scope = scope;
         assert_eq!(
-            response::operation(&value, &tenant, &limits)
+            response::operation(&value, None, &tenant, &limits)
                 .unwrap_err()
                 .code(),
             Code::Internal
@@ -110,7 +110,7 @@ fn historical_operation_output_rejects_foreign_scope_and_spare_capacity() {
     value.actor.subject = String::with_capacity(513);
     value.actor.subject.push_str("alice");
     assert_eq!(
-        response::operation(&value, &tenant, &limits)
+        response::operation(&value, None, &tenant, &limits)
             .unwrap_err()
             .code(),
         Code::ResourceExhausted
@@ -138,6 +138,7 @@ fn rejected_operation_preflight_binds_actor_and_checks_error_budget() {
         error: &'a latent_core::PlatformError,
     ) -> latent_artifacts::ReleaseOperationPreview<'a> {
         latent_artifacts::ReleaseOperationPreview {
+            publication: None,
             replay: false,
             receipt: value,
             release: None,

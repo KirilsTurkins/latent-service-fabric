@@ -12,6 +12,16 @@ impl DirectoryArtifactRepository {
         release: &ReleaseDigest,
         maximum_bytes: usize,
     ) -> Result<Option<RetainedPackageSource>, PlatformError> {
+        self.retained_package_selected(tenant, release, None, maximum_bytes)
+    }
+
+    pub(crate) fn retained_package_selected(
+        &self,
+        tenant: &TenantId,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+        maximum_bytes: usize,
+    ) -> Result<Option<RetainedPackageSource>, PlatformError> {
         // Bound borrowed identities and the complete prospective retained source
         // before any directory read or copy. This is an explicit control read.
         if maximum_bytes == 0 || maximum_bytes > 64 * 1024 * 1024 {
@@ -28,20 +38,34 @@ impl DirectoryArtifactRepository {
             .admission_work
             .try_lock()
             .map_err(|_| resource_exhausted("admission-work-busy"))?;
-        let row = self.life_store().record(release)?;
+        let reference = if publication.is_some() {
+            self.select_execution_publication(tenant, release, publication)?
+        } else {
+            let reference = self
+                .index
+                .read()
+                .map_err(super::lock_error)?
+                .legacy_component(Some(&LifecycleScope::Tenant(tenant.clone())), release)?
+                .map(|entry| entry.publication.clone());
+            let Some(reference) = reference else {
+                return Ok(None);
+            };
+            reference
+        };
+        let row = self.life_store().record_publication(&reference.id)?;
         let Some(row) = row.filter(|value| value.scope.tenant() == Some(tenant)) else {
             return Ok(None);
         };
         let Some(expected_package) = row.package.as_ref() else {
             return Ok(None);
         };
-        let directory = self.entry_path(release)?;
+        let directory = self.publication_path(&reference.id);
         let mut read_limits = self.repository_read_limits();
         read_limits.maximum_component_bytes =
             read_limits.maximum_component_bytes.min(maximum_bytes);
         let verified =
             self.load_complete_entry_with_limits(&directory, Retention::Metadata, read_limits)?;
-        self.verify_admission_index(release, &verified)?;
+        self.verify_publication_index(&reference, &verified)?;
         let stored = verified
             .admission
             .as_ref()
@@ -61,6 +85,7 @@ impl DirectoryArtifactRepository {
         let input = stored.package_input(&directory, maximum_bytes)?;
         admission::association::verify(&binding, &input, &verified.metadata, &self.codec)?;
         let source = RetainedPackageSource {
+            publication: reference.id,
             tenant: binding.tenant,
             package: binding.package,
             component: binding.release,

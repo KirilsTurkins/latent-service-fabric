@@ -42,6 +42,10 @@ pub enum DeploymentOperationAction {
     deny_unknown_fields
 )]
 pub struct DeploymentOperationReceipt {
+    /// Exact association retained by the containing operation table. Historical
+    /// receipt bytes/digests are unchanged; the table independently binds this ID.
+    #[serde(skip)]
+    pub publication: Option<latent_artifacts::PublicationRef>,
     pub format_version: u32,
     #[serde(with = "codec::tenant")]
     pub tenant: TenantId,

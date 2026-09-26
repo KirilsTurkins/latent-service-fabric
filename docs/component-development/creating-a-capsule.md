@@ -1,93 +1,199 @@
 # Creating a capsule
 
-A capsule project defines a versioned WIT world, implements its exported interfaces in a supported guest language, declares only the platform imports it requires, compiles to a Component Model binary, and packages immutable metadata.
+Create a small program and run it on your development node. Start with a greeting,
+then try a word counter or shipping calculator. Each accepts typed input and
+returns either an answer or a helpful application error.
 
-## Phase 1 assets and workflow
+Complete [Get the developer tools](../start/developer-setup.md) and
+[Set up your workspace](../start/development-workspace.md) first. Keep its terminal
+open: it defines `dev`, your selected `$Language`, `$Workspace`, `$Project` and
+other tool paths. The steps below use those same variables on both operating systems.
 
-The completed Phase 1 workflow publishes locally trusted component bytes with a
-validated capsule manifest and typed contract metadata. A deployment manifest
-selects the release and its routes. Follow the executable
-[standalone quickstart](../development/standalone-quickstart.md) for the maintained
-echo component and the [management reference](../reference/management-services.md)
-for publication validation.
+Select **Rust**, **C**, **TypeScript**, **Go**, **Java** or **C# / .NET** above a code
+example. Your selection is shared across the examples. The build, deploy and test
+commands work the same way for every language; use the language you installed
+during setup.
 
-The [echo fixture](../../examples/echo-contract/README.md) includes a Rust guest,
-pinned build tooling and reproducibility checks. Its generated package is
-executable on the standalone node; the checked-in `publish-release.json` is only
-a schema-shape example with placeholder digests.
+## 1. A greeting capsule
 
-## Phase 2 packaging
+The first program accepts a name and returns a greeting. An empty name produces
+a helpful error instead. This is the complete implementation in your selected language:
 
-The [deterministic packaging workflow](packaging.md) now builds and inspects
-supplied components, capsule metadata, typed contracts and pinned WIT sources.
-OCI transfer, publisher and independent builder verification, SBOM policy,
-release lifecycle and rollout controls are implemented alongside it. The
-packager consumes existing build output; it does not compile source, execute
-package scripts, sign bytes or invent build provenance. The
-[completed Phase 2 gate](../phase-2-completion.md) records the accepted scope,
-validation evidence and limitations.
+<!-- lsf-example: guest/tutorial-greeting capsule -->
 
-```text
-component.wasm
-capsule manifest
-WIT package and lock graph
-SBOM
-detached publisher signature and builder provenance
+The WIT contract describes the input and the two possible kinds of answer:
+
+```wit
+greet: func(name: string) -> result<string, string>;
 ```
 
-Use the [operator CLI](../reference/operator-cli.md) with explicit input roots:
+You will find this contract under `app/wit` in your project. Generated bindings
+connect it to your language's function. For now, keep the contract unchanged.
+
+## 2. Create the project
+
+Choose the `greeting` template. Setup has already selected its verified bundle
+and template settings. Run this same command on Windows or Linux:
 
 ```bash
-latent package build --source package-source.json --input-root build-inputs \
-  --sbom-inputs sbom-inputs.json --output-dir package
-latent package inspect package --output json
-latent package verify package --evidence-index evidence/index.json \
-  --evidence-root evidence --policy admission-policy.json --tenant examples \
-  --output json
+dev init "$Project" --bundle "$Bundle" --template "$Language/greeting" --template-sha256 "$GreetingTemplate"
 ```
 
-The output directory must be new. Its `manifest.json`, `config.json` and declared
-`layers/` form an immutable package. Detached evidence has a separate bounded
-index and directory. Inspect establishes content and supported contract
-structure, not publisher trust or execution authorization. Verify evaluates the
-explicit local policy once; it opens no node catalog, issues no execution grant
-and does not check the target node's runtime profile or durable policy floors.
-The node independently applies its current policy and release lifecycle.
+Open the project in your editor:
 
-Transfer a package and its evidence through an explicit registry profile with
-`package push`/`package pull`; retain returned immutable digests when a transfer
-is partial or uncertain. Publish to an enforced node with
-`release publish-package PACKAGE --evidence EVIDENCE/index.json --operation-id ID
---expected-generation 0`. That command reads evidence files relative to the
-index's parent. Node tokens and registry credentials use separate private files;
-the CLI never mounts or edits the node's authoritative catalogs. See
-[operator workflows](../phase-2-operator-workflows.md) for exact formats and bounds.
+| File or folder | What you do with it |
+| --- | --- |
+| `app` | Edit the source and its WIT contract |
+| `latent.project.json` | Review the compiler, build recipe and source files it can use |
+| `tests/scenarios.json` | Read the named test cases |
+| `tests/*-input.json`, `tests/*-expected.json` | See each input and its expected answer |
 
-A deployment selects the admitted component digest, grants and resource limits.
-Managed Apply/Delete requires both an object generation and the catalog state
-version returned by `deployment get ID --operation-snapshot`. A rollout Start
-also requires the candidate manifest's `spec.route.weight` to equal the first
-declared stage; the CLI does not rewrite it. Compatibility checks and a successful
-local verification do not override revocation or authorize a rollback target.
+## 3. Build and prepare the node
 
-The [bounded operator workflow](../development/standalone-quickstart.md#bounded-phase-2-operator-workflow)
-builds two tiny compatible packages and checks actual registry, CLI and node
-behavior. Its fresh signatures accompany synthetic test observations. Use the
-separate observed-build workflow when evaluating real source and tool evidence.
+After reviewing the project, run these commands in the same terminal on either OS:
 
-## Design rules
+```bash
+dev trust --workspace "$Workspace" --project "$Project"
+dev build --workspace "$Workspace" --project "$Project"
+dev prepare-test --workspace "$Workspace" --consent-test-fixtures --admission "$Admission"
+```
 
-- No background threads or listeners.
-- No assumption that process-local state survives a call.
-- No unrestricted filesystem, environment, network, or secret access.
-- Every external dependency is an imported WIT contract.
-- Domain errors are explicit WIT variants.
-- Platform failures remain separate.
+Expect `code: success` from each command. The compiler comes from the selected
+tool bundle. `prepare-test` prepares the stopped disposable node to accept this
+application. Setup selected `trusted-local` for Rust/C or `signed-fixture` for the
+other languages, including their required runtime permissions.
 
-The current runtime provides activation context, clocks, resource budgets and
-structured logging. Calls execute within finite activation budgets; persistent
-guest state and background work are unavailable. Phase 2 packaging of browser
-assets or SSR content does not launch a browser or renderer. General providers,
-including blob storage and shared application ingress, remain planned Phase 3
-work. Stable idempotency for state/effects and durable workflow suspension belong
-to later phases; see the [roadmap](../roadmap.md).
+A signed fixture lasts 30 minutes and binds one build. If you edit that build or
+the fixture expires, create a fresh disposable workspace before testing it. Use
+the [edit guide](../learn/deliver-and-recover-a-capsule.md) for the supported watch loop.
+
+## 4. Start, deploy and test
+
+Open a **second terminal** and start the node. Keep this command running.
+For the default paths from setup, use the following command; substitute your
+workspace name if you chose another one.
+
+**Windows (PowerShell):**
+
+```powershell
+& (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4/frontend/bin/latent-dev.exe') `
+    --state-root (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial') dev up --workspace test-my-greeting
+```
+
+**Linux (Bash):**
+
+```bash
+"$HOME/LSF-inputs-alpha4/frontend/bin/latent-dev" --state-root "$HOME/.latent-dev-tutorial" \
+    dev up --workspace test-my-greeting
+```
+
+Wait for the `ready` event. In your **first terminal**, publish the accepted build
+and run its tests with the same commands on either OS:
+
+```bash
+dev deploy --workspace "$Workspace"
+dev test --workspace "$Workspace" --environment node
+```
+
+Expect `passed: true` and every required case to report `status: passed`.
+`Ada` returns `Hello, Ada!`; an empty name produces the expected application error.
+Some language profiles include additional runtime cases, so their case counts differ.
+
+## 5. Send a request yourself
+
+The greeting's first input file contains `["Ada"]`. Call it directly:
+
+```bash
+dev invoke --workspace "$Workspace" --service examples/my-greeting --contract examples:greeting/api@1.0.0 --function greet --input "$Project/tests/0-input.json"
+```
+
+The response includes `category: success`, the selected deployment and an encoded
+payload. To display the typed answer, **on Windows**:
+
+```powershell
+$Reply = (dev invoke --workspace $Workspace --service examples/my-greeting `
+    --contract examples:greeting/api@1.0.0 --function greet `
+    --input (Join-Path $Project 'tests/0-input.json') | ConvertFrom-Json).result
+[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Reply.data.payload.data))
+```
+
+Or **on Linux**:
+
+```bash
+dev invoke --workspace "$Workspace" --service examples/my-greeting --contract examples:greeting/api@1.0.0 --function greet --input "$Project/tests/0-input.json" \
+    | python3 -c 'import base64,json,sys; print(base64.b64decode(json.load(sys.stdin)["result"]["data"]["payload"]["data"]).decode())'
+```
+
+Expected: `[{"ok":"Hello, Ada!"}]`. These are independent example calls. If a
+response is lost, use `dev recover --workspace "$Workspace"` to inspect that
+original call before making another one.
+
+## 6. Try a word counter
+
+This program counts groups separated by spaces, tabs or newlines. An empty
+document has zero words. Very long input produces a readable error.
+
+<!-- lsf-example: guest/tutorial-word-count capsule -->
+
+```wit
+count: func(text: string) -> result<u32, string>;
+```
+
+Stop the greeting with `dev down --workspace "$Workspace"`. Create another
+workspace and project using the [workspace setup](../start/development-workspace.md),
+for example `test-my-words` and `My words`. Reuse your downloads and existing WSL
+distro. Create the project with this command, then follow the same build, start,
+deploy and test steps with that workspace name:
+
+```bash
+dev init "$Project" --bundle "$Bundle" --template "$Language/word-count" --template-sha256 "$WordCountTemplate"
+```
+
+The tests send `LSF runs small programs` and expect `4`. Look in
+`tests/scenarios.json` for the service, contract and function to use in a direct call.
+
+## 7. Try a shipping calculator
+
+This program accepts an item count and whether delivery is express. It returns
+a price in cents: 500 for standard delivery or 1200 for express, plus 75 per item.
+
+<!-- lsf-example: guest/tutorial-shipping capsule -->
+
+```wit
+quote: func(items: u32, express: bool) -> result<u32, string>;
+```
+
+Use another project and workspace, then select the shipping template:
+
+```bash
+dev init "$Project" --bundle "$Bundle" --template "$Language/shipping" --template-sha256 "$ShippingTemplate"
+```
+
+Run the same build, start, deploy and test commands. Two items with standard delivery produce
+`650`; express delivery produces `1350`. Zero items produce
+`Choose between 1 and 100 items.` as a declared application error.
+
+The three programs need no network, files or secrets. Their compilers can still
+require explicitly granted runtime clocks or entropy. To add application access
+to an outside service, continue with [capabilities](../learn/use-capabilities.md).
+
+## 8. Clean up
+
+Stop the selected node and inspect its state:
+
+```bash
+dev down --workspace "$Workspace"
+dev status --workspace "$Workspace"
+```
+
+Expect `state: stopped`. Starting `up` again retains the deployment without another
+deploy command. Keep this workspace if you are continuing with [editing and recovery](../learn/deliver-and-recover-a-capsule.md).
+When you no longer need its node data, remove that workspace explicitly:
+
+```bash
+dev purge --workspace "$Workspace" --confirm-workspace "$Workspace"
+```
+
+Your project source remains. Repeat cleanup for each workspace you created.
+The [developer command guide](../how-to/developer-commands.md#stop-and-remove-workspaces)
+also explains when to remove the shared LSF-owned WSL distro.

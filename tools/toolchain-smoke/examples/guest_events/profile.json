@@ -1,0 +1,9 @@
+{
+  "name": "events",
+  "package": "tests:nats-events@1.0.0",
+  "contract": "tests:nats-events/api@1.0.0",
+  "capability": "latent:events/publisher@0.2.0",
+  "world": "tests:nats-events/service@1.0.0",
+  "witDirectory": "events-v2",
+  "asynchronous": false
+}

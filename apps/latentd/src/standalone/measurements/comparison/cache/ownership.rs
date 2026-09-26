@@ -47,9 +47,12 @@ pub(super) async fn run(
         .as_ref()
         .ok_or("cache node factory absent")?
         .create_backend_instance();
-    let key = helper
-        .preparation_key(&ReleaseDigest(releases[0].clone()))
-        .map_err(super::super::super::platform)?;
+    let key = super::super::super::publication_key(
+        &helper,
+        node.artifacts.as_ref(),
+        &node.fixture.tenant,
+        &ReleaseDigest(releases[0].clone()),
+    )?;
     state.direct.readiness_acquisitions += 1;
     let first = helper
         .prepare_ready_from_repository(node.artifacts.clone(), key.clone())

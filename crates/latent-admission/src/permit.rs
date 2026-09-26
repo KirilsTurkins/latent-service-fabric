@@ -116,6 +116,16 @@ impl AdmissionPermit {
     }
 
     #[must_use]
+    pub fn budget_profile(&self) -> latent_core::BudgetProfile {
+        self.quotas.budget_profile()
+    }
+
+    #[must_use]
+    pub fn delegation_limits(&self) -> latent_core::DelegationLimits {
+        self.quotas.delegation_limits()
+    }
+
+    #[must_use]
     pub fn deadline(&self) -> &EffectiveDeadline {
         &self.grant.deadline
     }

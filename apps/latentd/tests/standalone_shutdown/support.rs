@@ -30,6 +30,11 @@ pub fn settings(directory: &Path) -> NodeSettings {
         "credentials": [{"token": TOKEN, "subject": "operator", "tenant": "tests", "role": "operator"}]
     });
     fs::write(&path, serde_json::to_vec(&config).unwrap()).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    }
     NodeConfig::load(&path).unwrap().derive().unwrap()
 }
 

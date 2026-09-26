@@ -1,0 +1,10 @@
+package tests:nats-events@1.0.0;
+
+interface api {
+    run: func(which: u32, text: string, handle: u64) -> u64;
+}
+
+world service {
+    import latent:events/publisher@0.2.0;
+    export api;
+}

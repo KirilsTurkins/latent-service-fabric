@@ -13,6 +13,8 @@ mod dispatch;
 mod engine_memory;
 #[path = "generic_backend/engine_profiles.rs"]
 mod engine_profiles;
+#[path = "generic_backend/host_abi.rs"]
+mod host_abi;
 #[path = "generic_backend/owned_preparation.rs"]
 mod owned_preparation;
 #[path = "generic_backend/preparation.rs"]

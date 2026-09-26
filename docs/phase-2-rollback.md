@@ -26,10 +26,9 @@ rejects a fresh request. A retained exact operation retry still returns its
 original receipt. Historical stage and policy remain available for inspection;
 they no longer describe the restored route weights.
 
-Rows created before rollback-target support remain readable and replayable. They
-have no plan-bound target and reject a fresh rollback with
-`rollout-rollback-target-unavailable`. An old object generation or an evicted Start
-receipt is not enough to invent that provenance.
+A rollback requires the plan-bound target. A row without it rejects a fresh
+rollback with `rollout-rollback-target-unavailable`. An old object generation or
+an evicted Start receipt cannot supply the missing target.
 
 ## Eligibility and compatibility
 

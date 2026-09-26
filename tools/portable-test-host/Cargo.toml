@@ -1,0 +1,33 @@
+[package]
+name = "latent-portable-test-host"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Explicit controlled-development Component Model test host, without a production node."
+
+[lints]
+workspace = true
+
+[dependencies]
+base64.workspace = true
+getrandom = "=0.4.3"
+subtle = "=2.6.1"
+socket2 = "=0.6.5"
+zeroize = { version = "=1.9.0", features = ["alloc"] }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tokio = { workspace = true, features = ["net", "io-util"] }
+latent-activation = { path = "../../crates/latent-activation" }
+latent-artifacts = { path = "../../crates/latent-artifacts", features = ["development-test-host"] }
+latent-capabilities = { path = "../../crates/latent-capabilities", features = ["test-support"] }
+latent-core = { path = "../../crates/latent-core" }
+latent-executor = { path = "../../crates/latent-executor" }
+latent-http = { path = "../../crates/latent-http" }
+latent-manifest = { path = "../../crates/latent-manifest" }
+latent-policy = { path = "../../crates/latent-policy", features = ["development-test-host"] }
+latent-routing = { path = "../../crates/latent-routing" }
+latent-telemetry = { path = "../../crates/latent-telemetry" }
+latent-wasmtime = { path = "../../crates/latent-wasmtime", features = ["development-test-host"] }

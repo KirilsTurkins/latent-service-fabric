@@ -1,5 +1,5 @@
 use super::super::{
-    compiler::compile_catalog_with_runtime, next_generation, now, observation::Work, persistence,
+    compiler::compile_catalog_with_pins, next_generation, now, observation::Work, persistence,
     CompiledCatalog, DirectoryDeploymentRepository,
 };
 use super::{
@@ -141,8 +141,23 @@ impl DirectoryDeploymentRepository {
                         "rollout-initial-cohort-unsupported",
                     ));
                 }
+                let base_publication = previous
+                    .routes
+                    .record_by_id(&base.id)
+                    .ok_or_else(crate::rollouts::corrupt)?
+                    .publication
+                    .clone();
+                let candidate_publication = self
+                    .artifacts
+                    .select_execution_publication(
+                        &context.tenant,
+                        &spec.candidate.release,
+                        spec.candidate.publication.as_ref(),
+                    )?
+                    .map(|value| value.id);
                 if previous.routes.deployments.contains_key(&spec.candidate.id)
-                    || base.release == spec.candidate.release
+                    || (base.release == spec.candidate.release
+                        && base_publication == candidate_publication)
                 {
                     return Err(conflict());
                 }
@@ -156,14 +171,25 @@ impl DirectoryDeploymentRepository {
                 let (old_package, new_package) = comparison::compare(
                     self.artifacts.as_ref(),
                     &context.tenant,
-                    &base.release,
-                    &spec.candidate.release,
+                    &RolloutRelease {
+                        deployment_id: base.id.clone(),
+                        component: base.release.clone(),
+                        publication: base_publication.clone(),
+                        package: None,
+                    },
+                    &RolloutRelease {
+                        deployment_id: spec.candidate.id.clone(),
+                        component: spec.candidate.release.clone(),
+                        publication: candidate_publication.clone(),
+                        package: None,
+                    },
                 )
                 .await?;
                 let base_manifest = table::manifest(base)?;
                 let candidate_manifest = table::manifest(&spec.candidate)?;
                 let plan_digest = codec::hash(b"");
                 StoredRollout {
+                    plan_version: 2,
                     status: RolloutStatus {
                         id: spec.id.clone(),
                         tenant: context.tenant.clone(),
@@ -174,11 +200,13 @@ impl DirectoryDeploymentRepository {
                         current_step: 0,
                         candidate_weights: spec.candidate_weights.clone(),
                         base: RolloutRelease {
+                            publication: base_publication,
                             deployment_id: base.id.clone(),
                             component: base.release.clone(),
                             package: old_package,
                         },
                         candidate: RolloutRelease {
+                            publication: candidate_publication,
                             deployment_id: spec.candidate.id.clone(),
                             component: spec.candidate.release.clone(),
                             package: new_package,
@@ -300,8 +328,8 @@ impl DirectoryDeploymentRepository {
                 let packages = comparison::compare(
                     self.artifacts.as_ref(),
                     &row.status.tenant,
-                    &row.status.base.component,
-                    &row.status.candidate.component,
+                    &row.status.base,
+                    &row.status.candidate,
                 )
                 .await?;
                 if packages
@@ -336,7 +364,8 @@ impl DirectoryDeploymentRepository {
                 desired.insert(base.id.clone(), Arc::new(base));
                 row.status.reason = RolloutReason::StageApplied;
             }
-            let catalog = compile_catalog_with_runtime(
+            let pins = table::publication_pins(&row);
+            let catalog = compile_catalog_with_pins(
                 desired,
                 versions,
                 generation,
@@ -347,6 +376,8 @@ impl DirectoryDeploymentRepository {
                 &mut Work::default(),
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
+                Some(&pins),
+                None,
             )
             .await?;
             Arc::new(catalog)
@@ -358,6 +389,8 @@ impl DirectoryDeploymentRepository {
         }
         row.status.objects = managed_objects(&next_routes, &row);
         let mut receipt = RolloutOperationReceipt {
+            base_publication: row.status.base.publication.clone(),
+            candidate_publication: row.status.candidate.publication.clone(),
             rollout_id: row.status.id.clone(),
             tenant: context.tenant.clone(),
             operation_id: context.operation.operation_id.clone(),
@@ -412,6 +445,7 @@ impl DirectoryDeploymentRepository {
                 .operations
                 .enabled
                 .then_some(&previous.operations.data),
+            http_routes: previous.http.enabled.then_some(&previous.http.data),
         };
         let bytes = persistence::encode_combined(
             &next_routes,
@@ -549,7 +583,11 @@ pub(super) fn managed_objects(
         &row.status.base.deployment_id,
         &row.status.candidate.deployment_id,
     ] {
-        if let Some(generation) = catalog.versions.get(id) {
+        if let Some(generation) = catalog.versions.get(id).filter(|_| {
+            catalog.record_by_id(id).is_some_and(|record| {
+                record.deployment.metadata.tenant.as_ref() == Some(&row.status.tenant)
+            })
+        }) {
             objects.push(RolloutObjectVersion {
                 deployment_id: DeploymentId(id.0.as_str().into()),
                 generation: *generation,

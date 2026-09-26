@@ -32,6 +32,12 @@ updates:
       interval: weekly
     open-pull-requests-limit: 3
     labels: ["area:security", "area:tooling"]
+    # Angular's compiler-cli uses the TypeScript JavaScript compiler API.
+    # TypeScript 7's native compiler cannot replace that API. SDK compiler
+    # upgrades remain explicit reviewed migrations of tools/toolchain.toml.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     target-branch: development

@@ -1,0 +1,18 @@
+package latent:c-guest@1.0.0;
+
+// Reference SDK surface, not an application's request for ambient authority.
+// Application worlds import only the interfaces their implementation uses.
+world sdk {
+  import latent:context/context@0.1.0;
+  import latent:log/log@0.1.0;
+  import latent:clock/monotonic@0.1.0;
+  import latent:clock/wall@0.1.0;
+  import latent:random/random@0.1.0;
+  import latent:blob/blob@0.2.0;
+  import latent:secrets/reader@0.1.0;
+  import latent:events/publisher@0.2.0;
+  import latent:http/client@0.2.0;
+  import latent:http/streaming@0.3.0;
+  import latent:telemetry/custom@0.1.0;
+  import latent:service/invoke@0.1.0;
+}

@@ -10,23 +10,54 @@ use latent_wasmtime::{
     AotCompilationJob, AotJobControl, AotProcessLimits, AotResourceSnapshot, IsolatedAotCompiler,
     TrustedAotOutput, ValidatedAotProfile, WasmtimeConfig,
 };
-use sha2::{Digest, Sha256};
 
 use super::support::{self, Directory, Fixture};
 
+pub const CASE_NAMES: &[&str] = &[
+    "readiness-success",
+    "readiness-malformed",
+    "probe-launch-mismatch",
+    "probe-stalled-launch",
+    "readiness-wrong-digest",
+    "readiness-relative-path",
+    "oversized",
+    "zero",
+    "truncated-header",
+    "truncated-body",
+    "trailing",
+    "nonzero-exit",
+    "diagnostic-overflow",
+    "cancel-running-prefix",
+    "malformed-readiness",
+    "launch-mismatch",
+    "stalled-launch",
+    "fragmented-success",
+    "running-deadline",
+    "last-owner-drop",
+    "active-shutdown",
+    "inherited-descriptor",
+    "healthy-after-failures",
+];
+
 pub fn run() {
-    let compiler = compiler(support::limits());
-    protocol_failures(&compiler);
-    cancel_running_prefix(&compiler);
-    compiler.shutdown(Duration::from_secs(1)).unwrap();
-    malformed_readiness();
+    use support::diagnostics::case;
+    super::probe::run();
+    protocol_failures();
+    case("cancel-running-prefix", cancel_running_prefix);
+    case("malformed-readiness", malformed_readiness);
     launch_failures();
-    fragmented_success();
-    running_deadline();
-    last_owner_drop();
-    active_shutdown();
-    super::inherited::run();
-    eprintln!("isolated AOT supervisor: 16 bounded protocol/ownership scenarios passed");
+    case("fragmented-success", fragmented_success);
+    case("running-deadline", running_deadline);
+    case("last-owner-drop", last_owner_drop);
+    case("active-shutdown", active_shutdown);
+    case("inherited-descriptor", super::inherited::run);
+    case("healthy-after-failures", || {
+        super::availability::Guest::new().invoke()
+    });
+    println!(
+        "test result: ok. {} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
+        CASE_NAMES.len()
+    );
 }
 
 fn fragmented_success() {
@@ -36,6 +67,7 @@ fn fragmented_success() {
     let directory = Directory::new();
     let marker = directory.path().join("worker.pid");
     let fixture = fixture("fragmented-success", &marker);
+    let _execution = support::diagnostics::Span::new("child-protocol-and-reap");
     let output = compiler
         .reserve(fixture.source(), fixture.release())
         .unwrap()
@@ -61,7 +93,7 @@ fn fragmented_success() {
     assert_eq!(compiler.snapshot(), AotResourceSnapshot::default());
 }
 
-fn protocol_failures(compiler: &IsolatedAotCompiler) {
+fn protocol_failures() {
     for (mode, code) in [
         ("oversized", PlatformErrorCode::ResourceExhausted),
         ("zero", PlatformErrorCode::ResourceExhausted),
@@ -71,30 +103,36 @@ fn protocol_failures(compiler: &IsolatedAotCompiler) {
         ("nonzero-exit", PlatformErrorCode::Unavailable),
         ("diagnostic-overflow", PlatformErrorCode::ResourceExhausted),
     ] {
-        let directory = Directory::new();
-        let marker = directory.path().join("worker.pid");
-        let fixture = fixture(mode, &marker);
-        let failure = compiler
-            .reserve(fixture.source(), fixture.release())
-            .unwrap()
-            .run()
-            .unwrap_err();
-        assert_eq!(failure.code, code, "{mode}");
-        if mode == "trailing" {
-            assert_eq!(failure.message, "aot-worker-trailing-output");
-        }
-        assert_eq!(
-            compiler.snapshot(),
-            AotResourceSnapshot::default(),
-            "{mode}"
-        );
-        if let Some(pid) = marker_pid(&marker) {
-            assert_reaped(pid);
-        }
+        support::diagnostics::case(mode, || {
+            let compiler = compiler(support::limits());
+            let directory = Directory::new();
+            let marker = directory.path().join("worker.pid");
+            let fixture = fixture(mode, &marker);
+            let _execution = support::diagnostics::Span::new("child-protocol-and-reap");
+            let failure = compiler
+                .reserve(fixture.source(), fixture.release())
+                .unwrap()
+                .run()
+                .unwrap_err();
+            assert_eq!(failure.code, code, "{mode}");
+            if mode == "trailing" {
+                assert_eq!(failure.message, "aot-worker-trailing-output");
+            }
+            assert_eq!(
+                compiler.snapshot(),
+                AotResourceSnapshot::default(),
+                "{mode}"
+            );
+            if let Some(pid) = marker_pid(&marker) {
+                assert_reaped(pid);
+            }
+        });
     }
 }
 
-fn cancel_running_prefix(compiler: &IsolatedAotCompiler) {
+fn cancel_running_prefix() {
+    let compiler = compiler(support::limits());
+    let guest = super::availability::Guest::new();
     let directory = Directory::new();
     let marker = directory.path().join("worker.pid");
     let fixture = fixture("complete-then-hang", &marker);
@@ -109,6 +147,12 @@ fn cancel_running_prefix(compiler: &IsolatedAotCompiler) {
     assert_eq!(reserved.jobs, 1);
     assert_eq!(reserved.output_owners, 1);
     assert_eq!(reserved.native_bytes, support::OUTPUT_BYTES);
+    guest.invoke();
+    assert_eq!(
+        compiler.snapshot(),
+        reserved,
+        "unrelated work cannot refund the hung compiler"
+    );
     running.control.cancel();
     assert_eq!(
         running.finish().unwrap_err().code,
@@ -117,6 +161,7 @@ fn cancel_running_prefix(compiler: &IsolatedAotCompiler) {
     assert_reaped(pid);
     assert_eq!(compiler.snapshot(), AotResourceSnapshot::default());
     assert_eq!(std::sync::Arc::strong_count(&fixture.repository), 1);
+    guest.invoke();
 }
 
 fn malformed_readiness() {
@@ -126,6 +171,7 @@ fn malformed_readiness() {
     let directory = Directory::new();
     let marker = directory.path().join("worker.pid");
     let fixture = fixture("hang", &marker);
+    let _execution = support::diagnostics::Span::new("child-protocol-and-reap");
     let failure = compiler
         .reserve(fixture.source(), fixture.release())
         .unwrap()
@@ -149,29 +195,37 @@ fn launch_failures() {
         ),
         (23, PlatformErrorCode::DeadlineExceeded, None),
     ] {
-        let mut limits = support::limits();
-        limits.compiler.maximum_output_bytes = output;
-        if output == 23 {
-            limits.job_timeout = Duration::from_secs(1);
-        }
-        let compiler = compiler(limits);
-        let directory = Directory::new();
-        let marker = directory.path().join("worker.pid");
-        let fixture = fixture("hang", &marker);
-        let failure = compiler
-            .reserve(fixture.source(), fixture.release())
-            .unwrap()
-            .run()
-            .unwrap_err();
-        assert_eq!(failure.code, code);
-        if let Some(reason) = reason {
-            assert_eq!(failure.message, reason);
-        }
-        assert!(
-            !marker.exists(),
-            "launch failures must not receive component input"
-        );
-        assert_eq!(compiler.snapshot(), AotResourceSnapshot::default());
+        let name = if output == 21 {
+            "launch-mismatch"
+        } else {
+            "stalled-launch"
+        };
+        support::diagnostics::case(name, || {
+            let mut limits = support::limits();
+            limits.compiler.maximum_output_bytes = output;
+            if output == 23 {
+                limits.job_timeout = Duration::from_secs(1);
+            }
+            let compiler = compiler(limits);
+            let directory = Directory::new();
+            let marker = directory.path().join("worker.pid");
+            let fixture = fixture("hang", &marker);
+            let _execution = support::diagnostics::Span::new("child-protocol-and-reap");
+            let failure = compiler
+                .reserve(fixture.source(), fixture.release())
+                .unwrap()
+                .run()
+                .unwrap_err();
+            assert_eq!(failure.code, code);
+            if let Some(reason) = reason {
+                assert_eq!(failure.message, reason);
+            }
+            assert!(
+                !marker.exists(),
+                "launch failures must not receive component input"
+            );
+            assert_eq!(compiler.snapshot(), AotResourceSnapshot::default());
+        });
     }
 }
 
@@ -250,24 +304,19 @@ fn fixture(mode: &str, marker: &Path) -> Fixture {
     Fixture::new(bytes)
 }
 
-fn compiler(limits: AotProcessLimits) -> IsolatedAotCompiler {
+pub(super) fn executable() -> &'static (PathBuf, [u8; 32]) {
     static EXECUTABLE: OnceLock<(PathBuf, [u8; 32])> = OnceLock::new();
-    let (executable, digest) = EXECUTABLE.get_or_init(|| {
-        let path = std::env::current_exe().unwrap().canonicalize().unwrap();
-        let mut file = File::open(&path).unwrap();
-        let mut hash = Sha256::new();
-        let mut buffer = [0; 16 * 1024];
-        loop {
-            let count = file.read(&mut buffer).unwrap();
-            if count == 0 {
-                break;
-            }
-            hash.update(&buffer[..count]);
-        }
-        (path, hash.finalize().into())
-    });
+    EXECUTABLE.get_or_init(|| {
+        let input = support::prepared::select("aot_supervisor", &std::env::current_exe().unwrap());
+        (input.path, input.digest)
+    })
+}
+
+fn compiler(limits: AotProcessLimits) -> IsolatedAotCompiler {
+    let (executable, digest) = executable();
     let profile =
         ValidatedAotProfile::from_config(&WasmtimeConfig::default(), limits.compiler).unwrap();
+    let _stage = support::diagnostics::Span::new("compiler-construction-and-verification");
     IsolatedAotCompiler::new(
         executable,
         *digest,
@@ -290,6 +339,7 @@ impl Running {
         }
     }
     fn finish(mut self) -> Result<TrustedAotOutput, PlatformError> {
+        let _stage = support::diagnostics::Span::new("join-and-reap");
         self.owner
             .take()
             .unwrap()
@@ -327,10 +377,11 @@ fn marker_pid(path: &Path) -> Option<u32> {
 }
 
 fn wait_for_marker(path: &Path, running: &Running) -> u32 {
-    // Authentication hashes the actual debug executable before sending input.
+    // Authentication hashes the exact selected executable before sending input.
     // Give that rendezvous the fixture's existing job budget; the old 10-second
     // observer cutoff could cancel a valid job on a busy runner. The compiler's
     // own deadline (including the shorter deadline scenario) remains authoritative.
+    let _stage = support::diagnostics::Span::new("input-rendezvous");
     let deadline = Instant::now() + support::limits().job_timeout;
     loop {
         if let Some(pid) = marker_pid(path) {

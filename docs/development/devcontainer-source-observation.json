@@ -1,0 +1,488 @@
+{
+  "checks": {
+    "clientIsolation": {
+      "capDrop": [
+        "ALL"
+      ],
+      "mounts": [
+        {
+          "destination": "/workspaces/project",
+          "readWrite": true,
+          "type": "bind"
+        },
+        {
+          "destination": "/home/latent-dev",
+          "readWrite": true,
+          "type": "volume"
+        }
+      ],
+      "privileged": false,
+      "publishedPorts": {},
+      "securityOpt": [
+        "no-new-privileges"
+      ],
+      "user": "latent-dev"
+    },
+    "connect": {
+      "code": "success",
+      "result": {
+        "backend": "ssh",
+        "workspace": "test-ssh-source1"
+      },
+      "schemaVersion": "latent.dev.result.v1"
+    },
+    "doctor": {
+      "host": {
+        "distribution": "ubuntu-24.04",
+        "glibc": "glibc 2.39",
+        "kernel": "6.18.33.2-microsoft-standard-WSL2",
+        "pressureReadable": true,
+        "python": "3.13.5",
+        "target": "x86_64-unknown-linux-gnu"
+      },
+      "profile": {
+        "admission": "trusted-local",
+        "authenticatedNativeLoading": false,
+        "compiler": "in-process",
+        "compilerSandbox": null,
+        "guestBoundary": "in-process-wasmtime",
+        "hostAbiProfile": "lsf-host-abi-phase3-v4",
+        "profile": "local-experimental-v1",
+        "protectedCredentialFile": true,
+        "schemaVersion": "latent.standalone.config-check.v1",
+        "target": "x86_64-unknown-linux-gnu",
+        "threatClass": "T0",
+        "wasmtimeVersion": "47.0.4"
+      },
+      "schemaVersion": "latent.native-preflight.v1"
+    },
+    "finalStatus": {
+      "cleanShutdown": true,
+      "dataRetained": true,
+      "guestInstance": {
+        "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+        "initStartTicks": "10767586",
+        "pidNamespace": "4026532538"
+      },
+      "node": "lsf-7fe48ac4395c21cb",
+      "profile": "local-experimental-v1",
+      "providers": [],
+      "readiness": {
+        "activationReady": true,
+        "authenticated": true,
+        "profile": "local-experimental-v1",
+        "schemaVersion": "latent.native-readiness.v1"
+      },
+      "reaped": true,
+      "state": "stopped",
+      "workflow": {
+        "buildProcess": {
+          "state": "idle"
+        },
+        "lastAcceptedBuild": null,
+        "lastConfirmedDeployment": null,
+        "lastConfirmedPublication": null,
+        "pendingOperation": null,
+        "selectedSource": null
+      }
+    },
+    "firstDown": {
+      "build": {
+        "state": "idle"
+      },
+      "cleanShutdown": true,
+      "dataRetained": true,
+      "guestInstance": {
+        "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+        "initStartTicks": "10767586",
+        "pidNamespace": "4026532538"
+      },
+      "node": "lsf-7fe48ac4395c21cb",
+      "profile": "local-experimental-v1",
+      "providers": [],
+      "readiness": {
+        "activationReady": true,
+        "authenticated": true,
+        "profile": "local-experimental-v1",
+        "schemaVersion": "latent.native-readiness.v1"
+      },
+      "reaped": true,
+      "state": "stopped"
+    },
+    "firstReady": {
+      "event": "ready",
+      "result": {
+        "guestInstance": {
+          "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+          "initStartTicks": "10767586",
+          "pidNamespace": "4026532538"
+        },
+        "node": "lsf-7fe48ac4395c21cb",
+        "profile": "local-experimental-v1",
+        "providers": [],
+        "readiness": {
+          "activationReady": true,
+          "authenticated": true,
+          "profile": "local-experimental-v1",
+          "schemaVersion": "latent.native-readiness.v1"
+        },
+        "state": "ready"
+      },
+      "schemaVersion": "latent.dev.result.v1",
+      "workspace": "test-ssh-source1"
+    },
+    "peerIsolation": {
+      "capDrop": null,
+      "mounts": [
+        {
+          "destination": "/build",
+          "readWrite": false,
+          "type": "volume"
+        },
+        {
+          "destination": "/source",
+          "readWrite": false,
+          "type": "bind"
+        }
+      ],
+      "privileged": false,
+      "publishedPorts": {},
+      "securityOpt": null,
+      "user": ""
+    },
+    "repeatDown": {
+      "build": {
+        "state": "idle"
+      },
+      "cleanShutdown": true,
+      "dataRetained": true,
+      "guestInstance": {
+        "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+        "initStartTicks": "10767586",
+        "pidNamespace": "4026532538"
+      },
+      "node": "lsf-7fe48ac4395c21cb",
+      "profile": "local-experimental-v1",
+      "providers": [],
+      "readiness": {
+        "activationReady": true,
+        "authenticated": true,
+        "profile": "local-experimental-v1",
+        "schemaVersion": "latent.native-readiness.v1"
+      },
+      "reaped": true,
+      "state": "stopped"
+    },
+    "secondDown": {
+      "build": {
+        "state": "idle"
+      },
+      "cleanShutdown": true,
+      "dataRetained": true,
+      "guestInstance": {
+        "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+        "initStartTicks": "10767586",
+        "pidNamespace": "4026532538"
+      },
+      "node": "lsf-7fe48ac4395c21cb",
+      "profile": "local-experimental-v1",
+      "providers": [],
+      "readiness": {
+        "activationReady": true,
+        "authenticated": true,
+        "profile": "local-experimental-v1",
+        "schemaVersion": "latent.native-readiness.v1"
+      },
+      "reaped": true,
+      "state": "stopped"
+    },
+    "secondReady": {
+      "event": "ready",
+      "result": {
+        "guestInstance": {
+          "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+          "initStartTicks": "10767586",
+          "pidNamespace": "4026532538"
+        },
+        "node": "lsf-7fe48ac4395c21cb",
+        "profile": "local-experimental-v1",
+        "providers": [],
+        "readiness": {
+          "activationReady": true,
+          "authenticated": true,
+          "profile": "local-experimental-v1",
+          "schemaVersion": "latent.native-readiness.v1"
+        },
+        "state": "ready"
+      },
+      "schemaVersion": "latent.dev.result.v1",
+      "workspace": "test-ssh-source1"
+    },
+    "status": {
+      "guestInstance": {
+        "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+        "initStartTicks": "10767586",
+        "pidNamespace": "4026532538"
+      },
+      "node": "lsf-7fe48ac4395c21cb",
+      "profile": "local-experimental-v1",
+      "providers": [],
+      "readiness": {
+        "activationReady": true,
+        "authenticated": true,
+        "profile": "local-experimental-v1",
+        "schemaVersion": "latent.native-readiness.v1"
+      },
+      "state": "ready",
+      "workflow": {
+        "buildProcess": {
+          "state": "idle"
+        },
+        "lastAcceptedBuild": null,
+        "lastConfirmedDeployment": null,
+        "lastConfirmedPublication": null,
+        "pendingOperation": null,
+        "selectedSource": null
+      }
+    }
+  },
+  "cleanHost": false,
+  "cleanup": "three-node-starts-stopped-and-reaped-both-owned-containers-stopped-home-volume-retained",
+  "containerShutdown": {
+    "client": "stopped",
+    "homeVolume": "retained",
+    "privateBridge": "retained",
+    "sshPeer": "stopped"
+  },
+  "date": "2026-09-24",
+  "devcontainerCli": {
+    "license": "MIT",
+    "sha512": "LzaoOGKQ/Zql6PsiZ4hVIYVZagzWkD65aG/1ou5/Kly5Y1PtjLg1yn7qu+LZCzVoAl6DZZ/pbz8qOO4RLNlqMg==",
+    "url": "https://registry.npmjs.org/@devcontainers/cli/-/cli-0.89.0.tgz",
+    "version": "0.89.0"
+  },
+  "execution": "actual-devcontainer-cli-packaged-frontend-and-source-node",
+  "failedAttempts": [
+    {
+      "failure": "minimal-ubuntu-ca-bundle-absent-before-https-snapshot",
+      "phase": "image-build",
+      "resolution": "copy-ca-bundle-from-digest-pinned-certificate-image-before-apt"
+    },
+    {
+      "failure": "existing-image-helper-directory",
+      "phase": "source-peer-setup",
+      "resolution": "continued-exact-owned-container-with-existing-root-owned-directory"
+    }
+  ],
+  "frontend": {
+    "doctor": {
+      "code": "success",
+      "result": {
+        "architecture": "x86_64",
+        "host": "linux",
+        "nodeReadiness": "not-checked"
+      },
+      "schemaVersion": "latent.dev.result.v1"
+    },
+    "frontendSha256": "sha256:e3c6e1bdb2fe297a3fc6fc417febfff7400aca010d8d38ffb3538d896665ad6e",
+    "helperSha256": "sha256:0da616d52c19e60b04a8f4cdd9382dddd82d90dcd8c267bbebd3a6514e009806",
+    "hostAbi": "lsf-host-abi-phase3-v4",
+    "hostRequirements": {
+      "architecture": "x86_64",
+      "libc": "glibc",
+      "minimumLibcVersion": "2.36",
+      "os": "linux"
+    },
+    "lockSha256": "sha256:db0191c3a7d6a4f57444d49f591e42f82b39250dcd60cbbbefa695cf55d210de",
+    "packager": "pyinstaller-6.22.3",
+    "protocol": "latent.dev.protocol.v1",
+    "publisherAuthenticated": false,
+    "python": "3.13.5",
+    "qualification": "native-frontend-smoke-only",
+    "schemaVersion": "latent.dev.frontend-build.v1",
+    "sourceCommit": "b69b8750da84e99429ab11e7f9b7d78b9a2dddc5",
+    "sourceDirty": true,
+    "target": "linux-x86_64"
+  },
+  "generatorSource": {
+    "commit": "f0e831d59ca3f7704505099092433566682901f8",
+    "configurationSha256": "sha256:8001ec92e9d7af9f24804b527dc3b3f06046c06373e3d11984956432c6621770",
+    "dirty": true,
+    "dockerfileSha256": "sha256:c994341c1e8875f606712d440032b4db38007967faa8befbcc65f46ecd2eb60f"
+  },
+  "host": {
+    "architecture": "AMD64",
+    "dockerDesktop": "4.86.0",
+    "dockerEngine": "29.7.2",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "os": "windows",
+    "version": "10.0.26200"
+  },
+  "imageInputs": {
+    "aptSnapshot": "20260924T120000Z",
+    "base": "ubuntu@sha256:008173c23f95b170204355c12626cb5a965d779a7e1283b09e9cffbb1bf33ca3",
+    "certificateBootstrap": "python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419",
+    "packages": {
+      "ca-certificates": "20260601~24.04.1",
+      "git": "1:2.43.0-1ubuntu7.3",
+      "openssh-client": "1:9.6p1-3ubuntu13.19"
+    },
+    "verifiedFilesSha256": "sha256:7487cbe34274a82b26d29ae1c6c48085477f752d4f5aba0a3582ac933d70ed0b"
+  },
+  "limitations": [
+    "selected bundle authentication entrypoint not exercised by this source probe",
+    "source node was staged using the contributor probe, not an authenticated installer",
+    "no clean Windows host or editor-extension qualification",
+    "lifecycle and retained node identity observed; this probe did not invoke capsules"
+  ],
+  "negativeChecks": {
+    "interrupt": {
+      "events": [
+        {
+          "event": "ready",
+          "result": {
+            "guestInstance": {
+              "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+              "initStartTicks": "10767586",
+              "pidNamespace": "4026532538"
+            },
+            "node": "lsf-7fe48ac4395c21cb",
+            "profile": "local-experimental-v1",
+            "providers": [],
+            "readiness": {
+              "activationReady": true,
+              "authenticated": true,
+              "profile": "local-experimental-v1",
+              "schemaVersion": "latent.native-readiness.v1"
+            },
+            "state": "ready"
+          },
+          "schemaVersion": "latent.dev.result.v1",
+          "workspace": "test-ssh-source1"
+        },
+        {
+          "cleanup": {
+            "build": {
+              "state": "idle"
+            },
+            "cleanShutdown": true,
+            "dataRetained": true,
+            "guestInstance": {
+              "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+              "initStartTicks": "10767586",
+              "pidNamespace": "4026532538"
+            },
+            "node": "lsf-7fe48ac4395c21cb",
+            "profile": "local-experimental-v1",
+            "providers": [],
+            "readiness": {
+              "activationReady": true,
+              "authenticated": true,
+              "profile": "local-experimental-v1",
+              "schemaVersion": "latent.native-readiness.v1"
+            },
+            "reaped": true,
+            "state": "stopped"
+          },
+          "event": "foreground-stopped",
+          "schemaVersion": "latent.dev.result.v1",
+          "workspace": "test-ssh-source1"
+        },
+        {
+          "code": "interrupted-inspect-workspace-status",
+          "schemaVersion": "latent.dev.result.v1",
+          "uncertain": true
+        }
+      ],
+      "exitCode": 124,
+      "finalStatus": {
+        "code": "success",
+        "result": {
+          "cleanShutdown": true,
+          "dataRetained": true,
+          "guestInstance": {
+            "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+            "initStartTicks": "10767586",
+            "pidNamespace": "4026532538"
+          },
+          "node": "lsf-7fe48ac4395c21cb",
+          "profile": "local-experimental-v1",
+          "providers": [],
+          "readiness": {
+            "activationReady": true,
+            "authenticated": true,
+            "profile": "local-experimental-v1",
+            "schemaVersion": "latent.native-readiness.v1"
+          },
+          "reaped": true,
+          "state": "stopped",
+          "workflow": {
+            "buildProcess": {
+              "state": "idle"
+            },
+            "lastAcceptedBuild": null,
+            "lastConfirmedDeployment": null,
+            "lastConfirmedPublication": null,
+            "pendingOperation": null,
+            "selectedSource": null
+          }
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "passed": true,
+      "signal": "SIGINT",
+      "timerSeconds": 10
+    },
+    "remoteWorkspacesCreated": {
+      "wrong-helper": false,
+      "wrong-host-key": false
+    },
+    "wrong-helper": {
+      "exitCode": 2,
+      "result": {
+        "code": "helper-identity-mismatch-before-execution",
+        "diagnostics": [],
+        "schemaVersion": "latent.dev.result.v1",
+        "uncertain": false
+      },
+      "seconds": 3.446
+    },
+    "wrong-host-key": {
+      "exitCode": 2,
+      "result": {
+        "code": "backend-transport-lost-status-required",
+        "diagnostics": [],
+        "schemaVersion": "latent.dev.result.v1",
+        "uncertain": false
+      },
+      "seconds": 3.766
+    }
+  },
+  "nodeSource": {
+    "binaries": {
+      "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+      "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "latentd": "sha256:894d9d2d309717506cf85c8c57f4add3f8b8519c6158adcacdd60c393486ffa7"
+    },
+    "buildProfile": {
+      "name": "dev",
+      "overrides": ".cargo/managed-guest.toml",
+      "sha256": "sha256:55edca99a67b2651cf466feede9ce9a26756c22610b24c540a872d7a741bc831"
+    },
+    "engine": {
+      "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "wasmtimeVersion": "47.0.4"
+    },
+    "helperSha256": "sha256:75fe5ecf910530e6d777298685802d0c1e2a6f52d51ccd6efa7045226935e94d",
+    "publisherAuthenticated": false,
+    "purpose": "source-application-node-tests",
+    "sourceCommit": "8b0506ead6b27c1ea6d1fbc752fa653f1ccadcd3",
+    "sourceDirty": true,
+    "version": "0.1.0-alpha.4"
+  },
+  "passed": true,
+  "publisherAuthenticated": false,
+  "qualificationComplete": false,
+  "schemaVersion": "latent.dev.devcontainer-source-observation.v1"
+}

@@ -22,7 +22,13 @@ fn cli_publishes_deploys_pages_invokes_and_recovers_without_client_artifact_file
     let package = Package::echo();
     let mut harness = Harness::start();
     let release = publish(&harness, &package);
-    let (deployment, generation) = deployment_pages(&harness, &package);
+    let (deployment, generation) = deployment_pages(
+        &harness,
+        &package,
+        release["data"]["release"]["publication"]["id"]
+            .as_str()
+            .unwrap(),
+    );
     let route = inspect_management(&harness);
     harness.ready();
     let payload = package.payload("input.json", &json!(["hello\n\u{1b}[31m"]));
@@ -66,7 +72,14 @@ fn cli_publishes_deploys_pages_invokes_and_recovers_without_client_artifact_file
     harness.restart();
     let recovered = harness.call(
         "operator",
-        &["release", "get", &package.digest],
+        &[
+            "release",
+            "get",
+            "--publication",
+            release["data"]["release"]["publication"]["id"]
+                .as_str()
+                .unwrap(),
+        ],
         0,
         "success",
     );
@@ -101,20 +114,37 @@ fn cli_publishes_deploys_pages_invokes_and_recovers_without_client_artifact_file
 }
 
 fn publish(harness: &Harness, package: &Package) -> Value {
-    for (kind, file) in [
-        ("capsule", &package.manifest),
-        ("deployment", &package.deployment("echo-a")),
-    ] {
-        harness.call("operator", &["validate", kind, path(file)], 0, "success");
-    }
+    harness.call(
+        "operator",
+        &["validate", "capsule", path(&package.manifest)],
+        0,
+        "success",
+    );
     let release = package.publish(harness, "operator");
+    let selected = release["data"]["release"]["publication"]["id"]
+        .as_str()
+        .unwrap();
+    let deployment = package.deployment("validation", selected);
+    harness.call(
+        "operator",
+        &["validate", "deployment", path(&deployment)],
+        0,
+        "success",
+    );
     assert_eq!(release["data"]["release"]["digest"], package.digest);
     assert_eq!(release["data"]["release"]["service"], package.service);
     let duplicate = package.publish(harness, "operator");
     assert_eq!(duplicate["data"]["release"], release["data"]["release"]);
     let got = harness.call(
         "operator",
-        &["release", "get", &package.digest],
+        &[
+            "release",
+            "get",
+            "--publication",
+            release["data"]["release"]["publication"]["id"]
+                .as_str()
+                .unwrap(),
+        ],
         0,
         "success",
     );
@@ -142,7 +172,14 @@ fn publish(harness: &Harness, package: &Package) -> Value {
     assert!(listed["data"]["nextPageToken"].is_null());
     harness.call(
         "foreign",
-        &["release", "get", &package.digest],
+        &[
+            "release",
+            "get",
+            "--publication",
+            release["data"]["release"]["publication"]["id"]
+                .as_str()
+                .unwrap(),
+        ],
         6,
         "not-found",
     );

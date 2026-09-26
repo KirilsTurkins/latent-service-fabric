@@ -59,12 +59,12 @@ fn receipt_identity(
     }
     Ok(())
 }
-fn status(value: &proto::RolloutStatus, session: &Session) -> Result<(), Failure> {
-    if value.tenant != session.tenant()
+fn status(value: &proto::RolloutStatus, tenant: &str) -> Result<(), Failure> {
+    if value.tenant != tenant
         || value.revision == 0
         || value.base.is_none()
         || value.candidate.is_none()
-        || value.objects.len() != 2
+        || value.objects.len() > 2
         || value.candidate_weights.is_empty()
         || value.candidate_weights.last() != Some(&10000)
         || value.current_step as usize >= value.candidate_weights.len()
@@ -73,10 +73,38 @@ fn status(value: &proto::RolloutStatus, session: &Session) -> Result<(), Failure
     {
         return Err(invalid_response());
     }
+    let base = &value
+        .base
+        .as_ref()
+        .ok_or_else(invalid_response)?
+        .deployment_id;
+    let candidate = &value
+        .candidate
+        .as_ref()
+        .ok_or_else(invalid_response)?
+        .deployment_id;
+    // Objects are the currently retained members, not the historical pair.
+    // Completion removes the base; rollback removes the candidate; later
+    // deletion can leave neither, while the historical status remains valid.
+    if base == candidate
+        || value.objects.iter().enumerate().any(|(i, object)| {
+            object.generation == 0
+                || (&object.deployment_id != base && &object.deployment_id != candidate)
+                || value.objects[..i]
+                    .iter()
+                    .any(|prior| prior.deployment_id == object.deployment_id)
+        })
+    {
+        return Err(invalid_response());
+    }
     Ok(())
 }
 
 async fn start(request: proto::StartRolloutRequest, session: &Session) -> Result<Outcome, Failure> {
+    let selected = request
+        .candidate
+        .as_ref()
+        .and_then(|candidate| candidate.publication.clone());
     let id = request.id.clone();
     let op = request
         .operation
@@ -84,6 +112,16 @@ async fn start(request: proto::StartRolloutRequest, session: &Session) -> Result
         .ok_or_else(invalid_input)?
         .clone();
     let value = call!(session, RolloutServiceClient, start_rollout, request);
+    if selected.as_ref().is_some_and(|selected| {
+        selected.tenant != session.tenant()
+            || value
+                .receipt
+                .as_ref()
+                .and_then(|receipt| receipt.candidate_publication_id.as_ref())
+                != Some(&selected.id)
+    }) {
+        return Err(invalid_response());
+    }
     receipt(
         value.receipt.as_ref(),
         session,
@@ -153,7 +191,7 @@ async fn get(request: proto::GetRolloutRequest, session: &Session) -> Result<Out
     let id = request.id.clone();
     let value = call!(session, RolloutServiceClient, get_rollout, request);
     if let Some(value) = &value.status {
-        status(value, session)?;
+        status(value, session.tenant())?;
         if value.id != id {
             return Err(invalid_response());
         }
@@ -176,7 +214,7 @@ async fn list(request: proto::ListRolloutsRequest, session: &Session) -> Result<
     }
     crate::management::association::page_count(value.rollouts.len(), count)?;
     for row in &value.rollouts {
-        status(row, session)?;
+        status(row, session.tenant())?;
         if service.as_ref().is_some_and(|v| v != &row.service)
             || state.is_some_and(|v| v != row.state)
         {
@@ -234,4 +272,61 @@ async fn evaluate(
         }
     }
     Ok(Outcome::success(value.project()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn historical_status_allows_removed_objects_without_accepting_substitutions() {
+        let mut value = proto::RolloutStatus {
+            tenant: "tenant".into(),
+            revision: 2,
+            state: proto::RolloutState::Completed as i32,
+            current_step: 1,
+            candidate_weights: vec![1000, 10000],
+            plan_digest: format!("sha256:{}", "a".repeat(64)),
+            base: Some(proto::RolloutRelease {
+                deployment_id: "blue".into(),
+                ..Default::default()
+            }),
+            candidate: Some(proto::RolloutRelease {
+                deployment_id: "green".into(),
+                ..Default::default()
+            }),
+            objects: vec![proto::RolloutObjectVersion {
+                deployment_id: "green".into(),
+                generation: 3,
+            }],
+            ..Default::default()
+        };
+        status(&value, "tenant").unwrap();
+        value.state = proto::RolloutState::RolledBack as i32;
+        value.objects[0].deployment_id = "blue".into();
+        status(&value, "tenant").unwrap();
+        value.objects.clear();
+        status(&value, "tenant").unwrap();
+        assert!(status(&value, "other").is_err());
+        for objects in [
+            vec![proto::RolloutObjectVersion {
+                deployment_id: "foreign".into(),
+                generation: 3,
+            }],
+            vec![proto::RolloutObjectVersion {
+                deployment_id: "blue".into(),
+                generation: 0,
+            }],
+            vec![
+                proto::RolloutObjectVersion {
+                    deployment_id: "blue".into(),
+                    generation: 3
+                };
+                2
+            ],
+        ] {
+            value.objects = objects;
+            assert!(status(&value, "tenant").is_err());
+        }
+    }
 }

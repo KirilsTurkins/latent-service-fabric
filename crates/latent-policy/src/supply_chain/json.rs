@@ -3,7 +3,7 @@ use latent_core::PlatformError;
 use serde::de::{self, DeserializeSeed, MapAccess, SeqAccess, Visitor};
 use std::{collections::BTreeSet, fmt};
 
-pub(super) fn preflight(bytes: &[u8], maximum: usize) -> Result<(), PlatformError> {
+pub(crate) fn preflight(bytes: &[u8], maximum: usize) -> Result<(), PlatformError> {
     if bytes.len() > maximum {
         return Err(super::invalid("admission-document-limit"));
     }

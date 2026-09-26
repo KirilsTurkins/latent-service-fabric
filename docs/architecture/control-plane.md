@@ -4,21 +4,21 @@ The control plane owns desired state, release eligibility and compiled route
 metadata. Ordinary invocation selects a local immutable snapshot; it does not
 wait for a deployment compiler, audit worker or rollout coordinator.
 
-The [standalone Linux node](../reference/standalone-node.md) embeds the delivered
-Phase 1 and Phase 2 control services. Phase 2 feature delivery includes package
-admission, lifecycle, compatibility, audit, staged rollout, canary promotion,
-rollback and [operator workflows](../phase-2-operator-workflows.md).
-The [Phase 2 completion review](../phase-2-completion.md) records the accepted
-scope and evidence. The separate `latent-control` application is a scaffold;
-PostgreSQL, remote route watches and distributed reconciliation belong to Phase 5.
+The [standalone Linux node](../reference/standalone-node.md) embeds package
+admission, release lifecycle, capability policy and binding management, HTTP
+route publication, audit, rollout, canary promotion and rollback. The separate
+`latent-control` application is a scaffold; PostgreSQL, remote route watches and
+distributed reconciliation are not implemented.
 
 ## Release catalog and admission
 
 The directory catalog retains immutable component bytes, descriptor, capsule
 manifest, contracts and a completion record binding their association.
-`ReleaseDigest` identifies component bytes. Packaged content additionally has an
-independent `PackageDigest` identifying its exact OCI manifest. A registry pull
-or local verification report grants no catalog permission.
+`ReleaseDigest` identifies component bytes. `PackageDigest` identifies the exact
+immutable package manifest. The [publication catalog](../reference/publication-catalog.md)
+separates these from the scoped publication that owns admission and lifecycle.
+Different packages and tenants may share component bytes without sharing grants.
+A registry pull or local verification report grants no catalog permission.
 
 [Enforced admission](../reference/package-admission.md) checks package semantics,
 tenant ownership, current publisher and independent builder policy, provenance,
@@ -49,9 +49,12 @@ bound to the exact compared pair; it cannot approve unknown or unsupported
 analysis, bypass import uncertainty or grant release eligibility.
 
 The runtime's actual target, engine and CPU requirements are checked separately.
-General consumer/provider binding compilation and policy-managed capability
-providers remain Phase 3 work. Current host imports are context, structured log
-and monotonic/wall clock; declaring another WIT package does not supply a provider.
+The [binding compiler](../runtime/capability-bindings.md) checks exact imports,
+provider definitions and local targets. The [policy owner](../runtime/capability-policies.md)
+and [activation broker](../runtime/capability-broker.md) enforce current grants
+when a call begins. The [standalone provider reference](../reference/standalone-providers.md)
+lists accepted node configuration; other providers have explicit Rust embedding
+instructions. Declaring an import alone does not install a provider.
 
 ## Combined deployment publication
 
@@ -74,12 +77,13 @@ sealed preparation and synchronous commit. Exact retained replay returns the
 original receipt before fresh preconditions; it publishes nothing. Finite
 retention means `Unknown` includes both unseen and evicted operations. The
 original state precondition prevents an evicted create from executing again
-after an intervening delete. Legacy writers preserve both operation histories.
+after an intervening delete. All catalog writers preserve both operation histories.
 
-Format 3 combines routes and rollout history; format 4 adds managed deployment
-receipts. Formats 1 through 3 retain their existing absent-field and checksum
-rules. The first managed deployment operation writes format 4. Lowering limits
-does not silently prune retained state.
+The catalog writes publication-aware format 5, format 6 with capability bindings,
+or format 7 with HTTP route state. Obsolete formats 1 through 4 are rejected
+before recovery cleanup. No automatic migration or compatibility reader remains.
+See [publication-bound recovery](../reference/publication-runtime.md).
+Lowering limits does not silently prune retained state.
 
 Compilation still visits the bounded desired state and encodes a complete
 catalog candidate. Fresh verified metadata can reuse immutable derivations and
@@ -105,9 +109,8 @@ caller-supplied success flag cannot promote a stage.
 by a new plan. It publishes a new monotonic generation and records the historical
 target separately. Historical source metadata permits reverse comparison even
 when the candidate is now denied; the target independently needs current
-eligibility. Old plans without a retained target remain readable and replayable
-but cannot perform a fresh rollback. Neither rollback nor replay restores a
-revoked release.
+eligibility. Obsolete rollout-plan formats are rejected. Neither rollback nor replay
+restores a revoked release.
 
 ## Audit and bounded ownership
 
@@ -134,9 +137,26 @@ owners truthfully rather than refunding resources still in use.
 ## Current and future boundaries
 
 The node reports bounded local identity, runtime, class, cell, queue, cache and
-control-owner observations. Phase 3 adds shared provider pools, durable capability
-policy, exact bindings and application ingress. Cluster inventory, region/zone
-placement, state affinity and a separate persistent control service are later
-phases. A local snapshot remains usable only while its own lifecycle, trust and
+control-owner observations. Shared provider pools, durable capability
+policy, exact bindings and application ingress have their own finite owners.
+Cluster inventory, region/zone placement, state affinity and a separate
+persistent control service are not implemented. A local snapshot remains usable only while its own lifecycle, trust and
 runtime requirements remain valid; loss of a remote control service cannot
 turn stale authority into permission.
+
+## Disconnected authorization handoff
+
+[ADR-0030](../../adr/0030-bound-disconnected-authorization-validity.md) gives
+"temporary" disconnected use an explicit future cluster contract. Route content/digests
+and their retention are separate from exact scoped publication permission,
+lifecycle/evidence generations and trust/grant-policy checkpoints. A future node
+starts work only while the complete local association and finite authorization
+lease remain valid, with conservative clock/disconnection checks. No invocation
+performs a synchronous control-plane lookup.
+
+The current node has local guarded-start currentness, not distributed leases or
+remote-revocation knowledge. Future expiry/reconnect behavior, replay floors,
+new-boot revalidation and the queued/accepted cutover are specified in
+[RFC-0004](../../rfcs/0004-route-and-authorization-freshness.md).
+[Cluster implementation responsibilities and conformance scenarios](cluster-freshness-handoff.md)
+must be carried into the cluster plan before support is advertised.

@@ -58,6 +58,34 @@ impl Fixture {
         self.audit.close();
         assert!(self.audit_worker.join_until(expires()).unwrap());
     }
+    async fn audit_page(&self, limit: usize) -> latent_audit::AuditPage {
+        let deadline = expires();
+        let ticket = loop {
+            match self.audit.query(
+                latent_audit::AuditQueryRequest {
+                    scope: latent_audit::AuditScope::Tenant(latent_core::TenantId("alice".into())),
+                    filter: latent_audit::AuditFilter::default(),
+                    cursor: None,
+                    limit,
+                    maximum_bytes: 32768,
+                },
+                deadline,
+            ) {
+                Ok(ticket) => break ticket,
+                // The worker may hold bookkeeping before query admission.
+                // Once accepted, keep and wait for this one FIFO ticket.
+                Err(error)
+                    if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                        && error.message == "audit-busy"
+                        && Instant::now() < deadline =>
+                {
+                    tokio::task::yield_now().await;
+                }
+                Err(error) => panic!("bounded audit query failed: {error:?}"),
+            }
+        };
+        ticket.wait().await.unwrap()
+    }
 }
 impl Drop for Fixture {
     fn drop(&mut self) {

@@ -1,0 +1,7 @@
+{
+  "sourceRevision": "8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+  "path": "benchmarks/phase1/cases.json",
+  "bytes": 4066,
+  "sha256": "0dc56d4ca443dab99a94e6194127cf0c3d4c0111815391c02cfa808c6d2c5f88",
+  "reason": "The separately compiled Angular fixture imports latent-testkit, which embeds this bounded conformance case manifest."
+}

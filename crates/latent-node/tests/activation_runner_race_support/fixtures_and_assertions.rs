@@ -23,6 +23,7 @@ where
 fn prepared() -> PreparedComponent {
     PreparedComponent {
         key: PreparationKey {
+            publication: None,
             release: ReleaseDigest("sha256:runner-race".to_owned()),
             engine_version: "race-engine".to_owned(),
             engine_configuration_digest: "sha256:race-config".to_owned(),

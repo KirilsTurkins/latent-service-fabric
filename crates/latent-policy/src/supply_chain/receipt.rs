@@ -158,32 +158,12 @@ impl Receipt {
         bundle: &PackageBundle,
         sboms: &[AdmissionEvidence],
     ) -> Result<(), PlatformError> {
-        // Both presence modes are optional here: compare the historical exact
-        // inventory/association set, without substituting today's content policy.
-        let policy = SbomPolicy::new(SbomPolicyConfig {
-            format_version: 1,
-            embedded: SbomPresence::Optional,
-            detached: SbomPresence::Optional,
-            require_source: Vec::new(),
-            require_license: Vec::new(),
-        })?;
-        let references = sboms
-            .iter()
-            .map(|entry| SbomEvidenceRef {
-                manifest: &entry.manifest,
-                config: &entry.configuration,
-                payload: &entry.payload,
-            })
-            .collect::<Vec<_>>();
-        let checked = evaluate_sboms(bundle, &references, &policy, SbomEvidenceLimits::default())
-            .map_err(retained_error)?;
-        if checked.inventory_digest().map(ArtifactBlobDigest::as_str)
-            != self.sbom_inventory.as_deref()
-            || checked.referrer_digest().map(PackageDigest::as_str) != self.sbom_referrer.as_deref()
-        {
-            return Err(corrupt());
-        }
-        Ok(())
+        check_sbom_history(
+            self.sbom_inventory.as_deref(),
+            self.sbom_referrer.as_deref(),
+            bundle,
+            sboms,
+        )
     }
 
     pub fn encode(&self) -> Result<Vec<u8>, PlatformError> {
@@ -263,7 +243,7 @@ impl Receipt {
         Ok(())
     }
 }
-fn check_referrer(
+pub(super) fn check_referrer(
     expected: &PackageSubject,
     evidence: &AdmissionEvidence,
     kind: EvidenceKind,
@@ -290,16 +270,48 @@ fn check_referrer(
     }
     Ok(())
 }
-fn retained_error(error: PlatformError) -> PlatformError {
+pub(super) fn retained_error(error: PlatformError) -> PlatformError {
     if error.code == PlatformErrorCode::ResourceExhausted {
         error
     } else {
         corrupt()
     }
 }
-fn corrupt() -> PlatformError {
+pub(super) fn corrupt() -> PlatformError {
     super::error(
         PlatformErrorCode::CorruptArtifact,
         "admission-receipt-corrupt",
     )
+}
+
+pub(super) fn check_sbom_history(
+    inventory: Option<&str>,
+    referrer: Option<&str>,
+    bundle: &PackageBundle,
+    sboms: &[AdmissionEvidence],
+) -> Result<(), PlatformError> {
+    // Historical association only; current content policy is checked separately.
+    let policy = SbomPolicy::new(SbomPolicyConfig {
+        format_version: 1,
+        embedded: SbomPresence::Optional,
+        detached: SbomPresence::Optional,
+        require_source: Vec::new(),
+        require_license: Vec::new(),
+    })?;
+    let references = sboms
+        .iter()
+        .map(|entry| SbomEvidenceRef {
+            manifest: &entry.manifest,
+            config: &entry.configuration,
+            payload: &entry.payload,
+        })
+        .collect::<Vec<_>>();
+    let checked = evaluate_sboms(bundle, &references, &policy, SbomEvidenceLimits::default())
+        .map_err(retained_error)?;
+    if checked.inventory_digest().map(ArtifactBlobDigest::as_str) != inventory
+        || checked.referrer_digest().map(PackageDigest::as_str) != referrer
+    {
+        return Err(corrupt());
+    }
+    Ok(())
 }

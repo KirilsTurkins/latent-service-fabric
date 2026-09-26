@@ -27,24 +27,29 @@ pub(super) fn profile(version: &str) -> Arc<RuntimeCompatibilityProfile> {
 }
 
 pub(super) fn revoke(repository: &DirectoryArtifactRepository, release: &ReleaseDigest) {
-    run(repository.change_release_lifecycle(
-        ReleaseMutationContext {
-            scope: LifecycleScope::LocalUnscoped,
-            actor: ReleaseActor {
-                subject: "lifecycle-test".into(),
-                kind: ReleaseActorKind::Host,
+    let publication = repository
+        .select_execution_publication(&latent_core::TenantId("alice".into()), release, None)
+        .unwrap()
+        .unwrap();
+    repository
+        .change_publication_lifecycle(
+            ReleaseMutationContext {
+                scope: LifecycleScope::LocalUnscoped,
+                actor: ReleaseActor {
+                    subject: "lifecycle-test".into(),
+                    kind: ReleaseActorKind::Host,
+                },
+                operation: Some(ReleaseOperationPrecondition {
+                    operation_id: "revoke-test".into(),
+                    expected_generation: 1,
+                }),
             },
-            operation: Some(ReleaseOperationPrecondition {
-                operation_id: "revoke-test".into(),
-                expected_generation: 1,
-            }),
-        },
-        release,
-        ReleaseLifecycleAction::Revoke,
-        ReleaseLifecycleReason::OperatorRevocation,
-        &mut |_| Ok(()),
-    ))
-    .unwrap();
+            &publication,
+            ReleaseLifecycleAction::Revoke,
+            ReleaseLifecycleReason::OperatorRevocation,
+            &mut |_| Ok(()),
+        )
+        .unwrap();
 }
 
 struct Fixture {
@@ -222,10 +227,14 @@ fn inactive_history_never_hides_component_corruption() {
     run(store.apply(deployment("blue", "alice", &first))).unwrap();
     revoke(&releases, &first);
     drop(store);
+    let publication = releases
+        .select_execution_publication(&latent_core::TenantId("alice".into()), &first, None)
+        .unwrap()
+        .unwrap();
     let file = roots[0]
         .0
-        .join("releases")
-        .join(first.0.strip_prefix("sha256:").unwrap())
+        .join("publications")
+        .join(publication.id.hex())
         .join("component.wasm");
     std::fs::write(file, b"tampered").unwrap();
     assert_code(

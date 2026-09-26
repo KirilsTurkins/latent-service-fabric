@@ -2,6 +2,9 @@
 
 #![forbid(unsafe_code)]
 
+/// Versioned, bounded inbound HTTP application mapping and ownership.
+pub mod http;
+
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{BoxFuture, InvocationPrincipal, Metadata, PlatformError};
 use latent_identity::{AuthenticationContext, PresentedCredential};
@@ -50,20 +53,24 @@ pub trait PrincipalExtractor: Send + Sync {
 pub trait IngressAdapter: Send + Sync {
     fn protocol(&self) -> IngressProtocol;
 
-    fn to_activation<'a>(
-        &'a self,
+    fn to_activation(
+        &self,
         request: IngressRequest,
         principal: InvocationPrincipal,
-    ) -> BoxFuture<'a, Result<ActivationEnvelope, PlatformError>>;
+    ) -> BoxFuture<'_, Result<ActivationEnvelope, PlatformError>>;
 
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "retain the existing public adapter method name"
+    )]
     fn from_outcome(&self, outcome: ActivationOutcome) -> Result<IngressResponse, PlatformError>;
 }
 
 pub trait IngressRouter: Send + Sync {
-    fn route<'a>(
-        &'a self,
+    fn route(
+        &self,
         request: IngressRequest,
-    ) -> BoxFuture<'a, Result<IngressResponse, PlatformError>>;
+    ) -> BoxFuture<'_, Result<IngressResponse, PlatformError>>;
 
-    fn route_trigger<'a>(&'a self, event: TriggerEvent) -> BoxFuture<'a, ActivationOutcome>;
+    fn route_trigger(&self, event: TriggerEvent) -> BoxFuture<'_, ActivationOutcome>;
 }

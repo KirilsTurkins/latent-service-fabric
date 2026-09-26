@@ -34,9 +34,20 @@ pub struct Options {
 }
 
 pub fn component(options: Options) -> Vec<u8> {
+    let name = if options.unknown_host {
+        "tests:unknown/host@1.0.0"
+    } else if options.pruned_context {
+        CONTEXT
+    } else {
+        CLOCK
+    };
+    with_host(options, name, &host(options))
+}
+
+pub fn with_host(options: Options, name: &str, host: &InstanceType) -> Vec<u8> {
     let mut component = Component::new();
     let mut types = ComponentTypeSection::new();
-    types.instance(&host(options)); // 0: host interface
+    types.instance(host); // 0: host interface
     types.defined_type().record([
         (
             "value",
@@ -80,16 +91,7 @@ pub fn component(options: Options) -> Vec<u8> {
         .result(Some(PrimitiveValType::U32.into())); // 5
     component.section(&types);
     let mut imports = ComponentImportSection::new();
-    imports.import(
-        if options.unknown_host {
-            "tests:unknown/host@1.0.0"
-        } else if options.pruned_context {
-            CONTEXT
-        } else {
-            CLOCK
-        },
-        ComponentTypeRef::Instance(0),
-    );
+    imports.import(name, ComponentTypeRef::Instance(0));
     component.section(&imports);
     component.section(&ModuleSection(&core(options.invalid_body)));
     if options.invalid_unused_body {

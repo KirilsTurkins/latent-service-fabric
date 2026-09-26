@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "latent.native-validation-evidence.v1",
+  "scope": "candidate-not-release-acceptance",
+  "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35449471092",
+  "sourceCommit": "dd08449fb2dfb3174bb5468cfd6e13253fe48a17",
+  "version": "0.1.0-alpha.3",
+  "historicalReleaseModified": false,
+  "nativeBuildPassed": true,
+  "archiveSha256": "11000d2dabaa4091e66cee9fc51e02a5754bf8a7a58fecf32e1cc5d4cf88e429",
+  "archiveBytes": 26469496,
+  "archiveFiles": 444,
+  "publisher": {
+    "method": "github-artifact-attestation",
+    "workflow": ".github/workflows/native-runtime.yml",
+    "sourceRef": "refs/heads/feat/308-native-runtime-bundle",
+    "purpose": "candidate",
+    "oidcIssuer": "https://token.actions.githubusercontent.com",
+    "githubHostedRunnerRequired": true,
+    "attestationSha256": "42223f6b4c99ff01c64bace5998b25092da21d696037d927758e2297a53f4493"
+  },
+  "independentWindowsVerification": {
+    "exactIdentityAccepted": true,
+    "wrongSourceCommitRejected": true,
+    "authenticatedAssetHashesChecked": 3,
+    "offlineNetworkIsolationTested": false
+  },
+  "vmEnvironment": {
+    "imageSha256": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+    "distribution": "ubuntu-24.04",
+    "guestKernel": "6.8.0-139-generic",
+    "hostKernel": "6.17.0-1022-azure",
+    "acceleration": "kvm",
+    "python": "3.12.3",
+    "verifier": "gh 2.100.0",
+    "guestPackageInstallation": false,
+    "containerRuntimeRequired": false,
+    "sshHostKeyPinnedBeforeBoot": true
+  },
+  "profiles": {
+    "local-experimental-v1": {
+      "receiptSha256": "a2064ba08341599586135fce6a5794ee1d5a3f8136fe81fea8f54db3216747fb",
+      "offlinePublisherVerificationPassed": true,
+      "offlineSignatureNegativesPassed": true,
+      "nonRootSystemdActivationPassed": true,
+      "packagedEchoInvocationPassed": true,
+      "sameVersionPreservationPassed": true,
+      "compilerChildrenReaped": true,
+      "initialBootId": "00de0f32-ce27-4ca9-83bf-070b7c9eceb9",
+      "rebootedBootId": "98e6c3ad-6c74-4c9f-9f0e-72e0cabef221",
+      "retainedInvocationAfterRebootPassed": true,
+      "overallPassed": false,
+      "failure": "unsafe-test-backup",
+      "rootlessTestReached": false
+    },
+    "external-capsule-v1": {
+      "receiptSha256": "6eddaf122796e26e91b9165addb1664e18dc2af1604e254ae62336ad40dea6d9",
+      "offlinePublisherVerificationPassed": true,
+      "offlineSignatureNegativesPassed": true,
+      "nonRootSystemdActivationPassed": true,
+      "packagedEchoInvocationPassed": true,
+      "sameVersionPreservationPassed": true,
+      "protectedAotKeyPreserved": true,
+      "compilerChildrenReaped": true,
+      "initialBootId": "bcc29ec8-7fd7-4ad9-b104-2400ee1ce5f7",
+      "rebootedBootId": null,
+      "retainedInvocationAfterRebootPassed": false,
+      "overallPassed": false,
+      "failure": "command-timeout"
+    }
+  },
+  "completeAcceptance": false,
+  "compatibleUpgradeTested": false,
+  "releasePublished": false,
+  "secretsRetainedInEvidence": false
+}

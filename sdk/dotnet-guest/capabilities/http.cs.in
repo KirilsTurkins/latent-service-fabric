@@ -1,0 +1,9 @@
+using @root@;
+using Raw = @raw@;
+namespace Lsf.Guest;
+
+/// <summary>One buffered operation. Errors and uncertain effects are never retried.</summary>
+public static class Http
+{
+    public static Result<Raw.Response, Raw.HttpError> Send(Raw.Request request) => Raw.Send(request);
+}

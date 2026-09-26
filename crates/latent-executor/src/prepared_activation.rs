@@ -22,7 +22,19 @@ pub(crate) async fn prepare<B: ExecutionBackend + ?Sized>(
     // Selecting a sealed source explicitly delegates both lookup and reads.
     // Never combine another repository's token with the outer trait's fetch.
     let artifact = match repository.preparation_source() {
-        Some(source) => source.fetch(&key.release).await?,
+        Some(source) => {
+            source
+                .fetch_selected(&key.release, key.publication.as_ref())
+                .await?
+        }
+        None if key.publication.is_some() => {
+            return Err(PlatformError {
+                code: PlatformErrorCode::PermissionDenied,
+                message: "publication-preparation-source-required".into(),
+                retryable: false,
+                details: Vec::new(),
+            })
+        }
         None => repository.fetch(&key.release).await?,
     };
     verify(&artifact, key)?;

@@ -38,6 +38,38 @@ fn decoded(status: &Status) -> proto::PlatformError {
 }
 
 #[test]
+fn currentness_diagnostics_are_closed_and_never_include_private_fields() {
+    for reason in latent_core::error::ADMISSION_CURRENTNESS_REASONS {
+        let detail = ErrorDetail {
+            kind: "admission.currentness".into(),
+            fields: [
+                ("reason".into(), (*reason).into()),
+                ("secret".into(), "private".into()),
+            ]
+            .into(),
+        };
+        let wire = decoded(&platform_status(
+            failure(vec![detail]),
+            &ManagementLimits::default(),
+        ));
+        assert_eq!(wire.detail_items.len(), 1);
+        assert_eq!(wire.detail_items[0].fields.len(), 1);
+        assert_eq!(wire.detail_items[0].fields["reason"], *reason);
+    }
+    for reason in ["private-path", "admission-authority-busy/private", ""] {
+        let detail = ErrorDetail {
+            kind: "admission.currentness".into(),
+            fields: [("reason".into(), reason.into())].into(),
+        };
+        let wire = decoded(&platform_status(
+            failure(vec![detail]),
+            &ManagementLimits::default(),
+        ));
+        assert!(wire.detail_items.is_empty());
+    }
+}
+
+#[test]
 fn public_error_retains_commit_receipt_and_redacts_private_diagnostics() {
     let mut receipt = mutation("apply");
     receipt
@@ -146,6 +178,8 @@ fn current_page_reason_names_survive_and_obsolete_names_do_not() {
         "expired-deployment-page-token",
         "deployment-page-byte-limit",
         "deployment-generation-conflict",
+        "deployment-state-version-conflict",
+        "deployment-operation-conflict",
     ] {
         let wire = decoded(&platform_status(failure(vec![catalog(reason)]), &limits));
         assert_eq!(wire.detail_items[0].fields["reason"], reason);

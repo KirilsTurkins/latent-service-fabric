@@ -11,7 +11,7 @@ pub use phase2::{
     Phase2AuditIdentity, Phase2AuditLimits, Phase2AuditPage, Phase2AuditSnapshot,
 };
 
-use latent_core::{AuditEventId, BoxFuture, Metadata, PlatformError, TenantId};
+use latent_core::{Metadata, TenantId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -27,40 +27,4 @@ pub struct AuditActor {
     pub actor_type: String,
     pub tenant: Option<TenantId>,
     pub attributes: Metadata,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AuditEvent {
-    pub id: AuditEventId,
-    pub actor: AuditActor,
-    pub action: String,
-    pub resource: String,
-    pub outcome: AuditOutcome,
-    pub occurred_at_unix_millis: u64,
-    pub reason: Option<String>,
-    pub attributes: Metadata,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AuditQuery {
-    pub tenant: Option<TenantId>,
-    pub actor: Option<String>,
-    pub action: Option<String>,
-    pub resource_prefix: Option<String>,
-    pub from_unix_millis: Option<u64>,
-    pub to_unix_millis: Option<u64>,
-    pub limit: u32,
-}
-
-pub trait AuditStore: Send + Sync {
-    fn append<'a>(&'a self, event: AuditEvent) -> BoxFuture<'a, Result<(), PlatformError>>;
-
-    fn query<'a>(
-        &'a self,
-        query: AuditQuery,
-    ) -> BoxFuture<'a, Result<Vec<AuditEvent>, PlatformError>>;
-}
-
-pub trait AuditPublisher: Send + Sync {
-    fn publish<'a>(&'a self, event: AuditEvent) -> BoxFuture<'a, Result<(), PlatformError>>;
 }

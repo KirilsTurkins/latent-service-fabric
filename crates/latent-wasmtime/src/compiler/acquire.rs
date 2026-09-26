@@ -122,6 +122,7 @@ impl<T: Send + Sync + 'static> CompilerPool<T> {
             reservation: Some(reservation),
             task: None,
             native_control: None,
+            control: super::JobControl::new(),
             submitted_nanos: 0,
             documents: input.document_bytes,
             abandoned: false,

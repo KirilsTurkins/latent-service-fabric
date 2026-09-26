@@ -302,3 +302,36 @@ fn recognized_detail_keys_cannot_publish_unknown_atoms_or_non_u64_numbers() {
     );
     assert!(!format!("{public:?}").contains("SECRETABC123"));
 }
+
+#[test]
+fn currentness_details_only_publish_closed_reasons_and_no_private_fields() {
+    for reason in latent_core::error::ADMISSION_CURRENTNESS_REASONS
+        .iter()
+        .copied()
+        .chain(["SECRETABC123", "admission-clock-lease-uncovered:private"])
+    {
+        let error = PlatformError {
+            code: PlatformErrorCode::Unavailable,
+            message: "SECRETABC123".into(),
+            retryable: true,
+            details: vec![ErrorDetail {
+                kind: "admission.currentness".into(),
+                fields: Metadata::from([
+                    ("reason".into(), reason.into()),
+                    ("policy".into(), "SECRETABC123".into()),
+                ]),
+            }],
+        };
+        let public = public_platform_error(error, &InvocationLimits::default());
+        if latent_core::error::ADMISSION_CURRENTNESS_REASONS.contains(&reason) {
+            assert_eq!(public.details.len(), 1);
+            assert_eq!(
+                public.details[0].fields,
+                Metadata::from([("reason".into(), reason.into())])
+            );
+        } else {
+            assert!(public.details.is_empty());
+        }
+        assert!(!format!("{public:?}").contains("SECRETABC123"));
+    }
+}

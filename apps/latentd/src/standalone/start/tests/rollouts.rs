@@ -75,7 +75,7 @@ fn manual_owner_starts_and_joins_with_one_control_blocking_thread() {
 async fn configured_rollouts_cannot_compose_without_their_owner() {
     let directory = TempDir::new().unwrap();
     let mut settings = settings(&directory);
-    let catalogs = Catalogs::open(&settings).await.unwrap();
+    let mut catalogs = Catalogs::open(&settings).await.unwrap();
     settings.rollouts = Some(crate::config::RolloutSettings {
         store: RolloutLimits::default(),
         coordinator: CoordinatorLimits::default(),
@@ -84,7 +84,7 @@ async fn configured_rollouts_cannot_compose_without_their_owner() {
     assert_eq!(
         super::super::StandaloneNode::compose(
             &mut settings,
-            &catalogs,
+            &mut catalogs,
             Arc::new(SystemActivationClock)
         )
         .err()

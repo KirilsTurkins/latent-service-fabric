@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "scenario": "client/provider-invoke",
+  "language": "go",
+  "sourceRevision": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+  "sourceSha256": "a2f37c1223e35c8189dde0da78934bd98f439a7829592864eb31fa9c77d7d17e",
+  "validationSha256": "3b4f9b865f9bb1e22cf6c5857444beb34baa4f1c124e3c5baca5baf49666f39f",
+  "level": "real-node",
+  "execution": "real-node",
+  "passed": true,
+  "toolchain": "CI 35509915448: tools/toolchain.toml and exact language dependency locks",
+  "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35509915448",
+  "scope": "Separate authenticated native node; HTTP/blob guests, cancellation/deadline, policy receipt, 18 assertions, 9 activation IDs, 4 physically closed upstream holds. Raw receipts: docs/evidence/phase3-sdk-guides-35509915448."
+}

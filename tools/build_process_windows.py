@@ -122,9 +122,9 @@ class OwnedProcess:
         self.cleanup_deadline = None
         self.job = _Job()
 
-    def spawn(self, command, cwd, env, deadline):
+    def spawn(self, command, cwd, env, deadline, *, stdin=subprocess.DEVNULL):
         self.process = subprocess.Popen(
-            command, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+            command, cwd=cwd, env=env, stdin=stdin,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0, close_fds=True,
             creationflags=0x00000004 | 0x08000000,  # CREATE_SUSPENDED | CREATE_NO_WINDOW.
         )

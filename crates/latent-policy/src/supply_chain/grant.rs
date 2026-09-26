@@ -84,4 +84,14 @@ impl AdmissionRecheck for Checker<'_> {
             .ok_or_else(|| denied("admission-authority-mismatch"))?;
         grant.check(&self.initial.owner, &mut self.state.borrow_mut())
     }
+    fn check_web_grant(
+        &self,
+        grant: &dyn latent_artifacts::web::WebAdmissionGrant,
+    ) -> Result<(), PlatformError> {
+        let grant = grant
+            .as_any()
+            .downcast_ref::<super::web::Grant>()
+            .ok_or_else(|| denied("admission-authority-mismatch"))?;
+        grant.check(&self.initial.owner, &mut self.state.borrow_mut())
+    }
 }

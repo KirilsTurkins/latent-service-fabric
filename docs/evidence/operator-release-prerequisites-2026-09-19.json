@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "latent.operator-release-prerequisites.v1",
+  "observedAtUtc": "2026-09-19T16:40:11.954104+00:00",
+  "repository": "KirilsTurkins/latent-service-fabric",
+  "method": "GitHub REST GET through independently installed gh 2.96.0; each request bounded to 30 seconds",
+  "readOnly": true,
+  "administratorVisibility": true,
+  "defaultBranch": "release",
+  "developmentCommit": "5bd2219b681d196fcbd0c882554e95040fa9754b",
+  "releaseCommit": "44891f4158a663de5c08b177431686ec70c0bdf3",
+  "nativeReleaseWorkflow": {
+    "path": ".github/workflows/native-runtime-release.yml",
+    "registrationHttpStatus": 404,
+    "defaultBranchFileHttpStatus": 404
+  },
+  "securityWorkflow": {
+    "path": ".github/workflows/security-baseline.yml",
+    "registrationHttpStatus": 200,
+    "workflowId": 362094898,
+    "registeredState": "active",
+    "defaultBranchFileHttpStatus": 404,
+    "scheduledRunCount": 0,
+    "manualRunCount": 0
+  },
+  "nativePublishEnvironment": {
+    "name": "native-runtime-publish",
+    "httpStatus": 404
+  },
+  "newTags": [
+    {"name": "0.1.0-alpha.4-rc.1", "httpStatus": 404},
+    {"name": "0.1.0-alpha.4", "httpStatus": 404}
+  ],
+  "developmentRequiredChecks": ["CI result"],
+  "settingsMutated": false,
+  "workflowDispatched": false,
+  "tagsOrReleaseCreated": false,
+  "scheduledCoverageClaimed": false,
+  "boundary": "dated read-only prerequisite observation, not approval, enabled-schedule proof or final release acceptance"
+}

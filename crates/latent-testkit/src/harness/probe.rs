@@ -84,7 +84,9 @@ impl InvariantProbe for ObservedInvariantProbe<'_> {
                 .into_iter()
                 .filter_map(|record| match record {
                     TelemetryRecord::Metric(point) => Some(point),
-                    TelemetryRecord::Log(_) | TelemetryRecord::Span(_) => None,
+                    TelemetryRecord::CustomMetric(_)
+                    | TelemetryRecord::Log(_)
+                    | TelemetryRecord::Span(_) => None,
                 })
                 .collect())
         })

@@ -124,10 +124,14 @@ def seed(binary: Path, control: Path, config: Path, publications: list[dict], di
         client_config = fixtures.cli_config(directory, endpoint(server.ready()), "seed-client.json")
         ready_node(control, client_config, directory, "seed")
         for index, package in enumerate(publications):
-            cli(control, client_config, ["release", "publish", "--manifest", str(package["manifest"]),
+            published = cli(control, client_config, ["release", "publish", "--manifest", str(package["manifest"]),
                 "--component", str(package["component"]), "--contracts", str(package["contracts"])],
                 directory / f"publish-{index}.log")
-            cli(control, client_config, ["deployment", "apply", str(package["deployment"])],
+            deployment = json.loads(package["deployment"].read_bytes())
+            deployment["spec"]["publication"] = published["data"]["release"]["publication"]["id"]
+            selected = directory / f"deployment-{index}.json"
+            fixtures.write(selected, deployment)
+            cli(control, client_config, ["deployment", "apply", str(selected)],
                 directory / f"deploy-{index}.log")
         stopped = server.stop()
     finally:

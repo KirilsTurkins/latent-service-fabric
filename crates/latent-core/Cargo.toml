@@ -9,3 +9,11 @@ description = "Shared runtime types, concurrent resource budgets, clocks, and ca
 
 [lints]
 workspace = true
+
+[features]
+# Opt-in neutral helpers; no production dependencies or runtime scheduling hooks.
+test-support = []
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }

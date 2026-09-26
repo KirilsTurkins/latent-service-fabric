@@ -17,6 +17,7 @@ impl Drop for Owner {
 fn descriptor() -> PreparedComponent {
     PreparedComponent {
         key: PreparationKey {
+            publication: None,
             release: ReleaseDigest("release".into()),
             engine_version: "fixture".into(),
             engine_configuration_digest: "fixture".into(),

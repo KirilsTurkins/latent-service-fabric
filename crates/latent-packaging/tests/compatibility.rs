@@ -13,6 +13,56 @@ use std::collections::BTreeMap;
 fn build(input: PackageInput) -> PackageBundle {
     build_package(input, PackagingLimits::default()).unwrap()
 }
+
+#[test]
+fn invocation_target_checks_actual_exports_and_pins_metadata_distinct_packages() {
+    use latent_packaging::check_invocation_target;
+    let original = build(capsule(Options::default()));
+    let mut changed = capsule(Options::default());
+    changed
+        .annotations
+        .insert("tests.description".to_owned(), "corrected".to_owned());
+    let corrected = build(changed);
+    let first = check_invocation_target(
+        &original,
+        fixtures::component::CONTRACT,
+        PackageComparisonLimits::default(),
+    )
+    .unwrap();
+    let second = check_invocation_target(
+        &corrected,
+        fixtures::component::CONTRACT,
+        PackageComparisonLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(first.functions(), &["inspect"]);
+    assert_eq!(first.interface(), fixtures::component::CONTRACT);
+    assert_eq!(first.package().package(), original.layout().digest());
+    assert_eq!(first.package().component(), second.package().component());
+    assert_ne!(first.package().package(), second.package().package());
+    // An imported host contract is not an application export.
+    assert!(check_invocation_target(
+        &original,
+        fixtures::component::CLOCK,
+        PackageComparisonLimits::default()
+    )
+    .is_err());
+    assert!(check_invocation_target(
+        &original,
+        "tests:packaging/api@2.0.0",
+        PackageComparisonLimits::default()
+    )
+    .is_err());
+    assert!(check_invocation_target(
+        &original,
+        fixtures::component::CONTRACT,
+        PackageComparisonLimits {
+            max_total_wit_bytes: 1,
+            ..Default::default()
+        }
+    )
+    .is_err());
+}
 fn changed(options: Options, old: &str, new: &str) -> PackageBundle {
     let mut input = capsule(options);
     let source = input

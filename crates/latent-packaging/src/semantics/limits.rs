@@ -12,6 +12,10 @@ pub struct SemanticLimits {
     pub max_operators: usize,
     pub max_component_items: usize,
     pub max_type_nodes: usize,
+    /// Conservative reference expansion before validation. Whole-instance alias
+    /// summaries may revisit private members; actual type visits and allocations
+    /// still use max_type_nodes independently.
+    pub max_reference_work: usize,
     pub max_type_depth: usize,
     pub max_type_members: usize,
     pub max_name_bytes: usize,
@@ -24,6 +28,11 @@ pub struct SemanticLimits {
     pub max_functions: usize,
     pub max_parameters: usize,
     pub max_summary_bytes: usize,
+    /// Separate closed Angular binary profile. Its public WIT and ordinary web
+    /// profiles retain their earlier ceilings even for larger managed capsules.
+    /// Callers can independently lower these binary-only limits.
+    pub max_renderer_operators: usize,
+    pub max_renderer_type_nodes: usize,
 }
 
 impl Default for SemanticLimits {
@@ -34,9 +43,13 @@ impl Default for SemanticLimits {
             max_sections: 8192,
             max_core_functions: 65_536,
             max_core_locals: 1_048_576,
-            max_operators: 2_000_000,
+            // General capsules may embed a bounded language runtime, including
+            // SpiderMonkey. Keep the same finite binary-work envelope already
+            // used for that engine by the closed renderer, not an exemption.
+            max_operators: 8_000_000,
             max_component_items: 16_384,
-            max_type_nodes: 65_536,
+            max_type_nodes: 262_144,
+            max_reference_work: 2_097_152,
             max_type_depth: 64,
             max_type_members: 1024,
             max_name_bytes: 512,
@@ -49,6 +62,8 @@ impl Default for SemanticLimits {
             max_functions: 4096,
             max_parameters: 256,
             max_summary_bytes: 1024 * 1024,
+            max_renderer_operators: 8_000_000,
+            max_renderer_type_nodes: 262_144,
         }
     }
 }
@@ -72,6 +87,7 @@ impl SemanticLimits {
             max_operators,
             max_component_items,
             max_type_nodes,
+            max_reference_work,
             max_type_depth,
             max_type_members,
             max_name_bytes,
@@ -83,7 +99,9 @@ impl SemanticLimits {
             max_exports,
             max_functions,
             max_parameters,
-            max_summary_bytes
+            max_summary_bytes,
+            max_renderer_operators,
+            max_renderer_type_nodes
         );
         Ok(())
     }

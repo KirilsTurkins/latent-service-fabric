@@ -8,12 +8,13 @@ fn healthy_final_starts_share_reads_and_exclude_generation_cutover() {
     let id = identity(b"parallel-start");
     let record = publication(&id, "create").record.unwrap();
     let owner = Owner::new(None);
-    let row = Row::new(&record);
+    let row = Row::new(&record, id.publication().unwrap().id);
     let token = ReleaseUseEligibility::new(
         LifecycleEligibility {
             owner: Arc::clone(&owner),
             row: Arc::clone(&row),
             generation: record.generation,
+            projection: None,
         },
         None,
     )

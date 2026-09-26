@@ -53,7 +53,7 @@ fn bounded_input_and_shared_metadata_reject_before_hashing_or_publication() {
     );
     assert_eq!(releases.fetches.load(Ordering::Relaxed), 0);
     assert_eq!(store.generation(), RouteGeneration(0));
-    assert_eq!(stored(&root)["format_version"], 2);
+    assert_eq!(stored(&root)["format_version"], 5);
     drop(store);
     let store = open(&root, &releases);
     for kind in 0..3 {
@@ -79,7 +79,7 @@ fn bounded_input_and_shared_metadata_reject_before_hashing_or_publication() {
     }
     assert_eq!(releases.fetches.load(Ordering::Relaxed), 0);
     assert_eq!(store.generation(), RouteGeneration(0));
-    assert_eq!(stored(&root)["format_version"], 2);
+    assert_eq!(stored(&root)["format_version"], 5);
 }
 
 #[test]
@@ -98,8 +98,8 @@ fn prepared_owner_is_affine_and_cannot_be_committed_by_another_catalog() {
     );
     assert_code(second.commit_operation(prepared), Code::PermissionDenied);
     assert_eq!(first.generation(), RouteGeneration(0));
-    assert_eq!(stored(&first_root)["format_version"], 2);
+    assert_eq!(stored(&first_root)["format_version"], 5);
     assert_eq!(second.generation(), RouteGeneration(0));
-    assert_eq!(stored(&second_root)["format_version"], 2);
+    assert_eq!(stored(&second_root)["format_version"], 5);
     drop(execute(&first, request));
 }

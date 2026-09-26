@@ -1,5 +1,7 @@
 # Phase 0 activation, containment, and resource baselines
 
+> Historical evidence documentation: the live Phase 0 executable and collection runners were retired from the current development tree on 2026-09-22. Commands below describe the original authorizing/reproduction environment and require the source revision recorded by the evidence; they are not current `development` commands.
+
 The Phase 0 baseline records reproducible observational evidence for issue #24. It is not a production benchmark, service-level objective, competitive comparison, cluster-capacity model, or Phase 1 API.
 
 The completed [Phase 1 gate](phase-1-completion.md) and

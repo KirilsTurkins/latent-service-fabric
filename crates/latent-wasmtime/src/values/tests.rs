@@ -12,6 +12,7 @@ mod differential;
 #[cfg(target_os = "linux")]
 mod measurement;
 mod scalars;
+mod web;
 
 fn types() -> &'static BTreeMap<String, Type> {
     static TYPES: OnceLock<BTreeMap<String, Type>> = OnceLock::new();

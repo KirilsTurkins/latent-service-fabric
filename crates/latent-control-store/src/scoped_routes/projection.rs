@@ -68,10 +68,15 @@ impl<'a> ProjectionCost<'a> {
         &mut self,
         revision: &RevisionId,
         release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
         attributes: &Metadata,
     ) -> Result<(), PlatformError> {
         self.cost.text(&revision.0, revision.0.len(), true)?;
         self.cost.text(&release.0, release.0.len(), true)?;
+        if let Some(publication) = publication {
+            self.cost
+                .text(publication.as_str(), publication.as_str().len(), true)?;
+        }
         if attributes.len() > self.cost.limits.maximum_attributes_per_revision {
             return Err(exhausted());
         }

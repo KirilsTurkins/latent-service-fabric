@@ -1,96 +1,90 @@
-# Phase 2 delivery notes
+# Deliver packages and recover changes
 
-These delivery notes describe `0.1.0-alpha.3`, the Phase 2 source prerelease.
-The [GitHub release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3)
-records its published tag and source commit. Phase 2 is complete under the
-collective [gate #158 review](phase-2-completion.md), which records the
-implementation, validation evidence and limitations. The earlier alpha.2
-release records Phase 1 and its prioritized performance extension. These
-finite observations do not establish production SLOs.
+Use LSF to deploy a capsule, publish a static website, or run a supported Angular
+server renderer. The same delivery path keeps the package, its permissions and
+its selected deployment together. You can move traffic to a new version and
+recover a failed change without replacing the node.
 
-## Features
+If this is your first time using LSF, begin with [Run your first node](start/first-node.md).
+That guide creates a node and calls a small echo service. Continue here when you
+want to deliver your own application or manage a new version.
 
-- [Deterministic packaging](component-development/packaging.md) binds original
-  package, configuration, component, WIT and asset bytes. Explicit inventories
-  produce [SBOMs](component-development/sbom.md); the maintained build observer
-  records [source and tool provenance](reference/build-provenance.md).
-- [Authenticated OCI transfer](reference/oci-registry.md) supports exact package
-  and detached evidence bytes, immutable digest selection, TLS, separate registry
-  credentials and finite transfers. It does not turn registry possession into
-  publisher authority.
-- [Publisher and builder trust](reference/publisher-trust.md), tenant and SBOM
-  policy fence [catalog admission](reference/package-admission.md). Current
-  authority, lifecycle and runtime compatibility are checked again before use,
-  including cached preparation and native loading.
-- [Raw caching](reference/raw-artifact-cache.md), isolated compilation and a
-  [protected persistent native cache](runtime/trusted-aot.md) have explicit
-  byte, image, process and lease owners. Native output requires the approved
-  local compiler and a separate protected authentication key.
-- [Durable audit](phase-2-audit.md), versioned managed deployments and
-  [rollout plans](phase-2-rollouts.md) retain inspectable operation identities.
-  [Canary promotion](phase-2-canary-promotion.md) uses exact observed windows;
-  [rollback](phase-2-rollback.md) restores eligible content through a new route
-  generation and preserves existing activation pins.
-- The [operator CLI](reference/operator-cli.md) exposes package
-  build/inspect/verify/push/pull, publication and lifecycle, managed deployment
-  receipts, rollout control, observation and audit pagination. Files remain
-  client-local; authenticated management sends bounded bytes and typed inputs.
+[![Prepare a package, sign and admit it, then call the service or open its HTTP route.](assets/package-delivery.svg)](assets/package-delivery.svg)
 
-![Phase 2 package transfer, node admission and explicit rollout control.](assets/phase2-delivery-boundary.svg)
+[Open the delivery diagram at full size](assets/package-delivery.svg).
 
-## Upgrade and recovery
+## 1. Build the application you want to deliver
 
-Existing trusted-local catalogs retain their explicit compatibility mode.
-Enforced roots require complete current public policy and cannot reopen through
-the legacy constructor. Review [admission migration and clock leases](reference/package-admission.md#clock-leases-retries-and-migration)
-before changing policy or restarting; an immediate restart can correctly fail
-until its persisted future clock floor is reached. Do not delete a policy floor,
-catalog marker or audit journal to bypass that failure.
+Choose a guide for your application. Each one identifies the required tools,
+source files and commands for its supported build.
 
-Deployment formats 1 through 3 retain their historical decoding rules. The first
-managed deployment operation writes format 4 with its bounded receipt history;
-rollout mutations preserve that history. Old binaries that cannot read the new
-format are not a supported rollback strategy. Application rollback uses current
-eligibility and a new publication, as described in the
-[rollback runbook](phase-2-rollback.md).
+| Application | Follow this guide | Result |
+| --- | --- | --- |
+| A function called by another program | [Create a capsule](component-development/creating-a-capsule.md) | A Wasm component with typed inputs and outputs. |
+| A static website or browser application | [Package a static site](component-development/static-sites.md) | Public files and a manifest describing their URLs. |
+| An Angular application with server rendering | [Build an Angular application](component-development/angular-build.md) | Browser files and a renderer for the supported Angular profile. |
 
-After a timeout, inspect the original operation ID and exact route/catalog
-versions. `Unknown` includes absent or evicted receipts and cannot establish
-that a mutation never ran. Publication identity, directory synchronization and
-audit acknowledgment are separate facts. Keep original caller preconditions;
-the CLI does not retry mutations or silently refresh their versions.
+Package the selected output using [the packaging guide](component-development/packaging.md).
+Package assembly does not compile your source: finish the application build first.
+For a node that enforces publisher trust, also provide the required publisher
+signature, build provenance and [SBOM](component-development/sbom.md).
 
-Registry outage prevents transfers. Already retained local bytes do not need a
-registry connection for invocation, but their current policy and lifecycle must
-still permit use. Neither cached bytes nor a cached positive proof extends
-expiry or reverses revocation. Corruption fails closed; recovery must use exact
-verified bytes and the documented catalog procedures.
+## 2. Transfer and admit the package
 
-## Validation and limits
+Follow [Deliver, invoke and recover a capsule](learn/deliver-and-recover-a-capsule.md)
+for the complete local delivery workflow. [Package and deployment operations](phase-2-operator-workflows.md)
+cover inspection, verification and OCI push/pull commands when using a registry.
+Registry credentials and node management credentials are separate.
 
-The [bounded walkthrough](development/standalone-quickstart.md) uses separate
-client/node processes, an authenticated TLS registry and fresh public test
-policy. It exercises exact transfer, deployment, actual invocations, canary
-promotion, rollback, audit, restart and revocation. Its signed test observation
-is synthetic; the separately maintained observed-build integration supplies
-the actual build-capture evidence. [Validation](../VALIDATION.md) identifies both.
-The [completion review](phase-2-completion.md) additionally covers registry
-outage, real native trust invalidation and the fixed 32-release resource profile,
-with compact receipts and explicit failed or superseded attempts.
+A successful transfer means the selected bytes arrived. The node still checks
+its own [publisher trust](reference/publisher-trust.md), tenant policy, package
+requirements and current release eligibility before admission. A successful
+local verification does not override those checks.
 
-Linux reports RSS and its high-water value as approximate observations. The
-resource validator preserves those readings, including decreases, while CPU
-ticks and I/O counters must remain monotonic. A release-validation run exposed
-an incorrect high-water monotonicity assertion when the reported value fell
-from 66,506,752 to 66,502,656 bytes. The correction changes no workload, limit,
-process identity or ownership check, and does not rewrite the failed receipt.
-See the [Linux field definitions](https://man7.org/linux/man-pages/man5/proc_pid_status.5.html)
-and [failed CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34747999705).
+## 3. Deploy and try the application
 
-This remains a standalone Linux stateless node. Package contracts for browser
-assets and SSR do not provide application ingress, browser hosting or rendering.
-The [Phase 3 backlog](roadmap.md#phase-3-capabilities-and-application-hosting)
-tracks general capabilities, providers, SDK transports and web delivery.
-Distributed placement, durable state/effects and workflows remain later phases.
-Finite test profiles establish their observed behavior, not production SLOs,
-universal memory ceilings or a general dependency-security guarantee.
+Create a deployment that selects the admitted publication. Invoke a capsule
+using the CLI or [a client SDK](learn/use-a-client.mdx). For browser delivery,
+configure the [shared HTTP ingress](reference/http-ingress.md) and the route
+specified by the static-site or Angular guide, then open that route in a browser.
+
+Capsules and server rendering use temporary activations. Static files are served
+without creating a guest activation. A dormant deployment has retained metadata;
+it does not keep its own process, thread, guest heap or listener running.
+
+If a capsule needs HTTP, storage or another capability, install its provider and
+grant the required authority. The [standalone provider reference](reference/standalone-providers.md)
+lists the providers accepted by the node configuration. Other provider
+integrations have their own trusted Rust embedding instructions; adding an
+unsupported field to the node JSON does not enable them.
+
+## 4. Change a version deliberately
+
+Use [a staged rollout](phase-2-rollouts.md) to move traffic to a candidate.
+[Canary observation](phase-2-canary-observation.md) and
+[explicit promotion](phase-2-canary-promotion.md) let you inspect a window before
+advancing. [Rollback](phase-2-rollback.md) restores an eligible retained version
+through a new route generation. Running activations keep their selected revision.
+
+Keep the operation ID and original preconditions for every management change.
+After a timeout or lost response, inspect that operation before submitting
+another mutation. An unknown result can mean an absent or expired receipt; it
+does not prove that the change never ran.
+
+## Restart and recovery
+
+Use the current [persistence and fresh-state instructions](reference/publication-catalog.md#supported-storage-and-fresh-state)
+when preparing storage. Obsolete catalog formats are rejected; old binaries and
+old catalogs are not an application rollback mechanism.
+
+A protected node can refuse an immediate restart until its persisted clock floor
+is reached. Follow [clock lease recovery](reference/package-admission.md#clock-leases-retries-and-fresh-admission).
+Do not delete policy state or an audit journal to bypass that check.
+
+A registry outage blocks transfers. Already retained packages can still run
+when their current policy and release eligibility permit use. Cached bytes do
+not extend an expired signature or undo revocation.
+
+The current deployment is a standalone Linux node. Shared state transactions,
+cluster placement and durable workflows are not supported. For resource and
+security details, continue with [the architecture overview](architecture/overview.md).

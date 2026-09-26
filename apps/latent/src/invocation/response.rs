@@ -24,6 +24,7 @@ pub(super) fn invocation(
     let mut data = json!({"activationId": response.receipt.activation_id.0,
         "resolvedRevision": response.receipt.resolved_revision.map(|pin| json!({
             "revisionId": pin.revision_id.0, "releaseDigest": pin.release_digest.0,
+            "publicationId": pin.publication_id.map(|id| id.to_string()),
             "routeGeneration": pin.route_generation.0.to_string()}))});
     Ok(match response.outcome {
         ActivationOutcome::Succeeded(result) => {

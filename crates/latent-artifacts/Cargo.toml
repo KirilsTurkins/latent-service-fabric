@@ -7,6 +7,10 @@ license.workspace = true
 authors.workspace = true
 description = "Artifact interfaces and a bounded durable local release catalog."
 
+[features]
+# Explicit process-local fixture ownership; never selected by node configuration.
+development-test-host = []
+
 [lints]
 workspace = true
 

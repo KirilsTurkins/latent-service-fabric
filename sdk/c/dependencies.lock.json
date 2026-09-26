@@ -1,0 +1,68 @@
+{
+  "nghttp2": {
+    "version": "1.70.0",
+    "commit": "85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2",
+    "role": "runtime",
+    "purl": "pkg:github/nghttp2/nghttp2@v1.70.0",
+    "url": "https://github.com/nghttp2/nghttp2/releases/download/v1.70.0/nghttp2-1.70.0.tar.gz",
+    "sha256": "aa317e2cf9dca6afa0aed68f8fad6ff303ec6982e25a78c75c0b65e2b9b3ded5",
+    "bundled": [
+      {
+        "name": "sfparse",
+        "version": "88a137ab8864556bf6d44cc5639c06f6bafcee57",
+        "commit": "88a137ab8864556bf6d44cc5639c06f6bafcee57",
+        "role": "bundled-runtime",
+        "purl": "pkg:github/ngtcp2/sfparse@88a137ab8864556bf6d44cc5639c06f6bafcee57",
+        "url": "https://github.com/ngtcp2/sfparse/tree/88a137ab8864556bf6d44cc5639c06f6bafcee57",
+        "files": {
+          "lib/sfparse.c": "90c8f4627a0cf41d421bf2b186d9c9061f5087b23c8015021853788fc529d4c7",
+          "lib/sfparse.h": "fa99f26ea080137b0f79c3f8799e7513aa1a97fb4c9a4fb1cc42869c17bfac5d"
+        }
+      }
+    ]
+  },
+  "nanopb": {
+    "version": "0.4.9.2",
+    "commit": "160d4f09e5fabb2b66aa2dea32d4f38ace2c4b3f",
+    "role": "runtime-and-generator",
+    "purl": "pkg:github/nanopb/nanopb@160d4f09e5fabb2b66aa2dea32d4f38ace2c4b3f",
+    "url": "https://codeload.github.com/nanopb/nanopb/tar.gz/160d4f09e5fabb2b66aa2dea32d4f38ace2c4b3f",
+    "sha256": "3916241f10ae420ad1504246cfb98ab26c41a877e0c3a2f5dde6a99f610942e1"
+  },
+  "protoc": {
+    "version": "36.2",
+    "commit": "2c74169b34066ceb8ddb6b882fcb3fb32d737a55",
+    "role": "generator-only",
+    "purl": "pkg:github/protocolbuffers/protobuf@v36.2",
+    "url": "https://github.com/protocolbuffers/protobuf/releases/download/v36.2/protoc-36.2-linux-x86_64.zip",
+    "sha256": "121f6c7afe1d4d0e3ea6aab9432038599250134cbf4474cb1167d2c7decd4278"
+  },
+  "protobuf": {
+    "version": "7.36.2",
+    "role": "generator-and-test-only",
+    "purl": "pkg:pypi/protobuf@7.36.2",
+    "url": "https://files.pythonhosted.org/packages/e4/04/d52c7016b04b6c5108f26691f9d33ec82a9b65d041f1a9c771137693d618/protobuf-7.36.2-py3-none-any.whl",
+    "sha256": "bdb3a345d48db958e6ce1f18e508beb0cc981d64f24088427549c866cd039f1e"
+  },
+  "h2": {
+    "version": "4.4.1",
+    "role": "test-only",
+    "purl": "pkg:pypi/h2@4.4.1",
+    "url": "https://files.pythonhosted.org/packages/7e/22/e85faf23bd72a92d1921e37d674ca56eb298a3c8be31fdecef0ff2b3aaac/h2-4.4.1-py3-none-any.whl",
+    "sha256": "0e25f1462b23c9cb82d9eb02e28bc706dac2a68cb457c6a0d74d63c8a2a5d0e6"
+  },
+  "hpack": {
+    "version": "4.2.0",
+    "role": "test-only",
+    "purl": "pkg:pypi/hpack@4.2.0",
+    "url": "https://files.pythonhosted.org/packages/71/b4/4a9fcfb2aef6ba44d9073ecd301443aa00b3dac95de5619f2a7de7ec8a91/hpack-4.2.0-py3-none-any.whl",
+    "sha256": "858ac0b02280fa582b5080d68db0899c62a80375e0e5413a74970c5e518b6986"
+  },
+  "hyperframe": {
+    "version": "6.1.0",
+    "role": "test-only",
+    "purl": "pkg:pypi/hyperframe@6.1.0",
+    "url": "https://files.pythonhosted.org/packages/48/30/47d0bf6072f7252e6521f3447ccfa40b421b6824517f82854703d0f5a98b/hyperframe-6.1.0-py3-none-any.whl",
+    "sha256": "b03380493a519fce58ea5af42e4a42317bf9bd425596f7a0835ffce80f1a42e5"
+  }
+}

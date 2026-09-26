@@ -2,6 +2,7 @@
 
 mod compilation;
 pub(super) mod counters;
+mod renderer;
 pub use counters::PreparationActivitySnapshot;
 pub(super) use counters::PreparationCounters;
 
@@ -52,31 +53,38 @@ impl WasmtimeBackend {
         self.shared.preparation_context.validate_engine_key(key)?;
         let source = repository.preparation_source();
         let eligibility = if let Some(source) = &source {
-            source.execution_eligibility(&key.release)?
+            source.execution_eligibility_selected(&key.release, key.publication.as_ref())?
         } else {
-            if repository.execution_eligibility(&key.release)?.is_some() {
+            if repository
+                .execution_eligibility_selected(&key.release, key.publication.as_ref())?
+                .is_some()
+            {
                 return Err(super::admission_association_error());
             }
             None
         };
-        self.shared
-            .preparation_context
-            .check_eligibility(eligibility.as_ref(), &key.release)?;
+        self.shared.preparation_context.check_eligibility(
+            eligibility.as_ref(),
+            &key.release,
+            key.publication.as_ref(),
+        )?;
         if let Some(native) = &self.shared.preparation_context.native_aot {
             // Validate the borrowed caller's sealed source first, then use the
             // same owned readiness queue. Recheck the ORIGINAL capability after
             // the await so renewal cannot silently upgrade this request.
             let ready = self
-                .prepare_ready_repository(native.catalog(), key.clone())
+                .prepare_ready_repository(native.catalog(), key.clone(), None)
                 .await?;
-            self.shared
-                .preparation_context
-                .check_eligibility(eligibility.as_ref(), &key.release)?;
+            self.shared.preparation_context.check_eligibility(
+                eligibility.as_ref(),
+                &key.release,
+                key.publication.as_ref(),
+            )?;
             return self.materialize_readiness(ready);
         }
         let identity = source
             .as_ref()
-            .map(|source| source.identity(&key.release))
+            .map(|source| source.identity_selected(&key.release, key.publication.as_ref()))
             .transpose()?
             .flatten();
         let permit = self.shared.instances.try_acquire()?;
@@ -94,7 +102,9 @@ impl WasmtimeBackend {
             // repository adapter cannot redirect it to another repository.
             let (artifact, integrity) = match source {
                 Some(source) => (
-                    source.fetch(&key.release).await?,
+                    source
+                        .fetch_selected(&key.release, key.publication.as_ref())
+                        .await?,
                     ComponentIntegrity::VerifiedBySource,
                 ),
                 None => (
@@ -119,6 +129,7 @@ impl WasmtimeBackend {
             identity.metadata().charged_bytes(),
             Some(&identity),
             eligibility.as_ref(),
+            key.publication.as_ref(),
         )?;
         let handle = authenticated_handle(key, &identity, eligibility.as_ref());
         let reservation = match self.shared.cache.begin(
@@ -151,7 +162,7 @@ impl WasmtimeBackend {
         let fetch = job.stage(PreparationStage::RepositoryFetchVerified);
         let artifact = source
             .expect("identity always belongs to a selected source")
-            .fetch(&key.release)
+            .fetch_selected(&key.release, key.publication.as_ref())
             .await?;
         fetch.complete();
         let validation = job.stage(PreparationStage::MetadataValidation);
@@ -199,16 +210,22 @@ pub(super) fn retained_metadata_bytes(
     bytes: usize,
     identity: Option<&ArtifactPreparationIdentity>,
     eligibility: Option<&ReleaseUseEligibility>,
+    publication: Option<&latent_core::PublicationId>,
 ) -> Result<usize, PlatformError> {
     bytes
-        .checked_add(identity.map_or(
-            size_of::<Option<ArtifactPreparationIdentity>>(),
-            |identity| {
-                identity
-                    .retained_bytes()
-                    .max(size_of::<Option<ArtifactPreparationIdentity>>())
-            },
-        ))
+        .checked_add(publication.map_or(0, |id| {
+            4 * (size_of::<latent_core::PublicationId>() + id.as_str().len())
+        }))
+        .and_then(|bytes| {
+            bytes.checked_add(identity.map_or(
+                size_of::<Option<ArtifactPreparationIdentity>>(),
+                |identity| {
+                    identity
+                        .retained_bytes()
+                        .max(size_of::<Option<ArtifactPreparationIdentity>>())
+                },
+            ))
+        })
         .and_then(|bytes| {
             bytes.checked_add(eligibility.map_or(
                 size_of::<Option<ReleaseUseEligibility>>(),
@@ -244,7 +261,7 @@ pub(super) fn authenticated_handle(
     eligibility: Option<&ReleaseUseEligibility>,
 ) -> String {
     let mut digest = blake3::Hasher::new();
-    digest.update(b"lsf-wasmtime-authenticated-preparation-v1\0");
+    digest.update(b"lsf-wasmtime-authenticated-preparation-v2\0");
     for value in [
         &key.release.0,
         &key.engine_version,
@@ -255,6 +272,12 @@ pub(super) fn authenticated_handle(
         digest.update(&(value.len() as u64).to_le_bytes());
         digest.update(value.as_bytes());
     }
+    let publication = key
+        .publication
+        .as_ref()
+        .map_or("", latent_core::PublicationId::as_str);
+    digest.update(&(publication.len() as u64).to_le_bytes());
+    digest.update(publication.as_bytes());
     digest.update(&identity.cache_digest());
     super::admission::scoped_handle(
         format!("wasmtime-authenticated:{}", digest.finalize().to_hex()),

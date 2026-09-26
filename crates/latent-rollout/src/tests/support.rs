@@ -170,6 +170,7 @@ fn artifact(marker: &[u8]) -> CapsuleArtifact {
 }
 fn deployment(id: &str, release: ReleaseDigest) -> DeploymentManifest {
     DeploymentManifest {
+        publication: None,
         api_version: MANIFEST_API_VERSION.into(),
         id: DeploymentId(id.into()),
         metadata: metadata(id),

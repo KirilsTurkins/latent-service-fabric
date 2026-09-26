@@ -1,0 +1,707 @@
+{
+  "schemaVersion": "latent.dev.windows-source-observation.v1",
+  "recordedAt": "2026-09-23T20:59:07.088391+00:00",
+  "scope": "controlled Windows source integration",
+  "qualificationComplete": false,
+  "cleanHostQualification": false,
+  "publisherAuthenticatedWorkflow": false,
+  "publicReleaseAuthorized": false,
+  "environment": {
+    "windows": "11 26200.9448",
+    "wsl": "2.7.14.0",
+    "guestKernel": "6.18.33.2-microsoft-standard-WSL2",
+    "guestOS": "ubuntu-24.04",
+    "guestArchitecture": "x86_64",
+    "profile": "local-experimental-v1"
+  },
+  "artifacts": {
+    "frontendInitial": {
+      "frontendSha256": "sha256:6f58b99f3bf9460417801efd1c410995185f18ccd28256968107cdf5af65cc48",
+      "helperSha256": "sha256:77d93f18e36a80a7bb2181c7ec912d77afb6f69fba52d50fcd2dae0a39afed10",
+      "sourceCommit": "486c10939522f4eeeb30903f65e4c5bf54e5ccbe",
+      "sourceDirty": false
+    },
+    "frontendOwnershipFix": {
+      "frontendSha256": "sha256:ccb827c4a341c3c6071ae62eaca609561fcef5ad496f432e68f7c04fdd0a998b",
+      "helperSha256": "sha256:60d5a16273504921189cdf95ce25b837d21f03cb152ad2946705e29399fd382c",
+      "sourceCommit": "486c10939522f4eeeb30903f65e4c5bf54e5ccbe",
+      "sourceDirty": true
+    },
+    "guestHelperInitial": "sha256:77d93f18e36a80a7bb2181c7ec912d77afb6f69fba52d50fcd2dae0a39afed10",
+    "guestHelperTestIdentityFix": "sha256:e46cdbd8866b81b46ecfac3d97c4352f3c2b086c4beb8b3fb2fbd88502d9af2d",
+    "guestHelperRecoveryFix": "sha256:fc9ac093a1a53e770042eff2adda593cf2becbf286b621b93d14880cb2b6d847",
+    "rootfs": "sha256:406ff5a5980189c5b2bc0d621b7460659ce2f53e58d6114369744299a6f1d305",
+    "runtimeApprovedSource": "64e589f28147f2662aadd9a4833e1eda5644e36d",
+    "compilerInventory": "sha256:f1f9a174c4a6b4579a5d33663103169a5bebbd50f795a638df11c088b344f817",
+    "compilerTemplate": {
+      "ownerIssue": 545,
+      "revision": "7c8704b6b2d1fa0aed2729e2f23e0f53b86cedc3",
+      "sha256": "sha256:e0efa5b3f16a6caea02e0af728ce7ff7f572c54319084aca1d3016fae8bab66a"
+    },
+    "faultProbeSha256": "sha256:cf541dd989b8f0bc72112582a51c7151076e02b0fda6ab20de8326515fc8fc0f"
+  },
+  "observations": {
+    "watchDeployments": [
+      {
+        "attempt": "78aa54b6d30afcc92638b9e3a2d7f474",
+        "buildKey": "sha256:b72e6b578f008034d6467eb734b5d09d8ff0c5b18c9cf25635751b9c2a32ff94",
+        "componentDigest": "sha256:1ca34b2e7de7550e8134681a6a4541014419b29fa39a2c66c934972ad9116e5e",
+        "deployment": "my-greeting",
+        "generation": "1",
+        "operation": "dev-f0634c6452ff7dc4c7449185b2310847",
+        "publication": "publication:sha256:3fef07f2a0dd09e8585a3131d73ebcaaadccefbdaceba00e45dc30ee6dd6cf0b",
+        "publicationInput": "sha256:c5048a42d5c962bb28b0c854beffa850080253a509a9679c2b867333b743f894",
+        "source": "sha256:e0efa5b3f16a6caea02e0af728ce7ff7f572c54319084aca1d3016fae8bab66a"
+      },
+      {
+        "attempt": "894b838786678e9cde0c2f37402b1daa",
+        "buildKey": "sha256:91eb542445558bb1cb3aa0634792ed31a0a5920c88f04ff889f284e4a0087168",
+        "componentDigest": "sha256:ebedba3ad6d72ffce22846d7ddab7026e9de807da73c4120798b10da23020914",
+        "deployment": "my-greeting",
+        "generation": "2",
+        "operation": "dev-403c392b710e886343410130e8278313",
+        "publication": "publication:sha256:882efa0cef9e5c8e95b4571b4c51e82695a5af7230034e8ea07dad5596485478",
+        "publicationInput": "sha256:fc41c419f355c7a779326d02ff1fe00c5728c1e23f2a711811bd22c8d8c2373d",
+        "source": "sha256:55538b1dbe85f1e5afb57e645ec5bf9ecbbfef8f6b1c3ae787dfbc48df15533a"
+      }
+    ],
+    "focusedTestsA": {
+      "cleanup": "invocation-results-received-node-retained",
+      "environment": "node",
+      "excludedChecks": [],
+      "identity": {
+        "architecture": "x86_64",
+        "artifacts": {
+          "capsule": "sha256:991db9ba6eb8102e91ee45796ce4dcadd752a0eccac7f29de31f3fbf8dc51559",
+          "component": "sha256:1ca34b2e7de7550e8134681a6a4541014419b29fa39a2c66c934972ad9116e5e",
+          "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+          "deployment": "sha256:ffee5aaf35833bc133547b823c0f98222f148ee711ce68bf689775a90a4f724a",
+          "evidence": "sha256:5e45a5771c92ee300443eb23c44f796b3640e2dea56433407e654cd839097e98",
+          "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+        },
+        "kernel": "6.18.33.2-microsoft-standard-WSL2",
+        "node": "lsf-37362c4d1795c178",
+        "os": "linux",
+        "profile": "local-experimental-v1",
+        "runtime": {
+          "engine": {
+            "compilerSha256": "2ffad8d5c7bde0ea64bddd3865b7da969cb4f78b872eb8ad3d0d196b02b7806a",
+            "dynamicDependencies": [
+              "ld-linux-x86-64.so.2",
+              "libc.so.6",
+              "libgcc_s.so.1",
+              "libm.so.6"
+            ],
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "wasmtimeVersion": "47.0.4"
+          },
+          "sourceCommit": "64e589f28147f2662aadd9a4833e1eda5644e36d",
+          "target": "x86_64-unknown-linux-gnu",
+          "toolchain": {
+            "lockSha256": "da1e2cb7fbd555d5440eba3ec14a5d9d7af45d5097343d4a53d68f49ec64bc14",
+            "rust": "1.97.1"
+          },
+          "version": "0.1.0-alpha.4"
+        },
+        "source": "sha256:e0efa5b3f16a6caea02e0af728ce7ff7f572c54319084aca1d3016fae8bab66a"
+      },
+      "passed": true,
+      "results": [
+        {
+          "activationId": "dev-d0fe9ecb3d07e2604970ecb942270cda",
+          "category": "success",
+          "fixtures": [],
+          "id": "greeting-0",
+          "inputSha256": "sha256:ef51432249b4415547723843d22c923719d51493a177a4bb4cd312e840c70e37",
+          "outcomeKnown": true,
+          "platformCode": null,
+          "required": true,
+          "status": "passed"
+        },
+        {
+          "activationId": "dev-bb47d172b6759160b1793f507cccec81",
+          "category": "declared-error",
+          "fixtures": [],
+          "id": "greeting-2",
+          "inputSha256": "sha256:418386ee404c8f44a64ad6422cd07f032b6ce04f9ad1471397dcfb0a03a0d2f1",
+          "outcomeKnown": true,
+          "platformCode": null,
+          "required": true,
+          "status": "passed"
+        }
+      ],
+      "schemaVersion": "latent.dev.test-report.v1",
+      "selection": [
+        "greeting-0",
+        "greeting-2"
+      ]
+    },
+    "postDeployFailureB": {
+      "passed": false,
+      "rollbackPerformed": false,
+      "generation": "2"
+    },
+    "compilerFailure": {
+      "code": "guest-build-failed-last-deployment-retained",
+      "phase": "build",
+      "retainedGeneration": "2",
+      "hostDiagnosticMapped": true
+    },
+    "invocations": {
+      "invoke-a.json": {
+        "activationId": "dev-24455ecaa9cdde628319fbd9ee2803cd",
+        "payload": "[{\"ok\":\"Hello, Ada!\"}]",
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:3fef07f2a0dd09e8585a3131d73ebcaaadccefbdaceba00e45dc30ee6dd6cf0b",
+          "releaseDigest": "sha256:1ca34b2e7de7550e8134681a6a4541014419b29fa39a2c66c934972ad9116e5e",
+          "revisionId": "revision-v1:sha256:b71a422a3b75df1acc9857f2dc0dc1f45e88604982208c78f696ac7d7bbd990d",
+          "routeGeneration": "1"
+        }
+      },
+      "invoke-b.json": {
+        "activationId": "dev-5d169f681f0b6d016a25a85cc839ee27",
+        "payload": "[{\"ok\":\"Howdy, Ada!\"}]",
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:882efa0cef9e5c8e95b4571b4c51e82695a5af7230034e8ea07dad5596485478",
+          "releaseDigest": "sha256:ebedba3ad6d72ffce22846d7ddab7026e9de807da73c4120798b10da23020914",
+          "revisionId": "revision-v1:sha256:82e7df36ed03f9fece8d954c1f14108b6f7d6b551af22e5897910e7888ec0643",
+          "routeGeneration": "2"
+        }
+      },
+      "invoke-after-compile-failure.json": {
+        "activationId": "dev-087a29dccaa160b5af7bddb44193058f",
+        "payload": "[{\"ok\":\"Howdy, Ada!\"}]",
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:882efa0cef9e5c8e95b4571b4c51e82695a5af7230034e8ea07dad5596485478",
+          "releaseDigest": "sha256:ebedba3ad6d72ffce22846d7ddab7026e9de807da73c4120798b10da23020914",
+          "revisionId": "revision-v1:sha256:82e7df36ed03f9fece8d954c1f14108b6f7d6b551af22e5897910e7888ec0643",
+          "routeGeneration": "2"
+        }
+      },
+      "invoke-retained.json": {
+        "activationId": "dev-8d51d7fa62e309a7e571e4b5867603f5",
+        "payload": "[{\"ok\":\"Aloha, Ada!\"}]",
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:6a498605040d94629e9b2b312f25030220dc126ebaeca701a4c940b38a6d9188",
+          "releaseDigest": "sha256:337e81b8453893c3ac37ffd8effaf428ba9ebc97a3d9abf7b18d486465a21981",
+          "revisionId": "revision-v1:sha256:22c41731c48838d57530f88b03f354ad3395fac718138cf49ad46a611eebc2ef",
+          "routeGeneration": "5"
+        }
+      }
+    },
+    "lostResponses": [
+      {
+        "kind": "release",
+        "operation": "dev-d2c6898a1797901bd5ae24bda6c7ae6c",
+        "actualServerReceipt": {
+          "lookup": "RELEASE_OPERATION_LOOKUP_DISPOSITION_FOUND",
+          "receipt": {
+            "action": "RELEASE_LIFECYCLE_ACTION_PUBLISH",
+            "actor": {
+              "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "installation-operator"
+            },
+            "componentDigest": "sha256:337e81b8453893c3ac37ffd8effaf428ba9ebc97a3d9abf7b18d486465a21981",
+            "disposition": "RELEASE_OPERATION_DISPOSITION_COMMITTED",
+            "expectedGeneration": "0",
+            "observedAtUnixMillis": "1790196070732",
+            "operationId": "dev-d2c6898a1797901bd5ae24bda6c7ae6c",
+            "packageManifestDigest": null,
+            "policy": null,
+            "publication": {
+              "id": "publication:sha256:6a498605040d94629e9b2b312f25030220dc126ebaeca701a4c940b38a6d9188",
+              "tenant": "examples"
+            },
+            "reason": "RELEASE_LIFECYCLE_REASON_ADMITTED",
+            "record": {
+              "actor": {
+                "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                "subject": "installation-operator"
+              },
+              "componentDigest": "sha256:337e81b8453893c3ac37ffd8effaf428ba9ebc97a3d9abf7b18d486465a21981",
+              "evidenceRevisionDigest": null,
+              "generation": "1",
+              "observedAtUnixMillis": "1790196070732",
+              "operationId": "dev-d2c6898a1797901bd5ae24bda6c7ae6c",
+              "packageDigest": null,
+              "policy": null,
+              "publication": {
+                "id": "publication:sha256:6a498605040d94629e9b2b312f25030220dc126ebaeca701a4c940b38a6d9188",
+                "tenant": "examples"
+              },
+              "reason": "RELEASE_LIFECYCLE_REASON_ADMITTED",
+              "state": "RELEASE_LIFECYCLE_STATE_ADMITTED",
+              "tenant": "examples"
+            },
+            "requestDigest": "sha256:638a0ab1acb90ee45089a0dea9499ba4c017cb997aa37fd868436d7239a19baf",
+            "tenant": "examples"
+          }
+        },
+        "mutationCallsBeforeDiscard": 1,
+        "journalRecordsAfterRecovery": 1
+      },
+      {
+        "kind": "deployment",
+        "operation": "dev-2ee192cbe30eb1f942cec28ab894e1da",
+        "actualServerReceipt": {
+          "disposition": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_FOUND",
+          "durability": "DEPLOYMENT_DURABILITY_CONFIRMED",
+          "highWatermark": "0",
+          "receipt": {
+            "action": "DEPLOYMENT_OPERATION_ACTION_APPLY",
+            "actor": {
+              "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "installation-operator"
+            },
+            "completedAtUnixMillis": "1790196170527",
+            "componentDigest": "sha256:337e81b8453893c3ac37ffd8effaf428ba9ebc97a3d9abf7b18d486465a21981",
+            "deploymentId": "my-greeting",
+            "expectedGeneration": "3",
+            "expectedStateVersion": "3",
+            "formatVersion": 1,
+            "manifestDigest": "sha256:153fcccaf1dc3f17abe916c9b70dfd53e7bd80c21d0bc9977bdba58b0142cbac",
+            "objectGeneration": "4",
+            "operationId": "dev-2ee192cbe30eb1f942cec28ab894e1da",
+            "publication": {
+              "id": "publication:sha256:6a498605040d94629e9b2b312f25030220dc126ebaeca701a4c940b38a6d9188",
+              "tenant": "examples"
+            },
+            "receiptDigest": "sha256:c2473b8491c9a1e96321c9f42936070be01558f8c0d70d9e7ab5004310fc71cf",
+            "requestDigest": "sha256:6d10fddc0aa19eccb8535c6c08d1f67a994022d8acf4f44a4cc6a172f8fa68c9",
+            "routeGeneration": "4",
+            "stateVersion": "4",
+            "tenant": "examples"
+          },
+          "retainedFloor": "0"
+        },
+        "mutationCallsBeforeDiscard": 1,
+        "journalRecordsAfterRecovery": 1
+      },
+      {
+        "kind": "invoke",
+        "operation": "dev-5ac6006252e8b3a8fab2259bbf3b16c9",
+        "actualServerReceipt": {
+          "activationId": "dev-5ac6006252e8b3a8fab2259bbf3b16c9",
+          "finalConsumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "958",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "196608",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "17649"
+          },
+          "lastUpdatedUnixMillis": "1790196171844",
+          "metadata": {
+            "release": "sha256:337e81b8453893c3ac37ffd8effaf428ba9ebc97a3d9abf7b18d486465a21981",
+            "revision": "revision-v1:sha256:22c41731c48838d57530f88b03f354ad3395fac718138cf49ad46a611eebc2ef",
+            "route-generation": "4"
+          },
+          "phase": "running",
+          "terminalAtUnixMillis": "1790196171844",
+          "terminalOutcome": {
+            "committedStateVersion": null,
+            "effectIds": [],
+            "kind": "success",
+            "metadata": {
+              "cell-disposition": "released",
+              "cell-id": "lsf-37362c4d1795c178:phase0:standard:00000000"
+            }
+          },
+          "terminalState": "completed"
+        },
+        "mutationCallsBeforeDiscard": 1,
+        "journalRecordsAfterRecovery": 1
+      }
+    ],
+    "concurrentActor": {
+      "controllerGeneration": "4",
+      "environment": "node",
+      "helperSha256": "sha256:77d93f18e36a80a7bb2181c7ec912d77afb6f69fba52d50fcd2dae0a39afed10",
+      "injection": "separate-actor-committed-deployment",
+      "intent": {
+        "deployment": "my-greeting",
+        "expectedGeneration": "4",
+        "expectedStateVersion": "4",
+        "id": "qualification-07508f06cef02bdad278edf4b80cee58"
+      },
+      "node": "lsf-37362c4d1795c178",
+      "profile": "local-experimental-v1",
+      "qualificationComplete": false,
+      "receipt": {
+        "action": "DEPLOYMENT_OPERATION_ACTION_APPLY",
+        "actor": {
+          "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+          "subject": "installation-operator"
+        },
+        "completedAtUnixMillis": "1790196306018",
+        "componentDigest": "sha256:337e81b8453893c3ac37ffd8effaf428ba9ebc97a3d9abf7b18d486465a21981",
+        "deploymentId": "my-greeting",
+        "expectedGeneration": "4",
+        "expectedStateVersion": "4",
+        "formatVersion": 1,
+        "manifestDigest": "sha256:153fcccaf1dc3f17abe916c9b70dfd53e7bd80c21d0bc9977bdba58b0142cbac",
+        "objectGeneration": "5",
+        "operationId": "qualification-07508f06cef02bdad278edf4b80cee58",
+        "publication": {
+          "id": "publication:sha256:6a498605040d94629e9b2b312f25030220dc126ebaeca701a4c940b38a6d9188",
+          "tenant": "examples"
+        },
+        "receiptDigest": "sha256:8420cac9bb77b1a903a26b81eebb596571e644788abf854c9d2541489edb4e4f",
+        "requestDigest": "sha256:945227d3de84696f1d1e59099eb776046a1584b146500d623b52aaf3cec5c4cb",
+        "routeGeneration": "5",
+        "stateVersion": "5",
+        "tenant": "examples"
+      },
+      "remoteMutationCalls": 1,
+      "schemaVersion": "latent.dev.node-fault-observation.v1",
+      "serverGeneration": "5",
+      "workspace": "test-c-watch"
+    },
+    "conflictRejected": true,
+    "unknownOriginalOperation": "dev-1b8171c85de19eaa219107049d16cfc1",
+    "unknownLookupsRetainedSameIdentity": 2,
+    "expiredReceiptTested": false,
+    "staleTestIdentityRejectedByUpdatedHelper": true,
+    "untrustedRecipeRejectedByUpdatedFrontend": true,
+    "competingUpDidNotStopBuild": "e01572eb8665e52cf4212b89eef317a5",
+    "sourceExclusionAndBounds": {
+      "snapshot": "sha256:31ae40196c10fff7c26e172b5c5208ee1d05fd5744ffb41712972aaca50aeb97",
+      "envFileInSnapshot": false,
+      "snapshots": 4,
+      "builds": 4,
+      "operationHistory": 17
+    },
+    "down": {
+      "build": {
+        "attempt": "e01572eb8665e52cf4212b89eef317a5",
+        "guestInstance": {
+          "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+          "initStartTicks": "1951696",
+          "pidNamespace": "4026532473"
+        },
+        "id": "b94c6c135c7c5941393e8071726fec31",
+        "reason": "build-complete",
+        "state": "reaped"
+      },
+      "cleanShutdown": true,
+      "dataRetained": true,
+      "guestInstance": {
+        "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+        "initStartTicks": "1954919",
+        "pidNamespace": "4026532473"
+      },
+      "node": "lsf-37362c4d1795c178",
+      "profile": "local-experimental-v1",
+      "readiness": {
+        "activationReady": true,
+        "authenticated": true,
+        "profile": "local-experimental-v1",
+        "schemaVersion": "latent.native-readiness.v1"
+      },
+      "reaped": true,
+      "state": "stopped"
+    },
+    "purge": {
+      "linuxUser": {
+        "state": "removed",
+        "user": "lsfd-9cf75548b3c1"
+      },
+      "runtime": {
+        "accountRetained": false,
+        "installationId": "6b7b745fb6212fb6ee3ad8757166abe0",
+        "purged": true,
+        "schemaVersion": "latent.native-removal.v1"
+      },
+      "sourceTreeRetained": true,
+      "state": "purged",
+      "workspace": "test-c-watch"
+    },
+    "wslPurge": {
+      "distribution": "LSF-Dev-56b6d0b319d9523b",
+      "state": "purged"
+    },
+    "hostSourceRetained": true,
+    "unrelatedDockerRegistrationRetained": true
+  },
+  "retainedFailedAttempts": [
+    {
+      "artifact": "untrusted.json",
+      "finding": "missing trust was reported as a protected-file failure; fixed before tool selection"
+    },
+    {
+      "artifact": "up2.jsonl",
+      "finding": "failed foreground lock triggered shutdown and cancelled another build; fixed and repeated with actual Windows executable"
+    },
+    {
+      "artifact": "lost-deployment.stderr",
+      "finding": "fault harness expected the publication receipt field for deployment; original committed operation recovered without replay before a separate repeated case"
+    },
+    {
+      "artifact": "stale-test-identity.json",
+      "finding": "declared-error test used older deployment while reporting newer build; updated helper rejects before Invoke"
+    },
+    {
+      "artifact": "unknown-recover-0.json",
+      "finding": "semantic UNKNOWN was called transport loss; updated helper preserves UNKNOWN and the original pending intent"
+    }
+  ],
+  "notEstablished": [
+    "authenticated exact-source complete distribution",
+    "all six languages",
+    "in-flight cross-revision execution",
+    "admission denial and revoked publication",
+    "expired receipt and wrong-tenant real-node schedule",
+    "direct Linux and SSH qualification",
+    "portable/Linux differential provider fixtures",
+    "editor and newcomer review",
+    "devcontainer qualification",
+    "macOS qualification deferred"
+  ],
+  "localRawEvidence": {
+    "dev559-wsl-source4-build-c.json": {
+      "sha256": "sha256:558193600b4a92c099c3ea61bf4c06fbf74274c5e4c0a56977ef2e76c814616b",
+      "bytes": 115
+    },
+    "dev559-wsl-source4-build-c2.json": {
+      "sha256": "sha256:e0a89575720881f31b7e870ed5d8db82ce6b0f62b4a8056378b8a03284939a20",
+      "bytes": 2606
+    },
+    "dev559-wsl-source4-build-d.json": {
+      "sha256": "sha256:3ce1a8de3aa853ac6ad5bed7a69cb294fe9ff721e754fb4fe7df0af71ddf9068",
+      "bytes": 2606
+    },
+    "dev559-wsl-source4-build-d.stderr": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-build-excluded.json": {
+      "sha256": "sha256:3ce1a8de3aa853ac6ad5bed7a69cb294fe9ff721e754fb4fe7df0af71ddf9068",
+      "bytes": 2606
+    },
+    "dev559-wsl-source4-competing-up-fixed.json": {
+      "sha256": "sha256:fea69771e4c2a4024c2f9a96fff8c1f1fddc79168b6e4cce099990fef7ac822f",
+      "bytes": 115
+    },
+    "dev559-wsl-source4-concurrent.json": {
+      "sha256": "sha256:b5ffab8cb42a866b2d2bbc0da2bf0276bfb76d26ad48bd22b50bf5090a47c528",
+      "bytes": 1475
+    },
+    "dev559-wsl-source4-concurrent.stderr": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-conflict-rejected.json": {
+      "sha256": "sha256:bda82558a54207011aa66472460651d1a912026a73743232a6b47b6f5a1aa34b",
+      "bytes": 127
+    },
+    "dev559-wsl-source4-down1.json": {
+      "sha256": "sha256:9f7716c37366e713f194e0bccb607b2f365b8527bce7fda2680b707f3eb4cc52",
+      "bytes": 752
+    },
+    "dev559-wsl-source4-down3.json": {
+      "sha256": "sha256:939ee8a1d060dd4fda1b2dc9675fb71ed201150a388e3d06c09853fb95911cc1",
+      "bytes": 723
+    },
+    "dev559-wsl-source4-down4.json": {
+      "sha256": "sha256:352f68e9b30fa7abad526ce67196782b83124e35946c76c834a2e42a03f1e7bd",
+      "bytes": 723
+    },
+    "dev559-wsl-source4-install.json": {
+      "sha256": "sha256:912ea80e337d87b6be3df5811876883a7c7cfff5f0ab8bfddcf1cdedcf445c6a",
+      "bytes": 975
+    },
+    "dev559-wsl-source4-invoke-a.json": {
+      "sha256": "sha256:ce5b679b49c1eaecf2c2a6f1f6906e30c12533de1ab6975232fa7c42428ed338",
+      "bytes": 1129
+    },
+    "dev559-wsl-source4-invoke-after-compile-failure.json": {
+      "sha256": "sha256:f2ccf775b7a18f8b3cd269d003b9427ac3516c3e72606e1addaddb189f2a9018",
+      "bytes": 1129
+    },
+    "dev559-wsl-source4-invoke-b.json": {
+      "sha256": "sha256:9c706361e9c6df97a65307dbf020ae2e07292a28a9fd222629eefbee53e83f7c",
+      "bytes": 1129
+    },
+    "dev559-wsl-source4-invoke-retained.json": {
+      "sha256": "sha256:ed3798f98616eea1b2fa35bcc06aff4d01d346c0ff7ab786d7f150f328fa61ae",
+      "bytes": 1131
+    },
+    "dev559-wsl-source4-journal-final.json": {
+      "sha256": "sha256:268ee0c8cce9957a820e960ea99a44c66f423100f7f676dfc0eb97d74dc48613",
+      "bytes": 5853
+    },
+    "dev559-wsl-source4-lost-deployment-2.json": {
+      "sha256": "sha256:df0fb2b6f466c5f791b15d85043202c5c05c65167a1606259a4b871bde0a6f37",
+      "bytes": 1453
+    },
+    "dev559-wsl-source4-lost-deployment-2.stderr": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-lost-deployment.json": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-lost-deployment.stderr": {
+      "sha256": "sha256:c7e6adbfa4866be3d434640a888ec3b6ebfcc5a3b1cf5b7917bb704f306931bb",
+      "bytes": 2031
+    },
+    "dev559-wsl-source4-lost-invoke-2.json": {
+      "sha256": "sha256:5d6be01852e07ec6abc261eec1847bd33a98d0e3cb75060c1736f06f35c489f0",
+      "bytes": 977
+    },
+    "dev559-wsl-source4-lost-invoke-2.stderr": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-lost-release.json": {
+      "sha256": "sha256:94d946cf56f818f380c38ba8588d2033f45966d7bc739a045d55c949e3006bf0",
+      "bytes": 1217
+    },
+    "dev559-wsl-source4-lost-release.stderr": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-main-a.c": {
+      "sha256": "sha256:8f1de8cd5e7fc8d2c8c1b158af4038ac5a45f1b12720f2b4a2d329783ab34190",
+      "bytes": 1271
+    },
+    "dev559-wsl-source4-main-b.c": {
+      "sha256": "sha256:ff5b77faedda5652311871ab48f4e9351cb760d9b2c62a938f41a576b6199af1",
+      "bytes": 1271
+    },
+    "dev559-wsl-source4-node-observation.jsonl": {
+      "sha256": "sha256:758b6885a510a1e05845da6a1ed5e3bf59e3bd64ec1ed88d7d455ffb454f64c9",
+      "bytes": 1360
+    },
+    "dev559-wsl-source4-project.json": {
+      "sha256": "sha256:e8b24dc60d0b6c72feedc3ca456494869c5cb5fe60f05ba8ec323386f737c5f4",
+      "bytes": 198
+    },
+    "dev559-wsl-source4-provision.json": {
+      "sha256": "sha256:6126827e57cea494950c5587e880fc5a62f2ea30f599e642bd75293b18a820b7",
+      "bytes": 595
+    },
+    "dev559-wsl-source4-purge.json": {
+      "sha256": "sha256:7a428632cfc989b6b9a893566c8107751038b7672f4f5ec746fa000f4981451f",
+      "bytes": 343
+    },
+    "dev559-wsl-source4-recover-deployment-2.json": {
+      "sha256": "sha256:a969535ff091edb7b05b8edd2255f4956d0a397bb48abba03d5f912b31151b18",
+      "bytes": 1287
+    },
+    "dev559-wsl-source4-recover-deployment-attempt1.json": {
+      "sha256": "sha256:9b8f48ea6e002766511a3557dd088728cf7c925c8919a18845ce52f9a7b00270",
+      "bytes": 1287
+    },
+    "dev559-wsl-source4-recover-invoke-2.json": {
+      "sha256": "sha256:68844fea8c47a67f19ec667252f2d8a2b15241944602b3b44fa1d7602f82ae47",
+      "bytes": 1041
+    },
+    "dev559-wsl-source4-recover-release.json": {
+      "sha256": "sha256:b0443d42cc55d575b85ba50a184f6748a91f4bdef0217168525e3e6241d63948",
+      "bytes": 1610
+    },
+    "dev559-wsl-source4-stale-test-identity.json": {
+      "sha256": "sha256:2fe47cd6f0e26d404ba68aa108de1cbb68fc111f5aee95a9c62dd111ab840415",
+      "bytes": 1806
+    },
+    "dev559-wsl-source4-stale-test-rejected.json": {
+      "sha256": "sha256:e7fd4d704a1cdde7406f1926d7d51a1ab7ecb1c0559aa1ece6d1abd625e4d46a",
+      "bytes": 190
+    },
+    "dev559-wsl-source4-status-a.json": {
+      "sha256": "sha256:57889b2cec40b6d3600ac6e1160168308edf1387eb4d29cad89164877e5ede90",
+      "bytes": 878
+    },
+    "dev559-wsl-source4-status-deployment-attempt1.json": {
+      "sha256": "sha256:853bd132d07eef5480d1eb3b1409839ed68f8dc76a5a8fb74822cd394f26f665",
+      "bytes": 3107
+    },
+    "dev559-wsl-source4-status-release.json": {
+      "sha256": "sha256:7c55fdf9e786a85b518f8ba5eea067427e0c70b72a7bedc0bd9e3a0a311d3b3a",
+      "bytes": 2318
+    },
+    "dev559-wsl-source4-unknown-real-lookup.json": {
+      "sha256": "sha256:06726b77f4b7325afeb2d509d89ef6ffd61ea9fcb05c4ad1c1980c9a9786381f",
+      "bytes": 247
+    },
+    "dev559-wsl-source4-unknown-recover-0.json": {
+      "sha256": "sha256:dc7bec8dd7032e3153a671339bebf509cd547a72e0e309051d861a40989dc685",
+      "bytes": 119
+    },
+    "dev559-wsl-source4-unknown-recover-fixed-0.json": {
+      "sha256": "sha256:92c74c3f246e730faa07a354e2f06c3a663ee99419f1becfc3295297bad71bc2",
+      "bytes": 198
+    },
+    "dev559-wsl-source4-unknown-recover-fixed-1.json": {
+      "sha256": "sha256:cef858fe2997a571bc71f080de6a88919f5542c7807c6798c65251352ce7616c",
+      "bytes": 198
+    },
+    "dev559-wsl-source4-unknown-status.json": {
+      "sha256": "sha256:ebac22aeb57e34d39c5c754c61b431300a100647c7152ec65e8aa6a524f5e302",
+      "bytes": 2676
+    },
+    "dev559-wsl-source4-unknown.json": {
+      "sha256": "sha256:904821f179a4b9c5a52f264960ee83292990669c297259499d4b3a6fe584d21e",
+      "bytes": 717
+    },
+    "dev559-wsl-source4-untrusted-fixed.json": {
+      "sha256": "sha256:76a22d90aa8f263d713077b79d5040971ce6abdbdd22d4f091b4672ebd986479",
+      "bytes": 117
+    },
+    "dev559-wsl-source4-untrusted.json": {
+      "sha256": "sha256:fea69771e4c2a4024c2f9a96fff8c1f1fddc79168b6e4cce099990fef7ac822f",
+      "bytes": 115
+    },
+    "dev559-wsl-source4-up2.jsonl": {
+      "sha256": "sha256:624b0d8b3aad4ac742ca26c3205985617e442a087a30c1a7bfc53f67e5e48303",
+      "bytes": 893
+    },
+    "dev559-wsl-source4-up2.stderr": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-up3.jsonl": {
+      "sha256": "sha256:0f909618e61c629022c8398ab079eb22db7466c08b1b6f145ac460526f84dc8c",
+      "bytes": 3571
+    },
+    "dev559-wsl-source4-up3.stderr": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-up4.jsonl": {
+      "sha256": "sha256:e8a65aabbff3828a609734cfeb0dda34990ca9a9eff59f1b5c0dea6ecad2506d",
+      "bytes": 3840
+    },
+    "dev559-wsl-source4-up4.stderr": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-watch1.jsonl": {
+      "sha256": "sha256:141856d77f769b76d4259c4cf6858633d983d024a0e3c3473b5c760ba9388ebe",
+      "bytes": 18073
+    },
+    "dev559-wsl-source4-watch1.pid": {
+      "sha256": "sha256:1307878fd6d2649ee6db3d276e02eab6a2346536b27a6804d01d535985181775",
+      "bytes": 5
+    },
+    "dev559-wsl-source4-watch1.stderr": {
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "dev559-wsl-source4-workspace.json": {
+      "sha256": "sha256:979de156535aeed0d52402c88b8d0dac8a9ebf8fb3d94434c392b5add8807081",
+      "bytes": 140
+    },
+    "dev559-wsl-source4-wsl-purge.json": {
+      "sha256": "sha256:79ec27954a094d92007c0e675024713c425830153ea1c833a90e4e0933debf18",
+      "bytes": 128
+    }
+  }
+}

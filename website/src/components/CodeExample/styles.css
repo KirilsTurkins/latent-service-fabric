@@ -1,0 +1,24 @@
+.lsf-code-example { margin: 1.5rem 0; min-width: 0; border: 1px solid var(--lsf-border); border-radius: .25rem; background: var(--lsf-surface); overflow: hidden; }
+.lsf-example-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .25rem 1rem; padding: .8rem 1rem .6rem; }
+.lsf-example-heading > span { font-size: .875rem; }
+.lsf-code-example .tabs { display: flex; flex-wrap: wrap; gap: 0; overflow: visible; padding: 0 1rem; margin: 0; border-bottom: 1px solid var(--lsf-border); }
+.lsf-code-example .tabs__item { border-radius: 0; border-bottom: 0; padding: .5rem .9rem; font-size: .9rem; line-height: 1.5; cursor: pointer; }
+.lsf-code-example .tabs__item[aria-selected="true"] { font-weight: 700; text-decoration: underline; text-underline-offset: .3em; }
+.lsf-code-example .margin-top--md { margin-top: 0 !important; }
+.lsf-example-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; padding: .35rem .75rem; background: var(--lsf-raised); font-size: .875rem; }
+.lsf-example-toolbar .button { font-size: .8rem; padding: .3rem .8rem; }
+.lsf-example-code .theme-code-block { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+.lsf-example-code pre { border-radius: 0; font-size: .875rem; line-height: 1.65; }
+.lsf-example-footer { padding: .6rem 1rem; font-size: .875rem; border-top: 1px solid var(--lsf-border); }
+.lsf-example-details { margin: .6rem 0 0; }
+.lsf-example-details > summary { cursor: pointer; }
+.lsf-example-details p { margin-block: .65rem; }
+.lsf-code-example details code { overflow-wrap: anywhere; white-space: normal; }
+.lsf-example-code [class*="copyButton"] { display: none; }
+.lsf-example-copy-status:not(:empty) { display: block; padding: .5rem 1.25rem; }
+.lsf-example-selection { margin: .75rem 1.25rem; border-left: 3px solid var(--lsf-border); padding-left: .75rem; }
+@media (max-width: 480px) {
+  .lsf-example-heading, .lsf-example-toolbar, .lsf-example-footer { padding-inline: .75rem; }
+  .lsf-code-example .tabs { padding-inline: .75rem; }
+  .lsf-code-example .tabs__item { padding-inline: .7rem; }
+}

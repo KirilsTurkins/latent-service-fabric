@@ -1,0 +1,10 @@
+   Compiling latent-wasmtime v0.1.0-alpha.3 (/workspace/crates/latent-wasmtime)
+    Finished `test` profile [unoptimized] target(s) in 10.60s
+     Running tests/phase3_resource.rs (target/debug/deps/phase3_resource-63ecc53d36ab6793)
+
+running 1 test
+test phase3_resource_small_provider_ownership_checkpoint ... resource checkpoint: 70 observed ownership snapshots; full ticket pending
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.84s
+

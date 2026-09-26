@@ -39,7 +39,7 @@ fn noncanonical_manifest_order_remains_idempotent_across_retry_and_reopen() {
 }
 
 #[test]
-fn pending_sync_failure_blocks_conflicting_reference_even_after_failed_retry() {
+fn pending_sync_failure_gates_writes_then_distinct_publications_coexist() {
     let temp = TempRoot::new();
     let repo = repository(temp.path());
     let first = artifact("reserved", b"first-content");
@@ -65,11 +65,16 @@ fn pending_sync_failure_blocks_conflicting_reference_even_after_failed_retry() {
             .is_empty());
     }
     block_on(repo.publish(first.clone())).expect("identical retry reconciles pending release");
+    block_on(repo.publish(second)).expect("independent immutable publication");
     assert_eq!(
-        block_on(repo.publish(second))
-            .expect_err("reference remains unique")
-            .code,
-        PlatformErrorCode::AlreadyExists
+        block_on(repo.resolve(&ArtifactQuery {
+            reference: Some(first.descriptor.reference.clone()),
+            release_digest: None,
+            media_type: None,
+        }))
+        .unwrap_err()
+        .code,
+        PlatformErrorCode::StateConflict
     );
     // Recovery must release the gate, not permanently disable all mutation.
     block_on(repo.publish(artifact("unrelated", b"unrelated"))).expect("gate reopened");
@@ -84,7 +89,7 @@ fn pending_sync_failure_blocks_conflicting_reference_even_after_failed_retry() {
             .expect("list")
             .entries
             .len(),
-        2
+        3
     );
 }
 
@@ -120,7 +125,7 @@ fn pending_sync_failure_preserves_entry_and_byte_capacity_across_reopen() {
             PlatformErrorCode::Unavailable
         );
         assert_eq!(
-            fs::read_dir(temp.path().join("releases"))
+            fs::read_dir(temp.path().join("publications"))
                 .expect("directories")
                 .count(),
             1

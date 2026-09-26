@@ -30,6 +30,12 @@ fn held_authority_fence_reports_busy_and_recovers_after_release() {
     assert_eq!(error.code, PlatformErrorCode::Unavailable);
     assert_eq!(error.message, "admission-authority-busy");
     assert!(error.retryable);
+    assert_eq!(error.details.len(), 1);
+    assert_eq!(error.details[0].kind, "admission.currentness");
+    assert_eq!(
+        error.details[0].fields["reason"],
+        "admission-authority-busy"
+    );
 
     release_sender.send(()).unwrap();
     holder.join().unwrap();

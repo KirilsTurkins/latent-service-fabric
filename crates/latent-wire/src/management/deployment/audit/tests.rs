@@ -29,6 +29,7 @@ fn binding(manifest: &DeploymentManifest, expected: Option<u64>, delete: bool) -
 
 fn versioned(manifest: DeploymentManifest, generation: u64) -> VersionedDeployment {
     VersionedDeployment {
+        publication: None,
         manifest,
         generation,
     }

@@ -1,0 +1,36 @@
+{
+  "artifactDigest": "sha256:4d1f14bce0b23b32e8e86ba0ed5fb232ab3e83b305ba6d71afeae904f2e1fc75",
+  "artifactId": 10612956062,
+  "ciAttempt": 1,
+  "ciRun": 35534853488,
+  "examples": {
+    "bundleSha256": "7f72430af23017a3ff21bb2f66de6f2696bdace3aa1b9801a3bbddecd161d4f0",
+    "inputDigest": "dba81676801844587aa0636f86b8c8c9de2e94748b90cefb4d1b192169d90ffd"
+  },
+  "expectedLiveSource": "80d7924a6e203b88c889f4b9bd3f6afb2f0fe48c",
+  "files": 692,
+  "manifestDigest": "sha256:e5e98801a44ce3fd06da417ff6993b3ef6a6812ffdbf92b689dd7bf6d02f8804",
+  "mode": "rollback",
+  "previousPublicationRun": 35536167924,
+  "publisherAttempt": 1,
+  "publisherRun": 35537527420,
+  "publisherSource": "af3e8680d4132bd99b3299e300af147e53b7fa80",
+  "repository": "KirilsTurkins/latent-service-fabric",
+  "schema": 1,
+  "source": "80d7924a6e203b88c889f4b9bd3f6afb2f0fe48c",
+  "treeDigest": "sha256:8adfdfe4de767b506c8290e4ad43139629bbcde28f30dff3c8bd1eb1e1a0903e",
+  "url": "https://kirilsturkins.github.io/latent-service-fabric/",
+  "versions": [
+    {
+      "documentationSource": "44891f4158a663de5c08b177431686ec70c0bdf3",
+      "exampleSource": "44891f4158a663de5c08b177431686ec70c0bdf3",
+      "examplesSha256": "ba494a4fe53cc62324d090a2df91d47a4dc314c1454c9d23e36ec9711265db56",
+      "profile": "phase-2",
+      "runtimeSource": "44891f4158a663de5c08b177431686ec70c0bdf3",
+      "runtimeVersion": "0.1.0-alpha.3",
+      "snapshotIdentity": "0a4ff9568323bb8e76941e7482fe281321270531366ba6dbd968f8d3d7ed468a",
+      "verification": "Historical source snapshot; runtime evidence retains its original scope. Site checks do not qualify runtime behavior.",
+      "version": "0.1.0-alpha.3"
+    }
+  ]
+}

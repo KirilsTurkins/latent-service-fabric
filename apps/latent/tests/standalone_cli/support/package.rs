@@ -113,7 +113,7 @@ impl Package {
         )
     }
 
-    pub fn deployment(&self, id: &str) -> PathBuf {
+    pub fn deployment(&self, id: &str, publication: &str) -> PathBuf {
         let mut manifest: Value = serde_json::from_slice(include_bytes!(
             "../../../../../examples/echo-contract/deployment.json"
         ))
@@ -122,6 +122,7 @@ impl Package {
         manifest["metadata"]["tenant"] = json!(self.tenant);
         manifest["spec"]["service"] = json!(self.service);
         manifest["spec"]["release"] = json!(self.digest);
+        manifest["spec"]["publication"] = json!(publication);
         if self.tenant == "tests" {
             manifest["spec"]["grants"] = json!([]);
             manifest["spec"]["resources"]["cpuFuel"] = json!(10_000_000_000_u64);

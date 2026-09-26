@@ -25,6 +25,32 @@ impl Default for AdmissionStorageLimits {
     }
 }
 impl AdmissionStorageLimits {
+    pub(crate) fn check_evidence(
+        self,
+        upload: &crate::ReleaseEvidenceUpload,
+    ) -> Result<(), PlatformError> {
+        self.validate()?;
+        let mut bytes = 0usize;
+        for entries in [&upload.signatures, &upload.provenance, &upload.sboms] {
+            if entries.capacity() > self.max_evidence_per_kind {
+                return Err(exhausted());
+            }
+            for entry in entries {
+                if entry.manifest.len() > self.max_document_bytes
+                    || entry.configuration.len() > self.max_document_bytes
+                {
+                    return Err(exhausted());
+                }
+                for value in [&entry.manifest, &entry.configuration, &entry.payload] {
+                    bytes = bytes
+                        .checked_add(value.capacity())
+                        .filter(|n| *n <= self.max_auxiliary_bytes)
+                        .ok_or_else(exhausted)?;
+                }
+            }
+        }
+        Ok(())
+    }
     pub fn validate(self) -> Result<(), PlatformError> {
         let hard = Self {
             max_auxiliary_bytes: 64 * 1024 * 1024,

@@ -158,9 +158,12 @@ async fn prepare(node: &mut Node, directory: &Path) -> Result<(PreparedComponent
     let artifact = node.published().await?;
     let identity = evidence::artifact(directory, &node.fixture, &artifact)?;
     let backend = &node.owner.backend;
-    let key = backend
-        .preparation_key(&artifact.descriptor.release_digest)
-        .map_err(platform)?;
+    let key = super::publication_key(
+        backend.as_ref(),
+        node.artifacts.as_ref(),
+        &node.fixture.tenant,
+        &artifact.descriptor.release_digest,
+    )?;
     let before = backend.cache_snapshot();
     let started = Instant::now();
     let activation = backend

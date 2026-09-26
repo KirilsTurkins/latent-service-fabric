@@ -4,6 +4,28 @@ use super::{config, document, input, CellConfig, MIB};
 use crate::config::{EngineAllocator, EngineConfig, EngineOptimization};
 
 #[test]
+fn java_guest_engine_is_explicit_and_does_not_raise_operator_limits() {
+    let (_directory, mut config) = config();
+    let before = config.clone().derive().unwrap().wasmtime;
+    assert!(!before.java_guest);
+    config.engine.java_guest = true;
+    let current = config.clone().derive().unwrap().wasmtime;
+    assert!(current.java_guest);
+    assert_eq!(before.maximum_memory_bytes, current.maximum_memory_bytes);
+    assert_eq!(before.maximum_fuel, current.maximum_fuel);
+    config.engine.allocator = EngineAllocator::Pooling;
+    assert!(config.derive().is_err());
+    for invalid in ["null", "1", "\"true\"", "[]"] {
+        let source = document().replacen(
+            '{',
+            &format!("{{\"engine\":{{\"javaGuest\":{invalid}}},"),
+            1,
+        );
+        assert!(input::decode(source.as_bytes()).is_err());
+    }
+}
+
+#[test]
 fn finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage() {
     for allocator in [EngineAllocator::OnDemand, EngineAllocator::Pooling] {
         for optimization in [EngineOptimization::Speed, EngineOptimization::SpeedAndSize] {
@@ -11,6 +33,7 @@ fn finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage()
             config.engine = EngineConfig {
                 allocator,
                 optimization,
+                java_guest: false,
             };
             config.cells.push(CellConfig {
                 class: "small".to_owned(),

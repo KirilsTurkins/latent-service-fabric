@@ -6,6 +6,16 @@
 
 ## Context
 
+Current reading: this records the original supplied-component validator. The
+installed ABI has since gained the exact async and resource extensions in
+[ADR-0031](0031-version-host-abi-recognition-independently-of-provider-authority.md),
+[ADR-0032](0032-use-bounded-owned-resources-for-streaming-http.md),
+[ADR-0033](0033-use-scoped-durable-local-blobs-with-owned-chunks.md) and
+[ADR-0035](0035-bound-http-application-values-and-delivery-ownership.md).
+The [packaging reference](../docs/component-development/packaging.md) describes
+the current validator. Dependency versions below describe the original decision;
+the workspace Cargo manifest and lockfile own current pins.
+
 Package identity binds bytes, but cannot establish that a supplied component
 implements the accompanying WIT or typed metadata. The maintained Phase 0 echo
 builder is a fixture-specific compiler workflow. Packaging must also support

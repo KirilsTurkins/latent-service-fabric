@@ -7,6 +7,8 @@ use latent_core::{
 use serde::{Deserialize, Serialize};
 mod canary;
 pub use canary::{AuditCanaryDecision, AuditCanaryReason, AuditCanaryVerdict};
+mod capability;
+pub use capability::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AuditScope {
@@ -73,9 +75,12 @@ enumeration!(AuditControlAction {
     RenewEvidence,
     DeploymentApply,
     DeploymentDelete,
+    TriggerApply,
+    TriggerDelete,
     Rollout,
     Promotion,
-    Rollback
+    Rollback,
+    CapabilityCall
 });
 enumeration!(AuditOperationResult {
     Committed,
@@ -138,9 +143,64 @@ pub struct AuditPolicyIdentity {
     #[serde(with = "codec::text")]
     pub digest: ArtifactBlobDigest,
 }
+/// Exact static publication facts; this is not executable component authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AuditStaticWebTarget {
+    #[serde(with = "codec::text")]
+    pub web_manifest_digest: ArtifactBlobDigest,
+    #[serde(with = "codec::text")]
+    pub assets_digest: ArtifactBlobDigest,
+    pub web_generation: u64,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditIdentities {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub static_web: Option<AuditStaticWebTarget>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub trigger: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub trigger_generation: Option<u64>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub capability: Option<AuditCapabilityContext>,
+    /// Captured source publication; record scope authorizes the operation and
+    /// does not promote a local-unscoped compatibility source to tenant admission.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "codec::optional"
+    )]
+    pub publication: Option<latent_core::PublicationId>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "codec::optional"
+    )]
+    pub base_publication: Option<latent_core::PublicationId>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "codec::optional"
+    )]
+    pub candidate_publication: Option<latent_core::PublicationId>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

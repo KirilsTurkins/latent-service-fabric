@@ -6,6 +6,8 @@
 mod audit;
 #[path = "admission_tests/fixture.rs"]
 mod fixture;
+#[path = "admission_tests/read_wait.rs"]
+mod read_wait;
 #[path = "admission_tests/retained_package.rs"]
 mod retained_package;
 
@@ -138,7 +140,7 @@ fn admit(repo: &DirectoryArtifactRepository) -> Result<crate::ArtifactCatalogEnt
 }
 fn assert_no_releases(root: &TempRoot) {
     assert_eq!(
-        std::fs::read_dir(root.path().join("releases"))
+        std::fs::read_dir(root.path().join("publications"))
             .unwrap()
             .count(),
         0
@@ -196,6 +198,10 @@ fn retained_ineligible_history_requires_control_reverification() {
     let repo = open(&root, &authority);
     let summary = admit(&repo).unwrap();
     let release = &summary.descriptor.release_digest;
+    let publication = crate::PublicationRef {
+        scope: crate::LifecycleScope::Tenant(tenant()),
+        id: summary.publication.clone().unwrap(),
+    };
     drop(repo);
     authority.allowed.store(false, Ordering::Release);
     let reopened = open(&root, &authority);
@@ -208,16 +214,19 @@ fn retained_ineligible_history_requires_control_reverification() {
         reopened.release_eligibility(release).unwrap_err().code,
         PlatformErrorCode::PermissionDenied
     );
-    assert!(reopened.reverify_retained(&tenant(), release).is_err());
+    assert!(reopened.reverify_publication(&publication).is_err());
     authority.allowed.store(true, Ordering::Release);
     assert_eq!(
-        reopened.reverify_retained(&tenant(), release).unwrap(),
+        reopened.reverify_publication(&publication).unwrap(),
         summary
     );
     assert!(reopened.release_eligibility(release).unwrap().is_some());
     assert_eq!(
         reopened
-            .reverify_retained(&TenantId("other".to_owned()), release)
+            .reverify_publication(&crate::PublicationRef {
+                scope: crate::LifecycleScope::Tenant(TenantId("other".to_owned())),
+                ..publication.clone()
+            })
             .unwrap_err()
             .code,
         PlatformErrorCode::NotFound
@@ -290,7 +299,7 @@ fn post_rename_expiry_does_not_adopt_and_exact_retry_recovers() {
     );
     assert!(block_on(repo.list(None, 1)).unwrap().entries.is_empty());
     assert_eq!(
-        std::fs::read_dir(root.path().join("releases"))
+        std::fs::read_dir(root.path().join("publications"))
             .unwrap()
             .count(),
         1
@@ -383,12 +392,13 @@ fn corrupt_evidence_is_not_classified_as_expired_history() {
 }
 
 #[test]
-fn same_component_cannot_replace_immutable_package_or_evidence() {
+fn new_package_coexists_but_cannot_replace_an_existing_packages_evidence() {
     let root = TempRoot::new();
     let authority = Authority::new();
     let repo = open(&root, &authority);
     let release = admit(&repo).unwrap().descriptor.release_digest;
-    let before = std::fs::read(release_dir(root.path(), &release).join("COMPLETE")).unwrap();
+    let original = release_dir(root.path(), &release);
+    let before = std::fs::read(original.join("COMPLETE")).unwrap();
     for changed_package in [false, true] {
         let mut changed = upload();
         if changed_package {
@@ -396,18 +406,24 @@ fn same_component_cannot_replace_immutable_package_or_evidence() {
         } else {
             changed.signatures[0].manifest.push(b' ');
         }
-        assert_eq!(
-            block_on(repo.admit_package(&tenant(), changed, &mut |_| Ok(())))
-                .unwrap_err()
-                .code,
-            PlatformErrorCode::AlreadyExists
-        );
+        let result = block_on(repo.admit_package(&tenant(), changed, &mut |_| Ok(())));
+        if changed_package {
+            result.expect("test authority permits a distinct immutable package");
+        } else {
+            assert_eq!(result.unwrap_err().code, PlatformErrorCode::AlreadyExists);
+        }
     }
+    assert_eq!(std::fs::read(original.join("COMPLETE")).unwrap(), before);
     assert_eq!(
-        std::fs::read(release_dir(root.path(), &release).join("COMPLETE")).unwrap(),
-        before
+        block_on(repo.fetch(&release)).unwrap_err().code,
+        PlatformErrorCode::StateConflict
     );
-    assert_eq!(block_on(repo.fetch(&release)).unwrap(), artifact());
+    assert_eq!(
+        std::fs::read_dir(root.path().join("publications"))
+            .unwrap()
+            .count(),
+        2
+    );
 }
 
 #[test]

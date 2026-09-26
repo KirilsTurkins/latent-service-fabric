@@ -1,0 +1,25 @@
+package latent:dotnet-runtime@0.1.0;
+
+// Compiler support is activation-local. GC timing requires an explicitly
+// admitted LSF clock; all other WASI authority remains closed.
+world closed {
+    import latent:clock/monotonic@0.1.0;
+    export wasi:io/poll@0.2.6;
+    export wasi:clocks/monotonic-clock@0.2.6;
+    export wasi:io/error@0.2.6;
+    export wasi:io/streams@0.2.6;
+    export wasi:cli/environment@0.2.6;
+    export wasi:cli/exit@0.2.6;
+    export wasi:cli/stdin@0.2.6;
+    export wasi:cli/stdout@0.2.6;
+    export wasi:cli/stderr@0.2.6;
+    export wasi:cli/terminal-input@0.2.6;
+    export wasi:cli/terminal-output@0.2.6;
+    export wasi:cli/terminal-stdin@0.2.6;
+    export wasi:cli/terminal-stdout@0.2.6;
+    export wasi:cli/terminal-stderr@0.2.6;
+    export wasi:clocks/wall-clock@0.2.6;
+    export wasi:filesystem/types@0.2.6;
+    export wasi:filesystem/preopens@0.2.6;
+    export wasi:random/random@0.2.6;
+}

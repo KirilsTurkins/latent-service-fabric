@@ -2,6 +2,23 @@
 
 use crate::Metadata;
 
+/// Closed, non-sensitive reasons for a supply-chain currentness failure.
+/// These describe authority state, never keys, policy content or filesystem paths.
+pub const ADMISSION_CURRENTNESS_REASONS: &[&str] = &[
+    "admission-authority-busy",
+    "admission-authority-poisoned",
+    "admission-control-busy",
+    "admission-clock-lease-uncovered",
+    "admission-clock-regression",
+    "admission-durability-uncertain",
+    "admission-owner-retired",
+    "admission-restart-clock-floor",
+    "admission-verification-busy",
+    "signature-clock-regression",
+    "signature-trust-conflict",
+    "signature-stale-proof",
+];
+
 /// Stable platform-level error classification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]

@@ -1,0 +1,657 @@
+{
+  "artifacts": {
+    "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+    "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+    "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+    "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+    "evidence": "sha256:b1922167a21b486632599162a8550dde4968f6973b2329660ce8737d7ee9e528",
+    "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+  },
+  "authority": {
+    "wrong-tenant": {
+      "activationId": "qualification-9f03aa90c82d44649acbea52d650d243",
+      "calls": 1,
+      "category": "platform-failure",
+      "code": "permission-denied",
+      "credentialInArguments": false,
+      "outcomeKnown": true,
+      "privateConfigurationExported": false
+    },
+    "wrong-token": {
+      "activationId": "qualification-f0216dcbcd038655180a316a7844e1a6",
+      "calls": 1,
+      "category": "platform-failure",
+      "code": "unauthenticated",
+      "credentialInArguments": false,
+      "outcomeKnown": true,
+      "privateConfigurationExported": false
+    }
+  },
+  "cleanHost": false,
+  "cleanup": "owned-processes-reaped-private-state-retained",
+  "concurrent": {
+    "actorUnchanged": true,
+    "controllerUnchanged": true,
+    "injection": {
+      "controllerGeneration": "1",
+      "environment": "node",
+      "helperSha256": "sha256:5fedfdd66b506ebefc5ba84474091eca8de3b3b48a4da955f8d0f7e0eda8cbdd",
+      "injection": "separate-actor-committed-deployment",
+      "intent": {
+        "deployment": "my-greeting",
+        "expectedGeneration": "1",
+        "expectedStateVersion": "1",
+        "id": "qualification-6e0b1f9799030d0d731d0598f1d03daf"
+      },
+      "node": "lsf-47ee3fb609d25589",
+      "profile": "local-experimental-v1",
+      "qualificationComplete": false,
+      "receipt": {
+        "action": "DEPLOYMENT_OPERATION_ACTION_APPLY",
+        "actor": {
+          "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+          "subject": "installation-operator"
+        },
+        "completedAtUnixMillis": "1790291316890",
+        "componentDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "deploymentId": "my-greeting",
+        "expectedGeneration": "1",
+        "expectedStateVersion": "1",
+        "formatVersion": 1,
+        "manifestDigest": "sha256:8e530b66766a90470582bd715844828a37c55b7c2e2293774ae32cccec633237",
+        "objectGeneration": "2",
+        "operationId": "qualification-6e0b1f9799030d0d731d0598f1d03daf",
+        "publication": {
+          "id": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+          "tenant": "examples"
+        },
+        "receiptDigest": "sha256:fa5db59d1516c27bbc69be03ae271df279e83a7d388a7a94b8547812683bd21d",
+        "requestDigest": "sha256:f7b21ab0b031bef71505ce3e1c4395f5144b59eb60a3c3af5454aed21d0e0def",
+        "routeGeneration": "2",
+        "stateVersion": "2",
+        "tenant": "examples"
+      },
+      "remoteMutationCalls": 1,
+      "schemaVersion": "latent.dev.node-fault-observation.v1",
+      "serverGeneration": "2",
+      "workspace": "test-recovery-483585b2"
+    },
+    "rejection": {
+      "code": "concurrent-deployment-change-no-overwrite",
+      "uncertain": false
+    }
+  },
+  "controllerSourceCommit": "230ec8e7cf48318a6a621fa01f045492d33688fc",
+  "controllerSourceDirty": true,
+  "excludedClaims": [
+    "publisher-authenticated-final-candidate",
+    "clean-host-installation",
+    "expired-receipt-eviction",
+    "cross-user-isolation",
+    "revoked-publication",
+    "in-flight-revision-cutover",
+    "vm-network-disconnect"
+  ],
+  "execution": "actual-signed-node-and-separate-installed-helper-processes",
+  "failedAttempts": [
+    {
+      "cleanup": "owned-processes-reaped-private-state-retained",
+      "correction": "validate last lifecycle phase plus coherent terminal state, outcome, time and final accounting",
+      "failure": "controller required nonexistent terminal lifecycle phase",
+      "phase": "lost-invoke-recovery",
+      "releaseAndDeploymentRecovery": "passed"
+    },
+    {
+      "cleanup": "owned-processes-reaped-private-state-retained",
+      "correction": "use the actual invocation target tenant to exercise wrong-tenant and wrong-token authorization",
+      "failure": "management read with a different selected tenant correctly rejected response scope instead of returning invocation permission denial",
+      "lostResponseRecoveryAndRetainedRestart": "passed",
+      "phase": "authority-probe"
+    }
+  ],
+  "lostResponses": {
+    "deployment": {
+      "activationStatus": null,
+      "commands": [
+        [
+          "deployment",
+          "apply"
+        ]
+      ],
+      "discardedResultSha256": "sha256:4ecf901dca632f55f2047c67268871cc69c8385d64bcfd67a75d649514bca373",
+      "injection": "discarded-real-successful-response",
+      "mutationCalls": 1,
+      "newMutationBlocked": {
+        "code": "recover-original-operation-before-new-mutation",
+        "uncertain": true
+      },
+      "oneOriginalSettlement": true,
+      "originalOperation": "dev-5cc0a3cb6cff8bb3db7bc6d47104a324",
+      "pendingRequestDigest": "sha256:9ca520b565b032b21cb15ed70f31a95dfadd9740f7871bac8e378797c97c1bc7",
+      "recoveredReceipt": {
+        "action": "DEPLOYMENT_OPERATION_ACTION_APPLY",
+        "actor": {
+          "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+          "subject": "installation-operator"
+        },
+        "completedAtUnixMillis": "1790291306791",
+        "componentDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "deploymentId": "my-greeting",
+        "expectedGeneration": "0",
+        "expectedStateVersion": "0",
+        "formatVersion": 1,
+        "manifestDigest": "sha256:8e530b66766a90470582bd715844828a37c55b7c2e2293774ae32cccec633237",
+        "objectGeneration": "1",
+        "operationId": "dev-5cc0a3cb6cff8bb3db7bc6d47104a324",
+        "publication": {
+          "id": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+          "tenant": "examples"
+        },
+        "receiptDigest": "sha256:03d1cee06846a8680e4775fd1699775e9c5d441627ababdbeb00ea1b08802fb7",
+        "requestDigest": "sha256:2bac4e96e9abab319380c6f5f0a8e81d04f2712870f04a336a14c3a5ac9bfb19",
+        "routeGeneration": "1",
+        "stateVersion": "1",
+        "tenant": "examples"
+      },
+      "recoveryCategory": "success",
+      "recoveryOutcomeKnown": true,
+      "secondRecovery": "no-pending-operation",
+      "successfulResultBytesRecovered": null
+    },
+    "invoke": {
+      "activationStatus": {
+        "activationId": "dev-ccf3145779025f3e4ecc4b70163d7ad1",
+        "finalConsumption": {
+          "blobReadBytes": "0",
+          "blobWriteBytes": "0",
+          "childCalls": 0,
+          "cpuFuel": "1457",
+          "effectCount": 0,
+          "logBytes": "0",
+          "outboundRequests": 0,
+          "peakMemoryBytes": "1179648",
+          "stateReadBytes": "0",
+          "stateWriteBytes": "0",
+          "wallTimeMicros": "396055"
+        },
+        "phase": "running",
+        "terminalAtUnixMillis": "1790291308342",
+        "terminalState": "completed"
+      },
+      "commands": [
+        [
+          "invoke"
+        ]
+      ],
+      "discardedResultSha256": "sha256:cbf57393c1534303112d398d7bbecd3d496137ba53c72ce6e06e5a5f6d1a520a",
+      "injection": "discarded-real-successful-response",
+      "mutationCalls": 1,
+      "newMutationBlocked": {
+        "code": "recover-original-operation-before-new-mutation",
+        "uncertain": true
+      },
+      "oneOriginalSettlement": true,
+      "originalOperation": "dev-ccf3145779025f3e4ecc4b70163d7ad1",
+      "pendingRequestDigest": "sha256:ff839c5ff339bbf03ab689ce943fe9e55a455ff13ef69d5c652639451719d1db",
+      "recoveredReceipt": null,
+      "recoveryCategory": "success",
+      "recoveryOutcomeKnown": true,
+      "secondRecovery": "no-pending-operation",
+      "successfulResultBytesRecovered": false
+    },
+    "release": {
+      "activationStatus": null,
+      "commands": [
+        [
+          "release",
+          "publish-package"
+        ]
+      ],
+      "discardedResultSha256": "sha256:5ac2d1190d1f05bfd9fdddc45a308737b1b54626ffdb7772bc20ff4c6e4ef0b2",
+      "injection": "discarded-real-successful-response",
+      "mutationCalls": 1,
+      "newMutationBlocked": {
+        "code": "recover-original-operation-before-new-mutation",
+        "uncertain": true
+      },
+      "oneOriginalSettlement": true,
+      "originalOperation": "dev-c8d494955cf8290a859dc27f1717b8a1",
+      "pendingRequestDigest": "sha256:4a9fd8cad51db806da51385394347766c3d84178fb63a673fdabdcc5ddcd2d35",
+      "recoveredReceipt": {
+        "action": "RELEASE_LIFECYCLE_ACTION_PUBLISH",
+        "actor": {
+          "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+          "subject": "installation-operator"
+        },
+        "componentDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "disposition": "RELEASE_OPERATION_DISPOSITION_COMMITTED",
+        "expectedGeneration": "0",
+        "observedAtUnixMillis": "1790291305231",
+        "operationId": "dev-c8d494955cf8290a859dc27f1717b8a1",
+        "packageManifestDigest": "sha256:97d8293543d143748ae684e0384dcfacbd46f31f614529821ff5a6d765aebb6f",
+        "policy": {
+          "digest": "sha256:8caa3a300d2ee3f476652569db232e9dbd1a89542cee544ce25a40e3f7adb90d",
+          "generation": "1",
+          "scope": "examples"
+        },
+        "publication": {
+          "id": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+          "tenant": "examples"
+        },
+        "reason": "RELEASE_LIFECYCLE_REASON_ADMITTED",
+        "record": {
+          "actor": {
+            "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+            "subject": "installation-operator"
+          },
+          "componentDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+          "evidenceRevisionDigest": null,
+          "generation": "1",
+          "observedAtUnixMillis": "1790291305231",
+          "operationId": "dev-c8d494955cf8290a859dc27f1717b8a1",
+          "packageDigest": "sha256:97d8293543d143748ae684e0384dcfacbd46f31f614529821ff5a6d765aebb6f",
+          "policy": {
+            "digest": "sha256:8caa3a300d2ee3f476652569db232e9dbd1a89542cee544ce25a40e3f7adb90d",
+            "generation": "1",
+            "scope": "examples"
+          },
+          "publication": {
+            "id": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+            "tenant": "examples"
+          },
+          "reason": "RELEASE_LIFECYCLE_REASON_ADMITTED",
+          "state": "RELEASE_LIFECYCLE_STATE_ADMITTED",
+          "tenant": "examples"
+        },
+        "requestDigest": "sha256:0841efd3b78d4516cf441a9e7f272f9c2edf1e770df987620102bad686b139e9",
+        "tenant": "examples"
+      },
+      "recoveryCategory": "success",
+      "recoveryOutcomeKnown": true,
+      "secondRecovery": "no-pending-operation",
+      "successfulResultBytesRecovered": null
+    }
+  },
+  "postRecoveryValues": {
+    "cleanup": "invocation-results-received-node-retained",
+    "environment": "node",
+    "excludedChecks": [],
+    "identity": {
+      "admission": "enforced",
+      "architecture": "x86_64",
+      "artifacts": {
+        "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+        "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+        "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+        "evidence": "sha256:b1922167a21b486632599162a8550dde4968f6973b2329660ce8737d7ee9e528",
+        "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+      },
+      "deployment": {
+        "attempt": "7dd4c5dcb9a39750d5b34b0ae865d6af",
+        "buildKey": "sha256:68f4ef58d4e0f991c9e79f8d2128f805664534b48c172c6ede65e2f9e145920d",
+        "componentDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "deployment": "my-greeting",
+        "generation": "1",
+        "operation": "dev-5cc0a3cb6cff8bb3db7bc6d47104a324",
+        "publication": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+        "publicationInput": "sha256:49a907f2f515466e883eabd4e4d86add525d9effb54e2de14998090335ea9670",
+        "source": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+        "releaseDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "routeGeneration": "1"
+      },
+      "fixtureCheck": null,
+      "fixtureConfiguration": null,
+      "fixtureProviders": {},
+      "hostAbi": "lsf-host-abi-phase3-v4",
+      "kernel": "6.18.33.2-microsoft-standard-WSL2",
+      "node": "lsf-47ee3fb609d25589",
+      "os": "linux",
+      "package": {
+        "componentDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "executionAuthorized": false,
+        "kind": "capsule",
+        "layerBytes": "25770",
+        "layers": 6,
+        "name": "my-greeting",
+        "packageDigest": "sha256:7d4d8f4123b58007b0e2f0e37039de29b3c2f717eed963839c6b25b7897541a5",
+        "sbomInventoryDigest": null,
+        "trustEvaluated": false,
+        "version": "1.0.0",
+        "webBuildOutputs": null
+      },
+      "profile": "local-experimental-v1",
+      "runtime": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+        },
+        "buildProfile": {
+          "compiledBinary": "latentd",
+          "debugInfo": 0,
+          "features": [
+            "latentd/development-test-node"
+          ],
+          "incremental": false,
+          "name": "dev",
+          "retainedOperatorAndAotSource": {
+            "binaries": {
+              "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+              "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+              "latentd": "sha256:894d9d2d309717506cf85c8c57f4add3f8b8519c6158adcacdd60c393486ffa7"
+            },
+            "path": "/build/dev559-node-kit3"
+          }
+        },
+        "controllerSourceCommit": "230ec8e7cf48318a6a621fa01f045492d33688fc",
+        "controllerSourceDirty": true,
+        "engine": {
+          "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "hostAbiProfile": "lsf-host-abi-phase3-v4",
+          "wasmtimeVersion": "47.0.4"
+        },
+        "helperSha256": "sha256:5fedfdd66b506ebefc5ba84474091eca8de3b3b48a4da955f8d0f7e0eda8cbdd",
+        "publisherAuthenticated": false,
+        "purpose": "source-application-node-tests",
+        "sourceCommit": "e212bcc800ec0939715c2ee92de8e581e8ee69d4",
+        "sourceDirty": true,
+        "version": "0.1.0-alpha.4"
+      },
+      "source": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c",
+      "testSigning": {
+        "attempt": "7dd4c5dcb9a39750d5b34b0ae865d6af",
+        "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "expiresAtUnixSeconds": 1790293102,
+        "inventory": "sha256:27625062294e6c2ea3b184dce639795e349d0361621eecc654f945ab56b5f48c",
+        "name": "my-greeting",
+        "packageDigest": "sha256:97d8293543d143748ae684e0384dcfacbd46f31f614529821ff5a6d765aebb6f",
+        "policySha256": "sha256:1727a569ac384e5225dafbd58a3551de32ec9df646ceee9929e41c3d4583a3ae",
+        "signer": "sha256:96162b792023201d38971c7f836d8a6158045dec65d1d72a0b9c419479b3392d",
+        "source": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c",
+        "toolInventory": "sha256:d77d6240a78404c9718e3e06f2e05869066d7c571486c2f08823ce2d49dc5c43",
+        "trust": "isolated-short-lived-demo-only"
+      }
+    },
+    "passed": true,
+    "pendingOperation": null,
+    "results": [
+      {
+        "activationId": "dev-38244b6b31ad0c4a7ffbe4c38d9287bb",
+        "category": "success",
+        "execution": null,
+        "expectedRevision": {
+          "publicationId": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+          "releaseDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+          "routeGeneration": "1"
+        },
+        "fixtures": [],
+        "id": "greeting-0",
+        "inputSha256": "sha256:ef51432249b4415547723843d22c923719d51493a177a4bb4cd312e840c70e37",
+        "outcomeKnown": true,
+        "payloadSha256": "sha256:b5cf4f7f7e9bfe683ce6959318e4ce65bf1f519e8fbdb2ba248056c502a2ac07",
+        "platformCode": null,
+        "required": true,
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+          "releaseDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+          "revisionId": "revision-v1:sha256:7e542634c2b47aa58da7cde3776e2942a480776611ec07ecdd7f1fcdc2080f3e",
+          "routeGeneration": "1"
+        },
+        "status": "passed",
+        "targetMatches": true,
+        "timeoutMillis": 5000
+      }
+    ],
+    "schemaVersion": "latent.dev.test-report.v1",
+    "selection": [
+      "greeting-0"
+    ]
+  },
+  "publisherAuthenticated": false,
+  "qualificationComplete": false,
+  "rawReportSha256": "sha256:0fde1bd0fd6a4951c402faba8abaea77c55a0a9b4ebb41eaee7059d245802fd3",
+  "retainedRestart": {
+    "cleanup": "invocation-results-received-node-retained",
+    "environment": "node",
+    "excludedChecks": [],
+    "identity": {
+      "admission": "enforced",
+      "architecture": "x86_64",
+      "artifacts": {
+        "capsule": "sha256:906e08452911ade4301b36247db5fc1b6ac9fdb93d05e53842fc7cf1c6f434f8",
+        "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "contracts": "sha256:71c66a868e541f488aa2a79fee70fd6ccc78ad0f84c6cfb955a5cb21a93cb29a",
+        "deployment": "sha256:7380e2a4765877535f5f9c2b1d2934a034bcf7fef5f50863552e2dd68f8b8cd0",
+        "evidence": "sha256:b1922167a21b486632599162a8550dde4968f6973b2329660ce8737d7ee9e528",
+        "packageSource": "sha256:04746d9f5ef3f68e66e69def8445c049102c95274d849b08a7d275356a0b0bb5"
+      },
+      "deployment": {
+        "attempt": "7dd4c5dcb9a39750d5b34b0ae865d6af",
+        "buildKey": "sha256:68f4ef58d4e0f991c9e79f8d2128f805664534b48c172c6ede65e2f9e145920d",
+        "componentDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "deployment": "my-greeting",
+        "generation": "1",
+        "operation": "dev-5cc0a3cb6cff8bb3db7bc6d47104a324",
+        "publication": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+        "publicationInput": "sha256:49a907f2f515466e883eabd4e4d86add525d9effb54e2de14998090335ea9670",
+        "source": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+      },
+      "expectedRevision": {
+        "publicationId": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+        "releaseDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "routeGeneration": "1"
+      },
+      "fixtureCheck": null,
+      "fixtureConfiguration": null,
+      "fixtureProviders": {},
+      "hostAbi": "lsf-host-abi-phase3-v4",
+      "kernel": "6.18.33.2-microsoft-standard-WSL2",
+      "node": "lsf-47ee3fb609d25589",
+      "os": "linux",
+      "package": {
+        "componentDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "executionAuthorized": false,
+        "kind": "capsule",
+        "layerBytes": "25770",
+        "layers": 6,
+        "name": "my-greeting",
+        "packageDigest": "sha256:7d4d8f4123b58007b0e2f0e37039de29b3c2f717eed963839c6b25b7897541a5",
+        "sbomInventoryDigest": null,
+        "trustEvaluated": false,
+        "version": "1.0.0",
+        "webBuildOutputs": null
+      },
+      "profile": "local-experimental-v1",
+      "runtime": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+        },
+        "buildProfile": {
+          "compiledBinary": "latentd",
+          "debugInfo": 0,
+          "features": [
+            "latentd/development-test-node"
+          ],
+          "incremental": false,
+          "name": "dev",
+          "retainedOperatorAndAotSource": {
+            "binaries": {
+              "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+              "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+              "latentd": "sha256:894d9d2d309717506cf85c8c57f4add3f8b8519c6158adcacdd60c393486ffa7"
+            },
+            "path": "/build/dev559-node-kit3"
+          }
+        },
+        "controllerSourceCommit": "230ec8e7cf48318a6a621fa01f045492d33688fc",
+        "controllerSourceDirty": true,
+        "engine": {
+          "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "hostAbiProfile": "lsf-host-abi-phase3-v4",
+          "wasmtimeVersion": "47.0.4"
+        },
+        "helperSha256": "sha256:5fedfdd66b506ebefc5ba84474091eca8de3b3b48a4da955f8d0f7e0eda8cbdd",
+        "publisherAuthenticated": false,
+        "purpose": "source-application-node-tests",
+        "sourceCommit": "e212bcc800ec0939715c2ee92de8e581e8ee69d4",
+        "sourceDirty": true,
+        "version": "0.1.0-alpha.4"
+      },
+      "source": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c",
+      "testSigning": {
+        "attempt": "7dd4c5dcb9a39750d5b34b0ae865d6af",
+        "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "expiresAtUnixSeconds": 1790293102,
+        "inventory": "sha256:27625062294e6c2ea3b184dce639795e349d0361621eecc654f945ab56b5f48c",
+        "name": "my-greeting",
+        "packageDigest": "sha256:97d8293543d143748ae684e0384dcfacbd46f31f614529821ff5a6d765aebb6f",
+        "policySha256": "sha256:1727a569ac384e5225dafbd58a3551de32ec9df646ceee9929e41c3d4583a3ae",
+        "signer": "sha256:96162b792023201d38971c7f836d8a6158045dec65d1d72a0b9c419479b3392d",
+        "source": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c",
+        "toolInventory": "sha256:d77d6240a78404c9718e3e06f2e05869066d7c571486c2f08823ce2d49dc5c43",
+        "trust": "isolated-short-lived-demo-only"
+      }
+    },
+    "passed": true,
+    "pendingOperation": null,
+    "results": [
+      {
+        "activationId": "dev-641f63bf085fded72e50ffd2124b7df4",
+        "category": "success",
+        "execution": null,
+        "expectedRevision": {
+          "publicationId": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+          "releaseDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+          "routeGeneration": "1"
+        },
+        "fixtures": [],
+        "id": "greeting-0",
+        "inputSha256": "sha256:ef51432249b4415547723843d22c923719d51493a177a4bb4cd312e840c70e37",
+        "outcomeKnown": true,
+        "payloadSha256": "sha256:b5cf4f7f7e9bfe683ce6959318e4ce65bf1f519e8fbdb2ba248056c502a2ac07",
+        "platformCode": null,
+        "required": true,
+        "resolvedRevision": {
+          "publicationId": "publication:sha256:2b209e71aab10ccfcd687c1385ab3114cddb52a1259a3e723859536958f2a30a",
+          "releaseDigest": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+          "revisionId": "revision-v1:sha256:7e542634c2b47aa58da7cde3776e2942a480776611ec07ecdd7f1fcdc2080f3e",
+          "routeGeneration": "1"
+        },
+        "status": "passed",
+        "targetMatches": true,
+        "timeoutMillis": 5000
+      }
+    ],
+    "schemaVersion": "latent.dev.test-report.v1",
+    "selection": [
+      "greeting-0"
+    ]
+  },
+  "retainedWorkspace": "test-recovery-483585b2",
+  "runtime": {
+    "binaries": {
+      "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+      "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "latentd": "sha256:bc4854092697838ef4257184b5d3bc409dc1366055f1ed846d987834679c2e45"
+    },
+    "buildProfile": {
+      "compiledBinary": "latentd",
+      "debugInfo": 0,
+      "features": [
+        "latentd/development-test-node"
+      ],
+      "incremental": false,
+      "name": "dev",
+      "retainedOperatorAndAotSource": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "latentd": "sha256:894d9d2d309717506cf85c8c57f4add3f8b8519c6158adcacdd60c393486ffa7"
+        },
+        "path": "/build/dev559-node-kit3"
+      }
+    },
+    "controllerSourceCommit": "230ec8e7cf48318a6a621fa01f045492d33688fc",
+    "controllerSourceDirty": true,
+    "engine": {
+      "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "wasmtimeVersion": "47.0.4"
+    },
+    "helperSha256": "sha256:5fedfdd66b506ebefc5ba84474091eca8de3b3b48a4da955f8d0f7e0eda8cbdd",
+    "publisherAuthenticated": false,
+    "purpose": "source-application-node-tests",
+    "sourceCommit": "e212bcc800ec0939715c2ee92de8e581e8ee69d4",
+    "sourceDirty": true,
+    "version": "0.1.0-alpha.4"
+  },
+  "schemaVersion": "latent.dev.recovery-source-observation.v1",
+  "shutdown": {
+    "build": {
+      "state": "idle"
+    },
+    "cleanShutdown": true,
+    "dataRetained": true,
+    "guestInstance": {
+      "bootId": "00a3438b-3182-4af8-b9d9-0d8723e33ed2",
+      "initStartTicks": "11428961",
+      "pidNamespace": "4026532461"
+    },
+    "node": "lsf-47ee3fb609d25589",
+    "profile": "local-experimental-v1",
+    "providers": [],
+    "readiness": {
+      "activationReady": true,
+      "authenticated": true,
+      "profile": "local-experimental-v1",
+      "schemaVersion": "latent.native-readiness.v1"
+    },
+    "reaped": true,
+    "state": "stopped"
+  },
+  "source": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c",
+  "unknown": {
+    "expiredReceiptTested": false,
+    "injection": {
+      "environment": "node",
+      "expiredReceiptTested": false,
+      "helperSha256": "sha256:5fedfdd66b506ebefc5ba84474091eca8de3b3b48a4da955f8d0f7e0eda8cbdd",
+      "injection": "prepared-intent-never-dispatched",
+      "node": "lsf-47ee3fb609d25589",
+      "pending": {
+        "id": "dev-c2d02900cfb8481acb6eec9dce464829",
+        "intent": {
+          "expectedGeneration": "0",
+          "qualification": "never-dispatched"
+        },
+        "kind": "release",
+        "node": "lsf-47ee3fb609d25589",
+        "requestDigest": "sha256:006997cfaed5e4340b8af65622f5e977e84ce7b2470f7e4f47b53e040a0ecf0d",
+        "state": "prepared",
+        "tenant": "examples"
+      },
+      "profile": "local-experimental-v1",
+      "qualificationComplete": false,
+      "recoveryAttempted": false,
+      "remoteMutationCalls": 0,
+      "schemaVersion": "latent.dev.node-fault-observation.v1",
+      "workspace": "test-recovery-483585b2"
+    },
+    "neverDispatchedQualificationIntent": true,
+    "newMutation": {
+      "code": "recover-original-operation-before-new-mutation",
+      "uncertain": true
+    },
+    "recovery": {
+      "code": "original-operation-unknown-or-expired-no-replay",
+      "uncertain": true
+    },
+    "sameOriginalRetained": true
+  }
+}

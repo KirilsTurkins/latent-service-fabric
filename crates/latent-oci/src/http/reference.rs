@@ -13,6 +13,9 @@ pub(crate) struct Endpoint {
 
 impl Endpoint {
     pub(crate) fn new(config: &RegistryConfig) -> Result<Self> {
+        Self::configured(config, false)
+    }
+    pub(crate) fn configured(config: &RegistryConfig, network: bool) -> Result<Self> {
         if config.origin.len() > 512 || !repository(&config.repository) {
             return Err(invalid("invalid-oci-endpoint"));
         }
@@ -35,7 +38,9 @@ impl Endpoint {
         {
             return Err(invalid("oci-tls-required"));
         }
-        if config.addresses.len() > 16 || (numeric.is_none() && config.addresses.is_empty()) {
+        if config.addresses.len() > 16
+            || (!network && numeric.is_none() && config.addresses.is_empty())
+        {
             return Err(invalid("oci-bounded-addresses-required"));
         }
         let port = origin

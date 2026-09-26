@@ -10,6 +10,7 @@ description = "Developer and operator CLI entry point."
 [dependencies]
 base64.workspace = true
 clap.workspace = true
+clap_complete.workspace = true
 prost.workspace = true
 serde.workspace = true
 serde_json.workspace = true

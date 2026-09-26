@@ -48,27 +48,32 @@ pub(super) async fn check<T>(
     }
 }
 
-pub(super) async fn metadata(
+pub(super) async fn metadata_selected(
     artifacts: &dyn ArtifactRepository,
     release: &ReleaseDigest,
+    publication: Option<&latent_core::PublicationId>,
     recovery: bool,
 ) -> Result<VerifiedArtifactMetadata, PlatformError> {
     let retry = Retry::new(recovery);
     loop {
-        match artifacts.fetch_verified_metadata(release).await {
+        match artifacts
+            .fetch_verified_metadata_selected(release, publication)
+            .await
+        {
             Err(failure) if retry.pause(&failure).await => {}
             result => return result,
         }
     }
 }
 
-pub(super) async fn eligibility(
+pub(super) async fn eligibility_selected(
     artifacts: &dyn ArtifactRepository,
     release: &ReleaseDigest,
+    publication: Option<&latent_core::PublicationId>,
     recovery: bool,
 ) -> Result<Option<ReleaseUseEligibility>, PlatformError> {
     check(recovery, || {
-        let eligibility = artifacts.execution_eligibility(release)?;
+        let eligibility = artifacts.execution_eligibility_selected(release, publication)?;
         if let Some(grant) = &eligibility {
             grant.check_current()?;
         }

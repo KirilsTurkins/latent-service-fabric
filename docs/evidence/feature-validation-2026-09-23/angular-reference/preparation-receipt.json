@@ -1,0 +1,41 @@
+{
+  "sourceRevision": "8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+  "steps": [
+    {
+      "name": "current-optimized-compiler",
+      "argv": [
+        "cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "-p",
+        "latent-wasmtime",
+        "--bin",
+        "latent-aot-compiler",
+        "--release"
+      ],
+      "exit": 0,
+      "elapsedSeconds": 62.684
+    },
+    {
+      "name": "two-actual-angular-builds",
+      "argv": [
+        "python3",
+        "tools/build_angular_reference.py",
+        "--toolchain-root",
+        "/workspace/examples/renderer-profile",
+        "--cli",
+        "/tmp/lsf-feature-validation-8eea5c73/target/debug/latent",
+        "--cargo-target-dir",
+        "/tmp/lsf-feature-validation-8eea5c73/target",
+        "--output",
+        "/tmp/lsf-feature-validation-8eea5c73/target/angular-reference-review/builds"
+      ],
+      "exit": 0,
+      "elapsedSeconds": 40.516
+    }
+  ],
+  "compilerPreparation": "Copied existing release dependency cache; touched local Rust sources and rebuilt the compiler with Cargo from verified current source.",
+  "passed": false,
+  "failure": "command-exit"
+}

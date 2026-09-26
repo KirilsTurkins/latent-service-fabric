@@ -22,7 +22,10 @@ use latent_routing::InvocationTarget;
 pub(crate) use authentication::{authenticated_tenant, take_context};
 pub use authentication::{AuthenticatedInvocationContext, LocalPrincipalPolicy, PrincipalPolicy};
 pub use cancellation::{InvocationCancellation, InvocationInterruption};
-pub use cleanup::{ActivationCleanupHandle, ActivationCleanupOwner, ActivationCleanupSnapshot};
+pub use cleanup::{
+    ActivationCleanupHandle, ActivationCleanupOwner, ActivationCleanupReservation,
+    ActivationCleanupSnapshot, RetainedActivation,
+};
 pub use conversion::{
     activation_status_from_proto, activation_status_to_proto, budget_from_proto, budget_to_proto,
     cancel_disposition_from_proto, cancel_disposition_to_proto, consumption_from_proto,
@@ -69,6 +72,8 @@ pub struct InvocationCommand {
 pub struct InvocationRevision {
     pub revision_id: RevisionId,
     pub release_digest: ReleaseDigest,
+    /// Exact captured source; an ID alone does not confer tenant authority.
+    pub publication_id: Option<latent_core::PublicationId>,
     pub route_generation: RouteGeneration,
 }
 

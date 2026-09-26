@@ -1,0 +1,681 @@
+{
+  "schemaVersion": "latent.static.workflow.v1",
+  "passed": true,
+  "identity": {
+    "cliDigest": "sha256:9f234332cec776dc25e7100d84c5fa9d21b2312d0013b34d0af9013560b4adda",
+    "nodeDigest": "sha256:fda58c2686283ff7214c5ab1dbc88696ef4a9e7584d66018145887b4213d5148"
+  },
+  "publications": {
+    "csr-a": "publication:sha256:77b5d0b969dff3fe689552de0c7c1f60ced462deaba287289fbf3ed844f64df2",
+    "csr-b": "publication:sha256:36cdd835c28dfcbe2d5996ce1104aad8d8b3d6f0d1f3570a03ddeac73c887e51",
+    "generator": "publication:sha256:8de972a4d27eac5fade62a9b66738cd4a478a08ae310062e0e2995c7e1ca8e98",
+    "generator-docs": "publication:sha256:c4437bf94517d58c67a7fa9c8f74bbe2a3c6d9d460da5f01388edf8881817f8b"
+  },
+  "packageDigests": {
+    "csr-a": "sha256:3d50ce02487ea0070137caa3eefac18e564db4624790b84fa74a2e29b86921b6",
+    "csr-b": "sha256:5481abb10261d47874e5d4105bded06bc610b213ee2f9f17f335fef03ed2c31a",
+    "generator": "sha256:eb7fa323ef8d903692e2bf1eaabcf345ae05cf0a291f185fc367190d9e8e1536",
+    "generator-docs": "sha256:54af2fd3351a8fdf889d2cc7a1c7d0e18628956a46c89de71af30acfec47a84e"
+  },
+  "ociExactDigestRoundtrip": true,
+  "browserA": {
+    "schemaVersion": "latent.static.browser.v1",
+    "browser": "153.0.8010.52",
+    "mode": "navigation",
+    "version": "A",
+    "deepLinkRefreshAndClientNavigation": true,
+    "lazyScripts": 3,
+    "missingScriptAndJsonStay404": true,
+    "rootAndMountedGeneratorRedirects": true,
+    "pageErrors": 0
+  },
+  "cutover": {
+    "schemaVersion": "latent.static.browser.v1",
+    "browser": "153.0.8010.52",
+    "mode": "cutover",
+    "selectedADocumentCompletedAfterB": true,
+    "freshNavigationSelectedB": true,
+    "retainedContentHashedAssetsServedByB": true,
+    "pageErrors": 0
+  },
+  "browserB": {
+    "schemaVersion": "latent.static.browser.v1",
+    "browser": "153.0.8010.52",
+    "mode": "navigation",
+    "version": "B",
+    "deepLinkRefreshAndClientNavigation": true,
+    "lazyScripts": 3,
+    "missingScriptAndJsonStay404": true,
+    "rootAndMountedGeneratorRedirects": true,
+    "pageErrors": 0
+  },
+  "rollback": {
+    "action": "TRIGGER_OPERATION_ACTION_APPLY",
+    "actor": {
+      "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+      "subject": "workflow-operator"
+    },
+    "completedAtUnixMillis": "1790104276636",
+    "expectedGeneration": "7",
+    "expectedStateVersion": "8",
+    "formatVersion": 2,
+    "manifestDigest": "sha256:73f2e86e6959a856e23f42de95a8ba64492346b662121f382e0bf67eac0596ad",
+    "objectGeneration": "9",
+    "operationId": "csr-a-get-48",
+    "receiptDigest": "sha256:13f6a78b20ae47a34e3b14060e932384cd36af7d9db59ff104bf36eff8ec022f",
+    "requestDigest": "sha256:7636f01f87d88fb5e45716fa528b6e00aac9459b47fe5737e878f6b591af48b5",
+    "routeGeneration": "0",
+    "stateVersion": "9",
+    "target": {
+      "assetsDigest": "sha256:28560016ec066bc1ad2b48223e897c494ca31ae717091e008255e56cdc191b50",
+      "kind": "static-web",
+      "publication": {
+        "id": "publication:sha256:77b5d0b969dff3fe689552de0c7c1f60ced462deaba287289fbf3ed844f64df2",
+        "tenant": "tests"
+      },
+      "webGeneration": "1",
+      "webManifestDigest": "sha256:6facfc9e55adf17da43df1b1af67aa7b1edde1e3df3ce8ae352cb0d9d753ab2b"
+    },
+    "tenant": "tests",
+    "triggerId": "csr-a-get"
+  },
+  "revokedConditionalDenied": true,
+  "revokedRollbackDenied": true,
+  "foreignPublicationDenied": true,
+  "before": {
+    "cells": [
+      {
+        "accepting": true,
+        "active": 0,
+        "available": 1,
+        "cancellations": "0",
+        "class": "standard",
+        "expired": "0",
+        "granted": "0",
+        "maxWaitMicros": "0",
+        "observationAvailable": true,
+        "oldestLeaseAgeMicros": "0",
+        "quarantined": 0,
+        "queueCapacity": 8,
+        "queueDepth": 0,
+        "queuedTenants": 0,
+        "rejected": "0",
+        "total": 1,
+        "totalWaitMicros": "0"
+      }
+    ],
+    "cache": {
+      "available": true,
+      "compiledImageBytes": "0",
+      "entries": "0",
+      "evictions": "0",
+      "hits": "0",
+      "invalidations": "0",
+      "maximumCompiledImageBytes": "134217728",
+      "maximumConcurrentPreparations": "1",
+      "maximumEntries": "4",
+      "maximumMetadataBytes": "8388608",
+      "maximumSourceBytes": "67108864",
+      "metadataBytes": "0",
+      "misses": "0",
+      "preparing": "0",
+      "preparingMetadataBytes": "0",
+      "preparingSourceBytes": "0",
+      "sourceBytes": "0"
+    },
+    "quotaUsage": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    },
+    "topology": [
+      {
+        "activeCount": "1",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "listener",
+        "name": "http-listener",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "1",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "task",
+        "name": "http-owner",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "16",
+        "kind": "connection",
+        "name": "http-connections",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "8",
+        "kind": "exchange",
+        "name": "http-exchanges",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "50331648",
+        "kind": "byte",
+        "name": "http-buffer-reservations",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "cell",
+        "name": "execution-cell-leases",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "invocation",
+        "name": "guest-invocations",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "store",
+        "name": "guest-stores",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "host-state",
+        "name": "guest-host-states",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "component-instance",
+        "name": "guest-component-instances",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "buffer-group",
+        "name": "guest-value-buffers",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "probe",
+        "name": "guest-cancellation-probes",
+        "ownership": "activation-scoped"
+      }
+    ]
+  },
+  "dormant": {
+    "cells": [
+      {
+        "accepting": true,
+        "active": 0,
+        "available": 1,
+        "cancellations": "0",
+        "class": "standard",
+        "expired": "0",
+        "granted": "0",
+        "maxWaitMicros": "0",
+        "observationAvailable": true,
+        "oldestLeaseAgeMicros": "0",
+        "quarantined": 0,
+        "queueCapacity": 8,
+        "queueDepth": 0,
+        "queuedTenants": 0,
+        "rejected": "0",
+        "total": 1,
+        "totalWaitMicros": "0"
+      }
+    ],
+    "cache": {
+      "available": true,
+      "compiledImageBytes": "0",
+      "entries": "0",
+      "evictions": "0",
+      "hits": "0",
+      "invalidations": "0",
+      "maximumCompiledImageBytes": "134217728",
+      "maximumConcurrentPreparations": "1",
+      "maximumEntries": "4",
+      "maximumMetadataBytes": "8388608",
+      "maximumSourceBytes": "67108864",
+      "metadataBytes": "0",
+      "misses": "0",
+      "preparing": "0",
+      "preparingMetadataBytes": "0",
+      "preparingSourceBytes": "0",
+      "sourceBytes": "0"
+    },
+    "quotaUsage": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    },
+    "topology": [
+      {
+        "activeCount": "1",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "listener",
+        "name": "http-listener",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "1",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "task",
+        "name": "http-owner",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "16",
+        "kind": "connection",
+        "name": "http-connections",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "8",
+        "kind": "exchange",
+        "name": "http-exchanges",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "50331648",
+        "kind": "byte",
+        "name": "http-buffer-reservations",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "cell",
+        "name": "execution-cell-leases",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "invocation",
+        "name": "guest-invocations",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "store",
+        "name": "guest-stores",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "host-state",
+        "name": "guest-host-states",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "component-instance",
+        "name": "guest-component-instances",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "buffer-group",
+        "name": "guest-value-buffers",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "probe",
+        "name": "guest-cancellation-probes",
+        "ownership": "activation-scoped"
+      }
+    ]
+  },
+  "after": {
+    "cells": [
+      {
+        "accepting": true,
+        "active": 0,
+        "available": 1,
+        "cancellations": "0",
+        "class": "standard",
+        "expired": "0",
+        "granted": "0",
+        "maxWaitMicros": "0",
+        "observationAvailable": true,
+        "oldestLeaseAgeMicros": "0",
+        "quarantined": 0,
+        "queueCapacity": 8,
+        "queueDepth": 0,
+        "queuedTenants": 0,
+        "rejected": "0",
+        "total": 1,
+        "totalWaitMicros": "0"
+      }
+    ],
+    "cache": {
+      "available": true,
+      "compiledImageBytes": "0",
+      "entries": "0",
+      "evictions": "0",
+      "hits": "0",
+      "invalidations": "0",
+      "maximumCompiledImageBytes": "134217728",
+      "maximumConcurrentPreparations": "1",
+      "maximumEntries": "4",
+      "maximumMetadataBytes": "8388608",
+      "maximumSourceBytes": "67108864",
+      "metadataBytes": "0",
+      "misses": "0",
+      "preparing": "0",
+      "preparingMetadataBytes": "0",
+      "preparingSourceBytes": "0",
+      "sourceBytes": "0"
+    },
+    "quotaUsage": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    },
+    "topology": [
+      {
+        "activeCount": "1",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "listener",
+        "name": "http-listener",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "1",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "task",
+        "name": "http-owner",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "16",
+        "kind": "connection",
+        "name": "http-connections",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "8",
+        "kind": "exchange",
+        "name": "http-exchanges",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "50331648",
+        "kind": "byte",
+        "name": "http-buffer-reservations",
+        "ownership": "node-fixed"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "cell",
+        "name": "execution-cell-leases",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "invocation",
+        "name": "guest-invocations",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "store",
+        "name": "guest-stores",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "host-state",
+        "name": "guest-host-states",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "component-instance",
+        "name": "guest-component-instances",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "buffer-group",
+        "name": "guest-value-buffers",
+        "ownership": "activation-scoped"
+      },
+      {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "probe",
+        "name": "guest-cancellation-probes",
+        "ownership": "activation-scoped"
+      }
+    ]
+  },
+  "audit": {
+    "pages": 15,
+    "committedOperations": 10,
+    "exactStaticIdentities": true
+  },
+  "requests": [
+    {
+      "cache": "cold",
+      "requestNanos": "3267750",
+      "etag": "\"identity-sha256-d0734c711950a70fd6fa88db7e5d49ef70640b21658e55221c6198d5cc7cdcfa\""
+    },
+    {
+      "cache": "warm",
+      "requestNanos": "1736000",
+      "etag": "\"identity-sha256-d0734c711950a70fd6fa88db7e5d49ef70640b21658e55221c6198d5cc7cdcfa\""
+    }
+  ],
+  "shutdown": {
+    "processId": 25187,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "http": {
+          "listenerAlive": false,
+          "ownerAlive": false,
+          "joined": true,
+          "failed": false,
+          "accepting": false,
+          "maximumConnections": 16,
+          "connections": 0,
+          "maximumExchanges": 8,
+          "exchanges": 0,
+          "maximumBufferBytes": 50331648,
+          "reservedBufferBytes": 0,
+          "assets": {
+            "maximumReads": 4,
+            "activeReads": 0,
+            "maximumBufferBytes": 33554432,
+            "retainedBufferBytes": 0,
+            "cacheEntries": 0,
+            "cacheHits": 41,
+            "cacheMisses": 12,
+            "corruptions": 0,
+            "capacityRejections": 0
+          },
+          "responseCacheEntries": 0,
+          "responseCacheOwners": 0,
+          "responseCacheReservedBytes": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 1,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 9,
+          "maximum_waiters_per_job": 9,
+          "maximum_ready_preparations": 9,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 0,
+          "jobs_completed": 0,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 9,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 0,
+          "completed": 0,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "cliProcesses": 73
+}

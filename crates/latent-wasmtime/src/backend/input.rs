@@ -5,7 +5,7 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 use latent_core::{BoxFuture, PlatformError};
-use latent_executor::{ExecutionCancellation, ExecutionRequest, GuestOutcome};
+use latent_executor::{ExecutionCancellation, ExecutionReport, ExecutionRequest};
 
 use crate::invocation_input_observer::{InputTrace, InvocationObservation, RawGuard};
 use crate::{InvocationInputDropReason, InvocationInputObserver, Phase0InvocationTiming};
@@ -37,8 +37,13 @@ impl WasmtimeBackend {
         request: ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
         prepared: Option<WasmtimePreparedUse>,
-    ) -> Result<GuestOutcome, PlatformError> {
-        validate_request_context(&request, self.config.maximum_artifact_metadata_bytes)?;
+    ) -> ExecutionReport {
+        if let Err(error) =
+            validate_request_context(&request, self.config.maximum_artifact_metadata_bytes)
+        {
+            return ExecutionReport::reusable(Err(error));
+        }
+        let mut capability_observer = None;
         let activation_id = request.activation.activation_id.clone();
         let started = Instant::now();
         let mut timing = Phase0InvocationTiming::default();
@@ -47,17 +52,34 @@ impl WasmtimeBackend {
         {
             let trace = observation.trace();
             observe(
-                self.invoke_inner_timed(request, cancellation, &mut timing, prepared, Some(&trace)),
+                self.invoke_inner_timed(
+                    request,
+                    cancellation,
+                    &mut timing,
+                    prepared,
+                    Some(&trace),
+                    &mut capability_observer,
+                ),
                 observation,
             )
             .await
         } else {
-            self.invoke_inner_timed(request, cancellation, &mut timing, prepared, None)
-                .await
+            self.invoke_inner_timed(
+                request,
+                cancellation,
+                &mut timing,
+                prepared,
+                None,
+                &mut capability_observer,
+            )
+            .await
         };
         timing.backend_total_micros = elapsed_micros(started);
         self.lock_timings().insert(activation_id.0, timing);
-        outcome
+        match capability_observer {
+            Some(observer) => observer.after_store_dropped(outcome),
+            None => ExecutionReport::reusable(outcome),
+        }
     }
 }
 

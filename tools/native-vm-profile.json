@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "latent.native-vm-profile.v1",
+  "distribution": "ubuntu-24.04",
+  "architecture": "x86_64",
+  "imageUrl": "https://cloud-images.ubuntu.com/noble/20260911/noble-server-cloudimg-amd64.img",
+  "imageSha256": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354",
+  "maximumImageBytes": 1073741824,
+  "memoryMiB": 3072,
+  "processors": 2,
+  "diskGiB": 16,
+  "bootTimeoutSeconds": 240,
+  "scenarioTimeoutSeconds": 900,
+  "network": "qemu-user-restrict-hostforward-ssh-only"
+}

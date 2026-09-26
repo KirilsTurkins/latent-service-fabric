@@ -1,0 +1,31 @@
+{
+  "artifact": "echo-capsule.wasm",
+  "cargoPackage": "latent-toolchain-smoke",
+  "cargoTarget": "echo-capsule",
+  "contentDigest": "sha256:5ed2ad25572df7b223de80feadfa350b13bdca2cc1d41b31e59df4f03a8f7dd2",
+  "exports": [
+    "examples:echo/api@0.1.0"
+  ],
+  "imports": [
+    "latent:context/context@0.1.0",
+    "latent:log/log@0.1.0"
+  ],
+  "profile": "release",
+  "reproducibility": {
+    "scope": "byte-identical output for two clean builds from the same checkout, source path, host platform, pinned Rust toolchain, target, dependency lockfile, and release settings",
+    "verified": false
+  },
+  "schemaVersion": 1,
+  "sizeBytes": 24754,
+  "sourceWorld": "examples:echo/service@0.1.0",
+  "target": "wasm32-unknown-unknown",
+  "toolchain": {
+    "rust": "1.97.1",
+    "wasmTools": "1.254.0",
+    "witBindgen": "0.60.0"
+  },
+  "trust": {
+    "kind": "local-clean-build",
+    "signed": false
+  }
+}

@@ -1,10 +1,9 @@
+use super::protected_file::ProtectedFilePolicy;
 use super::{invalid, SupplyChainConfig};
 use latent_core::PlatformError;
 use latent_policy::supply_chain::{
     SupplyChainAuthority, SupplyChainPolicy, SystemSupplyChainClock,
 };
-use std::fs::File;
-use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -25,12 +24,12 @@ pub(super) fn derive(config: &SupplyChainConfig) -> Result<SupplyChainSettings, 
             if !(1..=5).contains(clock_lease_seconds) {
                 return Err(invalid("supplyChain.clockLeaseSeconds"));
             }
-            let mut bytes = Vec::new();
-            File::open(policy_file)
-                .map_err(|_| invalid("supplyChain.policyFile"))?
-                .take(256 * 1024 + 1)
-                .read_to_end(&mut bytes)
-                .map_err(|_| invalid("supplyChain.policyFile"))?;
+            let bytes = super::protected_file::read(
+                policy_file,
+                256 * 1024,
+                ProtectedFilePolicy::Integrity,
+                "supplyChain.policyFileProtection",
+            )?;
             SupplyChainPolicy::from_json(&bytes)?;
             Ok(SupplyChainSettings::Enforced {
                 policy: bytes.into_boxed_slice(),

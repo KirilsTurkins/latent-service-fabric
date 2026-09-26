@@ -25,6 +25,7 @@ fn complete_window_promotes_once_and_replays_without_old_live_evidence() {
             RolloutObservationState::Collecting
         );
         drop(started);
+        support::retired(&fixture.handle).await;
         assert!(fixture
             .handle
             .submit(
@@ -48,6 +49,7 @@ fn complete_window_promotes_once_and_replays_without_old_live_evidence() {
         );
         assert_eq!(report.value().revisions.len(), 2);
         drop(report);
+        support::retired(&fixture.handle).await;
         let promoted = fixture
             .handle
             .promote(
@@ -75,6 +77,7 @@ fn complete_window_promotes_once_and_replays_without_old_live_evidence() {
                 .success,
             2
         );
+        support::retired(&fixture.handle).await;
         let replay = fixture
             .handle
             .promote(
@@ -118,24 +121,7 @@ fn rejection_preflight_has_no_audit_effect_then_no_data_is_durably_rejected() {
         clock.set_millis(10);
         // A queued query follows the independent Start observation in the audit
         // FIFO, so this assertion cannot race its delayed journal append.
-        drop(
-            fixture
-                .audit
-                .query(
-                    latent_audit::AuditQueryRequest {
-                        scope: latent_audit::AuditScope::Tenant(TenantId("alice".into())),
-                        filter: latent_audit::AuditFilter::default(),
-                        cursor: None,
-                        limit: 1,
-                        maximum_bytes: 32768,
-                    },
-                    expires(),
-                )
-                .unwrap()
-                .wait()
-                .await
-                .unwrap(),
-        );
+        drop(fixture.audit_page(1).await);
         let before = fixture.audit.snapshot().retained_records;
         let result = fixture
             .handle

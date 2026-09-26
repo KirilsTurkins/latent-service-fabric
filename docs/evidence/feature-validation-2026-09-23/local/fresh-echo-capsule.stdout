@@ -1,0 +1,2 @@
+python3 tools/build_echo_capsule.py
+{"artifact": "target/capsules/echo/echo-capsule.wasm", "capsule": "target/capsules/echo/capsule.json", "digest": "sha256:5f59fcc4d017c52f5cec17517f8194d77e1e4f89c939b60182839e85f040664b", "reproducibilityVerified": false}

@@ -18,10 +18,13 @@ latent-routing = { path = "../latent-routing" }
 latent-rollout = { path = "../latent-rollout" }
 latent-rpc = { path = "../latent-rpc" }
 latent-artifacts = { path = "../latent-artifacts" }
+latent-executor = { path = "../latent-executor" }
 latent-audit = { path = "../latent-audit" }
 latent-telemetry = { path = "../latent-telemetry" }
 latent-control-store = { path = "../latent-control-store" }
 latent-manifest = { path = "../latent-manifest" }
+latent-policy = { path = "../latent-policy" }
+latent-capabilities = { path = "../latent-capabilities" }
 latent-admission = { path = "../latent-admission" }
 http-body.workspace = true
 prost.workspace = true
@@ -32,7 +35,6 @@ tonic.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
-latent-executor = { path = "../latent-executor" }
 latent-scheduler = { path = "../latent-scheduler" }
 tokio = { workspace = true, features = ["test-util", "rt-multi-thread"] }
 hyper-util.workspace = true

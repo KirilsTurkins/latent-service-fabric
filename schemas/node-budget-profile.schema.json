@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/node-budget-profile.schema.json",
+  "title": "Standalone budgetProfile configuration member",
+  "$comment": "Omission selects phase1. Counter omission means zero. Runtime additionally requires maximumLiveChildren <= maximumLiveDescendants; this selector does not authorize capabilities or install providers.",
+  "default": {"mode": "phase1"},
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["mode"], "properties": {"mode": {"const": "phase1"}}
+    },
+    {
+      "type": "object", "additionalProperties": false, "required": ["mode"],
+      "properties": {
+        "mode": {"const": "phase3"},
+        "maximumChildCalls": {"type": "integer", "minimum": 0, "maximum": 4294967295, "default": 0},
+        "maximumOutboundRequests": {"type": "integer", "minimum": 0, "maximum": 4294967295, "default": 0},
+        "maximumBlobReadBytes": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615, "default": 0},
+        "maximumBlobWriteBytes": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615, "default": 0},
+        "maximumDepth": {"type": "integer", "minimum": 1, "maximum": 16, "default": 8},
+        "maximumLiveDescendants": {"type": "integer", "minimum": 1, "maximum": 256, "default": 64},
+        "maximumLiveChildren": {"type": "integer", "minimum": 1, "maximum": 32, "default": 8}
+      }
+    }
+  ]
+}

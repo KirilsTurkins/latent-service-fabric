@@ -4,6 +4,12 @@ use super::{invalid_response, json, proto, Failure, Project, Tree, Value};
 impl Project for proto::DeploymentOperationReceipt {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
+        if let Some(value) = &self.publication {
+            value.validate(b)?;
+            if value.tenant != self.tenant {
+                return Err(invalid_response());
+            }
+        }
         b.text(&self.tenant, 4096)?;
         if let Some(value) = &self.actor {
             value.validate(b)?;
@@ -23,6 +29,7 @@ impl Project for proto::DeploymentOperationReceipt {
         json!({
         "formatVersion": json!(self.format_version),
         "tenant": json!(self.tenant),
+        "publication": self.publication.map(Project::project),
         "actor": self.actor.map(Project::project),
         "operationId": json!(self.operation_id),
         "action": json!(proto::DeploymentOperationAction::try_from(self.action).expect("validated enum").as_str_name()),

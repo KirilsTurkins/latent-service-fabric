@@ -1,8 +1,8 @@
-use super::support::{artifact, deployment, request, Harness};
-use latent_artifacts::ArtifactRepository;
+use super::support::{artifact, deployment, publish_artifact, request, Harness};
 use latent_audit::{AuditLimits, DirectoryPhase2AuditJournal};
 use latent_control_store::DeploymentStore;
 use latent_core::TenantId;
+use latent_routing::RouteResolver;
 use latent_wire::management::{deployment_manifest_from_proto, proto, ManagementLimits};
 use std::time::{Duration, Instant};
 use tempfile::TempDir;
@@ -10,21 +10,17 @@ use tonic::Code;
 
 #[path = "rollouts/canary.rs"]
 mod canary;
+#[path = "rollouts/publications.rs"]
+mod publications;
 #[path = "rollouts/rollback.rs"]
 mod rollback;
 
 async fn start_input(harness: &Harness) -> proto::StartRolloutRequest {
-    let base = harness
-        .artifacts
-        .publish(artifact("acme", "echo", "base"))
-        .await
-        .unwrap();
-    let candidate = harness
-        .artifacts
-        .publish(artifact("acme", "echo", "candidate"))
-        .await
-        .unwrap();
-    let base = deployment("base", "acme", "echo", &base.release_digest);
+    let (base, base_component) = publish_artifact(harness, artifact("acme", "echo", "base")).await;
+    let (candidate, candidate_component) =
+        publish_artifact(harness, artifact("acme", "echo", "candidate")).await;
+    let mut base = deployment("base", "acme", "echo", &base);
+    base.release_digest = base_component.0;
     let receipt = harness
         .deployments
         .apply_versioned(
@@ -34,9 +30,10 @@ async fn start_input(harness: &Harness) -> proto::StartRolloutRequest {
         )
         .await
         .unwrap();
-    let mut candidate = deployment("candidate", "acme", "echo", &candidate.release_digest);
+    let mut candidate = deployment("candidate", "acme", "echo", &candidate);
     candidate.route_weight = 1000;
     proto::StartRolloutRequest {
+        expected_candidate_component_digest: Some(candidate_component.0),
         id: "rollout".into(),
         base_deployment_id: "base".into(),
         expected_base_generation: Some(receipt.deployment.generation),
@@ -76,6 +73,22 @@ async fn manual_rpc_receipts_replay_exactly_and_queries_never_cross_tenants() {
             .code(),
         Code::PermissionDenied
     );
+    let before = harness.deployments.generation();
+    let mut component_only = input.clone();
+    component_only.candidate.as_mut().unwrap().publication = None;
+    component_only.candidate.as_mut().unwrap().release_digest = component_only
+        .expected_candidate_component_digest
+        .take()
+        .unwrap();
+    assert_eq!(
+        client
+            .start_rollout(request("alice", component_only))
+            .await
+            .unwrap_err()
+            .code(),
+        Code::InvalidArgument
+    );
+    assert_eq!(harness.deployments.generation(), before);
     let started = client
         .start_rollout(request("alice", input.clone()))
         .await

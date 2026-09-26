@@ -1,5 +1,4 @@
-//! Product command dispatch, separate from the historical Phase 0 entry point.
-
+//! Product command dispatch.
 #[cfg(target_os = "linux")]
 mod serve;
 #[cfg(any(target_os = "linux", test))]
@@ -7,7 +6,6 @@ mod status;
 #[cfg(test)]
 mod tests;
 
-use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -27,22 +25,21 @@ struct CommandLine {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Check protected configuration and actual compiler/profile prerequisites.
+    CheckConfig {
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+    },
     /// Serve the standalone node using a versioned local configuration file.
     Serve {
         #[arg(long, value_name = "PATH")]
         config: PathBuf,
     },
-    /// Run the finite, non-production Phase 0 validation tools.
-    #[command(name = "phase0-spike", visible_alias = "spike")]
-    Phase0Spike,
 }
 
-/// Dispatches legacy invocations unchanged, then handles the product commands.
+/// Handles the supported standalone node commands.
 #[must_use]
 pub fn main_entry() -> ExitCode {
-    if std::env::args_os().nth(1).as_deref().is_some_and(is_phase0) {
-        return crate::spike::main_entry();
-    }
     let command = match CommandLine::try_parse() {
         Ok(command) => command.command,
         Err(error)
@@ -62,8 +59,8 @@ pub fn main_entry() -> ExitCode {
         }
     };
     let result = match command {
+        Command::CheckConfig { config } => run_check_config(&config),
         Command::Serve { config } => run_serve(&config),
-        Command::Phase0Spike => Err(Failure::new("command", PlatformErrorCode::InvalidArgument)),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,
@@ -71,8 +68,20 @@ pub fn main_entry() -> ExitCode {
     }
 }
 
-fn is_phase0(argument: &OsStr) -> bool {
-    argument == "phase0-spike" || argument == "spike"
+#[cfg(target_os = "linux")]
+fn run_check_config(path: &std::path::Path) -> Result<(), Failure> {
+    let settings = crate::config::NodeConfig::load(path)
+        .and_then(|config| config.derive())
+        .map_err(|error| Failure::new("configuration", error.code))?;
+    let report = settings
+        .check_config()
+        .map_err(|error| Failure::new("execution-profile", error.code))?;
+    status::configuration(&report)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn run_check_config(_path: &std::path::Path) -> Result<(), Failure> {
+    Err(Failure::new("platform", PlatformErrorCode::Unavailable))
 }
 
 #[cfg(target_os = "linux")]

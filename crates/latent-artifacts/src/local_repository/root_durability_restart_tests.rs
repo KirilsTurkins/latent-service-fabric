@@ -102,13 +102,13 @@ fn exercise_working_directory_change(root: &Path) {
         .entries
         .is_empty());
     assert_eq!(
-        fs::read_dir(root_a.join("releases"))
+        fs::read_dir(root_a.join("publications"))
             .expect("A releases")
             .count(),
         1
     );
     assert_eq!(
-        fs::read_dir(root_b.join("releases"))
+        fs::read_dir(root_b.join("publications"))
             .expect("B releases")
             .count(),
         0

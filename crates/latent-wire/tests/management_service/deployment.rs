@@ -4,6 +4,8 @@ mod authorization;
 mod managed;
 #[path = "deployment/pagination.rs"]
 mod pagination;
+#[path = "deployment/publications.rs"]
+mod publications;
 #[path = "deployment/versions.rs"]
 mod versions;
 
@@ -15,14 +17,18 @@ use super::support::{request, Harness};
 async fn apply(
     harness: &Harness,
     identity: &str,
-    desired: proto::Deployment,
+    mut desired: proto::Deployment,
     expected: Option<u64>,
 ) -> Result<proto::Deployment, Status> {
+    let component = (!desired.release_digest.is_empty()).then(|| desired.release_digest.clone());
+    desired.release_digest.clear();
+    desired.requested_publication = None;
     harness
         .deployments_client()
         .apply_deployment(request(
             identity,
             proto::ApplyDeploymentRequest {
+                expected_component_digest: component,
                 operation: None,
                 deployment: Some(desired),
                 expected_generation: expected,

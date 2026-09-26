@@ -1,0 +1,390 @@
+{
+  "schemaVersion": "latent.feature-validation.review.v1",
+  "sourceRevision": "8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+  "sourceTree": "10c9770472a3d3dd4c95da71b0a342a9fd53a9ff",
+  "workflowRun": 35879906121,
+  "workflowConclusion": "success",
+  "workflowUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35879906121",
+  "discovery": {
+    "registeredTargets": 166,
+    "activeCases": 2718,
+    "everyRegisteredActiveLibtestCaseFoundInPassingLog": true,
+    "customHarnessSuccessMarkersVerified": true,
+    "supervisorCaseCoverageVerified": true,
+    "ordinaryWorkspaceLogSummaryPasses": 2742,
+    "ignoredCases": 150,
+    "ignoredTracedToCurrentCi": 124,
+    "additionalIgnoredExecutedLocally": 1,
+    "discoveryReceiptSha256": "f80afda8f2814802269aa9d066de3fe8345df6e499d8f584d15421614f65c079",
+    "workspaceLogSha256": "ab056a89b87eff7b97133ddef16b2ebf5174f4afa98484a45a14776e0d4021b8"
+  },
+  "freshLocalBuild": {
+    "verifiedGitBlobs": 4361,
+    "archiveSha256": "1131053e01fce7c93fb2dfd69b0018cdc2fb5cfbe9de94fab4eecfcf239db312",
+    "excluded": [
+      "benchmarks/ (not required by the selected CLI/node, protected-file and blob-storage builds; other test harnesses may require its case manifests)"
+    ],
+    "buildProfile": "dev, debug=0, incremental=0, locked, offline",
+    "protectedFileCases": 14,
+    "localBlobCases": 28,
+    "printedGuideBashBlocks": 8,
+    "policyCliCalls": 15,
+    "policyNodeStarts": 2,
+    "preinstalledToolchainAndDependencyCache": true
+  },
+  "jobs": [
+    {
+      "name": "Select CI profile",
+      "conclusion": "success",
+      "skippedSteps": []
+    },
+    {
+      "name": "Rust 1.97.1",
+      "conclusion": "success",
+      "skippedSteps": [
+        "Identify the opt-in dependency-cache recipe",
+        "Clippy diagnostics: no compiler errors",
+        "Set up the bounded resource guest compiler",
+        "Build fresh resource guest inputs",
+        "Execute the bounded Phase 3 resource matrix",
+        "Retain immutable Phase 3 resource attempts",
+        "Retain the opt-in dependency-cache identity"
+      ]
+    },
+    {
+      "name": "Repository contracts",
+      "conclusion": "success",
+      "skippedSteps": []
+    },
+    {
+      "name": "Fast host correctness",
+      "conclusion": "success",
+      "skippedSteps": []
+    },
+    {
+      "name": "Durable catalog acceptance",
+      "conclusion": "success",
+      "skippedSteps": [
+        "Publish and reopen 100,000 dormant releases in isolated processes",
+        "Retain catalog acceptance evidence"
+      ]
+    },
+    {
+      "name": "Rust MSRV 1.94.1",
+      "conclusion": "success",
+      "skippedSteps": [
+        "Check all selected reverse dependents at MSRV",
+        "Retain narrow MSRV timing evidence"
+      ]
+    },
+    {
+      "name": "Documentation and SVGs",
+      "conclusion": "success",
+      "skippedSteps": [
+        "Preserve repository source contracts in the host-only profile"
+      ]
+    },
+    {
+      "name": "Cross-language SDK surfaces",
+      "conclusion": "success",
+      "skippedSteps": []
+    },
+    {
+      "name": "Documentation website / Static site, examples and browser journeys",
+      "conclusion": "success",
+      "skippedSteps": []
+    },
+    {
+      "name": "OCI registry TLS integration",
+      "conclusion": "success",
+      "skippedSteps": []
+    },
+    {
+      "name": "CI result",
+      "conclusion": "success",
+      "skippedSteps": []
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 10762010210,
+      "name": "ci-integration-lanes-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+      "digest": "sha256:369c9dbd54dceb3edd4deefd491dc431f4772fb56b349ec862e7b3594f133728",
+      "size_in_bytes": 8727,
+      "created_at": "2026-09-23T15:37:55Z",
+      "expires_at": "2026-10-07T15:37:54Z"
+    },
+    {
+      "id": 10761710884,
+      "name": "browser-boundary-observations",
+      "digest": "sha256:855b534a82788a067ce33ea8a5508dda40ceab02b4d2d7bd558ac207ab42bc4b",
+      "size_in_bytes": 1245,
+      "created_at": "2026-09-23T15:37:55Z",
+      "expires_at": "2026-12-22T15:13:04Z"
+    },
+    {
+      "id": 10761706954,
+      "name": "owned-renderer-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+      "digest": "sha256:a61642292acaa143f5c122c3e410de0c1e12f9b1223925761cbb5f50b8f843d2",
+      "size_in_bytes": 4106,
+      "created_at": "2026-09-23T15:46:26Z",
+      "expires_at": "2026-09-30T15:46:25Z"
+    },
+    {
+      "id": 10761657132,
+      "name": "phase-2-gate-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+      "digest": "sha256:5ddb3c7dd9ccd41ca3fbfc2e35fbd9a93703860b1bfaff8a7a8202cad73a2c20",
+      "size_in_bytes": 28696,
+      "created_at": "2026-09-23T15:46:24Z",
+      "expires_at": "2026-09-30T15:46:23Z"
+    },
+    {
+      "id": 10761492389,
+      "name": "ci-runtime-discovery-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+      "digest": "sha256:3dcb3e19cfd70679e9cabac81d167ab4f1f592b4a78c1d0414db6f7a1ffa7fc1",
+      "size_in_bytes": 159110,
+      "created_at": "2026-09-23T15:46:25Z",
+      "expires_at": "2026-09-30T15:46:24Z"
+    },
+    {
+      "id": 10761316295,
+      "name": "phase3-security-pr-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+      "digest": "sha256:a9eb69fb164e691d86549c2d128c7cba9d088cba4e25174da508330f9bb3acee",
+      "size_in_bytes": 2831,
+      "created_at": "2026-09-23T15:24:49Z",
+      "expires_at": "2026-10-07T15:24:48Z"
+    },
+    {
+      "id": 10760777393,
+      "name": "phase-1-bounded-conformance-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+      "digest": "sha256:c6abc6cbc2527f8dbb32ec5b2fcb13148e56a63b6aa12fafe1c7800937371e3e",
+      "size_in_bytes": 270673,
+      "created_at": "2026-09-23T15:26:59Z",
+      "expires_at": "2026-10-07T15:26:58Z"
+    },
+    {
+      "id": 10760493414,
+      "name": "metadata-working-set-observations",
+      "digest": "sha256:ef295044093151550e6eea31f9dafd819e99f8356fe3a3ee942d3632313eb946",
+      "size_in_bytes": 1681,
+      "created_at": "2026-09-23T15:24:27Z",
+      "expires_at": "2026-12-22T15:13:04Z"
+    },
+    {
+      "id": 10760462325,
+      "name": "owned-oci-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+      "digest": "sha256:c32e80b4c74556cf685f7e221c97aacd621bea589440bf5e33b5251e84a410f5",
+      "size_in_bytes": 8904,
+      "created_at": "2026-09-23T15:29:51Z",
+      "expires_at": "2026-09-30T15:29:50Z"
+    },
+    {
+      "id": 10759684523,
+      "name": "ci-host-correctness-8eea5c73855530ae3fcd53e4e1ea64cf9f62ab21",
+      "digest": "sha256:b317691fb43c90bff6ed258060640c98ff3b4eda2a55e3447d3b727bc0652a16",
+      "size_in_bytes": 57914,
+      "created_at": "2026-09-23T15:15:32Z",
+      "expires_at": "2026-09-30T15:15:31Z"
+    }
+  ],
+  "retainedFiles": [
+    {
+      "path": "lanes/provider.json",
+      "bytes": 2350,
+      "sha256": "3c50bcb1742d25320511e0f210f2290bcc133cca9ab1f66a8f1ceffab73384dd"
+    },
+    {
+      "path": "lanes/receipt.json",
+      "bytes": 5046,
+      "sha256": "b158d83f80536086e3d713bf95537d0461afe26bd6f6e2aacd365dbf06d0f4bf"
+    },
+    {
+      "path": "lanes/renderer.json",
+      "bytes": 2175,
+      "sha256": "3f445bf65f337d99f0b6c444a196c7795c0e6badea2c9f9eb8c48234521ffff0"
+    },
+    {
+      "path": "operator/angular-t1-receipt.json",
+      "bytes": 13045,
+      "sha256": "02ecb6c5f4d492f04e2b3620a6cf7d72d5ec39450563302b9f7f85791917839e"
+    },
+    {
+      "path": "operator/offline-receipt.json",
+      "bytes": 9553,
+      "sha256": "e5aba1316ea34072e1318210ad5d7a6057ab1255933ebb1464abc8c5858cc004"
+    },
+    {
+      "path": "operator/operator-receipt.json",
+      "bytes": 35498,
+      "sha256": "4b363313041801c359b62d5dec3bea93ed3bf39e442641bb369a1ee4f148f50a"
+    },
+    {
+      "path": "operator/publication-receipt.json",
+      "bytes": 12718,
+      "sha256": "64b9b2581aa8460af48c7598e050f5dce8212fd5d285d08f4aff4faca014e362"
+    },
+    {
+      "path": "operator/resource-receipt.json",
+      "bytes": 90250,
+      "sha256": "dd89df45a89b7ca572ac0f6335b9e3b67c28ff044057f80bb5824c339b11bc27"
+    },
+    {
+      "path": "operator/security-profile-receipt.json",
+      "bytes": 4777,
+      "sha256": "793c7a879acb2a762223228715852ce75ffba09b6dc1c0b9aad04714fd610245"
+    },
+    {
+      "path": "operator/static-site-receipt.json",
+      "bytes": 13176,
+      "sha256": "8f14f0b70570ad8bb9821f210487693935aeb3f1b4c3d017fa168adffd0f4b2d"
+    },
+    {
+      "path": "browser/browser-application-receipt.json",
+      "bytes": 499,
+      "sha256": "7c67918e31735d33c94d782205f75a108fff900dd2bc8c8e6e58e4f4791f4bc4"
+    },
+    {
+      "path": "browser/browser-receipt.json",
+      "bytes": 504,
+      "sha256": "96465719fd7a35621b852f9f7187597c6c5a0ecdc1ea76066d20d99208ba595a"
+    },
+    {
+      "path": "browser/build-receipt.json",
+      "bytes": 336,
+      "sha256": "355dc54c3ee2208ed6c25fde421dbbae889e705240e90a99070e554e245060d8"
+    },
+    {
+      "path": "security-pr.json",
+      "bytes": 6765,
+      "sha256": "9fb03a0a181b14ffe9214ce176d2004c7c11108d8c1bf2cb5864d1b0a0b76e24"
+    },
+    {
+      "path": "bounded-conformance.json",
+      "bytes": 467707,
+      "sha256": "8755b5397ddad6f9e46ec58eaaf0c35ec2ef19b11a1adabef130719f6ca4fe17"
+    },
+    {
+      "path": "provider-management.json",
+      "bytes": 5721,
+      "sha256": "17a023dd7b2e11ab58ee30483477be507264d2db9d555bd0a08c1b5a7bbbb3b9"
+    },
+    {
+      "path": "clients/c.json",
+      "bytes": 10063,
+      "sha256": "4050e7608d6a5ddbc1f0049d5438dc2a0f84303e2cfc5fb4882d395e8da5300f"
+    },
+    {
+      "path": "clients/dotnet.json",
+      "bytes": 10219,
+      "sha256": "f8ab3470416d09923ab27eb69f4c73bb0f53e1524b5a4d4a834568759f516d2c"
+    },
+    {
+      "path": "clients/go.json",
+      "bytes": 10082,
+      "sha256": "792300e3c151c6c111be58edc62788782a78b406b52b564d84e95e6e38b01c36"
+    },
+    {
+      "path": "clients/java.json",
+      "bytes": 10188,
+      "sha256": "7a442877ca0df81e36661482829b5eb5c8e517dc6f7131558b6130fa6b865528"
+    },
+    {
+      "path": "clients/matrix.json",
+      "bytes": 5104,
+      "sha256": "75ba5fbb102335b633abdf4209d8c37362d042225b089f3b2f0deef9773fd19d"
+    },
+    {
+      "path": "clients/rust.json",
+      "bytes": 10099,
+      "sha256": "f793dfa0f1144dc9339d755a3d3181b2518fab0e79c850e91cff988639338bb3"
+    },
+    {
+      "path": "clients/typescript.json",
+      "bytes": 10260,
+      "sha256": "4b71369613419a50b9b5cf5e118ea7098c2510562a85ed9e3d17325b8de763f7"
+    },
+    {
+      "path": "local/bounded-local-blob-recovery.stderr",
+      "bytes": 3562,
+      "sha256": "467f43d88f73dd2265fac7aa1827b69917e31c47d55e99d76250a57a6b3badae"
+    },
+    {
+      "path": "local/bounded-local-blob-recovery.stdout",
+      "bytes": 2772,
+      "sha256": "e804fdd815de350057c0b7df40b2f238e88d75591d37861511184622745f06d5"
+    },
+    {
+      "path": "local/durable-policy-cli.stdout",
+      "bytes": 186,
+      "sha256": "eedf708576651b57c474991cfcc547ff2e551afd7f7e1e9630e84bd7ed6b17e3"
+    },
+    {
+      "path": "local/fresh-cli-node-build.stderr",
+      "bytes": 60,
+      "sha256": "2634d6bec047c4b96747f1a3f5477692a2fcb9c070b23938b5095ce219b2e697"
+    },
+    {
+      "path": "local/fresh-echo-capsule.stdout",
+      "bytes": 258,
+      "sha256": "d5102bb73e6b21913e1ac822b24f1d80fa0dfa980f07e741593a3f65aaf9c38d"
+    },
+    {
+      "path": "local/printed-first-node-walkthrough.stdout",
+      "bytes": 763,
+      "sha256": "99ed6a132caeb17462c5a43c749abe5cc1ce2d6a99b2a6b95fe3ddded2167152"
+    },
+    {
+      "path": "local/protected-files-including-privileged-owner.stderr",
+      "bytes": 332,
+      "sha256": "787c961c59282819cd582add1088760ffd93041e6d6e0f6330800d88b62d043a"
+    },
+    {
+      "path": "local/protected-files-including-privileged-owner.stdout",
+      "bytes": 1216,
+      "sha256": "8f7207bd3a78ee35df738cbd12719b2616deae426224c1341eb4d049bbd2911d"
+    },
+    {
+      "path": "local/receipt.json",
+      "bytes": 3434,
+      "sha256": "f5edc51268c69036f5d771b8c6d7af7771ce0493f7aef771e505c0bfcf2868b5"
+    },
+    {
+      "path": "ignored-execution-review.json",
+      "bytes": 32557,
+      "sha256": "e19445d083b03eb1c5758bcdf72d0e07e5ced936d0aa294b643c9b7e7569ba90",
+      "origin": "derived execution review"
+    }
+  ],
+  "limits": [
+    "No new SDK authoring qualification; separate SDK agent owns those tickets.",
+    "No 100k workload, new resource campaign, soak or throughput claim.",
+    "Harbor, full authenticated Angular reference and installed-bundle VMs retain their earlier evidence; not rerun here.",
+    "Angular compilation remains reproducibility not-checked and dependency completeness declared-inputs-incomplete.",
+    "Linux x86_64 T0/T1; no T2 guest-process containment or production certification.",
+    "Human documentation review and Pages deployment remain separate.",
+    "No runtime tag, release, or release-branch promotion authorized or performed."
+  ],
+  "emptyOutputs": [
+    {
+      "path": "local/durable-policy-cli.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "local/fresh-cli-node-build.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "local/fresh-echo-capsule.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "local/printed-first-node-walkthrough.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "emptyOutputRepresentation": "Empty process streams are represented by zero bytes and the empty SHA-256, without empty repository files."
+}

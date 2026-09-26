@@ -16,11 +16,13 @@ catalog-observation = []
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-ingress = { path = "../latent-ingress" }
 latent-manifest = { path = "../latent-manifest" }
 latent-routing = { path = "../latent-routing" }
 latent-node = { path = "../latent-node" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-policy = { path = "../latent-policy" }
+latent-capabilities = { path = "../latent-capabilities" }
 latent-audit = { path = "../latent-audit" }
 latent-contracts = { path = "../latent-contracts" }
 latent-packaging = { path = "../latent-packaging" }

@@ -1,0 +1,8 @@
+package metrics
+
+import (
+	raw "wit_component/@raw@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+)
+
+func EmitMetric(metric Metric) wit.Result[bool, TelemetryError] { return raw.EmitMetric(metric) }

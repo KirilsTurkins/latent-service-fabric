@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "module": "latent.dev/sdk/go",
+  "goVersion": "1.27.1",
+  "manifestSha256": "51a43e5fdbe87ce84c10119f45fe2df2abad23d0582324ad8128ce7d0c3d1948",
+  "sumSha256": "1f2f73a8538b16f694bb68f2e305a0e974434d3cbb8c5a795a864cc6b15357bc",
+  "modules": [
+    {
+      "path": "github.com/golang/protobuf",
+      "version": "v1.5.0",
+      "sum": "h1:LUVKkCeviFUMKqHa4tXIIij/lbhnMbP7Fn5wKdKkRh4=",
+      "goModSum": "h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk="
+    },
+    {
+      "path": "github.com/google/go-cmp",
+      "version": "v0.7.0",
+      "sum": "h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=",
+      "goModSum": "h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU="
+    },
+    {
+      "path": "google.golang.org/protobuf",
+      "version": "v1.36.12",
+      "sum": "h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc=",
+      "goModSum": "h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco="
+    }
+  ],
+  "tools": [
+    {
+      "path": "google.golang.org/protobuf/cmd/protoc-gen-go",
+      "module": "google.golang.org/protobuf",
+      "version": "v1.36.12"
+    }
+  ]
+}

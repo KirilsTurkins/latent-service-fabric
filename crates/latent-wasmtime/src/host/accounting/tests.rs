@@ -82,6 +82,60 @@ fn cancellation(request: &ExecutionRequest, clock: &Clock) -> Cancellation {
 }
 
 #[test]
+fn phase3_managed_execution_keeps_original_ledger_and_rejects_unmanaged_opt_in() {
+    let clock = Clock::new();
+    let mut request = request();
+    request.budget.child_calls = 4;
+    request.budget.outbound_requests = 2;
+    request.budget.blob_read_bytes = 100;
+    request.activation.budget = request.budget.clone();
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase3,
+        &request.budget,
+        &request.budget,
+        &request.budget,
+        Some(1050),
+        ClockSample::new(1000, clock.admitted),
+    )
+    .unwrap();
+    let owner = ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap();
+    let mut cancellation = Cancellation {
+        id: request.activation.activation_id.clone(),
+        budget: None,
+        deadline: None,
+    };
+    assert!(InvocationAccounting::new(&request, &cancellation, &clock).is_err());
+    cancellation.budget = Some(owner.clone());
+    request.activation.deadline_unix_millis = Some(1040);
+    let mut accounting = InvocationAccounting::new(&request, &cancellation, &clock).unwrap();
+    assert!(owner.is_same_instance(accounting.budget()));
+    assert_eq!(
+        accounting.deadline().monotonic(),
+        Some(clock.admitted + Duration::from_millis(40))
+    );
+    owner
+        .consume(latent_core::BudgetDimension::OutboundRequests, 1)
+        .unwrap();
+    accounting.observe_runtime(90, 32).unwrap();
+    let report = owner.finalize_at(
+        Some(&BudgetConsumption {
+            cpu_fuel: 10,
+            peak_memory_bytes: 32,
+            ..BudgetConsumption::default()
+        }),
+        clock.admitted,
+    );
+    assert!(report.violation().is_none());
+    assert_eq!(
+        (
+            report.consumption().cpu_fuel,
+            report.consumption().outbound_requests
+        ),
+        (10, 1)
+    );
+}
+
+#[test]
 fn shares_the_original_ledger_and_charges_only_new_fuel_deltas() {
     let request = request();
     let clock = Clock::new();

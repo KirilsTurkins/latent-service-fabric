@@ -1,0 +1,21 @@
+[package]
+name = "latent-protected-files"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Shared protected descriptor reads for node credentials and bounded secret providers."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+zeroize = { version = "=1.9.0", features = ["alloc"] }
+
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
+rustix = { version = "=1.1.4", features = ["fs", "process"] }
+
+[dev-dependencies]
+tempfile.workspace = true

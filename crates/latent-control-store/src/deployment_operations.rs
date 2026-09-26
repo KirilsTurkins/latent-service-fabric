@@ -13,11 +13,24 @@ pub const MAX_RECEIPT_BYTES: usize = 4096;
 /// Aggregate allowance for bounded request normalization, hashing and audit encoding.
 pub const MAX_OPERATION_SCRATCH_BYTES: usize = 512 * 1024;
 pub(crate) fn error(code: PlatformErrorCode, message: &'static str) -> PlatformError {
+    let details = if matches!(
+        message,
+        "deployment-generation-conflict"
+            | "deployment-state-version-conflict"
+            | "deployment-operation-conflict"
+    ) {
+        vec![latent_core::ErrorDetail {
+            kind: "deployment-catalog".into(),
+            fields: [("reason".into(), message.into())].into(),
+        }]
+    } else {
+        Vec::new()
+    };
     PlatformError {
         code,
         message: message.into(),
         retryable: false,
-        details: Vec::new(),
+        details,
     }
 }
 pub(crate) fn invalid() -> PlatformError {

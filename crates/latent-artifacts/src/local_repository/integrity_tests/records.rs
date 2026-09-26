@@ -131,7 +131,7 @@ fn a_complete_entry_cannot_be_adopted_under_a_different_final_directory() {
         let destination = if digest_named {
             release_dir(repo.root(), &release_digest(b"different component"))
         } else {
-            repo.root().join("releases/complete-but-not-a-digest")
+            repo.root().join("publications/complete-but-not-a-digest")
         };
         drop(repo);
         fs::rename(source, &destination).unwrap();
@@ -141,7 +141,7 @@ fn a_complete_entry_cannot_be_adopted_under_a_different_final_directory() {
                 temp.path(),
                 DirectoryArtifactRepositoryConfig::default(),
             ),
-            "release directory does not match its digest",
+            "publication directory does not match its immutable association",
         );
         assert_eq!(entry_files(&destination), persisted);
     }

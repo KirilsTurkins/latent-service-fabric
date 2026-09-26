@@ -7,9 +7,12 @@ pub(crate) struct RecoveryContext(Value);
 impl RecoveryContext {
     pub(crate) fn from_operation(operation: &Operation, tenant: &str) -> Self {
         let selected = match operation {
+            Operation::Web(value) => value.recovery(),
+            Operation::Trigger(value) => value.recovery(),
+            Operation::Policy(value) => value.recovery(),
             Operation::PublishRelease(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),
-            Operation::ChangeReleaseLifecycle(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"componentDigest":value.digest,"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),
-            Operation::RenewReleaseEvidence(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"componentDigest":value.digest,"packageDigest":value.package_digest,"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),
+            Operation::ChangeReleaseLifecycle(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"publication":value.publication.as_ref().map(|p|json!({"id":p.id,"tenant":p.tenant})),"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),
+            Operation::RenewReleaseEvidence(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"publication":value.publication.as_ref().map(|p|json!({"id":p.id,"tenant":p.tenant})),"packageDigest":value.package_digest,"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),
             Operation::ApplyDeployment(value) => value.operation.as_ref().map(|op|json!({"family":"deployment","operationId":op.operation_id,"deploymentId":value.deployment.as_ref().map(|v|&v.id),"expectedGeneration":value.expected_generation.map(|v|v.to_string()),"expectedStateVersion":op.expected_state_version.map(|v|v.to_string())})),
             Operation::DeleteDeployment(value) => value.operation.as_ref().map(|op|json!({"family":"deployment","operationId":op.operation_id,"deploymentId":value.id,"expectedGeneration":value.expected_generation.map(|v|v.to_string()),"expectedStateVersion":op.expected_state_version.map(|v|v.to_string())})),
             Operation::StartRollout(value) => value.operation.as_ref().map(|op|json!({"family":"rollout","operationId":op.operation_id,"rolloutId":value.id,"expectedRevision":op.expected_revision.map(|v|v.to_string())})),

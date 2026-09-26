@@ -70,9 +70,17 @@ pub(super) fn worlds(
             .imports
             .get(name)
             .ok_or_else(|| incompatible("component-world-identity-mismatch"))?;
+        let profile = latent_core::PHASE3_HOST_ABI_CURRENT
+            .interface(name)
+            .ok_or_else(|| incompatible("unsupported-host-import"))?;
+        compare.asynchronous = profile.asynchronous;
+        compare.resources = profile.resource_types();
         compare.import_subset(*expected, *actual)?;
+        compare.asynchronous = false;
+        compare.resources = &[];
     }
     for (name, expected) in &declared.exports {
+        compare.asynchronous = true;
         compare.interface(*expected, compiled.exports[name])?;
     }
     Ok(compare.examined)
@@ -83,6 +91,8 @@ pub(super) struct Comparison<'a> {
     right: &'a Resolve,
     limits: SemanticLimits,
     examined: usize,
+    asynchronous: bool,
+    resources: &'static [&'static str],
 }
 
 impl<'a> Comparison<'a> {
@@ -92,7 +102,21 @@ impl<'a> Comparison<'a> {
             right,
             limits,
             examined: 0,
+            asynchronous: false,
+            resources: &[],
         }
+    }
+
+    pub(super) fn host_interface(
+        &mut self,
+        left: InterfaceId,
+        right: InterfaceId,
+        asynchronous: bool,
+        resources: &'static [&'static str],
+    ) -> Result<(), PlatformError> {
+        self.asynchronous = asynchronous;
+        self.resources = resources;
+        self.interface(left, right)
     }
 
     pub(super) fn interface(
@@ -137,8 +161,10 @@ impl<'a> Comparison<'a> {
                 .get(name)
                 .ok_or_else(|| incompatible("component-function-missing"))?;
             self.node(1)?;
-            if !matches!(function.kind, FunctionKind::Freestanding)
-                || !matches!(other.kind, FunctionKind::Freestanding)
+            let supported = function.kind == FunctionKind::Freestanding
+                || (self.asynchronous && function.kind == FunctionKind::AsyncFreestanding);
+            if !supported
+                || function.kind != other.kind
                 || function.params.len() != other.params.len()
                 || function.params.len() > self.limits.max_parameters
             {

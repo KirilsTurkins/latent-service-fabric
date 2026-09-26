@@ -50,6 +50,7 @@ impl ExecutionBackend for Backend {
 
     fn preparation_key(&self, release: &ReleaseDigest) -> Result<PreparationKey, PlatformError> {
         Ok(PreparationKey {
+            publication: None,
             release: release.clone(),
             engine_version: "fixture-1".to_owned(),
             engine_configuration_digest: "fixture-config".to_owned(),

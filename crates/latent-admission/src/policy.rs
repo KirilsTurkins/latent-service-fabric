@@ -95,6 +95,13 @@ pub struct NodeAdmissionPolicy {
 
 impl NodeAdmissionPolicy {
     pub fn validate(&self) -> Result<(), PlatformError> {
+        self.validate_profile(latent_core::BudgetProfile::Phase1)
+    }
+
+    pub fn validate_profile(
+        &self,
+        profile: latent_core::BudgetProfile,
+    ) -> Result<(), PlatformError> {
         if self.maximum_identifier_bytes == 0
             || !valid_identifier(&self.architecture, self.maximum_identifier_bytes)
             || self
@@ -108,7 +115,7 @@ impl NodeAdmissionPolicy {
         {
             return Err(configuration("invalid-node-identity"));
         }
-        if self.budget_ceiling.validate_phase1_request().is_err()
+        if profile.validate_request(&self.budget_ceiling).is_err()
             || !matches!(self.budget_ceiling.wall_time_limit_millis, Some(1..))
         {
             return Err(configuration("invalid-node-budget"));

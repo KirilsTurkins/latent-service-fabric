@@ -3,9 +3,14 @@
 mod compiler;
 mod engine;
 pub(crate) use engine::CompilerEngineSettings;
+mod isolation;
+pub use isolation::ExecutionIsolationProfile;
+mod java;
+pub(crate) use java::JAVA_EXCEPTION_HEAP_BYTES;
 mod layout;
 mod pooling;
 mod profile;
+mod renderer;
 mod runtime_compatibility;
 #[cfg(test)]
 mod tests;
@@ -58,6 +63,15 @@ impl InstanceAllocator {
 /// Compatibility name retained for the Phase 0 profiling facade.
 pub type Phase0InstanceAllocator = InstanceAllocator;
 
+/// Explicit test-only guest readings. Admission, budgets, cancellation and
+/// provider authority continue to use the independently supplied real clock.
+#[cfg(feature = "development-clock-fixture")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DevelopmentClockReadings {
+    pub monotonic_nanos: u64,
+    pub wall_unix_millis: u64,
+}
+
 /// Safe Cranelift optimization policies; neither choice changes containment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompilerOptimization {
@@ -83,6 +97,16 @@ impl CompilerOptimization {
 /// not a request to enable arbitrary compiler features or load portable AOT.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WasmtimeConfig {
+    /// Required immutable owners and compatibility; never a grant by itself.
+    pub execution_isolation_profile: ExecutionIsolationProfile,
+    #[cfg(feature = "development-clock-fixture")]
+    pub development_clock_readings: Option<DevelopmentClockReadings>,
+    /// Explicit installation of the closed Angular profile. Ordinary defaults
+    /// never imply support for a JavaScript runtime or an ambient host surface.
+    pub angular_renderer: bool,
+    /// Explicit TeaVM C profile: standard Wasm exceptions, no Wasm GC values.
+    /// Its fixed exception heap is charged before every activation Store.
+    pub java_guest: bool,
     pub target_triple: String,
     pub cpu_feature_set: String,
     pub maximum_component_bytes: usize,
@@ -143,6 +167,11 @@ pub type Phase0WasmtimeConfig = WasmtimeConfig;
 impl Default for WasmtimeConfig {
     fn default() -> Self {
         Self {
+            execution_isolation_profile: ExecutionIsolationProfile::LocalExperimental,
+            #[cfg(feature = "development-clock-fixture")]
+            development_clock_readings: None,
+            angular_renderer: false,
+            java_guest: false,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
@@ -192,6 +221,15 @@ impl Default for WasmtimeConfig {
 
 impl WasmtimeConfig {
     pub fn validate(&self) -> Result<(), PlatformError> {
+        self.execution_isolation_profile.validate_platform()?;
+        #[cfg(feature = "development-clock-fixture")]
+        if self.development_clock_readings.is_some()
+            && self.execution_isolation_profile != ExecutionIsolationProfile::LocalExperimental
+        {
+            return Err(invalid_config());
+        }
+        self.validate_renderer()?;
+        self.validate_java()?;
         let positive = [
             self.maximum_component_bytes,
             self.maximum_wasm_stack_bytes,

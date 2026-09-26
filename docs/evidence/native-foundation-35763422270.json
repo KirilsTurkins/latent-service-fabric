@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "latent.native-foundation-evidence.v1",
+  "sourceCommit": "010c1c0605533a9f8a51a36e8b45265baa6255bb",
+  "version": "0.1.0-alpha.4-rc.1",
+  "releaseWorkflowRun": 35763422270,
+  "sourceCiRun": 35757424832,
+  "archive": {
+    "name": "lsf-0.1.0-alpha.4-rc.1-x86_64-unknown-linux-gnu.tar.gz",
+    "sha256": "cf79385f40bb8e478c7e2d45617574e77a7397e63cbe1e849fe87f34032f1dbb",
+    "size": 29132491
+  },
+  "checksumsSha256": "31b6cfdadef23850d5bfcdaacfc5896a8d85a7446ac20bd6f7576f9bb8181846",
+  "attestationSha256": "9623eab5d2e83dc690525c7268593fb25cb4322c525a210abcb351758ac8f5e3",
+  "localPublisherVerification": {
+    "verifier": "gh 2.96.0",
+    "sourceDigest": "010c1c0605533a9f8a51a36e8b45265baa6255bb",
+    "signerDigest": "010c1c0605533a9f8a51a36e8b45265baa6255bb",
+    "certificateIdentity": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.4-rc.1",
+    "githubHostedRunnerRequired": true,
+    "passed": true
+  },
+  "profiles": [
+    {
+      "profile": "local-experimental-v1",
+      "passed": true,
+      "acceptanceComplete": false,
+      "gaps": [
+        "declared-compatible-native-version-pair-not-yet-selected"
+      ],
+      "initialBootId": "5e2eabc9-5292-4412-9da3-2d1290df5e1d",
+      "rebootedBootId": "04d4a800-fe4d-4125-b7ff-b111c66be046",
+      "receiptSha256": "6cde1e1e16263dc03ed5ed3db1b39baf92260f1644f15e195111226fdc67a3cf"
+    },
+    {
+      "profile": "external-capsule-v1",
+      "passed": true,
+      "acceptanceComplete": false,
+      "gaps": [
+        "declared-compatible-native-version-pair-not-yet-selected"
+      ],
+      "initialBootId": "0ddc984f-77a7-466c-be90-ab97e28c2523",
+      "rebootedBootId": "810df704-f1e3-4bad-b6f8-c5893b7b9bb1",
+      "receiptSha256": "3d55c2cbd316e1818898f6f99ea67f982f3b20a1f95369bd6a68e5750bf55e46"
+    }
+  ],
+  "published": false,
+  "compatiblePairQualified": false
+}

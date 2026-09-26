@@ -11,6 +11,12 @@ use super::MIB;
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct NodeConfig {
     pub format_version: u32,
+    #[serde(default)]
+    pub security_profile: super::ExecutionIsolationProfile,
+    #[serde(default)]
+    pub budget_profile: super::BudgetConfig,
+    #[serde(skip)]
+    pub(crate) credentials_from_protected_file: bool,
     pub data_directory: PathBuf,
     #[serde(default = "default_bind")]
     pub bind: SocketAddr,
@@ -23,6 +29,11 @@ pub struct NodeConfig {
     pub execution: ExecutionConfig,
     #[serde(default)]
     pub engine: EngineConfig,
+    #[cfg(feature = "development-test-node")]
+    #[serde(default, deserialize_with = "super::development::present")]
+    pub development_test: Option<super::DevelopmentTestConfig>,
+    #[serde(default, deserialize_with = "super::renderer::present")]
+    pub renderer_profile: Option<latent_manifest::RendererProfile>,
     #[serde(default)]
     pub limits: LimitConfig,
     #[serde(default)]
@@ -37,6 +48,12 @@ pub struct NodeConfig {
     pub audit: Option<super::AuditConfig>,
     #[serde(default, deserialize_with = "super::rollouts::present")]
     pub rollouts: Option<super::RolloutConfig>,
+    #[serde(default, deserialize_with = "super::capability_policies::present")]
+    pub capability_policies: Option<super::CapabilityPolicyConfig>,
+    #[serde(default, deserialize_with = "super::providers::present")]
+    pub providers: Option<super::ConfiguredProviders>,
+    #[serde(default, deserialize_with = "super::http::present")]
+    pub http_ingress: Option<super::HttpIngressConfig>,
     #[serde(default)]
     pub retention: RetentionConfig,
     #[serde(default)]
@@ -93,6 +110,7 @@ pub struct ExecutionConfig {
 pub struct EngineConfig {
     pub allocator: EngineAllocator,
     pub optimization: EngineOptimization,
+    pub java_guest: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
@@ -117,6 +135,9 @@ pub struct LimitConfig {
     pub maximum_component_bytes: usize,
     pub maximum_payload_bytes: usize,
     pub maximum_connections: usize,
+    pub unauthenticated_connection_timeout_millis: u64,
+    pub maximum_connection_age_millis: u64,
+    pub connection_drain_timeout_millis: u64,
 }
 
 #[derive(Clone, Deserialize)]
@@ -135,6 +156,10 @@ pub struct CacheConfig {
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields, default)]
 pub struct CatalogConfig {
+    pub publication_storage_bytes: u64,
+    pub content_index_bytes: usize,
+    pub content_blobs: usize,
+    pub publication_files: usize,
     pub release_entries: usize,
     pub release_index_bytes: usize,
     pub deployments: usize,

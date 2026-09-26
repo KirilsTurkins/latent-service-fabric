@@ -6,6 +6,13 @@
 
 ## Context
 
+Current reading: the echo recipe below is the original observed-build profile.
+[ADR-0034](0034-version-maintained-guest-build-provenance-profiles.md) adds the
+maintained Rust/C guest recipes; the
+[Angular builder](../docs/component-development/angular-build.md) supplies its
+separate observed composition. None of these profiles authenticates arbitrary
+compiler commands or upgrades supplied-file assembly into a build claim.
+
 Package identity, supplied-artifact receipts and publisher signatures do not
 establish how a component was built. A serialized flag cannot prove execution,
 and matching detached subjects cannot lend publisher authority to a builder.
@@ -55,8 +62,8 @@ ownership. Sysroots and dependency caches remain trusted inputs outside a
 complete hermetic identity closure.
 
 The initial recipe supports maintained echo capsules. Browser/SSR recipes, SBOM
-policy, durable catalog admission and native compiler evidence require separate
-implementation. Durable owners must persist clock/generation floors and compare
+policy, durable catalog admission and native compiler evidence have separate
+implementations. Durable owners persist clock/generation floors and compare
 proof state atomically at publication. Serialized proof fields confer no trust.
 
 Validate with tiny shape/trust/process adversarial tests, an actual observed echo

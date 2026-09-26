@@ -1,5 +1,15 @@
 # Standalone node
 
+Phase 3's optional `capabilityPolicies` section enables one bounded durable policy
+owner on the existing control runtime and listener. See [capability policy
+configuration and recovery](../runtime/capability-policies.md#durable-owner-and-finite-retention).
+It adds policy/provider-binding management and sealed revision checks; it does not
+install application providers or change dormant-service execution resources.
+
+The optional `budgetProfile` selector enables [Phase 3 accounting and descendant
+limits](../runtime/descendant-budgets.md). It defaults to Phase 1. New counter
+ceilings default to zero and remain separate from capability grants.
+
 `latentd serve` runs the standalone stateless node on Linux. One process composes
 durable release and deployment catalogs, immutable routing, admission and quotas,
 fixed execution cells, generic Wasmtime execution, activation capabilities,
@@ -8,9 +18,11 @@ RPC adapters. Worker and listener counts come from node configuration and do not
 grow with deployed services. Completed Phase 2 provides authenticated package admission,
 release lifecycle, optional authenticated native caching, durable audit and
 manual/canary/rollback control. The [Phase 2 completion review](../phase-2-completion.md)
-records its accepted scope and evidence. Phase 3 capability providers and
-application ingress remain planned; no such implementation is enabled by these
-settings.
+records its accepted scope and evidence. Optional Phase 3 capability providers
+use their explicit policy and provider configurations. [HTTP trigger
+management](http-triggers.md) shares this node's catalog and management listener;
+the optional [shared HTTP/TLS application listener](http-ingress.md) provides
+bounded browser ingress through those exact targets and normal admission.
 
 The [`latent` operator CLI](operator-cli.md) uses the generated clients to publish,
 deploy, invoke, cancel, reconcile operation receipts, control rollouts and query
@@ -18,9 +30,19 @@ audit history; the
 [scriptable echo quickstart](../development/standalone-quickstart.md) starts a node
 with an ephemeral endpoint and private credentials. Generated Tonic clients can
 also use the [management](management-services.md) and
-[invocation](../protocol/invocation-service.md) contracts directly. The Phase 0
-`phase0-spike`/`spike` command family keeps its existing arguments, payload
-convention, output and exit codes.
+[invocation](../protocol/invocation-service.md) contracts directly. The historical Phase 0 `phase0-spike`/`spike` command family is no longer part of the current `latentd` product surface; its recorded receipts and versioned documentation remain available as historical evidence.
+
+## Execution security profile
+
+`securityProfile` selects `local-experimental-v1` (default) or
+`external-capsule-v1`. External selection requires enforced admission, protected
+configuration and the supported approved isolated compiler; unknown or unavailable
+profiles fail. `latentd check-config --config FILE` checks these controls without
+creating storage or opening a listener. Startup repeats the check and persists an
+external-profile requirement so an omitted selector cannot weaken a catalog on
+restart. The [profile reference](../runtime/execution-security-profiles.md) covers
+configuration, reported controls, the compiler probe, recovery and residual limits.
+There is no live configuration reload API.
 
 ## Start a local node
 
@@ -38,6 +60,7 @@ produces a token accepted by this configuration format.
 ```json
 {
   "formatVersion": 1,
+  "securityProfile": "local-experimental-v1",
   "dataDirectory": "data",
   "bind": "127.0.0.1:50051",
   "nodeId": "local-node",
@@ -117,6 +140,9 @@ reload live trust; the host replacement API owns that transaction.
 | `limits.maximumComponentBytes` | `16777216` | Upload, repository and backend component ceiling, up to 64 MiB. |
 | `limits.maximumPayloadBytes` | `1048576` | Invocation/codec input and output ceiling, up to 1 MiB. |
 | `limits.maximumConnections` | `32` | Accepted transport connections, 1–1024. |
+| `limits.unauthenticatedConnectionTimeoutMillis` | `5000` | Accept-to-first-authenticated-RPC deadline, 100–60000 ms; protocol traffic does not renew it. |
+| `limits.maximumConnectionAgeMillis` | `300000` | Accept-to-drain age, at least the authentication timeout and at most 86400000 ms. |
+| `limits.connectionDrainTimeoutMillis` | `5000` | Allowance for already admitted RPCs after connection age expiry, 1–60000 ms; then close the connection. |
 | `cache.entries` | `8` | Retained prepared components, 1–4096. |
 | `cache.sourceBytes` | `67108864` | Associated component-byte ceiling for resident code, at least one maximum component and at most 1 GiB; not retained source buffers. |
 | `cache.metadataBytes` | `8388608` | Resident preparation metadata accounting ceiling, 1 MiB–1 GiB. |
@@ -125,6 +151,10 @@ reload live trust; the host replacement API owns that transaction.
 | `cache.compilerWorkers` | `min(2, cache.preparations)` | Fixed compiler threads, 1 to 8 and no greater than total compiler jobs. Remaining job slots form the bounded compiler queue. |
 | `catalogs.releaseEntries` | `4096` | Completed-release index count, at most 100000. |
 | `catalogs.releaseIndexBytes` | `67108864` | Release index allocation ceiling, 1 MiB–1 GiB. |
+| `catalogs.publicationStorageBytes` | `4294967296` | Conservative shared blob, publication link and incomplete file exposure ceiling, 1 byte–1 PiB. Lifecycle history has separate limits. |
+| `catalogs.contentIndexBytes` | `67108864` | Shared content/reference metadata ceiling, 1 byte–1 GiB. |
+| `catalogs.contentBlobs` | `1000000` | Shared immutable file count, 1–1000000. |
+| `catalogs.publicationFiles` | `1024` | Files in one publication directory, 1–1024. |
 | `catalogs.deployments` | `4096` | Deployment count, at most 100000. |
 | `catalogs.deploymentStateBytes` | `67108864` | Deployment/compiler state ceiling, 1 MiB–1 GiB. |
 | `supplyChain` | `{"mode":"trusted-local"}` | Explicit local compatibility or `enforced` with a required policy file. |
@@ -136,6 +166,11 @@ reload live trust; the host replacement API owns that transaction.
 | `telemetry.retainedEntries` | `1024` | Local diagnostic capture, 1–65536 records. |
 | `telemetry.retainedBytes` | `8388608` | Local diagnostic allocation ceiling, 64 KiB–256 MiB. |
 | `shutdownGraceMillis` | `1000` | Bounded drain/transport/runtime shutdown interval, 1–60000 ms. |
+
+The [connection deadline policy](../runtime/transport-connection-deadlines.md)
+defines first authentication, maximum age, draining, reconnect/status recovery
+and the residual local admission-flood boundary. Successful authentication does
+not renew a connection's maximum age or bypass authentication on later RPCs.
 
 A cell entry has `class`, `capacity`, `queueCapacity`, and `maximumMemoryBytes`.
 Known classes are `tiny`, `small`, `standard`, `large`, and `extra-large`. Omit
@@ -395,9 +430,8 @@ downgrade. Audit configuration is unsupported on other node platforms.
 Tenant queries require an administrator and exactly that principal's tenant.
 Node queries additionally require the trusted `latent.node.operator` claim;
 that claim does not grant access to another tenant's history. Cursors are opaque
-and bound to their scope and filters. `QueryAudit` supplies a limited tenant
-projection; unsupported resource-prefix filters are rejected. Page records,
-scan work and encoded responses are bounded. The response retains its page
+and bound to their scope and filters. Every query supplies an explicit scope.
+Page records, scan work and encoded responses are bounded. The response retains its page
 allowance through body consumption or cancellation, including bytes still owned
 by the transport.
 

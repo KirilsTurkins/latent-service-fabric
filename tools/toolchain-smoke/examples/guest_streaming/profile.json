@@ -1,0 +1,9 @@
+{
+  "name": "streaming",
+  "package": "tests:streaming-http@1.0.0",
+  "contract": "tests:streaming-http/api@1.0.0",
+  "capability": "latent:http/streaming@0.3.0",
+  "world": "tests:streaming-http/service@1.0.0",
+  "witDirectory": "http-v3",
+  "asynchronous": true
+}

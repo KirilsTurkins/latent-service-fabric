@@ -2,6 +2,7 @@
 mod args;
 mod client;
 mod command;
+mod completions;
 mod config;
 mod error;
 mod input;

@@ -130,6 +130,21 @@ class BuildSnapshotTests(unittest.TestCase):
             with self.assertRaises(SnapshotError):
                 limits.validate()
 
+    def test_directory_headers_have_a_separate_finite_allowance(self) -> None:
+        payload = archive([("crates", b"", tarfile.DIRTYPE),
+                           ("crates/example", b"", tarfile.DIRTYPE),
+                           ("crates/example/lib.rs", b"source", tarfile.REGTYPE)])
+        with tempfile.TemporaryDirectory() as temporary:
+            rows = json.loads(extract_archive(payload, Path(temporary) / "source",
+                SnapshotLimits(max_entries=1, max_directories=2)))
+            self.assertEqual([row["path"] for row in rows], ["crates/example/lib.rs"])
+        with tempfile.TemporaryDirectory() as temporary, self.assertRaises(SnapshotError):
+            extract_archive(payload, Path(temporary) / "source",
+                            SnapshotLimits(max_entries=1, max_directories=1))
+        for maximum in (0, 4097):
+            with self.subTest(maximum=maximum), self.assertRaises(SnapshotError):
+                SnapshotLimits(max_directories=maximum).validate()
+
     def test_cleanup_refuses_root_and_outside_targets(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "id": "client/ui-syntax",
+  "title": "Synthetic language control specimen",
+  "audience": "client-developer",
+  "target": "client",
+  "variants": [
+    {
+      "language": "rust",
+      "kind": "synthetic",
+      "source": "examples/website-ui/specimen.rs",
+      "regions": [
+        "specimen"
+      ],
+      "validation": {
+        "target": "website/scripts/test-examples.mjs",
+        "instructions": "docs/development/website-code-examples.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "typescript",
+      "kind": "synthetic",
+      "source": "examples/website-ui/specimen.ts",
+      "regions": [
+        "specimen"
+      ],
+      "validation": {
+        "target": "website/scripts/test-examples.mjs",
+        "instructions": "docs/development/website-code-examples.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "go",
+      "kind": "synthetic",
+      "source": "examples/website-ui/specimen.go",
+      "regions": [
+        "specimen"
+      ],
+      "validation": {
+        "target": "website/scripts/test-examples.mjs",
+        "instructions": "docs/development/website-code-examples.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "c",
+      "kind": "synthetic",
+      "source": "examples/website-ui/specimen.c",
+      "regions": [
+        "specimen"
+      ],
+      "validation": {
+        "target": "website/scripts/test-examples.mjs",
+        "instructions": "docs/development/website-code-examples.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "java",
+      "kind": "synthetic",
+      "source": "examples/website-ui/specimen.java",
+      "regions": [
+        "specimen"
+      ],
+      "validation": {
+        "target": "website/scripts/test-examples.mjs",
+        "instructions": "docs/development/website-code-examples.mdx",
+        "evidence": null
+      }
+    },
+    {
+      "language": "csharp",
+      "kind": "synthetic",
+      "source": "examples/website-ui/specimen.cs",
+      "regions": [
+        "specimen"
+      ],
+      "validation": {
+        "target": "website/scripts/test-examples.mjs",
+        "instructions": "docs/development/website-code-examples.mdx",
+        "evidence": null
+      }
+    }
+  ]
+}

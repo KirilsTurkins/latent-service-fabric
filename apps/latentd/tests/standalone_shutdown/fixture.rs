@@ -66,6 +66,7 @@ pub fn deployment(digest: &str) -> proto::Deployment {
         .decode_deployment(&serde_json::to_vec(&document).unwrap())
         .unwrap();
     deployment_to_proto(&VersionedDeployment {
+        publication: None,
         manifest,
         generation: 0,
     })

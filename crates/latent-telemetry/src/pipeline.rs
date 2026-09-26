@@ -57,6 +57,7 @@ pub struct TelemetryPipelineSnapshot {
 
 #[derive(Debug, Default)]
 struct PipelineCounters {
+    custom_installed: AtomicBool,
     accepted: AtomicU64,
     exported: AtomicU64,
     dropped_queue_full: AtomicU64,
@@ -70,8 +71,12 @@ struct PipelineCounters {
     closed: AtomicBool,
 }
 
-enum PipelineCommand {
+pub(crate) enum PipelineCommand {
     Record(TelemetryRecord),
+    CustomMetric(
+        crate::custom::CustomMetricPoint,
+        crate::custom::registry::QueueCharge,
+    ),
     Flush(oneshot::Sender<()>),
     Shutdown(oneshot::Sender<()>),
 }

@@ -49,6 +49,22 @@ def source_fixture(root: Path):
 
 
 class BuildInventoryTests(unittest.TestCase):
+    def test_selected_adapter_library_requires_its_guest_cdylib_and_does_not_change_echo_default(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = root / 'Cargo.toml'
+            selected = 'latent_angular_renderer_adapter'
+            record = artifact(root, manifest, selected, 'cdylib')
+            with self.assertRaises(SnapshotError):
+                collect_units(messages([record]), root)
+            units = collect_units(messages([record]), root, component_library=selected)
+            self.assertEqual([unit.role for unit in units], ['component'])
+            for wrong in (artifact(root, manifest, selected, 'cdylib', host=True),
+                          artifact(root, manifest, selected, 'lib'),
+                          artifact(root, manifest, 'different_adapter', 'cdylib')):
+                with self.subTest(wrong=wrong), self.assertRaises(SnapshotError):
+                    collect_units(messages([wrong]), root, component_library=selected)
+
     def test_license_subset_omits_unknown_exceptions_and_invalid_expressions(self):
         licenses = load_license_ids()
         for expression in ("MIT", "Apache-2.0 OR MIT", "(MIT AND Apache-2.0) OR BSD-3-Clause"):

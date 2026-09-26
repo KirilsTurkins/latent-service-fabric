@@ -1,5 +1,7 @@
 //! Bounded semantic checks for supplied artifacts; no compilation, execution or trust.
 mod arena;
+mod authoring;
+pub use authoring::{derive_capsule_contracts, CapsuleContractInputs};
 mod compare;
 mod compatibility;
 mod host;
@@ -12,10 +14,14 @@ mod sources;
 #[cfg(test)]
 mod tests;
 mod wasm;
+mod web;
+
+pub use web::{inspect_web_bundle, validate_web_renderer, validate_web_renderer_with_backend};
 
 pub use compatibility::{
-    compare_packages, BreakingChangeAllowance, ComparedPackageIdentity, PackageComparisonLimits,
-    PackageCompatibilityReport,
+    check_invocation_target, compare_packages, compile_host_binding, compile_local_binding,
+    BreakingChangeAllowance, CheckedBinding, CheckedInvocationTarget, ComparedPackageIdentity,
+    PackageComparisonLimits, PackageCompatibilityReport,
 };
 use latent_artifacts::package::{artifact_blob_digest, WitLock};
 use latent_contracts::ContractDescriptor;
@@ -98,7 +104,19 @@ pub fn validate_capsule(
     Phase1ManifestValidator
         .validate_capsule(manifest)
         .map_err(|_| invalid("invalid-capsule-manifest"))?;
-    wasm::validate(component, limits)?;
+    if let Some(renderer) = &manifest.runtime_requirements.renderer {
+        if renderer != &latent_manifest::RendererRequirement::angular() {
+            return Err(incompatible("renderer-profile-incompatible"));
+        }
+        validate_web_renderer_with_backend(
+            component,
+            renderer.profile,
+            latent_artifacts::web::WebBackendProfile::from_imports(&manifest.imports)?,
+            limits,
+        )?;
+    } else {
+        wasm::validate(component, limits)?;
+    }
     let digest = artifact_blob_digest(component);
     if manifest.component_digest.0 != digest.as_str() {
         return Err(incompatible("capsule-component-digest-mismatch"));
@@ -179,7 +197,7 @@ fn compare_manifest(
         return Err(incompatible("capsule-export-set-mismatch"));
     }
     for import in &manifest.imports {
-        if !host::IMPORTS.contains(&import.contract.0.as_str()) {
+        if !host::recognizes(&import.contract.0) {
             return Err(incompatible("unsupported-host-import"));
         }
         if !import.optional && !declared.imports.contains_key(&import.contract.0) {

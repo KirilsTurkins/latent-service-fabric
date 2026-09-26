@@ -92,7 +92,7 @@ fn clean_root_publication_respects_a_smaller_recovery_budget_and_reopens() {
 #[test]
 fn retained_incomplete_directory_reduces_publication_capacity_across_reopen() {
     let temp = TempRoot::new();
-    let debris = temp.path().join("releases/incomplete");
+    let debris = temp.path().join("publications/incomplete");
     fs::create_dir_all(&debris).expect("incomplete final directory");
     let limits = config(2, 2);
     let repo = DirectoryArtifactRepository::open(temp.path(), limits).expect("open with debris");
@@ -111,7 +111,7 @@ fn retained_incomplete_directory_reduces_publication_capacity_across_reopen() {
     assert_catalog(&reopened, std::slice::from_ref(&first));
     assert_budget_rejected(&reopened, &second);
     assert_eq!(
-        fs::read_dir(temp.path().join("releases"))
+        fs::read_dir(temp.path().join("publications"))
             .expect("retained directories")
             .count(),
         2
@@ -124,7 +124,7 @@ fn retained_incomplete_directory_reduces_publication_capacity_across_reopen() {
 fn incomplete_directories_can_exhaust_recovery_capacity_without_visible_releases() {
     let temp = TempRoot::new();
     for name in ["incomplete-one", "incomplete-two"] {
-        fs::create_dir_all(temp.path().join("releases").join(name)).expect("debris");
+        fs::create_dir_all(temp.path().join("publications").join(name)).expect("debris");
     }
     let limits = config(3, 2);
     let repo = DirectoryArtifactRepository::open(temp.path(), limits).expect("open at scan limit");
@@ -161,7 +161,7 @@ fn recovery_capacity_rejection_precedes_staging_filesystem_access() {
 fn pending_release_keeps_its_directory_charge_through_retry_or_reopen() {
     for recover_by_retry in [false, true] {
         let temp = TempRoot::new();
-        fs::create_dir_all(temp.path().join("releases/incomplete")).expect("debris");
+        fs::create_dir_all(temp.path().join("publications/incomplete")).expect("debris");
         let limits = config(3, 2);
         let mut repo = DirectoryArtifactRepository::open(temp.path(), limits).expect("open");
         let first = artifact("pending", b"pending");
@@ -204,7 +204,7 @@ fn pending_release_keeps_its_directory_charge_through_retry_or_reopen() {
 
 #[test]
 fn failures_before_rename_do_not_consume_recovery_capacity() {
-    for directory in [".tmp", "releases"] {
+    for directory in [".tmp", "publications"] {
         let temp = TempRoot::new();
         let limits = config(3, 1);
         let repo = DirectoryArtifactRepository::open(temp.path(), limits).expect("open");
@@ -232,7 +232,7 @@ fn failures_before_rename_do_not_consume_recovery_capacity() {
 #[test]
 fn concurrent_publishers_cannot_overcommit_the_last_recovery_directory() {
     let temp = TempRoot::new();
-    fs::create_dir_all(temp.path().join("releases/incomplete")).expect("debris");
+    fs::create_dir_all(temp.path().join("publications/incomplete")).expect("debris");
     let limits = config(16, 2);
     let repo = Arc::new(DirectoryArtifactRepository::open(temp.path(), limits).expect("open"));
     let barrier = Arc::new(Barrier::new(8));
@@ -280,7 +280,7 @@ fn concurrent_publishers_cannot_overcommit_the_last_recovery_directory() {
     assert_eq!(accepted.len(), 1);
     assert_catalog(&repo, &accepted);
     assert_eq!(
-        fs::read_dir(temp.path().join("releases"))
+        fs::read_dir(temp.path().join("publications"))
             .expect("directories")
             .count(),
         2
@@ -293,7 +293,7 @@ fn concurrent_publishers_cannot_overcommit_the_last_recovery_directory() {
 #[test]
 fn offline_debris_removal_reclaims_directory_capacity_on_reopen() {
     let temp = TempRoot::new();
-    let debris = temp.path().join("releases/incomplete");
+    let debris = temp.path().join("publications/incomplete");
     fs::create_dir_all(&debris).expect("debris");
     let limits = config(2, 2);
     let first = artifact("first", b"first");

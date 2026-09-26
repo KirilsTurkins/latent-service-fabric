@@ -10,12 +10,17 @@ description = "Conformance interfaces and deterministic utilities for Latent Ser
 [lints]
 workspace = true
 
+[features]
+default = ["runtime"]
+# Low-level consumers use default-features = false. Preserve existing harness users.
+runtime = ["dep:latent-activation", "dep:latent-executor", "dep:latent-node", "dep:latent-telemetry"]
+
 [dependencies]
-latent-core = { path = "../latent-core" }
-latent-activation = { path = "../latent-activation" }
-latent-executor = { path = "../latent-executor" }
-latent-node = { path = "../latent-node" }
-latent-telemetry = { path = "../latent-telemetry" }
+latent-core = { path = "../latent-core", features = ["test-support"] }
+latent-activation = { path = "../latent-activation", optional = true }
+latent-executor = { path = "../latent-executor", optional = true }
+latent-node = { path = "../latent-node", optional = true }
+latent-telemetry = { path = "../latent-telemetry", optional = true }
 tokio = { workspace = true, features = ["process", "io-util"] }
 serde.workspace = true
 serde_json.workspace = true
@@ -24,3 +29,4 @@ serde_json.workspace = true
 latent-artifacts = { path = "../latent-artifacts" }
 latent-routing = { path = "../latent-routing" }
 tempfile.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }

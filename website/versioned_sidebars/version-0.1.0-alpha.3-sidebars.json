@@ -1,0 +1,414 @@
+{
+  "start": [
+    {
+      "type": "doc",
+      "id": "development/standalone-quickstart",
+      "label": "Standalone echo quickstart"
+    },
+    {
+      "type": "doc",
+      "id": "reference/standalone-node",
+      "label": "Standalone node"
+    },
+    {
+      "type": "doc",
+      "id": "roadmap",
+      "label": "Engineering roadmap"
+    }
+  ],
+  "learn": [
+    {
+      "type": "doc",
+      "id": "component-development/creating-a-capsule",
+      "label": "Creating a capsule"
+    },
+    {
+      "type": "doc",
+      "id": "component-development/packaging",
+      "label": "Deterministic package build and inspection"
+    },
+    {
+      "type": "doc",
+      "id": "component-development/sbom",
+      "label": "Package SBOMs and bounded content policy"
+    }
+  ],
+  "howTo": [
+    {
+      "type": "doc",
+      "id": "operations/topology",
+      "label": "Operational topology"
+    },
+    {
+      "type": "doc",
+      "id": "phase-2-canary-observation",
+      "label": "Phase 2 canary outcome observation"
+    },
+    {
+      "type": "doc",
+      "id": "phase-2-canary-promotion",
+      "label": "Controlled canary promotion"
+    },
+    {
+      "type": "doc",
+      "id": "phase-2-delivery",
+      "label": "Phase 2 delivery notes"
+    },
+    {
+      "type": "doc",
+      "id": "phase-2-operator-workflows",
+      "label": "Phase 2 operator workflows"
+    },
+    {
+      "type": "doc",
+      "id": "phase-2-rollback",
+      "label": "Atomic eligible-release rollback"
+    },
+    {
+      "type": "doc",
+      "id": "phase-2-rollouts",
+      "label": "Durable single-node rollouts"
+    }
+  ],
+  "reference": [
+    {
+      "type": "doc",
+      "id": "api-surface",
+      "label": "API surface map"
+    },
+    {
+      "type": "doc",
+      "id": "protocol/activation-lifecycle",
+      "label": "Activation lifecycle protocol"
+    },
+    {
+      "type": "doc",
+      "id": "protocol/commit-protocol",
+      "label": "Activation commit protocol"
+    },
+    {
+      "type": "doc",
+      "id": "protocol/invocation-service",
+      "label": "Phase 1 generic invocation service"
+    },
+    {
+      "type": "doc",
+      "id": "protocol/manifest-codec",
+      "label": "Manifest codec and Phase 1 admission contract"
+    },
+    {
+      "type": "doc",
+      "id": "protocol/package-format",
+      "label": "Phase 2 package identity and artifact format"
+    },
+    {
+      "type": "doc",
+      "id": "protocol/phase-1-contract-hardening",
+      "label": "Phase 1 contract hardening"
+    },
+    {
+      "type": "doc",
+      "id": "protocol/platform-errors",
+      "label": "Platform error model"
+    },
+    {
+      "type": "doc",
+      "id": "protocol/wit-values",
+      "label": "Phase 1 WIT value payloads"
+    },
+    {
+      "type": "doc",
+      "id": "reference/build-provenance",
+      "label": "Build observations and current builder trust"
+    },
+    {
+      "type": "doc",
+      "id": "reference/management-services",
+      "label": "Standalone management services"
+    },
+    {
+      "type": "doc",
+      "id": "reference/oci-registry",
+      "label": "Bounded OCI registry adapter"
+    },
+    {
+      "type": "doc",
+      "id": "reference/operator-cli",
+      "label": "Operator CLI"
+    },
+    {
+      "type": "doc",
+      "id": "reference/package-admission",
+      "label": "Authenticated package admission"
+    },
+    {
+      "type": "doc",
+      "id": "reference/publisher-trust",
+      "label": "Package publisher signatures and current trust"
+    },
+    {
+      "type": "doc",
+      "id": "reference/raw-artifact-cache",
+      "label": "Bounded raw artifact cache"
+    },
+    {
+      "type": "doc",
+      "id": "reference/release-compatibility",
+      "label": "Release and runtime compatibility"
+    },
+    {
+      "type": "doc",
+      "id": "reference/release-lifecycle",
+      "label": "Release lifecycle and evidence renewal"
+    }
+  ],
+  "understand": [
+    {
+      "type": "doc",
+      "id": "activation-lifecycle",
+      "label": "Local activation lifecycle"
+    },
+    {
+      "type": "doc",
+      "id": "admission-control",
+      "label": "Single-node admission and overload control"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/blob-model",
+      "label": "Blob model"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/cluster-topology",
+      "label": "Cluster topology"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/contracts-and-bindings",
+      "label": "Contracts and bindings"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/control-plane",
+      "label": "Control-plane architecture"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/data-plane",
+      "label": "Data-plane architecture"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/execution-cells",
+      "label": "Execution-cell architecture"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/identity-and-capabilities",
+      "label": "Identity and capability architecture"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/ingress-and-triggers",
+      "label": "Ingress and trigger architecture"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/overview",
+      "label": "LSF architecture overview"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/security",
+      "label": "Security architecture"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/state-and-effects",
+      "label": "State and effect architecture"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/versioning-and-deployment",
+      "label": "Versioning and deployment"
+    },
+    {
+      "type": "doc",
+      "id": "deployment-routing",
+      "label": "Embedded deployment catalog and local routing"
+    },
+    {
+      "type": "doc",
+      "id": "phase-0-baselines",
+      "label": "Phase 0 activation, containment, and resource baselines"
+    },
+    {
+      "type": "doc",
+      "id": "phase-0-completion",
+      "label": "Phase 0 completion gate"
+    },
+    {
+      "type": "doc",
+      "id": "phase-0-hot-path-profiling",
+      "label": "Phase 0 execution hot-path profiling and Phase 1 handoff"
+    },
+    {
+      "type": "doc",
+      "id": "phase-0-spike",
+      "label": "Phase 0 executable spike"
+    },
+    {
+      "type": "doc",
+      "id": "phase-1-completion",
+      "label": "Phase 1 completion report"
+    },
+    {
+      "type": "doc",
+      "id": "phase-1-extension-completion",
+      "label": "Phase 1 extension: measured results and Phase 2 handoff"
+    },
+    {
+      "type": "doc",
+      "id": "phase-2-audit",
+      "label": "Phase 2 audit"
+    },
+    {
+      "type": "doc",
+      "id": "phase-2-completion",
+      "label": "Phase 2 completion review"
+    },
+    {
+      "type": "doc",
+      "id": "runtime/capabilities",
+      "label": "Activation-scoped capabilities"
+    },
+    {
+      "type": "doc",
+      "id": "runtime/resource-budgets",
+      "label": "Phase 1 resource budgets, deadlines, and cancellation"
+    },
+    {
+      "type": "doc",
+      "id": "runtime/trusted-aot",
+      "label": "Isolated trusted-local AOT compilation and native cache"
+    },
+    {
+      "type": "doc",
+      "id": "runtime/wasmtime",
+      "label": "Generic Wasmtime execution"
+    },
+    {
+      "type": "doc",
+      "id": "scheduling",
+      "label": "Bounded single-node fair scheduling"
+    },
+    {
+      "type": "doc",
+      "id": "telemetry",
+      "label": "Shared telemetry and node inventory"
+    }
+  ],
+  "contribute": [
+    {
+      "type": "doc",
+      "id": "development/activation-containment",
+      "label": "Phase 0 activation containment"
+    },
+    {
+      "type": "doc",
+      "id": "development/build-foundation",
+      "label": "Executable build foundation"
+    },
+    {
+      "type": "doc",
+      "id": "development/ci-caching",
+      "label": "CI dependency caching"
+    },
+    {
+      "type": "doc",
+      "id": "development/ci-profiles",
+      "label": "CI validation profiles"
+    },
+    {
+      "type": "doc",
+      "id": "development/feature-audit-2026-09-07",
+      "label": "Feature audit — September 7, 2026"
+    },
+    {
+      "type": "doc",
+      "id": "development/fixed-cell-pool",
+      "label": "Phase 0 fixed execution-cell pool"
+    },
+    {
+      "type": "doc",
+      "id": "development/local-release-catalog",
+      "label": "Phase 1 local release catalog"
+    },
+    {
+      "type": "doc",
+      "id": "development/phase-0-wasmtime",
+      "label": "Phase 0 Wasmtime echo backend"
+    },
+    {
+      "type": "doc",
+      "id": "development/toolchain",
+      "label": "Toolchain and reproducibility baseline"
+    },
+    {
+      "type": "doc",
+      "id": "svg-style",
+      "label": "Documentation SVG convention"
+    },
+    {
+      "type": "doc",
+      "id": "testing/benchmark-retention",
+      "label": "Benchmark evidence retention"
+    },
+    {
+      "type": "doc",
+      "id": "testing/docker-comparison",
+      "label": "Docker comparison collection and replay"
+    },
+    {
+      "type": "doc",
+      "id": "testing/invariants",
+      "label": "Test invariants"
+    },
+    {
+      "type": "doc",
+      "id": "testing/kubernetes-comparison",
+      "label": "Kubernetes Service comparison"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-1-conformance",
+      "label": "Bounded Phase 1 conformance"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-1-controlled-comparison",
+      "label": "Controlled historical/current comparison"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-1-measurements",
+      "label": "Phase 1 scale, soak and benchmark measurements"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-2-offline-validation",
+      "label": "Phase 2 offline trust and registry availability"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-2-resource-profile",
+      "label": "Phase 2 resource profile"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase0-ci-layout",
+      "label": "Phase 0 CI layout"
+    }
+  ]
+}

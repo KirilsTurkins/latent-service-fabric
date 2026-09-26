@@ -108,6 +108,10 @@ impl Bounds {
 
 impl Check for proto::ReleaseDescriptor {
     fn check(&self, b: &mut Bounds) -> Result<(), Failure> {
+        release_operation::publication(self.publication.as_ref(), self.tenant.as_deref(), b)?;
+        if let Some(package) = &self.package_digest {
+            b.digest(package)?;
+        }
         b.digest(&self.digest)?;
         b.id(&self.artifact_reference)?;
         b.id(&self.service)?;
@@ -133,6 +137,8 @@ impl Check for proto::PublishReleaseResponse {
                 != self.release.as_ref().and_then(|v| v.tenant.as_deref())
                 || operation.component_digest.as_deref()
                     != self.release.as_ref().map(|v| v.digest.as_str())
+                || operation.publication.as_ref()
+                    != self.release.as_ref().and_then(|v| v.publication.as_ref())
             {
                 return Err(invalid_response());
             }
@@ -179,6 +185,19 @@ fn deployment_fields(value: &proto::Deployment, b: &mut Bounds) -> Result<(), Fa
     b.id(&value.service)?;
     b.digest(&value.release_digest)?;
     let metadata = value.metadata.as_ref().ok_or_else(invalid_response)?;
+    release_operation::publication(value.publication.as_ref(), metadata.tenant.as_deref(), b)?;
+    release_operation::publication(
+        value.requested_publication.as_ref(),
+        metadata.tenant.as_deref(),
+        b,
+    )?;
+    if value
+        .requested_publication
+        .as_ref()
+        .is_some_and(|selected| Some(selected) != value.publication.as_ref())
+    {
+        return Err(invalid_response());
+    }
     b.id(&metadata.name)?;
     b.id(metadata.tenant.as_deref().ok_or_else(invalid_response)?)?;
     b.optional(metadata.namespace.as_deref())?;

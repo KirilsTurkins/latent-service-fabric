@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LSF example evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "scenario",
+    "language",
+    "sourceRevision",
+    "sourceSha256",
+    "validationSha256",
+    "level",
+    "execution",
+    "passed",
+    "toolchain",
+    "run",
+    "scope"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "scenario": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "rust",
+        "typescript",
+        "go",
+        "c",
+        "java",
+        "csharp"
+      ]
+    },
+    "sourceRevision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "sourceSha256": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "validationSha256": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "compile-unit",
+        "real-node"
+      ]
+    },
+    "execution": {
+      "type": "string",
+      "enum": [
+        "compile-unit",
+        "test-double",
+        "real-node"
+      ]
+    },
+    "passed": {
+      "type": "boolean"
+    },
+    "toolchain": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+    }
+  }
+}

@@ -8,6 +8,30 @@ use latent_core::{
 
 use crate::{control::v1 as control, invocation::v1 as invocation};
 
+#[must_use]
+pub fn grpc_code(code: PlatformErrorCode) -> tonic::Code {
+    use tonic::Code;
+    match code {
+        PlatformErrorCode::Unavailable | PlatformErrorCode::RouteUnavailable => Code::Unavailable,
+        PlatformErrorCode::DeadlineExceeded => Code::DeadlineExceeded,
+        PlatformErrorCode::Cancelled => Code::Cancelled,
+        PlatformErrorCode::ResourceExhausted | PlatformErrorCode::AdmissionRejected => {
+            Code::ResourceExhausted
+        }
+        PlatformErrorCode::PermissionDenied => Code::PermissionDenied,
+        PlatformErrorCode::Unauthenticated => Code::Unauthenticated,
+        PlatformErrorCode::InvalidArgument => Code::InvalidArgument,
+        PlatformErrorCode::NotFound => Code::NotFound,
+        PlatformErrorCode::AlreadyExists => Code::AlreadyExists,
+        PlatformErrorCode::IncompatibleContract | PlatformErrorCode::DependencyFailed => {
+            Code::FailedPrecondition
+        }
+        PlatformErrorCode::StateConflict => Code::Aborted,
+        PlatformErrorCode::CorruptArtifact => Code::DataLoss,
+        _ => Code::Internal,
+    }
+}
+
 /// Error returned when a generated message carries a platform code unknown to this build.
 ///
 /// Unknown codes are rejected rather than mapped to `internal`, because coercion would

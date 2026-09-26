@@ -2,13 +2,12 @@
 
 The current node validates component metadata and dispatches supported exported
 contracts/functions through the [generic Wasmtime backend](../runtime/wasmtime.md).
-Phase 2 adds verified package association and bounded release compatibility
-comparison. Guest imports remain limited to declared context, log and clock
-bindings. SDK interface projections compile; general SDK transports remain
-unimplemented. Phase 3 plans the exact host ABI, capability broker and bounded
-isolated local service calls. Binding-graph compilation, remote/inline modes and
-automatic compatibility migration below remain design contracts; an open Phase 3
-proposal does not make them available. See the [roadmap](../roadmap.md).
+Verified package association and bounded release/runtime comparison accompany
+execution. The host ABI, sealed capability broker and
+[host/local binding compiler](../runtime/capability-bindings.md) preserve exact
+contracts. [Isolated local calls](../runtime/local-service-invocation.md) execute
+through a separate child activation. Remote calls, inline composition and
+automatic contract migration are not implemented.
 
 ## Contract authority
 
@@ -26,7 +25,7 @@ A release has separate identities for:
 
 Implementation version and contract version are not interchangeable.
 
-## Planned binding graph
+## Binding graph
 
 A binding connects one consumer import to one provider export or host capability:
 
@@ -36,13 +35,13 @@ consumer revision + imported contract + caller policy
     → host capability | local provider | remote provider | derived composition
 ```
 
-## Planned physical modes
+## Physical modes
 
 - `host`: import is supplied by the capability broker.
-- `inline`: provider is composed into the same activation.
-- `isolated-local`: provider runs as a separate activation on the same node.
-- `remote`: provider runs on another node.
-- `auto`: runtime selects a permitted mode.
+- `inline`: planned composition in the same activation; compilation is rejected today.
+- `isolated-local`: selects an exact local target and dispatches a separately admitted child activation.
+- `remote`: planned calls to another node; compilation is rejected today.
+- `auto`: compiler selects one unambiguous installed provider within explicit allowed modes.
 
 ## Inline eligibility
 
@@ -58,9 +57,10 @@ Compatibility checks consider removed functions, changed parameter/result types,
 
 Current preparation checks agreement between the supplied manifest/contract
 metadata and actual component imports, exports and supported value signatures.
-Phase 2 adds [bounded release comparison](../reference/release-compatibility.md)
-using the exact pinned WIT definitions of checked packages, plus actual-node
+[Bounded release comparison](../reference/release-compatibility.md)
+uses the exact pinned WIT definitions of checked packages, plus actual-node
 runtime requirements. Descriptor-only analysis cannot establish named record or
 variant structure. Unsupported and unknown results deny compatibility approval;
-general WIT migration and binding-graph compilation remain future work. WIT
+general WIT migration remains future work. Exact host/local binding compilation
+uses these checked definitions and rejects unsupported or ambiguous inputs. WIT
 versions remain distinct from workspace and SDK package release versions.

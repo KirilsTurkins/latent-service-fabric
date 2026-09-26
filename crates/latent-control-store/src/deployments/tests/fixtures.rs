@@ -257,6 +257,7 @@ pub(in crate::deployments) fn deployment(
     release: &ReleaseDigest,
 ) -> DeploymentManifest {
     DeploymentManifest {
+        publication: None,
         api_version: MANIFEST_API_VERSION.to_owned(),
         id: latent_core::DeploymentId(id.to_owned()),
         metadata: metadata(id, Some(tenant)),

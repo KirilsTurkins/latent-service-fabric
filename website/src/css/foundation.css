@@ -1,0 +1,16 @@
+.foundation-home {
+  padding-block: 3rem;
+}
+
+.foundation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1.5rem;
+  margin-block: 2rem;
+}
+
+.foundation-grid section {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+}

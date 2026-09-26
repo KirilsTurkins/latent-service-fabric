@@ -300,5 +300,7 @@ pub fn services(clock: &Arc<ManualClock>) -> WasmtimeHostServices {
     WasmtimeHostServices {
         clock: clock.clone(),
         log_sink: None,
+        capabilities: None,
+        currentness_read_wait: None,
     }
 }

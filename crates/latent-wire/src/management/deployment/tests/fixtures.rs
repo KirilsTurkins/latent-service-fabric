@@ -2,6 +2,8 @@ use super::proto;
 
 pub(super) fn deployment() -> proto::Deployment {
     proto::Deployment {
+        publication: None,
+        requested_publication: None,
         id: "ship".to_owned(),
         metadata: Some(proto::ObjectMetadata {
             name: "ship".to_owned(),

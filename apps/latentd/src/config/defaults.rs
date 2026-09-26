@@ -28,6 +28,9 @@ impl Default for LimitConfig {
             maximum_component_bytes: 16 * MIB,
             maximum_payload_bytes: MIB,
             maximum_connections: 32,
+            unauthenticated_connection_timeout_millis: 5000,
+            maximum_connection_age_millis: 300_000,
+            connection_drain_timeout_millis: 5000,
         }
     }
 }
@@ -48,6 +51,10 @@ impl Default for CacheConfig {
 impl Default for CatalogConfig {
     fn default() -> Self {
         Self {
+            publication_storage_bytes: 4_294_967_296,
+            content_index_bytes: 64 * MIB,
+            content_blobs: 1_000_000,
+            publication_files: 1024,
             release_entries: 4096,
             release_index_bytes: 64 * MIB,
             deployments: 4096,

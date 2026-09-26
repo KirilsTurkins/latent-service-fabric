@@ -13,6 +13,14 @@ pub struct ShutdownReport {
     pub audit: Option<super::AuditShutdownReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rollouts: Option<super::RolloutShutdownReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub policies: Option<super::PolicyShutdownReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub providers: Option<super::ProviderShutdownReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<super::providers::MetricObservation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub http: Option<super::http::HttpSnapshot>,
     pub clean: bool,
     pub active_connections: usize,
     pub active_rpcs: usize,
@@ -49,6 +57,9 @@ pub struct ShutdownReport {
 impl ShutdownReport {
     fn reclaimed(&self) -> bool {
         self.audit.is_none_or(super::AuditShutdownReport::clean)
+            && self.http.is_none_or(super::http::HttpSnapshot::clean)
+            && self.policies.is_none_or(super::PolicyShutdownReport::clean)
+            && self.providers.is_none_or(|report| report.clean)
             && self
                 .rollouts
                 .is_none_or(super::RolloutShutdownReport::clean)
@@ -88,6 +99,16 @@ impl StandaloneNode {
     )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
         self.supply_chain.retire();
+        self.capabilities.retire();
+        if let Some(providers) = &self.providers {
+            providers.retire();
+        }
+        if let Some(factory) = &self.factory {
+            factory.retire_capabilities();
+        }
+        if let Some(policies) = &self.policies {
+            policies.handle().retire();
+        }
         self.load.stop_accepting();
         if let Some(rollouts) = &self.rollouts {
             rollouts.handle().close();
@@ -97,6 +118,10 @@ impl StandaloneNode {
             .as_ref()
             .map(super::transport::Transport::handle);
         if let Some(handle) = &handle {
+            handle.stop_accepting();
+        }
+        let http_handle = self.http.as_ref().map(super::http::HttpOwner::handle);
+        if let Some(handle) = &http_handle {
             handle.stop_accepting();
         }
         let cleanup = self.cleanup.take().expect("owned cleanup driver");
@@ -120,7 +145,8 @@ impl StandaloneNode {
         let compiler_quiescence = factory.quiesce_compiler();
         self.scheduler.shutdown();
         let transport = self.transport.take();
-        let (transport_result, cleanup_result) = tokio::join!(
+        let http = self.http.take();
+        let (transport_result, cleanup_result, http_result) = tokio::join!(
             Box::pin(async {
                 if let Some(transport) = transport {
                     transport.shutdown().await.map(|_| ())
@@ -128,9 +154,19 @@ impl StandaloneNode {
                     Ok(())
                 }
             }),
-            Box::pin(cleanup.shutdown(forced_deadline))
+            Box::pin(cleanup.shutdown(forced_deadline)),
+            Box::pin(async {
+                if let Some(http) = http {
+                    http.shutdown(forced_deadline).await
+                } else {
+                    Ok(())
+                }
+            })
         );
         let mut failure = transport_result.err();
+        if let Err(error) = http_result {
+            failure.get_or_insert(error);
+        }
         if let Err(error) = cleanup_result {
             failure.get_or_insert(error);
         }
@@ -156,6 +192,32 @@ impl StandaloneNode {
                 )
             });
         }
+        let provider_report = if let Some(providers) = &self.providers {
+            match providers.shutdown(drain_deadline.into_std()).await {
+                Ok(report) => Some(report),
+                Err(error) => {
+                    failure.get_or_insert(error);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        let policies = self.policies.take();
+        let policy_report = if let Some(policies) = &policies {
+            let report = policies.shutdown(drain_deadline.into_std()).await;
+            if !report.work_completed || report.active_jobs != 0 {
+                failure.get_or_insert_with(|| {
+                    error(
+                        PlatformErrorCode::DeadlineExceeded,
+                        "capability policy work did not stop cleanly",
+                    )
+                });
+            }
+            Some(report)
+        } else {
+            None
+        };
         let rollout_report = if let Some(rollouts) = &self.rollouts {
             match rollouts.shutdown(self.shutdown_grace).await {
                 Ok(report) => {
@@ -212,14 +274,9 @@ impl StandaloneNode {
         if let Ok(report) = &mut report {
             report.audit = audit_report;
             report.rollouts = rollout_report;
-        }
-        if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
-            failure.get_or_insert_with(|| {
-                error(
-                    PlatformErrorCode::Internal,
-                    "node resources were not reclaimed",
-                )
-            });
+            report.policies = policy_report;
+            report.providers = provider_report;
+            report.http = http_handle.as_ref().map(super::http::HttpHandle::snapshot);
         }
         // This diagnostic contains no caller identifiers, payload, or private error.
         let _ = self.telemetry.try_emit_log(LogRecord {
@@ -244,6 +301,14 @@ impl StandaloneNode {
         } else if let Ok(report) = &mut report {
             report.telemetry_flushed = true;
             report.telemetry_retained_entries = self.sink.snapshot().entries;
+            if let Some(providers) = &self.providers {
+                match providers.metric_observation(&self.sink) {
+                    Ok(observation) => report.metrics = observation,
+                    Err(error) => {
+                        failure.get_or_insert(error);
+                    }
+                }
+            }
         }
         // Inventory, manager, and backend are the remaining runtime owners. Their
         // destruction precedes the factory's unique-owner shutdown barrier.
@@ -255,6 +320,17 @@ impl StandaloneNode {
         }
         if let Ok(report) = &mut report {
             report.compiler = compiler_observer.snapshot();
+            if let (Some(policies), Some(previous)) = (&policies, policy_report) {
+                report.policies = Some(policies.snapshot(previous.work_completed));
+            }
+        }
+        if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
+            failure.get_or_insert_with(|| {
+                error(
+                    PlatformErrorCode::Internal,
+                    "node resources were not reclaimed",
+                )
+            });
         }
         if let Some(error) = failure {
             return Err(error);
@@ -287,6 +363,9 @@ impl StandaloneNode {
         Ok(ShutdownReport {
             audit: None,
             rollouts: None,
+            policies: None,
+            providers: None,
+            http: None,
             clean: false,
             active_connections: transport.active_connections,
             active_rpcs: transport.active_rpcs,
@@ -312,6 +391,7 @@ impl StandaloneNode {
             live_temporary_buffers: backend.live_temporary_buffers,
             live_cancellation_probes: backend.live_cancellation_probes,
             telemetry_retained_entries: 0,
+            metrics: None,
             telemetry_flushed: false,
             epoch_helper_joined: false,
             compiler: self.backend.compiler_snapshot(),

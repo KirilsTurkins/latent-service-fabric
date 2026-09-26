@@ -1,0 +1,538 @@
+    Checking latent-core v0.1.0-alpha.3 (/workspace/crates/latent-core)
+    Checking tokio v1.53.1
+    Checking hybrid-array v0.4.15
+    Checking rand_core v0.10.1
+    Checking libm v0.2.16
+    Checking latent-manifest v0.1.0-alpha.3 (/workspace/crates/latent-manifest)
+    Checking ipnet v2.12.2
+    Checking const-oid v0.10.2
+    Checking der v0.8.2
+    Checking zerovec v0.11.8
+    Checking latent-routing v0.1.0-alpha.3 (/workspace/crates/latent-routing)
+    Checking wasmtime-internal-core v47.0.4
+    Checking getrandom v0.4.3
+    Checking io-lifetimes v2.0.4
+    Checking io-lifetimes v3.0.1
+    Checking crypto-common v0.2.2
+    Checking block-buffer v0.12.1
+    Checking subtle v2.6.1
+    Checking io-extras v0.19.0
+    Checking fs-set-times v0.20.3
+    Checking latent-activation v0.1.0-alpha.3 (/workspace/crates/latent-activation)
+    Checking spki v0.8.0
+    Checking latent-audit v0.1.0-alpha.3 (/workspace/crates/latent-audit)
+    Checking latent-contracts v0.1.0-alpha.3 (/workspace/crates/latent-contracts)
+    Checking digest v0.11.3
+    Checking rustix-linux-procfs v0.1.1
+    Checking maybe-owned v0.3.4
+    Checking unicode-ident v1.0.24
+    Checking id-arena v2.3.0
+    Checking ambient-authority v0.0.2
+    Checking cap-primitives v4.0.3
+    Checking wit-parser v0.252.0
+    Checking pkcs8 v0.11.0
+    Checking cranelift-bitset v0.134.4
+    Checking signature v3.0.0
+    Checking ed25519 v3.0.0
+    Checking curve25519-dalek v5.0.0
+    Checking cap-std v4.0.3
+    Checking latent-artifacts v0.1.0-alpha.3 (/workspace/crates/latent-artifacts)
+    Checking crc32fast v1.5.1
+    Checking sha2 v0.11.0
+    Checking tinystr v0.8.4
+    Checking writeable v0.6.4
+    Checking litemap v0.8.3
+    Checking futures-core v0.3.34
+    Checking base64 v0.22.1
+    Checking ed25519-dalek v3.0.0
+    Checking icu_locale_core v2.3.0
+    Checking cap-fs-ext v4.0.3
+    Checking cranelift-entity v0.134.4
+    Checking zerotrie v0.2.5
+    Checking potential_utf v0.1.6
+    Checking cobs v0.3.0
+    Checking spdx v0.13.5
+    Checking arrayvec v0.7.8
+    Checking constant_time_eq v0.4.2
+    Checking hashbrown v0.16.1
+    Checking fnv v1.0.7
+    Checking utf8_iter v1.0.4
+    Checking arrayref v0.3.9
+    Checking futures-sink v0.3.34
+    Checking futures-channel v0.3.34
+    Checking blake3 v1.8.5
+    Checking gimli v0.33.0
+    Checking icu_collections v2.3.0
+    Checking postcard v1.1.3
+    Checking icu_provider v2.3.1
+    Checking cranelift-bforest v0.134.4
+    Checking target-lexicon v0.13.5
+    Checking allocator-api2 v0.2.21
+    Checking bumpalo v3.20.3
+    Checking icu_normalizer_data v2.3.0
+    Checking icu_properties_data v2.3.0
+    Checking latent-telemetry v0.1.0-alpha.3 (/workspace/crates/latent-telemetry)
+    Checking rustls-pki-types v1.15.1
+    Checking getrandom v0.2.17
+    Checking untrusted v0.9.0
+    Checking arbitrary v1.4.2
+    Checking rustc-hash v2.1.3
+    Checking regalloc2 v0.15.2
+    Checking cranelift-control v0.134.4
+    Checking ring v0.17.14
+    Checking latent-packaging v0.1.0-alpha.3 (/workspace/crates/latent-packaging)
+    Checking latent-signing v0.1.0-alpha.3 (/workspace/crates/latent-signing)
+    Checking latent-executor v0.1.0-alpha.3 (/workspace/crates/latent-executor)
+    Checking icu_properties v2.3.0
+    Checking icu_normalizer v2.3.0
+    Checking cranelift-assembler-x64 v0.134.4
+    Checking pulley-interpreter v47.0.4
+    Checking latent-policy v0.1.0-alpha.3 (/workspace/crates/latent-policy)
+    Checking latent-capabilities v0.1.0-alpha.3 (/workspace/crates/latent-capabilities)
+    Checking leb128fmt v0.1.0
+    Checking cranelift-codegen-shared v0.134.4
+    Checking termcolor v1.4.1
+    Checking wasmprinter v0.252.0
+    Checking wasm-encoder v0.252.0
+    Checking idna_adapter v1.2.2
+    Checking object v0.39.1
+    Checking http v1.5.0
+    Checking percent-encoding v2.3.2
+    Checking wasmtime-internal-component-util v47.0.4
+    Checking form_urlencoded v1.2.2
+    Checking http-body v1.1.0
+    Checking idna v1.1.0
+    Checking rustls-webpki v0.103.15
+    Checking chacha20 v0.10.2
+    Checking tracing-core v0.1.36
+    Checking try-lock v0.2.5
+    Checking want v0.3.1
+    Checking tracing v0.1.44
+    Checking rand v0.10.2
+    Checking cranelift-codegen v0.134.4
+    Checking rustls v0.23.45
+    Checking wasmtime-environ v47.0.4
+    Checking url v2.5.8
+    Checking httparse v1.10.1
+    Checking deranged v0.5.8
+    Checking adler2 v2.0.1
+    Checking futures-io v0.3.34
+    Checking tinyvec v1.13.3
+    Checking slab v0.4.12
+    Checking powerfmt v0.2.0
+    Checking atomic-waker v1.1.2
+    Checking either v1.18.0
+    Checking data-encoding v2.11.1
+    Checking simd-adler32 v0.3.10
+    Checking num-conv v0.2.2
+    Checking futures-task v0.3.34
+    Checking time-core v0.1.9
+    Checking time v0.3.55
+    Checking futures-util v0.3.34
+    Checking miniz_oxide v0.9.1
+    Checking hickory-proto v0.26.3
+    Checking itertools v0.14.0
+    Checking hyper v1.11.1
+    Checking tokio-rustls v0.26.5
+    Checking webpki-roots v1.0.9
+    Checking latent-admission v0.1.0-alpha.3 (/workspace/crates/latent-admission)
+    Checking hyper-util v0.1.20
+    Checking wasmtime-internal-fiber v47.0.4
+    Checking latent-scheduler v0.1.0-alpha.3 (/workspace/crates/latent-scheduler)
+    Checking latent-network v0.1.0-alpha.3 (/workspace/crates/latent-network)
+    Checking futures v0.3.34
+    Checking flate2 v1.1.10
+    Checking http-body-util v0.1.5
+    Checking wasmtime-internal-jit-icache-coherence v47.0.4
+    Checking memfd v0.6.5
+    Checking encoding_rs v0.8.35
+   Compiling latent-component-bindings v0.1.0-alpha.3 (/workspace/crates/latent-component-bindings)
+    Checking enumflags2 v0.7.12
+    Checking latent-http v0.1.0-alpha.3 (/workspace/crates/latent-http)
+    Checking latent-node v0.1.0-alpha.3 (/workspace/crates/latent-node)
+    Checking latent-triggers v0.1.0-alpha.3 (/workspace/crates/latent-triggers)
+    Checking latent-identity v0.1.0-alpha.3 (/workspace/crates/latent-identity)
+    Checking latent-protected-files v0.1.0-alpha.3 (/workspace/crates/latent-protected-files)
+   Compiling latent-wasmtime v0.1.0-alpha.3 (/workspace/crates/latent-wasmtime)
+    Checking latent-secrets v0.1.0-alpha.3 (/workspace/crates/latent-secrets)
+    Checking latent-ingress v0.1.0-alpha.3 (/workspace/crates/latent-ingress)
+    Checking landlock v0.4.5
+    Checking yasna v0.6.0
+    Checking seccompiler v0.5.0
+    Checking close_fds v0.3.2
+    Checking quick-xml v0.42.0
+    Checking fastrand v2.5.0
+    Checking tempfile v3.27.0
+    Checking rcgen v0.14.10
+    Checking cranelift-frontend v0.134.4
+    Checking cranelift-native v0.134.4
+    Checking wasmtime-internal-unwinder v47.0.4
+    Checking latent-blobs v0.1.0-alpha.3 (/workspace/crates/latent-blobs)
+    Checking latent-control-store v0.1.0-alpha.3 (/workspace/crates/latent-control-store)
+    Checking wasmtime-internal-cranelift v47.0.4
+    Checking latent-vault v0.1.0-alpha.3 (/workspace/crates/latent-vault)
+    Checking wasmtime v47.0.4
+    Checking latent-nats v0.1.0-alpha.3 (/workspace/crates/latent-nats)
+    Checking memmap2 v0.9.11
+error: binding's name is too similar to existing binding
+   --> crates/latent-wasmtime/src/preparation_observer/guard.rs:185:17
+    |
+185 |         let mut state = inner.lock();
+    |                 ^^^^^
+    |
+note: existing binding defined here
+   --> crates/latent-wasmtime/src/preparation_observer/guard.rs:181:9
+    |
+181 |         stage: PreparationStage,
+    |         ^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#similar_names
+    = note: `-D clippy::similar-names` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::similar_names)]`
+
+error: this function has too many lines (149/100)
+  --> crates/latent-wasmtime/src/backend/preparation.rs:47:5
+   |
+47 | /     pub(super) async fn prepare_repository(
+48 | |         &self,
+49 | |         repository: &dyn ArtifactRepository,
+50 | |         key: &PreparationKey,
+51 | |     ) -> Result<PreparedActivation, PlatformError> {
+   | |__________________________________________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+   = note: `-D clippy::too-many-lines` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: very complex type used. Consider factoring parts into `type` definitions
+  --> crates/latent-wasmtime/src/backend/preparation_context.rs:35:26
+   |
+35 |     pub(super) uncached: Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>,
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#type_complexity
+   = note: `-D clippy::type-complexity` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::type_complexity)]`
+
+error: large size difference between variants
+  --> crates/latent-wasmtime/src/backend/readiness/input.rs:16:1
+   |
+16 | /  pub(in crate::backend) enum ArtifactInput {
+17 | |      Native(Option<crate::aot::AotCompilationJob>),
+   | |      --------------------------------------------- the second-largest variant contains at least 208 bytes
+18 | |      Source {
+19 | |          source: OwnedArtifactPreparationSource,
+...  |
+22 | |/     Fetched {
+23 | ||         artifact: CapsuleArtifact,
+24 | ||         metadata: MetadataIdentity,
+25 | ||     },
+   | ||_____- the largest variant contains at least 752 bytes
+26 | |  }
+   | |__^ the entire enum is at least 752 bytes
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_enum_variant
+   = note: `-D clippy::large-enum-variant` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::large_enum_variant)]`
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+   |
+23 -         artifact: CapsuleArtifact,
+23 +         artifact: Box<CapsuleArtifact>,
+   |
+
+error: this argument is passed by value, but not consumed in the function body
+  --> crates/latent-wasmtime/src/backend/readiness/input.rs:58:14
+   |
+58 |         key: PreparationKey,
+   |              ^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_pass_by_value
+   = note: `-D clippy::needless-pass-by-value` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::needless_pass_by_value)]`
+help: consider taking a reference instead
+   |
+58 |         key: &PreparationKey,
+   |              +
+
+error: this argument is passed by value, but not consumed in the function body
+  --> crates/latent-wasmtime/src/backend/readiness/input.rs:62:16
+   |
+62 |         queue: QueueWindow,
+   |                ^^^^^^^^^^^
+   |
+help: or consider marking this type as `Copy`
+  --> crates/latent-wasmtime/src/compiler.rs:51:1
+   |
+51 | pub(crate) struct QueueWindow {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_pass_by_value
+help: consider taking a reference instead
+   |
+62 |         queue: &QueueWindow,
+   |                +
+
+error: this function has too many lines (174/100)
+  --> crates/latent-wasmtime/src/backend/readiness.rs:21:5
+   |
+21 | /     pub(super) async fn prepare_ready_repository(
+22 | |         &self,
+23 | |         repository: Arc<dyn ArtifactRepository>,
+24 | |         key: PreparationKey,
+25 | |     ) -> Result<PreparedReadiness, PlatformError> {
+   | |_________________________________________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+
+error: casting `u64` to `usize` may truncate the value on targets with 32-bit wide pointers
+  --> crates/latent-wasmtime/src/backend/readiness.rs:88:17
+   |
+88 |                 bytes as usize,
+   |                 ^^^^^^^^^^^^^^
+   |
+   = help: if this is intentional allow the lint with `#[allow(clippy::cast_possible_truncation)]` ...
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#cast_possible_truncation
+   = note: `-D clippy::cast-possible-truncation` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::cast_possible_truncation)]`
+help: ... or use `try_from` and handle the error accordingly
+   |
+88 -                 bytes as usize,
+88 +                 usize::try_from(bytes),
+   |
+
+error: very complex type used. Consider factoring parts into `type` definitions
+   --> crates/latent-wasmtime/src/backend.rs:102:24
+    |
+102 |     uncached_prepared: Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>,
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#type_complexity
+
+error: this argument is passed by value, but not consumed in the function body
+   --> crates/latent-wasmtime/src/backend.rs:142:18
+    |
+142 |         profile: WasmtimeEngineProfile,
+    |                  ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_pass_by_value
+help: consider taking a reference instead
+    |
+142 |         profile: &WasmtimeEngineProfile,
+    |                  +
+
+error: this function has too many lines (154/100)
+   --> crates/latent-wasmtime/src/backend.rs:407:5
+    |
+407 | /     async fn invoke_inner_timed(
+408 | |         &self,
+409 | |         mut request: ExecutionRequest,
+410 | |         cancellation: &dyn ExecutionCancellation,
+...   |
+414 | |         capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
+415 | |     ) -> Result<GuestOutcome, PlatformError> {
+    | |____________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+
+error: the following explicit lifetimes could be elided: 'a
+   --> crates/latent-wasmtime/src/backend.rs:787:38
+    |
+787 |     fn prepare_ready_from_repository<'a>(
+    |                                      ^^
+788 |         &'a self,
+    |          ^^
+...
+791 |     ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
+    |                    ^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#elidable_lifetime_names
+    = note: `-D clippy::elidable-lifetime-names` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::elidable_lifetime_names)]`
+help: elide the lifetimes
+    |
+787 ~     fn prepare_ready_from_repository(
+788 ~         &self,
+789 |         repository: Arc<dyn ArtifactRepository>,
+790 |         key: PreparationKey,
+791 ~     ) -> BoxFuture<'_, Result<latent_executor::PreparedReadiness, PlatformError>> {
+    |
+
+error: all fields have the same postfix: `bytes`
+  --> crates/latent-wasmtime/src/cache/accounting/ledger.rs:14:1
+   |
+14 | / pub(crate) struct PreparedRuntimeCost {
+15 | |     pub source_bytes: usize,
+16 | |     pub metadata_bytes: usize,
+17 | |     pub compiled_image_bytes: usize,
+18 | | }
+   | |_^
+   |
+   = help: remove the postfixes
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#struct_field_names
+   = note: `-D clippy::struct-field-names` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::struct_field_names)]`
+
+error: usage of wildcard import
+ --> crates/latent-wasmtime/src/cache/reservation.rs:1:5
+  |
+1 | use super::*;
+  |     ^^^^^^^^ help: try: `super::{PrepareReservation, TrackedPreparedValue, Arc, PlatformError, capacity_error, PreparedResidency, PreparedRuntimeCost, Entry, PrepareAccess, MAXIMUM_HANDLE_BYTES, platform_error, PlatformErrorCode, State, CacheLimits}`
+  |
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#wildcard_imports
+  = note: `-D clippy::wildcard-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::wildcard_imports)]`
+
+error: this function has too many lines (124/100)
+  --> crates/latent-wasmtime/src/compiler/acquire.rs:11:5
+   |
+11 |     pub(crate) fn acquire(&self, input: Admission) -> Result<Acquisition<T>, PlatformError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+
+error: this argument is passed by value, but not consumed in the function body
+  --> crates/latent-wasmtime/src/compiler/worker.rs:10:51
+   |
+10 | pub(super) fn run<T: Send + Sync + 'static>(core: Arc<Core<T>>, worker: usize) {
+   |                                                   ^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_pass_by_value
+help: consider taking a reference instead
+   |
+10 | pub(super) fn run<T: Send + Sync + 'static>(core: &Arc<Core<T>>, worker: usize) {
+   |                                                   +
+
+error: this expression creates a reference which is immediately dereferenced by the compiler
+  --> crates/latent-wasmtime/src/compiler/worker.rs:74:16
+   |
+74 |         finish(&core, worker, id, result);
+   |                ^^^^^ help: change this to: `core`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_borrow
+   = note: `-D clippy::needless-borrow` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::needless_borrow)]`
+
+error: this argument is passed by value, but not consumed in the function body
+   --> crates/latent-wasmtime/src/compiler/worker.rs:184:13
+    |
+184 |     waiter: Arc<Waiter<T>>,
+    |             ^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_pass_by_value
+help: consider taking a reference instead
+    |
+184 |     waiter: &Arc<Waiter<T>>,
+    |             +
+
+error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
+   --> crates/latent-wasmtime/src/compiler.rs:100:13
+    |
+100 | /             match std::thread::Builder::new()
+101 | |                 .name(format!("latent-compiler-{worker}"))
+102 | |                 .spawn(move || worker::run(core, worker))
+...   |
+109 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#single_match_else
+    = note: `-D clippy::single-match-else` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::single_match_else)]`
+help: try
+    |
+100 ~             if let Ok(handle) = std::thread::Builder::new()
+101 +                 .name(format!("latent-compiler-{worker}"))
+102 +                 .spawn(move || worker::run(core, worker)) { pool.workers.push(handle) } else {
+103 +                 pool.stop_and_join()?;
+104 +                 return Err(capacity_error("compiler-thread-start"));
+105 +             }
+    |
+
+error: this argument is passed by value, but not consumed in the function body
+   --> crates/latent-wasmtime/src/containment.rs:244:13
+    |
+244 |     reason: String,
+    |             ^^^^^^ help: consider changing the type to: `&str`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_pass_by_value
+
+error: this argument (1 byte) is passed by reference, but would be more efficient if passed by value (limit: 8 byte)
+   --> crates/latent-wasmtime/src/containment.rs:341:21
+    |
+341 | fn trap_label(trap: &Trap) -> &'static str {
+    |                     ^^^^^ help: consider passing by value instead: `Trap`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#trivially_copy_pass_by_ref
+    = note: `-D clippy::trivially-copy-pass-by-ref` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::trivially_copy_pass_by_ref)]`
+
+error: redundant closure
+  --> crates/latent-wasmtime/src/factory.rs:80:61
+   |
+80 |             .map_or_else(crate::CompilerObserver::disabled, |pool| pool.observer())
+   |                                                             ^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the method itself: `super::compiler::CompilerPool::observer`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure_for_method_calls
+   = note: `-D clippy::redundant-closure-for-method-calls` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::redundant_closure_for_method_calls)]`
+
+error: this method could have a `#[must_use]` attribute
+   --> crates/latent-wasmtime/src/preparation_observer.rs:108:12
+    |
+108 |     pub fn wait_for_change(
+    |            ^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#must_use_candidate
+    = note: `-D clippy::must-use-candidate` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::must_use_candidate)]`
+help: add the attribute
+    |
+108 ~     #[must_use]
+109 ~     pub fn wait_for_change(
+    |
+
+error: more than 3 bools in a struct
+  --> crates/latent-wasmtime/src/surface.rs:58:1
+   |
+58 | / pub(crate) struct Providers {
+59 | |     pub local_services: bool,
+60 | |     pub http: bool,
+61 | |     pub streaming_http: bool,
+...  |
+66 | |     pub metrics: bool,
+67 | | }
+   | |_^
+   |
+   = help: consider using a state machine or refactoring bools into two-variant enums
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#struct_excessive_bools
+   = note: `-D clippy::struct-excessive-bools` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::struct_excessive_bools)]`
+
+error: more than 3 bools in a struct
+  --> crates/latent-wasmtime/src/lib.rs:71:1
+   |
+71 | / pub struct WasmtimeEngineProfile {
+72 | |     pub id: String,
+73 | |     pub wasmtime_version: String,
+74 | |     pub target_triple: String,
+...  |
+81 | |     pub configuration: Metadata,
+82 | | }
+   | |_^
+   |
+   = help: consider using a state machine or refactoring bools into two-variant enums
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#struct_excessive_bools
+
+error: the following explicit lifetimes could be elided: 'a
+   --> crates/latent-wasmtime/src/lib.rs:113:12
+    |
+113 |     fn put<'a>(&'a self, artifact: AheadOfTimeArtifact)
+    |            ^^   ^^
+114 |         -> BoxFuture<'a, Result<(), PlatformError>>;
+    |                      ^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#elidable_lifetime_names
+help: elide the lifetimes
+    |
+113 ~     fn put(&self, artifact: AheadOfTimeArtifact)
+114 ~         -> BoxFuture<'_, Result<(), PlatformError>>;
+    |
+
+error: could not compile `latent-wasmtime` (lib) due to 26 previous errors

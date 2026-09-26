@@ -11,9 +11,9 @@ pub enum ValidateCommand {
 #[derive(Subcommand)]
 pub enum ReleaseCommand {
     Publish(PublishArgs),
-    Get(DigestArgs),
+    Get(PublicationArgs),
     List(ServicePageArgs),
-    Lifecycle(DigestArgs),
+    Lifecycle(PublicationArgs),
     Operation(OperationIdArgs),
     PublishPackage(super::release::PublishPackageArgs),
     Revoke(super::release::ChangeReleaseArgs),
@@ -49,6 +49,7 @@ pub enum NodeCommand {
 
 #[derive(Args)]
 pub struct FileArgs {
+    #[arg(value_hint = clap::ValueHint::FilePath)]
     pub file: PathBuf,
 }
 
@@ -58,17 +59,19 @@ pub struct IdArgs {
 }
 
 #[derive(Args)]
-pub struct DigestArgs {
-    pub digest: String,
+pub struct PublicationArgs {
+    /// Exact publication ID in the configured authenticated tenant.
+    #[arg(long)]
+    pub publication: String,
 }
 
 #[derive(Args)]
 pub struct PublishArgs {
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub manifest: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub component: PathBuf,
-    #[arg(long)]
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
     pub contracts: PathBuf,
     #[command(flatten)]
     pub operation: super::release::OptionalReleaseOperation,
@@ -76,6 +79,7 @@ pub struct PublishArgs {
 
 #[derive(Args)]
 pub struct ApplyArgs {
+    #[arg(value_hint = clap::ValueHint::FilePath)]
     pub file: PathBuf,
     /// Omitted: unconditional; zero: must be absent; positive: exact object version.
     #[arg(long)]

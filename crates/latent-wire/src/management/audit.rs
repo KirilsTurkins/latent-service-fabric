@@ -2,7 +2,6 @@
 mod conversion;
 mod enums;
 mod lease;
-mod legacy;
 #[cfg(test)]
 mod tests;
 mod validation;
@@ -73,53 +72,6 @@ impl proto::audit_service_server::AuditService for ManagementServiceAdapter {
                 next_page_token: cursor.map(|value| value.0),
             }),
             coverage: Some(conversion::coverage(coverage)),
-        };
-        validation::encoded(&value, maximum)?;
-        let mut response = self.response(value)?;
-        response.extensions_mut().insert(lease);
-        validation::completed(deadline)?;
-        Ok(response)
-    }
-
-    async fn query_audit(
-        &self,
-        mut request: Request<proto::QueryAuditRequest>,
-    ) -> Result<Response<proto::QueryAuditResponse>, Status> {
-        let deadline = validation::deadline(&request);
-        let principal = self.authenticate(&mut request, ManagementOperation::AuditTenant)?;
-        let scope = validation::legacy(request.get_ref(), &principal, &self.limits)?;
-        let request = request.into_inner();
-        let filter = AuditFilter {
-            kind: request
-                .action
-                .as_deref()
-                .map(enums::kind_from_name)
-                .transpose()?,
-            actor: request.actor,
-            from_unix_millis: request.from_unix_millis,
-            to_unix_millis: request.to_unix_millis,
-        };
-        let query = self.audit_query(scope, filter, request.page)?;
-        let maximum = query.maximum_bytes;
-        let scope = query.scope.clone();
-        let page = self
-            .services
-            .audit
-            .as_ref()
-            .expect("query checked audit owner")
-            .query(query, deadline)
-            .map_err(|error| platform_status(error, &self.limits))?
-            .wait()
-            .await
-            .map_err(|error| platform_status(error, &self.limits))?;
-        validation::completed(deadline)?;
-        let (records, _, cursor, lease) = page.into_parts();
-        conversion::scope(&records, &scope)?;
-        let value = proto::QueryAuditResponse {
-            events: records.into_iter().map(legacy::record).collect(),
-            page: Some(proto::PageResponse {
-                next_page_token: cursor.map(|value| value.0),
-            }),
         };
         validation::encoded(&value, maximum)?;
         let mut response = self.response(value)?;

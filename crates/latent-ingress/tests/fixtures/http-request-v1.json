@@ -1,0 +1,1 @@
+[{"profile":"buffered-v1","method":"post","scheme":"https","authority":"example.test","path":"/api/~user","query":{"some":"a=1&a=2+3"},"headers":[{"name":"cookie","value":[97,61,49]},{"name":"cookie","value":[98,61,50]},{"name":"x-octets","value":[128,255]}],"media-type":{"some":"application/octet-stream"},"body-base64":"AP9B"}]

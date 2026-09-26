@@ -43,10 +43,14 @@ def prepare(campaign):
         require(before["health"]["ready"] is True, "docker-seed-not-ready")
         for index in range(density):
             fixture = campaign.build_root / "fixtures"
-            invoke(f"publish-{index}", ["release", "publish", "--manifest", str(fixture / f"capsule-{index}.json"),
+            published = invoke(f"publish-{index}", ["release", "publish", "--manifest", str(fixture / f"capsule-{index}.json"),
                                        "--component", str(fixture / f"component-{index}.wasm"),
                                        "--contracts", str(fixture / "contracts.json")])
-            invoke(f"apply-{index}", ["deployment", "apply", str(fixture / f"deployment-{index}.json")])
+            deployment = json.loads((fixture / f"deployment-{index}.json").read_bytes())
+            deployment["spec"]["publication"] = published["data"]["release"]["publication"]["id"]
+            selected = directory / f"deployment-{index}.json"
+            write_json(selected, deployment)
+            invoke(f"apply-{index}", ["deployment", "apply", str(selected)])
         after = invoke("inventory-after", ["node", "get", "optimization-node"])["data"]["inventory"]
         require(after["health"]["ready"] is True and after["cacheSummary"]["entries"] == "0"
                 and all(row["granted"] == "0" and row["active"] == row["queueDepth"] == 0 for row in after["cellCapacity"]),
@@ -60,7 +64,7 @@ def prepare(campaign):
                 "child_reaped": derived["shutdown"]["child_reaped"], "output_closed": derived["shutdown"]["output_closed"],
                 "copy_tasks_joined": derived["shutdown"]["copy_tasks_joined"], "invokes": 0}
         receipt = fixtures.seal_template(app.data, density=density, stop_receipt=stop)
-        value = {"schema": PREFIX + "seed.v1", "density": density, "owner": owner, "calls": calls,
+        value = {"schema": PREFIX + "seed.v2", "density": density, "owner": owner, "calls": calls,
                  "before": before, "after": after, "template": receipt,
                  "template_path": app.data.relative_to(campaign.root).as_posix(), "resources": derived}
         write_json(directory / "seed.json", value)

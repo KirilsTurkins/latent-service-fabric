@@ -12,6 +12,7 @@ mod canary;
 mod compatibility;
 mod recovery;
 mod rollback;
+mod web;
 
 fn alice() -> TenantId {
     TenantId("alice".into())
@@ -77,7 +78,7 @@ fn stages_commit_one_combined_catalog_and_replay_exact_history_after_restart() {
     let releases = Arc::new(Releases::default());
     let store = open(&root, &releases);
     let request = setup(&store, &releases);
-    assert_eq!(persisted(&root)["format_version"], 2);
+    assert_eq!(persisted(&root)["format_version"], 5);
     let original_pin = store.pin().unwrap();
     let original = original_pin
         .resolve(&target("alice", None), Some("pinned-activation"))
@@ -104,7 +105,7 @@ fn stages_commit_one_combined_catalog_and_replay_exact_history_after_restart() {
         2500
     );
     let encoded = persisted(&root);
-    assert_eq!(encoded["format_version"], 3);
+    assert_eq!(encoded["format_version"], 5);
     assert_eq!(
         encoded["payload"]["control"]["transaction_version"],
         first.receipt.state_version
@@ -162,7 +163,7 @@ fn stages_commit_one_combined_catalog_and_replay_exact_history_after_restart() {
         run(store.prepare_rollout(change("too-late", 3, RolloutCommand::Resume))),
         Code::StateConflict,
     );
-    assert_eq!(persisted(&root)["format_version"], 3);
+    assert_eq!(persisted(&root)["format_version"], 5);
 }
 
 #[test]
@@ -439,4 +440,40 @@ fn receipt_ring_evicts_only_history_and_reopens_under_higher_recovery_ceiling() 
             .unwrap(),
         RolloutOperationLookup::Unknown
     );
+}
+
+#[test]
+fn retained_rollout_objects_do_not_disclose_a_reused_foreign_deployment_id() {
+    let root = TempRoot::new();
+    let releases = Arc::new(Releases::default());
+    let store = open(&root, &releases);
+    let request = setup(&store, &releases);
+    execute(&store, request);
+    execute(&store, change("abort", 1, RolloutCommand::Abort));
+    assert_eq!(
+        store
+            .get_rollout(&alice(), &id())
+            .unwrap()
+            .unwrap()
+            .objects
+            .len(),
+        2
+    );
+    for name in ["base", "candidate"] {
+        run(store.delete(&DeploymentId(name.into()))).unwrap();
+    }
+    let foreign = releases.add("foreign-reuse");
+    run(store.apply(deployment("base", "bob", &foreign))).unwrap();
+    let status = store.get_rollout(&alice(), &id()).unwrap().unwrap();
+    assert_eq!(status.state, RolloutState::Aborted);
+    assert!(status.objects.is_empty());
+    assert_eq!(status.base.deployment_id.0, "base");
+    drop(store);
+    let reopened = open(&root, &releases);
+    assert!(reopened
+        .get_rollout(&alice(), &id())
+        .unwrap()
+        .unwrap()
+        .objects
+        .is_empty());
 }

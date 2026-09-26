@@ -1,0 +1,22 @@
+using @root@;
+using Raw = @raw@;
+namespace Lsf.Guest;
+
+public sealed class BlobHandleKind { private BlobHandleKind() {} }
+public sealed class BlobChunkKind { private BlobChunkKind() {} }
+public static class Blob
+{
+    private static Owner<ulong, BlobHandleKind> Own(ulong handle) => new(handle, value => { Raw.Close(value); });
+    public static Result<Owner<ulong, BlobHandleKind>, Raw.BlobError> Create(string mediaType, ulong? expectedSize) =>
+        Results.Map(Raw.Create(mediaType, expectedSize), Own);
+    public static Result<Owner<ulong, BlobHandleKind>, Raw.BlobError> Open(Raw.BlobReference reference) =>
+        Results.Map(Raw.Open(reference), Own);
+    public static Result<ulong, Raw.BlobError> Write(Owner<ulong, BlobHandleKind> handle, ulong offset, byte[] bytes) =>
+        handle.Borrow(value => Raw.Write(value, offset, bytes));
+    public static Result<Owner<Raw.Chunk, BlobChunkKind>, Raw.BlobError> Read(Owner<ulong, BlobHandleKind> handle, ulong offset, uint length) =>
+        Results.Map(handle.Borrow(value => Raw.Read(value, offset, length)),
+            chunk => new Owner<Raw.Chunk, BlobChunkKind>(chunk, value => value.Dispose()));
+    public static Result<byte[], Raw.BlobError> ChunkBytes(Owner<Raw.Chunk, BlobChunkKind> chunk) => chunk.Borrow(Raw.ChunkBytes);
+    public static Result<Raw.BlobReference, Raw.BlobError> Seal(Owner<ulong, BlobHandleKind> handle) => handle.Consume(Raw.Seal);
+    public static Result<bool, Raw.BlobError> Close(Owner<ulong, BlobHandleKind> handle) => handle.Consume(Raw.Close);
+}

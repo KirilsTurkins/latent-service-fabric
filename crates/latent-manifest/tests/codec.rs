@@ -65,6 +65,47 @@ fn every_supported_example_round_trips_without_semantic_loss() {
 }
 
 #[test]
+fn static_web_http_target_round_trips_and_hybrids_are_rejected() {
+    let codec = JsonManifestCodec::default();
+    let publication = format!("publication:sha256:{}", "a".repeat(64));
+    let document = json!({
+        "apiVersion":"latent.dev/v1alpha1",
+        "kind":"HttpTrigger",
+        "metadata":{"name":"static-site","tenant":"examples"},
+        "spec":{
+            "target":{"kind":"static-web","publication":publication},
+            "configuration":{
+                "profile":"static-site-v1",
+                "scheme":"https",
+                "host":"static.example.test",
+                "path":"/docs",
+                "pathMatch":"prefix",
+                "method":"GET"
+            }
+        }
+    });
+    let bytes = serde_json::to_vec(&document).unwrap();
+    let decoded = codec.decode_trigger(&bytes).expect("static web trigger");
+    assert!(decoded.target.static_web().is_some());
+    let encoded = codec
+        .encode_trigger(&decoded)
+        .expect("canonical static trigger");
+    assert_eq!(decoded, codec.decode_trigger(&encoded).unwrap());
+
+    let mut hybrid = document.clone();
+    hybrid["spec"]["target"]["service"] = json!("examples/web");
+    assert!(codec
+        .decode_trigger(&serde_json::to_vec(&hybrid).unwrap())
+        .is_err());
+
+    let mut mismatch = document;
+    mismatch["spec"]["configuration"]["profile"] = json!("buffered-v1");
+    assert!(codec
+        .decode_trigger(&serde_json::to_vec(&mismatch).unwrap())
+        .is_err());
+}
+
+#[test]
 fn generic_document_codec_identifies_all_manifest_kinds() {
     let codec = JsonManifestCodec::default();
     assert!(matches!(
@@ -295,7 +336,13 @@ fn optional_schema_fields_are_preserved_by_the_domain_model() {
     let policy = codec.decode_policy(LOG_POLICY).expect("policy");
     assert_eq!(policy.language, "latent-policy/v1");
     let trigger = codec.decode_trigger(ECHO_TRIGGER).expect("trigger");
-    assert_eq!(trigger.target.route.as_deref(), Some("production"));
+    assert_eq!(
+        trigger
+            .target
+            .application()
+            .and_then(|target| target.route.as_deref()),
+        Some("production")
+    );
 }
 
 fn assert_violation<T: std::fmt::Debug>(

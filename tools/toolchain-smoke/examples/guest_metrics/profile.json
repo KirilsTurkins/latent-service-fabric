@@ -1,0 +1,9 @@
+{
+  "name": "metrics",
+  "package": "tests:metrics@1.0.0",
+  "contract": "tests:metrics/api@1.0.0",
+  "capability": "latent:telemetry/custom@0.1.0",
+  "world": "tests:metrics/service@1.0.0",
+  "witDirectory": "telemetry",
+  "asynchronous": false
+}

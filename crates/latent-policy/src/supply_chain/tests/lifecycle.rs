@@ -50,10 +50,21 @@ fn evidence(fixture: &Fixture) -> ReleaseEvidenceUpload {
         sboms: upload.sboms,
     }
 }
+fn publication(
+    repo: &DirectoryArtifactRepository,
+    release: &ReleaseDigest,
+) -> latent_artifacts::PublicationRef {
+    repo.select_execution_publication(&tenant(), release, None)
+        .unwrap()
+        .unwrap()
+}
 fn status(repo: &DirectoryArtifactRepository, release: &ReleaseDigest) -> ReleaseLifecycleStatus {
-    ready(repo.get_release_lifecycle(&LifecycleScope::Tenant(tenant()), release))
-        .unwrap()
-        .unwrap()
+    ready(repo.get_selected_lifecycle(
+        &LifecycleScope::Tenant(tenant()),
+        &publication(repo, release),
+    ))
+    .unwrap()
+    .unwrap()
 }
 fn renew(
     repo: &DirectoryArtifactRepository,
@@ -63,13 +74,13 @@ fn renew(
     id: &str,
     generation: u64,
 ) -> Result<ReleaseOperationReceipt, PlatformError> {
-    ready(repo.renew_release_evidence(
+    repo.renew_publication_evidence(
         context(id, generation),
-        release,
+        &publication(repo, release),
         package,
         evidence,
         &mut |_| Ok(()),
-    ))
+    )
 }
 fn revoke(
     repo: &DirectoryArtifactRepository,
@@ -77,23 +88,20 @@ fn revoke(
     id: &str,
     generation: u64,
 ) -> ReleaseOperationReceipt {
-    ready(repo.change_release_lifecycle(
+    repo.change_publication_lifecycle(
         context(id, generation),
-        release,
+        &publication(repo, release),
         ReleaseLifecycleAction::Revoke,
         ReleaseLifecycleReason::OperatorRevocation,
         &mut |_| Ok(()),
-    ))
+    )
     .unwrap()
 }
 fn immutable_files(
     repo: &DirectoryArtifactRepository,
     release: &ReleaseDigest,
 ) -> BTreeMap<String, Vec<u8>> {
-    let directory = repo
-        .root()
-        .join("releases")
-        .join(release.0.strip_prefix("sha256:").unwrap());
+    let directory = super::catalog::publication_directory(repo, release);
     let mut result = BTreeMap::new();
     let mut bytes = 0;
     for entry in std::fs::read_dir(directory).unwrap() {
@@ -288,6 +296,7 @@ fn lifecycle_revocation_is_terminal_for_reverify_republication_renewal_and_resta
         release,
         package,
     } = Setup::new();
+    let publication = publication(&repo, &release);
     let held = repo.execution_eligibility(&release).unwrap().unwrap();
     let revoked = revoke(&repo, &release, "terminal-revoke", 1);
     assert_eq!(
@@ -295,7 +304,7 @@ fn lifecycle_revocation_is_terminal_for_reverify_republication_renewal_and_resta
         ReleaseLifecycleState::Revoked
     );
     assert!(held.check_current().is_err());
-    assert!(repo.reverify_retained(&tenant(), &release).is_err());
+    assert!(repo.reverify_publication(&publication).is_err());
     assert!(ready(repo.admit_package(&tenant(), fixture.upload(), &mut |_| Ok(()))).is_err());
     assert!(renew(
         &repo,
@@ -318,7 +327,7 @@ fn lifecycle_revocation_is_terminal_for_reverify_republication_renewal_and_resta
     assert_eq!(observed.eligibility, ReleaseLiveEligibility::Denied);
     assert!(reopened.execution_eligibility(&release).is_err());
     assert!(ready(reopened.fetch(&release)).is_err());
-    assert!(reopened.reverify_retained(&tenant(), &release).is_err());
+    assert!(reopened.reverify_publication(&publication).is_err());
     let snapshot = ready(reopened.historical_execution_snapshot(&release)).unwrap();
     assert!(matches!(
         snapshot.into_parts().1,
@@ -366,13 +375,9 @@ fn expired_trust_reopens_as_denied_history_and_emergency_revocation_remains_avai
         status(&reopened, &release).record.state,
         ReleaseLifecycleState::Revoked
     );
+    let path = super::catalog::publication_directory(&reopened, &release).join("component.wasm");
     drop(reopened);
     // Expired trust never turns corrupt retained bytes into acceptable history.
-    let path = root
-        .path()
-        .join("catalog/releases")
-        .join(release.0.strip_prefix("sha256:").unwrap())
-        .join("component.wasm");
     std::fs::write(path, b"corrupt fixture").unwrap();
     let configured: Arc<dyn AdmissionAuthority> = expired;
     assert_eq!(

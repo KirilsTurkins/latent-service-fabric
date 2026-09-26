@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "scenario": "client/provider-management",
+  "language": "rust",
+  "sourceRevision": "8dfcc11583a718a9da2f65ff2f2b162d68a452d6",
+  "sourceSha256": "ac5c563d2ee8e593e18feedb1ca05cd3092c53b34769823d643c86d76b4bc2b3",
+  "validationSha256": "3b4f9b865f9bb1e22cf6c5857444beb34baa4f1c124e3c5baca5baf49666f39f",
+  "level": "real-node",
+  "execution": "real-node",
+  "passed": true,
+  "toolchain": "CI 35509915448: tools/toolchain.toml and exact language dependency locks",
+  "run": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35509915448",
+  "scope": "Separate authenticated native node; HTTP/blob guests, cancellation/deadline, policy receipt, 18 assertions, 9 activation IDs, 4 physically closed upstream holds. Raw receipts: docs/evidence/phase3-sdk-guides-35509915448."
+}

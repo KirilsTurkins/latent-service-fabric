@@ -11,6 +11,9 @@ description = "Bounded shared telemetry, local sinks, and activation observation
 workspace = true
 
 [dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
 latent-core = { path = "../latent-core" }
 latent-activation = { path = "../latent-activation" }
 tokio.workspace = true

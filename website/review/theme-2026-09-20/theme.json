@@ -1,0 +1,1186 @@
+{
+  "schema": 1,
+  "measuredAt": "2026-09-20T09:23:14.871Z",
+  "browser": "153.0.8010.12",
+  "environment": {
+    "platform": "win32",
+    "architecture": "x64",
+    "osRelease": "10.0.26200",
+    "node": "v24.19.0"
+  },
+  "paletteSha256": "1baf1e5b4ae6397c1acf3c13e414a0cc618d61b726923fe5142a2a4dff9c99aa",
+  "pairings": [
+    {
+      "mode": "light",
+      "foreground": "text",
+      "background": "canvas",
+      "minimum": 4.5,
+      "ratio": 15.028
+    },
+    {
+      "mode": "light",
+      "foreground": "text",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 15.945
+    },
+    {
+      "mode": "light",
+      "foreground": "text",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 13.18
+    },
+    {
+      "mode": "light",
+      "foreground": "muted",
+      "background": "canvas",
+      "minimum": 4.5,
+      "ratio": 7.081
+    },
+    {
+      "mode": "light",
+      "foreground": "muted",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 7.513
+    },
+    {
+      "mode": "light",
+      "foreground": "muted",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 6.21
+    },
+    {
+      "mode": "light",
+      "foreground": "link",
+      "background": "canvas",
+      "minimum": 4.5,
+      "ratio": 6.932
+    },
+    {
+      "mode": "light",
+      "foreground": "link",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 7.355
+    },
+    {
+      "mode": "light",
+      "foreground": "link",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 6.08
+    },
+    {
+      "mode": "light",
+      "foreground": "linkHover",
+      "background": "canvas",
+      "minimum": 4.5,
+      "ratio": 10.453
+    },
+    {
+      "mode": "light",
+      "foreground": "linkHover",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 11.091
+    },
+    {
+      "mode": "light",
+      "foreground": "linkHover",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 9.168
+    },
+    {
+      "mode": "light",
+      "foreground": "focus",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 6.932
+    },
+    {
+      "mode": "light",
+      "foreground": "focus",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 7.355
+    },
+    {
+      "mode": "light",
+      "foreground": "focus",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 6.08
+    },
+    {
+      "mode": "light",
+      "foreground": "border",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 3.906
+    },
+    {
+      "mode": "light",
+      "foreground": "border",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 4.145
+    },
+    {
+      "mode": "light",
+      "foreground": "border",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 3.426
+    },
+    {
+      "mode": "light",
+      "foreground": "codeText",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 13.18
+    },
+    {
+      "mode": "light",
+      "foreground": "codeText",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 13.18
+    },
+    {
+      "mode": "light",
+      "foreground": "codeComment",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 5.482
+    },
+    {
+      "mode": "light",
+      "foreground": "codeComment",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 5.482
+    },
+    {
+      "mode": "light",
+      "foreground": "codeKeyword",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 6.942
+    },
+    {
+      "mode": "light",
+      "foreground": "codeKeyword",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 6.942
+    },
+    {
+      "mode": "light",
+      "foreground": "codeString",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 7.336
+    },
+    {
+      "mode": "light",
+      "foreground": "codeString",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 7.336
+    },
+    {
+      "mode": "light",
+      "foreground": "codeNumber",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 7.499
+    },
+    {
+      "mode": "light",
+      "foreground": "codeNumber",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 7.499
+    },
+    {
+      "mode": "light",
+      "foreground": "codeFunction",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 6.787
+    },
+    {
+      "mode": "light",
+      "foreground": "codeFunction",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 6.787
+    },
+    {
+      "mode": "light",
+      "foreground": "codeVariable",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 7.366
+    },
+    {
+      "mode": "light",
+      "foreground": "codeVariable",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 7.366
+    },
+    {
+      "mode": "light",
+      "foreground": "controlText",
+      "background": "controlSurface",
+      "minimum": 4.5,
+      "ratio": 7.355
+    },
+    {
+      "mode": "light",
+      "foreground": "controlText",
+      "background": "controlHover",
+      "minimum": 4.5,
+      "ratio": 11.091
+    },
+    {
+      "mode": "light",
+      "foreground": "controlSurface",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 6.932
+    },
+    {
+      "mode": "light",
+      "foreground": "controlSurface",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 7.355
+    },
+    {
+      "mode": "light",
+      "foreground": "controlSurface",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 6.08
+    },
+    {
+      "mode": "light",
+      "foreground": "controlHover",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 10.453
+    },
+    {
+      "mode": "light",
+      "foreground": "controlHover",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 11.091
+    },
+    {
+      "mode": "light",
+      "foreground": "controlHover",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 9.168
+    },
+    {
+      "mode": "light",
+      "foreground": "tabSurface",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 6.932
+    },
+    {
+      "mode": "light",
+      "foreground": "tabSurface",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 7.355
+    },
+    {
+      "mode": "light",
+      "foreground": "tabSurface",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 6.08
+    },
+    {
+      "mode": "light",
+      "foreground": "focus",
+      "background": "codeSurface",
+      "minimum": 3,
+      "ratio": 6.08
+    },
+    {
+      "mode": "light",
+      "foreground": "focus",
+      "background": "successSurface",
+      "minimum": 3,
+      "ratio": 6.472
+    },
+    {
+      "mode": "light",
+      "foreground": "focus",
+      "background": "warningSurface",
+      "minimum": 3,
+      "ratio": 6.622
+    },
+    {
+      "mode": "light",
+      "foreground": "focus",
+      "background": "dangerSurface",
+      "minimum": 3,
+      "ratio": 6.321
+    },
+    {
+      "mode": "light",
+      "foreground": "focus",
+      "background": "infoSurface",
+      "minimum": 3,
+      "ratio": 6.359
+    },
+    {
+      "mode": "light",
+      "foreground": "disabledText",
+      "background": "disabledSurface",
+      "minimum": 4.5,
+      "ratio": 5.163
+    },
+    {
+      "mode": "light",
+      "foreground": "tabText",
+      "background": "tabSurface",
+      "minimum": 4.5,
+      "ratio": 7.355
+    },
+    {
+      "mode": "light",
+      "foreground": "selectionInk",
+      "background": "selection",
+      "minimum": 4.5,
+      "ratio": 7.355
+    },
+    {
+      "mode": "light",
+      "foreground": "accentInk",
+      "background": "accent",
+      "minimum": 4.5,
+      "ratio": 8.742
+    },
+    {
+      "mode": "light",
+      "foreground": "successText",
+      "background": "successSurface",
+      "minimum": 4.5,
+      "ratio": 8.986
+    },
+    {
+      "mode": "light",
+      "foreground": "successBorder",
+      "background": "successSurface",
+      "minimum": 3,
+      "ratio": 6.199
+    },
+    {
+      "mode": "light",
+      "foreground": "successBorder",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 6.639
+    },
+    {
+      "mode": "light",
+      "foreground": "warningText",
+      "background": "warningSurface",
+      "minimum": 4.5,
+      "ratio": 7.964
+    },
+    {
+      "mode": "light",
+      "foreground": "warningBorder",
+      "background": "warningSurface",
+      "minimum": 3,
+      "ratio": 5.862
+    },
+    {
+      "mode": "light",
+      "foreground": "warningBorder",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 6.137
+    },
+    {
+      "mode": "light",
+      "foreground": "dangerText",
+      "background": "dangerSurface",
+      "minimum": 4.5,
+      "ratio": 7.235
+    },
+    {
+      "mode": "light",
+      "foreground": "dangerBorder",
+      "background": "dangerSurface",
+      "minimum": 3,
+      "ratio": 5.176
+    },
+    {
+      "mode": "light",
+      "foreground": "dangerBorder",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 5.677
+    },
+    {
+      "mode": "light",
+      "foreground": "infoText",
+      "background": "infoSurface",
+      "minimum": 4.5,
+      "ratio": 7.958
+    },
+    {
+      "mode": "light",
+      "foreground": "infoBorder",
+      "background": "infoSurface",
+      "minimum": 3,
+      "ratio": 5.038
+    },
+    {
+      "mode": "light",
+      "foreground": "infoBorder",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 5.492
+    },
+    {
+      "mode": "dark",
+      "foreground": "text",
+      "background": "canvas",
+      "minimum": 4.5,
+      "ratio": 16.432
+    },
+    {
+      "mode": "dark",
+      "foreground": "text",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 15.023
+    },
+    {
+      "mode": "dark",
+      "foreground": "text",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 13.708
+    },
+    {
+      "mode": "dark",
+      "foreground": "muted",
+      "background": "canvas",
+      "minimum": 4.5,
+      "ratio": 10.127
+    },
+    {
+      "mode": "dark",
+      "foreground": "muted",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 9.259
+    },
+    {
+      "mode": "dark",
+      "foreground": "muted",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 8.448
+    },
+    {
+      "mode": "dark",
+      "foreground": "link",
+      "background": "canvas",
+      "minimum": 4.5,
+      "ratio": 12.435
+    },
+    {
+      "mode": "dark",
+      "foreground": "link",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 11.369
+    },
+    {
+      "mode": "dark",
+      "foreground": "link",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 10.374
+    },
+    {
+      "mode": "dark",
+      "foreground": "linkHover",
+      "background": "canvas",
+      "minimum": 4.5,
+      "ratio": 15.635
+    },
+    {
+      "mode": "dark",
+      "foreground": "linkHover",
+      "background": "surface",
+      "minimum": 4.5,
+      "ratio": 14.295
+    },
+    {
+      "mode": "dark",
+      "foreground": "linkHover",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 13.044
+    },
+    {
+      "mode": "dark",
+      "foreground": "focus",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 15.635
+    },
+    {
+      "mode": "dark",
+      "foreground": "focus",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 14.295
+    },
+    {
+      "mode": "dark",
+      "foreground": "focus",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 13.044
+    },
+    {
+      "mode": "dark",
+      "foreground": "border",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 5.93
+    },
+    {
+      "mode": "dark",
+      "foreground": "border",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 5.422
+    },
+    {
+      "mode": "dark",
+      "foreground": "border",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 4.947
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeText",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 15.023
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeText",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 13.708
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeComment",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 9.259
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeComment",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 8.448
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeKeyword",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 11.369
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeKeyword",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 10.374
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeString",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 10.921
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeString",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 9.965
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeNumber",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 9.825
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeNumber",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 8.965
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeFunction",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 10.599
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeFunction",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 9.671
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeVariable",
+      "background": "codeSurface",
+      "minimum": 4.5,
+      "ratio": 12.274
+    },
+    {
+      "mode": "dark",
+      "foreground": "codeVariable",
+      "background": "raised",
+      "minimum": 4.5,
+      "ratio": 11.2
+    },
+    {
+      "mode": "dark",
+      "foreground": "controlText",
+      "background": "controlSurface",
+      "minimum": 4.5,
+      "ratio": 10.486
+    },
+    {
+      "mode": "dark",
+      "foreground": "controlText",
+      "background": "controlHover",
+      "minimum": 4.5,
+      "ratio": 12.435
+    },
+    {
+      "mode": "dark",
+      "foreground": "controlSurface",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 10.486
+    },
+    {
+      "mode": "dark",
+      "foreground": "controlSurface",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 9.587
+    },
+    {
+      "mode": "dark",
+      "foreground": "controlSurface",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 8.748
+    },
+    {
+      "mode": "dark",
+      "foreground": "controlHover",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 12.435
+    },
+    {
+      "mode": "dark",
+      "foreground": "controlHover",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 11.369
+    },
+    {
+      "mode": "dark",
+      "foreground": "controlHover",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 10.374
+    },
+    {
+      "mode": "dark",
+      "foreground": "tabSurface",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 10.486
+    },
+    {
+      "mode": "dark",
+      "foreground": "tabSurface",
+      "background": "surface",
+      "minimum": 3,
+      "ratio": 9.587
+    },
+    {
+      "mode": "dark",
+      "foreground": "tabSurface",
+      "background": "raised",
+      "minimum": 3,
+      "ratio": 8.748
+    },
+    {
+      "mode": "dark",
+      "foreground": "focus",
+      "background": "codeSurface",
+      "minimum": 3,
+      "ratio": 14.295
+    },
+    {
+      "mode": "dark",
+      "foreground": "focus",
+      "background": "successSurface",
+      "minimum": 3,
+      "ratio": 11.066
+    },
+    {
+      "mode": "dark",
+      "foreground": "focus",
+      "background": "warningSurface",
+      "minimum": 3,
+      "ratio": 11.775
+    },
+    {
+      "mode": "dark",
+      "foreground": "focus",
+      "background": "dangerSurface",
+      "minimum": 3,
+      "ratio": 12.251
+    },
+    {
+      "mode": "dark",
+      "foreground": "focus",
+      "background": "infoSurface",
+      "minimum": 3,
+      "ratio": 11.473
+    },
+    {
+      "mode": "dark",
+      "foreground": "disabledText",
+      "background": "disabledSurface",
+      "minimum": 4.5,
+      "ratio": 8.448
+    },
+    {
+      "mode": "dark",
+      "foreground": "tabText",
+      "background": "tabSurface",
+      "minimum": 4.5,
+      "ratio": 10.486
+    },
+    {
+      "mode": "dark",
+      "foreground": "selectionInk",
+      "background": "selection",
+      "minimum": 4.5,
+      "ratio": 10.486
+    },
+    {
+      "mode": "dark",
+      "foreground": "accentInk",
+      "background": "accent",
+      "minimum": 4.5,
+      "ratio": 10.486
+    },
+    {
+      "mode": "dark",
+      "foreground": "successText",
+      "background": "successSurface",
+      "minimum": 4.5,
+      "ratio": 10.058
+    },
+    {
+      "mode": "dark",
+      "foreground": "successBorder",
+      "background": "successSurface",
+      "minimum": 3,
+      "ratio": 6.484
+    },
+    {
+      "mode": "dark",
+      "foreground": "successBorder",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 9.161
+    },
+    {
+      "mode": "dark",
+      "foreground": "warningText",
+      "background": "warningSurface",
+      "minimum": 4.5,
+      "ratio": 10.362
+    },
+    {
+      "mode": "dark",
+      "foreground": "warningBorder",
+      "background": "warningSurface",
+      "minimum": 3,
+      "ratio": 6.365
+    },
+    {
+      "mode": "dark",
+      "foreground": "warningBorder",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 8.452
+    },
+    {
+      "mode": "dark",
+      "foreground": "dangerText",
+      "background": "dangerSurface",
+      "minimum": 4.5,
+      "ratio": 9.432
+    },
+    {
+      "mode": "dark",
+      "foreground": "dangerBorder",
+      "background": "dangerSurface",
+      "minimum": 3,
+      "ratio": 6.493
+    },
+    {
+      "mode": "dark",
+      "foreground": "dangerBorder",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 8.287
+    },
+    {
+      "mode": "dark",
+      "foreground": "infoText",
+      "background": "infoSurface",
+      "minimum": 4.5,
+      "ratio": 9.795
+    },
+    {
+      "mode": "dark",
+      "foreground": "infoBorder",
+      "background": "infoSurface",
+      "minimum": 3,
+      "ratio": 6.588
+    },
+    {
+      "mode": "dark",
+      "foreground": "infoBorder",
+      "background": "canvas",
+      "minimum": 3,
+      "ratio": 8.978
+    }
+  ],
+  "results": [
+    {
+      "variant": "project",
+      "mode": "light",
+      "source": "499a6db25d8ed178f71a47749f17117ad773c0c7",
+      "dirty": false,
+      "reading": {
+        "samples": 113,
+        "minimum": 5.163379529163044
+      },
+      "controls": {
+        "samples": 5,
+        "minimumText": 7.354825494168294,
+        "minimumBoundary": 3.9063431054072537
+      },
+      "hoveredControls": {
+        "samples": 5,
+        "minimumText": 7.354825494168294,
+        "minimumBoundary": 3.9063431054072537
+      },
+      "keyboardStops": 26,
+      "firstPaint": "system theme with hydration held; persisted theme on reload",
+      "reflow": "390px mobile and 640 CSS px equivalent to 1280px at 200%",
+      "requests": "same-origin only",
+      "errors": 0
+    },
+    {
+      "variant": "project",
+      "mode": "dark",
+      "source": "499a6db25d8ed178f71a47749f17117ad773c0c7",
+      "dirty": false,
+      "reading": {
+        "samples": 113,
+        "minimum": 8.448318065182052
+      },
+      "controls": {
+        "samples": 5,
+        "minimumText": 10.485891098854465,
+        "minimumBoundary": 5.9302438256527115
+      },
+      "hoveredControls": {
+        "samples": 5,
+        "minimumText": 10.485891098854465,
+        "minimumBoundary": 5.9302438256527115
+      },
+      "keyboardStops": 26,
+      "firstPaint": "system theme with hydration held; persisted theme on reload",
+      "reflow": "390px mobile and 640 CSS px equivalent to 1280px at 200%",
+      "requests": "same-origin only",
+      "errors": 0
+    },
+    {
+      "variant": "root",
+      "mode": "light",
+      "source": "499a6db25d8ed178f71a47749f17117ad773c0c7",
+      "dirty": false,
+      "reading": {
+        "samples": 113,
+        "minimum": 5.163379529163044
+      },
+      "controls": {
+        "samples": 5,
+        "minimumText": 7.354825494168294,
+        "minimumBoundary": 3.9063431054072537
+      },
+      "hoveredControls": {
+        "samples": 5,
+        "minimumText": 7.354825494168294,
+        "minimumBoundary": 3.9063431054072537
+      },
+      "keyboardStops": 26,
+      "firstPaint": "system theme with hydration held; persisted theme on reload",
+      "reflow": "390px mobile and 640 CSS px equivalent to 1280px at 200%",
+      "requests": "same-origin only",
+      "errors": 0
+    },
+    {
+      "variant": "root",
+      "mode": "dark",
+      "source": "499a6db25d8ed178f71a47749f17117ad773c0c7",
+      "dirty": false,
+      "reading": {
+        "samples": 113,
+        "minimum": 8.448318065182052
+      },
+      "controls": {
+        "samples": 5,
+        "minimumText": 10.485891098854465,
+        "minimumBoundary": 5.9302438256527115
+      },
+      "hoveredControls": {
+        "samples": 5,
+        "minimumText": 10.485891098854465,
+        "minimumBoundary": 5.9302438256527115
+      },
+      "keyboardStops": 26,
+      "firstPaint": "system theme with hydration held; persisted theme on reload",
+      "reflow": "390px mobile and 640 CSS px equivalent to 1280px at 200%",
+      "requests": "same-origin only",
+      "errors": 0
+    }
+  ],
+  "zoomReflow": [
+    {
+      "variant": "project",
+      "mode": "light",
+      "method": "640 CSS px at DPR 2: 200% rendering equivalent, not native browser zoom",
+      "dimensions": {
+        "width": 640,
+        "height": 450,
+        "ratio": 2
+      },
+      "reading": {
+        "samples": 100,
+        "minimum": 5.163379529163044
+      },
+      "screenshot": "project-light-zoom-equivalent-200.png",
+      "errors": 0
+    },
+    {
+      "variant": "project",
+      "mode": "dark",
+      "method": "640 CSS px at DPR 2: 200% rendering equivalent, not native browser zoom",
+      "dimensions": {
+        "width": 640,
+        "height": 450,
+        "ratio": 2
+      },
+      "reading": {
+        "samples": 100,
+        "minimum": 8.448318065182052
+      },
+      "screenshot": "project-dark-zoom-equivalent-200.png",
+      "errors": 0
+    },
+    {
+      "variant": "root",
+      "mode": "light",
+      "method": "640 CSS px at DPR 2: 200% rendering equivalent, not native browser zoom",
+      "dimensions": {
+        "width": 640,
+        "height": 450,
+        "ratio": 2
+      },
+      "reading": {
+        "samples": 100,
+        "minimum": 5.163379529163044
+      },
+      "screenshot": "root-light-zoom-equivalent-200.png",
+      "errors": 0
+    },
+    {
+      "variant": "root",
+      "mode": "dark",
+      "method": "640 CSS px at DPR 2: 200% rendering equivalent, not native browser zoom",
+      "dimensions": {
+        "width": 640,
+        "height": 450,
+        "ratio": 2
+      },
+      "reading": {
+        "samples": 100,
+        "minimum": 8.448318065182052
+      },
+      "screenshot": "root-dark-zoom-equivalent-200.png",
+      "errors": 0
+    }
+  ],
+  "illustrations": [
+    {
+      "variant": "project",
+      "path": "docs/assets/phase0-resource-lifecycle-presentation.svg",
+      "source": "docs/assets/phase0-resource-lifecycle.svg",
+      "beforeAfter": [
+        {
+          "label": "before",
+          "textLabels": 27,
+          "missingMarkers": 0,
+          "withinViewBox": true
+        },
+        {
+          "label": "after",
+          "textLabels": 27,
+          "missingMarkers": 0,
+          "withinViewBox": true
+        }
+      ],
+      "embeddedModes": [
+        "light",
+        "dark"
+      ],
+      "narrowWidth": 390,
+      "fullSizeWidth": 2880
+    },
+    {
+      "variant": "project",
+      "path": "docs/assets/phase2-delivery-boundary-presentation.svg",
+      "source": "docs/assets/phase2-delivery-boundary.svg",
+      "beforeAfter": [
+        {
+          "label": "before",
+          "textLabels": 23,
+          "missingMarkers": 0,
+          "withinViewBox": true
+        },
+        {
+          "label": "after",
+          "textLabels": 23,
+          "missingMarkers": 0,
+          "withinViewBox": true
+        }
+      ],
+      "embeddedModes": [
+        "light",
+        "dark"
+      ],
+      "narrowWidth": 390,
+      "fullSizeWidth": 2880
+    },
+    {
+      "variant": "root",
+      "path": "docs/assets/phase0-resource-lifecycle-presentation.svg",
+      "source": "docs/assets/phase0-resource-lifecycle.svg",
+      "beforeAfter": [
+        {
+          "label": "before",
+          "textLabels": 27,
+          "missingMarkers": 0,
+          "withinViewBox": true
+        },
+        {
+          "label": "after",
+          "textLabels": 27,
+          "missingMarkers": 0,
+          "withinViewBox": true
+        }
+      ],
+      "embeddedModes": [
+        "light",
+        "dark"
+      ],
+      "narrowWidth": 390,
+      "fullSizeWidth": 2880
+    },
+    {
+      "variant": "root",
+      "path": "docs/assets/phase2-delivery-boundary-presentation.svg",
+      "source": "docs/assets/phase2-delivery-boundary.svg",
+      "beforeAfter": [
+        {
+          "label": "before",
+          "textLabels": 23,
+          "missingMarkers": 0,
+          "withinViewBox": true
+        },
+        {
+          "label": "after",
+          "textLabels": 23,
+          "missingMarkers": 0,
+          "withinViewBox": true
+        }
+      ],
+      "embeddedModes": [
+        "light",
+        "dark"
+      ],
+      "narrowWidth": 390,
+      "fullSizeWidth": 2880
+    }
+  ],
+  "limitations": [
+    "Chromium headless only on the recorded host; no complete accessibility certification, native-control popup review or screen-reader campaign.",
+    "200% rendering is exercised by halving the CSS viewport and doubling DPR, not by native browser zoom controls. Native browser zoom remains a manual acceptance check.",
+    "SVG text remains a two-dimensional diagram: full-size link and zoom are required for narrow displays.",
+    "Wiki source snapshot is inventoried, not migrated or republished."
+  ]
+}

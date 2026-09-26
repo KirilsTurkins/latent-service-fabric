@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1alpha1/capability-policy-config.schema.json",
+  "title": "LSF optional node capability policy owner",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "store": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maximumRecords",
+        "maximumOutcomes",
+        "maximumCatalogBytes",
+        "maximumReadOwners",
+        "maximumPageRecords"
+      ],
+      "properties": {
+        "maximumRecords": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "maximumOutcomes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "maximumCatalogBytes": {
+          "type": "integer",
+          "minimum": 4096,
+          "maximum": 16777216
+        },
+        "maximumReadOwners": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "maximumPageRecords": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        }
+      }
+    },
+    "maximumControlJobs": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    }
+  }
+}

@@ -10,6 +10,7 @@ use tonic::Status;
 
 pub(super) fn operation(
     value: &ReleaseOperationReceipt,
+    publication: Option<&latent_core::PublicationId>,
     tenant: &TenantId,
     limits: &ManagementLimits,
 ) -> Result<proto::ReleaseOperationReceipt, Status> {
@@ -21,7 +22,8 @@ pub(super) fn operation(
     // Source allocations and the prospective owned wire graph coexist.
     bounds::receipt(value, tenant, &mut budget, &ceiling)?;
     bounds::receipt(value, tenant, &mut budget, &ceiling)?;
-    let wire = owned::receipt(value);
+    charge_publication(publication, tenant, &mut budget, &ceiling, 4)?;
+    let wire = owned::receipt(value, publication);
     ceiling.max_response_bytes = limits.max_response_bytes.min(8192);
     encoded(&wire, &ceiling)?;
     Ok(wire)
@@ -29,12 +31,14 @@ pub(super) fn operation(
 
 pub(super) fn charge_operation(
     value: &ReleaseOperationReceipt,
+    publication: Option<&latent_core::PublicationId>,
     tenant: &TenantId,
     budget: &mut RequestBudget,
     limits: &ManagementLimits,
 ) -> Result<(), Status> {
     // Publication retains the repository receipt, the preflight's owned wire
     // receipt, and the copy inside the prepared publication response together.
+    charge_publication(publication, tenant, budget, limits, 6)?;
     bounds::receipt(value, tenant, budget, limits)?;
     bounds::receipt(value, tenant, budget, limits)?;
     bounds::receipt(value, tenant, budget, limits)
@@ -50,14 +54,28 @@ pub(super) fn status(
     let mut budget = RequestBudget::for_response::<proto::ReleaseLifecycleStatus>(&ceiling)?;
     bounds::record(&value.record, tenant, &mut budget, &ceiling)?;
     bounds::record(&value.record, tenant, &mut budget, &ceiling)?;
+    charge_publication(value.publication.as_ref(), tenant, &mut budget, &ceiling, 2)?;
     let wire = proto::ReleaseLifecycleStatus {
-        record: Some(owned::record(&value.record)),
+        record: Some(owned::record(&value.record, value.publication.as_ref())),
         eligibility: conversion::release_live_eligibility(value.eligibility),
         eligibility_reason: conversion::release_eligibility_reason(value.eligibility_reason),
     };
     ceiling.max_response_bytes = limits.max_response_bytes.min(4096);
     encoded(&wire, &ceiling)?;
     Ok(wire)
+}
+
+fn charge_publication(
+    id: Option<&latent_core::PublicationId>,
+    tenant: &TenantId,
+    budget: &mut RequestBudget,
+    limits: &ManagementLimits,
+    copies: usize,
+) -> Result<(), Status> {
+    for _ in 0..copies {
+        super::super::selector::charge(id, tenant, budget, limits)?;
+    }
+    Ok(())
 }
 
 pub(super) fn encoded(value: &impl Message, limits: &ManagementLimits) -> Result<(), Status> {

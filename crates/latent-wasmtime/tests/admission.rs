@@ -4,6 +4,10 @@
 mod authority;
 #[path = "admission/component.rs"]
 mod component;
+#[path = "admission/packages.rs"]
+mod packages;
+#[path = "admission/publications.rs"]
+mod publications;
 #[path = "generic_backend/support.rs"]
 #[allow(dead_code)]
 mod support;

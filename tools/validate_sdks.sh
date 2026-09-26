@@ -16,57 +16,46 @@ npm ci --prefix sdk/typescript-client --ignore-scripts
 python3 tools/check_tool_versions.py
 
 (
+    export GOTOOLCHAIN=local GOWORK=off GOENV=off GOFLAGS=-mod=readonly
+    export GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
+    export GOPRIVATE= GONOPROXY= GONOSUMDB=
+    python3 -m unittest discover -s sdk/go -p 'test_*.py'
+    python3 sdk/go/dependencies.py --check
+    python3 sdk/go/generate.py
+    python3 sdk/go/generate.py --check
     cd sdk/go
     go test -timeout 30s ./...
+    go test -race -timeout 60s ./transport -run 'TestCancellationQueueAndReservedRecovery|TestConcurrentCloseReapsPendingAndQueuedCalls|TestFailedStartupAndAdoptedConnectionOwnership'
 )
 
 npm --prefix sdk/typescript-client run build -- --noEmit
 npm --prefix sdk/typescript-client run test:semantic
+npm --prefix sdk/typescript-client run test:transport
 
 mapfile -t java_sources < <(find sdk/java-client/src/main/java sdk/java-client/src/test/java -type f -name '*.java' | sort)
 if (( ${#java_sources[@]} == 0 )); then
     echo "no Java SDK sources found" >&2
     exit 1
 fi
-javac --release 21 -d "${OUTPUT}/java" "${java_sources[@]}"
+javac --release 25 -d "${OUTPUT}/java" "${java_sources[@]}"
+python3 sdk/java-client/tools/java_toolchain.py classes "${OUTPUT}/java"
 java -cp "${OUTPUT}/java" dev.latent.sdk.InvocationIdentityTest
+python3 sdk/java-client/tools/build.py test
+python3 sdk/java-client/tools/build.py build
 
-dotnet build sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj \
-    --configuration Release \
-    --nologo \
-    --output "${OUTPUT}/dotnet/bin" \
-    -p:BaseIntermediateOutputPath="${OUTPUT}/dotnet/obj/" \
-    -p:ContinuousIntegrationBuild=true
-
-dotnet build sdk/dotnet/Latent.Sdk.SemanticTests/Latent.Sdk.SemanticTests.csproj \
-    --configuration Release \
-    --nologo \
-    --artifacts-path "${OUTPUT}/dotnet-semantic" \
-    -p:ContinuousIntegrationBuild=true
-dotnet "${OUTPUT}/dotnet-semantic/bin/Latent.Sdk.SemanticTests/release/Latent.Sdk.SemanticTests.dll"
+python3 -m unittest discover -s sdk/dotnet -p 'test_validate.py'
+python3 sdk/dotnet/validate.py --check
 
 cat > "${OUTPUT}/c/header-smoke.c" <<'EOF_C'
-#include <latent/latent.h>
+#include <latent/profile.h>
 
 int main(void) {
-    latent_invocation_receipt receipt = {0};
-    latent_declared_invocation_error declared = {
-        .receipt = receipt,
+    latent_profile_invoke_response outcome = {
+        .has_declared_error = true,
+        .declared_error = {.code = {"example", 7}},
     };
-    latent_invocation_outcome outcome = {
-        .kind = LATENT_INVOCATION_DECLARED_ERROR,
-        .declared_error = &declared,
-    };
-    latent_activation_success_summary success = {0};
-    latent_retained_invocation_outcome retained = {
-        .kind = LATENT_RETAINED_INVOCATION_SUCCEEDED,
-        .success = &success,
-    };
-    latent_activation_status status = {
-        .has_terminal_outcome = true,
-        .terminal_outcome = retained,
-    };
-    return outcome.declared_error == 0 || !status.has_terminal_outcome;
+    latent_profile_activation_status status = {.has_succeeded = true};
+    return !outcome.has_declared_error || !status.has_succeeded;
 }
 EOF_C
 sed -i 's/^          //' "${OUTPUT}/c/header-smoke.c"
@@ -77,5 +66,8 @@ ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
 
 ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
     zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
-    -I sdk/c/include sdk/c/tests/invocation_identity.c -o "${OUTPUT}/c/invocation-identity"
-"${OUTPUT}/c/invocation-identity"
+    -I sdk/c/include sdk/c/tests/profile_semantics.c -o "${OUTPUT}/c/profile-semantics"
+"${OUTPUT}/c/profile-semantics"
+
+python3 sdk/c/tools/validate.py --build-dir "${TARGET_ROOT}/c-sdk"
+python3 sdk/c/tools/validate.py --build-dir "${TARGET_ROOT}/c-sdk-asan" --sanitize

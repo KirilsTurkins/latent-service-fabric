@@ -9,6 +9,7 @@ use std::time::Duration;
 fn identity(input: &AotPreparedInput) -> CoalescingKey {
     CoalescingKey {
         key: PreparationKey {
+            publication: None,
             release: input.artifact().descriptor.release_digest.clone(),
             engine_version: "native-control-test".into(),
             engine_configuration_digest: "native-control-test".into(),

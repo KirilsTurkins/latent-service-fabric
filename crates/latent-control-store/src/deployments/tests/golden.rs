@@ -4,7 +4,7 @@ use latent_core::RouteGeneration;
 use latent_manifest::__serde_json as json;
 
 #[test]
-fn catalog_preserves_original_bytes_and_weighted_assignments() {
+fn catalog_preserves_legacy_manifest_snapshot_and_weighted_assignments() {
     let releases = Releases::default();
     let one = releases.add("golden-one");
     let two = releases.add("golden-two");
@@ -74,7 +74,15 @@ fn catalog_preserves_original_bytes_and_weighted_assignments() {
             .unwrap_err();
         failures.push(json::json!({"code": format!("{:?}", failed.code), "message": failed.message, "retryable": failed.retryable}));
     }
-    assert_eq!(bytes, include_bytes!("golden/catalog-v2.json"));
+    let mut current: json::Value = json::from_slice(bytes).unwrap();
+    let legacy: json::Value = json::from_slice(include_bytes!("golden/catalog-v2.json")).unwrap();
+    assert_eq!(current["format_version"], 5);
+    assert_eq!(current["payload"]["publication_pins"], json::json!([]));
+    current["payload"]
+        .as_object_mut()
+        .unwrap()
+        .remove("publication_pins");
+    assert_eq!(current["payload"], legacy["payload"]);
     let snapshot = json::to_vec(&persistence::catalog_snapshot_value(catalog)).unwrap();
     assert_eq!(snapshot.as_slice(), include_bytes!("golden/snapshot.json"));
     let expected_choices: json::Value =

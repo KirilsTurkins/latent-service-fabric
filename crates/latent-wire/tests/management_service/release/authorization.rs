@@ -75,23 +75,43 @@ async fn rejected_publications_leave_no_visible_release() {
             expected
         );
     }
-    assert!(get(&harness, "alice", &capsule.descriptor.release_digest.0)
-        .await
-        .is_none());
+    assert!(get(
+        &harness,
+        "alice",
+        &format!("publication:sha256:{}", "0".repeat(64))
+    )
+    .await
+    .is_none());
     assert!(list(&harness, "alice", None, None)
         .await
         .unwrap()
         .releases
         .is_empty());
-    publish(&harness, "alice", valid).await.unwrap();
-    // The global content identity cannot be overwritten with another tenant's metadata.
+    let alice = publish(&harness, "alice", valid).await.unwrap();
+    // Identical executable bytes have independent authenticated tenant publications.
+    // Neither publication overwrites the other's immutable metadata.
     let other = artifact("other", "echo", "rejected-publication");
-    assert!(publish(&harness, "bob", upload(&other)).await.is_err());
-    assert!(list(&harness, "bob", None, None)
-        .await
-        .unwrap()
-        .releases
-        .is_empty());
+    publish(&harness, "bob", upload(&other)).await.unwrap();
+    let bob = list(&harness, "bob", None, None).await.unwrap().releases;
+    assert_eq!(bob.len(), 1);
+    assert_eq!(bob[0].tenant.as_deref(), Some("other"));
+    assert_eq!(bob[0].digest, capsule.descriptor.release_digest.0);
+    assert_eq!(
+        get(&harness, "alice", &alice.publication.as_ref().unwrap().id)
+            .await
+            .unwrap()
+            .tenant
+            .as_deref(),
+        Some("acme")
+    );
+    assert_eq!(
+        get(&harness, "bob", &bob[0].publication.as_ref().unwrap().id)
+            .await
+            .unwrap()
+            .tenant
+            .as_deref(),
+        Some("other")
+    );
     assert_eq!(
         list(&harness, "alice", None, None)
             .await

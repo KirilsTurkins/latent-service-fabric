@@ -22,6 +22,10 @@ use super::invalid_manifest;
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
+        Command::Web(command) => super::web::prepare(command, config),
+        Command::Trigger(command) => super::triggers::prepare(command, config),
+        Command::Capability(command) => super::capabilities::prepare(command),
+        Command::Policy(command) => super::policies::prepare(command, config),
         Command::Rollout(command) => super::phase2::prepare::rollout(command, config),
         Command::Audit(command) => super::phase2::prepare::audit(command, config),
         Command::Release(
@@ -34,9 +38,9 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
         ) => super::phase2::prepare::release(command, config),
         Command::Release(ReleaseCommand::Publish(args)) => publish(args, config),
         Command::Release(ReleaseCommand::Get(args)) => {
-            digest(&args.digest)?;
+            let publication = publication_selector(args, config)?;
             Ok(Operation::GetRelease(proto::GetReleaseRequest {
-                digest: args.digest.clone(),
+                publication: Some(publication),
             }))
         }
         Command::Release(ReleaseCommand::List(args)) => {
@@ -278,6 +282,29 @@ pub(super) fn page(page_size: u32, token: Option<&str>) -> Result<proto::PageReq
     })
 }
 
+pub(super) fn publication_selector(
+    args: &crate::args::PublicationArgs,
+    config: &ResolvedConfig,
+) -> Result<proto::PublicationRef, Failure> {
+    let invalid = || {
+        Failure::local(
+            "invalid-publication-selector",
+            "An exact publication ID is required.",
+        )
+    };
+    args.publication
+        .parse::<latent_core::PublicationId>()
+        .map_err(|_| invalid())?;
+    identifier(&config.tenant)?;
+    if config.tenant.chars().any(char::is_whitespace) {
+        return Err(invalid());
+    }
+    Ok(proto::PublicationRef {
+        id: args.publication.clone(),
+        tenant: config.tenant.clone(),
+    })
+}
+
 fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Operation, Failure> {
     let maximum = if args.operation.operation_id.is_some() {
         latent_control_store::deployment_operations::MAX_REQUEST_BYTES
@@ -299,12 +326,28 @@ fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Opera
             .map(|value| value.0.as_str()),
         &config.tenant,
     )?;
-    let deployment = deployment_to_proto(&VersionedDeployment {
+    let selected = manifest.publication.as_ref().ok_or_else(|| {
+        Failure::local(
+            "missing-publication",
+            "Set spec.publication to the exact publication ID returned by admission.",
+        )
+    })?;
+    let expected_component_digest = Some(manifest.release.0.clone());
+    let mut deployment = deployment_to_proto(&VersionedDeployment {
+        publication: Some(latent_artifacts::PublicationRef {
+            id: selected.clone(),
+            scope: latent_artifacts::LifecycleScope::Tenant(
+                manifest.metadata.tenant.clone().expect("validated tenant"),
+            ),
+        }),
         manifest,
         generation: 0,
     })
     .map_err(|_| invalid_manifest())?;
+    deployment.requested_publication = None;
+    deployment.release_digest.clear();
     Ok(Operation::ApplyDeployment(proto::ApplyDeploymentRequest {
+        expected_component_digest,
         deployment: Some(deployment),
         expected_generation: args.expected_generation,
         operation: args.operation.operation_id.as_ref().map(|id| {

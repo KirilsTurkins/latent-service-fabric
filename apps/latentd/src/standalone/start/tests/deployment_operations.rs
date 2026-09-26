@@ -137,7 +137,12 @@ fn prepared_receipt_digest(
     .unwrap()
 }
 
-fn copy_snapshot(from: &std::path::Path, to: &std::path::Path, depth: usize, count: &mut usize) {
+pub(super) fn copy_snapshot(
+    from: &std::path::Path,
+    to: &std::path::Path,
+    depth: usize,
+    count: &mut usize,
+) {
     assert!(depth < 8);
     std::fs::create_dir(to).unwrap();
     std::fs::set_permissions(to, std::fs::metadata(from).unwrap().permissions()).unwrap();

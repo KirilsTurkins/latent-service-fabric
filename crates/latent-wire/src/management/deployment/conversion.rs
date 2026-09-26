@@ -27,9 +27,25 @@ pub fn deployment_from_proto(
     let placement = deployment.placement.ok_or_else(|| missing("placement"))?;
     let route_weight = u16::try_from(deployment.route_weight)
         .map_err(|_| ManagementConversionError::new("route_weight", "exceeds u16"))?;
+    let publication = reference(deployment.publication.as_ref(), metadata.tenant.as_deref())?;
+    let requested_publication = reference(
+        deployment.requested_publication.as_ref(),
+        metadata.tenant.as_deref(),
+    )?;
+    if requested_publication
+        .as_ref()
+        .is_some_and(|id| Some(id) != publication.as_ref())
+    {
+        return Err(ManagementConversionError::new(
+            "requested_publication",
+            "does not match captured publication",
+        ));
+    }
     Ok(VersionedDeployment {
+        publication,
         generation: deployment.generation,
         manifest: DeploymentManifest {
+            publication: requested_publication.map(|reference| reference.id),
             api_version: MANIFEST_API_VERSION.to_owned(),
             id: DeploymentId(deployment.id),
             metadata: ObjectMetadata {
@@ -71,8 +87,11 @@ pub fn deployment_from_proto(
 /// Apply input ignores the output-only generation; the request's independent
 /// `expected_generation` is the sole caller version precondition.
 pub fn deployment_manifest_from_proto(
-    deployment: proto::Deployment,
+    mut deployment: proto::Deployment,
 ) -> Result<DeploymentManifest, ManagementConversionError> {
+    // The adapter has already resolved and validated the one input selector.
+    // Output conversion separately retains the original selector representation.
+    deployment.requested_publication = deployment.publication.clone();
     deployment_from_proto(deployment).map(|value| value.manifest)
 }
 
@@ -93,7 +112,25 @@ pub fn deployment_to_proto(
             "must equal metadata.name",
         ));
     }
+    if manifest.publication.as_ref().is_some_and(|id| {
+        deployment.publication.as_ref().is_none_or(|reference| {
+            &reference.id != id || reference.scope.tenant() != manifest.metadata.tenant.as_ref()
+        })
+    }) {
+        return Err(ManagementConversionError::new(
+            "publication",
+            "manifest association is not publicly scoped",
+        ));
+    }
     Ok(proto::Deployment {
+        publication: public_reference(
+            deployment.publication.as_ref(),
+            manifest.metadata.tenant.as_ref(),
+        )?,
+        requested_publication: scoped(
+            manifest.publication.as_ref(),
+            manifest.metadata.tenant.as_ref(),
+        )?,
         id: manifest.id.0.clone(),
         metadata: Some(proto::ObjectMetadata {
             name: manifest.metadata.name.clone(),
@@ -151,4 +188,61 @@ pub fn deployment_to_proto(
 
 fn missing(field: &'static str) -> ManagementConversionError {
     ManagementConversionError::new(field, "required field is absent")
+}
+
+fn reference(
+    reference: Option<&proto::PublicationRef>,
+    tenant: Option<&str>,
+) -> Result<Option<latent_artifacts::PublicationRef>, ManagementConversionError> {
+    reference
+        .map(|reference| {
+            if reference.tenant.is_empty() || Some(reference.tenant.as_str()) != tenant {
+                return Err(ManagementConversionError::new(
+                    "publication",
+                    "scope mismatch",
+                ));
+            }
+            Ok(latent_artifacts::PublicationRef {
+                id: reference.id.parse().map_err(|_| {
+                    ManagementConversionError::new("publication", "invalid identity")
+                })?,
+                scope: latent_artifacts::LifecycleScope::Tenant(TenantId(reference.tenant.clone())),
+            })
+        })
+        .transpose()
+}
+
+fn scoped(
+    id: Option<&latent_core::PublicationId>,
+    tenant: Option<&TenantId>,
+) -> Result<Option<proto::PublicationRef>, ManagementConversionError> {
+    id.map(|id| {
+        Ok(proto::PublicationRef {
+            id: id.as_str().to_owned(),
+            tenant: tenant
+                .ok_or_else(|| missing("publication tenant"))?
+                .0
+                .clone(),
+        })
+    })
+    .transpose()
+}
+
+pub(super) fn public_reference(
+    reference: Option<&latent_artifacts::PublicationRef>,
+    tenant: Option<&TenantId>,
+) -> Result<Option<proto::PublicationRef>, ManagementConversionError> {
+    let Some(reference) = reference else {
+        return Ok(None);
+    };
+    let Some(scope) = reference.scope.tenant() else {
+        return Ok(None);
+    };
+    if Some(scope) != tenant {
+        return Err(ManagementConversionError::new(
+            "publication",
+            "scope mismatch",
+        ));
+    }
+    scoped(Some(&reference.id), Some(scope))
 }

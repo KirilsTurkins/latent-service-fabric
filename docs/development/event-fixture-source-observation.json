@@ -1,0 +1,843 @@
+{
+  "schemaVersion": "latent.dev.event-source-observation.v1",
+  "publisherAuthenticated": false,
+  "cleanHost": false,
+  "qualificationComplete": false,
+  "liveBroker": false,
+  "boundary": "Authored Rust capsule built outside the checkout and signed for an actual Linux node. Production NATS provider, owned authenticated TLS protocol peer. No live broker, portable event or final Windows qualification.",
+  "runtime": {
+    "binaries": {
+      "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+      "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "latentd": "sha256:cb5ba1774c2bd089f0cd452aaa574feffc6c61cc6e7adaf0cbc6d3796febf649"
+    },
+    "buildProfile": {
+      "compiledBinary": "latentd",
+      "debugInfo": 0,
+      "features": [
+        "latentd/development-test-node"
+      ],
+      "incremental": false,
+      "name": "dev",
+      "retainedOperatorAndAotSource": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30"
+        },
+        "path": "/build/dev559-clock-kit2"
+      }
+    },
+    "controllerSourceCommit": "8b2cf843f287c460cf09777b9a1139c3ff49245c",
+    "controllerSourceDirty": true,
+    "controllerSources": {
+      "tools/dev_workflow/event_fixture.py": "sha256:09fb190b45a6644881fc6b96524fbcef86e41deb3da3e9d54fe8ac4a5290145f",
+      "tools/dev_workflow/event_peer.py": "sha256:d03b3af10af310a1fa98e891ade9fe34f1d0b5ee3106421c0275bba85c2366e4",
+      "tools/dev_workflow/service.py": "sha256:5d2c85e1658136a9a9655ab6363ed5bf217d44334789188a2f1836a657b9f61a"
+    },
+    "engine": {
+      "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+      "hostAbiProfile": "lsf-host-abi-phase3-v4",
+      "wasmtimeVersion": "47.0.4"
+    },
+    "fixtureProbeSha256": "sha256:f64f6c0cb748c3f8d39b519938b5ad6301bb3978a4e11ed1f45ddecd0c620950",
+    "fixtureTools": {
+      "inventory": "sha256:2bf2d280cb6ad8349e21c3b562de49f275a19a418273fd102578470230a04f67",
+      "originalInventory": "sha256:bf05bf4f9ad5247045274603a6d2378a5f4766c57449babae3455371cdb9cd02",
+      "path": "/build/dev559-event-tools2/payload",
+      "signer": "sha256:8a19b2937ad3128a99e4f01eba4282ab4eb7598deeca75b7888cb5749253762f",
+      "signerSource": {
+        "crates/latent-policy/examples/capsule_authoring.rs": "sha256:dda65679ac86ed297d6ecd206a59312ecb61e0737fe0135d5902484667db6844",
+        "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs": "sha256:700359fb9391632991892c5a517cdb9f8c736a5ce098757ddcca0647aa5a89e9"
+      }
+    },
+    "helperSha256": "sha256:ecba30258af023453d88b3b6bf74a4b99cea2618957a8e8811fd8e1cfdf201bc",
+    "nodeSources": {
+      "apps/latentd/src/config/providers.rs": "sha256:efa50c5b60dfbabf367a6d9e5bf7ca09f9be0d5f3a64dc6ec55a90ccda343c25",
+      "apps/latentd/src/config/providers/events.rs": "sha256:dd7a24bafe11e3a4eb2370ed7e1642a8f0228fa12176c904720b63ce7bcf5824",
+      "apps/latentd/src/standalone/providers/events.rs": "sha256:f5c3bd8341f3be6f0e3925c8399e6e6c2500eacfb89c69ac8f01fec37c3e0a09",
+      "apps/latentd/src/standalone/providers/runtime.rs": "sha256:5a838ba73aae8104794707b239efd194de47cf4a1e132a8ac4d692caf953fcc7"
+    },
+    "publisherAuthenticated": false,
+    "purpose": "source-application-node-tests",
+    "sourceCommit": "8b2cf843f287c460cf09777b9a1139c3ff49245c",
+    "sourceDirty": true,
+    "version": "0.1.0-alpha.4"
+  },
+  "profile": "local-experimental-v1",
+  "admission": "signed-fixture",
+  "fixtures": {
+    "events": {
+      "exchanges": [
+        {
+          "mode": "ack",
+          "payload": "ZXZlbnQtZGV2",
+          "topic": "dev.ack"
+        },
+        {
+          "mode": "drop-ack",
+          "payload": "ZXZlbnQtZGV2",
+          "topic": "dev.drop-ack"
+        },
+        {
+          "mode": "duplicate",
+          "payload": "ZXZlbnQtZGV2",
+          "topic": "dev.duplicate"
+        },
+        {
+          "mode": "malformed-ack",
+          "payload": "ZXZlbnQtZGV2",
+          "topic": "dev.malformed-ack"
+        },
+        {
+          "mode": "no-responders",
+          "payload": "ZXZlbnQtZGV2",
+          "topic": "dev.no-responders"
+        },
+        {
+          "mode": "wrong-stream",
+          "payload": "ZXZlbnQtZGV2",
+          "topic": "dev.wrong-stream"
+        }
+      ],
+      "port": 56723
+    }
+  },
+  "signing": {
+    "attempt": "ea896364dfacec6f439d2affa3195a67",
+    "component": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+    "expiresAtUnixSeconds": 1790319501,
+    "inventory": "sha256:b2b32df3543eb3d2ba62811d3ce05657a49ffc3d511cfbdcffc5b92d5148ec26",
+    "name": "my-greeting",
+    "packageDigest": "sha256:85c94a5fef523a18ffe3844b1cc6039d44731d1b50b971d31bc857d1c047ebca",
+    "policySha256": "sha256:a5caf25d98cd6bc585cf2edcba080c63e45d94eb75f96e4ffa15c89ba615dbd0",
+    "signer": "sha256:8a19b2937ad3128a99e4f01eba4282ab4eb7598deeca75b7888cb5749253762f",
+    "source": "sha256:8b496372eeb7e0ea6a6e5aef36ff26400b96977ea8e472ba7aa184c66d4b5746",
+    "toolInventory": "sha256:2bf2d280cb6ad8349e21c3b562de49f275a19a418273fd102578470230a04f67",
+    "trust": "isolated-short-lived-demo-only"
+  },
+  "deployment": {
+    "attempt": "ea896364dfacec6f439d2affa3195a67",
+    "buildKey": "sha256:dae0cf45d53f53bc4dd7fc5b37911004accb0cd284a2a2af428291557367d80b",
+    "componentDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+    "deployment": "my-greeting",
+    "generation": "5",
+    "operation": "dev-43362f089ca7baa96e6b21d000abae67",
+    "publication": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+    "publicationInput": "sha256:4e6a4695948f29b9217c250d2d5bbd79dd0b0568fda0de208fdcea330cfb64c9",
+    "source": "sha256:8b496372eeb7e0ea6a6e5aef36ff26400b96977ea8e472ba7aa184c66d4b5746"
+  },
+  "cases": [
+    {
+      "id": "cold",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "activationId": "dev-42ea6f20fbed4e8454bbe48d99015d6a",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "3"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "3"
+      }
+    },
+    {
+      "id": "warm",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "activationId": "dev-a415136d0c9763dd091ae63fc14110dc",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "3"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "3"
+      }
+    },
+    {
+      "id": "duplicate-receipt",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:68a90152c04505f5f2f397b31c13447056085e8176be9daa43b182b9d731b2e4",
+      "activationId": "dev-dcf02a270c654810257a306e9872a4cd",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "3"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "3"
+      }
+    },
+    {
+      "id": "unknown-topic",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+      "activationId": "dev-3248b6dd86e2a9b113256566aea7d74c",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "3"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "3"
+      }
+    },
+    {
+      "id": "invalid-topic",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:75fd229c68471d3d93eb936c077cb9a3f70082a3366a78bf62d4228389f77847",
+      "activationId": "dev-380090d562b948139df3521ca07ba40e",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "3"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "3"
+      }
+    },
+    {
+      "id": "invalid-event",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:803ec8add3498ac66633e5fdbf8f47d69858594c8820ab43a85dd692fc73e5ba",
+      "activationId": "dev-19750562d0a599c59eb07a29b5d15f28",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "3"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "3"
+      }
+    },
+    {
+      "id": "policy-denied",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:6e32bc5b03ab4d239b1eff1de30de5007f906dda41e8f720240bbf6481496a60",
+      "activationId": "dev-7d2840965ed42a05f19b1388480c309e",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "4"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:c64ae9553b64933cb8fb13365b3e1bf191df3523bfaaefe77b5cbedced68ab61",
+        "routeGeneration": "4"
+      }
+    },
+    {
+      "id": "after-denial",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "activationId": "dev-a2281f93379548f711db27306cecf263",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    },
+    {
+      "id": "lost-ack-uncertain",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "activationId": "dev-afc4039b2eb8b651d028e18fc9430dbc",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    },
+    {
+      "id": "after-lost-ack",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "activationId": "dev-1a956e11d24c37e13801b20bc98533de",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    },
+    {
+      "id": "wrong-stream-uncertain",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "activationId": "dev-f3c0968e7a0714cbcf2c5ffeafb37831",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    },
+    {
+      "id": "after-wrong-stream",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "activationId": "dev-fd324a73ce5c3999e19aa677dddf8ba1",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    },
+    {
+      "id": "malformed-ack-uncertain",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:71447c96d68bdc65906c5092de19f2d27634b0fb59a86baac726a961b4de4228",
+      "activationId": "dev-49295a71217a3596d91715f1e987ff48",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    },
+    {
+      "id": "after-malformed",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "activationId": "dev-3315f3b92af9a66603ee099f9ca3c560",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    },
+    {
+      "id": "no-responders",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:115175dafa22e3159003105401f27980690a156ea5190aa769e33a7e1394b09e",
+      "activationId": "dev-9aada8186598d5e8dfa131d89c14f303",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    },
+    {
+      "id": "after-no-responders",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "activationId": "dev-fdadcc6edb47616a07666d3383798206",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    }
+  ],
+  "retainedCases": [
+    {
+      "id": "cold",
+      "status": "passed",
+      "category": "success",
+      "platformCode": null,
+      "payloadSha256": "sha256:43de3a417d75f4818c5a553268b80ce3a5805109a3bbc6b605e9fb0b8f50b485",
+      "activationId": "dev-ec43b608c72f7fb23ca91fd04a04a27b",
+      "outcomeKnown": true,
+      "expectedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "routeGeneration": "5"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:bd224e25d182f8026dc726c8cb3a39fe7d27be596397bc65bed70c06b35c822a",
+        "releaseDigest": "sha256:945a683cc457fe637c595a42b025606e0904641395d0a6363b56ea19d07f6c45",
+        "revisionId": "revision-v1:sha256:7d7ee6d5375aec748d4ac2a6fc800023dfc8df43311e146cb2465d15fa5557a7",
+        "routeGeneration": "5"
+      }
+    }
+  ],
+  "fixtureRuntimeBefore": {
+    "events": {
+      "acceptedConnections": 0,
+      "authentication": "private-tls-provider-credential",
+      "configurationSha256": "sha256:477bc0278414deaa8227d2a282d451ee48dbcb783ff0fd6b4ed51adc923e7ea4",
+      "credentialReference": "dev-event-peer",
+      "failure": null,
+      "frameTimeoutMillis": 2000,
+      "kind": "controlled-peer",
+      "liveBroker": false,
+      "maximumCommandsPerConnection": 128,
+      "maximumConnections": 4,
+      "maximumPublishes": 128,
+      "maximumSeconds": 900,
+      "openConnections": 0,
+      "protocol": "tls-nats-publish",
+      "receivedByTopic": {
+        "dev.ack": 0,
+        "dev.drop-ack": 0,
+        "dev.duplicate": 0,
+        "dev.malformed-ack": 0,
+        "dev.no-responders": 0,
+        "dev.wrong-stream": 0
+      },
+      "receivedPublishes": 0,
+      "rejectedUnauthenticatedConnections": 0,
+      "sentAcknowledgements": 0,
+      "state": "ready"
+    }
+  },
+  "fixtureRuntimeAfter": {
+    "events": {
+      "acceptedConnections": 5,
+      "authentication": "private-tls-provider-credential",
+      "configurationSha256": "sha256:477bc0278414deaa8227d2a282d451ee48dbcb783ff0fd6b4ed51adc923e7ea4",
+      "credentialReference": "dev-event-peer",
+      "failure": null,
+      "frameTimeoutMillis": 2000,
+      "kind": "controlled-peer",
+      "liveBroker": false,
+      "maximumCommandsPerConnection": 128,
+      "maximumConnections": 4,
+      "maximumPublishes": 128,
+      "maximumSeconds": 900,
+      "openConnections": 1,
+      "protocol": "tls-nats-publish",
+      "receivedByTopic": {
+        "dev.ack": 7,
+        "dev.drop-ack": 1,
+        "dev.duplicate": 1,
+        "dev.malformed-ack": 1,
+        "dev.no-responders": 1,
+        "dev.wrong-stream": 1
+      },
+      "receivedPublishes": 12,
+      "rejectedUnauthenticatedConnections": 0,
+      "sentAcknowledgements": 8,
+      "state": "ready"
+    }
+  },
+  "shutdownBeforeRestart": {
+    "cleanShutdown": true,
+    "dataRetained": true,
+    "fixtures": {
+      "events": {
+        "acceptedConnections": 5,
+        "authentication": "private-tls-provider-credential",
+        "cleanup": "owned-listener-and-connections-closed",
+        "configurationSha256": "sha256:477bc0278414deaa8227d2a282d451ee48dbcb783ff0fd6b4ed51adc923e7ea4",
+        "credentialReference": "dev-event-peer",
+        "failure": null,
+        "frameTimeoutMillis": 2000,
+        "kind": "controlled-peer",
+        "liveBroker": false,
+        "maximumCommandsPerConnection": 128,
+        "maximumConnections": 4,
+        "maximumPublishes": 128,
+        "maximumSeconds": 900,
+        "openConnections": 0,
+        "protocol": "tls-nats-publish",
+        "receivedByTopic": {
+          "dev.ack": 7,
+          "dev.drop-ack": 1,
+          "dev.duplicate": 1,
+          "dev.malformed-ack": 1,
+          "dev.no-responders": 1,
+          "dev.wrong-stream": 1
+        },
+        "receivedPublishes": 12,
+        "rejectedUnauthenticatedConnections": 0,
+        "sentAcknowledgements": 8,
+        "state": "stopped"
+      }
+    },
+    "guestInstance": {
+      "bootId": "ed3f402c-31cf-406d-a69d-44e5d246d447",
+      "initStartTicks": "88280",
+      "pidNamespace": "4026532386"
+    },
+    "node": "lsf-e47222b26a145e31",
+    "profile": "local-experimental-v1",
+    "providerShutdown": {
+      "blobHandles": 0,
+      "blobStages": 0,
+      "blobWork": 0,
+      "calls": 0,
+      "clean": true,
+      "cleanupJobs": 0,
+      "connections": 0,
+      "controlOwners": 0,
+      "failedCleanup": 0,
+      "handles": 0,
+      "ioCalls": 0,
+      "ioRetainedBytes": 0,
+      "pendingRequests": 0,
+      "results": 0,
+      "runningRequests": 0,
+      "secretGenerations": 0,
+      "secretReferences": 0,
+      "sessions": 0,
+      "workers": 0
+    },
+    "providers": [
+      {
+        "capability": "latent:events/publisher@0.2.0",
+        "configurationDigest": "sha256:4859341ab4e747114938308370e61207fb3b5e98605a0bae16b6d1eac92d191a",
+        "configurationEpoch": "1",
+        "id": "events",
+        "profile": "nats-jetstream-publish-v1",
+        "service": "event-host",
+        "tenant": "examples"
+      }
+    ],
+    "readiness": {
+      "activationReady": true,
+      "authenticated": true,
+      "profile": "local-experimental-v1",
+      "schemaVersion": "latent.native-readiness.v1"
+    },
+    "reaped": true,
+    "state": "stopped"
+  },
+  "shutdown": {
+    "cleanShutdown": true,
+    "dataRetained": true,
+    "fixtures": {
+      "events": {
+        "acceptedConnections": 1,
+        "authentication": "private-tls-provider-credential",
+        "cleanup": "owned-listener-and-connections-closed",
+        "configurationSha256": "sha256:477bc0278414deaa8227d2a282d451ee48dbcb783ff0fd6b4ed51adc923e7ea4",
+        "credentialReference": "dev-event-peer",
+        "failure": null,
+        "frameTimeoutMillis": 2000,
+        "kind": "controlled-peer",
+        "liveBroker": false,
+        "maximumCommandsPerConnection": 128,
+        "maximumConnections": 4,
+        "maximumPublishes": 128,
+        "maximumSeconds": 900,
+        "openConnections": 0,
+        "protocol": "tls-nats-publish",
+        "receivedByTopic": {
+          "dev.ack": 1,
+          "dev.drop-ack": 0,
+          "dev.duplicate": 0,
+          "dev.malformed-ack": 0,
+          "dev.no-responders": 0,
+          "dev.wrong-stream": 0
+        },
+        "receivedPublishes": 1,
+        "rejectedUnauthenticatedConnections": 0,
+        "sentAcknowledgements": 1,
+        "state": "stopped"
+      }
+    },
+    "guestInstance": {
+      "bootId": "ed3f402c-31cf-406d-a69d-44e5d246d447",
+      "initStartTicks": "88280",
+      "pidNamespace": "4026532386"
+    },
+    "node": "lsf-e47222b26a145e31",
+    "profile": "local-experimental-v1",
+    "providerShutdown": {
+      "blobHandles": 0,
+      "blobStages": 0,
+      "blobWork": 0,
+      "calls": 0,
+      "clean": true,
+      "cleanupJobs": 0,
+      "connections": 0,
+      "controlOwners": 0,
+      "failedCleanup": 0,
+      "handles": 0,
+      "ioCalls": 0,
+      "ioRetainedBytes": 0,
+      "pendingRequests": 0,
+      "results": 0,
+      "runningRequests": 0,
+      "secretGenerations": 0,
+      "secretReferences": 0,
+      "sessions": 0,
+      "workers": 0
+    },
+    "providers": [
+      {
+        "capability": "latent:events/publisher@0.2.0",
+        "configurationDigest": "sha256:4859341ab4e747114938308370e61207fb3b5e98605a0bae16b6d1eac92d191a",
+        "configurationEpoch": "1",
+        "id": "events",
+        "profile": "nats-jetstream-publish-v1",
+        "service": "event-host",
+        "tenant": "examples"
+      }
+    ],
+    "readiness": {
+      "activationReady": true,
+      "authenticated": true,
+      "profile": "local-experimental-v1",
+      "schemaVersion": "latent.native-readiness.v1"
+    },
+    "reaped": true,
+    "state": "stopped"
+  },
+  "cleanup": "owned-processes-peer-and-private-material-purged",
+  "passed": true,
+  "invocations": 17,
+  "priorSuccessfulRuns": [
+    {
+      "runtime": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "latentd": "sha256:cb5ba1774c2bd089f0cd452aaa574feffc6c61cc6e7adaf0cbc6d3796febf649"
+        },
+        "buildProfile": {
+          "compiledBinary": "latentd",
+          "debugInfo": 0,
+          "features": [
+            "latentd/development-test-node"
+          ],
+          "incremental": false,
+          "name": "dev",
+          "retainedOperatorAndAotSource": {
+            "binaries": {
+              "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+              "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30"
+            },
+            "path": "/build/dev559-clock-kit2"
+          }
+        },
+        "controllerSourceCommit": "8b2cf843f287c460cf09777b9a1139c3ff49245c",
+        "controllerSourceDirty": true,
+        "engine": {
+          "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "hostAbiProfile": "lsf-host-abi-phase3-v4",
+          "wasmtimeVersion": "47.0.4"
+        },
+        "fixtureProbeSha256": "sha256:f64f6c0cb748c3f8d39b519938b5ad6301bb3978a4e11ed1f45ddecd0c620950",
+        "fixtureTools": {
+          "inventory": "sha256:2bf2d280cb6ad8349e21c3b562de49f275a19a418273fd102578470230a04f67",
+          "originalInventory": "sha256:bf05bf4f9ad5247045274603a6d2378a5f4766c57449babae3455371cdb9cd02",
+          "path": "/build/dev559-event-tools2/payload",
+          "signer": "sha256:8a19b2937ad3128a99e4f01eba4282ab4eb7598deeca75b7888cb5749253762f",
+          "signerSource": {
+            "crates/latent-policy/examples/capsule_authoring.rs": "sha256:dda65679ac86ed297d6ecd206a59312ecb61e0737fe0135d5902484667db6844",
+            "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs": "sha256:700359fb9391632991892c5a517cdb9f8c736a5ce098757ddcca0647aa5a89e9"
+          }
+        },
+        "helperSha256": "sha256:242682231d3be2636f7917a0b45e89d3a85d7bd1542861675fbc2deeadf0075b",
+        "nodeSources": {
+          "apps/latentd/src/config/providers.rs": "sha256:efa50c5b60dfbabf367a6d9e5bf7ca09f9be0d5f3a64dc6ec55a90ccda343c25",
+          "apps/latentd/src/config/providers/events.rs": "sha256:dd7a24bafe11e3a4eb2370ed7e1642a8f0228fa12176c904720b63ce7bcf5824",
+          "apps/latentd/src/standalone/providers/events.rs": "sha256:f5c3bd8341f3be6f0e3925c8399e6e6c2500eacfb89c69ac8f01fec37c3e0a09",
+          "apps/latentd/src/standalone/providers/runtime.rs": "sha256:5a838ba73aae8104794707b239efd194de47cf4a1e132a8ac4d692caf953fcc7"
+        },
+        "publisherAuthenticated": false,
+        "purpose": "source-application-node-tests",
+        "sourceCommit": "8b2cf843f287c460cf09777b9a1139c3ff49245c",
+        "sourceDirty": true,
+        "version": "0.1.0-alpha.4"
+      },
+      "invocations": 17,
+      "cleanup": "owned-processes-peer-and-private-material-purged",
+      "boundary": "Passed before acknowledged counter was moved from queueing to completed socket writes."
+    },
+    {
+      "runtime": {
+        "binaries": {
+          "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+          "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "latentd": "sha256:cb5ba1774c2bd089f0cd452aaa574feffc6c61cc6e7adaf0cbc6d3796febf649"
+        },
+        "buildProfile": {
+          "compiledBinary": "latentd",
+          "debugInfo": 0,
+          "features": [
+            "latentd/development-test-node"
+          ],
+          "incremental": false,
+          "name": "dev",
+          "retainedOperatorAndAotSource": {
+            "binaries": {
+              "latent": "sha256:ae7522b173cf31ffc39476ff35a1cf01f8021a858ed87efb55f23603ca1851ab",
+              "latent-aot-compiler": "sha256:fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30"
+            },
+            "path": "/build/dev559-clock-kit2"
+          }
+        },
+        "controllerSourceCommit": "8b2cf843f287c460cf09777b9a1139c3ff49245c",
+        "controllerSourceDirty": true,
+        "controllerSources": {
+          "tools/dev_workflow/event_fixture.py": "sha256:09fb190b45a6644881fc6b96524fbcef86e41deb3da3e9d54fe8ac4a5290145f",
+          "tools/dev_workflow/event_peer.py": "sha256:09c35055c16de8f6759499452d6c5fecf9e1f2867fd5511af1570bcb5b2bcee2",
+          "tools/dev_workflow/service.py": "sha256:5d2c85e1658136a9a9655ab6363ed5bf217d44334789188a2f1836a657b9f61a"
+        },
+        "engine": {
+          "compilerSha256": "fb993d95095af7d8ea34053b41e2f93fd269a465b3764e0ed8a8f2837f439a30",
+          "hostAbiProfile": "lsf-host-abi-phase3-v4",
+          "wasmtimeVersion": "47.0.4"
+        },
+        "fixtureProbeSha256": "sha256:f64f6c0cb748c3f8d39b519938b5ad6301bb3978a4e11ed1f45ddecd0c620950",
+        "fixtureTools": {
+          "inventory": "sha256:2bf2d280cb6ad8349e21c3b562de49f275a19a418273fd102578470230a04f67",
+          "originalInventory": "sha256:bf05bf4f9ad5247045274603a6d2378a5f4766c57449babae3455371cdb9cd02",
+          "path": "/build/dev559-event-tools2/payload",
+          "signer": "sha256:8a19b2937ad3128a99e4f01eba4282ab4eb7598deeca75b7888cb5749253762f",
+          "signerSource": {
+            "crates/latent-policy/examples/capsule_authoring.rs": "sha256:dda65679ac86ed297d6ecd206a59312ecb61e0737fe0135d5902484667db6844",
+            "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs": "sha256:700359fb9391632991892c5a517cdb9f8c736a5ce098757ddcca0647aa5a89e9"
+          }
+        },
+        "helperSha256": "sha256:183ac844ecd5a19f58b949f5d2a6f893eac72f610d67ee050c60b1b7279a194b",
+        "nodeSources": {
+          "apps/latentd/src/config/providers.rs": "sha256:efa50c5b60dfbabf367a6d9e5bf7ca09f9be0d5f3a64dc6ec55a90ccda343c25",
+          "apps/latentd/src/config/providers/events.rs": "sha256:dd7a24bafe11e3a4eb2370ed7e1642a8f0228fa12176c904720b63ce7bcf5824",
+          "apps/latentd/src/standalone/providers/events.rs": "sha256:f5c3bd8341f3be6f0e3925c8399e6e6c2500eacfb89c69ac8f01fec37c3e0a09",
+          "apps/latentd/src/standalone/providers/runtime.rs": "sha256:5a838ba73aae8104794707b239efd194de47cf4a1e132a8ac4d692caf953fcc7"
+        },
+        "publisherAuthenticated": false,
+        "purpose": "source-application-node-tests",
+        "sourceCommit": "8b2cf843f287c460cf09777b9a1139c3ff49245c",
+        "sourceDirty": true,
+        "version": "0.1.0-alpha.4"
+      },
+      "invocations": 17,
+      "cleanup": "owned-processes-peer-and-private-material-purged",
+      "boundary": "Passed before adding explicit partial-selector-registration cleanup and queued acknowledgement counts."
+    }
+  ],
+  "failedAttempts": [
+    {
+      "phase": "source-tool-payload-preparation",
+      "reason": "A new hardlinked tool copy was correctly rejected by single-link file validation. The new copy was detached and every original tool file was confirmed single-linked. No compiler or node started."
+    },
+    {
+      "phase": "source-tool-inventory-validation",
+      "reason": "The updated source signer inventory and inherited template revision did not match. Validation rejected the build before compilation. A new source payload and workspace used matching source identities.",
+      "observation": {
+        "cleanHost": false,
+        "cleanup": "unconfirmed",
+        "liveBroker": false,
+        "passed": false,
+        "publisherAuthenticated": false,
+        "qualificationComplete": false,
+        "retainedPrivateWorkspace": "/build/dev559-node-homes/ev1/tmp/lsf-events-0rx7fou6",
+        "schemaVersion": "latent.dev.event-node-probe.v1"
+      }
+    }
+  ]
+}

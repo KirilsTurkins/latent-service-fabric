@@ -1,0 +1,887 @@
+{
+  "schemaVersion": "latent.dev.packaged-platform-handoff.v1",
+  "sourceCommit": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+  "conductorCommit": "f710f8abf78f94ce79af4f44586585467dc3dafa",
+  "qualificationRun": 36187710975,
+  "developerCandidateRun": 36164649914,
+  "nativeCandidateRun": 36164724959,
+  "independentlyApprovedPolicyFiles": {
+    "developer-policy.json": "sha256:9b82963f9abd04a2c9499f161a1590b6a63644fb49e076d04cb47ad7a52fb251",
+    "native-policy.json": "sha256:234e03f4477522b8a5fe5a7b78532928ddab10004adbbf423ba419ed4636b02a"
+  },
+  "platformSchedulePassed": true,
+  "qualificationComplete": false,
+  "remaining": [
+    "editor-fix-candidates",
+    "clean-machine-newcomer-walkthrough",
+    "final-aggregate-review"
+  ],
+  "rawReceipts": {
+    "windows": {
+      "path": "windows/packaged-observation/observation.json",
+      "sha256": "sha256:679f9b728ca597f670276e2318eede2118bacb044e7f969d1956efa58efcf43a",
+      "artifactId": 10888256580,
+      "seconds": 1673.035,
+      "cleanup": "owned-workspaces-and-distribution-purged-author-source-retained"
+    },
+    "recovery": {
+      "path": "windows/packaged-recovery/observation.json",
+      "sha256": "sha256:fc7f109f16b5d853c176d09765113a2a54a03b97d071f84182c1746bf488ee54",
+      "artifactId": 10888256580,
+      "seconds": 338.806,
+      "cleanup": "owned-nodes-and-distro-stopped-private-original-intents-retained"
+    },
+    "linux": {
+      "path": "linux/packaged-linux/observation.json",
+      "sha256": "sha256:1123e02d7956e763910c05cf843da0ca439a3149a66f46e8627bd3bc30094a24",
+      "artifactId": 10889790596,
+      "seconds": 2626.468,
+      "cleanup": "both-owned-node-workspaces-purged-author-source-retained"
+    },
+    "devcontainer": {
+      "path": "linux/packaged-devcontainer/observation.json",
+      "sha256": "sha256:fa4b95939dd6d2f938eb74a89c53b48b5b116e43831459761f939a09dea60304",
+      "artifactId": 10889790596,
+      "seconds": 1760.743,
+      "cleanup": "owned-remote-node-reaped-workspace-purged-client-state-retained"
+    }
+  },
+  "entries": {
+    "windows-wsl2": {
+      "host": {
+        "architecture": "AMD64",
+        "osVersion": "10.0.26100"
+      },
+      "languages": {
+        "c": {
+          "runtimeSource": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+          "component": "sha256:8046963c9d6da12318255f3c7afd2ddf73eeb7938835c1bb151b0af696aff426",
+          "package": "sha256:4e6a0abbe19e29f56891cf159e308f9c7e80a07c94dd88b57f613a240ede96a3",
+          "toolsBundle": "66fb6739ecaceaaa12931b5bd12e711e662b5ad8c84780ca7f5a50ea6ce4b218",
+          "toolsInventory": "sha256:4a8352dc4a4fec599f7cafbf246feb1b5839caa2d5bd4c649816c43763e71483",
+          "template": {
+            "ownerIssue": 545,
+            "revision": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+            "sha256": "sha256:e0efa5b3f16a6caea02e0af728ce7ff7f572c54319084aca1d3016fae8bab66a"
+          },
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "source": "sha256:e0efa5b3f16a6caea02e0af728ce7ff7f572c54319084aca1d3016fae8bab66a",
+          "node": {
+            "environment": "node",
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error"
+            }
+          },
+          "kernel": "6.18.33.2-microsoft-standard-WSL2",
+          "privateCredentialMode": 384,
+          "sourceCredentialExcluded": true,
+          "purged": true,
+          "portable": {
+            "environment": "portable",
+            "cleanup": "owned-native-host-reaped",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error"
+            }
+          }
+        },
+        "dotnet": {
+          "runtimeSource": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+          "component": "sha256:b04b2e986acc856d0516ea0f28b4bbdb25d328254d2e633b6959453a4ca8a5bd",
+          "package": "sha256:9037b683b2a101fe38eb4c4907acc9caee1ed7f4bd6b6c7150fdbfe132b049be",
+          "toolsBundle": "7d42d25c1dc3316fe832ca3f1035ef0a24d02e0e17ad48f25324ba967a351a0e",
+          "toolsInventory": "sha256:8d2ccb13498815634a7765895daf08f8467d389a065972d8830b613c079f20c3",
+          "template": {
+            "ownerIssue": 549,
+            "revision": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+            "sha256": "sha256:5ae68b92fb1d90577c7ea5f57753dc688a48a286b9f5ed8e28362c0a330ccf45"
+          },
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "source": "sha256:5ae68b92fb1d90577c7ea5f57753dc688a48a286b9f5ed8e28362c0a330ccf45",
+          "node": {
+            "environment": "node",
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error",
+              "greeting-runtime-denied": "platform-failure",
+              "greeting-after-runtime-denial": "success"
+            }
+          },
+          "kernel": "6.18.33.2-microsoft-standard-WSL2",
+          "privateCredentialMode": 384,
+          "sourceCredentialExcluded": true,
+          "purged": true,
+          "portable": {
+            "environment": "portable",
+            "cleanup": "owned-native-host-reaped",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error",
+              "greeting-runtime-denied": "platform-failure",
+              "greeting-after-runtime-denial": "success"
+            }
+          }
+        },
+        "go": {
+          "runtimeSource": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+          "component": "sha256:794df80c07c21515f40878fa3cb499120c9a8231c093897f646fa936dbdca0e5",
+          "package": "sha256:050d1258246a776ac3eb52ed8aa1e9731d68f61f5a7e757c5aa830988cab4cd1",
+          "toolsBundle": "1cfaf201aec4a3eeb68a3e06f2ef38f78150090795de1e4558de53363b27db11",
+          "toolsInventory": "sha256:caf7de77ae81af9760c1c0d1d0b6ded148baa58948f6974dba42eb9c2cec9577",
+          "template": {
+            "ownerIssue": 547,
+            "revision": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+            "sha256": "sha256:8ff693d330536656037b03617608eca39c5cabb9c5772f1d05aab9690315b924"
+          },
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "source": "sha256:8ff693d330536656037b03617608eca39c5cabb9c5772f1d05aab9690315b924",
+          "node": {
+            "environment": "node",
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error",
+              "greeting-runtime-denied": "platform-failure",
+              "greeting-after-runtime-denial": "success"
+            }
+          },
+          "kernel": "6.18.33.2-microsoft-standard-WSL2",
+          "privateCredentialMode": 384,
+          "sourceCredentialExcluded": true,
+          "purged": true,
+          "portable": {
+            "environment": "portable",
+            "cleanup": "owned-native-host-reaped",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error",
+              "greeting-runtime-denied": "platform-failure",
+              "greeting-after-runtime-denial": "success"
+            }
+          }
+        },
+        "java": {
+          "runtimeSource": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+          "component": "sha256:c84b7840a9f3d134d3dc3e22347a1f5c45ff997c65d34c21e02096a0755b1855",
+          "package": "sha256:2a8a08d82bb010eedc324e43fda856e79bae798a62a4ed3f6a28e0d1ede22bbf",
+          "toolsBundle": "167114e6011bf13195a5fccae4cd10e3e6d6393d573fef9e4f6661015143fcbe",
+          "toolsInventory": "sha256:46c85f681c3d6b8d2298382c1cdcacf37c0467dbfe0b416a7303e826110af656",
+          "template": {
+            "ownerIssue": 548,
+            "revision": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+            "sha256": "sha256:29371bb04b9c3ebc5f2d521998fc6825e587d3d2b76fb00281de56a7063cfa93"
+          },
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "source": "sha256:29371bb04b9c3ebc5f2d521998fc6825e587d3d2b76fb00281de56a7063cfa93",
+          "node": {
+            "environment": "node",
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error",
+              "greeting-runtime-denied": "platform-failure",
+              "greeting-after-runtime-denial": "success"
+            }
+          },
+          "kernel": "6.18.33.2-microsoft-standard-WSL2",
+          "privateCredentialMode": 384,
+          "sourceCredentialExcluded": true,
+          "purged": true,
+          "portable": {
+            "environment": "portable",
+            "cleanup": "owned-native-host-reaped",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error",
+              "greeting-runtime-denied": "platform-failure",
+              "greeting-after-runtime-denial": "success"
+            }
+          }
+        },
+        "rust": {
+          "runtimeSource": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+          "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+          "package": "sha256:7d4d8f4123b58007b0e2f0e37039de29b3c2f717eed963839c6b25b7897541a5",
+          "toolsBundle": "24651dce6026327dc3441e91e4342c1339dfbdc488524fdb5085126198fe10c9",
+          "toolsInventory": "sha256:69d899cef7d97a9fd985c04532496c5a26c7d8a2cdf5d9e3fe5c3db5684b15ec",
+          "template": {
+            "ownerIssue": 544,
+            "revision": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+            "sha256": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+          },
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "source": "sha256:4365fc6bb999874ed5a13943fd243f8fa354ffadad0180fb28a5bd079e696f9f",
+          "node": {
+            "environment": "node",
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error"
+            }
+          },
+          "kernel": "6.18.33.2-microsoft-standard-WSL2",
+          "privateCredentialMode": 384,
+          "sourceCredentialExcluded": true,
+          "purged": true,
+          "portable": {
+            "environment": "portable",
+            "cleanup": "owned-native-host-reaped",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error"
+            }
+          }
+        },
+        "typescript": {
+          "runtimeSource": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+          "component": "sha256:e8d2de548fbf144da004824a76f9df7b2c05309f98ec7873d47a321c54192b45",
+          "package": "sha256:1248eb85edac58ce9b32b65289eb41f062a52bf49846e84458e923fa5f4997ca",
+          "toolsBundle": "fca80c9e36aca712edd217064e64a0625f30e6bedb661045074939968ab66dda",
+          "toolsInventory": "sha256:8d96eeac67fdbcb31a9aac20c1358f4681c4da0bc50d3625e0b639ac82754b9f",
+          "template": {
+            "ownerIssue": 546,
+            "revision": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+            "sha256": "sha256:98d0300ce55d3ffa526320b1a88b062c75f9a01d4a5d58e6122620a53aa57b88"
+          },
+          "profile": "local-experimental-v1",
+          "admission": "enforced",
+          "source": "sha256:98d0300ce55d3ffa526320b1a88b062c75f9a01d4a5d58e6122620a53aa57b88",
+          "node": {
+            "environment": "node",
+            "cleanup": "invocation-results-received-node-retained",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error"
+            }
+          },
+          "kernel": "6.18.33.2-microsoft-standard-WSL2",
+          "privateCredentialMode": 384,
+          "sourceCredentialExcluded": true,
+          "purged": true,
+          "portable": {
+            "environment": "portable",
+            "cleanup": "owned-native-host-reaped",
+            "cases": {
+              "greeting-0": "success",
+              "greeting-1": "success",
+              "greeting-2": "declared-error"
+            }
+          }
+        }
+      },
+      "watch": {
+        "passed": true,
+        "inflightOriginalRevisionRetained": true,
+        "invokeCalls": 1,
+        "cancelCalls": 1,
+        "supersededChildReaped": true,
+        "latestValue": 501,
+        "retention": {
+          "attempts": 4,
+          "maximumAttempts": 4,
+          "ownedBytes": 2077085858
+        },
+        "revokedRestore": {
+          "controllerDeploymentUnchanged": true,
+          "serverDeploymentUnchanged": true,
+          "restoreCalls": 1,
+          "revokeCalls": 1,
+          "statePreconditionRefreshedForRetry": false
+        },
+        "focusedFailureVisible": true,
+        "automaticRollback": false,
+        "finalDownReaped": true
+      },
+      "recovery": {
+        "operations": [
+          "deployment",
+          "invoke",
+          "release"
+        ],
+        "effectReplay": false,
+        "newMutationsBlockedUntilRecovery": true
+      },
+      "sourceTransfer": {
+        "bareLfLines": 0,
+        "bytes": 1070,
+        "crlfLines": 37,
+        "sha256": "sha256:2fd5b3b8587f71027a1f3aced293100e2d35e46b5243679ce951d32b84cf2edf"
+      },
+      "bundleRejections": {
+        "rejectedCandidateBecameUsable": false,
+        "tamperedArchiveRejected": true,
+        "target": "windows-x86_64",
+        "wrongPublisherRejected": true,
+        "wrongTargetRejected": true
+      },
+      "ownedWslRestart": true,
+      "physicalHostSuspended": false,
+      "cleanup": "owned-workspaces-and-distribution-purged-author-source-retained",
+      "separateLinuxUsersAndOtherWorkspaceRetained": true
+    },
+    "windows-portable": {
+      "host": {
+        "architecture": "AMD64",
+        "osVersion": "10.0.26100"
+      },
+      "execution": "native-windows-after-owned-wsl-distribution-purge",
+      "languages": {
+        "c": {
+          "environment": "portable",
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": "success",
+            "greeting-1": "success",
+            "greeting-2": "declared-error"
+          }
+        },
+        "dotnet": {
+          "environment": "portable",
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": "success",
+            "greeting-1": "success",
+            "greeting-2": "declared-error",
+            "greeting-runtime-denied": "platform-failure",
+            "greeting-after-runtime-denial": "success"
+          }
+        },
+        "go": {
+          "environment": "portable",
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": "success",
+            "greeting-1": "success",
+            "greeting-2": "declared-error",
+            "greeting-runtime-denied": "platform-failure",
+            "greeting-after-runtime-denial": "success"
+          }
+        },
+        "java": {
+          "environment": "portable",
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": "success",
+            "greeting-1": "success",
+            "greeting-2": "declared-error",
+            "greeting-runtime-denied": "platform-failure",
+            "greeting-after-runtime-denial": "success"
+          }
+        },
+        "rust": {
+          "environment": "portable",
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": "success",
+            "greeting-1": "success",
+            "greeting-2": "declared-error"
+          }
+        },
+        "typescript": {
+          "environment": "portable",
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "greeting-0": "success",
+            "greeting-1": "success",
+            "greeting-2": "declared-error"
+          }
+        }
+      },
+      "closedProfile": {
+        "clock": {
+          "environment": "portable",
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "clock-zero-cold": "success",
+            "clock-zero-warm": "success",
+            "clock-zero-denied": "platform-failure",
+            "clock-zero-fresh": "success"
+          }
+        },
+        "failure": {
+          "environment": "portable",
+          "cleanup": "owned-native-host-reaped",
+          "cases": {
+            "cold-fresh": "success",
+            "warm-fresh": "success",
+            "declared": "declared-error",
+            "trap": "platform-failure",
+            "after-trap": "success",
+            "fuel": "platform-failure",
+            "after-fuel": "success",
+            "memory": "platform-failure",
+            "after-memory": "success",
+            "deadline": "platform-failure",
+            "after-deadline": "success",
+            "after-cancel": "success"
+          }
+        }
+      },
+      "prestartCancellation": {
+        "environment": "portable",
+        "cleanup": "owned-native-host-reaped",
+        "cases": {
+          "native-cancel-before-start": "platform-failure"
+        }
+      },
+      "productionNode": false,
+      "linuxIsolationQualified": false,
+      "requiredRunningNodeCancellationRejectedBeforeExecution": true
+    },
+    "linux-direct": {
+      "host": {
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+        "architecture": "x86_64",
+        "kernel": "6.17.0-1022-azure"
+      },
+      "application": {
+        "runtimeSource": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+        "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "package": "sha256:7d4d8f4123b58007b0e2f0e37039de29b3c2f717eed963839c6b25b7897541a5",
+        "toolsBundle": "24651dce6026327dc3441e91e4342c1339dfbdc488524fdb5085126198fe10c9",
+        "toolsInventory": "sha256:69d899cef7d97a9fd985c04532496c5a26c7d8a2cdf5d9e3fe5c3db5684b15ec",
+        "template": {
+          "ownerIssue": 544,
+          "revision": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+          "sha256": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+        },
+        "profile": "local-experimental-v1",
+        "admission": "enforced",
+        "source": "sha256:4365fc6bb999874ed5a13943fd243f8fa354ffadad0180fb28a5bd079e696f9f",
+        "node": {
+          "environment": "node",
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "greeting-0": "success",
+            "greeting-1": "success",
+            "greeting-2": "declared-error"
+          }
+        },
+        "kernel": "6.17.0-1022-azure",
+        "privateCredentialMode": 384,
+        "sourceCredentialExcluded": true,
+        "purged": true
+      },
+      "watch": {
+        "passed": true,
+        "inflightOriginalRevisionRetained": true,
+        "invokeCalls": 1,
+        "cancelCalls": 1,
+        "supersededChildReaped": true,
+        "latestValue": 501,
+        "retention": {
+          "attempts": 4,
+          "maximumAttempts": 4,
+          "ownedBytes": 2076988129
+        },
+        "revokedRestore": {
+          "controllerDeploymentUnchanged": true,
+          "serverDeploymentUnchanged": true,
+          "restoreCalls": 1,
+          "revokeCalls": 1,
+          "statePreconditionRefreshedForRetry": false
+        },
+        "focusedFailureVisible": true,
+        "automaticRollback": false,
+        "finalDownReaped": true
+      },
+      "recovery": {
+        "operations": [
+          "deployment",
+          "invoke",
+          "release"
+        ],
+        "effectReplay": false,
+        "newMutationsBlockedUntilRecovery": true
+      },
+      "closedProfile": {
+        "clock": {
+          "environment": "node",
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "clock-zero-cold": "success",
+            "clock-zero-warm": "success",
+            "clock-zero-denied": "platform-failure",
+            "clock-zero-fresh": "success"
+          }
+        },
+        "failure": {
+          "environment": "node",
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "cold-fresh": "success",
+            "warm-fresh": "success",
+            "declared": "declared-error",
+            "trap": "platform-failure",
+            "after-trap": "success",
+            "fuel": "platform-failure",
+            "after-fuel": "success",
+            "memory": "platform-failure",
+            "after-memory": "success",
+            "deadline": "platform-failure",
+            "after-deadline": "success",
+            "running-cancel": "platform-failure",
+            "after-cancel": "success"
+          }
+        }
+      },
+      "otherOwnerHomeDenied": true,
+      "bundleRejections": {
+        "rejectedCandidateBecameUsable": false,
+        "tamperedArchiveRejected": true,
+        "target": "linux-x86_64",
+        "wrongPublisherRejected": true,
+        "wrongTargetRejected": true
+      },
+      "cleanup": "both-owned-node-workspaces-purged-author-source-retained"
+    },
+    "linux-ssh": {
+      "host": {
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+        "architecture": "x86_64",
+        "kernel": "6.17.0-1022-azure"
+      },
+      "application": {
+        "runtimeSource": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+        "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "package": "sha256:7d4d8f4123b58007b0e2f0e37039de29b3c2f717eed963839c6b25b7897541a5",
+        "toolsBundle": "24651dce6026327dc3441e91e4342c1339dfbdc488524fdb5085126198fe10c9",
+        "toolsInventory": "sha256:69d899cef7d97a9fd985c04532496c5a26c7d8a2cdf5d9e3fe5c3db5684b15ec",
+        "template": {
+          "ownerIssue": 544,
+          "revision": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+          "sha256": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+        },
+        "profile": "local-experimental-v1",
+        "admission": "enforced",
+        "source": "sha256:4365fc6bb999874ed5a13943fd243f8fa354ffadad0180fb28a5bd079e696f9f",
+        "node": {
+          "environment": "node",
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "greeting-0": "success",
+            "greeting-1": "success",
+            "greeting-2": "declared-error"
+          }
+        },
+        "kernel": "6.17.0-1022-azure",
+        "privateCredentialMode": 384,
+        "sourceCredentialExcluded": true,
+        "purged": true
+      },
+      "watch": {
+        "passed": true,
+        "inflightOriginalRevisionRetained": true,
+        "invokeCalls": 1,
+        "cancelCalls": 1,
+        "supersededChildReaped": true,
+        "latestValue": 501,
+        "retention": {
+          "attempts": 4,
+          "maximumAttempts": 4,
+          "ownedBytes": 2077087846
+        },
+        "revokedRestore": {
+          "controllerDeploymentUnchanged": true,
+          "serverDeploymentUnchanged": true,
+          "restoreCalls": 1,
+          "revokeCalls": 1,
+          "statePreconditionRefreshedForRetry": false
+        },
+        "focusedFailureVisible": true,
+        "automaticRollback": false,
+        "finalDownReaped": true
+      },
+      "recovery": {
+        "operations": [
+          "deployment",
+          "invoke",
+          "release"
+        ],
+        "effectReplay": false,
+        "newMutationsBlockedUntilRecovery": true
+      },
+      "closedProfile": {
+        "clock": {
+          "environment": "node",
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "clock-zero-cold": "success",
+            "clock-zero-warm": "success",
+            "clock-zero-denied": "platform-failure",
+            "clock-zero-fresh": "success"
+          }
+        },
+        "failure": {
+          "environment": "node",
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "cold-fresh": "success",
+            "warm-fresh": "success",
+            "declared": "declared-error",
+            "trap": "platform-failure",
+            "after-trap": "success",
+            "fuel": "platform-failure",
+            "after-fuel": "success",
+            "memory": "platform-failure",
+            "after-memory": "success",
+            "deadline": "platform-failure",
+            "after-deadline": "success",
+            "running-cancel": "platform-failure",
+            "after-cancel": "success"
+          }
+        }
+      },
+      "otherOwnerHomeDenied": true,
+      "bundleRejections": {
+        "rejectedCandidateBecameUsable": false,
+        "tamperedArchiveRejected": true,
+        "target": "linux-x86_64",
+        "wrongPublisherRejected": true,
+        "wrongTargetRejected": true
+      },
+      "cleanup": "both-owned-node-workspaces-purged-author-source-retained"
+    },
+    "devcontainer": {
+      "host": {
+        "architecture": "x86_64",
+        "kernel": "6.17.0-1022-azure",
+        "osVersion": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+        "uid": 10001
+      },
+      "application": {
+        "runtimeSource": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+        "component": "sha256:aeaf6dc2f564bfbcdb1cea6102d224a6f8adb53b400ed872d869d23c2533f0a5",
+        "package": "sha256:7d4d8f4123b58007b0e2f0e37039de29b3c2f717eed963839c6b25b7897541a5",
+        "toolsBundle": "24651dce6026327dc3441e91e4342c1339dfbdc488524fdb5085126198fe10c9",
+        "toolsInventory": "sha256:69d899cef7d97a9fd985c04532496c5a26c7d8a2cdf5d9e3fe5c3db5684b15ec",
+        "template": {
+          "ownerIssue": 544,
+          "revision": "0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+          "sha256": "sha256:0113547bc70f06f1b6eb353da30b7bb1b9d86acb8a91f75367e19fbf6837137c"
+        },
+        "profile": "local-experimental-v1",
+        "admission": "enforced",
+        "source": "sha256:4365fc6bb999874ed5a13943fd243f8fa354ffadad0180fb28a5bd079e696f9f",
+        "node": {
+          "environment": "node",
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "greeting-0": "success",
+            "greeting-1": "success",
+            "greeting-2": "declared-error"
+          }
+        },
+        "kernel": "6.17.0-1022-azure",
+        "privateCredentialMode": 384,
+        "sourceCredentialExcluded": true,
+        "purged": true
+      },
+      "watch": {
+        "passed": true,
+        "inflightOriginalRevisionRetained": true,
+        "invokeCalls": 1,
+        "cancelCalls": 1,
+        "supersededChildReaped": true,
+        "latestValue": 501,
+        "retention": {
+          "attempts": 4,
+          "maximumAttempts": 4,
+          "ownedBytes": 1557900664
+        },
+        "revokedRestore": {
+          "controllerDeploymentUnchanged": true,
+          "serverDeploymentUnchanged": true,
+          "restoreCalls": 1,
+          "revokeCalls": 1,
+          "statePreconditionRefreshedForRetry": false
+        },
+        "focusedFailureVisible": true,
+        "automaticRollback": false,
+        "finalDownReaped": true
+      },
+      "recovery": {
+        "operations": [
+          "deployment",
+          "invoke",
+          "release"
+        ],
+        "effectReplay": false,
+        "newMutationsBlockedUntilRecovery": true
+      },
+      "closedProfile": {
+        "clock": {
+          "environment": "node",
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "clock-zero-cold": "success",
+            "clock-zero-warm": "success",
+            "clock-zero-denied": "platform-failure",
+            "clock-zero-fresh": "success"
+          }
+        },
+        "failure": {
+          "environment": "node",
+          "cleanup": "invocation-results-received-node-retained",
+          "cases": {
+            "cold-fresh": "success",
+            "warm-fresh": "success",
+            "declared": "declared-error",
+            "trap": "platform-failure",
+            "after-trap": "success",
+            "fuel": "platform-failure",
+            "after-fuel": "success",
+            "memory": "platform-failure",
+            "after-memory": "success",
+            "deadline": "platform-failure",
+            "after-deadline": "success",
+            "running-cancel": "platform-failure",
+            "after-cancel": "success"
+          }
+        }
+      },
+      "separateSshPeerAndWorkspaceIsolation": true,
+      "cleanup": "owned-remote-node-reaped-workspace-purged-client-state-retained"
+    }
+  },
+  "dedicatedRecovery": {
+    "passed": true,
+    "expiredOriginalRetained": true,
+    "concurrentActorAndControllerUnchanged": true,
+    "cleanup": "owned-nodes-and-distro-stopped-private-original-intents-retained",
+    "privateOriginalIntentsRetained": true
+  },
+  "sourceCapabilityAndLifecycleCampaign": [
+    {
+      "artifact": "developer-blob-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:34b5a5046f16663109a2956ce4438aa24bce39b4f7009a41384848b546bd3fb6",
+      "schemaVersion": "latent.dev.blob-node-probe.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped-live-provider-counters-zero-private-workspace-purged",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-clock-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:b656a968d915a71122aecf548ef285389efd57940cac1ea74ebe28e12873864c",
+      "schemaVersion": "latent.dev.clock-node-portable-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-and-portable-processes-reaped",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-event-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:fce23a6a8efd98adcba52e64fb8c8fd37fb01e9701508fa850e327398a82bb5e",
+      "schemaVersion": "latent.dev.event-node-probe.v1",
+      "passed": true,
+      "cleanup": "owned-processes-peer-and-private-material-purged",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-failure-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:a317039659b090990f0336ed03bb7108f2162c6a07ba3dc7234bf20aa9377fbd",
+      "schemaVersion": "latent.dev.failure-node-portable-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-and-portable-processes-reaped",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-http-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:d32d2ef437132c01445cf43f6152f204c105dcd63f50251b0fc5e653ef0e1b6b",
+      "schemaVersion": "latent.dev.http-node-portable-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-peer-and-portable-processes-reaped",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-local-service-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:24a9a4a29f4d2491421cb34b75adcc3bc54c35221ebc47a4d9d6a3e275ef808c",
+      "schemaVersion": "latent.dev.local-service-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-and-client-processes-reaped-private-pair-workspace-purged",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-metric-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:a3c9171d2fddae37ccf25bc94e3e272635844fbe6d9901291ed1676338c9d6a4",
+      "schemaVersion": "latent.dev.metric-node-portable-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-and-native-processes-reaped-exporter-joined-queue-drained",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-recovery-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:f3422586a8f8a9696f23778526c8a1512718c0e76a369cda62036a8395fb48a1",
+      "schemaVersion": "latent.dev.recovery-source-probe.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped-private-state-retained",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-secret-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:9b824307dfd19436400937216da1ea82db7bd232d310eafb611b7dc69bfa60dd",
+      "schemaVersion": "latent.dev.secret-node-probe.v1",
+      "passed": true,
+      "cleanup": "owned-processes-reaped-secret-generations-released-private-workspace-purged",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-watch-fixtures-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:6741af41f6e2f7b106f72d57389b9024d62b28df49eca677d4247b88bf5dd8a0",
+      "schemaVersion": "latent.dev.watch-source-probe.v1",
+      "passed": true,
+      "cleanup": "owned-node-invoke-and-recipe-children-reaped-private-state-retained",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    },
+    {
+      "artifact": "developer-workspace-isolation-0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3",
+      "observationSha256": "sha256:63883526f57c0b26d44147bdc1cef79083dc6b2a198b52a81c7b80f78d167766",
+      "schemaVersion": "latent.dev.workspace-isolation-source-probe.v1",
+      "passed": true,
+      "cleanup": "owned-nodes-reaped-private-original-intent-and-workspaces-retained",
+      "publisherAuthenticatedInstallation": false,
+      "cleanHost": false
+    }
+  ],
+  "excluded": [
+    "macOS",
+    "Lima",
+    "ARM64",
+    "public-release-authority",
+    "production-Windows-node",
+    "physical-host-sleep-qualification"
+  ],
+  "retainedEarlierFailures": [
+    "packaged-candidate-attempt-observation.json",
+    "packaged-monitor-candidate-attempt-observation.json",
+    "candidate-source-campaign-observation.json"
+  ]
+}

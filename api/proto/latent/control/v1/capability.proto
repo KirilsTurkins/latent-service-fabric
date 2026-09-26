@@ -10,17 +10,26 @@ message CapabilityDescriptor {
   string provider = 3;
   repeated string operations = 4;
   map<string, string> attributes = 5;
+  CapabilityBindingInspection inspection = 6;
 }
 
 message ListCapabilitiesRequest {
   optional string contract_prefix = 1;
   optional string provider = 2;
   PageRequest page = 3;
+  // Required in the closed Phase 3 profile. Scope comes from authentication.
+  string deployment_id = 4;
+  // Shared counters require the trusted node-operator claim.
+  bool include_node_usage = 5;
 }
 
 message ListCapabilitiesResponse {
   repeated CapabilityDescriptor capabilities = 1;
   PageResponse page = 2;
+  CapabilityInspectionRevision revision = 3;
+  CapabilityResourceUsage tenant_usage = 4;
+  CapabilityResourceUsage node_usage = 5;
+  string state = 6;
 }
 
 message ExplainCapabilityGrantRequest {
@@ -29,6 +38,9 @@ message ExplainCapabilityGrantRequest {
   string principal = 3;
   string operation = 4;
   map<string, string> attributes = 5;
+  // Legacy principal/attributes must be empty. No claims are accepted.
+  string resource_document = 6;
+  CapabilityInspectionSubject hypothetical_subject = 7;
 }
 
 message ExplainCapabilityGrantResponse {
@@ -36,6 +48,54 @@ message ExplainCapabilityGrantResponse {
   repeated string reasons = 2;
   map<string, string> obligations = 3;
   string policy_digest = 4;
+  CapabilityInspectionRevision revision = 5;
+  CapabilityBindingInspection inspection = 6;
+  bool requires_audit = 7;
+  CapabilityInspectionCeiling ceiling = 8;
+}
+
+message CapabilityInspectionRevision {
+  string deployment_id = 1;
+  string revision_id = 2;
+  string component_digest = 3;
+  optional string publication_id = 4;
+  uint64 route_generation = 5;
+  uint64 catalog_transaction = 6;
+}
+message CapabilityInspectionPolicy {
+  string id = 1;
+  uint64 revision = 2;
+  string digest = 3;
+}
+message CapabilityBindingInspection {
+  optional string definition_digest = 1;
+  CapabilityInspectionPolicy provider_binding = 2;
+  repeated CapabilityInspectionPolicy policies = 3;
+  string provider_profile = 4;
+  string provider_configuration_digest = 5;
+  uint64 provider_configuration_epoch = 6;
+  // Describes sampled currentness, never permission to execute.
+  string state = 7;
+}
+message CapabilityInspectionSubject {
+  // Closed values: user, service, node, trigger, administrator.
+  string kind = 1;
+  string subject = 2;
+  optional string service = 3;
+}
+message CapabilityInspectionCeiling {
+  uint32 operations = 1;
+  uint64 input_bytes = 2;
+  uint64 output_bytes = 3;
+  uint64 wall_time_millis = 4;
+}
+message CapabilityResourceUsage {
+  // tenant or node; no identities/secret references occur in metric keys.
+  string scope = 1;
+  // Fixed documented keys, sampled from actual resource owners; not RSS.
+  map<string, uint64> counters = 2;
+  // Missing owners are explicit, never represented by fabricated zeroes.
+  repeated string unavailable = 3;
 }
 
 service CapabilityService {

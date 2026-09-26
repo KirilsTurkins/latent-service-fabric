@@ -1,7 +1,9 @@
 //! One explicitly scoped OCI endpoint with bounded transfer and retention owners.
+mod auth;
 mod body;
 mod cache;
 mod config;
+mod network;
 mod pull;
 mod push;
 mod reference;
@@ -10,8 +12,15 @@ mod transport;
 mod upload_worker;
 
 use crate::{OciDescriptor, OciManifestBytes, OciPushRequest, OciReference, OciRegistry};
-pub use config::{RegistryConfig, RegistryCredentials, RegistryLimits};
+pub use auth::BearerUsage;
+pub use config::{
+    BearerIdentity, RegistryActions, RegistryConfig, RegistryCredentials, RegistryLimits,
+};
 use latent_core::{BoxFuture, PackageDigest, PlatformError, PlatformErrorCode};
+pub use network::{
+    RegistryAddressPolicy, RegistryDestination, RegistryNetworkPolicy, RegistryNetworkUsage,
+    RegistryResolution,
+};
 pub use pull::OciPulledPackage;
 use std::sync::Arc;
 use tokio::time::Instant;
@@ -30,7 +39,8 @@ pub(crate) fn corrupt(reason: &'static str) -> PlatformError {
 }
 
 /// One shared client/worker for one configured origin and repository. Construction
-/// requires a Tokio runtime; no DNS lookup, token flow or guest network authority.
+/// requires a Tokio runtime. Hostname destinations remain explicitly resolved;
+/// optional Bearer challenge reads use only an operator-approved HTTPS token realm.
 #[derive(Clone)]
 pub struct HttpOciRegistry {
     pub(crate) transport: Arc<Transport>,
@@ -40,7 +50,22 @@ pub struct HttpOciRegistry {
 
 impl HttpOciRegistry {
     pub fn new(config: RegistryConfig) -> Result<Self> {
-        Self::configured(config, None)
+        Self::configured(config, None, None)
+    }
+
+    pub fn new_with_network(
+        config: RegistryConfig,
+        network: RegistryNetworkPolicy,
+    ) -> Result<Self> {
+        Self::configured(config, None, Some(network))
+    }
+
+    pub fn new_with_network_and_cache(
+        config: RegistryConfig,
+        network: RegistryNetworkPolicy,
+        cache: Arc<latent_artifacts::RawArtifactCache>,
+    ) -> Result<Self> {
+        Self::configured(config, Some(cache), Some(network))
     }
 
     /// Adds replaceable raw blob storage. Every package pull still authorizes
@@ -49,16 +74,20 @@ impl HttpOciRegistry {
         config: RegistryConfig,
         cache: Arc<latent_artifacts::RawArtifactCache>,
     ) -> Result<Self> {
-        Self::configured(config, Some(cache))
+        Self::configured(config, Some(cache), None)
     }
 
     fn configured(
         config: RegistryConfig,
         cache: Option<Arc<latent_artifacts::RawArtifactCache>>,
+        network: Option<RegistryNetworkPolicy>,
     ) -> Result<Self> {
         let handle = tokio::runtime::Handle::try_current()
             .map_err(|_| invalid("oci-tokio-runtime-required"))?;
-        let transport = Arc::new(Transport::new(config)?);
+        let transport = Arc::new(match network {
+            Some(network) => Transport::new_with_network(config, Some(network))?,
+            None => Transport::new(config)?,
+        });
         let uploads = upload_worker::UploadWorker::new(transport.clone(), &handle);
         Ok(Self {
             transport,
@@ -69,6 +98,16 @@ impl HttpOciRegistry {
     #[must_use]
     pub fn usage(&self) -> RegistryUsage {
         self.transport.usage()
+    }
+
+    pub fn rotate_bearer_credentials(
+        &self,
+        identity: BearerIdentity,
+        username: &str,
+        password: &str,
+    ) -> Result<()> {
+        self.transport
+            .rotate_bearer_credentials(identity, username, password)
     }
 
     /// Aggregate storage/read ownership across every client sharing this cache.

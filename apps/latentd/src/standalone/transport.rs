@@ -41,9 +41,12 @@ impl Transport {
         let routes = tonic::service::Routes::new(invocation.into_server())
             .add_service(management.clone().release_server())
             .add_service(management.clone().deployment_server())
+            .add_service(management.clone().trigger_server())
             .add_service(management.clone().route_server())
             .add_service(management.clone().audit_server())
             .add_service(management.clone().rollout_server())
+            .add_service(management.clone().policy_server())
+            .add_service(management.clone().capability_server())
             .add_service(management.node_server())
             .prepare();
         Self::start_routes(config, routes, clock, control_runtime).await
@@ -74,7 +77,14 @@ impl Transport {
             control_runtime,
         };
         let server = tonic::transport::Server::builder()
-            .timeout(shared.config.request_timeout)
+            .timeout(shared.config.request_timeout.max(Duration::from_millis(
+                latent_wire::management::MAX_WEB_PREPARATION_WAIT_MILLIS,
+            )))
+            // Dispatch denies new RPCs after the accept-time age limit. This
+            // independent driver timeout also retires a backpressured HTTP/2
+            // connection that has stopped polling its underlying socket.
+            .max_connection_age(shared.config.maximum_connection_age)
+            .max_connection_age_grace(shared.config.connection_drain_timeout)
             .max_concurrent_streams(Some(shared.config.maximum_streams_per_connection))
             .http2_max_header_list_size(Some(shared.config.maximum_header_bytes))
             .max_frame_size(Some(16_384))

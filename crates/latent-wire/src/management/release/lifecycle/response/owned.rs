@@ -16,8 +16,17 @@ fn policy(value: &ReleasePolicyIdentity) -> proto::ReleasePolicyIdentity {
         digest: value.digest.as_str().to_owned(),
     }
 }
-pub(super) fn record(value: &ReleaseLifecycleRecord) -> proto::ReleaseLifecycleRecord {
+pub(super) fn record(
+    value: &ReleaseLifecycleRecord,
+    publication: Option<&latent_core::PublicationId>,
+) -> proto::ReleaseLifecycleRecord {
     proto::ReleaseLifecycleRecord {
+        publication: publication.map(|id| {
+            super::super::super::selector::owned(
+                id,
+                value.scope.tenant().expect("checked tenant scope"),
+            )
+        }),
         tenant: value
             .scope
             .tenant()
@@ -39,8 +48,17 @@ pub(super) fn record(value: &ReleaseLifecycleRecord) -> proto::ReleaseLifecycleR
             .map(|v| v.as_str().to_owned()),
     }
 }
-pub(super) fn receipt(value: &ReleaseOperationReceipt) -> proto::ReleaseOperationReceipt {
+pub(super) fn receipt(
+    value: &ReleaseOperationReceipt,
+    publication: Option<&latent_core::PublicationId>,
+) -> proto::ReleaseOperationReceipt {
     proto::ReleaseOperationReceipt {
+        publication: publication.map(|id| {
+            super::super::super::selector::owned(
+                id,
+                value.scope.tenant().expect("checked tenant scope"),
+            )
+        }),
         operation_id: value.operation_id.clone(),
         request_digest: value.request_digest.as_str().to_owned(),
         tenant: value
@@ -59,7 +77,10 @@ pub(super) fn receipt(value: &ReleaseOperationReceipt) -> proto::ReleaseOperatio
             .as_ref()
             .map(|v| v.as_str().to_owned()),
         expected_generation: value.expected_generation,
-        record: value.record.as_ref().map(record),
+        record: value
+            .record
+            .as_ref()
+            .map(|value| record(value, publication)),
         policy: value.policy.as_ref().map(policy),
         observed_at_unix_millis: value.observed_at_unix_millis,
     }
