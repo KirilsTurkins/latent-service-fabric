@@ -4,8 +4,9 @@ Issue #566's Windows x86-64 native test scope passed at candidate source
 `0cb5cf08f1d7eb53650c116c93dcdd4c4a4d6bc3`. The
 [retained observation](native-windows-qualification-observation.json) binds the
 authenticated Windows archive, its native executable, the actual clean-host
-schedule and the source-bound provider/differential receipts. Epic #559 still
-requires its other platform, watch/recovery and newcomer/editor gates.
+schedule and the source-bound provider/differential receipts. The
+[final qualification handoff](windows-qualification-handoff.md) supplies the
+replacement package run and the complete platform, recovery and newcomer review.
 
 The executable SHA-256 is
 `c2aa294fef132428229cc417fe73945497610b2d7b829a3aafa079105a9d8453`.
@@ -66,5 +67,5 @@ Candidate approval permits these nonpublishing qualification runs. It is not a
 public release, production-node approval or expansion of the supported security
 profile. The earlier failed attempts remain linked in the observation, including
 the original conductor comparison failure corrected by #596. The successful
-Windows job does not relabel those failures or qualify the still-separate
-devcontainer/newcomer work.
+Windows job does not relabel those failures or the separate devcontainer/newcomer
+observations; their final results are recorded in the combined handoff.

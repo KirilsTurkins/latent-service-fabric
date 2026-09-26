@@ -1,13 +1,17 @@
 # Packaged developer qualification
 
-The [five-platform handoff](packaged-platform-handoff.md) records the complete
-passing packaged schedule and dedicated Windows recovery campaign at approved
-source `0cb5cf08`. It retains the remaining editor/newcomer and final review gates.
+The [final Windows developer handoff](windows-qualification-handoff.md) records
+all five passing packaged entries, dedicated Windows recovery and the reviewed
+clean-machine newcomer walkthrough at approved source `8b6dc33f`. Its combined
+report passes the existing qualification schema validator.
+
+The earlier [five-platform handoff](packaged-platform-handoff.md) retains the
+passing schedule at `0cb5cf08` and its original editor/newcomer acceptance boundary.
 
 The [native Windows qualification](native-windows-qualification.md) records the
 completed Windows/WSL and native schedule at approved source `0cb5cf08`, including
 all six languages and the closed failure/clock differential. It supplies #566's
-evidence while the remaining epic gates stay separately tracked.
+earlier evidence; the final handoff records the replacement candidate's native run.
 
 The `Packaged developer qualification` workflow stages a small test conductor on
 a fresh Windows x86-64 runner and a disconnected Linux OS container. The Windows application runs the authenticated native
@@ -253,10 +257,10 @@ the conductor verifies the original container identity, attempts its bounded
 stop, and inspects the result. Private state remains until runner teardown;
 an unconfirmed container stop is reported as unconfirmed.
 
-The receipt deliberately keeps `qualificationComplete: false` even when an
-individual schedule passes. The full watch, transport-loss, security/failure,
-portable subset, devcontainer and rendered newcomer/editor requirements still
-need their actual packaged evidence before issue #569 or epic #559 can close.
+Each individual receipt deliberately keeps `qualificationComplete: false` even
+when its schedule passes. The [final combined report](windows-qualification-report.json)
+validates every required entry and scenario, and the accompanying handoff reviews
+the separate editor, newcomer, security/failure and portable support boundaries.
 Completed stages and failed attempts are recorded separately below. The successful
 [hosted WSL preflight](hosted-wsl-preflight-observation.json) proves that the
 Windows runner can execute WSL2; it does not supply those missing receipts.
@@ -319,8 +323,8 @@ before creating its client container; the owned SSH peer stopped. The reviewed
 CLI reproduced that rejection locally. The conductor now uses the accepted
 `.devcontainer.json` name beside the generated configuration, preserving relative
 Dockerfile paths, and retains bounded structured CLI failures. Configuration
-parsing succeeded locally; a fresh installed devcontainer campaign is still
-required. Neither correction replaces the original failed receipt.
+parsing succeeded locally; the later installed campaigns in the final handoff
+passed. Neither correction replaces the original failed receipt.
 
 The seventeen fast conductor regressions exercise archive traversal/alias/device/link
 rejection, modified member bytes, output flooding, finite process deadlines and
@@ -366,6 +370,8 @@ supervisor commits its stopped record. The helper now reconciles connection
 reset and broken pipe through the existing durable ownership checks. It sends
 no replacement request and reports uncertainty when the owner is not confirmed
 stopped. Coverage includes status, logs and down; neither a reset nor a generic
-helper error is accepted as proof of cleanup. Replacement authenticated package
-qualification is still required; this source correction does not change the
-original candidate receipt into a pass.
+helper error is accepted as proof of cleanup. Replacement authenticated packages
+passed [run 36236145313](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36236145313),
+including the complete newcomer sequence and its zero-exit watch shutdown.
+The [final handoff](windows-qualification-handoff.md) records that proof without
+changing the original failed candidate receipt into a pass.
