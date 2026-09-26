@@ -9,7 +9,7 @@
     "@angular/compiler-cli": "22.1.6",
     "@angular/core": "22.1.6",
     "@angular/platform-browser": "22.1.6",
-    "@angular/platform-server": "22.1.6",
+    "@angular/platform-server": "22.1.7",
     "@angular/router": "22.1.6",
     "@babel/core": "8.0.5",
     "@bytecodealliance/componentize-js": "0.22.0",
