@@ -1,0 +1,81 @@
+import CodeExample from '@site/src/components/CodeExample';
+
+# Review language-switching examples
+
+This development guide documents the website's code-example controls. The syntax
+fixtures below test the UI only; they do not implement SDK transports. The real
+Rust guest at the end is extracted from its maintained source. Every block is
+bound to this document's build identity, and missing execution evidence remains
+unverified.
+
+## Author a block
+
+Register the scenario and source regions using the [extraction guide](website-examples.md),
+then import the reviewed component and supply literal scenario and region IDs:
+
+```mdx
+import CodeExample from '@site/src/components/CodeExample';
+
+<CodeExample example="guest/rust-echo" region="echo" />
+```
+
+The build supplies the document version. Authors cannot inject a source path,
+remote include or version override. All available variants are static content;
+the reader's browser does not execute the example code or contact LSF.
+
+## Selection and sharing
+
+Client examples share the `lsf-client-language` URL parameter and the namespaced
+`lsf-example-client` Docusaurus preference group. Guest and browser selections use
+`lsf-guest-language` and `lsf-browser-language`, with independent groups. Operating
+system tabs keep their own groups. Valid values are `rust`, `typescript`, `go`,
+`c`, `java` and `csharp`, where registered for the selected target/version.
+
+An unavailable preference displays a labelled supported alternative. It never
+invents a translation or treats Node, browser and guest TypeScript as equivalent.
+Storage is optional; URL selection and ordinary controls still work without it.
+Use left/right arrows and Enter within the tab list. Copy selects only the shown
+snippet. A denied clipboard operation gives a manual-copy instruction.
+
+## Six synthetic language variants
+
+The following source-backed specimens deliberately contain unsafe-looking text
+and Unicode to check escaping, highlighting, copying and overflow. They are not
+product tutorials or executable SDK evidence.
+
+<CodeExample example="client/ui-syntax" region="specimen" />
+
+## Synchronized second block
+
+<CodeExample example="client/ui-syntax" region="specimen" />
+
+## A partial language set
+
+Choose Java above to see the explicit unavailable-language notice here.
+
+<CodeExample example="client/ui-subset" region="specimen" />
+
+## Separate browser group
+
+This synthetic browser-target specimen does not inherit a native-client choice.
+
+<CodeExample example="browser/ui-syntax" region="specimen" />
+
+## Maintained Rust guest
+
+This is the actual [echo guest](../../examples/echo-contract/README.md). Its owner
+documents prerequisites, build, outcome and failure cases. The component label
+does not claim a new execution of that guest.
+
+<CodeExample example="guest/rust-echo" region="echo" />
+
+## Validate and clean up
+
+Use the [pinned website tools](website.md), run `npm run check`, `npm test`, both
+production builds, `npm run browser:install`, then `npm run test:examples` from
+`website/`. The browser runner checks both base paths, actual clipboard access,
+storage/clipboard denial, keyboard relationships, synchronization, safe hydration
+and narrow layouts. It closes its loopback servers and browser contexts and
+writes bounded receipts/screenshots below `.generated/code-example-review/`.
+Generated build/review directories are disposable; source examples stay in
+their owning projects. These checks provide UI evidence, not runtime proof.

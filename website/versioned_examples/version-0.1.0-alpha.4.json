@@ -1,0 +1,1470 @@
+{
+  "schema": 1,
+  "documentVersion": "0.1.0-alpha.4",
+  "documentationRevision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+  "sourceRevision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+  "inputDigest": "e6fec6b4bf90ac619c0023d60cb820c3d1c089a52ce42338093e5e144dc5e6ed",
+  "examples": [
+    {
+      "id": "browser/angular-hydration",
+      "title": "Hydrate the server-rendered Angular application",
+      "audience": "browser-developer",
+      "target": "browser",
+      "regions": [
+        {
+          "id": "hydrate",
+          "variants": [
+            {
+              "language": "typescript",
+              "kind": "maintained",
+              "environment": "browser",
+              "source": {
+                "path": "examples/angular-reference-application/client/main.ts",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "54b76f1ca7657f19aafab655fd01c4a43d5fd200544bed620e5017241d7773fe",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/angular-reference-application/client/main.ts"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_angular_reference_workflow.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/build-and-deliver-angular.mdx"
+              },
+              "verification": {
+                "level": "real-node",
+                "execution": "real-node",
+                "basis": "reviewed-record",
+                "sourceRevision": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+                "evidenceSha256": "1e5ff8a2c6aaa9a8e837db4f5d085a270de063c69176379bf3144d1513aa77c3",
+                "toolchain": "Linux x86_64; Rust 1.97.1; Node.js 24.19.0; Chromium 153.0.8010.52; exact binary/build identities in the receipt",
+                "run": "docs/evidence/angular-guide-2026-09-20.json",
+                "scope": "Complete separately owned enforced-node Angular workflow: real HTTP/browser hydration and navigation, scoped provider calls, cancellation, canary, revocation, same-port restart and rollback."
+              },
+              "snippet": {
+                "code": "import {bootstrapApplication, provideClientHydration} from '@angular/platform-browser';\nimport {provideZonelessChangeDetection} from '@angular/core';\nimport {App} from '../shared/app.js';\n\nconst application = await bootstrapApplication(App, {\n  providers: [provideZonelessChangeDetection(), provideClientHydration()],\n});\nawait application.whenStable();\ndocument.documentElement.dataset['referenceHydrated'] = 'true';\n",
+                "startLine": 2,
+                "endLine": 10,
+                "sha256": "b73f0553f5000984fd4940973bb5b34f89460e280cbcd0ff4aeedc99d6a2b438"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "browser/angular-navigation",
+      "title": "Navigate within the hydrated Angular application",
+      "audience": "browser-developer",
+      "target": "browser",
+      "regions": [
+        {
+          "id": "navigate",
+          "variants": [
+            {
+              "language": "typescript",
+              "kind": "maintained",
+              "environment": "browser",
+              "source": {
+                "path": "examples/angular-reference-application/shared/app.ts",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "d8d135957482cb5e6e1f5c49ba37c8a2772e5afdd3fd75dc2cf00285452a8264",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/angular-reference-application/shared/app.ts"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_angular_reference_workflow.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/build-and-deliver-angular.mdx"
+              },
+              "verification": {
+                "level": "real-node",
+                "execution": "real-node",
+                "basis": "reviewed-record",
+                "sourceRevision": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+                "evidenceSha256": "9b860ac1383cd1388a02f7ccc1be84c3930df6caa18a91ee02cab38185b9e6d9",
+                "toolchain": "Linux x86_64; Rust 1.97.1; Node.js 24.19.0; Chromium 153.0.8010.52; exact binary/build identities in the receipt",
+                "run": "docs/evidence/angular-guide-2026-09-20.json",
+                "scope": "Complete separately owned enforced-node Angular workflow: real HTTP/browser hydration and navigation, scoped provider calls, cancellation, canary, revocation, same-port restart and rollback."
+              },
+              "snippet": {
+                "code": "  navigate(event: MouseEvent, view: 'main' | 'about') {\n    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;\n    event.preventDefault();\n    this.view.set(view);\n    globalThis.history.pushState(null, '', view === 'about' ? '/about' : '/');\n  }\n",
+                "startLine": 54,
+                "endLine": 59,
+                "sha256": "a93eec8c63a8350a89b5529b34f31f6066ff372379d3f3d539c0e8e440a39289"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "browser/ui-syntax",
+      "title": "Synthetic language control specimen",
+      "audience": "browser-developer",
+      "target": "browser",
+      "regions": [
+        {
+          "id": "specimen",
+          "variants": [
+            {
+              "language": "typescript",
+              "kind": "synthetic",
+              "environment": "browser",
+              "source": {
+                "path": "examples/website-ui/specimen.ts",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "74fbb2efb481cb321b9bc0cc341fe910eb41cdfa9170472e471850b94695e2ab",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/website-ui/specimen.ts"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/website/scripts/test-examples.mjs",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/development/website-code-examples.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "const text = '<script>window.__lsfUnsafeExample = true</script> — 東京';\n// Indentation, Unicode and this deliberately long line remain intact when the selected snippet is copied; long code scrolls within its own container.\n",
+                "startLine": 3,
+                "endLine": 4,
+                "sha256": "023f1b266a590a3202bf28b649e9684bbafc3d6832fc0d4a05201b871a1dc038"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "client/provider-cancel",
+      "title": "Recover an interrupted invocation using its original identity",
+      "audience": "client-developer",
+      "target": "client",
+      "regions": [
+        {
+          "id": "cancel",
+          "variants": [
+            {
+              "language": "rust",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/rust/examples/provider_workflow/control.rs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "b604f02f8dc226d45b610e56a24023ecb0c7f8dff9789702e5f8a6e2a958fcd7",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/rust/examples/provider_workflow/control.rs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "            drop(pending);\n            let response = client\n                .cancel(\n                    CancelRequest {\n                        activation_id: identity.clone(),\n                        reason: \"explicit recovery\".into(),\n                    },\n                    options(),\n                )\n                .await\n                .map_err(|_| \"recovery-cancel-rpc\")?;\n            require(\n                matches!(\n                    response.value.disposition,\n                    CancelDisposition::ACCEPTED | CancelDisposition::ALREADY_TERMINAL\n                ),\n                \"recovery-cancel-disposition\",\n            )?;\n",
+                "startLine": 104,
+                "endLine": 121,
+                "sha256": "64d32fd3190438707b905daefa7d03b43b855e6fe2c4ecf104190066e8154d9f"
+              }
+            },
+            {
+              "language": "typescript",
+              "kind": "maintained",
+              "environment": "node",
+              "source": {
+                "path": "sdk/typescript-client/tests/provider-workflow.mjs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "359192d01eb77b90090153772cf2c4145dac77f83281fc87d7d078da631afe38",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/typescript-client/tests/provider-workflow.mjs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "    controller.abort();\n    const result = await pending;\n    check(result.error instanceof RpcError && result.error.failure.category === Category.LocalCancelled\n      && result.error.failure.identity.activationId === activationId && result.error.failure.outcome === Knowledge.Unknown, \"local-cancellation-semantics\");\n    const cancelled = await client.cancel({ activationId, reason: \"explicit recovery\" });\n    check([1, 2].includes(cancelled.value.disposition), \"lost-response-explicit-cancel\");\n",
+                "startLine": 117,
+                "endLine": 122,
+                "sha256": "a16f64ecbcf434c9963c6488517ba8db366ff7129557f2bf580e025ebd31162c"
+              }
+            },
+            {
+              "language": "go",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/go/internal/providerworkflow/held.go",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "fd450608656fd86629a840b81a34b481da95b7d91eef72f76356892599d9b779",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/go/internal/providerworkflow/held.go"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "\tstatus, failure = owner.client.GetActivation(parent, profile.GetActivationRequest{ActivationId: identity}, profile.CallOptions{TimeoutMillis: reference(uint64(1000))})\n\tif failure != nil {\n\t\treturn errors.New(\"participant-original-id-status-after-lost-response-failed\")\n\t}\n\towner.observe(status.Metadata)\n\tif status.Value.TerminalState == nil {\n\t\tif failure := owner.cancel(parent, identity); failure != nil {\n\t\t\treturn failure\n\t\t}\n\t}\n",
+                "startLine": 120,
+                "endLine": 129,
+                "sha256": "aa0b971b12bb16c14f56fbdbd11f66352a12f9b2b0388371aaa93d2255b71c73"
+              }
+            },
+            {
+              "language": "c",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/c/examples/provider_workflow.c",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "13c6188bc86750fc3edfb98faa46c056d5324e46a05ee7d1126e3206747d7911",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/c/examples/provider_workflow.c"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "        if (kind == 0) {\n            state->api->cancel_local(call);\n            if (!require(state, pending.callbacks == 1 && pending.failed && pending.category == LATENT_PROFILE_FAILURE_CATEGORY_LOCAL_CANCELLED,\n                         \"local-cancellation-facts\")) goto cleanup;\n        }\n        ex_result cancelled = {0};\n        latent_profile_cancel_request request = {ex_string(activations[kind + 5]), EX_TEXT(\"explicit C workflow cancellation\")};\n        latent_profile_call_options options = ex_options(5000);\n        latent_profile_call *cancellation = state->api->cancel(latent_transport_profile(owner), &request, &options, ex_cancelled, &cancelled);\n        if (!finish(state, owner, cancellation, &cancelled) || !require(state, !cancelled.failed\n            && (cancelled.disposition == LATENT_PROFILE_CANCEL_DISPOSITION_ACCEPTED\n                 || (kind == 0 && cancelled.disposition == LATENT_PROFILE_CANCEL_DISPOSITION_ALREADY_TERMINAL)), \"explicit-cancel-disposition\")) goto cleanup;\n",
+                "startLine": 239,
+                "endLine": 250,
+                "sha256": "ec9d55f72cc4916ec06c91f02f11c6edb66ebff33c8d34465e539dc0cb918e15"
+              }
+            },
+            {
+              "language": "java",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/java-client/src/example/java/dev/latent/sdk/examples/ProviderWorkflow.java",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "298aa9fac22670d82f7df1b0ecd3daa3da5a2fb9570d23b2a1c8df835a898f88",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/java-client/src/example/java/dev/latent/sdk/examples/ProviderWorkflow.java"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "                pending.cancel(true);\n                var failure = failed(pending);\n                require(pending.isCancelled() && failure.category().equals(Management.FailureCategory.LOCAL_CANCELLED)\n                        && failure.identity().activationId().equals(Optional.of(identity)));\n                var cancelled = await(observer.cancel(new Management.CancelRequest(identity, \"explicit recovery\"), options())).value();\n                require(cancelled.disposition().equals(Management.CancelDisposition.ACCEPTED) || cancelled.disposition().equals(Management.CancelDisposition.ALREADY_TERMINAL));\n",
+                "startLine": 181,
+                "endLine": 186,
+                "sha256": "59aba0ae9d3454b39d2d898237b8a10ea35a774262cb604cbd4889bca5e9c554"
+              }
+            },
+            {
+              "language": "csharp",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/Lifetime.cs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "341b1627d64efc1e106e038cd8a7fed0e9c7ac0697bbfe34698d7a7efc279884",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/dotnet/Latent.Sdk.ProviderWorkflow/Lifetime.cs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "                local.Cancel();\n                Profile.ClientFailure cancelled = await Failure(pending);\n                Require(cancelled.Category == Profile.FailureCategory.LocalCancelled && cancelled.Dispatched &&\n                    cancelled.Outcome == Profile.OutcomeKnowledge.Unknown && cancelled.Identity.ActivationId == identity);\n                await Cancel(observer, identity);\n",
+                "startLine": 64,
+                "endLine": 68,
+                "sha256": "c3652c9bbb0379ab6e1a46d08751b16a6c9640819dcdca54cfd09c8d2a3ccddd"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "client/provider-invoke",
+      "title": "Invoke the authorized HTTP and blob guests",
+      "audience": "client-developer",
+      "target": "client",
+      "regions": [
+        {
+          "id": "invoke",
+          "variants": [
+            {
+              "language": "rust",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/rust/examples/provider_workflow/invocation.rs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "fda7798280de098d5a028883b685f6d6928332c78c52711536295891525cba82",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/rust/examples/provider_workflow/invocation.rs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "    for (provider, expected, assertion) in [(\"http\", 2201, \"httpGuest\"), (\"blob\", 4, \"blobGuest\")] {\n        let response = client\n            .invoke(config.request(provider, provider, None)?, options())\n            .await\n            .map_err(|_| {\n                if provider == \"http\" {\n                    \"http-invocation-rpc\"\n                } else {\n                    \"blob-invocation-rpc\"\n                }\n            })?;\n        let actual = guest(&response.value)?;\n        if actual != expected {\n            return Err(match (provider, actual) {\n                (\"http\", 10) => \"http-guest-permission-denied\",\n                (\"http\", 11) => \"http-guest-outcome-uncertain\",\n                (\"http\", _) => \"http-guest-unexpected-result\",\n                _ => \"blob-guest-unexpected-result\",\n            });\n        }\n        activations.push(format!(\"rust-{provider}\"));\n        assertions.insert(assertion, true);\n    }\n",
+                "startLine": 34,
+                "endLine": 56,
+                "sha256": "5e0cfe3b74165d7c4eff87298585e427a303a5d561ef4f8c59e48b5ad70fdf1f"
+              }
+            },
+            {
+              "language": "typescript",
+              "kind": "maintained",
+              "environment": "node",
+              "source": {
+                "path": "sdk/typescript-client/tests/provider-workflow.mjs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "359192d01eb77b90090153772cf2c4145dac77f83281fc87d7d078da631afe38",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/typescript-client/tests/provider-workflow.mjs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "    stage = \"http-invocation\";\n    check(guestU64(await client.invoke(request(\"http\"))) === \"2201\", \"http-guest-result\");\n    activationIds.push(\"typescript-http\"); assertions.httpGuest = true;\n    stage = \"blob-invocation\";\n    check(guestU64(await client.invoke(request(\"blob\"))) === \"4\", \"blob-guest-result\");\n    activationIds.push(\"typescript-blob\"); assertions.blobGuest = true;\n",
+                "startLine": 169,
+                "endLine": 174,
+                "sha256": "0ed35a745cbdd8779c46b93f659a87a4201117e006b458210058a25d3cc79516"
+              }
+            },
+            {
+              "language": "go",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/go/internal/providerworkflow/workflow.go",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "1c33b8e1f5a2f737fe8e92397708d7c366ae1ddfdd53304afad812a2cd6cdfc5",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/go/internal/providerworkflow/workflow.go"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "\tfor _, sample := range []struct {\n\t\tname      string\n\t\tid        string\n\t\tvalue     uint64\n\t\tassertion string\n\t}{{\"http\", \"go-http\", 2201, \"httpGuest\"}, {\"blob\", \"go-blob\", 4, \"blobGuest\"}} {\n\t\tresponse, failure := owner.client.Invoke(ctx, owner.request(sample.name, sample.id), profile.CallOptions{})\n\t\tif failure != nil {\n\t\t\treturn &stepFailure{reason: \"participant-\" + sample.assertion + \"-rpc-failed\", cause: failure}\n\t\t}\n\t\tactual, valid := u64Value(response.Value)\n\t\tif !valid {\n\t\t\treturn errors.New(\"participant-\" + sample.assertion + \"-result-shape\")\n\t\t}\n\t\tif actual != sample.value {\n\t\t\treturn fmt.Errorf(\"participant-%s-result-%d\", sample.name, actual)\n\t\t}\n\t\tif !owner.pin(response.Value, sample.name) {\n\t\t\treturn errors.New(\"participant-\" + sample.assertion + \"-pin-failed\")\n\t\t}\n\t\towner.observe(response.Metadata)\n\t\tif failure := owner.retain(ctx, sample.id); failure != nil {\n\t\t\treturn failure\n\t\t}\n\t\towner.result.Assertions[sample.assertion] = true\n\t}\n",
+                "startLine": 119,
+                "endLine": 144,
+                "sha256": "2f1d6f01ca2829953b5f078c962af7b1578e89d66f67d9364fb23eaf91fbf420"
+              }
+            },
+            {
+              "language": "c",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/c/examples/provider_workflow.c",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "13c6188bc86750fc3edfb98faa46c056d5324e46a05ee7d1126e3206747d7911",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/c/examples/provider_workflow.c"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "    const char *const suffixes[] = {\"http\", \"blob\", \"declared\", \"platform\"};\n    for (unsigned index = 0; index < 4; ++index) {\n        ex_result result = {0};\n        const char *function = index == 2 ? \"fail\" : index == 3 ? \"spin\" : NULL;\n        latent_profile_call *call = ex_invoke(&state->config, client, index > 1 ? 2 : index,\n                                             suffixes[index], function, false, 5000, &result);\n        if (!finish(state, client, call, &result) || !require(state, !result.failed, \"guest-rpc\")) return false;\n        bool valid = index < 2 ? ex_guest(&result, index == 0 ? 2201 : 4)\n                   : index == 2 ? result.declared : result.platform;\n        if (!require(state, valid, guest_reason(&result, index))\n            || !require(state, strcmp(result.identity, activations[index]) == 0, \"invocation-identity\")) return false;\n        state->admitted[index] = true;\n        state->assertions[index] = true;\n    }\n",
+                "startLine": 80,
+                "endLine": 93,
+                "sha256": "e9d7e639913c92dd3096ff6d8f2d4f32aca98fca1877e376597f2bd2765c8ad8"
+              }
+            },
+            {
+              "language": "java",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/java-client/src/example/java/dev/latent/sdk/examples/ProviderWorkflow.java",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "298aa9fac22670d82f7df1b0ecd3daa3da5a2fb9570d23b2a1c8df835a898f88",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/java-client/src/example/java/dev/latent/sdk/examples/ProviderWorkflow.java"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "        for (String provider : new String[] {\"http\", \"blob\"}) {\n            stage = provider + \"-guest\";\n            var response = await(client.invoke(request(provider, provider, null, tenant, false), options())).value();\n            input.identity(response, provider, \"java-\" + provider);\n            require(ProviderInput.guest(response) == (provider.equals(\"http\") ? 2201 : 4));\n            identities.add(\"java-\" + provider); passed(provider + \"Guest\");\n        }\n",
+                "startLine": 66,
+                "endLine": 72,
+                "sha256": "96c3537c828ac7676716808b0d6aa19592f2813731b2214e5471d3a5378ce0ac"
+              }
+            },
+            {
+              "language": "csharp",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/Program.cs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "977d8e5460bc4467f4fcbfb2107813ef0c7e1719464d92fcba483b5358d99236",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/dotnet/Latent.Sdk.ProviderWorkflow/Program.cs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "        foreach (string provider in new[] { \"http\", \"blob\" })\n        {\n            Stage = provider + \"-guest\";\n            string identity = \"dotnet-\" + provider;\n            Profile.InvokeResponse response = (await client.InvokeAsync(input.Request(provider, identity), Calls, stop)).Value;\n            input.Receipt(response, provider, identity);\n            Require(Input.Guest(response) == (provider == \"http\" ? 2201UL : 4UL));\n            identities.Add(identity);\n            Passed(provider + \"Guest\");\n        }\n",
+                "startLine": 62,
+                "endLine": 71,
+                "sha256": "8d34c7de0b876c30d5a2752a926cfc8f4059fe9ba67d19a802eea725ba935cb9"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "client/provider-management",
+      "title": "Look up the original policy operation receipt",
+      "audience": "client-developer",
+      "target": "client",
+      "regions": [
+        {
+          "id": "management",
+          "variants": [
+            {
+              "language": "rust",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/rust/examples/provider_workflow/management.rs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "ac5c563d2ee8e593e18feedb1ca05cd3092c53b34769823d643c86d76b4bc2b3",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/rust/examples/provider_workflow/management.rs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "    let known = client\n        .get_policy_operation(\n            GetPolicyOperationRequest {\n                operation_id: operation_id.clone(),\n            },\n            options(),\n        )\n        .await\n        .map_err(|_| \"policy-operation-rpc\")?;\n    require(\n        known.value.receipt.as_ref() == Some(&receipt),\n        \"operation-recovery-receipt\",\n    )?;\n",
+                "startLine": 75,
+                "endLine": 87,
+                "sha256": "a86a0e9cfc561277ae7365e412c8ed790b4a5eb25dd7c21dda20844bfb43a7f5"
+              }
+            },
+            {
+              "language": "typescript",
+              "kind": "maintained",
+              "environment": "node",
+              "source": {
+                "path": "sdk/typescript-client/tests/provider-workflow.mjs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "359192d01eb77b90090153772cf2c4145dac77f83281fc87d7d078da631afe38",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/typescript-client/tests/provider-workflow.mjs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "  stage = \"operation-recovery\";\n  const receipt = await client.getPolicyOperation({ operationId });\n  check(isDeepStrictEqual(receipt.value.receipt, created.value.receipt), \"operation-recovery\");\n",
+                "startLine": 83,
+                "endLine": 85,
+                "sha256": "98d6b628ed495160468b25247a051c661d67f2d283efdbdc224fdb0299d987e6"
+              }
+            },
+            {
+              "language": "go",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/go/internal/providerworkflow/management.go",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "5c5b58f00c9e8df7f278918bd4725077ebd907f7fcd83fb9ed477e0c415dc978",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/go/internal/providerworkflow/management.go"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "\tlookup, failure := owner.client.GetPolicyOperation(ctx, profile.GetPolicyOperationRequest{OperationId: request.OperationId}, profile.CallOptions{})\n\tif failure != nil || !sameReceipt(created.Value.Receipt, lookup.Value.Receipt) || lookup.Metadata.Outcome != profile.OutcomeKnowledgeObserved {\n\t\treturn errors.New(\"participant-original-policy-operation-recovery-failed\")\n\t}\n\towner.observe(lookup.Metadata)\n",
+                "startLine": 60,
+                "endLine": 64,
+                "sha256": "d1bccda1fb166a312490e37d4b8e121d3a64648314c99e7680a081f51c2de1b8"
+              }
+            },
+            {
+              "language": "c",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/c/examples/provider_workflow.c",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "13c6188bc86750fc3edfb98faa46c056d5324e46a05ee7d1126e3206747d7911",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/c/examples/provider_workflow.c"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "    latent_profile_get_policy_operation_request lookup = {EX_TEXT(\"c-policy-create\")};\n    result = (ex_result){0};\n    call = state->api->get_policy_operation(client, &lookup, &options, ex_operation, &result);\n    if (!finish(state, owner, call, &result) || !require(state, !result.failed && result.has_receipt && result.audit_absent\n        && ex_receipt_equal(&created.receipt, &result.receipt), \"original-operation-recovery\")) return false;\n",
+                "startLine": 177,
+                "endLine": 181,
+                "sha256": "a64a266044b2204a442c2013f87f2b79a412f8a1a45702dd54152c8736d95f71"
+              }
+            },
+            {
+              "language": "java",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/java-client/src/example/java/dev/latent/sdk/examples/ProviderWorkflow.java",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "298aa9fac22670d82f7df1b0ecd3daa3da5a2fb9570d23b2a1c8df835a898f88",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/java-client/src/example/java/dev/latent/sdk/examples/ProviderWorkflow.java"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "        var recovered = await(client.getPolicyOperation(new Management.GetPolicyOperationRequest(\"java-policy-create\"), options()));\n        absentAudit(recovered.metadata());\n        require(recovered.value().receipt().equals(Optional.of(receipt)));\n",
+                "startLine": 130,
+                "endLine": 132,
+                "sha256": "28c31e024f9ddbf070c7e4f84ab36a432bddf847458c042d22611e00807599b0"
+              }
+            },
+            {
+              "language": "csharp",
+              "kind": "maintained",
+              "environment": "native",
+              "source": {
+                "path": "sdk/dotnet/Latent.Sdk.ProviderWorkflow/Management.cs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "a6df366729727d1a09d36e7d4b475ac688b10d5be678a6fca1ff69f603a2423b",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/dotnet/Latent.Sdk.ProviderWorkflow/Management.cs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_sdk_provider_matrix.sh",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/use-a-client.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "evidence-source-mismatch"
+              },
+              "snippet": {
+                "code": "        Profile.ClientResponse<Profile.GetPolicyOperationResponse> recovered = await client.GetPolicyOperationAsync(new(request.OperationId), Calls, stop);\n        AbsentAudit(recovered.Metadata);\n        Require(recovered.Value.Receipt == receipt);\n",
+                "startLine": 38,
+                "endLine": 40,
+                "sha256": "bcac4b286cdb63f0315dd084332e7b6500c1204132393081def13c70a0ab53ac"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "client/ui-subset",
+      "title": "Synthetic language control specimen",
+      "audience": "client-developer",
+      "target": "client",
+      "regions": [
+        {
+          "id": "specimen",
+          "variants": [
+            {
+              "language": "rust",
+              "kind": "synthetic",
+              "environment": "native",
+              "source": {
+                "path": "examples/website-ui/specimen.rs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "170e2570ff42d3228809b42d1fa2f6bfda172aa641d63d575af6f3bbbe32d402",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/website-ui/specimen.rs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/website/scripts/test-examples.mjs",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/development/website-code-examples.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "let text = \"<script>window.__lsfUnsafeExample = true</script> — 東京\";\n// Indentation, Unicode and this deliberately long line remain intact when the selected snippet is copied; long code scrolls within its own container.\n",
+                "startLine": 3,
+                "endLine": 4,
+                "sha256": "cb70627171ca7a11c0f76d226861ab8a86aa42a2cb2f797731e2f38499623861"
+              }
+            },
+            {
+              "language": "go",
+              "kind": "synthetic",
+              "environment": "native",
+              "source": {
+                "path": "examples/website-ui/specimen.go",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "fcc01e50f70a40fa5f740c02a2017d246bc9c77dd176d815791db8fef8d4c3f5",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/website-ui/specimen.go"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/website/scripts/test-examples.mjs",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/development/website-code-examples.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "text := \"<script>window.__lsfUnsafeExample = true</script> — 東京\"\n// Indentation, Unicode and this deliberately long line remain intact when the selected snippet is copied; long code scrolls within its own container.\n",
+                "startLine": 3,
+                "endLine": 4,
+                "sha256": "4f59e7952d833c0cf1ee36c97b8761ac63153847d0a27020206852faefb724d4"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "client/ui-syntax",
+      "title": "Synthetic language control specimen",
+      "audience": "client-developer",
+      "target": "client",
+      "regions": [
+        {
+          "id": "specimen",
+          "variants": [
+            {
+              "language": "rust",
+              "kind": "synthetic",
+              "environment": "native",
+              "source": {
+                "path": "examples/website-ui/specimen.rs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "170e2570ff42d3228809b42d1fa2f6bfda172aa641d63d575af6f3bbbe32d402",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/website-ui/specimen.rs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/website/scripts/test-examples.mjs",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/development/website-code-examples.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "let text = \"<script>window.__lsfUnsafeExample = true</script> — 東京\";\n// Indentation, Unicode and this deliberately long line remain intact when the selected snippet is copied; long code scrolls within its own container.\n",
+                "startLine": 3,
+                "endLine": 4,
+                "sha256": "cb70627171ca7a11c0f76d226861ab8a86aa42a2cb2f797731e2f38499623861"
+              }
+            },
+            {
+              "language": "typescript",
+              "kind": "synthetic",
+              "environment": "node",
+              "source": {
+                "path": "examples/website-ui/specimen.ts",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "74fbb2efb481cb321b9bc0cc341fe910eb41cdfa9170472e471850b94695e2ab",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/website-ui/specimen.ts"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/website/scripts/test-examples.mjs",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/development/website-code-examples.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "const text = '<script>window.__lsfUnsafeExample = true</script> — 東京';\n// Indentation, Unicode and this deliberately long line remain intact when the selected snippet is copied; long code scrolls within its own container.\n",
+                "startLine": 3,
+                "endLine": 4,
+                "sha256": "023f1b266a590a3202bf28b649e9684bbafc3d6832fc0d4a05201b871a1dc038"
+              }
+            },
+            {
+              "language": "go",
+              "kind": "synthetic",
+              "environment": "native",
+              "source": {
+                "path": "examples/website-ui/specimen.go",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "fcc01e50f70a40fa5f740c02a2017d246bc9c77dd176d815791db8fef8d4c3f5",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/website-ui/specimen.go"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/website/scripts/test-examples.mjs",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/development/website-code-examples.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "text := \"<script>window.__lsfUnsafeExample = true</script> — 東京\"\n// Indentation, Unicode and this deliberately long line remain intact when the selected snippet is copied; long code scrolls within its own container.\n",
+                "startLine": 3,
+                "endLine": 4,
+                "sha256": "4f59e7952d833c0cf1ee36c97b8761ac63153847d0a27020206852faefb724d4"
+              }
+            },
+            {
+              "language": "c",
+              "kind": "synthetic",
+              "environment": "native",
+              "source": {
+                "path": "examples/website-ui/specimen.c",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "72932ff04b10f3c2dbd7cade65cc0cb03dabe219dc44dfd1355e349a9f7a8258",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/website-ui/specimen.c"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/website/scripts/test-examples.mjs",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/development/website-code-examples.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "const char *text = \"<script>window.__lsfUnsafeExample = true</script> — 東京\";\n// Indentation, Unicode and this deliberately long line remain intact when the selected snippet is copied; long code scrolls within its own container.\n",
+                "startLine": 3,
+                "endLine": 4,
+                "sha256": "60c778e261f370e6333fccebb67f8d017f15efa638e2a8179ce5f14dbcd569c4"
+              }
+            },
+            {
+              "language": "java",
+              "kind": "synthetic",
+              "environment": "native",
+              "source": {
+                "path": "examples/website-ui/specimen.java",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "a0c610731acc697a522ece9d1d4baa05bb492a6e7844b2a5cca54c222856d983",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/website-ui/specimen.java"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/website/scripts/test-examples.mjs",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/development/website-code-examples.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "String text = \"<script>window.__lsfUnsafeExample = true</script> — 東京\";\n// Indentation, Unicode and this deliberately long line remain intact when the selected snippet is copied; long code scrolls within its own container.\n",
+                "startLine": 3,
+                "endLine": 4,
+                "sha256": "23281e52b36361c1324a09248ed2a085768ea3a308b3ef78df2db9d56d4545ad"
+              }
+            },
+            {
+              "language": "csharp",
+              "kind": "synthetic",
+              "environment": "native",
+              "source": {
+                "path": "examples/website-ui/specimen.cs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "c804309f4645cc237f96b4a11b1b26300e3012ef4ccb753ad58e88fd0e487d2b",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/website-ui/specimen.cs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/website/scripts/test-examples.mjs",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/development/website-code-examples.mdx"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "var text = \"<script>window.__lsfUnsafeExample = true</script> — 東京\";\n// Indentation, Unicode and this deliberately long line remain intact when the selected snippet is copied; long code scrolls within its own container.\n",
+                "startLine": 3,
+                "endLine": 4,
+                "sha256": "6c833938d9e4d0ae4cbbbfb3c6db06e3313981bba9498f8a155c8cfdfce43ed9"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guest/angular-dependency",
+      "title": "Request one scoped HTTP dependency",
+      "audience": "guest-author",
+      "target": "guest",
+      "regions": [
+        {
+          "id": "dependency",
+          "variants": [
+            {
+              "language": "typescript",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "examples/angular-reference-application/server/main.ts",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "8479b7254163c5ac4b0e0102c66a372000552e1f1b54e4a30669d1c881bc4a64",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/angular-reference-application/server/main.ts"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/run_angular_reference_workflow.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/learn/build-and-deliver-angular.mdx"
+              },
+              "verification": {
+                "level": "real-node",
+                "execution": "real-node",
+                "basis": "reviewed-record",
+                "sourceRevision": "270aef0b62e4f1298f1fb8520a2522cd6d604832",
+                "evidenceSha256": "fb72fd4abcbf406068b65d94846a450e02eb0262b82323cf7f50b2fc960b6d69",
+                "toolchain": "Linux x86_64; Rust 1.97.1; Node.js 24.19.0; Chromium 153.0.8010.52; exact binary/build identities in the receipt",
+                "run": "docs/evidence/angular-guide-2026-09-20.json",
+                "scope": "Complete separately owned enforced-node Angular workflow: real HTTP/browser hydration and navigation, scoped provider calls, cancellation, canary, revocation, same-port restart and rollback."
+              },
+              "snippet": {
+                "code": "export async function prepare(request: Request) {\n  if (request.path === '/data') return {url: 'http://127.0.0.1:19090/message'};\n  if (request.path === '/slow') return {url: 'http://127.0.0.1:19090/slow'};\n  if (request.path === '/denied') return {url: 'http://127.0.0.1:19091/message'};\n  return null;\n}\n",
+                "startLine": 16,
+                "endLine": 21,
+                "sha256": "04ecb32dfbd796143ba99ca5910e59de19b72248ef806309da0c651f936c659b"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guest/rust-echo",
+      "title": "Bounded Rust echo guest",
+      "audience": "guest-author",
+      "target": "guest",
+      "regions": [
+        {
+          "id": "echo",
+          "variants": [
+            {
+              "language": "rust",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "tools/toolchain-smoke/examples/echo_capsule/component.rs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "f38523ac54c9fdbf6547b319f4f1f646bcc780f4951e50c1199816d0ad703354",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/toolchain-smoke/examples/echo_capsule/component.rs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/build_echo_capsule.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/examples/echo-contract/README.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "impl Guest for EchoCapsule {\n    fn echo(message: String) -> Result<String, EchoError> {\n        let message_bytes = message.len();\n        let result = logic::echo(message);\n        let activation_id = context::activation_id();\n        let outcome = match &result {\n            Ok(_) => \"success\",\n            Err(MessageRejection::Empty) => \"empty-message\",\n            Err(MessageRejection::OverLimit) => \"message-too-large\",\n        };\n        let fields = [\n            Field {\n                name: \"activation_id\".to_owned(),\n                value: logic::bounded_utf8_prefix(&activation_id, MAX_LOG_ACTIVATION_ID_BYTES)\n                    .to_owned(),\n            },\n            Field {\n                name: \"message_bytes\".to_owned(),\n                value: message_bytes.to_string(),\n            },\n            Field {\n                name: \"outcome\".to_owned(),\n                value: outcome.to_owned(),\n            },\n        ];\n        // Logging is deliberately best effort: the declared echo result is never\n        // replaced by a logging-capability failure.\n        let _log_outcome = log::write(Level::Info, LOG_MESSAGE, &fields);\n\n        result.map_err(|error| match error {\n            MessageRejection::Empty => EchoError::EmptyMessage,\n            MessageRejection::OverLimit => EchoError::MessageTooLarge,\n        })\n    }\n}\n",
+                "startLine": 25,
+                "endLine": 59,
+                "sha256": "981ca98f5a0d41dcebc35541fd869c0203e39f36d4725ab95d5283a1c5d47434"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guest/tutorial-greeting",
+      "title": "Greet a visitor",
+      "audience": "guest-author",
+      "target": "guest",
+      "regions": [
+        {
+          "id": "capsule",
+          "variants": [
+            {
+              "language": "rust",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "tools/toolchain-smoke/examples/tutorial_greeting/component.rs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "fec18f05746c81aa6f8e28f76fa63db9f8a54d246c9ea7f323b9a8ce43abbbd8",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/toolchain-smoke/examples/tutorial_greeting/component.rs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/build_tutorial_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/creating-a-capsule.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "pub fn greet(name: String) -> Result<String, String> {\n    let name = name.trim();\n    if name.is_empty() {\n        return Err(\"Please enter a name.\".into());\n    }\n    if name.len() > 100 {\n        return Err(\"Use a name of at most 100 bytes.\".into());\n    }\n    Ok(format!(\"Hello, {name}!\"))\n}\n\n#[cfg(target_arch = \"wasm32\")]\nmod component {\n    wit_bindgen::generate!({path: \"examples/tutorial_greeting\", world: \"service\"});\n    struct Capsule;\n    impl exports::examples::greeting::api::Guest for Capsule {\n        fn greet(name: String) -> Result<String, String> {\n            super::greet(name)\n        }\n    }\n    export!(Capsule);\n}\n",
+                "startLine": 2,
+                "endLine": 23,
+                "sha256": "85617092d745e310900e1d41682d4fd1d8afb1099b5bc3345b19e52914ddd7d8"
+              }
+            },
+            {
+              "language": "typescript",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/typescript-guest/templates/greeting.ts",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "c123e99bff804713a478593074d5c4fd856b8a7e58c963c791b63f82a90e9fd2",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/typescript-guest/templates/greeting.ts"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_typescript_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/typescript-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "export const api: typeof Contract = {\n  greet(name) {\n    const clean = trim(name);\n    if (!clean) throw 'Please enter a name.';\n    if (utf8Length(clean) > 100) throw 'Use a name of at most 100 bytes.';\n    return `Hello, ${clean}!`;\n  },\n};\n",
+                "startLine": 5,
+                "endLine": 12,
+                "sha256": "e59c2cc1c77e5eba6b3e081d615caf31c3da15189e17983b1fa1e202b6f8e496"
+              }
+            },
+            {
+              "language": "go",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/go-guest/templates/greeting.go",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "553ac60b77dcc65994c8c07947aac552493895714e59313da944da4b14bf856b",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/go-guest/templates/greeting.go"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_go_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/go-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "package export_examples_greeting_api\n\nimport (\n\twit \"go.bytecodealliance.org/pkg/wit/types\"\n\t\"strings\"\n)\n\nfunc Greet(name string) wit.Result[string, string] {\n\tname = strings.TrimSpace(name)\n\tif len(name) == 0 {\n\t\treturn wit.Err[string, string](\"Please enter a name.\")\n\t}\n\tif len(name) > 100 {\n\t\treturn wit.Err[string, string](\"Use a name of at most 100 bytes.\")\n\t}\n\treturn wit.Ok[string, string](\"Hello, \" + name + \"!\")\n}\n\n",
+                "startLine": 2,
+                "endLine": 19,
+                "sha256": "17a3bf60e62d0ed7ccb4c6937c911a10880211181362ec04a2cb13eaee250d83"
+              }
+            },
+            {
+              "language": "c",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/c-guest/templates/greeting.c",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "8f1de8cd5e7fc8d2c8c1b158af4038ac5a45f1b12720f2b4a2d329783ab34190",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/c-guest/templates/greeting.c"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_c_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/c-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "#include \"lsf/text.h\"\n\nbool exports_examples_greeting_api_greet(probe_string_t *name, probe_string_t *value,\n                                         probe_string_t *error) {\n    size_t first = name->len, end = 0, offset = 0;\n    while (offset < name->len) {\n        size_t start = offset;\n        if (!lsf_text_whitespace(lsf_text_next(name, &offset))) {\n            if (first == name->len) first = start;\n            end = offset;\n        }\n    }\n    const char *failure = first == name->len ? \"Please enter a name.\" :\n        end - first > 100 ? \"Use a name of at most 100 bytes.\" : NULL;\n    if (failure) {\n        probe_string_free(name);\n        lsf_text_error(error, failure);\n        return false;\n    }\n    lsf_scope_t scope;\n    lsf_scope_init(&scope, 128);\n    size_t length = end - first;\n    uint8_t *bytes = lsf_scope_alloc(&scope, length + 8, 1);\n    lsf_require(bytes != NULL);\n    memcpy(bytes, \"Hello, \", 7);\n    memcpy(bytes + 7, name->ptr + first, length);\n    bytes[length + 7] = '!';\n    probe_string_free(name);\n    *value = (probe_string_t){bytes, length + 8};\n    lsf_string_return(&scope, value);\n    lsf_scope_close(&scope);\n    return true;\n}\n",
+                "startLine": 3,
+                "endLine": 35,
+                "sha256": "5eacb70b1226947709a5104c20f75e3f106fe1fcbeca9d9dc7b579fd23c4d39e"
+              }
+            },
+            {
+              "language": "java",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/java-guest/templates/greeting.java",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "b3ef5de6dd9c15fc8c292112b657375b55e07722296a387bf0fe776ccbd95b62",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/java-guest/templates/greeting.java"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_java_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/java-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "public final class Capsule implements Bindings.Exports {\n    public Result<String, String> greet(String name) {\n        String trimmed = Text.trim(name);\n        if (trimmed.isEmpty()) return Result.err(\"Please enter a name.\");\n        if (Text.utf8Length(trimmed) > 100) return Result.err(\"Use a name of at most 100 bytes.\");\n        return Result.ok(\"Hello, \" + trimmed + \"!\");\n    }\n}\n",
+                "startLine": 7,
+                "endLine": 14,
+                "sha256": "ebce083e7c8fef9cd431db4016b3d3d9eb699420147538ae94e5fef61ecf5456"
+              }
+            },
+            {
+              "language": "csharp",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/dotnet-guest/templates/greeting.cs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "f6164ae1de630d389bd284b01561100ffafc27a85279e0125ff18cc1788b44b8",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/dotnet-guest/templates/greeting.cs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_dotnet_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/dotnet-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "public class ApiExportsImpl : IApiExports\n{\n    public static Result<string, string> Greet(string name)\n    {\n        string clean = Text.Trim(name);\n        if (clean.Length == 0) return Result<string, string>.Err(\"Please enter a name.\");\n        if (Text.Utf8Length(clean) > 100) return Result<string, string>.Err(\"Use a name of at most 100 bytes.\");\n        return Result<string, string>.Ok($\"Hello, {clean}!\");\n    }\n}\n",
+                "startLine": 6,
+                "endLine": 15,
+                "sha256": "b135c1cbaec07d708899b90bc06a9496e31d70906f30b2d48490dbccf7404005"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guest/tutorial-shipping",
+      "title": "Calculate a shipping price",
+      "audience": "guest-author",
+      "target": "guest",
+      "regions": [
+        {
+          "id": "capsule",
+          "variants": [
+            {
+              "language": "rust",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "tools/toolchain-smoke/examples/tutorial_shipping/component.rs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "9dc4233626ed40a4b2abb3f0f3b821f86b829b658f14c2f54e8fb37ef13b733c",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/toolchain-smoke/examples/tutorial_shipping/component.rs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/build_tutorial_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/creating-a-capsule.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "pub fn quote(items: u32, express: bool) -> Result<u32, String> {\n    if !(1..=100).contains(&items) {\n        return Err(\"Choose between 1 and 100 items.\".into());\n    }\n    let base_cents = if express { 1200 } else { 500 };\n    Ok(base_cents + items * 75)\n}\n\n#[cfg(target_arch = \"wasm32\")]\nmod component {\n    wit_bindgen::generate!({path: \"examples/tutorial_shipping\", world: \"service\"});\n    struct Capsule;\n    impl exports::examples::shipping::api::Guest for Capsule {\n        fn quote(items: u32, express: bool) -> Result<u32, String> {\n            super::quote(items, express)\n        }\n    }\n    export!(Capsule);\n}\n",
+                "startLine": 2,
+                "endLine": 20,
+                "sha256": "b5f833e4f2908e39488676f5928fb11c264107d0f71e8dbfcbe081aa090006b0"
+              }
+            },
+            {
+              "language": "typescript",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/typescript-guest/templates/shipping.ts",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "892ffcbe255a69a2d99c29b1e1550ea74a7131f40e49f27df4874871d8145fdb",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/typescript-guest/templates/shipping.ts"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_typescript_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/typescript-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "export const api: typeof Contract = {\n  quote(items, express) {\n    if (items < 1 || items > 100) throw 'Choose between 1 and 100 items.';\n    return (express ? 1200 : 500) + items * 75;\n  },\n};\n",
+                "startLine": 4,
+                "endLine": 9,
+                "sha256": "140c65120a90f468aacdfb019745f92d31033e611d75f3565c2b2c027f3648d1"
+              }
+            },
+            {
+              "language": "go",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/go-guest/templates/shipping.go",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "3c71b1ad8ba2f638c55b9f83a64b61532faf5363e6d24fccb51d23e07c6c8bd3",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/go-guest/templates/shipping.go"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_go_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/go-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "package export_examples_shipping_api\n\nimport wit \"go.bytecodealliance.org/pkg/wit/types\"\n\nfunc Quote(items uint32, express bool) wit.Result[uint32, string] {\n\tif items < 1 || items > 100 {\n\t\treturn wit.Err[uint32, string](\"Choose between 1 and 100 items.\")\n\t}\n\tbase := uint32(500)\n\tif express {\n\t\tbase = 1200\n\t}\n\treturn wit.Ok[uint32, string](base + items*75)\n}\n\n",
+                "startLine": 2,
+                "endLine": 16,
+                "sha256": "6823a5f0a3f19a8983ca2dd1175e19f9f88964240e8cbfb2c051a00ef35c78d0"
+              }
+            },
+            {
+              "language": "c",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/c-guest/templates/shipping.c",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "8c13ce374276215337d679b8bf42a521944f1328fc14143b080165b183eaa6d8",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/c-guest/templates/shipping.c"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_c_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/c-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "#include \"lsf/text.h\"\n\nbool exports_examples_shipping_api_quote(uint32_t items, bool express, uint32_t *value,\n                                         probe_string_t *error) {\n    if (items < 1 || items > 100) {\n        lsf_text_error(error, \"Choose between 1 and 100 items.\");\n        return false;\n    }\n    *value = (express ? 1200u : 500u) + items * 75u;\n    return true;\n}\n",
+                "startLine": 3,
+                "endLine": 13,
+                "sha256": "8144b474fb147786818866bf2b07dcc67e14624fca4fa82d3dc5d9a29ef67b72"
+              }
+            },
+            {
+              "language": "java",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/java-guest/templates/shipping.java",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "52c40e4a0af92515a923d0d53c2f2d5adfd712e82319206b2d4037370a5cd127",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/java-guest/templates/shipping.java"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_java_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/java-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "public final class Capsule implements Bindings.Exports {\n    public Result<Long, String> quote(Long items, Boolean express) {\n        if (items < 1 || items > 100) return Result.err(\"Choose between 1 and 100 items.\");\n        return Result.ok((express ? 1200L : 500L) + items * 75L);\n    }\n}\n",
+                "startLine": 6,
+                "endLine": 11,
+                "sha256": "1690d91818796396227988b3a390f76e833d4fd004da451ee9c91da3ec97c1a8"
+              }
+            },
+            {
+              "language": "csharp",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/dotnet-guest/templates/shipping.cs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "443c09eb8841452a821276d0a34efeaa5c5995a5cfbde005983782d4cf697f2a",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/dotnet-guest/templates/shipping.cs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_dotnet_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/dotnet-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "public class ApiExportsImpl : IApiExports\n{\n    public static Result<uint, string> Quote(uint items, bool express)\n    {\n        if (items < 1 || items > 100) return Result<uint, string>.Err(\"Choose between 1 and 100 items.\");\n        return Result<uint, string>.Ok((express ? 1200U : 500U) + items * 75U);\n    }\n}\n",
+                "startLine": 5,
+                "endLine": 12,
+                "sha256": "2a9e28c6a1bfa71f7183ff83c476a78da43a49440302e315ad96f0011db8fd54"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guest/tutorial-word-count",
+      "title": "Count the words in a document",
+      "audience": "guest-author",
+      "target": "guest",
+      "regions": [
+        {
+          "id": "capsule",
+          "variants": [
+            {
+              "language": "rust",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "tools/toolchain-smoke/examples/tutorial_word_count/component.rs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "e54b82e6e3073572056b1e47588d1c78214511d66f6355e5fd87124a5cac2092",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/toolchain-smoke/examples/tutorial_word_count/component.rs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/build_tutorial_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/creating-a-capsule.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "pub fn count(text: &str) -> Result<u32, String> {\n    if text.len() > 4096 {\n        return Err(\"Use text of at most 4096 bytes.\".into());\n    }\n    u32::try_from(text.split_whitespace().count()).map_err(|_| \"Too many words.\".into())\n}\n\n#[cfg(target_arch = \"wasm32\")]\nmod component {\n    wit_bindgen::generate!({path: \"examples/tutorial_word_count\", world: \"service\"});\n    struct Capsule;\n    impl exports::examples::word_count::api::Guest for Capsule {\n        fn count(text: String) -> Result<u32, String> {\n            super::count(&text)\n        }\n    }\n    export!(Capsule);\n}\n",
+                "startLine": 2,
+                "endLine": 19,
+                "sha256": "5c4ad75ce6529c21631c37d89fcdc71e92b18d1d0807c1f68a9e32bc7918e6c4"
+              }
+            },
+            {
+              "language": "typescript",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/typescript-guest/templates/word-count.ts",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "a7ea6369dc6c9e052c1704226bf5512879f8e9063f5dc2de6ca7de725724947b",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/typescript-guest/templates/word-count.ts"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_typescript_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/typescript-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "export const api: typeof Contract = {\n  count(text) {\n    if (utf8Length(text) > 4096) throw 'Use text of at most 4096 bytes.';\n    let count = 0, inWord = false;\n    for (const scalar of text) {\n      const word = !whitespace(scalar);\n      if (word && !inWord) count++;\n      inWord = word;\n    }\n    return count;\n  },\n};\n",
+                "startLine": 5,
+                "endLine": 16,
+                "sha256": "ccda00a0aa1ad969f73d1067639922010cfe6988525867d93a9b87971db987f7"
+              }
+            },
+            {
+              "language": "go",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/go-guest/templates/word-count.go",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "2543d9b04f44cfb4824ef8bfe59a7165bfc2fa0ab1de7bdc038fc6c3ceffff56",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/go-guest/templates/word-count.go"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_go_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/go-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "package export_examples_word_count_api\n\nimport (\n\twit \"go.bytecodealliance.org/pkg/wit/types\"\n\t\"strings\"\n)\n\nfunc Count(text string) wit.Result[uint32, string] {\n\tif len(text) > 4096 {\n\t\treturn wit.Err[uint32, string](\"Use text of at most 4096 bytes.\")\n\t}\n\treturn wit.Ok[uint32, string](uint32(len(strings.Fields(text))))\n}\n\n",
+                "startLine": 2,
+                "endLine": 15,
+                "sha256": "492065a2f4e8f8a6743440cdc6c5eb1ae1010773a682f4621a8688079c1a998f"
+              }
+            },
+            {
+              "language": "c",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/c-guest/templates/word-count.c",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "2b531974197ad6525f581a3d0e7ca6738c72a69bedf51123440d2245b7b7e1e8",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/c-guest/templates/word-count.c"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_c_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/c-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "#include \"lsf/text.h\"\n\nbool exports_examples_word_count_api_count(probe_string_t *text, uint32_t *value,\n                                           probe_string_t *error) {\n    if (text->len > 4096) {\n        probe_string_free(text);\n        lsf_text_error(error, \"Use text of at most 4096 bytes.\");\n        return false;\n    }\n    uint32_t count = 0;\n    bool in_word = false;\n    size_t offset = 0;\n    while (offset < text->len) {\n        bool word = !lsf_text_whitespace(lsf_text_next(text, &offset));\n        if (word && !in_word) ++count;\n        in_word = word;\n    }\n    probe_string_free(text);\n    *value = count;\n    return true;\n}\n",
+                "startLine": 3,
+                "endLine": 23,
+                "sha256": "441bf5662522ab4e5298e9e4f2dc35a005483e3f1987cfbf64cdf0a2fa9cffc2"
+              }
+            },
+            {
+              "language": "java",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/java-guest/templates/word-count.java",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "36924c01937175faa45beff0c09f716b40e85f4b3a988b207077eb434fd26334",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/java-guest/templates/word-count.java"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_java_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/java-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "public final class Capsule implements Bindings.Exports {\n    public Result<Long, String> count(String text) {\n        if (Text.utf8Length(text) > 4096) return Result.err(\"Use text of at most 4096 bytes.\");\n        long count = 0;\n        boolean inside = false;\n        for (int offset = 0; offset < text.length();) {\n            int character = text.codePointAt(offset);\n            boolean word = !Text.whitespace(character);\n            if (word && !inside) count++;\n            inside = word;\n            offset += Character.charCount(character);\n        }\n        return Result.ok(count);\n    }\n}\n",
+                "startLine": 7,
+                "endLine": 21,
+                "sha256": "fbcdf369f2872ba7af3e0aa28fc9c6741406a0b1272bdcb2bbd8ed23dd703577"
+              }
+            },
+            {
+              "language": "csharp",
+              "kind": "maintained",
+              "environment": "component",
+              "source": {
+                "path": "sdk/dotnet-guest/templates/word-count.cs",
+                "revision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+                "sha256": "26db9794b5f7a44a5e10e455bd3482a9decdbab73be84df6f402cf9ca2186a15",
+                "matchesRevision": true,
+                "url": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/sdk/dotnet-guest/templates/word-count.cs"
+              },
+              "validation": {
+                "target": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/tools/qualify_dotnet_capsules.py",
+                "instructions": "https://github.com/KirilsTurkins/latent-service-fabric/blob/403ded53bf00a973f77e089786cef970ab7d5bfd/docs/component-development/dotnet-authoring.md"
+              },
+              "verification": {
+                "level": "source-extracted",
+                "reason": "no-evidence"
+              },
+              "snippet": {
+                "code": "public class ApiExportsImpl : IApiExports\n{\n    public static Result<uint, string> Count(string text)\n    {\n        if (Text.Utf8Length(text) > 4096) return Result<uint, string>.Err(\"Use text of at most 4096 bytes.\");\n        uint count = 0;\n        bool inWord = false;\n        foreach (char scalar in text) {\n            bool word = !Text.Whitespace(scalar);\n            if (word && !inWord) ++count;\n            inWord = word;\n        }\n        return Result<uint, string>.Ok(count);\n    }\n}\n",
+                "startLine": 6,
+                "endLine": 20,
+                "sha256": "a4e08a3c9a70aa72ad388936e0770172c136ba0520767418c38bc70be02d9cf8"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
