@@ -343,7 +343,7 @@ class PackagedProbe(unittest.TestCase):
         script = ('from pathlib import Path;import sys;Path("starts").write_text("once");'
                   'print(' + repr(json.dumps(response)) + ');sys.exit(5)')
         child = Command([sys.executable, '-I', '-B', '-c', script], self.root, environment(self.root))
-        frontend.command = lambda *_: child
+        frontend.command = lambda *_, **_options: child
         try:
             with self.assertRaisesRegex(ProbeFailure, 'foreground-ended-before-required-event'):
                 frontend.start('test-packaged-rust')
@@ -358,6 +358,56 @@ class PackagedProbe(unittest.TestCase):
             self.assertEqual(report['startupFailures']['test-packaged-rust']['events'], [response])
         finally:
             child.abort_controller()
+
+    def test_newcomer_walkthrough_requires_the_exact_staged_guide(self):
+        from tools.dev_packaged_newcomer import reviewed_guide
+        from tools.dev_packaged_process import digest
+        guide = self.root / 'windows-application.md'
+        guide.write_bytes(b'# Reviewed guide\n')
+        config = {'faultProbe': str(self.root / 'dev_node_fault_probe.py'), 'conductorSourceCommit': 'a' * 40,
+            'newcomerGuide': {'path': 'docs/component-development/windows-application.md', 'sha256': digest(guide)}}
+        self.assertEqual(reviewed_guide(config)['execution'], 'automated-public-command-walkthrough')
+        self.assertFalse(reviewed_guide(config)['interactiveEditorReview'])
+        guide.write_bytes(b'# Changed after staging\n')
+        with self.assertRaisesRegex(ProbeFailure, 'exact-reviewed-newcomer-guide-required'):
+            reviewed_guide(config)
+        guide.unlink()
+        with self.assertRaisesRegex(ProbeFailure, 'exact-reviewed-newcomer-guide-required'):
+            reviewed_guide(config)
+
+    def test_newcomer_invocation_cannot_accept_stale_revision_or_wrong_greeting(self):
+        import base64
+        from types import SimpleNamespace
+        from tools.dev_packaged_newcomer import greeting
+        (self.root / 'latent.project.json').write_text(json.dumps({'service': 'examples/my-greeting'}))
+        selected = {'publication': 'publication:sha256:' + '1' * 64, 'componentDigest': 'sha256:' + '2' * 64}
+        response = {'category': 'success', 'outcomeKnown': True, 'data': {
+            'resolvedRevision': {'publicationId': selected['publication'], 'releaseDigest': selected['componentDigest']},
+            'payload': {'data': base64.b64encode(b'[{"ok":"Welcome, Ada!"}]').decode()}}}
+        api = SimpleNamespace(call=lambda *_: response)
+        item = {'project': str(self.root), 'workspace': 'test-packaged-rust-newcomer'}
+        self.assertIs(greeting(api, item, 'Welcome, Ada!', selected), response)
+        with self.assertRaisesRegex(ProbeFailure, 'newcomer-greeting-value-or-selected-revision-mismatch'):
+            greeting(api, item, 'Hello, Ada!', selected)
+        for key in ('publicationId', 'releaseDigest'):
+            original = response['data']['resolvedRevision'][key]
+            response['data']['resolvedRevision'][key] = 'stale'
+            with self.subTest(key=key), self.assertRaisesRegex(ProbeFailure, 'newcomer-greeting-value-or-selected-revision-mismatch'):
+                greeting(api, item, 'Welcome, Ada!', selected)
+            response['data']['resolvedRevision'][key] = original
+
+    def test_newcomer_diagnostics_preserve_native_windows_and_utf8_paths(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.dev_packaged_newcomer import diagnostics_finished
+        prior = b'LSF build-start\nold diagnostic\nLSF build-end\n'
+        text = 'LSF build-start\nLSF C:/Author spaces-\u00fc/app/src/lib.rs:39:26: error : bad source\nLSF build-end\n'
+        for encoding in ('cp1252', 'utf-8'):
+            process = SimpleNamespace(raw=lambda _, encoding=encoding: prior + text.encode(encoding))
+            with self.subTest(encoding=encoding), patch('tools.dev_packaged_newcomer.locale.getencoding', return_value='cp1252'):
+                actual, observed_encoding = diagnostics_finished(process, after=len(prior))
+                self.assertEqual(actual, text)
+                self.assertEqual(observed_encoding, encoding)
 
 
 if __name__ == '__main__':

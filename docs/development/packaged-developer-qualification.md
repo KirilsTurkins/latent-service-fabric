@@ -204,6 +204,26 @@ Ordinary lost-response recovery additionally checks blocked new mutations and
 a second public recovery with no journal change. These assertions require a
 completed installed-package run before being counted as qualification evidence.
 
+The Windows schedule first exercises the published
+[greeting walkthrough](../component-development/windows-application.md) in a new
+workspace, before the six-language and failure campaigns. Staging pins the guide
+bytes to the conductor commit. The installed frontend creates the maintained
+template, builds it, runs all three real-node cases and invokes `Hello, Ada!`.
+The guide's `Hello,` to `Welcome,` edit updates source and exact expected bytes;
+watch must confirm the new revision and focused test. An intentional compiler
+error must report the Windows source location while watch remains running and
+the confirmed greeting remains callable. Restoring valid source must complete
+an error-free diagnostic batch. Status/recover, retained restart, final down and
+exact workspace purge must preserve the authored project and generated tasks.
+
+This is an automated public-command walkthrough, with an exact guide identity
+and real package receipts. It does not record an interactive editor UI review.
+The optional native business test is explicitly not run because no native host
+toolchain is selected; its separate existing-host observation remains in the
+[guide validation record](application-guide-validation.md). The actual installed
+VS Code integration has its own evidence. Adding this sequence to the existing
+manual Windows lane creates no additional always-on runtime or browser pipeline.
+
 Each command has bounded output and a deadline. The schedule admits at most
 360 completed commands per backend, reserving the last 24 for status, recovery
 and cleanup, 4 MiB stdout and 256 KiB stderr per command, 1,800 seconds
