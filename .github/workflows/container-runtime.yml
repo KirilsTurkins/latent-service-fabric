@@ -51,7 +51,7 @@ jobs:
           docker build --tag lsf-container-runtime "$RUNNER_TEMP/container-context"
           docker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release
       - name: Publish actual signed sites and verify restart
-        run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$RUNNER_TEMP/container-context/release" --output "$RUNNER_TEMP/container-qualification"
+        run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$RUNNER_TEMP/container-context/release" --output "$RUNNER_TEMP/container-qualification" --storage
       - name: Retain public container evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

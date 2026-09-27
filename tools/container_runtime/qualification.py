@@ -10,6 +10,7 @@ import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
+INSIDE = '/source/tools/container_runtime/qualification_inside.py'
 
 
 class Drill:
@@ -100,11 +101,10 @@ class Drill:
         denied = json.loads(self.attached(root, 'reject-root.json', codes=(1,)))
         if denied.get('reason') != 'run-as-uid-and-gid-10001':
             raise RuntimeError('root-rejection-reason')
-        node = self.container('node', [*mounts, self.args.image])
+        node = self.container('node', [*mounts, *source, self.args.image])
         self.docker('start', node)
         self.ready(node)
-        self.docker('cp', ROOT / 'tools/container_runtime/qualification_inside.py', node + ':/var/cache/lsf/qualification.py')
-        published = self.exec_json(node, '/usr/local/bin/python3', '/var/cache/lsf/qualification.py', 'publish')
+        published = self.exec_json(node, '/usr/local/bin/python3', INSIDE, 'publish')
         (self.output / 'publication.json').write_text(json.dumps(published) + '\n')
         begin = time.monotonic()
         self.docker('stop', '--time', '10', node, timeout=15)
@@ -117,8 +117,12 @@ class Drill:
         time.sleep(6)
         self.docker('start', node)
         self.ready(node)
-        reopened = self.exec_json(node, '/usr/local/bin/python3', '/var/cache/lsf/qualification.py', 'reopen')
+        reopened = self.exec_json(node, '/usr/local/bin/python3', INSIDE, 'reopen')
         elapsed = round((time.monotonic() - begin) * 1000)
+        storage = None
+        if self.args.storage:
+            from qualification_storage import run
+            storage = run(self, node, volumes, mounts, mount, source, native)
         self.docker('stop', '--time', '10', node, timeout=15)
         if json.loads(self.docker('inspect', '--format', '{{.State.ExitCode}}', node)[1]) != 0:
             raise RuntimeError('second-native-shutdown-failed')
@@ -127,7 +131,7 @@ class Drill:
                   'shutdownExitCode': stopped, 'stopToVerifiedRestartMillis': elapsed,
                   'imageId': self.docker('image', 'inspect', '--format', '{{.Id}}', self.args.image)[1].decode().strip(),
                   'cloudQualified': False, 'negativeChecks': ['root-identity-rejected'],
-                  'dockerProcesses': self.calls, 'maximumSeconds': 300, 'privilegedRuntime': False}
+                  'dockerProcesses': self.calls, 'maximumSeconds': 300, 'privilegedRuntime': False, 'storage': storage}
         (self.output / 'receipt.json').write_text(json.dumps(report, indent=2) + '\n')
         return report
 
@@ -153,6 +157,7 @@ def main():
     parser.add_argument('--frontend-image', required=True)
     parser.add_argument('--release-directory', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--storage', action='store_true', help='also qualify stopped local storage recovery')
     args = parser.parse_args()
     for identity in (args.image, args.frontend_image):
         if not re.fullmatch(r'[a-z0-9][a-zA-Z0-9/_.:@-]{0,255}', identity):

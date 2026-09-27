@@ -31,10 +31,10 @@ def call(*arguments, codes=(0,)):
     return result
 
 
-def route(name, publication, mount, method):
+def route(name, publication, mount, method, prefix='initial'):
     previous = call('trigger', 'get', name, codes=(0, 6))['data']
     generation = previous['trigger']['generation'] if previous['trigger'] else '0'
-    operation = name + '-' + str(CALLS)
+    operation = prefix + '-' + name + '-' + str(CALLS)
     path = Path('/var/cache/lsf') / (operation + '.json')
     files.create(path, encode({'apiVersion': 'latent.dev/v1alpha1', 'kind': 'HttpTrigger',
         'metadata': {'name': name, 'tenant': 'tests'}, 'spec': {
