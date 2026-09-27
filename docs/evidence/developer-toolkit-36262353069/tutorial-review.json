@@ -1,0 +1,67 @@
+{
+  "sourceCommit": "cb00bf43e3f598e0f9d4bcaea2a4853d17dea8f4",
+  "candidateRun": 36259950144,
+  "scope": "Native tutorial subset equivalence; excludes clean-host installation, node admission and provider-clock value equivalence",
+  "languages": [
+    {
+      "language": "rust",
+      "applications": {
+        "greeting": 3,
+        "shipping": 3,
+        "word-count": 3
+      },
+      "passed": true,
+      "receiptSha256": "79b370f1c2a7872d8db2a07be9a54734895cdd4aea96ff19b2c7248772ca55dd"
+    },
+    {
+      "language": "c",
+      "applications": {
+        "greeting": 3,
+        "shipping": 3,
+        "word-count": 3
+      },
+      "passed": true,
+      "receiptSha256": "291feab67c9fd2918086f67cd82814079e2b7b9eccdc8efa16e8fc9e08f93039"
+    },
+    {
+      "language": "java",
+      "applications": {
+        "greeting": 5,
+        "shipping": 5,
+        "word-count": 5
+      },
+      "passed": true,
+      "receiptSha256": "fd80acccb4056337ec3aa628e12b09ff6844a4baf7237e7750dfb40478b4e862"
+    },
+    {
+      "language": "dotnet",
+      "applications": {
+        "greeting": 5,
+        "shipping": 5,
+        "word-count": 5
+      },
+      "passed": true,
+      "receiptSha256": "07e57e200bd2f3d599f57a8018353c094b97fc333835f3b050907e90d7be6c18"
+    },
+    {
+      "language": "go",
+      "applications": {
+        "greeting": 5,
+        "shipping": 5,
+        "word-count": 5
+      },
+      "passed": true,
+      "receiptSha256": "e5b4acdd89eaf8ceabe99cf55789bc185e74a33260633769f9fa8b364565bb6b"
+    },
+    {
+      "language": "typescript",
+      "applications": {
+        "greeting": 3,
+        "shipping": 3,
+        "word-count": 3
+      },
+      "passed": true,
+      "receiptSha256": "f1f0c34105f1ed0d32d8da6556f08f7597dc0818e0cbd237e7cad8ac0150a850"
+    }
+  ]
+}
