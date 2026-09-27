@@ -129,6 +129,9 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     }
     let path = head.collector.target().path();
     if path == "/_lsf/assets" || path.starts_with(latent_artifacts::web::IMMUTABLE_ASSET_PREFIX) {
+        if head.public_document {
+            return Err(403);
+        }
         if used != end {
             return Err(400);
         }
@@ -178,19 +181,7 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     head.collector
         .append(&buffer[end..used])
         .map_err(|e| e.status().unwrap_or(0))?;
-    let mut remaining = head.content_length - (used - end);
-    buffer.zeroize();
-    let body_until = Instant::from_std(deadline.monotonic())
-        .min(Instant::now() + millis(shared.settings.limits.body_timeout_millis));
-    while remaining != 0 {
-        let maximum = remaining.min(buffer.len());
-        let n = read_until(socket, &mut buffer[..maximum], body_until).await?;
-        head.collector
-            .append(&buffer[..n])
-            .map_err(|e| e.status().unwrap_or(0))?;
-        remaining -= n;
-    }
-    buffer.zeroize();
+    read_body(socket, shared, buffer, &mut head, used - end, deadline).await?;
     let delivery = match dispatch::begin(head, selected, shared)? {
         dispatch::Begun::Cached(delivery) => delivery,
         dispatch::Begun::Activation(mut activation) => {
@@ -223,6 +214,29 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     .map_err(|_| 0u16)?
     .map_err(|_| 0u16)?;
     Ok(close)
+}
+async fn read_body<S: AsyncRead + Unpin>(
+    socket: &mut S,
+    shared: &Shared,
+    buffer: &mut [u8],
+    head: &mut head::Head,
+    received: usize,
+    deadline: IncomingDeadline,
+) -> Result<(), u16> {
+    let mut remaining = head.content_length - received;
+    buffer.zeroize();
+    let body_until = Instant::from_std(deadline.monotonic())
+        .min(Instant::now() + millis(shared.settings.limits.body_timeout_millis));
+    while remaining != 0 {
+        let maximum = remaining.min(buffer.len());
+        let n = read_until(socket, &mut buffer[..maximum], body_until).await?;
+        head.collector
+            .append(&buffer[..n])
+            .map_err(|e| e.status().unwrap_or(0))?;
+        remaining -= n;
+    }
+    buffer.zeroize();
+    Ok(())
 }
 async fn read_head<S: AsyncRead + Unpin>(
     socket: &mut S,
