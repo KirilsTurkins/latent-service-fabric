@@ -2018,7 +2018,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 -m pip install --require-hashes --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_harbor_registry_runner\ncargo build --locked --package latent --bin latent"
+      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_harbor_registry_runner\ncargo build --locked --package latent --bin latent"
     },
     ".github/workflows/registry-cli.yml:harbor:Qualify the CLI against real Harbor": {
       "workflow": ".github/workflows/registry-cli.yml",
@@ -7156,6 +7156,6 @@
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
     ".github/workflows/container-runtime.yml": "7594ec618b30311c253f32e3a20b1f9b6842d3d7e51de8cc6b53b0a18959fc0b",
-    ".github/workflows/registry-cli.yml": "b11d5b2f54133876ab16365932edc5883787a05de9c856d0ad64904e9e3e8afa"
+    ".github/workflows/registry-cli.yml": "a3ff58b3330ba14d79b1394693b2262964e3ff08649062ddb5bd503df055310a"
   }
 }
