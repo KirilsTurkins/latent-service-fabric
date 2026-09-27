@@ -6745,6 +6745,7 @@
       "WebAdmissionSchemaTests.test_componentless_profiles_are_closed_and_keep_required_identities",
       "WebAdmissionSchemaTests.test_legacy_capsule_statement_and_receipt_do_not_silently_become_web",
       "WebAdmissionSchemaTests.test_private_asset_locations_unknown_profiles_and_unbounded_arrays_are_rejected",
+      "WebAdmissionSchemaTests.test_static_contract_fixtures_agree_with_native_acceptance",
       "WebAdmissionSchemaTests.test_web_build_type_does_not_claim_compiler_or_hermetic_observation"
     ],
     "tools/tests/test_wiki_migration.py": [
