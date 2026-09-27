@@ -68,6 +68,19 @@ identity remain requirements of the existing
 
 ## Choose the routing policy before signing
 
+Editors and schema-based CI can validate `metadata/web-application.json` with
+the [web application schema](../../schemas/web-application.schema.json).
+It supports both a CSR entry route and a generator's empty `routes` list with
+`staticRouting`. Routing fields and fallback modes are closed: SPA fallback
+requires a document, while `none` forbids one. Static routing cannot accompany
+a server renderer.
+
+Also run `latent package build --validate-web` and `latent package inspect`.
+Native validation checks the actual package kind, digests, asset bytes and that
+each routing document names an admitted HTML asset. JSON Schema validates the
+document's structure; it cannot verify those package associations or establish
+publisher trust.
+
 For Angular CSR, keep directory indexes disabled and select the admitted HTML
 entry as the SPA fallback. For static-generator output, choose `redirect` with
 `/index.html` as the directory-index document and `{"mode":"none"}` as fallback.
