@@ -7033,7 +7033,7 @@
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "0e6d62e17694c75b231822f019e772de7b89f9563fd35a32f2e3800956cbc409",
     ".github/workflows/docs-pages.yml": "cd2107d5f0e5fbf684f33f9ba4a0bdd51bbfb2a253f2e73f53470f64c11f6290",
-    ".github/workflows/docs-site.yml": "ce3682ffcbf98c4395edb2757e7ddd04078b4a4749b2907d398fe04507bdbd6f",
+    ".github/workflows/docs-site.yml": "0c1292592fb6371d493bc66467677eae6d3fa72bc68365bb5b4c640c9a32c5d2",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
     ".github/workflows/go-guest.yml": "bb0a8f048724248e33fe72ebb9f153c0e82184cf8d7f99f53be05cfb97c8919e",
     ".github/workflows/java-guest-feasibility.yml": "6c1814b442abf741dc4dceb6ab707cf87b3cc161090a3b5b7a62c9334dc3f872",
