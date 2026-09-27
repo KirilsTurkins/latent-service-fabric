@@ -230,7 +230,9 @@ def run(args):
         node_root, client_root, pulled = (directory / name for name in ('node', 'client', 'pulled'))
         for path in (node_root, client_root, pulled): path.mkdir(mode=0o700)
         client = Client(args.cli, client_root, cancellation, time.monotonic() + 600)
-        original = tree_inventory(args.fixture, client)
+        # Four independently signed publications include two complete 250-file
+        # documentation sites plus package/evidence records and directories.
+        original = tree_inventory(args.fixture, client, maximum_entries=2048)
         identity = {name: file_digest(path, 1024 * 1024 * 1024, cancellation, client.deadline)
                     for name, path in [('cliDigest', args.cli), ('nodeDigest', args.node)]}
         with registry_fixture(args, directory, cancellation) as (origin, ca):
@@ -286,7 +288,7 @@ def run(args):
             stop(client, node)
             shutdown = stopped_record(node)
             node = None
-            require(tree_inventory(args.fixture, client) == original, 'static-fixture-mutated')
+            require(tree_inventory(args.fixture, client, maximum_entries=2048) == original, 'static-fixture-mutated')
             return bounded_receipt({'schemaVersion': 'latent.static.workflow.v1', 'passed': True,
                 'identity': identity, 'publications': publications, 'packageDigests': {n: r['packageDigest'] for n, r in records.items()},
                 'ociExactDigestRoundtrip': True, 'browserA': browser_a, 'cutover': handoff, 'browserB': browser_b,
