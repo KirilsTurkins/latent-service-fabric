@@ -61,11 +61,20 @@ does not prove compatibility with hosted object-storage redirects: see the
 No mutable fallback is authorized.
 
 The [CLI challenge profile](oci-bearer-read-auth.md#configure-the-cli) exposes
-these transport controls to `latent package push/pull`. It does not expand this
-qualification matrix. Azure Container Registry remains unqualified: no actual
-authenticated ACR package/evidence round trip or identity-renewal result has been
-recorded. The pending qualification is tracked in
-[issue #634](https://github.com/KirilsTurkins/latent-service-fabric/issues/634).
+these transport controls to `latent package push/pull`. The maintained
+`CLI registry qualification` workflow exercises the version 2 CLI against the
+real pinned Harbor fixture using a disposable private project's robot identity,
+explicit DNS and verified TLS. It pushes exact signed static-package digests and
+native evidence referrers, pulls them using a separate pull-only profile, and
+verifies publisher/build evidence against the fixture's approved test policy.
+Address, certificate, credential, repository-scope and unavailable-endpoint
+failures are also required. Its sanitized receipt records the source-built CLI
+digest; it is not released-binary authentication.
+
+Azure Container Registry remains unqualified. The owner excludes Azure resources
+and cloud simulation from this delivery; Harbor is the real local alternative.
+No actual ACR package/evidence round trip, Azure identity renewal or hosted
+storage redirect result is claimed.
 
 Permanent rules apply to every profile: server-controlled challenges, DNS replies,
 redirects, links and manifests cannot grant endpoint or credential authority;

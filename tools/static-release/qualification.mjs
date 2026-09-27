@@ -12,10 +12,11 @@ import {main} from './release.mjs';
 import {native, run} from './process.mjs';
 
 const repository = 'https://example.com/anonymous/frontend';
-export async function qualify(cli, destination, node) {
+export async function qualify(cli, destination, node, releasedCli = true) {
   assert.equal(process.platform, 'linux');
   assert.notEqual(process.getuid(), 0);
-  for (const directory of ['/usr/bin', '/usr/local/bin', '/home/frontend/.cargo/bin']) {
+  assert.equal(typeof releasedCli, 'boolean');
+  for (const directory of releasedCli ? ['/usr/bin', '/usr/local/bin', '/home/frontend/.cargo/bin'] : []) {
     for (const name of ['cargo', 'rustc']) await assert.rejects(access(path.join(directory, name)));
   }
   const work = await mkdtemp(path.join(os.tmpdir(), 'lsf-frontend-'));
@@ -71,15 +72,15 @@ export async function qualify(cli, destination, node) {
     const deniedFile = path.join(work, name + '-revoked-policy.json'); await writeJson(deniedFile, denied);
     await assert.rejects(native(cli, ['--tenant', 'tests', 'package', 'verify', path.join(prepared, 'package'),
       '--evidence-index', path.join(evidence, 'index.json'), '--evidence-root', evidence, '--policy', deniedFile], work));
-    rows.push({example: name, packageDigest: signed.packageDigest, verifiedByReleasedCli: true,
+    rows.push({example: name, packageDigest: signed.packageDigest, verifiedByReleasedCli: releasedCli,
       revokedPublisherRejected: true, assemblyExecuted: true, frameworkBuildExecuted: false});
   }
   const live = node ? JSON.parse((await run(await realpath('/usr/bin/python3'),
     [path.join(path.dirname(fileURLToPath(import.meta.url)), 'qualification_native.py'), '--work', work,
       '--cli', cli, '--node', node], work, 120)).toString('utf8')) : null;
   if (node) assert.equal(live?.passed, true, JSON.stringify(live));
-  const receipt = {schemaVersion: 'latent.frontend.release-qualification.v1', passed: true, actualReleasedCli: true,
-    rustToolchainAvailable: false, uid: process.getuid(), node: process.version, examples: rows,
+  const receipt = {schemaVersion: 'latent.frontend.release-qualification.v1', passed: true, actualReleasedCli: releasedCli,
+    rustToolchainAvailable: releasedCli ? false : null, uid: process.getuid(), node: process.version, examples: rows,
     nativeWorkflow: live, testIdentityOnly: true, cloudQualified: false};
   if (destination) await writeJson(destination, receipt);
   return receipt;

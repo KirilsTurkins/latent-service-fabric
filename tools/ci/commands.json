@@ -2009,6 +2009,26 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\""
+    },
+    ".github/workflows/registry-cli.yml:harbor:Build the exact CLI and check owned registry guards": {
+      "workflow": ".github/workflows/registry-cli.yml",
+      "job": "harbor",
+      "name": "Build the exact CLI and check owned registry guards",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --require-hashes --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_harbor_registry_runner\ncargo build --locked --package latent --bin latent"
+    },
+    ".github/workflows/registry-cli.yml:harbor:Qualify the CLI against real Harbor": {
+      "workflow": ".github/workflows/registry-cli.yml",
+      "job": "harbor",
+      "name": "Qualify the CLI against real Harbor",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "umask 077\npython3 tools/run_harbor_registry_tests.py --network --cli target/debug/latent --output \"$RUNNER_TEMP/harbor-cli.json\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3693,6 +3713,9 @@
     },
     "tools/prepare_container_runtime.py": {
       "sha256": "ec63c85baf36ba259c49f3d256e937396deab6da137d4b6326e672b7e27d16ed"
+    },
+    "tools/run_harbor_registry_tests.py": {
+      "sha256": "ebcefe5489127650cbdb634060222da39fb853a3155aa9653c58207b96c3203b"
     }
   },
   "pythonCases": {
@@ -7132,6 +7155,7 @@
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
-    ".github/workflows/container-runtime.yml": "7594ec618b30311c253f32e3a20b1f9b6842d3d7e51de8cc6b53b0a18959fc0b"
+    ".github/workflows/container-runtime.yml": "7594ec618b30311c253f32e3a20b1f9b6842d3d7e51de8cc6b53b0a18959fc0b",
+    ".github/workflows/registry-cli.yml": "b11d5b2f54133876ab16365932edc5883787a05de9c856d0ad64904e9e3e8afa"
   }
 }
