@@ -8,6 +8,7 @@ from jsonschema import Draft202012Validator
 
 from tools import static_site as site
 from tools.build_snapshot import SnapshotError, canonical, digest
+from tools.static_fonts import prepare_primeicons
 
 
 class StaticSiteCaptureTests(unittest.TestCase):
@@ -87,6 +88,43 @@ class StaticSiteCaptureTests(unittest.TestCase):
         self.web_schema.validate(web)
         self.assertEqual(web['routes'], [{'path': '/', 'mode': 'client', 'asset': '/index.html'}])
         self.assertEqual((left / 'public/index.html').read_bytes(), (right / 'public/index.html').read_bytes())
+
+    def test_xml_sitemap_bytes_and_exact_media_are_preserved_without_parsing(self):
+        xml = b'<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>'
+        (self.root / 'sitemap.xml').write_bytes(xml)
+        config = copy.deepcopy(self.config)
+        config['assets'].append({'path': '/sitemap.xml', 'source': 'sitemap.xml'})
+        output, _ = self.capture(config)
+        self.assertEqual((output / 'public/sitemap.xml').read_bytes(), xml)
+        web = json.loads((output / 'metadata/web-application.json').read_bytes())
+        self.assertEqual(next(row['mediaType'] for row in web['assets'] if row['path'] == '/sitemap.xml'), 'application/xml')
+        config['assets'][-1]['mediaType'] = 'text/xml'
+        self.reject(config)
+        for suffix in ('woff', 'ttf', 'eot', 'bin'):
+            with self.assertRaises(SnapshotError):
+                site.public_file('fonts/font.' + suffix)
+
+    def test_font_preparation_keeps_glyphs_and_only_one_woff2_resource(self):
+        package = Path(self.temp.name) / 'primeicons'
+        (package / 'fonts').mkdir(parents=True)
+        (package / 'package.json').write_text('{"name":"primeicons","version":"7.0.0"}')
+        (package / 'LICENSE').write_text('Test-only fixture license')
+        (package / 'fonts/primeicons.woff2').write_bytes(b'wOF2' + b'\0' * 44)
+        css = "@font-face { font-family: 'primeicons'; src: url('./fonts/old.eot'); src: url('./fonts/primeicons.woff2') format('woff2'); }\n.pi-check:before { content: '\\e909'; }"
+        (package / 'primeicons.css').write_text(css)
+        output = Path(self.temp.name) / 'prepared-fonts'
+        prepare_primeicons(package, output)
+        prepared = (output / 'primeicons.css').read_text()
+        self.assertNotIn('.eot', prepared)
+        self.assertEqual(prepared.count('url('), 1)
+        self.assertIn('.pi-check:before', prepared)
+        self.assertEqual({p.name for p in output.iterdir()}, {'primeicons.css', 'primeicons.woff2', 'LICENSE.txt'})
+        for unsupported in [css + '\n@import "https://example.test/other.css";', css + '\n.other { background: url(foreign.svg); }', css + css]:
+            (package / 'primeicons.css').write_text(unsupported)
+            rejected = Path(self.temp.name) / 'rejected-fonts'
+            with self.assertRaises(SnapshotError):
+                prepare_primeicons(package, rejected)
+            self.assertFalse(rejected.exists())
 
     def test_closed_input_rejects_duplicate_fields_unknown_authority_and_executable_hooks(self):
         with self.assertRaises(SnapshotError):

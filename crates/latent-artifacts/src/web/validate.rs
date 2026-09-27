@@ -266,6 +266,7 @@ fn media_type(path: &str) -> Option<&'static str> {
         "js" | "mjs" => Some("text/javascript"),
         "css" => Some("text/css"),
         "json" => Some("application/json"),
+        "xml" => Some("application/xml"),
         "txt" => Some("text/plain"),
         "svg" => Some("image/svg+xml"),
         "png" => Some("image/png"),

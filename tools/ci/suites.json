@@ -753,7 +753,8 @@
         "web::tests::renderer_requires_the_same_asset_tree_and_supported_compatibility_identity",
         "web::tests::static_contract_fixtures_agree_with_json_schema_acceptance",
         "web::tests::static_routing_is_closed_signed_browser_metadata_with_html_documents",
-        "web::tests::unknown_fields_and_duplicate_keys_are_rejected_even_in_an_integrity_checked_package"
+        "web::tests::unknown_fields_and_duplicate_keys_are_rejected_even_in_an_integrity_checked_package",
+        "web::tests::xml_sitemaps_are_inert_exact_media_and_legacy_fonts_remain_rejected"
       ],
       "expectedIgnored": [
         "local_repository::tests::one_hundred_thousand_index_adoptions_are_bounded"

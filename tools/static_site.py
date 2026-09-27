@@ -21,7 +21,7 @@ MAX_TREE_BYTES = 16 * 1024 * 1024
 MAX_INPUT_BYTES = 256 * 1024
 MAX_WEB_MANIFEST_BYTES = 256 * 1024
 MEDIA = {'html': 'text/html', 'js': 'text/javascript', 'mjs': 'text/javascript',
-         'css': 'text/css', 'json': 'application/json', 'txt': 'text/plain',
+         'css': 'text/css', 'json': 'application/json', 'xml': 'application/xml', 'txt': 'text/plain',
          'svg': 'image/svg+xml', 'png': 'image/png', 'jpg': 'image/jpeg',
          'jpeg': 'image/jpeg', 'webp': 'image/webp', 'ico': 'image/x-icon', 'woff2': 'font/woff2'}
 

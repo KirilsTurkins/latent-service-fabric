@@ -58,7 +58,7 @@ The profile bounds are 252 public assets, 8 MiB per asset, 16 MiB in aggregate,
 232 bytes per relative path, a 256 KiB input descriptor, and three to eight
 nonempty observation files of at most 1 MiB each. Exactly one source observation
 and at least one toolchain and build observation are required. Supported media
-are HTML, JavaScript, CSS, JSON, text, SVG, PNG, JPEG, WebP, ICO and WOFF2. Explicit
+are HTML, JavaScript, CSS, JSON, XML, text, SVG, PNG, JPEG, WebP, ICO and WOFF2. Explicit
 media declarations must agree with the supported extension mapping.
 
 The web manifest is also bounded to 256 KiB. Public paths count independently
@@ -75,6 +75,39 @@ generator builds and publishes a complete 250-file English/German documentation
 fixture at both root and mounted paths. See the
 [capacity decision](../../adr/0045-bound-larger-static-documentation-inventories.md)
 for the coupled package, SBOM, memory and serving limits.
+
+## Sitemaps and fonts
+
+Include your generated `sitemap.xml` and sitemap index in the explicit asset
+inventory. `.xml` files use exactly `application/xml`, with `nosniff`, the normal
+size limits and the same GET/HEAD/conditional-response behavior as other assets.
+LSF serves the admitted bytes without parsing XML or resolving entities; it does
+not generate a sitemap or infer the site's public origin. Set the generator's
+public URL and mounted base path before building.
+
+For font-based PrimeIcons applications, prepare the pinned WOFF2-only stylesheet
+**before** the Angular or documentation build:
+
+```sh
+npm install --save-exact primeicons@7.0.0
+python3 tools/static_fonts.py --primeicons node_modules/primeicons --output src/primeicons-woff2
+```
+
+The output directory must be new. The helper preserves the icon classes and
+license, replacing the font declaration with a single local WOFF2 reference.
+Include `src/primeicons-woff2/primeicons.css` in Angular's `styles` list, or use
+that stylesheet as a Docusaurus `customCss` input. Remove the original
+`primeicons/primeicons.css` import, so the framework bundler does not emit its
+WOFF, TTF and EOT alternatives. The framework can hash/copy the WOFF2 asset in
+its normal build. Keep the resulting CSS, font and license in the reviewed
+public inventory. This recipe targets the font-based package; SVG component
+icon libraries do not need font preparation.
+
+Use the same prepared output for every hosting route you compare. Review
+deployment-only files such as `.nojekyll` separately and list deliberate
+exclusions; never enable arbitrary hidden files or silently discard referenced
+fonts. The maintained generator/browser check loads an actual WOFF2 icon and
+checks that no legacy font URL is requested.
 
 Observation references retain their digest and size in private package metadata;
 their contents are not copied into the public inventory. They are honestly
