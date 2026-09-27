@@ -116,6 +116,6 @@ The relevant guide issues are #357, #358, #359 and #361, consumed by #237 and
 the finite migration gate #345. Native installation qualification #308,
 verified Pages publication and the [Wiki removal](wiki-cutover-review.md) keep
 their separate completion evidence. The Wiki and its publishers are already
-disabled; final site publication and replacement-route verification complete
-the cutover. Old Wiki links and archive notices are not required. Report limitations directly; accepting a
+disabled. The [complete-site publication](website-publication-evidence.md)
+and every mapped replacement route are verified. Old Wiki links and archive notices are not required. Report limitations directly; accepting a
 guide does not certify an unfinished installer or deployment.
