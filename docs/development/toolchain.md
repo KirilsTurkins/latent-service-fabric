@@ -28,7 +28,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `wasmparser` |                               0.259.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
 | `wit-bindgen` |                               0.62.0 | Guest bindings and canonical ABI exports generated from WIT |
 | Serde / `serde_json` |                    1.0.229 / 1.0.150 | Rust contract serialization |
-| TOML |                                1.1.4 | Configuration parsing and serialization |
+| TOML |                                1.1.6 | Configuration parsing and serialization |
 | BLAKE3 / SHA-256 |                       1.8.7 / 0.10.9 | Cache/prepared identity and artifact digest verification |
 | Clap / `tempfile` |                       4.6.7 / 3.27.0 | CLI surfaces and test-only temporary storage |
 | `wasm-tools` |                              1.254.0 | WIT parsing, validation, componentization, and interface extraction |
@@ -39,7 +39,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Gradle (optional Java build) |                                9.1.0 | Java 25-compatible Gradle path; distribution SHA-256 pinned in `tools/toolchain.toml` |
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
 
-Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.4`; the resolved package may display `1.1.4+spec-1.1.0` in `Cargo.lock`.
+Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.6`; the resolved package may display `1.1.6+spec-1.1.0` in `Cargo.lock`.
 
 ## Shell completion tests
 
