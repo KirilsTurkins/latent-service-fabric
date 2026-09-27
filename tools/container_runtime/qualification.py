@@ -26,7 +26,7 @@ class Drill:
 
     def docker(self, *arguments, codes=(0,), timeout=60):
         self.calls += 1
-        if self.calls > 128 or time.monotonic() >= self.deadline:
+        if self.calls > 160 or time.monotonic() >= self.deadline:
             raise RuntimeError('container-drill-bound')
         result = subprocess.run(['docker', *map(str, arguments)], stdin=subprocess.DEVNULL,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -43,10 +43,12 @@ class Drill:
         self.volumes.append(name)
         return name
 
-    def container(self, suffix, arguments):
+    def container(self, suffix, arguments, *, network='none', memory='1g', pids='128'):
+        if network != 'none' and network not in {'container:' + name for name in self.containers}:
+            raise RuntimeError('qualification-network-owner')
         name = self.name + '-' + suffix
         self.docker('create', '--name', name, '--label', 'io.latent.container-qualification=' + self.name,
-                    '--cpus', '2', '--memory', '1g', '--pids-limit', '128', '--network', 'none',
+                    '--cpus', '2', '--memory', memory, '--pids-limit', pids, '--network', network,
                     '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
                     '--log-driver', 'json-file', '--log-opt', 'max-size=1m', '--log-opt', 'max-file=1', *arguments)
         self.containers.append(name)
@@ -104,6 +106,10 @@ class Drill:
         node = self.container('node', [*mounts, *source, self.args.image])
         self.docker('start', node)
         self.ready(node)
+        probes = None
+        if self.args.probes:
+            from qualification_probes import run
+            probes = run(self, node, volumes, mount)
         published = self.exec_json(node, '/usr/local/bin/python3', INSIDE, 'publish')
         (self.output / 'publication.json').write_text(json.dumps(published) + '\n')
         begin = time.monotonic()
@@ -135,8 +141,9 @@ class Drill:
                   'shutdownExitCode': stopped, 'stopToVerifiedRestartMillis': elapsed,
                   'imageId': self.docker('image', 'inspect', '--format', '{{.Id}}', self.args.image)[1].decode().strip(),
                   'cloudQualified': False, 'negativeChecks': ['root-identity-rejected'],
-                  'dockerProcesses': self.calls, 'maximumSeconds': 300, 'privilegedRuntime': False,
-                  'storage': storage, 'handover': handover}
+                  'dockerProcesses': self.calls, 'maximumDockerProcesses': 160,
+                  'maximumSeconds': 300, 'privilegedRuntime': False,
+                  'storage': storage, 'handover': handover, 'probes': probes}
         (self.output / 'receipt.json').write_text(json.dumps(report, indent=2) + '\n')
         return report
 
@@ -164,6 +171,7 @@ def main():
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--storage', action='store_true', help='also qualify stopped local storage recovery')
     parser.add_argument('--ownership', action='store_true', help='also qualify overlapping owners and interrupted handover')
+    parser.add_argument('--probes', action='store_true', help='also qualify the private HTTP status projection')
     args = parser.parse_args()
     for identity in (args.image, args.frontend_image):
         if not re.fullmatch(r'[a-z0-9][a-zA-Z0-9/_.:@-]{0,255}', identity):

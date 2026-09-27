@@ -16,9 +16,11 @@ const node = {formatVersion: 1, securityProfile: 'local-experimental-v1', dataDi
   supplyChain: {mode: 'enforced', policyFile: '/etc/lsf/policy.json', clockLeaseSeconds: 5},
   credentials: [{token, subject: 'container-operator', tenant: 'tests', role: 'operator'}],
   audit: {mode: 'durable'}, limits: {maximumPayloadBytes: 2097152},
+  execution: {maximumWallTimeMillis: 10000},
   httpIngress: {formatVersion: 1, bind: '127.0.0.1:18080', transport: {mode: 'loopback'},
     authentication: {mode: 'public-origins', origins: [{authority: 'frontend.example.test', subject: 'frontend-browser', tenant: 'tests'}]},
-    limits: {maximumConnections: 4, maximumExchanges: 2, maximumBufferBytes: 25165824, maximumRequestsPerConnection: 8}}};
+    limits: {maximumConnections: 4, maximumExchanges: 2, maximumBufferBytes: 25165824, maximumRequestsPerConnection: 8,
+      headerTimeoutMillis: 8000}}};
 const client = {formatVersion: 1, defaultProfile: 'local', profiles: [{name: 'local',
   endpoint: 'http://127.0.0.1:50051', tenant: 'tests', token, connectTimeoutMillis: 500, rpcTimeoutMillis: 1000,
   limits: {maximumComponentBytes: 16777216, maximumPayloadBytes: 1048576, maximumResponseBytes: 262144}}]};
