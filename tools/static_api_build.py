@@ -59,7 +59,6 @@ def exercise(payload: Path, packager: Path, supplied: Path, output: Path) -> dic
         root.mkdir(mode=0o700)
         captured = root / 'source'
         snapshot.materialize(captured, record, content)
-        paths.write_new(captured / 'snapshot.json', encode(record))
         trusted = project.trust_identity(descriptor)
         state.atomic(root, 'project.json', {'descriptor': descriptor, 'trust': trusted,
                      'source': str(captured), 'snapshot': record['identity']})
