@@ -3337,7 +3337,7 @@
       "sha256": "b0b05d6c1b48c6f1f405db526e7883900e98137dd8a8436de9c0720d6b40dd86"
     },
     "tools/build_static_sites.py": {
-      "sha256": "5acd3d499791273271236d0e60077763b6e9dd22ccee58aaac46d2b69733035c"
+      "sha256": "4e61f455f0f5c1f30db130278dc20b359a04e97df710b2e58361b59073416777"
     },
     "tools/check_owned_diagnostics.py": {
       "sha256": "38d0f7507d674c4b0ba0c0e6a72199b6250fbc48139dc909079116c1244f5d92"
@@ -3577,7 +3577,7 @@
       "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
     },
     "tools/static_site.py": {
-      "sha256": "5e2a5228f9bd06b06534a7b5c5b51b8e3a42ec0d924c82e661f4af44249504ce"
+      "sha256": "1c423a90ed5bc885166f501ab4f259c8c1157775677e7627c8bacae234a20afc"
     },
     "tools/test.py": {
       "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
@@ -6534,6 +6534,7 @@
     ],
     "tools/tests/test_static_site.py": [
       "StaticSiteCaptureTests.test_closed_input_rejects_duplicate_fields_unknown_authority_and_executable_hooks",
+      "StaticSiteCaptureTests.test_complete_multilingual_inventory_at_the_limit_and_exact_count_diagnostics",
       "StaticSiteCaptureTests.test_csr_entry_is_explicit_and_routing_changes_manifest_identity_without_changing_public_bytes",
       "StaticSiteCaptureTests.test_destination_cannot_overwrite_input_existing_data_or_follow_a_link",
       "StaticSiteCaptureTests.test_deterministic_sorted_capture_binds_public_bytes_routing_and_private_observation_refs",

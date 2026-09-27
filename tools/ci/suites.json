@@ -746,6 +746,7 @@
         "web::tests::backend_data_requires_an_explicit_angular_profile_and_nonoptional_import",
         "web::tests::browser_and_ssr_layouts_have_exact_asset_and_package_identity_without_capsule_identity",
         "web::tests::browser_routes_cannot_claim_a_renderer_and_server_routes_cannot_name_arbitrary_files",
+        "web::tests::documentation_asset_profile_admits_252_paths_and_rejects_the_next_with_a_named_bound",
         "web::tests::public_paths_media_types_order_and_spare_capacity_are_bounded",
         "web::tests::renderer_requires_the_same_asset_tree_and_supported_compatibility_identity",
         "web::tests::static_routing_is_closed_signed_browser_metadata_with_html_documents",
@@ -760,7 +761,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 253,
+      "minimumCases": 254,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [

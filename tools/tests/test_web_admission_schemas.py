@@ -99,7 +99,7 @@ class WebAdmissionSchemaTests(unittest.TestCase):
             value["assets"][0]["layer"] = path
             self.assertFalse(validator.is_valid(value), path)
         for field, invalid in (("profile", "lsf.web-release.v2"), ("renderer", None),
-                               ("assets", application()["assets"] * 129),
+                               ("assets", application()["assets"] * 253),
                                ("routes", application()["routes"] * 129)):
             value = application()
             value[field] = invalid
