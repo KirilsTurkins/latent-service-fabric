@@ -267,12 +267,16 @@ async fn verify_completed(inner: &Inner, work: &Work) -> Result<String> {
             || remote::header(&response, "content-range")?
                 != format!("bytes {low}-{}/{}", high - 1, work.record.size)
             || response.headers.iter().any(|h| h.0 == "content-encoding")
-            || format!("{:x}", part.finalize()) != *expected
+            || format!("{:x}", latent_core::digest::HexDigest(part.finalize())) != *expected
         {
             return Err(BlobError::ChecksumMismatch);
         }
     }
-    if format!("sha256:{:x}", full.finalize()) != work.record.digest {
+    if format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(full.finalize())
+    ) != work.record.digest
+    {
         return Err(BlobError::ChecksumMismatch);
     }
     Ok(version)

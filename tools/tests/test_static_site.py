@@ -179,13 +179,33 @@ class StaticSiteCaptureTests(unittest.TestCase):
             self.reject(config)
 
     def test_excessive_counts_paths_input_bytes_and_asset_bytes_fail_before_emission(self):
-        config = copy.deepcopy(self.config); config['assets'] *= 31
+        config = copy.deepcopy(self.config); config['assets'] *= 64
         self.reject(config)
         config = copy.deepcopy(self.config); config['assets'][0]['path'] = '/' + 'x' * 233 + '.html'
         self.reject(config)
         with self.assertRaises(SnapshotError): site.decode(b' ' * (site.MAX_INPUT_BYTES + 1))
         with (self.root / 'assets/main.js').open('wb') as stream: stream.truncate(site.MAX_ASSET_BYTES + 1)
         self.reject(self.config)
+
+    def test_complete_multilingual_inventory_at_the_limit_and_exact_count_diagnostics(self):
+        config = copy.deepcopy(self.config)
+        config['assets'] = [{'path': '/index.html', 'source': 'index.html'}]
+        for number in range(1, 252):
+            locale = 'en' if number % 2 else 'de'
+            name = f'{locale}/page-{number:03}/' + 'x' * 50 + '/' + 'y' * 50 + '.html'
+            file = self.root / name
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_bytes(f'<html lang="{locale}"><title>Page {number}</title></html>'.encode())
+            config['assets'].append({'path': '/' + name, 'source': name})
+        output, _ = self.capture(config)
+        raw = (output / 'metadata/web-application.json').read_bytes()
+        self.assertGreater(len(raw), 64 * 1024)
+        self.assertEqual(len(json.loads(raw)['assets']), 252)
+        self.assertEqual(len(json.loads((output / 'package-source.json').read_bytes())['layers']), 254)
+        config['assets'].append({'path': '/extra.html', 'source': 'extra.html'})
+        with self.assertRaisesRegex(SnapshotError, 'asset-count: actual=253 maximum=252'):
+            self.capture(config, 'too-many')
+        self.assertFalse((Path(self.temp.name) / 'too-many').exists())
 
     def test_missing_foreign_or_changed_observation_is_not_accepted_as_build_proof(self):
         for change in ['digest', 'missing', 'foreign', 'kind']:

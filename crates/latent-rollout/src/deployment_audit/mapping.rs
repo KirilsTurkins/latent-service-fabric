@@ -9,9 +9,12 @@ use latent_core::ArtifactBlobDigest;
 use sha2::{Digest, Sha256};
 
 fn digest(receipt: &DeploymentOperationReceipt) -> crate::Result<ArtifactBlobDigest> {
-    format!("sha256:{:x}", Sha256::digest(receipt.canonical_bytes()?))
-        .parse()
-        .map_err(|_| super::invalid())
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(receipt.canonical_bytes()?))
+    )
+    .parse()
+    .map_err(|_| super::invalid())
 }
 fn identities(receipt: &DeploymentOperationReceipt) -> AuditIdentities {
     AuditIdentities {

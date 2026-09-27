@@ -38,7 +38,10 @@ async fn real_vault_audit_and_status_redact_token_and_value_material() {
     );
     for material in ["Alpha", setup::FIRST_TOKEN, setup::SECOND_TOKEN] {
         assert!(!text.contains(material));
-        assert!(!text.contains(&format!("{:x}", Sha256::digest(material.as_bytes()))));
+        assert!(!text.contains(&format!(
+            "{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(material.as_bytes()))
+        )));
     }
     let AuditRecordData::Outcome { conclusion, .. } = &page.records()[1].data else {
         panic!("terminal audit")

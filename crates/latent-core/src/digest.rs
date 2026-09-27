@@ -8,6 +8,21 @@
 use std::fmt;
 use std::str::FromStr;
 
+/// Formats digest bytes as two lowercase hexadecimal digits per byte.
+///
+/// This keeps persisted identities independent of the hash library's output
+/// array type and writes directly into the caller's formatter.
+pub struct HexDigest<T>(pub T);
+
+impl<T: AsRef<[u8]>> fmt::LowerHex for HexDigest<T> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for byte in self.0.as_ref() {
+            write!(formatter, "{byte:02x}")?;
+        }
+        Ok(())
+    }
+}
+
 /// A digest is not `sha256:` followed by exactly 64 lowercase ASCII hex digits.
 ///
 /// Diagnostics deliberately omit the rejected input.
@@ -115,8 +130,20 @@ artifact_digest! {
 
 #[cfg(test)]
 mod tests {
-    use super::{ArtifactBlobDigest, DigestParseError, PackageDigest};
+    use super::{ArtifactBlobDigest, DigestParseError, HexDigest, PackageDigest};
     use std::collections::{BTreeSet, HashSet};
+
+    #[test]
+    fn digest_bytes_keep_leading_zeroes_and_lowercase_hex() {
+        assert_eq!(format!("{:x}", HexDigest([])), "");
+        assert_eq!(
+            format!("{:x}", HexDigest([0, 1, 15, 16, 127, 128, 254, 255])),
+            "00010f107f80feff"
+        );
+        let text = format!("sha256:{:x}", HexDigest([0_u8; 32]));
+        assert_eq!(text, format!("sha256:{}", "0".repeat(64)));
+        assert!(text.parse::<PackageDigest>().is_ok());
+    }
 
     #[test]
     fn canonical_sha256_text_round_trips_in_each_identity_domain() {

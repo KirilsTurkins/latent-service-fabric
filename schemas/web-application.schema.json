@@ -26,7 +26,7 @@
     "assets": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 128,
+      "maxItems": 252,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -232,7 +232,7 @@
     }
   },
   "title": "LSF exact web application package metadata",
-  "$comment": "At metadata/web-application.json; <=64 KiB. Rust additionally checks portable noncolliding paths, order, aggregate asset bytes, MIME suffixes, exact package/layer/profile hashes, static document references to admitted HTML, package kind and actual async renderer WIT. Schema/layout alone confers no admission. Angular profile is recognizable but is not installed by declaring it.",
+  "$comment": "At metadata/web-application.json; <=256 KiB. At most 252 assets, leaving four package layers for capture metadata, SBOM and input receipt. Rust additionally checks portable noncolliding paths, order, aggregate asset bytes, MIME suffixes, exact package/layer/profile hashes, static document references to admitted HTML, package kind and actual async renderer WIT. Schema/layout alone confers no admission. Angular profile is recognizable but is not installed by declaring it.",
   "$defs": {
     "staticDocumentPath": {
       "type": "string",

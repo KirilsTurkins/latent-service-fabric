@@ -110,7 +110,7 @@ pub(crate) fn message_id(namespace: &str, tenant: &str, event: &Event) -> String
     ] {
         part(&mut hash, bytes);
     }
-    format!("lsf-{:x}", hash.finalize())
+    format!("lsf-{:x}", latent_core::digest::HexDigest(hash.finalize()))
 }
 pub(crate) fn headers(event: &Event, stream: &str, id: &str) -> String {
     let mut out = String::with_capacity(4096);
