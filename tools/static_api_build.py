@@ -70,8 +70,8 @@ def exercise(payload: Path, packager: Path, supplied: Path, output: Path) -> dic
         shutil.copytree(source / 'output', output / 'build')
         from tools.dev_node_application_probe import run
         # Even rejection-only calls instantiate the declared HTTP import. Install
-        # the actual provider and a finite local peer, with no capability grant.
-        # These two scenarios must reject before sending anything upstream.
+        # the actual provider and a finite local peer. The scenario grants only
+        # that peer; both requests must reject before sending anything upstream.
         with socket.socket() as reservation:
             reservation.bind(('127.0.0.1', 0))
             port = reservation.getsockname()[1]

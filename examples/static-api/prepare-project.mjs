@@ -55,7 +55,8 @@ for (const [id, path, method, status, error] of [
   }
   cases.push({id, service: descriptor.service, contract: 'latent:web/application@0.1.0', function: 'handle',
     input: `tests/${id}-input.json`, mediaType: 'application/vnd.latent.wit-values.v1+json',
-    expect: {category: 'success', payload: `tests/${id}-expected.json`}, requires: [], fixtures: [],
+    expect: {category: 'success', payload: `tests/${id}-expected.json`}, requires: ['buffered-http-fixture'], fixtures: [],
+    execution: {grants: ['latent:http/client@0.2.0']},
     timeoutMillis: 5000, nodeTimeoutMillis: 120000, required: true});
 }
 await writeFile(join(destination, 'tests/scenarios.json'), JSON.stringify({schemaVersion: 'latent.dev.scenarios.v1', scenarios: cases}, null, 2) + '\n');
