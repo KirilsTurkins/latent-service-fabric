@@ -135,7 +135,11 @@ pub(super) fn verify(
     checkpoint()?;
     if data.read(&mut [0]).map_err(fs::failure)? != 0
         || fs::Identity::of(&data)? != before
-        || reference.digest != format!("sha256:{:x}", hash.finalize())
+        || reference.digest
+            != format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(hash.finalize())
+            )
     {
         return Err(LocalBlobError::Corrupt);
     }

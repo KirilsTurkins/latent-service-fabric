@@ -127,7 +127,10 @@ pub(super) fn write_new(path: &Path, bytes: &[u8]) -> ProbeResult<()> {
 }
 
 pub(super) fn sha256(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    )
 }
 
 pub(super) fn file_ref(path: &str, bytes: &[u8]) -> serde_json::Value {

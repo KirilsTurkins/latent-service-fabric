@@ -205,7 +205,8 @@ pub(super) async fn read(
             || header(&response, "content-range")?
                 != format!("bytes {low}-{}/{}", high - 1, record.size)
             || response.headers.iter().any(|h| h.0 == "content-encoding")
-            || format!("{:x}", digest.finalize()) != record.parts[part]
+            || format!("{:x}", latent_core::digest::HexDigest(digest.finalize()))
+                != record.parts[part]
         {
             return Err(BlobError::ChecksumMismatch);
         }

@@ -38,7 +38,10 @@ async fn required_audit_records_operations_and_outcomes_without_generated_bytes_
     let text = serde_json::to_string(page.records()).unwrap();
     for forbidden in [
         "*".repeat(16),
-        format!("{:x}", Sha256::digest([42; 16])),
+        format!(
+            "{:x}",
+            latent_core::digest::HexDigest(Sha256::digest([42; 16]))
+        ),
         SCALAR.to_string(),
     ] {
         assert!(!text.contains(&forbidden));
