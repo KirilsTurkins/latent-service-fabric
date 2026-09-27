@@ -1,65 +1,59 @@
 // One bounded, trusted TLS edge. No DNS, credentials, route rules or public management.
 import https from 'node:https';
-import http from 'node:http';
 import {configuration, LIMITS, requireEdge} from './config.mjs';
-import {admitted, responseHeaders, reject} from './request.mjs';
+import {admitted, reject} from './request.mjs';
+import {upstream} from './upstream.mjs';
+import {compressed} from './compressed.mjs';
+import {encoding, conditions} from './representation.mjs';
 
 export async function start(file) {
   const {value: config, cert, key} = await configuration(file);
+  const compress = config.compression === 'gzip', maximumExchanges = compress ? 4 : LIMITS.exchanges;
   let active = 0, accepting = true, completed = 0, cancelled = 0, denied = 0;
+  let listenerClosed = false, reported = false;
   const sockets = new Set(), owners = new Set();
+  const reportStopped = () => {
+    if (reported || !listenerClosed || active !== 0) return;
+    reported = true;
+    console.log(JSON.stringify({event: 'stopped', active, sockets: sockets.size, completed, cancelled, denied,
+      residentBytes: process.memoryUsage().rss, cloudQualified: false}));
+  };
   const server = https.createServer({cert, key, minVersion: 'TLSv1.2', ALPNProtocols: ['http/1.1'],
     handshakeTimeout: 2000, headersTimeout: 2000, requestTimeout: 2000, connectionsCheckingInterval: 250,
     maxHeaderSize: LIMITS.headerBytes, highWaterMark: 16384}, async (request, response) => {
-    let headers;
-    try { headers = admitted(request, config.authority); }
+    let headers, selected, condition;
+    try {
+      headers = admitted(request, config.authority);
+      if (compress) { selected = encoding(headers['accept-encoding']); condition = conditions(headers); }
+    }
     catch { denied++; reject(response); return; }
-    if (!accepting || active >= LIMITS.exchanges) { denied++; reject(response, 503); return; }
+    if (!accepting || active >= maximumExchanges) { denied++; reject(response, 503); return; }
     active++;
-    const owner = {upstream: null, abort: null}; owners.add(owner);
-    let settled = false, downstreamClosed = false, upstreamClosed = false;
+    const owner = {upstreams: new Set(), abort: null, aborted: false, done: false}; owners.add(owner);
+    let settled = false, downstreamClosed = false;
     const release = () => {
-      if (settled || !downstreamClosed || !upstreamClosed) return;
-      settled = true; clearTimeout(timer); owners.delete(owner); active--;
+      if (settled || !downstreamClosed || !owner.done || owner.upstreams.size) return;
+      settled = true; clearTimeout(timer); owners.delete(owner); active--; reportStopped();
     };
-    owner.abort = () => { if (!settled) { cancelled++; owner.upstream?.destroy(); response.destroy(); } };
+    owner.abort = () => {
+      if (settled || owner.aborted) return;
+      owner.aborted = true; cancelled++;
+      for (const call of owner.upstreams) call.destroy(new Error('edge-cancelled'));
+      response.destroy();
+    };
     const timer = setTimeout(owner.abort, LIMITS.seconds * 1000);
     response.once('close', () => {
       downstreamClosed = true;
-      if (!response.writableFinished) cancelled++;
-      owner.upstream?.destroy(); release();
+      if (!response.writableFinished) owner.abort();
+      release();
     });
     request.once('aborted', owner.abort);
     try {
-      const upstream = http.request({host: '127.0.0.1', port: config.upstreamPort, localAddress: '127.0.0.2',
-        agent: false, method: request.method, path: request.url, headers, maxHeaderSize: LIMITS.headerBytes}, incoming => {
-        try {
-          const outgoing = responseHeaders(incoming);
-          const length = incoming.headers['content-length'] ?? ([204, 304].includes(incoming.statusCode) ? '0' : undefined);
-          requireEdge(typeof length === 'string' && /^(0|[1-9][0-9]{0,7})$/.test(length)
-            && Number(length) <= LIMITS.responseBytes, 'edge-upstream-body-bound');
-          response.writeHead(incoming.statusCode, outgoing);
-          let bytes = 0;
-          incoming.on('data', block => {
-            bytes += block.length;
-            if (bytes > LIMITS.responseBytes || bytes > Number(length)) { owner.abort(); return; }
-            if (!response.write(block)) incoming.pause();
-          });
-          response.on('drain', () => incoming.resume());
-          incoming.on('end', () => {
-            if (request.method !== 'HEAD' && ![204, 304].includes(incoming.statusCode) && bytes !== Number(length)) {
-              owner.abort(); return;
-            }
-            completed++; response.end();
-          });
-          incoming.on('error', owner.abort);
-        } catch { denied++; incoming.destroy(); reject(response, 502); }
-      });
-      owner.upstream = upstream;
-      upstream.once('close', () => { upstreamClosed = true; release(); });
-      upstream.on('error', () => { reject(response, 502); });
-      upstream.end();
-    } catch { upstreamClosed = true; reject(response, 502); }
+      if (compress) await compressed(request, response, headers, config, owner, release, selected, condition);
+      else await upstream(request, headers, config, owner, release, response, false);
+      if (!owner.aborted) completed++;
+    } catch { denied++; reject(response, 502); }
+    finally { owner.done = true; release(); }
   });
   key.fill(0);
   server.maxHeadersCount = LIMITS.headers;
@@ -83,17 +77,14 @@ export async function start(file) {
   let stopped = false;
   const stop = () => {
     if (stopped) return; stopped = true; accepting = false;
-    server.close(() => {
-      console.log(JSON.stringify({event: 'stopped', active, sockets: sockets.size, completed, cancelled, denied,
-        residentBytes: process.memoryUsage().rss, cloudQualified: false}));
-    });
+    server.close(() => { listenerClosed = true; reportStopped(); });
     for (const owner of owners) owner.abort();
     for (const socket of sockets) socket.destroy();
     server.closeAllConnections();
   };
   process.once('SIGTERM', stop); process.once('SIGINT', stop);
   console.log(JSON.stringify({event: 'listening', profile: 'latent.local-tls-edge.v1', fixedPeer: '127.0.0.2',
-    limits: LIMITS, cloudQualified: false}));
+    limits: {...LIMITS, exchanges: maximumExchanges}, compression: config.compression ?? 'none', cloudQualified: false}));
   return {server, stop};
 }
 
