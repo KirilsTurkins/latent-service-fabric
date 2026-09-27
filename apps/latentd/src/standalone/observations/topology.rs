@@ -10,6 +10,8 @@ use latent_wire::invocation::ActivationCleanupHandle;
 use crate::config::NodeSettings;
 use crate::standalone::transport::{TransportHandle, TransportSnapshot};
 
+mod catalog;
+
 pub(in crate::standalone) struct TopologySource {
     limits: Limits,
     backend: Arc<WasmtimeBackend>,
@@ -21,6 +23,7 @@ pub(in crate::standalone) struct TopologySource {
     control_threads: Arc<AtomicUsize>,
     rollouts: Option<latent_rollout::RolloutHandle>,
     policies: Option<latent_policy::capability::PolicyControlHandle>,
+    catalog: Option<Arc<latent_artifacts::DirectoryArtifactRepository>>,
 }
 
 impl TopologySource {
@@ -59,6 +62,7 @@ impl TopologySource {
             control_threads: threads.control,
             rollouts: None,
             policies: None,
+            catalog: None,
         }
     }
 
@@ -67,6 +71,13 @@ impl TopologySource {
         rollouts: Option<latent_rollout::RolloutHandle>,
     ) -> Self {
         self.rollouts = rollouts;
+        self
+    }
+    pub(in crate::standalone) fn with_catalog(
+        mut self,
+        catalog: Arc<latent_artifacts::DirectoryArtifactRepository>,
+    ) -> Self {
+        self.catalog = Some(catalog);
         self
     }
     pub(in crate::standalone) fn with_http(
@@ -113,6 +124,11 @@ impl TopologySource {
 
 impl NodeTopologySource for TopologySource {
     fn snapshot(&self, writer: &mut NodeTopologyWriter<'_>) -> Result<bool, PlatformError> {
+        if let Some(catalog) = &self.catalog {
+            if !writer.push(&catalog::entry(catalog))? {
+                return Ok(false);
+            }
+        }
         if !self.http_rows(writer)? {
             return Ok(false);
         }

@@ -1,5 +1,8 @@
 #[path = "admission_tests.rs"]
 mod admission;
+#[cfg(unix)]
+#[path = "capacity_tests.rs"]
+mod capacity;
 #[path = "catalog_query_tests.rs"]
 mod catalog_queries;
 #[path = "format_tests.rs"]
