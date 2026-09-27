@@ -31,7 +31,7 @@ def call(*arguments, codes=(0,)):
     return result
 
 
-def route(name, publication, mount, method, prefix='initial'):
+def route(name, publication, mount, method, prefix='initial', scheme='http', authority='frontend.example.test'):
     previous = call('trigger', 'get', name, codes=(0, 6))['data']
     generation = previous['trigger']['generation'] if previous['trigger'] else '0'
     operation = prefix + '-' + name + '-' + str(CALLS)
@@ -39,7 +39,7 @@ def route(name, publication, mount, method, prefix='initial'):
     files.create(path, encode({'apiVersion': 'latent.dev/v1alpha1', 'kind': 'HttpTrigger',
         'metadata': {'name': name, 'tenant': 'tests'}, 'spec': {
             'target': {'kind': 'static-web', 'publication': publication}, 'configuration': {
-                'profile': 'static-site-v1', 'scheme': 'http', 'host': 'frontend.example.test',
+                'profile': 'static-site-v1', 'scheme': scheme, 'host': authority,
                 'path': mount, 'pathMatch': 'prefix', 'method': method}}}))
     result = call('trigger', 'apply', path, '--operation-id', operation,
                  '--expected-generation', generation, '--expected-state-version', previous['stateVersion'])

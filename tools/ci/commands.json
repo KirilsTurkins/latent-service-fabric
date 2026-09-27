@@ -1998,7 +1998,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "docker build --tag lsf-container-runtime \"$CONTAINER_WORK/context\"\ndocker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release"
+      "run": "docker build --tag lsf-container-runtime \"$CONTAINER_WORK/context\"\ndocker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release\ndocker build --tag lsf-trusted-edge --file tools/trusted_edge/Dockerfile ."
     },
     ".github/workflows/container-runtime.yml:container:Publish actual signed sites and verify restart": {
       "workflow": ".github/workflows/container-runtime.yml",
@@ -2009,6 +2009,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage --ownership --probes"
+    },
+    ".github/workflows/container-runtime.yml:container:Verify exact HTTPS edge peers and native browser policy": {
+      "workflow": ".github/workflows/container-runtime.yml",
+      "job": "container",
+      "name": "Verify exact HTTPS edge peers and native browser policy",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/edge-qualification\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3693,6 +3703,9 @@
     },
     "tools/prepare_container_runtime.py": {
       "sha256": "def3f330f6d50dc10f9b949260d0b429deb968cf96aa362b323232b95f09cfc4"
+    },
+    "tools/trusted_edge/qualification.py": {
+      "sha256": "83774b48abf485f97930dc972e0bb6c1066316b6fec3ae6c0b7ece8c9d88f43f"
     }
   },
   "pythonCases": {
@@ -7132,6 +7145,6 @@
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
-    ".github/workflows/container-runtime.yml": "84981e0f872a168ee4dbbeeed4ed760f605c7dd3ce8ef516ea3d6310a92162c7"
+    ".github/workflows/container-runtime.yml": "dd2590b865ffe4b8da21a354eb39ad4943e4cb38569c21a5bd4b5391b0d7bfee"
   }
 }
