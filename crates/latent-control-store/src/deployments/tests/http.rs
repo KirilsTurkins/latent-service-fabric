@@ -158,6 +158,7 @@ fn static_web_upload() -> PackageAdmissionUpload {
             mode: WebRenderMode::Client,
             asset: Some("/index.html".into()),
         }],
+        style_hashes: Vec::new(),
         static_routing: Some(StaticWebRouting {
             profile: StaticWebRoutingProfile::StaticSiteV1,
             entry_document: "/index.html".into(),

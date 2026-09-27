@@ -83,6 +83,7 @@ fn manifest(renderer: bool) -> WebApplicationManifest {
                 Some("/index.html".into())
             },
         }],
+        style_hashes: Vec::new(),
         static_routing: None,
         renderer: renderer.then(|| WebRenderer {
             layer: "server/renderer.wasm".into(),

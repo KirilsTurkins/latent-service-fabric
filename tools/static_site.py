@@ -124,7 +124,11 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
     require(not destination.exists() and root != destination and root not in destination.parents, 'output-root')
     require(destination.parent.is_dir() and not any(is_reparse(p) for p in [destination.parent, *destination.parent.parents]), 'output-link')
     fields(config, {'formatVersion', 'profile', 'name', 'version', 'assets', 'entryDocument',
-                    'directoryIndex', 'fallback', 'excluded', 'observations'})
+                    'directoryIndex', 'fallback', 'excluded', 'observations'}, {'styleHashes'})
+    styles = config.get('styleHashes', [])
+    require(isinstance(styles, list) and len(styles) <= 64
+            and all(isinstance(value, str) and re.fullmatch(r'sha256:[0-9a-f]{64}', value) for value in styles)
+            and styles == sorted(set(styles)), 'style-hashes')
     require(type(config['formatVersion']) is int and config['formatVersion'] == 1
             and config['profile'] == 'static-site-input-v1', 'profile')
     require(isinstance(config['name'], str) and re.fullmatch(r'[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?', config['name']), 'package-name')
@@ -191,6 +195,8 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
     routes = [{'path': '/', 'mode': 'client', 'asset': entry}] if index['mode'] == 'disabled' else []
     web = {'formatVersion': 1, 'profile': 'lsf.web-release.v1', 'assetsDigest': asset_digest(table),
            'assets': table, 'routes': routes, 'staticRouting': routing}
+    if styles:
+        web['styleHashes'] = styles
     bounded(len(canonical(web)), MAX_WEB_MANIFEST_BYTES, 'web-manifest-bytes')
     observation = {'schemaVersion': 'latent.static-site.capture.v1', 'inputObservationTrust': 'operator-supplied',
                    'frameworkBuildExecuted': False, 'reproducibility': 'not-checked',
