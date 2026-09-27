@@ -20,6 +20,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/setup-dotnet` | `v4` | `67a3573c9a986a3f9c594539f4ab511d57bb3ce9` |
 | `actions/upload-artifact` | `v4` | `ea165f8d65b6e75b540449e92b4886f43607fa02` |
 | `actions/download-artifact` | `v4` | `d3f86a106a0bac45b974a628896c90dbdf5c8093` |
+| `actions/attest-build-provenance` | `v4.2.2` | `4d101475d8b20a2381f78447822ac1eab6504dd8` |
 | `actions/upload-pages-artifact` | `v5.0.0` | `fc324d3547104276b827a68afc52ff2a11cc49c9` |
 | `dtolnay/rust-toolchain` | `1.97.1` | `4716b85f2fac3e324e64fa2810f6b5c3905760a5` |
 | `dtolnay/rust-toolchain` | `1.94.1` | `9376cdc5a5e25b16da71af47712785cf06b0d6d4` |
@@ -34,6 +35,13 @@ retains the `distribution: temurin` and exact `java-version: '25.0.4+101.0.LTS'`
 inputs selected by LSF. The JDK baseline remains Temurin 25.0.4.1+1. The workflow
 hashes in `tools/ci/commands.json` reflect the new action pin; required commands
 and job conditions are unchanged.
+
+The `actions/attest-build-provenance` v4.2.2 identity was resolved and its action
+definition reviewed on **2026-09-27**. It delegates to the pinned `actions/attest`
+v4.2.1 action and preserves the `subject-path` input and `bundle-path` output used
+by the developer and native runtime workflows. Registry publication remains
+disabled by default. The workflow hashes in `tools/ci/commands.json` reflect the
+new action pin; required commands and job conditions are unchanged.
 
 The `actions/upload-pages-artifact` v5.0.0 identity was resolved and its action
 definition reviewed on **2026-09-27**. It delegates artifact upload to the pinned
