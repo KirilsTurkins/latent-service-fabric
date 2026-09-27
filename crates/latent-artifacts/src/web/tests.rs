@@ -2,7 +2,7 @@ use super::{
     asset_tree_digest, inspect_web_layout, renderer_profile_digest, StaticDirectoryIndexMode,
     StaticFallbackMode, StaticWebFallback, StaticWebRouting, StaticWebRoutingProfile,
     WebApplicationManifest, WebAsset, WebRenderMode, WebRenderer, WebRendererProfile, WebRoute,
-    MAX_WEB_ASSETS, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
+    MAX_WEB_ASSETS, MAX_WEB_ASSET_CAPACITY, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
 };
 use crate::package::{
     artifact_blob_digest, encode_config, encode_manifest, inspect_package, ArtifactDescriptor,
@@ -456,8 +456,40 @@ fn public_paths_media_types_order_and_spare_capacity_are_bounded() {
     document.assets.push(document.assets[0].clone());
     assert!(asset_tree_digest(&document.assets).is_err());
     document = manifest(false);
-    document.assets.reserve_exact(MAX_WEB_ASSETS + 1);
+    document.assets.reserve_exact(MAX_WEB_ASSET_CAPACITY + 1);
     assert!(asset_tree_digest(&document.assets).is_err());
+}
+
+#[test]
+fn documentation_asset_profile_admits_252_paths_and_rejects_the_next_with_a_named_bound() {
+    let mut document = manifest(false);
+    for i in 1..MAX_WEB_ASSETS {
+        let mut asset = document.assets[0].clone();
+        asset.path = format!("/page-{i:03}/{}/{}.html", "x".repeat(50), "y".repeat(50));
+        asset.layer = format!("public{}", asset.path);
+        document.assets.push(asset);
+    }
+    document
+        .assets
+        .sort_by(|left, right| left.path.cmp(&right.path));
+    document.assets_digest = asset_tree_digest(&document.assets).unwrap().to_string();
+    let (layout, bytes) = package(&document);
+    assert!(bytes.len() > 64 * 1024);
+    let checked = inspect_web_layout(&layout, &bytes).unwrap();
+    assert_eq!(checked.manifest().assets.len(), 252);
+    assert!(checked.retained_bytes() < 256 * 1024);
+    let mut asset = document.assets[0].clone();
+    asset.path = "/zzz.html".into();
+    asset.layer = "public/zzz.html".into();
+    document.assets.push(asset);
+    let error = asset_tree_digest(&document.assets).unwrap_err();
+    assert_eq!(error.message, "web-asset-count: actual=253 maximum=252");
+    let error =
+        inspect_web_layout(&layout, &vec![b' '; super::MAX_WEB_MANIFEST_BYTES + 1]).unwrap_err();
+    assert_eq!(
+        error.message,
+        "web-manifest-bytes: actual=262145 maximum=262144"
+    );
 }
 
 #[test]
