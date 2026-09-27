@@ -3464,7 +3464,7 @@
       "sha256": "16266aee2b730aac007d2ef6b7e5a74f8ce7391c69a0ffc1849011f30884414d"
     },
     "tools/phase2_gate_resource.py": {
-      "sha256": "46f01052e597827d1366b1b934b0d9e56903b499555155de60ba02a75a26f3b0"
+      "sha256": "74623e6085c4da871b70f5e2c6d44f8e0fd3186ae275d295071cd2ba94874a8d"
     },
     "tools/phase3_resource_campaign.py": {
       "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
