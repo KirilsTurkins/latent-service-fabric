@@ -22,6 +22,8 @@
     "esbuild": "0.28.2",
     "parse5": "8.0.1",
     "playwright-core": "1.63.0",
+    "postcss": "8.5.28",
+    "postcss-value-parser": "4.2.0",
     "primeng": "20.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

@@ -30,7 +30,9 @@ server.maxConnections = 8; server.requestTimeout = 5000; server.headersTimeout =
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const browser = await chromium.launch({executablePath: chrome, headless: true});
 const timer = setTimeout(() => { void browser.close(); server.closeAllConnections(); server.close(); }, 60000);
-const styles = new Map(), failures = [];
+// PrimeNG inserts an empty style element before assigning the reviewed CSS.
+// Chromium checks that empty intermediate identity as well as the final bytes.
+const styles = new Map([['sha256:' + createHash('sha256').update('').digest('hex'), 0]]), failures = [];
 let capturedBytes = 0;
 try {
   const page = await browser.newPage();

@@ -5,6 +5,8 @@ import {createHash} from 'node:crypto';
 import {lstat, mkdir, readFile, readdir, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {parse, serialize} from 'parse5';
+import postcss from 'postcss';
+import cssValues from 'postcss-value-parser';
 
 const [input, output, selectedMount] = process.argv.slice(2);
 assert.ok(input && output && ['/', '/docs'].includes(selectedMount));
@@ -15,8 +17,9 @@ const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 // A full SHA-256 identity in a portable segment shorter than 64 characters.
 const filenameHash = bytes => createHash('sha256').update(bytes).digest('base64url');
 const report = {schemaVersion: 'latent.framework.transformation.v1', mount,
-  nativeRuntimeQualified: false, pages: [], sourceFiles: 0, sourceBytes: 0};
+  nativeRuntimeQualified: false, pages: [], stylesheets: [], sourceFiles: 0, sourceBytes: 0};
 const generated = new Map();
+const reviewedImages = new Set(JSON.parse(await readFile(new URL('./reviewed-generator-images.json', import.meta.url))).sha256);
 await mkdir(destination);
 
 async function walk(relative = '') {
@@ -36,6 +39,28 @@ async function walk(relative = '') {
     // deliberate exclusion; every other regular output must remain present.
     if (name === '.nojekyll') { report.excluded = ['.nojekyll']; continue; }
     assert.ok(!name.split('/').some(part => part.startsWith('.')), 'review hidden output before capture');
+    if (name.endsWith('.css')) {
+      const original = 'sha256:' + hash(bytes), images = new Set();
+      const css = postcss.parse(bytes.toString('utf8'));
+      css.walkDecls(declaration => {
+        const value = cssValues(declaration.value);
+        value.walk(node => {
+          if (node.type !== 'function' || node.value !== 'url') return;
+          assert.equal(node.nodes.length, 1, 'review compound CSS URLs');
+          const uri = node.nodes[0].value;
+          if (!uri.startsWith('data:')) return;
+          assert.ok(uri.startsWith('data:image/svg+xml;utf8,') && uri.length <= 65536, 'review embedded media before externalizing');
+          const svg = decodeURIComponent(uri.slice(uri.indexOf(',') + 1));
+          assert.ok(reviewedImages.has(hash(svg)), 'review changed generator icon sources before packaging');
+          const file = 'assets/lsf-icon-' + filenameHash(svg) + '.svg';
+          generated.set(file, svg); images.add(file);
+          node.nodes = [{type: 'string', quote: '"', value: mount + '/' + file}];
+        });
+        declaration.value = value.toString();
+      });
+      bytes = Buffer.from(css.toString());
+      report.stylesheets.push({path: name, original, transformed: 'sha256:' + hash(bytes), images: [...images].sort()});
+    }
     if (name.endsWith('.html')) {
       const document = parse(bytes.toString('utf8'));
       const page = {path: name, original: 'sha256:' + hash(bytes), scripts: [], symbolStyle: false};

@@ -88,8 +88,8 @@ Keep runtime style generation deterministic; arbitrary per-user CSS needs a
 separately reviewed strategy.
 
 Docusaurus needs no style-hash opt-in in this example. Its build transformation
-moves owned bootstrap code into external scripts and the hidden SVG-symbol style
-into a stylesheet **before** packaging. It rejects other inline style attributes
+moves owned bootstrap code into external scripts, theme icons into SVG files and
+the hidden SVG-symbol style into a stylesheet **before** packaging. It rejects other inline style attributes
 and event handlers so that you can correct them in the application source.
 
 ## Check the published application

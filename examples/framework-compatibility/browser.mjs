@@ -36,7 +36,8 @@ async function protections(page) {
   assert.ok(evidence.denied.some(event => event.directive === 'base-uri'));
   assert.ok(evidence.denied.some(event => event.directive.startsWith('script-src') && event.blocked === 'inline'));
   assert.ok(evidence.denied.some(event => event.directive.startsWith('style-src') && event.blocked === 'inline'));
-  assert.equal(evidence.denied.filter(event => event.blocked.startsWith('https://unapproved.invalid')).length, 2);
+  assert.equal(evidence.denied.filter(event => event.blocked.startsWith('https://unapproved.invalid')
+    && /^(script|style)-src/.test(event.directive)).length, 2);
   return evidence.denied;
 }
 
@@ -44,7 +45,7 @@ try {
   for (const kind of ['angular', 'docs']) for (const mount of ['', kind === 'angular' ? '/app' : '/docs']) {
     const context = await browser.newContext();
     const page = await context.newPage();
-    const errors = [], badResponses = [], violations = [], scripts = new Set();
+    const errors = [], badResponses = [], failedRequests = [], violations = [], scripts = new Set(), rejectedStyleHashes = new Set();
     let documents = 0;
     await page.exposeFunction('lsfRecordCsp', event => { if (violations.length < 64) violations.push(event); });
     await page.addInitScript(() => { globalThis.lsfViolations = []; document.addEventListener('securitypolicyviolation', event => {
@@ -53,7 +54,19 @@ try {
       void globalThis.lsfRecordCsp(record);
     }); });
     page.on('pageerror', error => { if (errors.length < 16) errors.push(error.message.slice(0, 512)); });
+    page.on('console', message => {
+      if (rejectedStyleHashes.size >= 64) return;
+      const text = message.text();
+      if (text.includes('inline style')) {
+        const match = text.match(/hash \('sha256-([A-Za-z0-9+/=]+)'\)/);
+        if (match) rejectedStyleHashes.add('sha256:' + Buffer.from(match[1], 'base64').toString('hex'));
+      }
+    });
     page.on('request', request => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documents++; });
+    page.on('requestfailed', request => {
+      if (failedRequests.length < 16) failedRequests.push({path: new URL(request.url()).pathname.slice(1),
+        reason: request.failure()?.errorText.slice(0, 128)});
+    });
     page.on('response', response => {
       if (response.status() >= 400 && badResponses.length < 16) badResponses.push({url: new URL(response.url()).pathname, status: response.status()});
       if (response.request().resourceType() === 'script' && response.status() === 200) scripts.add(response.url());
@@ -77,27 +90,35 @@ try {
           .evaluate(element => getComputedStyle(element).backgroundColor), 'rgba(0, 0, 0, 0)');
       }
       assert.ok(scripts.size >= 3, 'actual entry/shared/lazy chunks loaded');
-      assert.deepEqual(await page.evaluate(() => globalThis.lsfViolations), []);
+      assert.equal((await page.evaluate(() => globalThis.lsfViolations)).length, 0,
+        'unapproved Angular style identities: ' + JSON.stringify([...rejectedStyleHashes]));
       policy(await page.reload({waitUntil: 'networkidle'}), true);
       await page.locator('#view').filter({hasText: 'Order 42'}).waitFor();
     } else {
       await page.getByRole('heading', {name: 'Welcome to the handbook', exact: true}).waitFor();
       await page.getByRole('link', {name: 'release guide', exact: true}).click();
       await page.getByRole('heading', {name: 'Release guide', exact: true}).waitFor();
+      await page.waitForLoadState('networkidle', {timeout: 15000});
       const theme = page.getByRole('button', {name: /Switch between dark and light mode/});
       const originalTheme = await page.locator('html').getAttribute('data-theme');
-      await theme.click();
-      await page.waitForFunction(original => document.documentElement.getAttribute('data-theme') !== original, originalTheme);
+      // Docusaurus cycles system -> light -> dark; system and light may render identically.
+      for (let changes = 0; changes < 3 && await page.locator('html').getAttribute('data-theme') === originalTheme; changes++) {
+        const choice = await page.locator('html').getAttribute('data-theme-choice');
+        await theme.click();
+        await page.waitForFunction(previous => document.documentElement.getAttribute('data-theme-choice') !== previous, choice);
+      }
+      assert.notEqual(await page.locator('html').getAttribute('data-theme'), originalTheme);
       policy(await page.goto(origin + mount + '/de/', {waitUntil: 'networkidle'}), false);
       await page.getByRole('heading', {name: 'Willkommen im Handbuch', exact: true}).waitFor();
       await page.getByRole('link', {name: 'Anleitung', exact: true}).click();
       await page.getByRole('heading', {name: /^Anleitung/}).waitFor();
+      await page.waitForLoadState('networkidle', {timeout: 15000});
       policy(await page.goto(origin + mount + '/guide', {waitUntil: 'networkidle'}), false);
       assert.equal(new URL(page.url()).pathname, mount + '/guide/');
       await page.getByRole('heading', {name: 'Release guide', exact: true}).waitFor();
       assert.ok(scripts.size >= 4, 'actual localized and lazy generator chunks loaded');
     }
-    assert.deepEqual(errors, [], 'framework must run without browser errors');
+    assert.deepEqual(errors, [], 'framework must run without browser errors: ' + JSON.stringify({kind, mount, badResponses, failedRequests}));
     assert.deepEqual(badResponses, [], 'required framework requests succeed');
     assert.deepEqual(violations, [], 'all previous pages and transitions satisfy CSP');
     assert.deepEqual(await page.evaluate(() => globalThis.lsfViolations), [], 'legitimate framework behavior satisfies CSP');
