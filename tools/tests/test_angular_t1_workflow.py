@@ -238,7 +238,8 @@ class AngularT1WorkflowTests(unittest.TestCase):
             self.assertEqual(tree_inventory(root, client(root), maximum_entries=2), observed)
             with self.assertRaisesRegex(WorkflowError, "angular-inventory-count-or-link"):
                 tree_inventory(root, client(root), maximum_entries=1)
-            for invalid in (0, 2049, True):
+            self.assertEqual(tree_inventory(root, client(root), maximum_entries=8192), observed)
+            for invalid in (0, 8193, True):
                 with self.assertRaisesRegex(WorkflowError, "angular-inventory-entry-limit"):
                     tree_inventory(root, client(root), maximum_entries=invalid)
             with self.assertRaisesRegex(WorkflowError, "angular-inventory-bytes"):

@@ -478,7 +478,7 @@
       "stepIf": "needs.profile.outputs.renderer == 'true'",
       "workingDirectory": ".",
       "shell": "bash",
-      "run": "# Reviewed capture owner: tools/static_site.py\nnode --test tools/static-release/route-set.test.mjs tools/static-release/io.test.mjs\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\"\nnode --test tools/cross-origin/contract.test.mjs\nmkdir -m 0700 \"$static_root/cors-tls\"\nopenssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -sha256 -days 1 -subj '/CN=localhost' -keyout \"$static_root/cors-tls/key.pem\" -out \"$static_root/cors-tls/server.pem\"\nnode tools/cross-origin/browser.mjs examples/renderer-profile \"$(command -v google-chrome)\" \"$static_root/cors-tls\" examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 \"${RUNNER_TEMP}/phase2-gate/cross-origin-feasibility.json\""
+      "run": "# Reviewed capture owner: tools/static_site.py\nnode --test tools/static-release/route-set.test.mjs tools/static-release/io.test.mjs\nnode --test tools/catalog-capacity.test.mjs\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\"\nnode --test tools/cross-origin/contract.test.mjs\nmkdir -m 0700 \"$static_root/cors-tls\"\nopenssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -sha256 -days 1 -subj '/CN=localhost' -keyout \"$static_root/cors-tls/key.pem\" -out \"$static_root/cors-tls/server.pem\"\nnode tools/cross-origin/browser.mjs examples/renderer-profile \"$(command -v google-chrome)\" \"$static_root/cors-tls\" examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 \"${RUNNER_TEMP}/phase2-gate/cross-origin-feasibility.json\""
     },
     ".github/workflows/ci.yml:rust:Qualify the deterministic Phase 3 security matrix": {
       "job": "rust",
@@ -1940,16 +1940,6 @@
       "workflow": ".github/workflows/typescript-guest.yml",
       "workingDirectory": "."
     },
-    ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Qualify actual Angular PrimeNG and bilingual Docusaurus publications",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "bash",
-      "run": "npm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\""
-    },
     ".github/workflows/frontend-release.yml:frontend:Authenticate the exact released native archive": {
       "workflow": ".github/workflows/frontend-release.yml",
       "job": "frontend",
@@ -1989,6 +1979,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "set -euo pipefail\ncontainer=$(docker create --label io.latent.frontend-qualification=\"$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT\" --cpus 2 --memory 2g --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=536870912,mode=1777 --mount \"type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly\" --mount \"type=bind,source=$RUNNER_TEMP/frontend-release/extracted,target=/release,readonly\" lsf-frontend-qualification /source/tools/static-release/qualification.mjs /release/bin/latent /tmp/result.json /release/bin/latentd)\n[[ \"$container\" =~ ^[0-9a-f]{64}$ ]]\ncleanup() { docker rm --force \"$container\" >/dev/null; }\ntrap cleanup EXIT\ntimeout --signal=TERM --kill-after=10s 180s docker start --attach \"$container\" > \"$RUNNER_TEMP/frontend-release/qualification.json\"\ntest \"$(docker inspect --format '{{.State.ExitCode}}' \"$container\")\" = 0\ncat \"$RUNNER_TEMP/frontend-release/qualification.json\""
+    },
+    ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify actual Angular PrimeNG and bilingual Docusaurus publications",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "npm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\""
     },
     ".github/workflows/container-runtime.yml:container:Authenticate and prepare the released image context": {
       "workflow": ".github/workflows/container-runtime.yml",
@@ -3504,7 +3504,7 @@
       "sha256": "16266aee2b730aac007d2ef6b7e5a74f8ce7391c69a0ffc1849011f30884414d"
     },
     "tools/phase2_gate_resource.py": {
-      "sha256": "46f01052e597827d1366b1b934b0d9e56903b499555155de60ba02a75a26f3b0"
+      "sha256": "74623e6085c4da871b70f5e2c6d44f8e0fd3186ae275d295071cd2ba94874a8d"
     },
     "tools/phase3_resource_campaign.py": {
       "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
@@ -3636,7 +3636,7 @@
       "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
     },
     "tools/run_static_site_workflow.py": {
-      "sha256": "b2ec2740f0e06ef16980f3732bb964707a9018f343da0fdfa809382c9b0ee0dc"
+      "sha256": "cb06179e97b1b7122579e7137fab5508ca5566131ba4e0ee2e860cc77cd0d788"
     },
     "tools/run_vault_secret_tests.py": {
       "sha256": "81ab09bf676f22fca2e1cb923353586cef8d36361980cac4091677bcbe9abcf4"
@@ -3695,14 +3695,14 @@
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
     },
+    "tools/static-release/unpack.py": {
+      "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
+    },
     "tools/build_framework_sites.py": {
       "sha256": "c82fe7e64de08e7e42e170a75148a24f2de8ebab71173cf4a8570b650b336fe8"
     },
     "tools/run_framework_sites.py": {
       "sha256": "04fdc86bc19851aff707a91d3196e6a6bad7f976f00f53b81b26a541600821cd"
-    },
-    "tools/static-release/unpack.py": {
-      "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
     },
     "tools/container_runtime/qualification.py": {
       "sha256": "11aa932c5ee899de7ba3e7f2916af09210749276f401cd74ec8cc5da6446bade"
@@ -7140,7 +7140,7 @@
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
-    ".github/workflows/ci.yml": "7010934d3c26939a3e86cca08ffccbb3fb6673591f4a83d73c9cb7feea7dda83",
+    ".github/workflows/ci.yml": "701517ef7d268f278d77e534d001fa217565b58d18d78e6d3a9cfe4199b56acd",
     ".github/workflows/developer-packaged-qualification.yml": "aeda0753a6ee0d0ed0e4198334f7447761a72bf741623adbd9c9f0a210e57610",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "0566e5e88ab63c07bc1672993b1e26537ca56c4fbae949c6b0f782f0aaac3dce",

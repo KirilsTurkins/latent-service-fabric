@@ -88,6 +88,10 @@ fn unique(rows: Option<&Rows>) -> Result<Option<&PublicationId>, PlatformError> 
 }
 
 impl CatalogIndex {
+    pub(super) fn capacity_entries(&self) -> usize {
+        self.by_publication.len() + self.pending_reservations.len() + self.web_entries
+    }
+
     /// One aggregate metadata budget for capsule and componentless web rows.
     /// Caller holds the shared publication writer while preflighting/cutting over.
     pub(super) fn check_web(
