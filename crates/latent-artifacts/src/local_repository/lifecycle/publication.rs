@@ -64,6 +64,9 @@ impl DirectoryArtifactRepository {
             release: Some(&candidate.summary),
             failure: None,
         })?;
+        // Preparation and the audit callback may span the sampler's lease.
+        // Renew only this control operation, then recheck its exact grant.
+        self.renew_publication_lease(candidate.proof.as_ref())?;
         let destination = self.publication_path(&candidate.reference.id);
         let staged = if destination.exists() {
             None
@@ -88,29 +91,14 @@ impl DirectoryArtifactRepository {
         drop(publication.manifest_bytes);
         drop(files);
         let result = self.life_store().with_prepared(&lifecycle, &mut |fence| {
-            if let Some(proof) = &proof {
-                proof.with_current(&mut |check| {
-                    self.commit_publication(
-                        &destination,
-                        staged.as_ref().map(|value| value.0.as_path()),
-                        &expected,
-                        Some(proof),
-                        &lifecycle,
-                        fence,
-                        &mut || check.check(),
-                    )
-                })
-            } else {
-                self.commit_publication(
-                    &destination,
-                    staged.as_ref().map(|value| value.0.as_path()),
-                    &expected,
-                    None,
-                    &lifecycle,
-                    fence,
-                    &mut || Ok(()),
-                )
-            }
+            self.commit_publication(
+                &destination,
+                staged.as_ref().map(|value| value.0.as_path()),
+                &expected,
+                proof.as_ref(),
+                &lifecycle,
+                fence,
+            )
         });
         if let Err(failure) = result {
             if legacy_errors {
@@ -382,7 +370,21 @@ impl DirectoryArtifactRepository {
         })
     }
 
-    #[allow(clippy::too_many_arguments)]
+    fn renew_publication_lease(
+        &self,
+        proof: Option<&ReleaseEligibility>,
+    ) -> Result<(), PlatformError> {
+        if let Some(proof) = proof {
+            self.admission
+                .as_ref()
+                .ok_or_else(|| corrupt("publication-admission-missing"))?
+                .authority
+                .renew_control_lease()?;
+            proof.check_current()?;
+        }
+        Ok(())
+    }
+
     fn commit_publication(
         &self,
         destination: &Path,
@@ -391,7 +393,6 @@ impl DirectoryArtifactRepository {
         proof: Option<&ReleaseEligibility>,
         prepared: &crate::lifecycle::LifecyclePrepared,
         fence: &crate::lifecycle::LifecycleFence<'_>,
-        check: &mut dyn FnMut() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
         let publication_id = prepared
             .publication()
@@ -407,7 +408,6 @@ impl DirectoryArtifactRepository {
                 "catalog-needs-pending-publication-recovery",
             ));
         }
-        check()?;
         if let Some(staged) = staged {
             if destination.exists() {
                 return Err(error(
@@ -443,7 +443,7 @@ impl DirectoryArtifactRepository {
         }
         sync_dir(&self.root.join(RELEASES_DIR))?;
         let stamp = self.preparation_stamp(&verified.metadata);
-        let original_binding = verified
+        let mut original_binding = verified
             .admission
             .as_ref()
             .map(|stored| {
@@ -477,31 +477,55 @@ impl DirectoryArtifactRepository {
             .lock()
             .map_err(lock_error)?
             .register_directory(publication_id, destination)?;
-        check()?;
-        fence.commit(prepared)?;
-        let mut index = self.index.write().map_err(lock_error)?;
-        check()?;
-        if let Some(binding) = original_binding {
-            index.insert_admitted(
-                verified.publication,
-                verified.metadata,
-                stamp,
-                binding,
-                None,
-                expected.identity()?,
-                self.config,
-            )?;
-            index.install_selected_eligibility(
-                publication_id,
-                proof.cloned(),
-                expected.identity()?,
-                self.config,
-            )?;
+        // All immutable payload reads and directory synchronization finish
+        // outside the policy fence. The single publication/lifecycle owners
+        // still exclude a competing commit; no positive state is visible yet.
+        self.renew_publication_lease(proof)?;
+        let mut verified = Some(verified);
+        let mut commit = |check: Option<&dyn crate::AdmissionRecheck>| {
+            if let Some(check) = check {
+                check.check()?;
+            }
+            fence.commit(prepared)?;
+            let mut index = self.index.write().map_err(lock_error)?;
+            if let Some(check) = check {
+                check.check()?;
+            }
+            let verified = verified
+                .take()
+                .ok_or_else(|| corrupt("publication-commit-reused"))?;
+            if let Some(binding) = original_binding.take() {
+                index.insert_admitted(
+                    verified.publication,
+                    verified.metadata,
+                    stamp,
+                    binding,
+                    None,
+                    expected.identity()?,
+                    self.config,
+                )?;
+                index.install_selected_eligibility(
+                    publication_id,
+                    proof.cloned(),
+                    expected.identity()?,
+                    self.config,
+                )?;
+            } else {
+                index.insert_verified(
+                    verified.publication,
+                    verified.metadata,
+                    stamp,
+                    self.config,
+                )?;
+            }
+            publication.pending = None;
+            Ok(())
+        };
+        if let Some(proof) = proof {
+            proof.with_current(&mut |check| commit(Some(check)))
         } else {
-            index.insert_verified(verified.publication, verified.metadata, stamp, self.config)?;
+            commit(None)
         }
-        publication.pending = None;
-        Ok(())
     }
 
     pub(in crate::local_repository) fn publish_legacy(

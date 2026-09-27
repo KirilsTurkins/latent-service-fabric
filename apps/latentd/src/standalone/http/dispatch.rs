@@ -54,6 +54,9 @@ pub(super) fn select(head: &Head, shared: &Shared) -> Result<AcceptedHttpRoute, 
         })?;
     match accepted.target() {
         AcceptedHttpTarget::Application { revision, .. } => {
+            if head.public_document {
+                return Err(403);
+            }
             LocalPrincipalPolicy
                 .authorize_target(&head.principal, &revision.target.tenant.0)
                 .map_err(status)?;
