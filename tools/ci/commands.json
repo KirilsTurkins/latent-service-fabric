@@ -2008,7 +2008,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\""
+      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3689,10 +3689,10 @@
       "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
     },
     "tools/container_runtime/qualification.py": {
-      "sha256": "5754009707a2d1a1ed84e832168b34f6d8d6a68b039b0a5d3e6ccc5884ec8f74"
+      "sha256": "c2884188153ea1a40117b2a9823ab82e6c645af5185d54f49c021d868ca66c3a"
     },
     "tools/prepare_container_runtime.py": {
-      "sha256": "ec63c85baf36ba259c49f3d256e937396deab6da137d4b6326e672b7e27d16ed"
+      "sha256": "3527a1bb2296864c75a54d86f38579b67c94b8b10cf0964c59c33f4f66aa7d2e"
     }
   },
   "pythonCases": {
@@ -7132,6 +7132,6 @@
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
-    ".github/workflows/container-runtime.yml": "7594ec618b30311c253f32e3a20b1f9b6842d3d7e51de8cc6b53b0a18959fc0b"
+    ".github/workflows/container-runtime.yml": "5e340398d2298e60c422929bdc363054ca97ea3064582baf45ecb2f3af402df9"
   }
 }
