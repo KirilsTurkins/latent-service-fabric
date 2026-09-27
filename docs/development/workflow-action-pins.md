@@ -12,7 +12,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 
 | Action | Reviewed upstream ref | Commit |
 | --- | --- | --- |
-| `actions/checkout` | `v4` | `11d5960a326750d5838078e36cf38b85af677262` |
+| `actions/checkout` | `v7.0.1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
 | `actions/setup-python` | `v5` | `a26af69be951a213d495a4c3e4e4022e16d87065` |
 | `actions/setup-go` | `v5` | `40f1582b2485089dde7abd97c1529aa768e1baff` |
 | `actions/setup-node` | `v4` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
@@ -50,6 +50,13 @@ definition reviewed on **2026-09-27**. It delegates artifact upload to the pinne
 to false, preserving the site's current file selection. The Pages workflow hash
 in `tools/ci/commands.json` reflects the new pin; publication guards and required
 commands are unchanged.
+
+The `actions/checkout` v7.0.1 identity, release notes and action-definition diff
+were reviewed on **2026-09-27**. It uses Node 24. All repository checkouts retain
+`persist-credentials: false` and their existing refs. The new fork-PR checkout
+guard remains enabled; these workflows do not use `pull_request_target` or
+`workflow_run`. The reviewed workflow hashes reflect the new pin without
+changing required commands or publication conditions.
 
 ## Updating a pin
 
