@@ -114,7 +114,7 @@ fn frozen_schema_matrix_matches_host_shapes_identity_and_generated_sdk_baseline(
         matrix["digest"],
         format!(
             "sha256:{:x}",
-            sha2::digest::Output::<Sha256>::from(host_abi_digest())
+            latent_core::digest::HexDigest(host_abi_digest())
         )
     );
     assert_eq!(
@@ -130,7 +130,10 @@ fn frozen_schema_matrix_matches_host_shapes_identity_and_generated_sdk_baseline(
         assert_eq!(entry["package"], spec.package);
         assert_eq!(
             entry["sourceSha256"],
-            format!("sha256:{:x}", Sha256::digest(spec.wit.as_bytes()))
+            format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(spec.wit.as_bytes()))
+            )
         );
         assert_eq!(entry["asynchronous"], spec.asynchronous);
         assert_eq!(

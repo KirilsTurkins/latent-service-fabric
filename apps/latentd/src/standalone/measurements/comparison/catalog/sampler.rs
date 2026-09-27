@@ -131,7 +131,7 @@ fn run(
         "minimum_start_gap_nanos":(count>1).then(||gap_min.to_string()),
         "maximum_start_gap_nanos":(count>1).then(||gap_max.to_string()),
         "file":{"path":path.file_name().and_then(|name|name.to_str()).ok_or("catalog sampler path")?,
-            "bytes":bytes.to_string(),"sha256":format!("sha256:{:x}",digest.finalize())}}),
+            "bytes":bytes.to_string(),"sha256":format!("sha256:{:x}",latent_core::digest::HexDigest(digest.finalize()))}}),
     )
 }
 

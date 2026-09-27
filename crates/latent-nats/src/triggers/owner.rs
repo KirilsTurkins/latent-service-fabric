@@ -94,7 +94,10 @@ impl NatsTriggers {
             return Err(EventError::PermissionDenied);
         }
         let tls = network::tls_for(config.public_roots, &config.extra_roots)?;
-        let digest = format!("sha256:{:x}", hash.finalize());
+        let digest = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        );
         let tenants = tenant_rows(&config, &credentials);
         let mut entropy = [0; 16];
         getrandom::fill(&mut entropy).map_err(|_| EventError::Unavailable)?;

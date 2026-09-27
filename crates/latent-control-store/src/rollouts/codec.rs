@@ -139,7 +139,10 @@ pub(crate) fn encode<T: Serialize>(v: &T, maximum: usize) -> Result<Vec<u8>> {
     Ok(writer.bytes)
 }
 pub(crate) fn hash(bytes: &[u8]) -> ArtifactBlobDigest {
-    format!("sha256:{:x}", Sha256::digest(bytes))
-        .parse()
-        .expect("canonical hash")
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    )
+    .parse()
+    .expect("canonical hash")
 }

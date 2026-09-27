@@ -235,6 +235,12 @@ class AngularT1WorkflowTests(unittest.TestCase):
             observed = tree_inventory(root, client(root), maximum_bytes=32768)
             self.assertEqual(observed["image"][0], 32768)
             self.assertEqual(observed["lock"], (0, None))
+            self.assertEqual(tree_inventory(root, client(root), maximum_entries=2), observed)
+            with self.assertRaisesRegex(WorkflowError, "angular-inventory-count-or-link"):
+                tree_inventory(root, client(root), maximum_entries=1)
+            for invalid in (0, 2049, True):
+                with self.assertRaisesRegex(WorkflowError, "angular-inventory-entry-limit"):
+                    tree_inventory(root, client(root), maximum_entries=invalid)
             with self.assertRaisesRegex(WorkflowError, "angular-inventory-bytes"):
                 tree_inventory(root, client(root), maximum_bytes=32767)
             expired = client(root)
