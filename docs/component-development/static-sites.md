@@ -1,5 +1,8 @@
 # Package an observed static site
 
+For actual Angular/PrimeNG and bilingual Docusaurus examples, follow
+[Serve Angular and Docusaurus sites](../how-to/serve-angular-and-docusaurus.md).
+
 For repeatable GET/HEAD promotion, interrupted-job recovery and rollback, follow
 the [static route-set guide](../operations/static-route-sets.md) after publishing
 your package.

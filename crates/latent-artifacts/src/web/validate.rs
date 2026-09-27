@@ -78,6 +78,7 @@ pub fn inspect_web_layout(
     if manifest.format_version != 1 || manifest.profile != WEB_RELEASE_PROFILE {
         return Err(incompatible());
     }
+    style_hashes(&manifest)?;
     let config = package.config();
     if !matches!(
         config.kind,
@@ -163,6 +164,27 @@ pub fn inspect_web_layout(
         assets_digest,
         manifest,
     })
+}
+
+fn style_hashes(manifest: &WebApplicationManifest) -> Result<(), PlatformError> {
+    if manifest.style_hashes.capacity() > super::MAX_WEB_STYLE_HASHES {
+        return Err(exhausted());
+    }
+    if !manifest.style_hashes.is_empty()
+        && (manifest.static_routing.is_none() || manifest.renderer.is_some())
+    {
+        return Err(invalid("web-style-hashes-require-static-publication"));
+    }
+    let mut previous: Option<&str> = None;
+    for hash in &manifest.style_hashes {
+        if hash.capacity() > 71 || previous.is_some_and(|value| value >= hash.as_str()) {
+            return Err(invalid("web-style-hash-order-or-bound"));
+        }
+        hash.parse::<ArtifactBlobDigest>()
+            .map_err(|_| invalid("web-style-hash-identity"))?;
+        previous = Some(hash);
+    }
+    Ok(())
 }
 
 fn routes(manifest: &WebApplicationManifest) -> Result<(), PlatformError> {

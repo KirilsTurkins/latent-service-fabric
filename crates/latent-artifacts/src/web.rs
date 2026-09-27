@@ -45,6 +45,7 @@ pub const IMMUTABLE_ASSET_PREFIX: &str = "/_lsf/assets/";
 pub const MAX_WEB_MANIFEST_BYTES: usize = 64 * 1024;
 pub const MAX_WEB_ASSETS: usize = 128;
 pub const MAX_WEB_ROUTES: usize = 128;
+pub const MAX_WEB_STYLE_HASHES: usize = 64;
 pub const MAX_WEB_ASSET_BYTES: u64 = 8 * 1024 * 1024;
 pub const MAX_WEB_ASSET_TREE_BYTES: u64 = 16 * 1024 * 1024;
 pub const MAX_WEB_RENDERER_BYTES: u64 = 32 * 1024 * 1024;

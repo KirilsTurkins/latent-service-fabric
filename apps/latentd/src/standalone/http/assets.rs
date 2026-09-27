@@ -3,6 +3,7 @@
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod browser;
 mod cache;
+mod csp;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod fixture;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
@@ -177,12 +178,18 @@ impl Store {
             request.status(&etag)?
         };
         let media = asset.media_type.clone();
+        let csp = if media == "text/html" {
+            csp::policy(&selected.layout().manifest().style_hashes)?
+        } else {
+            None
+        };
         Ok(Prepared {
             buffer,
             selection,
             request,
             etag,
             media,
+            csp,
             code,
             _permit: permit,
         })
@@ -195,6 +202,7 @@ struct Prepared {
     request: Request,
     etag: String,
     media: String,
+    csp: Option<String>,
     code: u16,
     // Last field: release all output and selection ownership before this slot.
     _permit: OwnedSemaphorePermit,
