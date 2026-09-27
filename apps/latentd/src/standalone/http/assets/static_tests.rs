@@ -155,7 +155,10 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         assert!(response.1.contains("Sec-Fetch-Dest"));
         if matches!(path, "/sitemap.xml" | "/docs/sitemap.xml") {
             assert!(response.1.contains("Content-Type: application/xml\r\n"));
-            assert!(response.1.contains("X-Content-Type-Options: nosniff\r\n"));
+            assert!(response
+                .1
+                .to_ascii_lowercase()
+                .contains("x-content-type-options: nosniff\r\n"));
         }
         let conditional = format!("{headers}If-None-Match: {}\r\n", etag(&response.1));
         let cached = get(&h, path, &conditional).await;
@@ -163,6 +166,13 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         let head = h.call("HEAD", path, headers, node::TOKEN).await;
         assert_eq!((head.0, head.2.len()), (200, 0));
         assert_eq!(etag(&head.1), etag(&response.1));
+        if matches!(path, "/sitemap.xml" | "/docs/sitemap.xml") {
+            for headers in [&cached.1, &head.1] {
+                assert!(headers
+                    .to_ascii_lowercase()
+                    .contains("x-content-type-options: nosniff\r\n"));
+            }
+        }
     }
     for (path, location) in [
         ("/guide", "/guide/"),
