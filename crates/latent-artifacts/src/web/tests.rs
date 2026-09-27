@@ -99,6 +99,38 @@ fn manifest(renderer: bool) -> WebApplicationManifest {
 }
 
 #[test]
+fn xml_sitemaps_are_inert_exact_media_and_legacy_fonts_remain_rejected() {
+    let mut document = manifest(false);
+    document.assets.push(WebAsset {
+        path: "/sitemap.xml".into(),
+        layer: "public/sitemap.xml".into(),
+        digest: artifact_blob_digest(b"<urlset/>").to_string(),
+        size: 9,
+        media_type: "application/xml".into(),
+    });
+    document.assets_digest = asset_tree_digest(&document.assets).unwrap().to_string();
+    let (layout, bytes) = package(&document);
+    assert!(inspect_web_layout(&layout, &bytes).is_ok());
+    for media in ["text/xml", "text/html", "application/octet-stream"] {
+        let mut changed = document.assets.clone();
+        changed[1].media_type = media.into();
+        assert!(asset_tree_digest(&changed).is_err());
+    }
+    for (suffix, media) in [
+        ("woff", "font/woff"),
+        ("ttf", "font/ttf"),
+        ("eot", "application/vnd.ms-fontobject"),
+        ("bin", "application/xml"),
+    ] {
+        let mut changed = document.assets.clone();
+        changed[1].path = format!("/sitemap.{suffix}");
+        changed[1].layer = format!("public/sitemap.{suffix}");
+        changed[1].media_type = media.into();
+        assert!(asset_tree_digest(&changed).is_err());
+    }
+}
+
+#[test]
 fn static_contract_fixtures_agree_with_json_schema_acceptance() {
     let fixtures: serde_json::Value = serde_json::from_str(include_str!(
         "../../tests/fixtures/static-web-contracts.json"

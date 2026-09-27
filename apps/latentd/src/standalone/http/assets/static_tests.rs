@@ -10,6 +10,8 @@ use std::{sync::Arc, time::Duration};
 use tokio::{io::AsyncWriteExt, net::TcpStream, time::Instant};
 
 const HTML: &str = "Accept: text/html\r\n";
+const SITEMAP: &[u8] =
+    b"<?xml version=\"1.0\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"/>";
 const NAVIGATION: &str = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Site: same-origin\r\n";
 
 fn publish(h: &Harness, operation: &str, page: &[u8]) -> PublicationRef {
@@ -20,6 +22,7 @@ fn publish(h: &Harness, operation: &str, page: &[u8]) -> PublicationRef {
             ("/index.html", "text/html", page),
             ("/main.js", "text/javascript", b"script"),
             ("/other.html", "text/html", b"explicit"),
+            ("/sitemap.xml", "application/xml", SITEMAP),
         ],
         Some(StaticWebRouting {
             profile: StaticWebRoutingProfile::StaticSiteV1,
@@ -296,6 +299,8 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         ("/docs/", "", b"root"),
         ("/docs/exact.html", "", b"explicit"),
         ("/docs/main.js?version=1", "", b"script"),
+        ("/sitemap.xml", "", SITEMAP),
+        ("/docs/sitemap.xml", "", SITEMAP),
         ("/guide/", "", b"guide"),
         ("/docs/guide/", "", b"guide"),
         ("/orders/42?tab=history", NAVIGATION, b"root"),
@@ -305,12 +310,26 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         assert_eq!((response.0, response.2.as_slice()), (200, body), "{path}");
         assert!(response.1.contains("Cache-Control: private, no-cache\r\n"));
         assert!(response.1.contains("Sec-Fetch-Dest"));
+        if matches!(path, "/sitemap.xml" | "/docs/sitemap.xml") {
+            assert!(response.1.contains("Content-Type: application/xml\r\n"));
+            assert!(response
+                .1
+                .to_ascii_lowercase()
+                .contains("x-content-type-options: nosniff\r\n"));
+        }
         let conditional = format!("{headers}If-None-Match: {}\r\n", etag(&response.1));
         let cached = get(&h, path, &conditional).await;
         assert_eq!((cached.0, cached.2.len()), (304, 0));
         let head = h.call("HEAD", path, headers, node::TOKEN).await;
         assert_eq!((head.0, head.2.len()), (200, 0));
         assert_eq!(etag(&head.1), etag(&response.1));
+        if matches!(path, "/sitemap.xml" | "/docs/sitemap.xml") {
+            for headers in [&cached.1, &head.1] {
+                assert!(headers
+                    .to_ascii_lowercase()
+                    .contains("x-content-type-options: nosniff\r\n"));
+            }
+        }
     }
     for (path, location) in [
         ("/guide", "/guide/"),

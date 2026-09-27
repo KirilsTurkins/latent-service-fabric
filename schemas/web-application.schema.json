@@ -70,6 +70,7 @@
               "text/javascript",
               "text/css",
               "application/json",
+              "application/xml",
               "text/plain",
               "image/svg+xml",
               "image/png",
