@@ -26,6 +26,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
 | Wasmtime |                               47.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
 | `wasmparser` |                               0.259.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
+| `wasm-encoder` |                               0.259.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-bindgen` |                               0.62.0 | Guest bindings and canonical ABI exports generated from WIT |
 | Serde / `serde_json` |                    1.0.229 / 1.0.150 | Rust contract serialization |
 | TOML |                                1.1.4 | Configuration parsing and serialization |
