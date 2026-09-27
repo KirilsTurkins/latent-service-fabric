@@ -1,0 +1,281 @@
+import CodeExample from '@site/src/components/CodeExample';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Call a capsule from your application
+
+Use an LSF client SDK to call a capsule from Rust, TypeScript, Go, C, Java or C#.
+In this tutorial, run one example in your chosen language. It calls HTTP and
+storage capsules, handles an application error, cancels a request and checks
+whether a configuration change succeeded.
+
+The example starts its own temporary node and stops it when finished. It does
+not change the node from [your first tutorial](../start/first-node.md).
+Client programs run outside capsules. To write the code that runs inside a
+capsule, use the [capsule authoring guide](../component-development/guest-sdk.md).
+
+## 1. Prepare the example
+
+Use the Linux source checkout and Python environment from the first-node guide.
+Run the Bash blocks in one terminal, from the repository root. The current
+native clients connect to a node on the same machine; this example uses numeric
+loopback addresses. Browser applications use the separate
+[application HTTP interface](../security/browser-boundary.md).
+
+Install the tools for your chosen client language from the
+[toolchain setup](../development/toolchain.md). Rust, `wit-bindgen` and Zig are
+also needed to build the example capsules that the client calls.
+
+```bash
+set -euo pipefail
+umask 077
+export CARGO_TARGET_DIR="$PWD/target"
+mkdir -p "$CARGO_TARGET_DIR"
+CLIENT_DEMO=$(mktemp -d "$CARGO_TARGET_DIR/client-demo.XXXXXXXX")
+cargo build --locked -p latent -p latentd
+```
+
+The new directory keeps this attempt's files separate from earlier attempts.
+The first build can take several minutes.
+
+## 2. Build the client in your language
+
+Select one tab and run its commands. The SDKs come from this checkout.
+
+<Tabs groupId="client-tutorial-language" defaultValue="rust">
+<TabItem value="rust" label="Rust">
+
+```bash
+cargo build --locked -p latent-sdk --example provider_workflow
+```
+
+See the [Rust client reference](../../sdk/rust/README.md) for its API.
+
+</TabItem>
+<TabItem value="typescript" label="TypeScript">
+
+```bash
+npm ci --prefix sdk/typescript-client --ignore-scripts
+npm --prefix sdk/typescript-client run build
+```
+
+The runnable example is a JavaScript ESM program using the compiled TypeScript
+client. See the [TypeScript client reference](../../sdk/typescript-client/README.md).
+
+</TabItem>
+<TabItem value="go" label="Go">
+
+```bash
+(
+  export GOTOOLCHAIN=local GOWORK=off GOENV=off GOFLAGS=-mod=readonly
+  export GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
+  export GOPRIVATE= GONOPROXY= GONOSUMDB=
+  python3 sdk/go/dependencies.py --check
+  python3 sdk/go/generate.py
+  go -C sdk/go build -trimpath -o "$CLIENT_DEMO/go-provider-workflow" ./cmd/provider-workflow
+)
+```
+
+Generation also needs the pinned Buf tool. See the
+[Go client setup](../../sdk/go/README.md).
+
+</TabItem>
+<TabItem value="c" label="C">
+
+```bash
+python3 sdk/c/tools/validate.py --build-dir "$CLIENT_DEMO/c"
+```
+
+This builds the C library and runnable example. See the
+[C client setup](../../sdk/c/README.md) for its Zig, nanopb and nghttp2 prerequisites.
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```bash
+python3 sdk/java-client/tools/build.py build
+```
+
+Use the pinned Java 25 toolchain from the
+[Java client setup](../../sdk/java-client/README.md).
+
+</TabItem>
+<TabItem value="csharp" label="C#/.NET">
+
+```bash
+dotnet restore sdk/dotnet/Latent.Sdk.ProviderWorkflow/Latent.Sdk.ProviderWorkflow.csproj \
+  --locked-mode --configfile sdk/dotnet/nuget.transport.config \
+  -p:ArtifactsPath="$CLIENT_DEMO/dotnet" \
+  -p:ImportDirectoryBuildProps=false -p:ImportDirectoryBuildTargets=false \
+  -p:ImportDirectoryPackagesProps=false -p:UseSharedCompilation=false -nodeReuse:false
+dotnet build sdk/dotnet/Latent.Sdk.ProviderWorkflow/Latent.Sdk.ProviderWorkflow.csproj \
+  --no-restore --disable-build-servers --artifacts-path "$CLIENT_DEMO/dotnet" \
+  -p:ImportDirectoryBuildProps=false -p:ImportDirectoryBuildTargets=false \
+  -p:ImportDirectoryPackagesProps=false -p:UseSharedCompilation=false -nodeReuse:false
+```
+
+Use the pinned .NET 8 SDK and runtime from the
+[C# client setup](../../sdk/dotnet/README.md).
+
+</TabItem>
+</Tabs>
+
+## 3. Prepare the capsules and temporary node inputs
+
+```bash
+python3 tools/build_guest_capsules.py --output "$CLIENT_DEMO/guests"
+LSF_GUEST_CAPSULES="$CLIENT_DEMO/guests" \
+LSF_PHASE3_WORKFLOW_FIXTURE_ROOT="$CLIENT_DEMO/inputs" \
+  cargo test --locked -p latentd --test phase3_workflow_fixture -- \
+    export_signed_provider_workflow_fixtures --exact --ignored --nocapture
+```
+
+Expect `1 passed; 0 failed`. This prepares signed example packages and the
+temporary node's trust settings. Run the next step soon afterward because the
+demonstration signatures expire. These credentials are for this temporary
+example; use [package delivery](deliver-and-recover-a-capsule.md) when configuring
+your own installed node.
+
+## 4. Run your client
+
+Define this helper once. It starts the temporary node, runs the selected client
+and saves the result:
+
+```bash
+run_client() {
+  local language=$1
+  shift
+  python3 tools/run_sdk_provider_workflow.py \
+    --cli "$CARGO_TARGET_DIR/debug/latent" --node "$CARGO_TARGET_DIR/debug/latentd" \
+    --fixture-root "$CLIENT_DEMO/inputs" --language "$language" \
+    -- "$@" > "$CLIENT_DEMO/result.json"
+}
+```
+
+Select the same language you built in step 2:
+
+<Tabs groupId="client-tutorial-language" defaultValue="rust">
+<TabItem value="rust" label="Rust">
+
+```bash
+run_client rust "$CARGO_TARGET_DIR/debug/examples/provider_workflow"
+```
+
+</TabItem>
+<TabItem value="typescript" label="TypeScript">
+
+```bash
+run_client typescript "$(command -v node)" "$PWD/sdk/typescript-client/tests/provider-workflow.mjs"
+```
+
+</TabItem>
+<TabItem value="go" label="Go">
+
+```bash
+run_client go "$CLIENT_DEMO/go-provider-workflow"
+```
+
+</TabItem>
+<TabItem value="c" label="C">
+
+```bash
+run_client c "$CLIENT_DEMO/c/provider-workflow"
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```bash
+run_client java "$(command -v java)" --sun-misc-unsafe-memory-access=allow \
+  --enable-native-access=ALL-UNNAMED -jar "$PWD/sdk/java-client/build/latent-java-client.jar"
+```
+
+</TabItem>
+<TabItem value="csharp" label="C#/.NET">
+
+```bash
+run_client dotnet "$(command -v dotnet)" \
+  "$CLIENT_DEMO/dotnet/bin/Latent.Sdk.ProviderWorkflow/debug/Latent.Sdk.ProviderWorkflow.dll"
+```
+
+</TabItem>
+</Tabs>
+
+Show what happened:
+
+```bash
+python3 - "$CLIENT_DEMO/result.json" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    result = json.load(source)
+checks = result["participant"]["assertions"]
+print("Client language:", result["language"])
+print("HTTP capsule succeeded:", checks["httpGuest"])
+print("Storage capsule succeeded:", checks["blobGuest"])
+print("Cancellation completed:", checks["explicitCancellation"])
+print("Configuration change recovered:", checks["mutationReceipt"])
+print("Node stopped cleanly:", result["nodeShutdown"]["record"]["clean"])
+PY
+```
+
+Expect your chosen language followed by five `True` results. The example also
+tries intentional failures, such as a wrong credential and an application error.
+Those cases are part of the demonstration. A command that exits with an error
+has not completed the walkthrough.
+
+## Invoke an admitted guest
+
+Now follow the code behind the example. Choose a language tab below; the source
+link opens the complete program with its imports and setup.
+
+<CodeExample example="client/provider-invoke" region="invoke" />
+
+The client sends the target capsule, function arguments, a time/resource budget
+and an activation ID. The HTTP capsule makes its permitted request through the
+node. The storage capsule writes and reads four bytes. Provider credentials stay
+with the node; the client does not need them.
+
+A successful call, an error declared by the capsule, and a platform failure are
+different outcomes. Handle each explicitly. Keep the activation ID if the reply
+is lost so that you can ask about the original call.
+
+## Cancel the wait, then inspect the original identity
+
+Stopping a client-side wait does not prove that the capsule has stopped. This
+example retains the activation ID, requests cancellation and checks its status:
+
+<CodeExample example="client/provider-cancel" region="cancel" />
+
+Use a fresh, live context or cancellation token for that follow-up. Do not send
+the invocation again just to find out whether the first one finished. When your
+program finishes, close its client and await any required shutdown.
+
+## Inspect pages and reconcile a mutation
+
+A management operation has its own operation ID. Keep that ID and the original
+request so that a lost reply can be resolved without accidentally creating a
+second change:
+
+<CodeExample example="client/provider-management" region="management" />
+
+The example reads one result page at a time and follows its continuation token.
+It also demonstrates a conflicting change. Check the current state before
+deciding to submit a new operation.
+
+## Finish or troubleshoot
+
+The runner stops its temporary node and local HTTP server automatically. Your
+builds and result remain under the directory printed by `printf '%s\n' "$CLIENT_DEMO"`.
+You can remove that directory when you no longer need it.
+
+| What you see | What to do |
+| --- | --- |
+| Missing compiler, generator or dependency | Revisit the setup link for your selected language and the common capsule toolchain |
+| Expired demonstration signature | Start again at step 1 with a fresh demo directory |
+| Connection or authentication failure | Use the runner's temporary configuration and keep its credential file private |
+| An example command exits with an error | Keep its diagnostic and result files; start the next attempt in a fresh demo directory |
+
+Continue with [provider failure and recovery](../how-to/exercise-provider-failure-and-recovery.md)
+or [policy reconciliation](../how-to/reconcile-a-policy-change.md).
+For detailed limits and language-specific ownership rules, see the
+[shared client API reference](../../sdk/profile/README.md).

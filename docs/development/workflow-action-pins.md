@@ -16,7 +16,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/setup-python` | `v5` | `a26af69be951a213d495a4c3e4e4022e16d87065` |
 | `actions/setup-go` | `v5` | `40f1582b2485089dde7abd97c1529aa768e1baff` |
 | `actions/setup-node` | `v4` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
-| `actions/setup-java` | `v4` | `cf277c60eb25467037889841efdb72551f06f6c3` |
+| `actions/setup-java` | `v6.0.1` | `de7274f081f381c8f8158605e0321c36c376e2e6` |
 | `actions/setup-dotnet` | `v4` | `67a3573c9a986a3f9c594539f4ab511d57bb3ce9` |
 | `actions/upload-artifact` | `v4` | `ea165f8d65b6e75b540449e92b4886f43607fa02` |
 | `actions/download-artifact` | `v4` | `d3f86a106a0bac45b974a628896c90dbdf5c8093` |
@@ -28,7 +28,12 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `bufbuild/buf-setup-action` | `v1` | `a47c93e0b1648d5651a065437926377d060baa99` |
 | `mlugg/setup-zig` | `v2` | `d1434d08867e3ee9daa34448df10607b98908d29` |
 
-The upstream `actions/setup-java@v4` line is deprecated as of the reviewed commit. This pin records the behavior already selected by the repository; moving to another major action line is a separate dependency change that requires its own compatibility review.
+The `actions/setup-java` v6.0.1 identity was resolved and its action definition
+reviewed on **2026-09-27**. The action uses Node 24 on the hosted runners and
+retains the `distribution: temurin` and exact `java-version: '25.0.4+101.0.LTS'`
+inputs selected by LSF. The JDK baseline remains Temurin 25.0.4.1+1. The workflow
+hashes in `tools/ci/commands.json` reflect the new action pin; required commands
+and job conditions are unchanged.
 
 The `actions/upload-pages-artifact` v5.0.0 identity was resolved and its action
 definition reviewed on **2026-09-27**. It delegates artifact upload to the pinned

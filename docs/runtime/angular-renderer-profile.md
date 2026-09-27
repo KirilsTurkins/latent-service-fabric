@@ -1,7 +1,7 @@
 # Angular renderer execution profile
 
 [ADR-0037](../../adr/0037-qualify-a-closed-angular-component-renderer-profile.md)
-selects `angular-ssr-component-v1` for Phase 3's first renderer adapter.
+selects `angular-ssr-component-v1` for the supported renderer adapter.
 The [executable fixture](../../examples/renderer-profile/README.md) qualifies
 real Angular SSR and hydration. The [installed generic-cell adapter](angular-renderer-runtime.md)
 implements #233; the observed Angular build adapter remains #234. Exact package admission
@@ -13,17 +13,21 @@ node selector, separate from security policy. T1 remains gated pending the
 observed Angular recipe and web deployment authority; arbitrary Angular/Node
 compatibility is not implied.
 
-## Qualified inputs and identity
+## Pinned inputs and identity
 
-| Input | Qualified value |
+| Input | Pinned value |
 | --- | --- |
-| Angular core/common/compiler/compiler-cli/platform-browser/platform-server | 22.1.6; full AOT, zoneless, server rendering and client hydration |
+| Angular core/common/compiler/compiler-cli/platform-browser/platform-server | 22.1.7; full AOT, zoneless, server rendering and client hydration |
 | TypeScript / Babel / esbuild / RxJS | 6.0.3 / 8.0.1 / 0.28.2 / 7.8.2 |
 | Build Node / ComponentizeJS / jco | 24.19.0 / 0.22.0 / 1.34.0 |
 | JavaScript guest engine | ComponentizeJS's packaged `starlingmonkey_embedding.wasm`, identified by its observed SHA-256 and npm integrity-locked inputs |
 | Native execution | Wasmtime 47.0.4, Cranelift speed, on-demand allocation, fuel and epoch interruption, Component Model and async types enabled |
 | Public application contract | `latent:web/application@0.1.0`, buffered V1, async `handle`; unchanged |
 | Qualification-only interface | `lsf:renderer-qualification/renderer`, synchronous `render` plus adversarial `probe`; no imports |
+
+The Angular packages move together at the same patch version. Updating them
+also changes the installed renderer profile digest. Historical qualification
+reports retain the versions exercised by their recorded builds.
 
 The checked-in [profile](../../examples/renderer-profile/profile.json), npm lock
 and source are versioned build inputs. Each build reports profile, package-lock,

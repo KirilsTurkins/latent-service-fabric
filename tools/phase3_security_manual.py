@@ -117,7 +117,7 @@ def inputs(args, runner, directory: Path) -> tuple[dict[str, str], dict]:
     built = runner.command([str(paths["browser_node"]), "tools/browser-boundary/build.mjs",
                             str(paths["browser_toolchain"]), str(directory / "browser")], timeout=180)
     report = json.loads(built.stdout)
-    require(report == {"angular": "22.1.6", "built": True, "transferredSecrets": False,
+    require(report == {"angular": "22.1.7", "built": True, "transferredSecrets": False,
                        "sourceSeparated": True}, "browser-build-receipt")
     return environment, identities
 
