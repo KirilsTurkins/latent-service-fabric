@@ -44,9 +44,10 @@ without renewing the five-second clock lease before the commit fence.
 Replaying the retained component locally on Linux reproduced the failure and
 identified `admission-clock-lease-uncovered` at that boundary.
 
-Package publication now renews the existing control lease after staging and before
-taking the lifecycle and admission fences, as web publication already does. The
-original grant is still checked under those fences. This neither extends the
+Package publication renews the existing control lease after preparation and
+preflight, then again after immutable payload reads and directory synchronization.
+The implementation integrated with #655 keeps that I/O outside the policy fence
+and checks the original grant before the final commit. This neither extends the
 configured lease nor retries a mutation. A deterministic regression advances the
 clock beyond the lease during preflight and checks one successful publication;
 clock regression, expired policy and a retired authority still reject publication.
