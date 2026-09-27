@@ -18,7 +18,7 @@ import time
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_process_signals import owned_cancellation
-from tools.phase2_operator_process import require, read_json, stopped_record, write_json
+from tools.phase2_operator_process import require, read_json, stopped_record
 from tools.phase2_operator_scenario import connect, stop
 from tools.phase3_resource_identity import file_identity, source_identity
 from tools.phase3_resource_os import Probe
@@ -29,6 +29,16 @@ from tools.sdk_provider_scenario import close_failed_provider, start_provider
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = {"greeting", "word-count", "shipping", "http-status", "recovery"}
+
+
+def write_workflow_receipt(path, value):
+    # Complete authoring reports contain several bounded node inventories.
+    # Keep their new catalog-capacity rows without enlarging fixture inputs.
+    encoded = json.dumps(value, separators=(",", ":")).encode("utf-8")
+    require(len(encoded) <= 1024 * 1024, "authoring-workflow-receipt-bound")
+    with path.open("xb") as target:
+        target.write(encoded)
+    path.chmod(0o600)
 
 
 def run(cli, node_binary, fixture, evidence, *, language="rust"):
@@ -127,14 +137,14 @@ def run(cli, node_binary, fixture, evidence, *, language="rust"):
         require(result["source"] == source_identity(ROOT) and identities == {"cli": file_identity(cli), "node": file_identity(node_binary)},
                 "authoring-inputs-changed")
         result["status"] = "passed"
-        write_json(evidence / "workflow.json", result)
+        write_workflow_receipt(evidence / "workflow.json", result)
         return result
     except BaseException as error:
         result["status"] = "failed"
         result["reason"] = str(error) if isinstance(error, (ValueError, RuntimeError)) else type(error).__name__
         if peer is not None and "peerShutdown" not in result and "peerFailure" not in result:
             result["peerFailure"] = close_failed_provider(peer)
-        write_json(evidence / "FAILED.json", result)
+        write_workflow_receipt(evidence / "FAILED.json", result)
         raise
     finally:
         if client:
