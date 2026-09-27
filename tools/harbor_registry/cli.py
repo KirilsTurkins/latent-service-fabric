@@ -108,7 +108,7 @@ def run(cli: Path, root: Path, origin: str, credential: Path, dns):
             value['origin'] = 'https://harbor.test:1'
             value['bearerChallenge']['realm'] = value['origin'] + '/service/token'
             value['network']['destinations'][0]['origin'] = value['origin']
-        selected = write(work / (name + '.json'), value)
+        selected = write(work / (name + '-profile.json'), value)
         call('package', 'pull', '--registry-profile', selected, '--reference', packages[0]['packageDigest'],
              '--output-dir', work / (name + '-package'), '--evidence-output', work / (name + '-evidence'), success=False)
         negatives.append(name)
