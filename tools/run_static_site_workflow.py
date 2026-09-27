@@ -246,7 +246,11 @@ def run(args):
             node = connect(client, args.node, node_root, config, 'tests', 1)
             selected_profile = client_profile(client, 1)
             before = idle(client)
-            publications = {name: publish(client, pulled, name)['publication']['id'] for name in records}
+            capacity_observations = [catalog_capacity(client, args)]
+            publications = {}
+            for name in records:
+                publications[name] = publish(client, pulled, name)['publication']['id']
+                capacity_observations.append(catalog_capacity(client, args))
             receipts = []
             for name, host, mount in [('csr-a', hosts['csr'], '/'), ('generator', hosts['generator'], '/'), ('generator-docs', hosts['csr'], '/docs')]:
                 for method in ('GET', 'HEAD'):
@@ -276,6 +280,10 @@ def run(args):
             client.config = original_profile
             audit_receipt = audit(client, receipts)
             reconciliation = route_reconciliation(client, args, directory, hosts['csr'], publications)
+            retained_capacity = catalog_capacity(client, args)
+            for key in ('sharedBlobBytes', 'publicationLinkBytes'):
+                require(retained_capacity['accounting'][key] == capacity_observations[-1]['accounting'][key],
+                        'retired-or-revoked-committed-content-was-reclaimed')
             # Disconnect a selected immutable read; its shared request owners must retire.
             asset = next(row for row in records['csr-b']['assets'] if row['mediaType'] == 'text/javascript')
             current_immutable = '/_lsf/assets/' + publications['csr-b'] + asset['path']
@@ -294,10 +302,29 @@ def run(args):
                 'rollback': rollback, 'revokedConditionalDenied': True, 'revokedRollbackDenied': True,
                 'foreignPublicationDenied': True, 'before': before, 'dormant': dormant, 'after': after,
                 'audit': audit_receipt, 'routeReconciliation': reconciliation,
+                'catalogCapacity': {'finitePublicationSequence': capacity_observations,
+                                    'afterRetirementAndRevocation': retained_capacity},
                 'requests': timings, 'shutdown': shutdown, 'cliProcesses': client.calls})
         finally:
             client.node = None
             if node is not None: node.close()
+
+
+def catalog_capacity(client, args):
+    inventory = client.call('node', 'get', NODE_ID)
+    path = client.directory / f'capacity-{client.calls}.json'
+    write_json(path, inventory)
+    process = Process([str(args.node_js), str(ROOT / 'tools/catalog-capacity.mjs'), str(path)],
+                      ROOT, client.environment, client.cancellation, maximum=16384)
+    try:
+        result = process.complete(min(client.deadline, time.monotonic() + 10))
+        require(result.returncode == 0, 'native-catalog-capacity-unavailable')
+        receipt = json.loads(result.stdout)
+        require(receipt['schemaVersion'] == 'latent.publication.capacity.v1'
+                and receipt['retirementReclaimsCommittedBytes'] is False, 'catalog-capacity-receipt')
+        return receipt
+    finally:
+        process.close()
 
 
 def route_reconciliation(client, args, directory, host, publications):
