@@ -1,0 +1,74 @@
+name: Released frontend publication workflow
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/frontend-release.yml'
+      - 'tools/static-release/**'
+      - 'tools/static_site.py'
+      - 'tools/phase2_operator_process.py'
+      - 'tools/phase2_operator_scenario.py'
+      - 'tools/phase3_web_scenario.py'
+      - 'tools/run_static_site_workflow.py'
+      - 'tools/run_oci_registry_tests.py'
+      - 'tools/run_phase2_operator_workflow.py'
+      - 'examples/static-release/**'
+      - 'docs/operations/static-release-workflow.md'
+  push:
+    branches: [development]
+    paths:
+      - '.github/workflows/frontend-release.yml'
+      - 'tools/static-release/**'
+      - 'tools/static_site.py'
+      - 'examples/static-release/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-release-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Released binaries without a Rust toolchain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Authenticate the exact released native archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir "$RUNNER_TEMP/frontend-release"
+          gh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir "$RUNNER_TEMP/frontend-release" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json
+          gh attestation verify "$RUNNER_TEMP/frontend-release/SHA256SUMS" --bundle "$RUNNER_TEMP/frontend-release/SHA256SUMS.sigstore.json" --repo KirilsTurkins/latent-service-fabric --cert-identity https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.4 --cert-oidc-issuer https://token.actions.githubusercontent.com --source-ref refs/tags/0.1.0-alpha.4 --source-digest 2d6cc2eafc0a17dfe573be4252fa49835bebbbd6 --signer-digest 2d6cc2eafc0a17dfe573be4252fa49835bebbbd6 --deny-self-hosted-runners --predicate-type https://slsa.dev/provenance/v1 --digest-alg sha256 --format json > "$RUNNER_TEMP/frontend-release/authentication.json"
+          python3 tools/static-release/unpack.py "$RUNNER_TEMP/frontend-release" > "$RUNNER_TEMP/frontend-release/archive-verification.json"
+      - name: Build the bounded frontend qualification environment
+        run: docker build --tag lsf-frontend-qualification --file tools/static-release/qualification.Dockerfile tools/static-release
+      - name: Check signing identities and hostile approvals
+        run: docker run --rm --cpus 1 --memory 256m --pids-limit 32 --network none --read-only --cap-drop ALL --security-opt no-new-privileges --mount "type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly" lsf-frontend-qualification --test /source/tools/static-release/evidence.test.mjs
+      - name: Exercise actual signing, OCI and native publication
+        run: |
+          set -euo pipefail
+          container=$(docker create --label io.latent.frontend-qualification="$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" --cpus 2 --memory 2g --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=536870912,mode=1777 --mount "type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly" --mount "type=bind,source=$RUNNER_TEMP/frontend-release/extracted,target=/release,readonly" lsf-frontend-qualification /source/tools/static-release/qualification.mjs /release/bin/latent /tmp/result.json /release/bin/latentd)
+          [[ "$container" =~ ^[0-9a-f]{64}$ ]]
+          cleanup() { docker rm --force "$container" >/dev/null; }
+          trap cleanup EXIT
+          timeout --signal=TERM --kill-after=10s 180s docker start --attach "$container" > "$RUNNER_TEMP/frontend-release/qualification.json"
+          test "$(docker inspect --format '{{.State.ExitCode}}' "$container")" = 0
+          cat "$RUNNER_TEMP/frontend-release/qualification.json"
+      - name: Retain public qualification receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: frontend-release-qualification
+          path: |
+            ${{ runner.temp }}/frontend-release/authentication.json
+            ${{ runner.temp }}/frontend-release/archive-verification.json
+            ${{ runner.temp }}/frontend-release/qualification.json
+          if-no-files-found: error
+          retention-days: 14

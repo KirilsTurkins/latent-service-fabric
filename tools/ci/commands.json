@@ -1939,6 +1939,46 @@
       "stepIf": "success()",
       "workflow": ".github/workflows/typescript-guest.yml",
       "workingDirectory": "."
+    },
+    ".github/workflows/frontend-release.yml:frontend:Authenticate the exact released native archive": {
+      "workflow": ".github/workflows/frontend-release.yml",
+      "job": "frontend",
+      "name": "Authenticate the exact released native archive",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "mkdir \"$RUNNER_TEMP/frontend-release\"\ngh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir \"$RUNNER_TEMP/frontend-release\" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json\ngh attestation verify \"$RUNNER_TEMP/frontend-release/SHA256SUMS\" --bundle \"$RUNNER_TEMP/frontend-release/SHA256SUMS.sigstore.json\" --repo KirilsTurkins/latent-service-fabric --cert-identity https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.4 --cert-oidc-issuer https://token.actions.githubusercontent.com --source-ref refs/tags/0.1.0-alpha.4 --source-digest 2d6cc2eafc0a17dfe573be4252fa49835bebbbd6 --signer-digest 2d6cc2eafc0a17dfe573be4252fa49835bebbbd6 --deny-self-hosted-runners --predicate-type https://slsa.dev/provenance/v1 --digest-alg sha256 --format json > \"$RUNNER_TEMP/frontend-release/authentication.json\"\npython3 tools/static-release/unpack.py \"$RUNNER_TEMP/frontend-release\" > \"$RUNNER_TEMP/frontend-release/archive-verification.json\""
+    },
+    ".github/workflows/frontend-release.yml:frontend:Build the bounded frontend qualification environment": {
+      "workflow": ".github/workflows/frontend-release.yml",
+      "job": "frontend",
+      "name": "Build the bounded frontend qualification environment",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker build --tag lsf-frontend-qualification --file tools/static-release/qualification.Dockerfile tools/static-release"
+    },
+    ".github/workflows/frontend-release.yml:frontend:Check signing identities and hostile approvals": {
+      "workflow": ".github/workflows/frontend-release.yml",
+      "job": "frontend",
+      "name": "Check signing identities and hostile approvals",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker run --rm --cpus 1 --memory 256m --pids-limit 32 --network none --read-only --cap-drop ALL --security-opt no-new-privileges --mount \"type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly\" lsf-frontend-qualification --test /source/tools/static-release/evidence.test.mjs"
+    },
+    ".github/workflows/frontend-release.yml:frontend:Exercise actual signing, OCI and native publication": {
+      "workflow": ".github/workflows/frontend-release.yml",
+      "job": "frontend",
+      "name": "Exercise actual signing, OCI and native publication",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\ncontainer=$(docker create --label io.latent.frontend-qualification=\"$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT\" --cpus 2 --memory 2g --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=536870912,mode=1777 --mount \"type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly\" --mount \"type=bind,source=$RUNNER_TEMP/frontend-release/extracted,target=/release,readonly\" lsf-frontend-qualification /source/tools/static-release/qualification.mjs /release/bin/latent /tmp/result.json /release/bin/latentd)\n[[ \"$container\" =~ ^[0-9a-f]{64}$ ]]\ncleanup() { docker rm --force \"$container\" >/dev/null; }\ntrap cleanup EXIT\ntimeout --signal=TERM --kill-after=10s 180s docker start --attach \"$container\" > \"$RUNNER_TEMP/frontend-release/qualification.json\"\ntest \"$(docker inspect --format '{{.State.ExitCode}}' \"$container\")\" = 0\ncat \"$RUNNER_TEMP/frontend-release/qualification.json\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3614,6 +3654,9 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
+    },
+    "tools/static-release/unpack.py": {
+      "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
     }
   },
   "pythonCases": {
@@ -7051,6 +7094,7 @@
     ".github/workflows/rust-capsule-authoring.yml": "a69b8d1ac076990c1e197203b807f306005df327bc1b4c6fee87b6b40ba199fb",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41"
+    ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
+    ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc"
   }
 }
