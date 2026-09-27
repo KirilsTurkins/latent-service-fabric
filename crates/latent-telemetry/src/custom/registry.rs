@@ -85,7 +85,10 @@ impl CustomMetricRegistry {
         config.validate()?;
         let mut hash = HashWriter(Sha256::new());
         serde_json::to_writer(&mut hash, &config).map_err(|_| E::InvalidName)?;
-        let digest = format!("sha256:{:x}", hash.0.finalize());
+        let digest = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.0.finalize())
+        );
         let mut series = Vec::new();
         series
             .try_reserve_exact(config.limits.maximum_series)

@@ -131,7 +131,7 @@ fn prepared_receipt_digest(
     use sha2::{Digest, Sha256};
     format!(
         "sha256:{:x}",
-        Sha256::digest(receipt.canonical_bytes().unwrap())
+        latent_core::digest::HexDigest(Sha256::digest(receipt.canonical_bytes().unwrap()))
     )
     .parse()
     .unwrap()

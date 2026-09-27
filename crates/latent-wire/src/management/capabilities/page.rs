@@ -51,7 +51,7 @@ pub(super) fn select(
         "v1:{}:{}:{:x}:",
         selected.generation.0,
         selected.catalog_transaction,
-        hash.finalize()
+        latent_core::digest::HexDigest(hash.finalize())
     );
     let offset = request
         .page

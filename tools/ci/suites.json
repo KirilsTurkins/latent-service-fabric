@@ -752,7 +752,8 @@
         "web::tests::renderer_requires_the_same_asset_tree_and_supported_compatibility_identity",
         "web::tests::static_contract_fixtures_agree_with_json_schema_acceptance",
         "web::tests::static_routing_is_closed_signed_browser_metadata_with_html_documents",
-        "web::tests::unknown_fields_and_duplicate_keys_are_rejected_even_in_an_integrity_checked_package"
+        "web::tests::unknown_fields_and_duplicate_keys_are_rejected_even_in_an_integrity_checked_package",
+        "web::tests::xml_sitemaps_are_inert_exact_media_and_legacy_fonts_remain_rejected"
       ],
       "expectedIgnored": [
         "local_repository::tests::one_hundred_thousand_index_adoptions_are_bounded"
@@ -763,7 +764,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 256,
+      "minimumCases": 257,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -1573,6 +1574,7 @@
         "deadline_wait_observer::tests::counter_exhaustion_is_explicit_and_never_wraps",
         "deadline_wait_observer::tests::unwinding_releases_the_guard_without_retaining_its_creator",
         "digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain",
+        "digest::tests::digest_bytes_keep_leading_zeroes_and_lowercase_hex",
         "digest::tests::noncanonical_and_malformed_digests_are_rejected_without_normalization",
         "digest::tests::validated_identities_support_deterministic_keys_and_deduplication",
         "host_profile::tests::canonical_identity_changes_with_version_and_bounds_its_data",
@@ -1610,7 +1612,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 88,
+      "minimumCases": 89,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [

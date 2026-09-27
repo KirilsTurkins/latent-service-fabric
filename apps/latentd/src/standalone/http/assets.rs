@@ -229,7 +229,10 @@ fn identity(digest: &str, size: u64, media: &str) -> String {
     hash.update(digest.as_bytes());
     hash.update(size.to_le_bytes());
     hash.update(media.as_bytes());
-    format!("\"identity-sha256-{:x}\"", hash.finalize())
+    format!(
+        "\"identity-sha256-{:x}\"",
+        latent_core::digest::HexDigest(hash.finalize())
+    )
 }
 fn status(error: &PlatformError) -> u16 {
     match error.code {

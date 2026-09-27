@@ -157,7 +157,10 @@ fn delta(before: WorkCounts, after: WorkCounts) -> WorkCounts {
 
 pub fn sha256(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    )
 }
 
 pub fn write_artifact(root: &Path, name: &str, bytes: &[u8]) -> ArtifactReference {

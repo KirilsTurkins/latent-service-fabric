@@ -28,7 +28,7 @@ fn decoded_control_bindings_fail_closed_even_with_recomputed_outer_checksum() {
         }
         record.checksum = format!(
             "sha256:{:x}",
-            Sha256::digest(json::to_vec(&record.payload).unwrap())
+            latent_core::digest::HexDigest(Sha256::digest(json::to_vec(&record.payload).unwrap()))
         );
         std::fs::write(path, json::to_vec(&record).unwrap()).unwrap();
         assert_code(
