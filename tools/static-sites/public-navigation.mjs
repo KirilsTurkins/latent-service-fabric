@@ -1,6 +1,50 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 
+// CORS/CORP denial can suppress Playwright's response event even when LSF sent
+// a real 403. Observe Chromium's wire response without granting page access to it.
+export async function rejectedResponse(page, target, action) {
+  const session = await page.context().newCDPSession(page);
+  const requests = new Map(), responses = new Map();
+  let resolve, reject, events = 0;
+  const received = new Promise((yes, no) => { resolve = yes; reject = no; });
+  const timer = setTimeout(() => reject(new Error('denied-response-timeout: ' + target)), 10000);
+  const bounded = () => {
+    if (++events <= 128) return true;
+    reject(new Error('denied-response-observation-capacity'));
+    return false;
+  };
+  const complete = id => {
+    const request = requests.get(id), response = responses.get(id);
+    if (request?.url === target && response) resolve(response);
+  };
+  session.on('Network.requestWillBeSent', event => {
+    if (!bounded()) return;
+    requests.set(event.requestId, event.request);
+    complete(event.requestId);
+  });
+  session.on('Network.responseReceivedExtraInfo', event => {
+    if (!bounded()) return;
+    responses.set(event.requestId, {status: event.statusCode, headers: event.headers});
+    complete(event.requestId);
+  });
+  session.on('Network.responseReceived', event => {
+    if (!bounded()) return;
+    if (event.response.url === target) resolve({status: event.response.status, headers: event.response.headers});
+  });
+  try {
+    await session.send('Network.enable');
+    const [response] = await Promise.all([received, action()]);
+    assert.equal(response.status, 403);
+    const headers = Object.fromEntries(Object.entries(response.headers).map(([key, value]) => [key.toLowerCase(), value]));
+    assert.equal(headers['access-control-allow-origin'], undefined);
+    return response.status;
+  } finally {
+    clearTimeout(timer);
+    await session.detach();
+  }
+}
+
 // Real network pages and browser-generated Fetch Metadata. The source server
 // only hosts links/forms; every target response comes from the running LSF node.
 export async function publicNavigation(browser, strictOrigin) {
@@ -52,20 +96,21 @@ export async function publicNavigation(browser, strictOrigin) {
       for (const action of ['read', 'script', 'frame', 'unsafe', 'strict']) {
         await page.goto(source, {timeout: 10000});
         const target = action === 'strict' ? strictOrigin + '/docs/guide' : origin + '/guide';
-        const denied = page.waitForResponse(value => value.url() === target, {timeout: 10000});
-        if (action === 'read') {
+        const status = await rejectedResponse(page, target, async () => {
+          if (action === 'read') {
           assert.equal(await page.evaluate(async url => {
             try { await fetch(url); return 'read'; } catch (error) { return error.name; }
           }, target), 'TypeError');
-        } else if (action === 'script' || action === 'frame') {
+          } else if (action === 'script' || action === 'frame') {
           await page.evaluate(({target, action}) => {
             const element = document.createElement(action === 'script' ? 'script' : 'iframe');
             element.src = target; document.body.append(element);
           }, {target, action});
-        } else {
+          } else {
           await page.locator('#' + action).click({noWaitAfter: true});
-        }
-        assert.equal((await denied).status(), 403, action);
+          }
+        });
+        observations.push({site: expectedSite, action, status});
       }
     }
     const addressBar = await context.newPage();
