@@ -117,6 +117,10 @@ def exercise(payload: Path, packager: Path, output: Path, language: str, *, sour
                         and changed["attempt"] != compiled["attempt"], "changed-source-must-build-a-new-component")
                 receipt["templates"][name].update(compileFailureRetainedPrevious=True,
                     failureDiagnosticsMapped=True, changedComponent=changed["artifacts"]["component"])
+        if language == "typescript" and source_node is not None:
+            from tools.static_api_build import exercise as static_api
+            receipt["staticApi"] = static_api(payload, cli, source_node, output / "static-api")
+            require(receipt["staticApi"]["passed"], "static-api-build-or-cleanup-failed")
         receipt.update(passed=True, cleanup="reaped")
     finally:
         attempts = list(temporary.glob("test-*/builds/*"))

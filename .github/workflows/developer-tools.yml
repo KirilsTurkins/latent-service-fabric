@@ -34,6 +34,8 @@ on:
       - tools/dev_typescript_distribution.py
       - tools/guest_runtime_profiles.py
       - tools/run_dev_guest_tools_tests.py
+      - tools/static_api_build.py
+      - examples/static-api/**
       - tools/dev_node_application_probe.py
       - tools/dev_clock_fixture_probe.py
       - tools/run_dev_clock_portable.py
