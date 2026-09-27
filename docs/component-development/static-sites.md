@@ -1,5 +1,8 @@
 # Package an observed static site
 
+For actual Angular/PrimeNG and bilingual Docusaurus examples, follow
+[Serve Angular and Docusaurus sites](../how-to/serve-angular-and-docusaurus.md).
+
 To release your existing frontend output with installed binaries and Node.js,
 follow the [frontend release guide](../operations/static-release-workflow.md).
 It covers organization signing, verification, OCI transfer, publication,
