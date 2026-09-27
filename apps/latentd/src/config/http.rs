@@ -36,6 +36,8 @@ pub struct HttpIngressConfig {
     pub browser_origins: Vec<BrowserOrigin>,
     #[serde(default)]
     pub public_document_navigation: Vec<PublicDocumentNavigation>,
+    #[serde(default)]
+    pub allow_static_style_hashes: bool,
 }
 
 #[derive(Clone, Deserialize)]
@@ -120,6 +122,7 @@ pub(crate) struct HttpSettings {
     pub response_cache: Vec<PublicCachePolicy>,
     pub browser_origins: Vec<BrowserOrigin>,
     pub public_document_navigation: Vec<PublicDocumentNavigation>,
+    pub allow_static_style_hashes: bool,
 }
 pub(super) fn present<'de, D: Deserializer<'de>>(
     d: D,
@@ -236,6 +239,7 @@ pub(super) fn derive(
         response_cache: http.response_cache.clone(),
         browser_origins,
         public_document_navigation: http.public_document_navigation.clone(),
+        allow_static_style_hashes: http.allow_static_style_hashes,
     }))
 }
 
