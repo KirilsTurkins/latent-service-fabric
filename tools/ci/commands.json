@@ -3556,7 +3556,7 @@
       "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
     },
     "tools/run_static_site_workflow.py": {
-      "sha256": "a90f8b647fd72a40191c36db230edb93498597beaa1cd89b18200ae37b14967d"
+      "sha256": "b2ec2740f0e06ef16980f3732bb964707a9018f343da0fdfa809382c9b0ee0dc"
     },
     "tools/run_vault_secret_tests.py": {
       "sha256": "81ab09bf676f22fca2e1cb923353586cef8d36361980cac4091677bcbe9abcf4"
@@ -4655,7 +4655,8 @@
       "NodeHttpIngressSchema.test_browser_bindings_are_bounded_closed_and_not_credentials",
       "NodeHttpIngressSchema.test_closed_profiles_do_not_infer_proxy_trust_or_public_authority",
       "NodeHttpIngressSchema.test_documented_tls_configuration_and_public_adapter",
-      "NodeHttpIngressSchema.test_individual_resource_bounds"
+      "NodeHttpIngressSchema.test_individual_resource_bounds",
+      "NodeHttpIngressSchema.test_public_document_navigation_requires_bounded_public_scope"
     ],
     "tools/tests/test_node_isolated_aot_schema.py": [
       "NodeIsolatedAotSchema.test_every_numeric_ceiling",
