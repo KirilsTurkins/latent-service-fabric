@@ -66,7 +66,10 @@ impl S3BlobProvider {
                 hash.update(value.as_bytes());
             }
         }
-        let identity = format!("sha256:{:x}", hash.finalize());
+        let identity = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        );
         let restriction = serde_json::to_vec(&serde_json::json!({
             "operations": ["create", "write", "seal", "open", "read"],
             "resources": {"kind": "blob", "namespaces": [config.namespace]}

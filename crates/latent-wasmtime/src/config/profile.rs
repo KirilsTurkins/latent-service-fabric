@@ -21,10 +21,7 @@ impl WasmtimeConfig {
     ) -> WasmtimeEngineProfile {
         let mut configuration = self.compatibility_fields(mode);
         if let Some(runtime) = runtime {
-            let fingerprint = format!(
-                "{:x}",
-                sha2::digest::Output::<sha2::Sha256>::from(*runtime.digest())
-            );
+            let fingerprint = format!("{:x}", latent_core::digest::HexDigest(runtime.digest()));
             configuration.insert("runtime-compatibility-digest".into(), fingerprint);
         }
         configuration.insert("configuration-digest".to_owned(), digest(&configuration));
@@ -101,7 +98,7 @@ impl WasmtimeConfig {
                 "host-abi-digest".into(),
                 format!(
                     "{:x}",
-                    sha2::digest::Output::<sha2::Sha256>::from(crate::bindings::host_abi_digest())
+                    latent_core::digest::HexDigest(crate::bindings::host_abi_digest())
                 ),
             );
             for (name, value) in [

@@ -1956,6 +1956,7 @@ dependencies = [
 name = "latent-renderer-profile"
 version = "0.1.0-alpha.4"
 dependencies = [
+ "latent-core",
  "serde_json",
  "sha2 0.11.0",
  "wasmtime",

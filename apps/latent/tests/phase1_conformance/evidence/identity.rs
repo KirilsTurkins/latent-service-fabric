@@ -95,7 +95,10 @@ fn file(name: &str, path: &Path) -> FileIdentity {
     assert_eq!(bytes, expected);
     FileIdentity {
         name: name.to_owned(),
-        sha256: format!("sha256:{:x}", hash.finalize()),
+        sha256: format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        ),
         bytes,
     }
 }

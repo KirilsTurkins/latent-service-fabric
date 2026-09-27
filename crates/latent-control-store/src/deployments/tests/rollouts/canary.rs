@@ -295,7 +295,7 @@ fn policy_is_optional_closed_and_plan_bound_on_recovery() {
         .observation_millis = 101;
     persisted.checksum = format!(
         "sha256:{:x}",
-        Sha256::digest(json::to_vec(&persisted.payload).unwrap())
+        latent_core::digest::HexDigest(Sha256::digest(json::to_vec(&persisted.payload).unwrap()))
     );
     std::fs::write(path, json::to_vec(&persisted).unwrap()).unwrap();
     assert_code(

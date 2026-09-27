@@ -264,7 +264,10 @@ fn part(hash: &mut Sha256, value: &[u8]) {
 }
 
 fn finish(hash: Sha256) -> ArtifactBlobDigest {
-    format!("sha256:{:x}", hash.finalize())
-        .parse()
-        .expect("SHA-256")
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(hash.finalize())
+    )
+    .parse()
+    .expect("SHA-256")
 }

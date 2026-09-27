@@ -102,7 +102,11 @@ pub(super) fn record(path: &Path, key: &RawArtifactKey, maximum: u64) -> Result<
 }
 
 pub(super) fn verify_bytes(key: &RawArtifactKey, bytes: &[u8]) -> Result<()> {
-    if format!("sha256:{:x}", Sha256::digest(bytes)) != key.digest() {
+    if format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    ) != key.digest()
+    {
         return Err(corrupt("raw-cache-digest-mismatch"));
     }
     Ok(())
@@ -150,7 +154,10 @@ pub(super) fn verify_file(path: &Path, key: &RawArtifactKey, size: u64) -> Resul
         remaining -= count as u64;
     }
     if file.read(&mut [0]).map_err(failure)? != 0
-        || format!("sha256:{:x}", hash.finalize()) != key.digest()
+        || format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        ) != key.digest()
     {
         return Err(corrupt("raw-cache-digest-mismatch"));
     }

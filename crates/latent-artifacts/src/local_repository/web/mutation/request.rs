@@ -52,9 +52,12 @@ pub(super) fn receipt(
         resulting_generation,
         disposition: ReleaseOperationDisposition::Committed,
         reason,
-        request_digest: format!("sha256:{:x}", hash.finalize())
-            .parse()
-            .map_err(|_| corrupt("web-request-digest"))?,
+        request_digest: format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        )
+        .parse()
+        .map_err(|_| corrupt("web-request-digest"))?,
     })
 }
 pub(super) fn check_generation(
@@ -97,9 +100,12 @@ pub(super) fn upload_digest(upload: &PackageAdmissionUpload) -> ArtifactBlobDige
             field(&mut hash, &evidence.payload);
         }
     }
-    format!("sha256:{:x}", hash.finalize())
-        .parse()
-        .expect("SHA-256")
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(hash.finalize())
+    )
+    .parse()
+    .expect("SHA-256")
 }
 pub(super) fn updated(
     state: &State,

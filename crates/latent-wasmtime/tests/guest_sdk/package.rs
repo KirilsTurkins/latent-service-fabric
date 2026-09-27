@@ -59,13 +59,19 @@ pub fn observation(name: &str) -> BuildObservation {
         })
         .as_str()
         .expect("completed build observation digest"),
-        format!("sha256:{:x}", Sha256::digest(&bytes))
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(&bytes))
+        )
     );
     let observation = decode_build_observation(&bytes, ProvenanceLimits::default()).unwrap();
     let inputs = read(&root.join("source-inputs.json"), 1024 * 1024);
     assert_eq!(
         observation.source.snapshot_digest,
-        format!("sha256:{:x}", Sha256::digest(inputs))
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(inputs))
+        )
     );
     observation
 }

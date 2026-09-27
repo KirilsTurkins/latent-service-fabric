@@ -105,7 +105,10 @@ pub(super) async fn drain<R: AsyncRead + Unpin>(
     if file.flush().is_err() {
         receipt.error = Some("child-output-flush");
     }
-    receipt.sha256 = format!("sha256:{:x}", hash.finalize());
+    receipt.sha256 = format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(hash.finalize())
+    );
     if let Some(error) = receipt.error {
         let _ = notices.try_send(Notice::Failed(error));
     }
@@ -224,7 +227,7 @@ mod tests {
             let bytes=std::fs::read(&path).unwrap();
             std::fs::remove_file(&path).unwrap();
             assert_eq!(receipt.bytes,bytes.len());
-            assert_eq!(receipt.sha256,format!("sha256:{:x}",Sha256::digest(&bytes)));
+            assert_eq!(receipt.sha256,format!("sha256:{:x}",latent_core::digest::HexDigest(Sha256::digest(&bytes))));
             assert_eq!(receipt.error,expected);
             assert!(bytes.len()<=MAX_BYTES);
             if expected.is_none() {assert!(receipt.eof && receipt.ready.is_some() && receipt.stopped.is_some());}
