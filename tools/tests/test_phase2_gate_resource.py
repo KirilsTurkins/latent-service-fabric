@@ -268,13 +268,14 @@ class Phase2ResourceTests(unittest.TestCase):
                 integer(value)
 
     def test_consistently_missing_fixed_owner_rows_cannot_fake_complete_topology(self):
-        value = complete_receipt()
-        for sample in value["samples"]:
-            sample["inventory"]["topology"]["entries"] = [
-                row for row in sample["inventory"]["topology"]["entries"]
-                if row["name"] != "wasmtime-compiler"]
-        with self.assertRaisesRegex(WorkflowError, "inventory-fixed-rows"):
-            validate_receipt(value)
+        for missing in ("wasmtime-compiler", "publication-catalog"):
+            value = complete_receipt()
+            for sample in value["samples"]:
+                sample["inventory"]["topology"]["entries"] = [
+                    row for row in sample["inventory"]["topology"]["entries"]
+                    if row["name"] != missing]
+            with self.subTest(owner=missing), self.assertRaisesRegex(WorkflowError, "inventory-fixed-rows"):
+                validate_receipt(value)
         value = complete_receipt()
         for sample in value["samples"]:
             next(row for row in sample["inventory"]["topology"]["entries"]
