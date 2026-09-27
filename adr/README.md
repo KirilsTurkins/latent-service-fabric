@@ -98,3 +98,4 @@ old implementation snapshots are not setup instructions.
 - [ADR-0043: Select static web publications as first-class HTTP targets](0043-select-static-web-publications-as-first-class-http-targets.md)
 - [ADR-0044: Remove obsolete alpha compatibility](0044-remove-obsolete-alpha-compatibility.md)
 - [ADR-0045: Bound larger static documentation inventories](0045-bound-larger-static-documentation-inventories.md)
+- [ADR-0047: Reconcile static route sets with durable intent](0047-reconcile-static-route-sets-with-durable-intent.md)
