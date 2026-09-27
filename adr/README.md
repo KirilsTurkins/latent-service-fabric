@@ -102,3 +102,4 @@ old implementation snapshots are not setup instructions.
 - [ADR-0047: Reconcile static route sets with durable intent](0047-reconcile-static-route-sets-with-durable-intent.md)
 - [ADR-0049: Scope cross-origin assets to explicit publications](0049-scope-cross-origin-assets-to-publications.md)
 - [ADR-0051: Author static release evidence without a Rust toolchain](0051-author-static-release-evidence-without-a-rust-toolchain.md)
+- [ADR-0053: Run authenticated native binaries in a bounded container profile](0053-run-authenticated-native-containers.md)
