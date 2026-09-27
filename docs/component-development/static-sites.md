@@ -3,9 +3,11 @@
 For actual Angular/PrimeNG and bilingual Docusaurus examples, follow
 [Serve Angular and Docusaurus sites](../how-to/serve-angular-and-docusaurus.md).
 
-For repeatable GET/HEAD promotion, interrupted-job recovery and rollback, follow
-the [static route-set guide](../operations/static-route-sets.md) after publishing
-your package.
+To release your existing frontend output with installed binaries and Node.js,
+follow the [frontend release guide](../operations/static-release-workflow.md).
+It covers organization signing, verification, OCI transfer, publication,
+GET/HEAD promotion and rollback without a Rust toolchain. This page explains
+the inventory and routing inputs used by that workflow.
 
 `tools/static_site.py` captures an explicit finite file map from an existing
 framework build. It writes ordinary `browser-assets` package inputs and a
@@ -148,6 +150,10 @@ same name; any intentionally retained assets must be present in the selected
 publication's signed inventory.
 
 ## Build and qualify the maintained references
+
+This section is for contributors testing LSF itself. Application delivery uses
+the [frontend release guide](../operations/static-release-workflow.md) and your
+organization's signing identities.
 
 `examples/static-sites/csr` is an Angular client-only application with a home
 view, a lazy `/orders/:id` route, CSS and visible A/B version markers. Its build

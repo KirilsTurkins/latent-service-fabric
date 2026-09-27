@@ -52,7 +52,7 @@ export function buildSidebars(pages) {
   ], 'Application concepts');
   sidebars.howTo = sections(sidebars.howTo, [
     {label: 'Application development', ids: ['how-to/developer-commands', 'component-development/portable-tests', 'component-development/devcontainer']},
-    {label: 'Web delivery', ids: ['operations/static-route-sets', 'how-to/serve-angular-and-docusaurus', 'how-to/diagnose-angular-delivery']},
+    {label: 'Web delivery', ids: ['operations/static-release-workflow', 'operations/static-route-sets', 'how-to/serve-angular-and-docusaurus', 'how-to/diagnose-angular-delivery']},
     {label: 'Operate a node', ids: ['how-to/operate-and-contribute', 'how-to/reconcile-a-policy-change', 'phase-2-delivery',
       'how-to/operate-capability-providers'], match: id => id.startsWith('operations/')},
   ], 'Operations tasks');
