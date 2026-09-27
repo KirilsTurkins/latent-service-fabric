@@ -36,7 +36,10 @@ fn replace_bytes_and_unkeyed_claims(fixture: &Fixture) {
     // Deliberately not native code. The adversary also supplies the correct SHA
     // and size, so raw-cache integrity recovery alone cannot reject this object.
     let substituted = vec![0xa5; original.len()];
-    let hex = format!("{:x}", Sha256::digest(&substituted));
+    let hex = format!(
+        "{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(&substituted))
+    );
     let key = format!("b-{hex}");
     let replacement = old_path.parent().unwrap().join(&key);
     fs::write(old_path.join("data"), &substituted).unwrap();

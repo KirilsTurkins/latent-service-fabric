@@ -316,7 +316,12 @@ pub(in crate::local_repository) fn verify(
             .ok_or_else(|| corrupt("admission-file-growth"))?;
         hash.update(&scratch[..count]);
     }
-    if total != blob.size || format!("sha256:{:x}", hash.finalize()) != blob.digest {
+    if total != blob.size
+        || format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        ) != blob.digest
+    {
         return Err(corrupt("admission-file-digest-mismatch"));
     }
     Ok(())

@@ -120,7 +120,10 @@ fn synthetic_release(template: &CapsuleManifest, index: u32) -> CapsuleArtifact 
         0, 97, 115, 109, 13, 0, 1, 0, 0, 9, 4, b's', b'e', b'e', b'd',
     ];
     component_bytes.extend_from_slice(&index.to_le_bytes());
-    let digest = ReleaseDigest(format!("sha256:{:x}", Sha256::digest(&component_bytes)));
+    let digest = ReleaseDigest(format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(&component_bytes))
+    ));
     let mut manifest = template.clone();
     manifest.component_digest = digest.clone();
     CapsuleArtifact {

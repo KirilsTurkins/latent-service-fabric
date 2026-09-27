@@ -193,5 +193,7 @@ pub(in crate::broker) fn request_digest(
         part(&typed.0);
     }
     let hash = digest.finalize();
-    format!("sha256:{hash:x}").parse().expect("SHA-256 digest")
+    format!("sha256:{:x}", latent_core::digest::HexDigest(hash))
+        .parse()
+        .expect("SHA-256 digest")
 }

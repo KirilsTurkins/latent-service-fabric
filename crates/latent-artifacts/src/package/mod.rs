@@ -51,17 +51,23 @@ pub fn validate_package_json(bytes: &[u8], limits: PackageLimits) -> Result<(), 
 /// Content identity of the exact received manifest bytes, without normalization.
 #[must_use]
 pub fn package_digest(bytes: &[u8]) -> PackageDigest {
-    format!("sha256:{:x}", Sha256::digest(bytes))
-        .parse()
-        .expect("SHA-256")
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    )
+    .parse()
+    .expect("SHA-256")
 }
 
 /// Content identity of raw config or layer bytes. No archive extraction is implied.
 #[must_use]
 pub fn artifact_blob_digest(bytes: &[u8]) -> ArtifactBlobDigest {
-    format!("sha256:{:x}", Sha256::digest(bytes))
-        .parse()
-        .expect("SHA-256")
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    )
+    .parse()
+    .expect("SHA-256")
 }
 
 fn invalid(reason: &'static str) -> PlatformError {
