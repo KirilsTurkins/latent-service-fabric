@@ -10,6 +10,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from native_runtime import files, host, verify
 from native_runtime.common import InstallError, document, execute, require
+from ownership import acquire
 
 RELEASE = Path('/opt/lsf/release')
 CONFIG = Path('/etc/lsf/node.json')
@@ -74,8 +75,11 @@ def preflight() -> dict:
 
 
 def main() -> int:
+    owner = None
     try:
         require(sys.argv[1:] in (['check'], ['serve']), 'expected-check-or-serve')
+        if sys.argv[1] == 'serve':
+            owner = acquire(DATA, inherit=True)
         result = preflight()
         if sys.argv[1] == 'check':
             print(json.dumps(result, separators=(',', ':')))
@@ -91,6 +95,9 @@ def main() -> int:
     except (OSError, ValueError, KeyError, TypeError):
         print('{"schemaVersion":"latent.container-failure.v1","stage":"preflight","reason":"inspect-release-and-private-mounts","ready":false}', file=sys.stderr)
         return 1
+    finally:
+        if owner is not None:
+            os.close(owner)
     return 1
 
 
