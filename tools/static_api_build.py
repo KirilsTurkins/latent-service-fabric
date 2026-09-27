@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 import os
 import shutil
+import socket
 import sys
 import tempfile
 import time
@@ -68,10 +69,22 @@ def exercise(payload: Path, packager: Path, supplied: Path, output: Path) -> dic
         source = root / 'builds' / compiled['attempt'] / 'source'
         shutil.copytree(source / 'output', output / 'build')
         from tools.dev_node_application_probe import run
-        report['node'] = run(root, supplied, payload, descriptor, output / 'node')
+        # Even rejection-only calls instantiate the declared HTTP import. Install
+        # the actual provider and a finite local peer, with no capability grant.
+        # These two scenarios must reject before sending anything upstream.
+        with socket.socket() as reservation:
+            reservation.bind(('127.0.0.1', 0))
+            port = reservation.getsockname()[1]
+        fixtures = {'http': {'port': port, 'exchanges': [{'method': 'GET', 'path': '/health',
+            'requestBody': '', 'status': 200, 'responseBody': ''}]}}
+        report['node'] = run(root, supplied, payload, descriptor, output / 'node', fixtures=fixtures)
         require(report['node']['passed'], 'static-api-signed-node-scenarios-failed')
         require(report['node']['cleanup'] == 'owned-node-and-client-processes-reaped',
                 'static-api-owned-cleanup-required')
+        for phase in ('tests', 'retained'):
+            peer = report['node'][phase]['identity']['fixtureRuntimeAfter']['http']
+            require(peer['acceptedConnections'] == 0 and peer['completedRequests'] == 0,
+                    'rejected-api-request-contacted-upstream')
         report.update(passed=True, cleanup='owned-node-and-build-processes-reaped')
     except BaseException as error:
         report['failure'] = error.code if isinstance(error, DevError) else type(error).__name__
