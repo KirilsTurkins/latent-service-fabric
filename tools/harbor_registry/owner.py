@@ -62,11 +62,41 @@ class Owner:
         command([*arguments, IMAGES['prepare'], 'prepare'], timeout=120)
 
     def launch(self) -> None:
+        self.environment_ownership()
         for name, image in IMAGES.items():
             if name != 'prepare':
                 image_available(image)
         command(['docker', 'compose', '--project-name', self.project, '--file', str(self.root / 'compose.json'),
                  'up', '--detach', '--no-build', '--pull', 'never'], timeout=180)
+
+    def environment_ownership(self) -> None:
+        # Upstream prepare creates root-owned 0600 env files. Compose reads
+        # those on the host before creating a container; retain 0600 while
+        # handing only the approved env files to this fixture's invoking user.
+        import os
+        if os.name == 'nt':
+            return
+        compose = json.loads((self.root / 'compose.json').read_bytes())
+        selected = sorted({str(Path(name).relative_to(self.root))
+                           for service in compose['services'].values()
+                           for name in service.get('env_file', [])})
+        if len(selected) > 8 or any(not re.fullmatch(r'common/config/[a-z]+/env', name) for name in selected):
+            raise RuntimeError('Harbor environment file ownership bound')
+        program = (
+            'import os,stat\n'
+            f'for name in {selected!r}:\n'
+            ' path="/owned/"+name\n'
+            ' info=os.lstat(path)\n'
+            ' if not stat.S_ISREG(info.st_mode) or info.st_nlink!=1 or info.st_size>65536: raise RuntimeError("environment file bound")\n'
+            f' os.chown(path,{os.getuid()},{os.getgid()},follow_symlinks=False)\n'
+            ' os.chmod(path,0o600,follow_symlinks=False)\n'
+        )
+        command(['docker', 'run', '--rm', '--network', 'none', '--label', self.label,
+                 '--memory', '128m', '--pids-limit', '32', '--cap-drop', 'ALL',
+                 '--cap-add', 'CHOWN', '--cap-add', 'DAC_OVERRIDE', '--cap-add', 'FOWNER',
+                 '--security-opt', 'no-new-privileges:true',
+                 '--mount', f'type=bind,source={self.root},target=/owned',
+                 '--entrypoint', 'python3', IMAGES['prepare'], '-c', program], timeout=30)
 
     def close(self) -> None:
         for kind, listing in [
