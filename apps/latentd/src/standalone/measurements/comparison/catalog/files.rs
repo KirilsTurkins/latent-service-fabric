@@ -158,7 +158,7 @@ pub(in crate::standalone::measurements::comparison) fn file_reference(
         return Err("catalog file size changed".into());
     }
     Ok(
-        json!({"path":name,"bytes":bytes.to_string(),"sha256":format!("sha256:{:x}",digest.finalize())}),
+        json!({"path":name,"bytes":bytes.to_string(),"sha256":format!("sha256:{:x}",latent_core::digest::HexDigest(digest.finalize()))}),
     )
 }
 

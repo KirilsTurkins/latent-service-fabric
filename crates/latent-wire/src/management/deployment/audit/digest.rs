@@ -43,9 +43,12 @@ impl Hash {
         }
     }
     fn finish(self) -> ArtifactBlobDigest {
-        format!("sha256:{:x}", self.0.finalize())
-            .parse()
-            .expect("canonical SHA256")
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(self.0.finalize())
+        )
+        .parse()
+        .expect("canonical SHA256")
     }
 }
 

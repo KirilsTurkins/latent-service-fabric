@@ -113,7 +113,7 @@ impl Output {
 
     pub fn attempt_ref(&self) -> Value {
         json!({"path":"attempts.jsonl","bytes":self.attempts_bytes.to_string(),
-            "sha256":format!("sha256:{:x}",self.attempts_hash.clone().finalize())})
+            "sha256":format!("sha256:{:x}",latent_core::digest::HexDigest(self.attempts_hash.clone().finalize()))})
     }
 
     fn charge(&mut self, bytes: usize, final_record: bool) -> Result<()> {

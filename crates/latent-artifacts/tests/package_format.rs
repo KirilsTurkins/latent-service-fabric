@@ -82,7 +82,10 @@ fn all_three_kinds_preserve_distinct_raw_and_component_identities() {
         assert_eq!(layout.config().kind, kind);
         assert_eq!(
             layout.digest().as_str(),
-            format!("sha256:{:x}", Sha256::digest(&bytes))
+            format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(&bytes))
+            )
         );
         assert_ne!(
             layout.digest().as_str(),
