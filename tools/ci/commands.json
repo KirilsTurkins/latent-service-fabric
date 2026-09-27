@@ -1988,7 +1988,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "set -euo pipefail\numask 077\nmkdir \"$RUNNER_TEMP/container-release\"\ngh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir \"$RUNNER_TEMP/container-release\" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json --pattern lsf-install.pyz\ngh attestation trusted-root > \"$RUNNER_TEMP/container-trusted-root.jsonl\"\npython3 tools/prepare_container_runtime.py --release-directory \"$RUNNER_TEMP/container-release\" --version 0.1.0-alpha.4 --publisher-policy tools/container_runtime/release-policy.json --trusted-root \"$RUNNER_TEMP/container-trusted-root.jsonl\" --verifier \"$(command -v gh)\" --output \"$RUNNER_TEMP/container-context\" > \"$RUNNER_TEMP/container-build-inputs.json\""
+      "run": "set -euo pipefail\numask 077\ncontainer_work=$(mktemp -d /tmp/lsf-container-XXXXXXXX)\necho \"CONTAINER_WORK=$container_work\" >> \"$GITHUB_ENV\"\nmkdir \"$container_work/release\" \"$container_work/trust\" \"$container_work/tools\"\ncp -R tools/native_runtime tools/container_runtime \"$container_work/tools/\"\ncp tools/prepare_container_runtime.py \"$container_work/tools/\"\ninstall -m 0755 \"$(command -v gh)\" \"$container_work/trust/gh\"\ngh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir \"$container_work/release\" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json --pattern lsf-install.pyz\ngh attestation trusted-root > \"$container_work/trust/root.jsonl\"\npython3 \"$container_work/tools/prepare_container_runtime.py\" --release-directory \"$container_work/release\" --version 0.1.0-alpha.4 --publisher-policy \"$container_work/tools/container_runtime/release-policy.json\" --trusted-root \"$container_work/trust/root.jsonl\" --verifier \"$container_work/trust/gh\" --output \"$container_work/context\" > \"$RUNNER_TEMP/container-build-inputs.json\""
     },
     ".github/workflows/container-runtime.yml:container:Build the runtime and disposable publisher images": {
       "workflow": ".github/workflows/container-runtime.yml",
@@ -1998,7 +1998,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "docker build --tag lsf-container-runtime \"$RUNNER_TEMP/container-context\"\ndocker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release"
+      "run": "docker build --tag lsf-container-runtime \"$CONTAINER_WORK/context\"\ndocker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release"
     },
     ".github/workflows/container-runtime.yml:container:Publish actual signed sites and verify restart": {
       "workflow": ".github/workflows/container-runtime.yml",
@@ -2008,7 +2008,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$RUNNER_TEMP/container-context/release\" --output \"$RUNNER_TEMP/container-qualification\""
+      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -7131,6 +7131,6 @@
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
-    ".github/workflows/container-runtime.yml": "8964de2261e96c61a38ced121e2ea8689b5c5aef6be576d76b4ef38ed6d4b996"
+    ".github/workflows/container-runtime.yml": "7594ec618b30311c253f32e3a20b1f9b6842d3d7e51de8cc6b53b0a18959fc0b"
   }
 }

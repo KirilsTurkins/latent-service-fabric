@@ -42,16 +42,21 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          mkdir "$RUNNER_TEMP/container-release"
-          gh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir "$RUNNER_TEMP/container-release" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json --pattern lsf-install.pyz
-          gh attestation trusted-root > "$RUNNER_TEMP/container-trusted-root.jsonl"
-          python3 tools/prepare_container_runtime.py --release-directory "$RUNNER_TEMP/container-release" --version 0.1.0-alpha.4 --publisher-policy tools/container_runtime/release-policy.json --trusted-root "$RUNNER_TEMP/container-trusted-root.jsonl" --verifier "$(command -v gh)" --output "$RUNNER_TEMP/container-context" > "$RUNNER_TEMP/container-build-inputs.json"
+          container_work=$(mktemp -d /tmp/lsf-container-XXXXXXXX)
+          echo "CONTAINER_WORK=$container_work" >> "$GITHUB_ENV"
+          mkdir "$container_work/release" "$container_work/trust" "$container_work/tools"
+          cp -R tools/native_runtime tools/container_runtime "$container_work/tools/"
+          cp tools/prepare_container_runtime.py "$container_work/tools/"
+          install -m 0755 "$(command -v gh)" "$container_work/trust/gh"
+          gh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir "$container_work/release" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json --pattern lsf-install.pyz
+          gh attestation trusted-root > "$container_work/trust/root.jsonl"
+          python3 "$container_work/tools/prepare_container_runtime.py" --release-directory "$container_work/release" --version 0.1.0-alpha.4 --publisher-policy "$container_work/tools/container_runtime/release-policy.json" --trusted-root "$container_work/trust/root.jsonl" --verifier "$container_work/trust/gh" --output "$container_work/context" > "$RUNNER_TEMP/container-build-inputs.json"
       - name: Build the runtime and disposable publisher images
         run: |
-          docker build --tag lsf-container-runtime "$RUNNER_TEMP/container-context"
+          docker build --tag lsf-container-runtime "$CONTAINER_WORK/context"
           docker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release
       - name: Publish actual signed sites and verify restart
-        run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$RUNNER_TEMP/container-context/release" --output "$RUNNER_TEMP/container-qualification"
+        run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/container-qualification"
       - name: Retain public container evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
