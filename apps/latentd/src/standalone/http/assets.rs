@@ -3,6 +3,7 @@
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod browser;
 mod cache;
+mod csp;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod fixture;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
@@ -31,7 +32,10 @@ use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 #[cfg(test)]
 type TestPause = (std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>);
 
-const MAX_READS: usize = 4;
+// A single browser can open six HTTP/1 connections while loading framework
+// chunks. Keep eight fixed read/output owners; the shared byte budget and
+// immediate capacity rejection are unchanged.
+const MAX_READS: usize = 8;
 pub(super) use prerender::select as prerender;
 pub(super) use wire::exchange;
 pub(super) use wire::exchange_routed;
@@ -177,12 +181,18 @@ impl Store {
             request.status(&etag)?
         };
         let media = asset.media_type.clone();
+        let csp = if media == "text/html" {
+            csp::policy(&selected.layout().manifest().style_hashes)?
+        } else {
+            None
+        };
         Ok(Prepared {
             buffer,
             selection,
             request,
             etag,
             media,
+            csp,
             code,
             _permit: permit,
         })
@@ -195,6 +205,7 @@ struct Prepared {
     request: Request,
     etag: String,
     media: String,
+    csp: Option<String>,
     code: u16,
     // Last field: release all output and selection ownership before this slot.
     _permit: OwnedSemaphorePermit,
