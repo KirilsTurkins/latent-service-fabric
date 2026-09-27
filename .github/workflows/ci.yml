@@ -360,6 +360,10 @@ jobs:
           python3 tools/build_static_sites.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --toolchain examples/renderer-profile --output "${static_root}/builds"
           LSF_STATIC_BUILDS="${static_root}/builds" LSF_STATIC_FIXTURE_ROOT="${static_root}/fixture" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite static-site-fixture
           python3 tools/run_static_site_workflow.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --node "${static_root}/latentd" --fixture "${static_root}/fixture" --toolchain examples/renderer-profile --chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"
+          node --test tools/cross-origin/contract.test.mjs
+          mkdir -m 0700 "$static_root/cors-tls"
+          openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -sha256 -days 1 -subj '/CN=localhost' -keyout "$static_root/cors-tls/key.pem" -out "$static_root/cors-tls/server.pem"
+          node tools/cross-origin/browser.mjs examples/renderer-profile "$(command -v google-chrome)" "$static_root/cors-tls" examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 "${RUNNER_TEMP}/phase2-gate/cross-origin-feasibility.json"
       - name: Validate bounded Phase 2 delivery and resource workflows
         timeout-minutes: 10
         shell: bash

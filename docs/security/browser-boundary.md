@@ -47,6 +47,11 @@ untrusted applications even when they share an LSF tenant.
 
 ## Requests, CORS and CSRF
 
+An opt-in asset extension is specified in
+[ADR-0049](../../adr/0049-scope-cross-origin-assets-to-publications.md). Its browser
+experiment establishes feasibility only; native CORS support remains pending.
+The current rules below continue to apply to running nodes.
+
 - An Origin must equal the exact serialized configured origin. `null`, lists,
   alternative/default-port spellings, trailing slashes and foreign origins are
   rejected. Duplicate Origin or supported Fetch Metadata fields are rejected.
