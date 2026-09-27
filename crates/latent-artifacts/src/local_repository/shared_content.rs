@@ -84,7 +84,7 @@ impl SharedContent {
             healthy: true,
         }
     }
-    fn check(&self) -> Result<(), PlatformError> {
+    pub(super) fn check(&self) -> Result<(), PlatformError> {
         if self.healthy {
             Ok(())
         } else {
