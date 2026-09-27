@@ -1,38 +1,32 @@
 # Phase 3 gate review
 
-**Decision: pending.** This is the evidence handoff for
-[#240](https://github.com/KirilsTurkins/latent-service-fabric/issues/240), not a
-Phase 3 completion declaration or runtime release. The implementation receipts
-below retain their original source and measurement identities. The maintainer confirmed the 27-topic guide review on September 26 and
-authorized guide updates and release publication without another approval.
-Exact release-source CI and protected native publication have passed at
-`2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`; the
-[native gate](development/native-release-gate.md) links the actual public assets
-and complete VM acceptance. Public developer-tool downloads also passed the
-six-language acquisition and example-creation check below. Complete-site
-publication and final cutover remain acceptance work.
-Security-monitoring activation #282, the actual Angular
-reference workflow #236 and static-site delivery #495/#496/#497 are complete.
-The Wiki is already disabled and its publishers are retired; final live-site
-cutover checks remain separate from that
-[retirement observation](evidence/wiki-retirement-2026-09-26.json).
+**Decision: passed for the declared standalone profiles on 2026-09-27.**
+The finite implementation, native delivery, six-language developer workflow,
+guide and website requirements are complete. This decision supplies
+[#240](https://github.com/KirilsTurkins/latent-service-fabric/issues/240) and
+[epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201) with their collective evidence.
+It preserves the supported profiles and later-phase exclusions below.
 
-The current completion preparation starts from development
-`9b97ac8a13a3d83c228f4e5bee43e54d37da2bdf`, including all six guest SDKs and
-the qualified developer workflow. The [selected developer toolkit](evidence/developer-toolkit-36262353069/README.md)
-retains the independently authenticated package source and complete supported-host results.
-The historical runtime execution review below starts from
-`6c63b68064ae44284d931e80d76d1e9012189b2b`. It does not certify a later integration
-commit merely because that commit contains the same documentation.
-The preceding runtime integration is development
-`532364d697b1b93f2b3187e0df367f878023e91a`, reviewed on September 23, 2026.
-[Full CI 35818046307](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35818046307)
-passed at selected source `193d52c37635026de416feffd4a2dfd57d082451`; its actual
-PR checkout and the development squash have identical Git trees. The
-[preceding integration receipt set](evidence/phase3-integration-35818046307/README.md)
-retains the original security, six-client, browser, provider, publication,
-protected Angular, static-site and bounded resource results. Earlier receipts
-below keep their original execution identities and measurement scopes.
+The maintainer accepted all 27 guide outcomes on September 26 and authorized
+subsequent corrections, promotion and publication without another approval.
+The [review record](development/phase3-guide-review.md) distinguishes that
+acceptance from actual command execution and later automated checks.
+
+The [alpha.4 release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.4) is published from
+`2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`. Exact-source CI, both complete real-VM profiles,
+independent public asset authentication and all six public toolkit acquisitions
+passed. The runtime tag remains immutable while engineering documentation is
+synchronized separately into release.
+
+The [complete website](https://kirilsturkins.github.io/latent-service-fabric/)
+passed protected deployment and actual live browser checks, including all six
+released code languages, copy, navigation, search, reloads, assets and 404 behavior.
+The [publication record](development/website-publication-evidence.md) binds the
+source, CI attempt, artifact and original receipts. All 26 Wiki entries have
+verified maintained destinations. The Wiki and its writers were already retired;
+[the cutover record](development/wiki-cutover-review.md) retains their actual
+dates and final observations. #356's administrative recheck follows this decision.
+Continuous documentation and performance workstreams remain open.
 
 ## Final runtime integration
 
@@ -162,12 +156,13 @@ profiles; T2 guest-process containment and production certification remain
 outside it. At that historical checkpoint, guide review, site deployment and authoring were
 still pending. All six authoring tickets #544–#549 and developer workflow #559
 are now closed, and the maintainer has accepted the guide review. The final
-native publication and runtime integration are recorded above; complete-site
-deployment and the final decision remain to be recorded.
+native publication, runtime integration, complete-site delivery and this final
+decision are recorded separately above. The historical receipts retain their
+original pending fields and do not acquire a later execution identity.
 
 ## Dependency and evidence closure
 
-| Required boundary | Verified handoff | Remaining gate condition |
+| Required boundary | Verified handoff | Retained scope and qualification |
 | --- | --- | --- |
 | Phase 2 entry gate #158 | [Phase 2 completion](phase-2-completion.md) retains its original decision, source, failures and bounded resource profiles. | Preserve the earlier evidence population. |
 | Guest contracts, providers and management #202–#221, #226/#227 | [Core/provider execution handoff](development/core-guide-validation.md), [provider workflow](testing/sdk-provider-workflow.md), and [integrated security selection](testing/phase3-security.md). | Current final integration checks must remain green. |
@@ -178,10 +173,10 @@ deployment and the final decision remain to be recorded.
 | Resource equation #239 | [Provider recovery](testing/phase3-resource-recovery.md), [renderer memory/storage](testing/phase3-resource-renderer.md), [event and child ownership](testing/phase3-resource-events.md), and OCI qualification. #376 merged after exact-head CI passed; #239 is closed. | Keep profile-specific measurements, failed attempts and unexported counters explicit. |
 | Angular application/reference #44/#236 | [Actual Angular reference workflow](testing/angular-reference-workflow.md): real signed two-build publication, public/authenticated browser delivery, DOM-reusing hydration, provider denial/cancellation, canary/revocation/restart/rollback and cleanup. #372 merged as `ffa90dc3f76f4bc589be63d313103fdb67fb5f1b`; both tickets are closed. | Preserve the restricted profile, unchecked reproducibility and declared incomplete dependency coverage. Guide review #361 is accepted and its ticket is closed. |
 | Static web extension #495/#496/#497 | [Contract PR #498](https://github.com/KirilsTurkins/latent-service-fabric/pull/498), [delivery PR #501](https://github.com/KirilsTurkins/latent-service-fabric/pull/501) and [CSR/static-generator workflow PR #502](https://github.com/KirilsTurkins/latent-service-fabric/pull/502) are merged; all three tickets are closed. #502 merged as `e4c9120b7d4c14220a4315bfd8e717505e37a5b4` after [CI run 35784029574](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35784029574) passed, including the actual OCI/browser qualification. | Preserve the final integrated static and SSR checks; human guide review remains separate. |
-| Native distribution #308 | [Verified native release](development/native-release-gate.md) from `2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`, exact-source CI and protected publisher 36278662081 passed. Both real VM profiles have complete acceptance and no gaps; public assets and attestations were independently verified. | The runtime tag remains immutable. Complete-site installation-guide publication is the remaining delivery check. The earlier rehearsal retains its original source and archive. |
-| Runbooks and guides #237/#357/#358/#359/#361 | Executed first-node, delivery, provider and six-client receipts are retained. [Guide execution PR #467](https://github.com/KirilsTurkins/latent-service-fabric/pull/467) merged after all 17 checks passed. | The maintainer review is accepted. Updated packaged setup steps, final native bundle/upgrade evidence and the published site remain to be verified. |
-| Six guest SDKs #544–#549 and developer workflow #559 | All tickets are closed. The [selected toolkit](evidence/developer-toolkit-36262353069/README.md) passed its complete five-entry packaged qualification at source `cb00bf43e3f598e0f9d4bcaea2a4853d17dea8f4`; separate six-language native tutorial comparisons retain 18 applications and 72 cases per platform. | Preserve the actual platform/language scope and original toolkit identities when attaching public assets. Native server qualification is separate. |
-| Finite documentation gate #345 | Foundation, theme, diagrams, examples, version binding, discovery and initial protected Pages publication are delivered. The [coverage contract](development/website.md#coverage-is-a-review-contract-not-a-page-counter) retains 27 required outcomes. | The 27-topic maintainer review is accepted with subsequent edits delegated. Publish the updated complete site, verify live routes and finish #356's content cutover. The Wiki and its publishers are already disabled. |
+| Native distribution #308 | [Verified native release](development/native-release-gate.md), exact-source CI and protected publisher 36278662081 passed. Both real VM profiles have complete acceptance and no gaps; public assets and attestations were independently verified. | Installation and README entry points are live. The runtime tag stays immutable; historical rehearsals keep their original sources and archives. |
+| Runbooks and guides #237/#357/#358/#359/#361 | The first-node, delivery, provider, six-client and Angular walkthroughs retain their original execution receipts. All guide children and the runbook umbrella are closed. | The maintainer accepted all 27 outcomes and delegated corrections. Final native acceptance, public toolkit downloads, short setup commands and complete-site publication are verified separately. |
+| Six guest SDKs #544–#549 and developer workflow #559 | All tickets are closed. The [selected toolkit](evidence/developer-toolkit-36262353069/README.md) passed complete five-entry packaged qualification at `cb00bf43e3f598e0f9d4bcaea2a4853d17dea8f4`; separate native tutorial comparisons retain 18 applications and 72 cases per platform. All 41 public developer assets match the authenticated selection. | Preserve the actual platform/language scope and original toolkit identities. The public acquisition check creates 18 projects; native server qualification remains separate. |
+| Finite documentation gate #345 | Foundation, accessible theme, refreshed maintained diagrams, language selectors, frozen release versions, discovery, all 27 guide outcomes and protected complete-site publication are delivered. The gate is closed. | [Live browser and publication evidence](development/website-publication-evidence.md) and [all mapped destinations](development/wiki-cutover-review.md) pass. #356 retains the final administrative recheck after this collective decision; ongoing documentation work remains open. |
 
 The [continuous Documentation & Learning workstream](development/website.md)
 stays open. Its later tasks do not enlarge the finite #345 gate.
@@ -238,36 +233,38 @@ not rewrite measured bytes or convert an earlier failed attempt into a pass.
 
 ## Final integration and publication checks
 
-1. The obsolete audit, capability and policy API removals and current runtime
-   fixes are merged. Preserve the successful exact-source integration above and
-   its retained six-client, browser, security and cleanup receipts. Any further
-   runtime change needs its own required checks and review.
-2. Preserve #282's activated monitoring and scheduled-ref evidence and #308's
-   successful historical native rehearsal. The maintainer has authorized
-   publication after the required corrections. Complete the requirements and
-   merge development into release before recreating the final tag. Qualify the resulting
-   release source and verify its actual published assets through the protected
-   publisher; the earlier rehearsal does not qualify later runtime changes.
-3. Preserve the maintainer's accepted 27-topic review and delegated updates in
-   the coverage inventory. Validate the changed packaged setup paths and report
-   their execution source separately. Do not attribute later automated checks
-   to the human reviewer or relabel historical execution receipts.
-4. Publish that reviewed complete site through the protected exact-artifact
-   flow. Record source SHA, successful push CI run/attempt, immutable artifact,
-   publisher run and live deployment identity. Verify home, nested/versioned
-   pages, source-backed code switching, assets, search and accessibility.
-5. Complete the [Wiki content migration](development/wiki-migration.md): verify
-   maintained replacement routes and switch entry links to the deployed site.
-   Legacy Wiki URLs, anchors and archive notices are not required.
-6. Complete the required six-language capsule-authoring extension below and
-   resolve the remaining guide/runbook, documentation, static-site and native
-   criteria, including removal of obsolete Phase 1/2 compatibility, then publish
-   the final #240 decision with immutable evidence and accepted residual limits.
-   That decision closes #201 and changes the roadmap's phase-completion status.
-7. After Phase 3 completion and verified site deployment, recheck the already
-   disabled Wiki and retired writers, retain the final cutover receipt and close
-   #356. Preserve the original dates of the earlier source removal and settings
-   observation. Content migration and live readiness remain gate prerequisites.
+The promoted runtime and selected toolkits retain their independent exact-source
+qualification above. The complete site passes its own successful push CI,
+protected publication and browser checks; a documentation-only commit is not
+represented as another native runtime execution.
+
+The complete site was published from `69a7b30dd89b298254a16b049180bbd9082ecdec` through
+[push CI 36285745230](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36285745230), attempt 1, and
+[protected publisher 36287023135](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36287023135), attempt 1.
+The immutable site artifact is `10920985707`,
+digest `sha256:13cbc99efb2e26e5302209f03b76f31b47c9595e2effa70969ed158804852727`; the deployed tree digest is
+`sha256:446a84536f367bb04290b4fd062e1a7201fa005a230e05edd7a837e485efb748`. The original publication, live-browser, build/theme/
+example/version/discovery receipts and final Wiki observations are retained in
+[documentation-validation-36287023135.zip](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.4/documentation-validation-36287023135.zip), 13,532 bytes, SHA-256
+`ecfbb7f76aec1bb41c10bade136b2f8b3445512bc29e5644a22ca1175abd1834`. Its public bytes were independently verified. This
+supplemental archive is separate from the native publisher's attested assets.
+
+All required guide/runbook, native distribution and finite documentation criteria
+are complete. Obsolete capability/audit/policy compatibility and active legacy
+Wiki navigation are removed. Historical sources, frozen snapshots, measurements,
+failed attempts and original execution receipts remain unchanged.
+
+The versioned alpha.4 documentation binds runtime source
+`2d6cc2eafc0a17dfe573be4252fa49835bebbbd6` to documentation/example source
+`403ded53bf00a973f77e089786cef970ab7d5bfd`, snapshot identity
+`0467a564d8dc7c9ae697cd0fbcffeb052485b3f3d1f6c905b15c56e377a05197`.
+It contains 227 documents, 13 example groups and seven illustrations. All 88
+alpha.3 snapshot files preserve their original bytes.
+
+After this decision is merged and published, close #240 and #201, recheck the
+already disabled Wiki and retired writers, then close #356 and the finite
+Phase 3 milestone. This administrative order does not change the earlier dates
+when source publishing was removed and the Wiki was disabled.
 
 ## Required six-language capsule authoring
 
@@ -296,9 +293,9 @@ profiles need their own validation and useful language-selectable tutorials.
 Each ticket records its language's current implementation and acceptance state.
 The gate requires all six authoring workflows to be complete.
 Delivery evidence is retained in those tickets and their language-specific
-developer qualification reports. This extension alone does not complete the
-remaining gate criteria, human newcomer review or development-to-release
-integration.
+developer qualification reports. All six authoring workflows are complete.
+The collective decision above combines their evidence with the accepted guide
+review, promoted runtime and actual public delivery.
 
 ## Later-phase exclusions
 
