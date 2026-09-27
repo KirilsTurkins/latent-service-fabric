@@ -4032,6 +4032,15 @@
       "CapabilityPolicySchemaTests.test_policy_operation_table_matches_each_frozen_wit_interface",
       "CapabilityPolicySchemaTests.test_published_examples_and_closed_required_fields"
     ],
+    "tools/tests/test_capsule_invocation_diagnostics.py": [
+      "InvocationDiagnosticsTests.test_audit_failure_keeps_original_failure_and_redacts_exception_text",
+      "InvocationDiagnosticsTests.test_byte_limit_preserves_original_failure_without_oversized_output",
+      "InvocationDiagnosticsTests.test_exhausted_original_call_budget_never_starts_another_process",
+      "InvocationDiagnosticsTests.test_failed_result_stays_unchanged_and_only_recent_audit_is_read",
+      "InvocationDiagnosticsTests.test_page_limit_preserves_incomplete_evidence",
+      "InvocationDiagnosticsTests.test_repeated_cursor_stops_and_does_not_hide_original_failure",
+      "InvocationDiagnosticsTests.test_success_performs_no_diagnostic_io"
+    ],
     "tools/tests/test_check_tool_versions.py": [
       "JavaQualificationTests.test_default_validation_keeps_all_sdk_checks",
       "JavaQualificationTests.test_explicit_home_is_used_for_both_tools",
@@ -6891,6 +6900,7 @@
     "tools/tests/test_build_snapshot.py",
     "tools/tests/test_c_capsule_authoring.py",
     "tools/tests/test_capability_policy_schema.py",
+    "tools/tests/test_capsule_invocation_diagnostics.py",
     "tools/tests/test_check_tool_versions.py",
     "tools/tests/test_ci_browser_artifacts.py",
     "tools/tests/test_ci_cargo.py",
