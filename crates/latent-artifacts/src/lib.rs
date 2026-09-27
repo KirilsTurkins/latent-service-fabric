@@ -63,8 +63,8 @@ pub use local_repository::contract_metadata::{
     decode_contract_metadata, encode_contract_metadata, ContractMetadataLimits,
 };
 pub use local_repository::{
-    DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig, PublicationContentReclamation,
-    PublicationStorageSnapshot,
+    DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig, PublicationCapacitySnapshot,
+    PublicationContentReclamation, PublicationStorageSnapshot,
 };
 
 /// Contract metadata accepted by artifact publication and consumed by route compilation.

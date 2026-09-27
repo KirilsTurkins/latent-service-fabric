@@ -70,7 +70,7 @@ def foreign_profile(client, profile):
 
 
 def tree_inventory(directory, client, maximum_bytes=512 * MIB, *, maximum_entries=1024):
-    require(type(maximum_entries) is int and 1 <= maximum_entries <= 2048, "angular-inventory-entry-limit")
+    require(type(maximum_entries) is int and 1 <= maximum_entries <= 8192, "angular-inventory-entry-limit")
     entries = {}
     pending = [directory]
     total = 0
