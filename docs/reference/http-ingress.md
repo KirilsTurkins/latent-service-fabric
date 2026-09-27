@@ -109,6 +109,13 @@ application sessions are needed.
 
 ## Ownership and bounds
 
+Public static sites can opt in to external document links through
+`httpIngress.publicDocumentNavigation`, with entries containing `authority`,
+`tenant` and `mount`. Only existing `public-origins` bindings are eligible.
+The [browser guide](../security/browser-boundary.md#allow-links-to-public-static-pages)
+explains the exact navigation rule and its distinction from cross-origin reads.
+
+
 | Owner / boundary | Bound and retirement |
 | --- | --- |
 | Shared listener / driver | One each when enabled; no application-owned task. |

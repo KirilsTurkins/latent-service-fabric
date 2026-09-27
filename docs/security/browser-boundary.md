@@ -50,14 +50,15 @@ untrusted applications even when they share an LSF tenant.
 - An Origin must equal the exact serialized configured origin. `null`, lists,
   alternative/default-port spellings, trailing slashes and foreign origins are
   rejected. Duplicate Origin or supported Fetch Metadata fields are rejected.
-- `Sec-Fetch-Site` permits only `same-origin` and `none`, not even `same-site`.
+- By default, `Sec-Fetch-Site` permits only `same-origin` and `none`.
   Supported modes are `navigate`, `same-origin`, `cors` and `no-cors`; supported
   destinations are document, empty, script, style, image, font and manifest.
   `Sec-Fetch-User`, when present, must be `?1`.
 - CORS is not supported. Preflight request fields are rejected, no access-control
   response headers are emitted, and guests cannot opt back in. This also means
-  external-site links/subresources with cross-site Fetch Metadata are rejected;
-  a safe address-bar/new-tab navigation with `none` is supported.
+  external-site links/subresources with cross-site Fetch Metadata are rejected
+  unless a static document navigation is explicitly enabled below. A safe
+  address-bar/new-tab navigation with `none` is supported.
 - Public or browser unsafe methods require a matching Origin. `none` is not
   accepted for unsafe methods. GET, HEAD and OPTIONS must remain free of state
   changes in application code. Cookie values never authenticate a platform call.
@@ -71,6 +72,30 @@ without making same-origin non-CORS POST Origin become `null`, as the
 would do for `no-referrer`. Browser tests exercise an actual same-origin POST.
 
 ## Host-owned response policy
+
+### Allow links to public static pages
+
+To let readers follow links from other websites, add a
+`publicDocumentNavigation` array inside `httpIngress`. Each entry supplies an
+existing public `authority`, its `tenant`, and a `mount`, such as `/docs` or `/`.
+The authority and tenant must match `authentication.origins` under the
+`public-origins` adapter. A maximum of 32 distinct authority/mount pairs is
+allowed. Omission or an empty array keeps the strict policy.
+
+Only top-level GET/HEAD document navigations to admitted static HTML qualify.
+Both `same-site` and `cross-site` require `navigate` mode, `document` destination
+and no Origin header. Duplicate or malformed fields are rejected; incomplete
+metadata does not qualify for the exception. Directory redirects are checked
+again at their destination. `/docs` includes `/docs/guide`, not `/docs-other`.
+
+This lets the reader open a public page. It does not let the linking website
+fetch its scripts, read its API, embed it in a frame, or submit cross-origin
+forms. Application capsule routes and immutable asset URLs remain outside the
+exception. A native caller can forge browser metadata but cannot bypass tenant,
+route, media or current publication eligibility checks. See
+[ADR-0046](../../adr/0046-opt-in-public-document-navigation.md).
+
+### Response headers
 
 All writable dynamic, error and immutable-asset responses, including HEAD and
 304, receive these headers. A failed/expired transport may close without a

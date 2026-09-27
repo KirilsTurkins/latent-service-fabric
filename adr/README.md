@@ -97,6 +97,7 @@ old implementation snapshots are not setup instructions.
 - [ADR-0042: Bound Angular render data through the capability broker](0042-bound-angular-render-data-through-the-capability-broker.md)
 - [ADR-0043: Select static web publications as first-class HTTP targets](0043-select-static-web-publications-as-first-class-http-targets.md)
 - [ADR-0044: Remove obsolete alpha compatibility](0044-remove-obsolete-alpha-compatibility.md)
+- [ADR-0046: Opt in to public document navigation](0046-opt-in-public-document-navigation.md)
 - [ADR-0047: Reconcile static route sets with durable intent](0047-reconcile-static-route-sets-with-durable-intent.md)
 - [ADR-0048: Expose bounded OCI authority in the CLI](0048-expose-bounded-oci-authority-in-the-cli.md)
 - [ADR-0050: Plan capacity before deleting publication history](0050-plan-capacity-before-deleting-publication-history.md)

@@ -6,6 +6,31 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["formatVersion", "bind", "transport", "authentication"],
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "publicDocumentNavigation"
+        ],
+        "properties": {
+          "publicDocumentNavigation": {
+            "minItems": 1
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "authentication": {
+            "properties": {
+              "mode": {
+                "const": "public-origins"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "properties": {
     "formatVersion": {"const": 1},
     "bind": {"type": "string", "minLength": 1},
@@ -51,6 +76,40 @@
           }
         }
       ]
+    },
+    "publicDocumentNavigation": {
+      "description": "Opt-in external top-level GET/HEAD navigation to static HTML documents. Requires public-origins with the same authority and tenant. Mount is a canonical path prefix; native validation rejects reserved namespaces, queries and trailing slashes except root. No CORS or API/asset exception.",
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "authority",
+          "tenant",
+          "mount"
+        ],
+        "properties": {
+          "authority": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "tenant": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "mount": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240,
+            "pattern": "^/"
+          }
+        }
+      }
     },
     "browserOrigins": {
       "description": "Bearer browser opt-in: exact canonical authority to one authenticated tenant. Omitted/empty keeps bearer ingress native-client-only. Public-origins authentication derives these bindings itself and requires this array empty. Origins share the configured transport scheme; forwarded origin fields are never used.",
