@@ -153,7 +153,10 @@ impl MetricProvider {
         ] {
             hash.update((value as u64).to_le_bytes());
         }
-        let digest = format!("sha256:{:x}", hash.finalize());
+        let digest = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        );
         let registration = broker.register_provider(ProviderConfiguration {
             capability: METRICS_CAPABILITY,
             profile: METRICS_PROFILE,

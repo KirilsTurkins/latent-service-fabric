@@ -104,7 +104,10 @@ impl RandomProvider {
         identity.update(source.profile().as_bytes());
         identity.update((limits.maximum_bytes_per_call as u64).to_le_bytes());
         identity.update((limits.maximum_bytes_per_activation as u64).to_le_bytes());
-        let digest = format!("sha256:{:x}", identity.finalize());
+        let digest = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(identity.finalize())
+        );
         let registration = broker.register_provider(ProviderConfiguration {
             capability: RANDOM_CAPABILITY,
             profile: source.profile(),

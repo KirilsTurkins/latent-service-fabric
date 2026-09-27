@@ -148,7 +148,7 @@ async fn publish(
         }
         writer.sample(&json!({"kind":"publication-chunk","first":begin.to_string(),"planned_count":(stop-begin).to_string(),
             "completed":completed.to_string(),"started_nanos":started.to_string(),"finished_nanos":clock.elapsed().to_string(),
-            "digest":format!("sha256:{:x}",digest.finalize()),"failure":failure}))?;
+            "digest":format!("sha256:{:x}",latent_core::digest::HexDigest(digest.finalize())),"failure":failure}))?;
         if failure.is_some() {
             return Err("catalog publication failed".into());
         }

@@ -64,9 +64,12 @@ pub fn web_build_outputs(package: &PackageLayout) -> Result<WebBuildOutputs, Pla
         return Err(super::invalid("web-build-output-missing"));
     }
     Ok(WebBuildOutputs {
-        digest: format!("sha256:{:x}", hash.finalize())
-            .parse()
-            .expect("SHA-256"),
+        digest: format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        )
+        .parse()
+        .expect("SHA-256"),
         count,
         bytes,
     })

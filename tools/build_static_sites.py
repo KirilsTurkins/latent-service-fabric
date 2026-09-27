@@ -88,8 +88,27 @@ def generator(mount, source, work, toolchain):
             f'<a id="guide" href="{mount}/guide">Guide</a><i id="font-icon" class="pi pi-check" aria-hidden="true"></i>'
             f'<a id="sitemap" href="{mount}/sitemap.xml">Sitemap</a></body></html>', encoding='utf-8')
         names.append(page['path'])
+    # Build a complete finite multilingual tree. Include every emitted page in
+    # the captured inventory; shared files count toward the same 250-file total.
+    localized = []
+    for number in range(250 - len(names)):
+        locale = 'en' if number % 2 == 0 else 'de'
+        chapter = number // 2 + 1
+        name = f'{locale}/chapter-{chapter:03}/index.html'
+        output = public / name
+        output.parent.mkdir(parents=True, exist_ok=True)
+        title = f'Chapter {chapter}' if locale == 'en' else f'Kapitel {chapter}'
+        text = 'A maintained documentation example.' if locale == 'en' else 'Ein gepflegtes Dokumentationsbeispiel.'
+        output.write_text(f'<!doctype html><html lang="{locale}"><head><meta charset="utf-8">'
+            f'<title>{title}</title><link rel="stylesheet" href="{mount}/{style}"></head>'
+            f'<body><h1 id="view">{title}</h1><p>{text}</p>'
+            f'<a href="{mount}/guide/">Guide</a></body></html>', encoding='utf-8')
+        names.append(name)
+        localized.append(name)
+    require(len(names) == 250, 'documentation-fixture-file-count')
     return public, names, {'generator': 'maintained-finite-pages-v1', 'mount': mount,
-                            'dependencies': ['primeicons'], 'serverRenderer': False, 'lifecycleScripts': False}
+                            'dependencies': ['primeicons'], 'serverRenderer': False, 'lifecycleScripts': False,
+                            'locales': ['en', 'de'], 'localizedPages': localized, 'publicFileCount': len(names)}
 
 
 def dependencies(toolchain, names):

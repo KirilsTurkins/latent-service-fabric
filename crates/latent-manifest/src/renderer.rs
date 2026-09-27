@@ -85,9 +85,12 @@ pub fn renderer_profile_digest(profile: RendererProfile) -> ArtifactBlobDigest {
             }
         }
     }
-    format!("sha256:{:x}", hash.finalize())
-        .parse()
-        .expect("SHA-256 digest")
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(hash.finalize())
+    )
+    .parse()
+    .expect("SHA-256 digest")
 }
 
 fn part(hash: &mut Sha256, bytes: &[u8]) {
