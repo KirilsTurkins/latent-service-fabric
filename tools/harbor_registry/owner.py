@@ -14,7 +14,20 @@ def command(arguments: list[str], timeout: float = 60) -> str:
     if len(result.stdout) > 1024 * 1024 or len(result.stderr) > 1024 * 1024:
         raise RuntimeError('Harbor tool diagnostic bound exceeded')
     if result.returncode:
-        raise RuntimeError(f'{Path(arguments[0]).name} failed ({result.returncode})')
+        # Container preparation can read private configuration. Classify known
+        # failure markers without printing raw output, credentials or arguments.
+        observed = (result.stdout + result.stderr).lower()
+        reasons = [name for name, marker in {
+            'permission': 'permission denied', 'operation-permission': 'operation not permitted',
+            'missing-file': 'filenotfounderror', 'missing-directory': 'no such file or directory',
+            'readonly-filesystem': 'read-only file system', 'attribute': 'attributeerror',
+            'image-rate-limit': 'toomanyrequests', 'image-authority': 'unauthorized',
+            'unknown-image': 'manifest unknown', 'disk-capacity': 'no space left',
+            'unhealthy': 'unhealthy', 'dependency': 'dependency failed', 'certificate': 'certificate',
+            'port-conflict': 'address already in use', 'timeout': 'timed out',
+        }.items() if marker in observed]
+        stage = arguments[1] if len(arguments) > 1 and arguments[1] in {'run', 'pull', 'compose', 'volume', 'network', 'container'} else 'tool'
+        raise RuntimeError(f'{Path(arguments[0]).name} {stage} failed ({result.returncode}); markers: {",".join(reasons) or "unclassified"}')
     return result.stdout.strip()
 
 
