@@ -1,6 +1,6 @@
 # Phase 2 resource profile
 
-`phase2-dormant-32-r3` is a fixed Linux resource experiment for gate #158.
+`phase2-dormant-32-r4` is a fixed Linux resource experiment for gate #158.
 A profile definition
 is not a passing result. The gate remains pending until its retained evidence
 has been reviewed alongside the other Phase 2 checks.

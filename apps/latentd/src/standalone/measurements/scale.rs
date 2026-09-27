@@ -177,7 +177,8 @@ fn fixed_topology(first: &Value, last: &Value) -> Result<()> {
             return Err("scale process resources grew".into());
         }
     }
-    if first["inventory"]["topology"] != last["inventory"]["topology"]
+    if topology_owners(&first["inventory"]["topology"])?
+        != topology_owners(&last["inventory"]["topology"])?
         || first["inventory"]["cellCapacity"] != last["inventory"]["cellCapacity"]
     {
         return Err("scale fixed node topology changed".into());
@@ -185,9 +186,78 @@ fn fixed_topology(first: &Value, last: &Value) -> Result<()> {
     Ok(())
 }
 
+fn topology_owners(topology: &Value) -> Result<Value> {
+    let mut result = topology.clone();
+    let entries = result["entries"]
+        .as_array_mut()
+        .ok_or("missing measured topology")?;
+    for entry in entries {
+        if entry["name"] == "publication-catalog" {
+            let attributes = entry["attributes"]
+                .as_object_mut()
+                .ok_or("missing catalog measurements")?;
+            // Content and metadata grow with registered publications. The owner,
+            // configured ceilings, availability and every other row stay fixed.
+            // Preserve the original measurements in the retained samples.
+            attributes.retain(|name, _| {
+                !matches!(
+                    name.as_str(),
+                    "chargedStorageBytes"
+                        | "sharedBlobBytes"
+                        | "publicationLinkBytes"
+                        | "incompleteFileBytes"
+                        | "webControlBytes"
+                        | "contentIndexBytes"
+                        | "sharedBlobs"
+                        | "indexedPublications"
+                        | "releaseDirectories"
+                        | "releaseIndexBytes"
+                )
+            });
+        }
+    }
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn catalog_content_growth_does_not_mask_owner_or_capacity_changes() {
+        let first = json!({"available": true, "complete": true, "entries": [{
+            "name": "publication-catalog", "kind": "store", "ownership": "node-fixed",
+            "configuredCount": "1", "activeCount": "1", "attributes": {
+                "measurementStatus": "available", "maximumPublications": "16",
+                "indexedPublications": "0", "chargedStorageBytes": "0"}}]});
+        let mut grown = first.clone();
+        grown["entries"][0]["attributes"]["indexedPublications"] = json!("8");
+        grown["entries"][0]["attributes"]["chargedStorageBytes"] = json!("1024");
+        assert_eq!(
+            topology_owners(&first).unwrap(),
+            topology_owners(&grown).unwrap()
+        );
+        for key in ["configuredCount", "activeCount", "ownership", "kind"] {
+            let mut changed = grown.clone();
+            changed["entries"][0][key] = json!("changed");
+            assert_ne!(
+                topology_owners(&first).unwrap(),
+                topology_owners(&changed).unwrap()
+            );
+        }
+        for key in [
+            "maximumPublications",
+            "measurementStatus",
+            "unknownFutureField",
+        ] {
+            let mut changed = grown.clone();
+            changed["entries"][0]["attributes"][key] = json!("changed");
+            assert_ne!(
+                topology_owners(&first).unwrap(),
+                topology_owners(&changed).unwrap()
+            );
+        }
+    }
+
     #[test]
     fn variant_identity_is_one_bounded_custom_section() {
         let mut first = b"\0asm\x0d\0\x01\0".to_vec();
