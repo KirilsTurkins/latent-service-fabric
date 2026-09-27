@@ -478,7 +478,7 @@
       "stepIf": "needs.profile.outputs.renderer == 'true'",
       "workingDirectory": ".",
       "shell": "bash",
-      "run": "# Reviewed capture owner: tools/static_site.py\nnode --test tools/static-release/route-set.test.mjs tools/static-release/io.test.mjs\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\""
+      "run": "# Reviewed capture owner: tools/static_site.py\nnode --test tools/static-release/route-set.test.mjs tools/static-release/io.test.mjs\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\"\nnode --test tools/cross-origin/contract.test.mjs\nmkdir -m 0700 \"$static_root/cors-tls\"\nopenssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -sha256 -days 1 -subj '/CN=localhost' -keyout \"$static_root/cors-tls/key.pem\" -out \"$static_root/cors-tls/server.pem\"\nnode tools/cross-origin/browser.mjs examples/renderer-profile \"$(command -v google-chrome)\" \"$static_root/cors-tls\" examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 \"${RUNNER_TEMP}/phase2-gate/cross-origin-feasibility.json\""
     },
     ".github/workflows/ci.yml:rust:Qualify the deterministic Phase 3 security matrix": {
       "job": "rust",
@@ -1939,6 +1939,46 @@
       "stepIf": "success()",
       "workflow": ".github/workflows/typescript-guest.yml",
       "workingDirectory": "."
+    },
+    ".github/workflows/frontend-release.yml:frontend:Authenticate the exact released native archive": {
+      "workflow": ".github/workflows/frontend-release.yml",
+      "job": "frontend",
+      "name": "Authenticate the exact released native archive",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "mkdir \"$RUNNER_TEMP/frontend-release\"\ngh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir \"$RUNNER_TEMP/frontend-release\" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json\ngh attestation verify \"$RUNNER_TEMP/frontend-release/SHA256SUMS\" --bundle \"$RUNNER_TEMP/frontend-release/SHA256SUMS.sigstore.json\" --repo KirilsTurkins/latent-service-fabric --cert-identity https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.4 --cert-oidc-issuer https://token.actions.githubusercontent.com --source-ref refs/tags/0.1.0-alpha.4 --source-digest 2d6cc2eafc0a17dfe573be4252fa49835bebbbd6 --signer-digest 2d6cc2eafc0a17dfe573be4252fa49835bebbbd6 --deny-self-hosted-runners --predicate-type https://slsa.dev/provenance/v1 --digest-alg sha256 --format json > \"$RUNNER_TEMP/frontend-release/authentication.json\"\npython3 tools/static-release/unpack.py \"$RUNNER_TEMP/frontend-release\" > \"$RUNNER_TEMP/frontend-release/archive-verification.json\""
+    },
+    ".github/workflows/frontend-release.yml:frontend:Build the bounded frontend qualification environment": {
+      "workflow": ".github/workflows/frontend-release.yml",
+      "job": "frontend",
+      "name": "Build the bounded frontend qualification environment",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker build --tag lsf-frontend-qualification --file tools/static-release/qualification.Dockerfile tools/static-release"
+    },
+    ".github/workflows/frontend-release.yml:frontend:Check signing identities and hostile approvals": {
+      "workflow": ".github/workflows/frontend-release.yml",
+      "job": "frontend",
+      "name": "Check signing identities and hostile approvals",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker run --rm --cpus 1 --memory 256m --pids-limit 32 --network none --read-only --cap-drop ALL --security-opt no-new-privileges --mount \"type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly\" lsf-frontend-qualification --test /source/tools/static-release/evidence.test.mjs"
+    },
+    ".github/workflows/frontend-release.yml:frontend:Exercise actual signing, OCI and native publication": {
+      "workflow": ".github/workflows/frontend-release.yml",
+      "job": "frontend",
+      "name": "Exercise actual signing, OCI and native publication",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\ncontainer=$(docker create --label io.latent.frontend-qualification=\"$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT\" --cpus 2 --memory 2g --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=536870912,mode=1777 --mount \"type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly\" --mount \"type=bind,source=$RUNNER_TEMP/frontend-release/extracted,target=/release,readonly\" lsf-frontend-qualification /source/tools/static-release/qualification.mjs /release/bin/latent /tmp/result.json /release/bin/latentd)\n[[ \"$container\" =~ ^[0-9a-f]{64}$ ]]\ncleanup() { docker rm --force \"$container\" >/dev/null; }\ntrap cleanup EXIT\ntimeout --signal=TERM --kill-after=10s 180s docker start --attach \"$container\" > \"$RUNNER_TEMP/frontend-release/qualification.json\"\ntest \"$(docker inspect --format '{{.State.ExitCode}}' \"$container\")\" = 0\ncat \"$RUNNER_TEMP/frontend-release/qualification.json\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3337,7 +3377,7 @@
       "sha256": "b0b05d6c1b48c6f1f405db526e7883900e98137dd8a8436de9c0720d6b40dd86"
     },
     "tools/build_static_sites.py": {
-      "sha256": "5acd3d499791273271236d0e60077763b6e9dd22ccee58aaac46d2b69733035c"
+      "sha256": "5fa1064b8bae13a9ebd248debba5dda1ea4d9118a9994f06726aec579103b5a9"
     },
     "tools/check_owned_diagnostics.py": {
       "sha256": "38d0f7507d674c4b0ba0c0e6a72199b6250fbc48139dc909079116c1244f5d92"
@@ -3556,7 +3596,7 @@
       "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
     },
     "tools/run_static_site_workflow.py": {
-      "sha256": "eaedf5cdeea05ee5378f6d9c5ccfc0f5d64b1e5e42991712ce7469966ff11810"
+      "sha256": "15f63cf5319a99035c48687ea03a99b14e6e91bf68905c98a748365095dbd170"
     },
     "tools/run_vault_secret_tests.py": {
       "sha256": "81ab09bf676f22fca2e1cb923353586cef8d36361980cac4091677bcbe9abcf4"
@@ -3577,7 +3617,7 @@
       "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
     },
     "tools/static_site.py": {
-      "sha256": "5e2a5228f9bd06b06534a7b5c5b51b8e3a42ec0d924c82e661f4af44249504ce"
+      "sha256": "d57e4bccf4694418ee531f5005d09c1e9b9112097d368b217e89e23db5fa79e0"
     },
     "tools/test.py": {
       "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
@@ -3614,6 +3654,9 @@
     },
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
+    },
+    "tools/static-release/unpack.py": {
+      "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
     }
   },
   "pythonCases": {
@@ -4655,7 +4698,8 @@
       "NodeHttpIngressSchema.test_browser_bindings_are_bounded_closed_and_not_credentials",
       "NodeHttpIngressSchema.test_closed_profiles_do_not_infer_proxy_trust_or_public_authority",
       "NodeHttpIngressSchema.test_documented_tls_configuration_and_public_adapter",
-      "NodeHttpIngressSchema.test_individual_resource_bounds"
+      "NodeHttpIngressSchema.test_individual_resource_bounds",
+      "NodeHttpIngressSchema.test_public_document_navigation_requires_bounded_public_scope"
     ],
     "tools/tests/test_node_isolated_aot_schema.py": [
       "NodeIsolatedAotSchema.test_every_numeric_ceiling",
@@ -6062,6 +6106,8 @@
       "SplitPairedReplayTests.test_split_publication_requires_full_replay_and_preserves_source_bytes"
     ],
     "tools/tests/test_phase2_cli_schemas.py": [
+      "Phase2CliSchemas.test_challenge_network_profile_is_closed_versioned_and_bounded",
+      "Phase2CliSchemas.test_challenge_profile_allows_separate_static_token_resolution",
       "Phase2CliSchemas.test_credential_modes_are_closed_and_disjoint",
       "Phase2CliSchemas.test_evidence_requires_exact_subject_and_closed_portable_selection",
       "Phase2CliSchemas.test_registry_profile_rejects_inline_secrets_null_and_unbounded_sets"
@@ -6541,9 +6587,11 @@
       "StaticSiteCaptureTests.test_excessive_counts_paths_input_bytes_and_asset_bytes_fail_before_emission",
       "StaticSiteCaptureTests.test_excluded_files_and_duplicate_source_aliases_cannot_be_published",
       "StaticSiteCaptureTests.test_explicit_mapping_still_rejects_obvious_server_private_maps_and_unsupported_media",
+      "StaticSiteCaptureTests.test_font_preparation_keeps_glyphs_and_only_one_woff2_resource",
       "StaticSiteCaptureTests.test_missing_foreign_or_changed_observation_is_not_accepted_as_build_proof",
       "StaticSiteCaptureTests.test_paths_cannot_alias_escape_reserved_namespace_or_collide_by_case",
-      "StaticSiteCaptureTests.test_symlink_files_and_directories_are_rejected_before_reading_outside_output_root"
+      "StaticSiteCaptureTests.test_symlink_files_and_directories_are_rejected_before_reading_outside_output_root",
+      "StaticSiteCaptureTests.test_xml_sitemap_bytes_and_exact_media_are_preserved_without_parsing"
     ],
     "tools/tests/test_supply_chain_schemas.py": [
       "SupplyChainSchemaTests.test_historical_receipt_has_closed_identities_and_explicit_nullable_sbom",
@@ -7029,7 +7077,7 @@
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
-    ".github/workflows/ci.yml": "e41926cdf669033c90ed5d410020a6a97346bea1f2ee587251483498ec9110b4",
+    ".github/workflows/ci.yml": "482009c32185d439697a20bad85d139caf3dfee43211c8b0b62c1025741e49fa",
     ".github/workflows/developer-packaged-qualification.yml": "aeda0753a6ee0d0ed0e4198334f7447761a72bf741623adbd9c9f0a210e57610",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "66223e72ae761683472d7add1fcde0c672e733f4cfb272550b2ef67cafb7b31b",
@@ -7045,6 +7093,7 @@
     ".github/workflows/rust-capsule-authoring.yml": "a69b8d1ac076990c1e197203b807f306005df327bc1b4c6fee87b6b40ba199fb",
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
-    ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41"
+    ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
+    ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc"
   }
 }

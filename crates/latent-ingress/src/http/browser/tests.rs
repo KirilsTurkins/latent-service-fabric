@@ -21,6 +21,91 @@ fn response(status: u16, fields: &[(&str, &str)]) -> ResponseData {
         "representation-length":{"none":null},"body-base64":""})).unwrap()
 }
 
+fn navigation(
+    method: Method,
+    pairs: &[(&str, &str)],
+    approved: bool,
+    bearer: bool,
+) -> Result<Admission, u16> {
+    admit_with_public_documents(&target(), method, &fields(pairs), approved, bearer, true)
+}
+
+#[test]
+fn public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method() {
+    for site in ["cross-site", "same-site"] {
+        let metadata = [
+            ("sec-fetch-site", site),
+            ("sec-fetch-mode", "navigate"),
+            ("sec-fetch-dest", "document"),
+        ];
+        for method in [Method::Get, Method::Head] {
+            assert_eq!(
+                navigation(method, &metadata, true, false),
+                Ok(Admission::PublicDocument)
+            );
+            assert_eq!(
+                admit(&target(), method, &fields(&metadata), true, false),
+                Err(403)
+            );
+            assert_eq!(navigation(method, &metadata, true, true), Err(403));
+            assert_eq!(navigation(method, &metadata, false, false), Err(403));
+        }
+        for method in [
+            Method::Post,
+            Method::Put,
+            Method::Patch,
+            Method::Delete,
+            Method::Options,
+        ] {
+            assert_eq!(navigation(method, &metadata, true, false), Err(403));
+        }
+        for index in 0..metadata.len() {
+            let mut missing = metadata.to_vec();
+            missing.remove(index);
+            assert_ne!(
+                navigation(Method::Get, &missing, true, false),
+                Ok(Admission::PublicDocument)
+            );
+        }
+        for pair in [
+            ("origin", "null"),
+            ("origin", "https://other.test"),
+            ("origin", "https://web.example.test"),
+            ("access-control-request-method", "GET"),
+            ("sec-fetch-user", "?0"),
+        ] {
+            let mut rejected = metadata.to_vec();
+            rejected.push(pair);
+            assert_eq!(navigation(Method::Get, &rejected, true, false), Err(403));
+        }
+        for pair in [
+            ("sec-fetch-mode", "cors"),
+            ("sec-fetch-mode", "no-cors"),
+            ("sec-fetch-dest", "iframe"),
+            ("sec-fetch-dest", "script"),
+            ("sec-fetch-dest", "empty"),
+        ] {
+            let mut rejected = metadata.to_vec();
+            rejected.iter_mut().find(|row| row.0 == pair.0).unwrap().1 = pair.1;
+            assert_eq!(navigation(Method::Get, &rejected, true, false), Err(403));
+        }
+        let mut duplicate = metadata.to_vec();
+        duplicate.push(("Sec-Fetch-Site", site));
+        assert_eq!(navigation(Method::Get, &duplicate, true, false), Err(400));
+    }
+    for site in ["none", "same-origin"] {
+        let metadata = [
+            ("sec-fetch-site", site),
+            ("sec-fetch-mode", "navigate"),
+            ("sec-fetch-dest", "document"),
+        ];
+        assert_eq!(
+            navigation(Method::Get, &metadata, true, false),
+            Ok(Admission::SameOrigin)
+        );
+    }
+}
+
 #[test]
 fn browser_origin_is_exact_and_never_accepts_null_lists_siblings_or_forwarding() {
     for origin in [

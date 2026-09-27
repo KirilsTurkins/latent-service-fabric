@@ -1,5 +1,6 @@
 //! Explicit node-owned HTTP/1.1 transport and identity profiles.
 mod browser;
+mod navigation;
 use super::{invalid, CredentialRole, NodeConfig};
 use crate::standalone::http::tls;
 pub use browser::BrowserOrigin;
@@ -7,6 +8,7 @@ use latent_core::{InvocationPrincipal, Metadata, PlatformError, PrincipalKind, T
 use latent_ingress::http::{
     cache::PublicCachePolicy, CanonicalTarget, Scheme, EXCHANGE_RESERVATION_BYTES,
 };
+pub use navigation::PublicDocumentNavigation;
 use serde::{Deserialize, Deserializer};
 use std::{
     collections::BTreeSet,
@@ -32,6 +34,8 @@ pub struct HttpIngressConfig {
     pub response_cache: Vec<PublicCachePolicy>,
     #[serde(default)]
     pub browser_origins: Vec<BrowserOrigin>,
+    #[serde(default)]
+    pub public_document_navigation: Vec<PublicDocumentNavigation>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -115,6 +119,7 @@ pub(crate) struct HttpSettings {
     pub request_timeout_millis: u64,
     pub response_cache: Vec<PublicCachePolicy>,
     pub browser_origins: Vec<BrowserOrigin>,
+    pub public_document_navigation: Vec<PublicDocumentNavigation>,
 }
 pub(super) fn present<'de, D: Deserializer<'de>>(
     d: D,
@@ -219,6 +224,7 @@ pub(super) fn derive(
         }
     };
     let browser_origins = browser::derive(config, http, scheme, &authentication)?;
+    navigation::validate(http, scheme, &authentication)?;
     Ok(Some(HttpSettings {
         bind: http.bind,
         tls,
@@ -229,6 +235,7 @@ pub(super) fn derive(
         request_timeout_millis: config.execution.maximum_wall_time_millis,
         response_cache: http.response_cache.clone(),
         browser_origins,
+        public_document_navigation: http.public_document_navigation.clone(),
     }))
 }
 
