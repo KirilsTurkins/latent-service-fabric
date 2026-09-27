@@ -120,6 +120,66 @@ async fn get(h: &Harness, path: &str, headers: &str) -> (u16, String, Vec<u8>) {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn public_document_navigation_never_grants_asset_private_mount_or_unsafe_access() {
+    let h = Harness::configured_catalog(|value| {
+        value["httpIngress"]["authentication"] = serde_json::json!({"mode":"public-origins", "origins":[
+            {"authority":node::AUTHORITY, "subject":"reader", "tenant":"tests"}]});
+        value["httpIngress"]["publicDocumentNavigation"] = serde_json::json!([
+            {"authority":node::AUTHORITY, "tenant":"tests", "mount":"/docs"}]);
+    }, None, true).await;
+    let reference = publish(&h, "navigation", b"public document");
+    for (id, mount) in [("docs", "/docs"), ("private", "/private")] {
+        for method in ["GET", "HEAD"] {
+            apply(
+                &h,
+                &format!("{id}-{method}"),
+                &reference,
+                mount,
+                "prefix",
+                method,
+                0,
+            );
+        }
+    }
+    let metadata =
+        "Sec-Fetch-Site: cross-site\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Dest: document\r\n";
+    for (method, path, extra, expected) in [
+        ("GET", "/docs/", metadata, 200),
+        ("HEAD", "/docs/", metadata, 200),
+        ("GET", "/docs/guide", metadata, 308),
+        ("GET", "/docs/main.js", metadata, 403),
+        ("GET", "/private/", metadata, 403),
+        ("GET", "/docs-other/", metadata, 403),
+        ("POST", "/docs/", metadata, 403),
+        ("OPTIONS", "/docs/", metadata, 403),
+        (
+            "GET",
+            "/docs/",
+            "Sec-Fetch-Site: cross-site\r\nSec-Fetch-Mode: cors\r\nSec-Fetch-Dest: empty\r\n",
+            403,
+        ),
+        (
+            "GET",
+            "/docs/",
+            "Sec-Fetch-Site: cross-site\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Dest: iframe\r\n",
+            403,
+        ),
+    ] {
+        let (status, headers, body) = h.call(method, path, extra, "").await;
+        assert_eq!(status, expected, "{method} {path}");
+        assert!(!headers
+            .to_ascii_lowercase()
+            .contains("access-control-allow"));
+        assert!(headers.contains("frame-ancestors 'none'"));
+        if method == "HEAD" {
+            assert!(body.is_empty());
+        }
+    }
+    no_execution(&h);
+    h.finish().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalidation_without_execution(
 ) {
     let h = Harness::static_site().await;
