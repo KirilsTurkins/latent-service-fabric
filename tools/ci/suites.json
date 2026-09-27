@@ -546,6 +546,8 @@
         "local_repository::tests::admission::parent_sync_failure_retains_pending_bytes_without_positive_index",
         "local_repository::tests::admission::post_rename_expiry_does_not_adopt_and_exact_retry_recovers",
         "local_repository::tests::admission::preflight_runs_once_without_locks_and_cannot_stage_on_rejection",
+        "local_repository::tests::admission::publication_lease::capsule_publication_renews_after_preparation_and_reads_outside_policy_fence",
+        "local_repository::tests::admission::publication_lease::capsule_publication_staging_cannot_revive_revocation_or_failed_renewal",
         "local_repository::tests::admission::read_wait::scheduling_hook_cannot_supply_success_and_legacy_fetch_remains_immediate",
         "local_repository::tests::admission::read_wait::sealed_worker_fetch_cannot_upgrade_original_grant_during_post_read_wait",
         "local_repository::tests::admission::read_wait::sealed_worker_fetch_never_schedules_non_busy_or_malformed_errors",
@@ -748,6 +750,7 @@
         "web::tests::browser_routes_cannot_claim_a_renderer_and_server_routes_cannot_name_arbitrary_files",
         "web::tests::public_paths_media_types_order_and_spare_capacity_are_bounded",
         "web::tests::renderer_requires_the_same_asset_tree_and_supported_compatibility_identity",
+        "web::tests::static_contract_fixtures_agree_with_json_schema_acceptance",
         "web::tests::static_routing_is_closed_signed_browser_metadata_with_html_documents",
         "web::tests::unknown_fields_and_duplicate_keys_are_rejected_even_in_an_integrity_checked_package"
       ],
@@ -760,7 +763,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 253,
+      "minimumCases": 256,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -1818,14 +1821,15 @@
         "http::cache::tests::response::browser_policy_rejection_discards_a_pending_fill_before_any_local_delivery",
         "http::cache::tests::response::no_store_private_cookies_unknown_vary_and_ttl_extensions_never_publish",
         "http::cache::tests::response::only_application_200_can_publish_and_failures_are_no_store",
-        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted"
+        "http::cache::tests::response::ttl_is_the_minimum_and_approved_vary_is_accepted",
+        "http::browser::tests::public_document_exception_requires_opt_in_complete_metadata_and_safe_anonymous_method"
       ],
       "expectedIgnored": [],
       "id": "latent-ingress.lib.latent-ingress",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-ingress/Cargo.toml",
-      "minimumCases": 22,
+      "minimumCases": 23,
       "mode": "libtest",
       "package": "latent-ingress",
       "platforms": [
@@ -7525,6 +7529,9 @@
         "output::tests::output_failure_preserves_managed_recovery_without_bulk_response",
         "output::tests::requested_control_characters_are_escaped_and_roundtrip_as_data",
         "output::tests::unknown_outcome_and_absent_identity_survive_document_conversion",
+        "package::registry::profile::advanced_tests::advanced_cli_profile_constructor_denies_wrong_realms_roots_and_destinations",
+        "package::registry::profile::advanced_tests::advanced_cli_profile_preserves_separate_authorities_identity_limits_and_network",
+        "package::registry::profile::advanced_tests::advanced_cli_profile_rejects_closed_fields_version_mixing_and_excess_authority",
         "package::registry::profile::tests::closed_profile_rejects_null_duplicates_escapes_and_excess_entries",
         "package::registry::profile::tests::selected_profile_file_rejects_a_symlink",
         "package::registry::tests::cancellation::caller_loss_after_observed_request_keeps_digest_uncertain_and_releases_owner",
@@ -7538,7 +7545,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 123,
+      "minimumCases": 126,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
@@ -7914,7 +7921,9 @@
         "config::tests::local_service::local_dispatcher_protected_configuration_rejects_ambiguous_provider_identity",
         "config::tests::events::event_input_rejects_inline_secrets_ambient_auth_and_unknown_fields",
         "config::tests::events::event_binding_requires_exact_tenant_and_provider_service",
-        "config::tests::events::event_protected_configuration_rejects_foreign_topics_paths_and_colliding_identity"
+        "config::tests::events::event_protected_configuration_rejects_foreign_topics_paths_and_colliding_identity",
+        "standalone::http::tests::browser_config::public_document_navigation_is_explicit_public_tenant_scoped_and_mount_bounded",
+        "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -7977,7 +7986,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 235,
+      "minimumCases": 237,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

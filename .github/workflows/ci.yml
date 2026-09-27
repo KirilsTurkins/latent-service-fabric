@@ -354,6 +354,7 @@ jobs:
         shell: bash
         run: |
           # Reviewed capture owner: tools/static_site.py
+          node --test tools/static-release/route-set.test.mjs tools/static-release/io.test.mjs
           static_root="${RUNNER_TEMP}/static-site"
           mkdir -p "$static_root" "${RUNNER_TEMP}/phase2-gate"
           objcopy --strip-debug "${PWD}/target/debug/latentd" "${static_root}/latentd"

@@ -1,0 +1,643 @@
+[
+  {
+    "name": "generator-directory-index",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "csr-explicit-route",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [
+        {
+          "path": "/",
+          "mode": "client",
+          "asset": "/index.html"
+        }
+      ],
+      "staticRouting": {
+        "directoryIndex": "disabled",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "spa",
+          "document": "/index.html"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "static-spa-without-explicit-route",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "spa",
+          "document": "/index.html"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "explicit-route-without-static-routing",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [
+        {
+          "path": "/",
+          "mode": "client",
+          "asset": "/index.html"
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty-routes-without-static-routing",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": []
+    }
+  },
+  {
+    "name": "null-static-routing-with-empty-routes",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": null
+    }
+  },
+  {
+    "name": "unknown-routing-field",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "host": "other.example.test"
+      }
+    }
+  },
+  {
+    "name": "unknown-fallback-field",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none",
+          "rewrite": true
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "unknown-profile",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v2"
+      }
+    }
+  },
+  {
+    "name": "unknown-directory-index-mode",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "rewrite",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "unknown-fallback-mode",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "rewrite"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "spa-without-document",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "spa"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "none-with-document",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none",
+          "document": "/index.html"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "missing-entry-document",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "missing-directory-index-document",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-relative",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-parent",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/../index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-dot",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/./index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-reserved",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/_lsf/assets/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-query",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html?x=1",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-empty",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-newline",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html\n",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "static-routing-with-renderer",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      },
+      "renderer": {
+        "layer": "server/renderer.wasm",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "size": 8,
+        "profile": "wasm-web-buffered-v1",
+        "profileDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4"
+      }
+    }
+  }
+]

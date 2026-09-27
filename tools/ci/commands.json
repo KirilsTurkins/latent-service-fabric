@@ -471,14 +471,14 @@
       "workingDirectory": "."
     },
     ".github/workflows/ci.yml:rust:Qualify signed static sites through OCI and actual browsers": {
-      "job": "rust",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "name": "Qualify signed static sites through OCI and actual browsers",
-      "run": "# Reviewed capture owner: tools/static_site.py\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\"",
-      "shell": "bash",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
       "workflow": ".github/workflows/ci.yml",
-      "workingDirectory": "."
+      "job": "rust",
+      "name": "Qualify signed static sites through OCI and actual browsers",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "# Reviewed capture owner: tools/static_site.py\nnode --test tools/static-release/route-set.test.mjs tools/static-release/io.test.mjs\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\""
     },
     ".github/workflows/ci.yml:rust:Qualify the deterministic Phase 3 security matrix": {
       "job": "rust",
@@ -3556,7 +3556,7 @@
       "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
     },
     "tools/run_static_site_workflow.py": {
-      "sha256": "4660f2e124a5e180fc986e667fc52c9e91ffd8f69ff88ec9686ee610b8c3e995"
+      "sha256": "15f63cf5319a99035c48687ea03a99b14e6e91bf68905c98a748365095dbd170"
     },
     "tools/run_vault_secret_tests.py": {
       "sha256": "81ab09bf676f22fca2e1cb923353586cef8d36361980cac4091677bcbe9abcf4"
@@ -4655,7 +4655,8 @@
       "NodeHttpIngressSchema.test_browser_bindings_are_bounded_closed_and_not_credentials",
       "NodeHttpIngressSchema.test_closed_profiles_do_not_infer_proxy_trust_or_public_authority",
       "NodeHttpIngressSchema.test_documented_tls_configuration_and_public_adapter",
-      "NodeHttpIngressSchema.test_individual_resource_bounds"
+      "NodeHttpIngressSchema.test_individual_resource_bounds",
+      "NodeHttpIngressSchema.test_public_document_navigation_requires_bounded_public_scope"
     ],
     "tools/tests/test_node_isolated_aot_schema.py": [
       "NodeIsolatedAotSchema.test_every_numeric_ceiling",
@@ -6062,6 +6063,8 @@
       "SplitPairedReplayTests.test_split_publication_requires_full_replay_and_preserves_source_bytes"
     ],
     "tools/tests/test_phase2_cli_schemas.py": [
+      "Phase2CliSchemas.test_challenge_network_profile_is_closed_versioned_and_bounded",
+      "Phase2CliSchemas.test_challenge_profile_allows_separate_static_token_resolution",
       "Phase2CliSchemas.test_credential_modes_are_closed_and_disjoint",
       "Phase2CliSchemas.test_evidence_requires_exact_subject_and_closed_portable_selection",
       "Phase2CliSchemas.test_registry_profile_rejects_inline_secrets_null_and_unbounded_sets"
@@ -6745,6 +6748,7 @@
       "WebAdmissionSchemaTests.test_componentless_profiles_are_closed_and_keep_required_identities",
       "WebAdmissionSchemaTests.test_legacy_capsule_statement_and_receipt_do_not_silently_become_web",
       "WebAdmissionSchemaTests.test_private_asset_locations_unknown_profiles_and_unbounded_arrays_are_rejected",
+      "WebAdmissionSchemaTests.test_static_contract_fixtures_agree_with_native_acceptance",
       "WebAdmissionSchemaTests.test_web_build_type_does_not_claim_compiler_or_hermetic_observation"
     ],
     "tools/tests/test_wiki_migration.py": [
@@ -7028,7 +7032,7 @@
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
-    ".github/workflows/ci.yml": "5c9c7ed9da5650cb2ee2744a3c27ebec1733c76f376c215ba600a4b0469273e8",
+    ".github/workflows/ci.yml": "00679f2b91caca5b88311a9255dd3ffda3ddf3123179a387c410e3e70a7d3a1d",
     ".github/workflows/developer-packaged-qualification.yml": "aeda0753a6ee0d0ed0e4198334f7447761a72bf741623adbd9c9f0a210e57610",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "0566e5e88ab63c07bc1672993b1e26537ca56c4fbae949c6b0f782f0aaac3dce",
