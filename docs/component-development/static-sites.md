@@ -1,5 +1,9 @@
 # Package an observed static site
 
+For repeatable GET/HEAD promotion, interrupted-job recovery and rollback, follow
+the [static route-set guide](../operations/static-route-sets.md) after publishing
+your package.
+
 `tools/static_site.py` captures an explicit finite file map from an existing
 framework build. It writes ordinary `browser-assets` package inputs and a
 `static-site-v1` web manifest. Compilation, package assembly and deployment are
