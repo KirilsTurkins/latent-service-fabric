@@ -119,6 +119,10 @@ class Drill:
         self.ready(node)
         reopened = self.exec_json(node, '/usr/local/bin/python3', INSIDE, 'reopen')
         elapsed = round((time.monotonic() - begin) * 1000)
+        handover = None
+        if self.args.ownership:
+            from qualification_handover import run
+            handover = run(self, node, mounts, source)
         storage = None
         if self.args.storage:
             from qualification_storage import run
@@ -131,7 +135,8 @@ class Drill:
                   'shutdownExitCode': stopped, 'stopToVerifiedRestartMillis': elapsed,
                   'imageId': self.docker('image', 'inspect', '--format', '{{.Id}}', self.args.image)[1].decode().strip(),
                   'cloudQualified': False, 'negativeChecks': ['root-identity-rejected'],
-                  'dockerProcesses': self.calls, 'maximumSeconds': 300, 'privilegedRuntime': False, 'storage': storage}
+                  'dockerProcesses': self.calls, 'maximumSeconds': 300, 'privilegedRuntime': False,
+                  'storage': storage, 'handover': handover}
         (self.output / 'receipt.json').write_text(json.dumps(report, indent=2) + '\n')
         return report
 
@@ -158,6 +163,7 @@ def main():
     parser.add_argument('--release-directory', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--storage', action='store_true', help='also qualify stopped local storage recovery')
+    parser.add_argument('--ownership', action='store_true', help='also qualify overlapping owners and interrupted handover')
     args = parser.parse_args()
     for identity in (args.image, args.frontend_image):
         if not re.fullmatch(r'[a-z0-9][a-zA-Z0-9/_.:@-]{0,255}', identity):
