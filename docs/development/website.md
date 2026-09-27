@@ -21,7 +21,7 @@ separate `../adr` plugin. There is no edited `website/docs` copy. Current guides
 may be consolidated as the product changes; frozen releases retain their
 recorded bytes. The public Wiki and its publishers are already disabled. The
 [migration record](wiki-migration.md) identifies the maintained replacement
-pages and the remaining live-site cutover checks. Historical evidence remains
+pages and the successful complete-site cutover checks. Historical evidence remains
 unchanged; obsolete Wiki URLs have no compatibility requirement.
 
 ## Toolchain and installation
@@ -233,7 +233,7 @@ walkthrough results and record the exact source reviewed.
 | #349/#350 | Shared theme tokens, reviewed global brand assets and maintained illustrations. Frozen historical bytes remain unchanged. |
 | #354 | Version-aware search, task navigation and keyboard/accessibility/browser checks consuming the same page/source/channel metadata. |
 | #355 | One protected Pages writer publishes the exact successful development CI artifact. Deployment and rollback retain the original source, CI attempt, artifact and publisher identities. |
-| #356 | Useful Wiki content has maintained replacement pages. The Wiki and both old publisher registrations are disabled; live replacement-route verification completes the cutover. |
+| #356 | Useful Wiki content has maintained replacement pages. The Wiki and both old publisher registrations are disabled; all live replacement routes passed the [complete-site cutover](wiki-cutover-review.md). |
 
 Repository CI selects the maintained website validation profile and retains
 full validation for unknown source. Generated-directory exclusions are scoped;

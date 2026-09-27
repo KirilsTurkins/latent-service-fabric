@@ -115,15 +115,17 @@ identities, actual outcomes and failed or superseded attempts.
 
 ## Phase 3: capabilities and application hosting
 
-**Status: release completion in progress.**
+**Status: complete for the declared standalone profiles.**
 
-All six guest SDKs and the packaged developer workflow are implemented and
-qualified. The maintainer accepted the 27-topic guide review on September 26.
-The final runtime source has passed exact-source CI and protected native
-publication, including both complete VM profiles. The
-[completion gate](phase-3-gate-review.md) records the successful public
-six-language download and 18-project creation check. Complete-site deployment
-and the final acceptance decision remain.
+All six guest SDKs, the packaged developer workflow, native distribution and
+complete learning site are delivered. The maintainer accepted the 27-topic
+guide review; final runtime CI, both real VM profiles, public tool downloads,
+18-project creation and protected live-site checks passed. The
+[completion decision](phase-3-gate-review.md) records the exact evidence and
+remaining platform/security limits. The
+[alpha.4 release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.4) and
+[matching guides](https://kirilsturkins.github.io/latent-service-fabric/docs/0.1.0-alpha.4/start/application-development/)
+are public. Runtime tags and historical measurements remain immutable.
 
 [Epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
 tracks the delivered capability and application-hosting implementation,
