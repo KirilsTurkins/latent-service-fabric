@@ -40,5 +40,7 @@ elif mode == 'cancel-marker':
     print(json.dumps(q.document(q.files.read(marker, 4096)) if marker.exists() else {}))
 elif mode == 'permission-marker':
     print(json.dumps(q.document(q.files.read(Path('/var/cache/lsf/ci-permission-denied.json'), 4096))))
+elif mode == 'failure':
+    print(json.dumps(q.document(q.files.read(Path('/var/cache/lsf/qualification-command-failure.json'), 4096))))
 else:
     raise AssertionError('unknown private operator test')

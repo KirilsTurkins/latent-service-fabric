@@ -26,8 +26,14 @@ def call(*arguments, codes=(0,)):
     status, output = execute(['/opt/lsf/release/bin/latent', '--config', '/etc/lsf/client.json',
         '--output', 'json', *(str(value) for value in arguments)], maximum=300000,
         timeout=min(5, DEADLINE - time.monotonic()), stdout_only=True)
-    require(status in codes, 'container-qualification-command-failed')
     result = document(output, 300000)
+    if status not in codes:
+        # Test-only evidence: retain closed native outcome metadata, never the
+        # private credential, full command arguments or application payload.
+        files.replace(Path('/var/cache/lsf/qualification-command-failure.json'), encode({
+            'exitCode': status, 'category': result.get('category'), 'code': result.get('error', {}).get('code'),
+            'outcomeKnown': result.get('outcomeKnown'), 'nativeCall': CALLS}))
+    require(status in codes, 'container-qualification-command-failed')
     require(result.get('outcomeKnown') is True, 'container-qualification-unknown-outcome')
     return result
 

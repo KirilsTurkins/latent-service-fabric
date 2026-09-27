@@ -14,7 +14,7 @@ sys.path.insert(0, '/source/tools')
 sys.path.insert(0, '/source/tools/container_runtime')
 from ci_operator import Transport, operate, protected
 from native_runtime import files
-from native_runtime.common import encode, require
+from native_runtime.common import InstallError, encode, require
 from operator_process import run
 
 INSIDE = '/source/tools/container_runtime/qualification_operator_inside.py'
@@ -33,8 +33,14 @@ def main():
     calls, deadline = 0, time.monotonic() + 180
 
     def inside(mode):
-        return json.loads(run(['/usr/bin/docker', '--host', 'unix:///var/run/docker.sock', 'exec', node,
-                              '/usr/local/bin/python3', INSIDE, mode], seconds=100))
+        command = ['/usr/bin/docker', '--host', 'unix:///var/run/docker.sock', 'exec', node,
+                   '/usr/local/bin/python3', INSIDE]
+        try:
+            return json.loads(run([*command, mode], seconds=100))
+        except InstallError:
+            diagnostic = json.loads(run([*command, 'failure']))
+            files.replace(root / 'qualification-command-failure.json', encode(diagnostic))
+            raise InstallError('qualification-native-outcome: ' + json.dumps(diagnostic)) from None
 
     def command(request, *, recovery=None, selected=None, expected=None):
         nonlocal calls
