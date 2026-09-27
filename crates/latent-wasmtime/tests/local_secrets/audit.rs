@@ -36,7 +36,10 @@ async fn real_secret_audit_and_status_contain_no_plaintext_or_value_digest() {
     assert_eq!(page.records().len(), 2);
     let text = serde_json::to_string(page.records()).unwrap();
     assert!(!text.contains(secret));
-    assert!(!text.contains(&format!("{:x}", Sha256::digest(secret.as_bytes()))));
+    assert!(!text.contains(&format!(
+        "{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(secret.as_bytes()))
+    )));
     let AuditRecordData::Outcome { conclusion, .. } = &page.records()[1].data else {
         panic!("terminal audit")
     };

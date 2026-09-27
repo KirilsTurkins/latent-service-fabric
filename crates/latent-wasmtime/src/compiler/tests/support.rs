@@ -189,7 +189,10 @@ pub(super) fn source() -> (Directory, Arc<DirectoryArtifactRepository>, Coalesci
     let directory = Directory::new();
     let repository = Arc::new(directory.open());
     let bytes = b"bounded compiler pool protocol fixture".to_vec();
-    let release = ReleaseDigest(format!("sha256:{:x}", Sha256::digest(&bytes)));
+    let release = ReleaseDigest(format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(&bytes))
+    ));
     let mut document: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../examples/echo-contract/capsule.json"
     ))

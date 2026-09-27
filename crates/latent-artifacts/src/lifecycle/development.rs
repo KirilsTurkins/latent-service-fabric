@@ -58,9 +58,12 @@ impl DevelopmentTestArtifact {
         identity.update(b"latent-controlled-development-owner-v1\0");
         identity.update(sequence.to_le_bytes());
         identity.update(artifact.descriptor.release_digest.0.as_bytes());
-        let publication: PublicationId = format!("publication:sha256:{:x}", identity.finalize())
-            .parse()
-            .map_err(|_| super::invalid())?;
+        let publication: PublicationId = format!(
+            "publication:sha256:{:x}",
+            latent_core::digest::HexDigest(identity.finalize())
+        )
+        .parse()
+        .map_err(|_| super::invalid())?;
         let record = ReleaseLifecycleRecord {
             scope,
             release: artifact.descriptor.release_digest.clone(),

@@ -758,6 +758,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1dd6dbb5841937940781866fa1281a1ff7bd3bf827091440879f9994983d5c2"
 dependencies = [
  "block-buffer 0.12.1",
+ "const-oid",
  "crypto-common 0.2.2",
 ]
 
@@ -1505,7 +1506,7 @@ dependencies = [
  "prost",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tonic",
@@ -1547,7 +1548,7 @@ dependencies = [
  "latent-manifest",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
 ]
 
 [[package]]
@@ -1559,7 +1560,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
 ]
 
 [[package]]
@@ -1577,7 +1578,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "time",
  "tokio",
@@ -1601,7 +1602,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "zeroize",
@@ -1630,7 +1631,7 @@ version = "0.1.0-alpha.4"
 dependencies = [
  "latent-core",
  "semver",
- "sha2 0.10.9",
+ "sha2 0.11.0",
 ]
 
 [[package]]
@@ -1658,7 +1659,7 @@ dependencies = [
  "latent-scheduler",
  "latent-telemetry",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
  "wasm-encoder 0.259.0",
 ]
@@ -1724,7 +1725,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tokio-rustls",
@@ -1761,7 +1762,7 @@ dependencies = [
  "latent-core",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
 ]
 
 [[package]]
@@ -1778,7 +1779,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
  "tokio-rustls",
  "webpki-roots",
@@ -1860,7 +1861,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
  "tonic",
  "wasmparser 0.259.0",
@@ -1886,7 +1887,7 @@ dependencies = [
  "latent-manifest",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "spdx",
  "tempfile",
  "wasm-encoder 0.259.0",
@@ -1934,7 +1935,7 @@ dependencies = [
  "latent-wasmtime",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "socket2",
  "subtle",
  "tokio",
@@ -1955,8 +1956,9 @@ dependencies = [
 name = "latent-renderer-profile"
 version = "0.1.0-alpha.4"
 dependencies = [
+ "latent-core",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "wasmtime",
 ]
 
@@ -1972,7 +1974,7 @@ dependencies = [
  "latent-telemetry",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
 ]
@@ -2007,7 +2009,7 @@ dependencies = [
  "latent-routing",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
 ]
 
@@ -2041,7 +2043,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "zeroize",
@@ -2078,7 +2080,7 @@ dependencies = [
  "latent-core",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
 ]
 
@@ -2140,7 +2142,7 @@ dependencies = [
  "latent-secrets",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "time",
  "zeroize",
 ]
@@ -2185,7 +2187,7 @@ dependencies = [
  "seccompiler",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tokio-rustls",
@@ -2219,7 +2221,7 @@ dependencies = [
  "latent-telemetry",
  "prost",
  "serde",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tonic",
@@ -2283,7 +2285,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tokio-rustls",

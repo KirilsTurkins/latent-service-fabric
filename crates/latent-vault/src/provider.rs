@@ -102,7 +102,10 @@ impl VaultSecretProvider {
         {
             return Err(SecretError::PermissionDenied);
         }
-        let digest = format!("sha256:{:x}", hash.finalize());
+        let digest = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        );
         let mut references: Vec<_> = config
             .references
             .iter()

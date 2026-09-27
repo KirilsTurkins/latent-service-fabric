@@ -72,7 +72,7 @@ prost = "=0.14.4"
 protoc-bin-vendored = "=3.2.0"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = { version = "=1.0.150", features = ["raw_value"] }
-sha2 = "=0.10.9"
+sha2 = "=0.11.0"
 hyper-util = { version = "=0.1.20", features = ["tokio"] }
 http-body = "=1.1.0"
 tower = { version = "=0.5.3", features = ["util"] }

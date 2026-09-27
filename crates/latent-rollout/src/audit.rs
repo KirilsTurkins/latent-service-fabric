@@ -22,9 +22,12 @@ pub(crate) fn now() -> u64 {
         .unwrap_or(0)
 }
 pub(crate) fn digest(receipt: &RolloutOperationReceipt) -> Result<ArtifactBlobDigest> {
-    format!("sha256:{:x}", Sha256::digest(receipt.canonical_bytes()?))
-        .parse()
-        .map_err(|_| invalid("rollout-receipt-digest"))
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(receipt.canonical_bytes()?))
+    )
+    .parse()
+    .map_err(|_| invalid("rollout-receipt-digest"))
 }
 fn identities(receipt: &RolloutOperationReceipt) -> AuditIdentities {
     let mut identities = AuditIdentities {

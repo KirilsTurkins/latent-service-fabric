@@ -99,3 +99,5 @@ old implementation snapshots are not setup instructions.
 - [ADR-0044: Remove obsolete alpha compatibility](0044-remove-obsolete-alpha-compatibility.md)
 - [ADR-0046: Opt in to public document navigation](0046-opt-in-public-document-navigation.md)
 - [ADR-0047: Reconcile static route sets with durable intent](0047-reconcile-static-route-sets-with-durable-intent.md)
+- [ADR-0049: Scope cross-origin assets to explicit publications](0049-scope-cross-origin-assets-to-publications.md)
+- [ADR-0051: Author static release evidence without a Rust toolchain](0051-author-static-release-evidence-without-a-rust-toolchain.md)
