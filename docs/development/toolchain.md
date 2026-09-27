@@ -29,7 +29,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Serde / `serde_json` |                    1.0.229 / 1.0.150 | Rust contract serialization |
 | TOML |                                1.1.4 | Configuration parsing and serialization |
 | BLAKE3 / SHA-256 |                       1.8.7 / 0.10.9 | Cache/prepared identity and artifact digest verification |
-| Clap / `tempfile` |                       4.6.4 / 3.27.0 | CLI surfaces and test-only temporary storage |
+| Clap / `tempfile` |                       4.6.7 / 3.27.0 | CLI surfaces and test-only temporary storage |
 | `wasm-tools` |                              1.254.0 | WIT parsing, validation, componentization, and interface extraction |
 | Buf |                               1.72.0 | Protobuf linting and independent descriptor-set generation |
 | Python / `jsonschema` |                      3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
