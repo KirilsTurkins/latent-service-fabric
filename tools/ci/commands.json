@@ -3337,7 +3337,7 @@
       "sha256": "b0b05d6c1b48c6f1f405db526e7883900e98137dd8a8436de9c0720d6b40dd86"
     },
     "tools/build_static_sites.py": {
-      "sha256": "5acd3d499791273271236d0e60077763b6e9dd22ccee58aaac46d2b69733035c"
+      "sha256": "5fa1064b8bae13a9ebd248debba5dda1ea4d9118a9994f06726aec579103b5a9"
     },
     "tools/check_owned_diagnostics.py": {
       "sha256": "38d0f7507d674c4b0ba0c0e6a72199b6250fbc48139dc909079116c1244f5d92"
@@ -3577,7 +3577,7 @@
       "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
     },
     "tools/static_site.py": {
-      "sha256": "5e2a5228f9bd06b06534a7b5c5b51b8e3a42ec0d924c82e661f4af44249504ce"
+      "sha256": "d57e4bccf4694418ee531f5005d09c1e9b9112097d368b217e89e23db5fa79e0"
     },
     "tools/test.py": {
       "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
@@ -6544,9 +6544,11 @@
       "StaticSiteCaptureTests.test_excessive_counts_paths_input_bytes_and_asset_bytes_fail_before_emission",
       "StaticSiteCaptureTests.test_excluded_files_and_duplicate_source_aliases_cannot_be_published",
       "StaticSiteCaptureTests.test_explicit_mapping_still_rejects_obvious_server_private_maps_and_unsupported_media",
+      "StaticSiteCaptureTests.test_font_preparation_keeps_glyphs_and_only_one_woff2_resource",
       "StaticSiteCaptureTests.test_missing_foreign_or_changed_observation_is_not_accepted_as_build_proof",
       "StaticSiteCaptureTests.test_paths_cannot_alias_escape_reserved_namespace_or_collide_by_case",
-      "StaticSiteCaptureTests.test_symlink_files_and_directories_are_rejected_before_reading_outside_output_root"
+      "StaticSiteCaptureTests.test_symlink_files_and_directories_are_rejected_before_reading_outside_output_root",
+      "StaticSiteCaptureTests.test_xml_sitemap_bytes_and_exact_media_are_preserved_without_parsing"
     ],
     "tools/tests/test_supply_chain_schemas.py": [
       "SupplyChainSchemaTests.test_historical_receipt_has_closed_identities_and_explicit_nullable_sbom",
