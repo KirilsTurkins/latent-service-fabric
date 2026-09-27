@@ -106,9 +106,7 @@ fn defined(
             value(*ty, types, budget, depth + 1)?;
         }
         Defined::Map {
-            key,
-            value: item,
-            ..
+            key, value: item, ..
         } => {
             value(*key, types, budget, depth + 1)?;
             value(*item, types, budget, depth + 1)?;

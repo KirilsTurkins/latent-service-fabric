@@ -138,10 +138,10 @@ fn envelope(bytes: &[u8], component: bool, depth: usize, budget: &mut Budget) ->
         }
         if component && matches!(id, 1 | 4) {
             let range = section.range();
-            let start = usize::try_from(range.start)
-                .map_err(|_| invalid("invalid-component-extent"))?;
-            let end = usize::try_from(range.end)
-                .map_err(|_| invalid("invalid-component-extent"))?;
+            let start =
+                usize::try_from(range.start).map_err(|_| invalid("invalid-component-extent"))?;
+            let end =
+                usize::try_from(range.end).map_err(|_| invalid("invalid-component-extent"))?;
             let nested = bytes
                 .get(start..end)
                 .ok_or_else(|| invalid("invalid-component-extent"))?;
