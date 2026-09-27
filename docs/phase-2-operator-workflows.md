@@ -55,11 +55,12 @@ latent package pull --registry-profile registry.json --reference candidate --out
 ```
 
 The closed [registry profile](../schemas/cli-registry-profile.schema.json)
-contains an origin, repository, bounded numeric socket addresses, optional
-credential-file reference and optional DER CA-file references. This CLI shape
-selects the static transport. Challenge-based Bearer, DNS and redirect configuration
-is available through the [Rust network API](reference/oci-network-profile.md);
-those fields are not accepted in this CLI profile. Those relative
+contains an origin, repository, credential-file reference and optional DER CA-file
+references. `formatVersion: 1` selects static credentials and numeric socket
+addresses. `formatVersion: 2` selects an explicitly approved bearer token service
+and optionally bounded DNS and content redirects. Follow the
+[CLI challenge profile](reference/oci-bearer-read-auth.md#configure-the-cli)
+to choose authorities and credentials before transferring a package. Those relative
 files are read below the profile's parent using the same regular-file,
 no-follow boundary. Credentials are separate from node management tokens and
 use the closed [credential file schema](../schemas/cli-registry-credentials.schema.json).

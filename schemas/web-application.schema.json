@@ -85,7 +85,7 @@
     },
     "routes": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
       "maxItems": 128,
       "items": {
         "type": "object",
@@ -149,6 +149,29 @@
         ]
       }
     },
+    "staticRouting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "entryDocument", "directoryIndex", "directoryIndexDocument", "fallback"],
+      "properties": {
+        "profile": {"const": "static-site-v1"},
+        "entryDocument": {"$ref": "#/$defs/staticDocumentPath"},
+        "directoryIndex": {"enum": ["disabled", "redirect"]},
+        "directoryIndexDocument": {"$ref": "#/$defs/staticDocumentPath"},
+        "fallback": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": {
+            "mode": {"enum": ["none", "spa"]},
+            "document": {"$ref": "#/$defs/staticDocumentPath"}
+          },
+          "if": {"properties": {"mode": {"const": "spa"}}, "required": ["mode"]},
+          "then": {"required": ["document"]},
+          "else": {"not": {"required": ["document"]}}
+        }
+      }
+    },
     "renderer": {
       "type": "object",
       "additionalProperties": false,
@@ -209,8 +232,22 @@
     }
   },
   "title": "LSF exact web application package metadata",
-  "$comment": "At metadata/web-application.json; <=64 KiB. Rust additionally checks portable noncolliding paths, order, aggregate asset bytes, MIME suffixes, exact package/layer/profile hashes and actual async renderer WIT. Schema/layout alone confers no admission. Angular profile is recognizable but is not installed by declaring it.",
+  "$comment": "At metadata/web-application.json; <=64 KiB. Rust additionally checks portable noncolliding paths, order, aggregate asset bytes, MIME suffixes, exact package/layer/profile hashes, static document references to admitted HTML, package kind and actual async renderer WIT. Schema/layout alone confers no admission. Angular profile is recognizable but is not installed by declaring it.",
+  "$defs": {
+    "staticDocumentPath": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 240,
+      "pattern": "^/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*(?![\\s\\S])",
+      "not": {"pattern": "^/_lsf/assets/|(?:^|/)\\.{1,2}(?:/|$)"}
+    }
+  },
   "allOf": [
+    {
+      "if": {"required": ["staticRouting"]},
+      "then": {"not": {"required": ["renderer"]}},
+      "else": {"properties": {"routes": {"minItems": 1}}}
+    },
     {
       "if": {
         "not": {

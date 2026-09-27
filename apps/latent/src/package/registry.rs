@@ -41,7 +41,10 @@ pub(super) fn execute(cli: &Cli, command: &PackageCommand) -> Result<Outcome, Fa
         let reference=match command {PackageCommand::Push(a)=>&a.reference,PackageCommand::Pull(a)=>&a.reference,_=>unreachable!()};
         validate_reference(reference)?;
         check(deadline)?;
-        let registry=HttpOciRegistry::new(configured.config).map_err(super::failure)?;
+        let registry=match configured.network {
+            Some(network)=>HttpOciRegistry::new_with_network(configured.config,network),
+            None=>HttpOciRegistry::new(configured.config),
+        }.map_err(super::failure)?;
         let budget=budget::Budget::new(MAX_GRAPH_BYTES);
         let mut progress=transfer::Progress::default();
         let result={

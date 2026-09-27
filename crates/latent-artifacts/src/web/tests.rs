@@ -130,6 +130,29 @@ fn xml_sitemaps_are_inert_exact_media_and_legacy_fonts_remain_rejected() {
 }
 
 #[test]
+fn static_contract_fixtures_agree_with_json_schema_acceptance() {
+    let fixtures: serde_json::Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/static-web-contracts.json"
+    ))
+    .unwrap();
+    for case in fixtures.as_array().unwrap() {
+        let raw = serde_json::to_vec(&case["manifest"]).unwrap();
+        let accepted = serde_json::from_slice::<WebApplicationManifest>(&raw)
+            .ok()
+            .is_some_and(|document| {
+                let (layout, bytes) = package_bytes(&document, raw);
+                inspect_web_layout(&layout, &bytes).is_ok()
+            });
+        assert_eq!(
+            accepted,
+            case["accepted"].as_bool().unwrap(),
+            "{}",
+            case["name"]
+        );
+    }
+}
+
+#[test]
 fn static_routing_is_closed_signed_browser_metadata_with_html_documents() {
     let mut document = manifest(false);
     let baseline = package(&document).0.digest().clone();
