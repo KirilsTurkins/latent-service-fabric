@@ -23,7 +23,10 @@ fn read_checked(record: &Value) -> Vec<u8> {
         "{path}"
     );
     assert_eq!(
-        format!("sha256:{:x}", Sha256::digest(&bytes)),
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(&bytes))
+        ),
         record["digest"].as_str().unwrap(),
         "{path}"
     );
@@ -92,7 +95,10 @@ fn independently_recorded_corpus_digests_sizes_and_canonical_bytes_match() {
         let payload = read_checked(&evidence["payload"]);
         assert_eq!(
             referrer.layers[0].digest.as_str(),
-            format!("sha256:{:x}", Sha256::digest(&payload))
+            format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(&payload))
+            )
         );
         assert_eq!(referrer.layers[0].size, payload.len() as u64);
     }

@@ -53,7 +53,7 @@ async fn unsupported_or_uninstalled_imports_do_not_gain_ambient_authority() {
                 .expect("denied import fixture");
         artifact.descriptor.release_digest = ReleaseDigest(format!(
             "sha256:{:x}",
-            Sha256::digest(&artifact.component_bytes)
+            latent_core::digest::HexDigest(Sha256::digest(&artifact.component_bytes))
         ));
         artifact.descriptor.size_bytes =
             u64::try_from(artifact.component_bytes.len()).expect("fixture size");

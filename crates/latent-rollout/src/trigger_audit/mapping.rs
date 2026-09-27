@@ -9,9 +9,12 @@ use latent_core::{ArtifactBlobDigest, DeploymentId, RevisionId, RouteGeneration,
 use sha2::{Digest, Sha256};
 
 fn digest(receipt: &TriggerOperationReceipt) -> crate::Result<ArtifactBlobDigest> {
-    format!("sha256:{:x}", Sha256::digest(receipt.canonical_bytes()?))
-        .parse()
-        .map_err(|_| super::invalid())
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(receipt.canonical_bytes()?))
+    )
+    .parse()
+    .map_err(|_| super::invalid())
 }
 fn identities(r: &TriggerOperationReceipt) -> crate::Result<AuditIdentities> {
     let target = r.target_identity().ok_or_else(super::invalid)?;
