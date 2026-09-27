@@ -1,8 +1,10 @@
 # Package an observed static site
 
-For repeatable GET/HEAD promotion, interrupted-job recovery and rollback, follow
-the [static route-set guide](../operations/static-route-sets.md) after publishing
-your package.
+To release your existing frontend output with installed binaries and Node.js,
+follow the [frontend release guide](../operations/static-release-workflow.md).
+It covers organization signing, verification, OCI transfer, publication,
+GET/HEAD promotion and rollback without a Rust toolchain. This page explains
+the inventory and routing inputs used by that workflow.
 
 `tools/static_site.py` captures an explicit finite file map from an existing
 framework build. It writes ordinary `browser-assets` package inputs and a
@@ -58,8 +60,41 @@ The profile bounds are 120 public assets, 8 MiB per asset, 16 MiB in aggregate,
 232 bytes per relative path, a 64 KiB input descriptor, and three to eight
 nonempty observation files of at most 1 MiB each. Exactly one source observation
 and at least one toolchain and build observation are required. Supported media
-are HTML, JavaScript, CSS, JSON, text, SVG, PNG, JPEG, WebP, ICO and WOFF2. Explicit
+are HTML, JavaScript, CSS, JSON, XML, text, SVG, PNG, JPEG, WebP, ICO and WOFF2. Explicit
 media declarations must agree with the supported extension mapping.
+
+## Sitemaps and fonts
+
+Include your generated `sitemap.xml` and sitemap index in the explicit asset
+inventory. `.xml` files use exactly `application/xml`, with `nosniff`, the normal
+size limits and the same GET/HEAD/conditional-response behavior as other assets.
+LSF serves the admitted bytes without parsing XML or resolving entities; it does
+not generate a sitemap or infer the site's public origin. Set the generator's
+public URL and mounted base path before building.
+
+For font-based PrimeIcons applications, prepare the pinned WOFF2-only stylesheet
+**before** the Angular or documentation build:
+
+```sh
+npm install --save-exact primeicons@7.0.0
+python3 tools/static_fonts.py --primeicons node_modules/primeicons --output src/primeicons-woff2
+```
+
+The output directory must be new. The helper preserves the icon classes and
+license, replacing the font declaration with a single local WOFF2 reference.
+Include `src/primeicons-woff2/primeicons.css` in Angular's `styles` list, or use
+that stylesheet as a Docusaurus `customCss` input. Remove the original
+`primeicons/primeicons.css` import, so the framework bundler does not emit its
+WOFF, TTF and EOT alternatives. The framework can hash/copy the WOFF2 asset in
+its normal build. Keep the resulting CSS, font and license in the reviewed
+public inventory. This recipe targets the font-based package; SVG component
+icon libraries do not need font preparation.
+
+Use the same prepared output for every hosting route you compare. Review
+deployment-only files such as `.nojekyll` separately and list deliberate
+exclusions; never enable arbitrary hidden files or silently discard referenced
+fonts. The maintained generator/browser check loads an actual WOFF2 icon and
+checks that no legacy font URL is requested.
 
 Observation references retain their digest and size in private package metadata;
 their contents are not copied into the public inventory. They are honestly
@@ -112,6 +147,10 @@ same name; any intentionally retained assets must be present in the selected
 publication's signed inventory.
 
 ## Build and qualify the maintained references
+
+This section is for contributors testing LSF itself. Application delivery uses
+the [frontend release guide](../operations/static-release-workflow.md) and your
+organization's signing identities.
 
 `examples/static-sites/csr` is an Angular client-only application with a home
 view, a lazy `/orders/:id` route, CSS and visible A/B version markers. Its build

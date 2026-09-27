@@ -116,7 +116,10 @@ impl HttpProvider {
         // epoch separately fences rotations; publishing a secret hash would
         // permit offline guessing of weak credentials.
         credentials::hash_references(&mut hash, &references)?;
-        let digest = format!("sha256:{:x}", hash.0.finalize());
+        let digest = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.0.finalize())
+        );
         let tls = crate::tls::configure(&config)?;
         let restriction = serde_json::to_vec(&serde_json::json!({"operations":[operation],"resources":{"kind":"http","origins":config.destinations.iter().map(|d| &d.origin).collect::<Vec<_>>(),"methods":["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"],"paths":[],"pathPrefixes":["/"]}})).map_err(|_| HttpError::InvalidRequest)?;
         let installed = pools.install(

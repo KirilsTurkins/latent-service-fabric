@@ -163,7 +163,10 @@ fn profile() -> Result<String, String> {
             return Err("qualification limits differ from the recorded profile".into());
         }
     }
-    Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
+    Ok(format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    ))
 }
 fn run() -> Result<(), String> {
     let profile_digest = profile()?;
@@ -231,7 +234,7 @@ fn run() -> Result<(), String> {
         "{}",
         json!({"format_version":1,"engine":"wasmtime-47.0.4","profile_sha256":profile_digest,
         "target_os":std::env::consts::OS,"target_arch":std::env::consts::ARCH,
-        "component_sha256":format!("sha256:{:x}",Sha256::digest(&bytes)),"component_bytes":bytes.len(),
+        "component_sha256":format!("sha256:{:x}",latent_core::digest::HexDigest(Sha256::digest(&bytes))),"component_bytes":bytes.len(),
         "preparation_millis":preparation_ms,"memory_limit_bytes":MEMORY,"hostcall_bytes":HOSTCALL,
         "fuel":FUEL,"samples":samples,"failures":failures,"small_memory_rejected":true,
         "reuse_negative_control":true,"success_after_each_failure":true,"live_stores":0})

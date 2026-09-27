@@ -193,7 +193,10 @@ pub fn file_digest(path: &Path) -> String {
         assert!(observed_bytes <= 512 * 1024 * 1024);
         hasher.update(&bytes[..length]);
     }
-    format!("sha256:{:x}", hasher.finalize())
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(hasher.finalize())
+    )
 }
 
 pub fn publish(observations: &[Value]) {

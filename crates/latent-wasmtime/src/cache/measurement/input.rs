@@ -131,7 +131,10 @@ pub(super) fn write_new(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 }
 
 pub(super) fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    format!(
+        "{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    )
 }
 
 pub(super) fn verify_occupancy(

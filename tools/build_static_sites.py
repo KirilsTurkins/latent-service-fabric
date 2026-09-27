@@ -17,6 +17,7 @@ from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
 from tools.static_site import capture, read, require
+from tools.static_fonts import prepare_primeicons
 
 ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY = 'https://github.com/KirilsTurkins/latent-service-fabric'
@@ -55,7 +56,7 @@ def csr(version, source, work, toolchain, node, environment):
     return public, ['index.html', css, *(row['name'] for row in outputs['outputs'])], outputs
 
 
-def generator(mount, source, work):
+def generator(mount, source, work, toolchain):
     source.mkdir()
     raw = read(ROOT / 'examples/static-sites/generator', 'pages.json', 65536)
     (source / 'pages.json').write_bytes(raw)
@@ -63,20 +64,32 @@ def generator(mount, source, work):
     value = json.loads(raw)
     public = work / 'public'
     (public / 'assets').mkdir(parents=True)
+    font_output = public / 'assets/primeicons'
+    prepare_primeicons(toolchain / 'node_modules/primeicons', font_output)
     css = b'body{font-family:sans-serif;color:rgb(20,50,80)}'
     style = 'assets/site-' + digest(css)[7:23] + '.css'
     (public / style).write_bytes(css)
-    names = [style]
+    names = [style, 'assets/primeicons/primeicons.css', 'assets/primeicons/primeicons.woff2',
+             'assets/primeicons/LICENSE.txt', 'sitemap.xml', 'sitemap-index.xml']
+    sitemap = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    sitemap += ''.join(f'<url><loc>https://static.example.test{mount}/{html.escape(page["path"])}</loc></url>'
+                       for page in value['pages']) + '</urlset>'
+    (public / 'sitemap.xml').write_text(sitemap, encoding='utf-8')
+    (public / 'sitemap-index.xml').write_text(
+        '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f'<sitemap><loc>https://static.example.test{mount}/sitemap.xml</loc></sitemap></sitemapindex>', encoding='utf-8')
     for page in value['pages']:
         output = public / page['path']
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text('<!doctype html><html lang="en"><head><meta charset="utf-8">'
             f'<title>{html.escape(value["title"])}</title><link rel="stylesheet" href="{mount}/{style}">'
+            f'<link rel="stylesheet" href="{mount}/assets/primeicons/primeicons.css">'
             f'</head><body><h1 id="view">{html.escape(page["title"])}</h1><p>{html.escape(page["text"])}</p>'
-            f'<a id="guide" href="{mount}/guide">Guide</a></body></html>', encoding='utf-8')
+            f'<a id="guide" href="{mount}/guide">Guide</a><i id="font-icon" class="pi pi-check" aria-hidden="true"></i>'
+            f'<a id="sitemap" href="{mount}/sitemap.xml">Sitemap</a></body></html>', encoding='utf-8')
         names.append(page['path'])
     return public, names, {'generator': 'maintained-finite-pages-v1', 'mount': mount,
-                            'dependencies': [], 'serverRenderer': False, 'lifecycleScripts': False}
+                            'dependencies': ['primeicons'], 'serverRenderer': False, 'lifecycleScripts': False}
 
 
 def dependencies(toolchain, names):
@@ -108,7 +121,7 @@ def build(args):
                  file_identity(toolchain / 'package-lock.json', 'npm-lock'),
                  file_identity(ROOT / 'tools/toolchain.toml', 'toolchain-config')]
     recipe = canonical([file_identity(ROOT / path, path) for path in
-                        ['tools/build_static_sites.py', 'tools/static_site.py', 'tools/static-sites/build.mjs']])
+                        ['tools/build_static_sites.py', 'tools/static_site.py', 'tools/static_fonts.py', 'tools/static-sites/build.mjs']])
     materials.append(record('build-recipe', recipe))
     args.output.mkdir()
     summaries = []
@@ -127,7 +140,7 @@ def build(args):
             source = temporary / (name + '-source')
             is_csr = name.startswith('csr-')
             public, files, observed = (csr(name[-1].upper(), source, work, toolchain, node, environment)
-                                       if is_csr else generator('/docs' if name.endswith('docs') else '', source, work))
+                                       if is_csr else generator('/docs' if name.endswith('docs') else '', source, work, toolchain))
             if name == 'csr-b':
                 for path, data in retained.items():
                     if path not in files:

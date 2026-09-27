@@ -26,7 +26,10 @@ impl Fixture {
     fn path(&self, bytes: &[u8]) -> PathBuf {
         self.path
             .join("objects")
-            .join(format!("b-{:x}", Sha256::digest(bytes)))
+            .join(format!(
+                "b-{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(bytes))
+            ))
             .join("data")
     }
 }
@@ -37,9 +40,12 @@ impl Drop for Fixture {
 }
 fn key(bytes: &[u8]) -> RawArtifactKey {
     RawArtifactKey::Blob(
-        format!("sha256:{:x}", Sha256::digest(bytes))
-            .parse()
-            .unwrap(),
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(bytes))
+        )
+        .parse()
+        .unwrap(),
     )
 }
 

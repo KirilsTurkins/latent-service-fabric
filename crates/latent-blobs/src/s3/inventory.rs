@@ -119,7 +119,7 @@ pub(super) fn key(namespace: &str, tenant: &str, reference: &BlobReference) -> S
         hash.update(text.as_bytes());
     }
     hash.update(reference.size.to_le_bytes());
-    format!("{:x}", hash.finalize())
+    format!("{:x}", latent_core::digest::HexDigest(hash.finalize()))
 }
 pub struct S3Inventory {
     config: S3Config,
