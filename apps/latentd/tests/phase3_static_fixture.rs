@@ -32,7 +32,19 @@ fn export_actual_static_site_fixtures() {
     fs::set_permissions(root, fs::Permissions::from_mode(0o700)).unwrap();
     let mut signers = None;
     let mut records = Vec::new();
-    for name in ["csr-a", "csr-b", "generator", "generator-docs"] {
+    let frameworks = std::env::var_os("LSF_STATIC_REFERENCE_PROFILE")
+        .is_some_and(|value| value == "frameworks-v1");
+    let names = if frameworks {
+        [
+            "angular-root",
+            "angular-mounted",
+            "docs-root",
+            "docs-mounted",
+        ]
+    } else {
+        ["csr-a", "csr-b", "generator", "generator-docs"]
+    };
+    for name in names {
         let build = builds.join(name);
         assert!(fs::metadata(build.join("observation.json")).unwrap().len() <= 64 * 1024);
         let bytes = fs::read(build.join("observation.json")).unwrap();
@@ -85,12 +97,14 @@ fn export_actual_static_site_fixtures() {
         records.push(json!({"name":name,"packageDigest":layout.package().to_string(),
             "assetsDigest":layout.assets_digest().to_string(),"manifestDigest":layout.manifest_digest().to_string(),
             "assets":layout.manifest().assets,"staticRouting":layout.manifest().static_routing,
+            "styleHashes":layout.manifest().style_hashes,
             "sourceSnapshotDigest":observation.source.snapshot_digest,"renderer":false}));
     }
     assert_ne!(records[0]["packageDigest"], records[1]["packageDigest"]);
     write(&root.join("policy.json"), &signers.unwrap().policy_document);
     write(&root.join("fixture.json"), &serde_json::to_vec(&json!({
         "schemaVersion":"latent.static.reference.fixture.v1", "tenant":"tests", "fixtures":records,
-        "actualCsrBuilds":true,"reproducibility":"not-checked","dependencyCompleteness":"declared-inputs-incomplete"
+        "actualCsrBuilds":true,"frameworkReferences":frameworks,
+        "reproducibility":"not-checked","dependencyCompleteness":"declared-inputs-incomplete"
     })).unwrap());
 }

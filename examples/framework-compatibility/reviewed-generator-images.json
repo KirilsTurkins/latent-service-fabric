@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "latent.framework.reviewed-generator-images.v1",
+  "generator": "@docusaurus/core@3.10.2",
+  "sha256": [
+    "6fced1c65cb5dcff49833988a699cb20deb9c9aad542f12d9a5261fea53fed1a",
+    "99f9a49c142a5c6ef381c301983bc059e9a5ae4afb93717987a1fe22084445af",
+    "c7e2bd079acda1b60cbb9930b42d07883e55aeb196ccd874b9157336e2859217"
+  ],
+  "reviewScope": "Three static theme icons: navigation chevron, up chevron and search. Reviewed SVG consists only of svg, g, polygon and path elements with no handlers, scripts or external references. Changed icons need a new source review."
+}

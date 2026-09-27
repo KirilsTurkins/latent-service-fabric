@@ -50,6 +50,7 @@ pub const MAX_WEB_ASSETS: usize = 252;
 /// Logical admission is independently bounded by MAX_WEB_ASSETS.
 pub const MAX_WEB_ASSET_CAPACITY: usize = 256;
 pub const MAX_WEB_ROUTES: usize = 128;
+pub const MAX_WEB_STYLE_HASHES: usize = 64;
 pub const MAX_WEB_ASSET_BYTES: u64 = 8 * 1024 * 1024;
 pub const MAX_WEB_ASSET_TREE_BYTES: u64 = 16 * 1024 * 1024;
 pub const MAX_WEB_RENDERER_BYTES: u64 = 32 * 1024 * 1024;
