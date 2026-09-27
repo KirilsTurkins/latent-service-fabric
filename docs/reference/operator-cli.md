@@ -168,8 +168,11 @@ still apply.
 
 Package build/inspect/verify need no node credential. OCI push/pull use
 `--registry-profile FILE`, separate from node tokens: a fixed origin/repository,
-explicit numeric addresses and optional credential/CA files below the profile's
-parent. HTTPS is required except explicitly configured loopback fixtures.
+explicit numeric addresses or an approved bounded DNS policy, and credential/CA
+files below the profile's parent. The
+[version 2 challenge profile](oci-bearer-read-auth.md#configure-the-cli) separates
+token-service authority from registry and optional content-redirect authority.
+HTTPS is required except explicitly configured version 1 loopback fixtures.
 Transfers use one absolute `--rpc-timeout-ms` allowance (default 60000 ms), with
 separately bounded cleanup; a partial multi-referrer push is not a transaction.
 See [OCI transfer](../phase-2-operator-workflows.md#oci-transfer).

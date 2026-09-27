@@ -60,6 +60,13 @@ does not prove compatibility with hosted object-storage redirects: see the
 [precise network evidence boundary](oci-network-profile.md#maintained-conformance-and-limitations).
 No mutable fallback is authorized.
 
+The [CLI challenge profile](oci-bearer-read-auth.md#configure-the-cli) exposes
+these transport controls to `latent package push/pull`. It does not expand this
+qualification matrix. Azure Container Registry remains unqualified: no actual
+authenticated ACR package/evidence round trip or identity-renewal result has been
+recorded. The pending qualification is tracked in
+[issue #634](https://github.com/KirilsTurkins/latent-service-fabric/issues/634).
+
 Permanent rules apply to every profile: server-controlled challenges, DNS replies,
 redirects, links and manifests cannot grant endpoint or credential authority;
 all continuations consume one original operation deadline; physical network,

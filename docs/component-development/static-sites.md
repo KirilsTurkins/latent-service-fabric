@@ -1,5 +1,9 @@
 # Package an observed static site
 
+For repeatable GET/HEAD promotion, interrupted-job recovery and rollback, follow
+the [static route-set guide](../operations/static-route-sets.md) after publishing
+your package.
+
 `tools/static_site.py` captures an explicit finite file map from an existing
 framework build. It writes ordinary `browser-assets` package inputs and a
 `static-site-v1` web manifest. Compilation, package assembly and deployment are
@@ -67,6 +71,19 @@ identity remain requirements of the existing
 [package and supply-chain workflow](packaging.md).
 
 ## Choose the routing policy before signing
+
+Editors and schema-based CI can validate `metadata/web-application.json` with
+the [web application schema](../../schemas/web-application.schema.json).
+It supports both a CSR entry route and a generator's empty `routes` list with
+`staticRouting`. Routing fields and fallback modes are closed: SPA fallback
+requires a document, while `none` forbids one. Static routing cannot accompany
+a server renderer.
+
+Also run `latent package build --validate-web` and `latent package inspect`.
+Native validation checks the actual package kind, digests, asset bytes and that
+each routing document names an admitted HTML asset. JSON Schema validates the
+document's structure; it cannot verify those package associations or establish
+publisher trust.
 
 For Angular CSR, keep directory indexes disabled and select the admitted HTML
 entry as the SPA fallback. For static-generator output, choose `redirect` with
