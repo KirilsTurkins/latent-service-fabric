@@ -6,7 +6,7 @@ component-target = "wasm32-unknown-unknown"
 
 [rust.dependencies]
 blake3 = "1.8.7"
-clap = "4.6.4"
+clap = "4.6.7"
 prost = "0.14.4"
 protoc-bin-vendored = "3.2.0"
 serde = "1.0.229"
