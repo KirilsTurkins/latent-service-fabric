@@ -12,7 +12,9 @@ browser checks.
 
 ## Build the examples
 
-From the repository root, install the pinned build dependencies with Node 24.19:
+Use a Linux build workspace with Node 24.19 and Python 3.13 or newer. On Windows,
+open your WSL2 terminal and run the commands inside that workspace. From the
+repository root, install the pinned build dependencies:
 
 ```sh
 npm ci --prefix examples/framework-compatibility --ignore-scripts
@@ -22,12 +24,12 @@ Locate your native `latent` executable and an installed Chromium or Chrome
 executable. Run the following command with their absolute paths:
 
 ```sh
-python tools/build_framework_sites.py --cli /path/to/latent --chrome /path/to/chrome --output target/framework-sites
+python3 tools/build_framework_sites.py --cli /path/to/latent --chrome /path/to/chrome --output target/framework-sites
 ```
 
-On Windows, use the paths to `latent.exe` and `chrome.exe`, enclosing a path in
-quotes if it contains spaces. Python 3.13 or newer is required. The output
-directory must be new; choose another name when repeating the build.
+Use the Linux executables in that workspace and enclose paths in quotes if they
+contain spaces. The output directory must be new; choose another name when
+repeating the build.
 
 The command creates four packages: `angular-root`, `angular-mounted`, `docs-root`
 and `docs-mounted`. Each directory contains a `package` ready for the

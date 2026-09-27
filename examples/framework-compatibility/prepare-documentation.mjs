@@ -12,6 +12,8 @@ const source = path.resolve(input), destination = path.resolve(output);
 assert.ok(source !== destination && !destination.startsWith(source + path.sep));
 const mount = selectedMount === '/' ? '' : selectedMount;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+// A full SHA-256 identity in a portable segment shorter than 64 characters.
+const filenameHash = bytes => createHash('sha256').update(bytes).digest('base64url');
 const report = {schemaVersion: 'latent.framework.transformation.v1', mount,
   nativeRuntimeQualified: false, pages: [], sourceFiles: 0, sourceBytes: 0};
 const generated = new Map();
@@ -20,6 +22,7 @@ await mkdir(destination);
 async function walk(relative = '') {
   for (const entry of (await readdir(path.join(source, relative), {withFileTypes: true})).sort((a, b) => a.name.localeCompare(b.name))) {
     assert.match(entry.name, /^[A-Za-z0-9_.-]+$/, 'configure portable chunk names before packaging');
+    assert.ok(entry.name.length <= 64, 'configure chunk names within the package segment limit');
     assert.ok(!entry.isSymbolicLink(), 'linked build output is unsupported');
     const name = path.posix.join(relative, entry.name);
     if (entry.isDirectory()) { await mkdir(path.join(destination, name)); await walk(name); continue; }
@@ -56,7 +59,7 @@ async function walk(relative = '') {
           assert.ok(node.attrs.every(attr => attr.name === 'data-rh'), `${name}: review non-classic inline script before externalizing`);
           const script = node.childNodes.map(child => child.value ?? '').join('');
           assert.ok(Buffer.byteLength(script) > 0 && Buffer.byteLength(script) <= 65536);
-          const file = 'assets/lsf-bootstrap-' + hash(script) + '.js';
+          const file = 'assets/lsf-bootstrap-' + filenameHash(script) + '.js';
           generated.set(file, script); page.scripts.push(file);
           node.attrs.push({name: 'src', value: mount + '/' + file});
           node.childNodes = [];
@@ -66,7 +69,7 @@ async function walk(relative = '') {
       visit(document); assert.ok(head);
       if (page.symbolStyle) {
         const css = '.lsf-generator-symbols{display:none}\n';
-        const file = 'assets/lsf-symbols-' + hash(css) + '.css'; generated.set(file, css);
+        const file = 'assets/lsf-symbols-' + filenameHash(css) + '.css'; generated.set(file, css);
         head.childNodes.push({nodeName: 'link', tagName: 'link', attrs: [
           {name: 'rel', value: 'stylesheet'}, {name: 'href', value: mount + '/' + file}],
           namespaceURI: 'http://www.w3.org/1999/xhtml', childNodes: [], parentNode: head});

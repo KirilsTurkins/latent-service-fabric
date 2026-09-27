@@ -9,6 +9,7 @@
     {"path": "sdk/typescript-guest/tools/package.json", "kind": "npm", "lock": "sdk/typescript-guest/tools/package-lock.json", "absent_when_directory_missing": "sdk/typescript-guest/tools"},
     {"path": "sdk/typescript-client/package.json", "kind": "npm", "lock": "sdk/typescript-client/package-lock.json"},
     {"path": "examples/renderer-profile/package.json", "kind": "npm", "lock": "examples/renderer-profile/package-lock.json", "absent_when_directory_missing": "examples/renderer-profile"},
+    {"path": "examples/framework-compatibility/package.json", "kind": "npm", "lock": "examples/framework-compatibility/package-lock.json", "absent_when_directory_missing": "examples/framework-compatibility"},
     {"path": "website/package.json", "kind": "npm", "lock": "website/package-lock.json", "absent_when_directory_missing": "website"},
     {"path": "website/toolchain/package.json", "kind": "npm", "lock": "website/toolchain/package-lock.json", "bundled_package": "npm", "absent_when_directory_missing": "website/toolchain"},
     {"path": "tools/requirements.lock", "kind": "pypi"},

@@ -13,7 +13,7 @@ import time
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_observation import build_environment, file_identity
-from tools.build_process import run_bounded
+from tools.build_process import run_bounded_result
 from tools.build_snapshot import canonical, digest
 from tools.build_static_sites import dependencies, record, REPOSITORY
 from tools.static_site import capture, read, require
@@ -23,9 +23,12 @@ TOOLCHAIN = ROOT / 'examples/framework-compatibility'
 NAMES = ('angular-root', 'angular-mounted', 'docs-root', 'docs-mounted')
 
 
-def run(command, environment, cwd=TOOLCHAIN, seconds=300):
-    return run_bounded([str(value) for value in command], cwd=cwd, env=environment,
-                       timeout_seconds=seconds, max_output_bytes=2 * 1024 * 1024).stdout
+def run(command, environment, cwd=TOOLCHAIN, seconds=300, stage='framework-tool'):
+    result = run_bounded_result([str(value) for value in command], cwd=cwd, env=environment,
+                               timeout_seconds=seconds, max_output_bytes=2 * 1024 * 1024)
+    # Keep private command output out of diagnostics; stage is a recipe-owned label.
+    require(result.returncode == 0, stage + '-command-exit')
+    return result.stdout
 
 
 def source_inventory():
@@ -112,7 +115,8 @@ def build(args):
             sbom['entries'] = sorted(sbom['entries'], key=canonical)
             sbom_path.write_bytes(canonical(sbom))
             result = json.loads(run([cli, '--output', 'json', 'package', 'build', '--source', output / 'inputs/package-source.json',
-                '--input-root', output / 'inputs', '--sbom-inputs', sbom_path, '--output-dir', output / 'package', '--validate-web'], environment))
+                '--input-root', output / 'inputs', '--sbom-inputs', sbom_path, '--output-dir', output / 'package', '--validate-web'], environment,
+                stage=name + '-package-assembly'))
             require(result['category'] == 'success', 'framework-package-assembly')
             summary = result['data']
             require(summary['componentDigest'] is None and summary['webBuildOutputs'], 'framework-static-package')

@@ -3626,7 +3626,7 @@
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
     },
     "tools/build_framework_sites.py": {
-      "sha256": "72f115a8c4aa572bd188f658bd49aa4cfd8d5f03d48731aa1131b36fd60d3b29"
+      "sha256": "c82fe7e64de08e7e42e170a75148a24f2de8ebab71173cf4a8570b650b336fe8"
     },
     "tools/run_framework_sites.py": {
       "sha256": "04fdc86bc19851aff707a91d3196e6a6bad7f976f00f53b81b26a541600821cd"
