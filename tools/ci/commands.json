@@ -1940,6 +1940,16 @@
       "workflow": ".github/workflows/typescript-guest.yml",
       "workingDirectory": "."
     },
+    ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify actual Angular PrimeNG and bilingual Docusaurus publications",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "npm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\""
+    },
     ".github/workflows/frontend-release.yml:frontend:Authenticate the exact released native archive": {
       "workflow": ".github/workflows/frontend-release.yml",
       "job": "frontend",
@@ -2008,7 +2018,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\""
+      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3647,7 +3657,7 @@
       "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
     },
     "tools/static_site.py": {
-      "sha256": "a07592982539d5d575494bdb51a2ab1dd3b14e75501cf4ae1d40c3f5cd1e7618"
+      "sha256": "bf037162dcb6b332b50f4dd88175425b87bd2b209645e754ad6bddf74daedbd3"
     },
     "tools/test.py": {
       "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
@@ -3685,14 +3695,20 @@
     "tools/verify_sdk_provider_matrix.py": {
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
     },
+    "tools/build_framework_sites.py": {
+      "sha256": "c82fe7e64de08e7e42e170a75148a24f2de8ebab71173cf4a8570b650b336fe8"
+    },
+    "tools/run_framework_sites.py": {
+      "sha256": "04fdc86bc19851aff707a91d3196e6a6bad7f976f00f53b81b26a541600821cd"
+    },
     "tools/static-release/unpack.py": {
       "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
     },
     "tools/container_runtime/qualification.py": {
-      "sha256": "5754009707a2d1a1ed84e832168b34f6d8d6a68b039b0a5d3e6ccc5884ec8f74"
+      "sha256": "c2884188153ea1a40117b2a9823ab82e6c645af5185d54f49c021d868ca66c3a"
     },
     "tools/prepare_container_runtime.py": {
-      "sha256": "ec63c85baf36ba259c49f3d256e937396deab6da137d4b6326e672b7e27d16ed"
+      "sha256": "3527a1bb2296864c75a54d86f38579b67c94b8b10cf0964c59c33f4f66aa7d2e"
     }
   },
   "pythonCases": {
@@ -7114,7 +7130,7 @@
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
-    ".github/workflows/ci.yml": "482009c32185d439697a20bad85d139caf3dfee43211c8b0b62c1025741e49fa",
+    ".github/workflows/ci.yml": "7010934d3c26939a3e86cca08ffccbb3fb6673591f4a83d73c9cb7feea7dda83",
     ".github/workflows/developer-packaged-qualification.yml": "aeda0753a6ee0d0ed0e4198334f7447761a72bf741623adbd9c9f0a210e57610",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "66223e72ae761683472d7add1fcde0c672e733f4cfb272550b2ef67cafb7b31b",
@@ -7132,6 +7148,6 @@
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
-    ".github/workflows/container-runtime.yml": "7594ec618b30311c253f32e3a20b1f9b6842d3d7e51de8cc6b53b0a18959fc0b"
+    ".github/workflows/container-runtime.yml": "5e340398d2298e60c422929bdc363054ca97ea3064582baf45ecb2f3af402df9"
   }
 }

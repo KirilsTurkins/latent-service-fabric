@@ -7926,7 +7926,9 @@
         "config::tests::events::event_binding_requires_exact_tenant_and_provider_service",
         "config::tests::events::event_protected_configuration_rejects_foreign_topics_paths_and_colliding_identity",
         "standalone::http::tests::browser_config::public_document_navigation_is_explicit_public_tenant_scoped_and_mount_bounded",
-        "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access"
+        "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access",
+        "standalone::http::assets::csp::tests::signed_style_identities_only_extend_styles_and_reject_policy_text",
+        "standalone::http::assets::static_tests::signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -7989,7 +7991,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 237,
+      "minimumCases": 239,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

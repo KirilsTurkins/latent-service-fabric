@@ -128,6 +128,9 @@ async fn serve<S: AsyncRead + AsyncWrite + Unpin>(
         result = &mut work => result.map_err(|_| 503u16)??,
     };
     prepared.accept(&tenant)?;
+    if prepared.csp.is_some() && !shared.settings.allow_static_style_hashes {
+        return Err(403);
+    }
     let close = close || !shared.handle.accepting();
     let until = Instant::from_std(deadline.monotonic())
         .min(Instant::now() + millis(shared.settings.limits.write_timeout_millis));
@@ -187,9 +190,13 @@ async fn delivery<W: AsyncWrite + Unpin>(
         )
         .map_err(|_| io::ErrorKind::InvalidData)?;
     }
-    security(&mut head, scheme);
+    security(&mut head, scheme, response.csp.as_deref());
     head.push_str("\r\n");
-    if head.len() > latent_ingress::http::MAX_TARGET_BYTES + 2048 {
+    if head.len()
+        > latent_ingress::http::MAX_TARGET_BYTES
+            + 2048
+            + latent_artifacts::web::MAX_WEB_STYLE_HASHES * 54
+    {
         return Err(io::ErrorKind::InvalidData.into());
     }
     socket.write_all(head.as_bytes()).await?;
@@ -213,16 +220,20 @@ async fn rejection<W: AsyncWrite + Unpin>(
         ""
     };
     let mut head = format!("HTTP/1.1 {code} Rejected\r\nConnection: close\r\nContent-Length: 0\r\nCache-Control: no-store\r\n{allow}");
-    security(&mut head, scheme);
+    security(&mut head, scheme, None);
     head.push_str("\r\n");
     socket.write_all(head.as_bytes()).await?;
     socket.flush().await
 }
-fn security(head: &mut String, scheme: Scheme) {
+fn security(head: &mut String, scheme: Scheme, csp: Option<&str>) {
     for header in browser::security_headers(scheme) {
         head.push_str(header.name);
         head.push_str(": ");
-        head.push_str(std::str::from_utf8(header.value).expect("static security header"));
+        head.push_str(if header.name == "content-security-policy" {
+            csp.unwrap_or(browser::CSP)
+        } else {
+            std::str::from_utf8(header.value).expect("static security header")
+        });
         head.push_str("\r\n");
     }
 }

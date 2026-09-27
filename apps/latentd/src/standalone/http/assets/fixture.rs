@@ -157,6 +157,14 @@ pub(super) fn configured_upload(
     static_routing: Option<StaticWebRouting>,
     routes: Vec<WebRoute>,
 ) -> PackageAdmissionUpload {
+    styled_upload(files, static_routing, routes, Vec::new())
+}
+pub(super) fn styled_upload(
+    files: &[(&str, &str, &[u8])],
+    static_routing: Option<StaticWebRouting>,
+    routes: Vec<WebRoute>,
+    style_hashes: Vec<String>,
+) -> PackageAdmissionUpload {
     let mut assets: Vec<_> = files
         .iter()
         .map(|(path, media, bytes)| WebAsset {
@@ -178,6 +186,7 @@ pub(super) fn configured_upload(
         assets_digest: asset_tree_digest(&assets).unwrap().to_string(),
         assets,
         routes,
+        style_hashes,
         static_routing,
         renderer: None,
     };
