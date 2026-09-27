@@ -129,6 +129,9 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     }
     let path = head.collector.target().path();
     if path == "/_lsf/assets" || path.starts_with(latent_artifacts::web::IMMUTABLE_ASSET_PREFIX) {
+        if head.public_document {
+            return Err(403);
+        }
         if used != end {
             return Err(400);
         }

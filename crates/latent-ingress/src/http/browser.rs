@@ -48,6 +48,25 @@ pub fn admit(
     approved_origin: bool,
     bearer: bool,
 ) -> Result<(), u16> {
+    admit_with_public_documents(target, method, headers, approved_origin, bearer, false).map(|_| ())
+}
+
+/// A document exception is provisional: the transport must still select a
+/// public static-web route and an admitted HTML document before serving bytes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Admission {
+    SameOrigin,
+    PublicDocument,
+}
+
+pub fn admit_with_public_documents(
+    target: &CanonicalTarget,
+    method: Method,
+    headers: &[HeaderView<'_>],
+    approved_origin: bool,
+    bearer: bool,
+    public_documents: bool,
+) -> Result<Admission, u16> {
     let origin = singleton(headers, "origin")?;
     let site = singleton(headers, "sec-fetch-site")?;
     let mode = singleton(headers, "sec-fetch-mode")?;
@@ -73,7 +92,15 @@ pub fn admit(
             return Err(403);
         }
     }
-    if site.is_some_and(|value| !matches!(value, b"same-origin" | b"none")) {
+    let public_document = public_documents
+        && approved_origin
+        && !bearer
+        && matches!(method, Method::Get | Method::Head)
+        && matches!(site, Some(b"same-site" | b"cross-site"))
+        && mode == Some(b"navigate")
+        && destination == Some(b"document")
+        && origin.is_none();
+    if !public_document && site.is_some_and(|value| !matches!(value, b"same-origin" | b"none")) {
         return Err(403);
     }
     if mode
@@ -101,7 +128,11 @@ pub fn admit(
     {
         return Err(403);
     }
-    Ok(())
+    Ok(if public_document {
+        Admission::PublicDocument
+    } else {
+        Admission::SameOrigin
+    })
 }
 
 fn singleton<'value>(

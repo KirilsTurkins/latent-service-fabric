@@ -30,7 +30,8 @@ def configure(directory, fixture):
         reservation.bind(('127.0.0.1', 0))
         port = reservation.getsockname()[1]
     # Startup must acquire this endpoint itself. A racing listener causes failure.
-    hosts = {'csr': f'localhost:{port}', 'generator': f'127.0.0.1:{port}', 'foreign': f'foreign.static.test:{port}'}
+    hosts = {'csr': f'localhost:{port}', 'generator': f'127.0.0.1:{port}',
+             'navigation': f'docs.lsf.localhost:{port}', 'foreign': f'foreign.static.test:{port}'}
     path = configure_node(directory, fixture, 'tests')
     value = read_json(path)
     value['cells'][0]['queueCapacity'] = 8
@@ -42,6 +43,7 @@ def configure(directory, fixture):
         'authentication': {'mode': 'public-origins', 'origins': [
             {'authority': host, 'subject': 'static-browser', 'tenant': 'foreign' if name == 'foreign' else 'tests'}
             for name, host in hosts.items()]},
+        'publicDocumentNavigation': [{'authority': hosts['navigation'], 'tenant': 'tests', 'mount': '/'}],
         'limits': {'maximumConnections': 16, 'maximumExchanges': 8, 'maximumBufferBytes': 48 * 1024 * 1024,
                    'maximumRequestsPerConnection': 16, 'idleTimeoutMillis': 1000, 'headerTimeoutMillis': 1000}}
     replace_config(path, value)
@@ -251,6 +253,9 @@ def run(args):
             for name, host, mount in [('csr-a', hosts['csr'], '/'), ('generator', hosts['generator'], '/'), ('generator-docs', hosts['csr'], '/docs')]:
                 for method in ('GET', 'HEAD'):
                     receipts.append(apply(client, name + '-' + method.lower(), publications[name], host, mount, method))
+            for name, mount in [('generator', '/'), ('generator-docs', '/docs')]:
+                for method in ('GET', 'HEAD'):
+                    receipts.append(apply(client, 'public-' + name + '-' + method.lower(), publications[name], hosts['navigation'], mount, method))
             dormant = idle(client)
             timings, immutable, etag = smoke(client, node, hosts, records, publications)
             browser_a = browser(client, args, hosts, 'A')
