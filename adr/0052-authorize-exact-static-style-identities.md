@@ -71,3 +71,9 @@ denial of unlisted inline script/style, foreign resources and base injection.
 Disabling the host setting and restarting must deny the Angular HTML while
 continuing to serve the Docusaurus publications. Build success alone is never
 reported as native browser qualification.
+
+The node reserves eight shared asset read/output owners, enough for the browser's
+six concurrent HTTP/1 chunk requests. The previous four-owner limit could reject
+ordinary cold Docusaurus loads. The 32 MiB shared payload cache and immediate
+exhaustion rejection remain fixed; a retained-output test fills all eight owners
+and verifies the next request cannot queue or fall through to a renderer.

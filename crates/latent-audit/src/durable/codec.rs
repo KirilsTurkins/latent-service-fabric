@@ -491,7 +491,10 @@ pub(super) fn envelope(
     encode(&value, maximum).map(|_| ())
 }
 pub(super) fn digest(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    format!(
+        "{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    )
 }
 pub(super) fn blob(bytes: &[u8]) -> ArtifactBlobDigest {
     format!("sha256:{}", digest(bytes))

@@ -32,7 +32,10 @@ use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 #[cfg(test)]
 type TestPause = (std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>);
 
-const MAX_READS: usize = 4;
+// A single browser can open six HTTP/1 connections while loading framework
+// chunks. Keep eight fixed read/output owners; the shared byte budget and
+// immediate capacity rejection are unchanged.
+const MAX_READS: usize = 8;
 pub(super) use prerender::select as prerender;
 pub(super) use wire::exchange;
 pub(super) use wire::exchange_routed;
@@ -237,7 +240,10 @@ fn identity(digest: &str, size: u64, media: &str) -> String {
     hash.update(digest.as_bytes());
     hash.update(size.to_le_bytes());
     hash.update(media.as_bytes());
-    format!("\"identity-sha256-{:x}\"", hash.finalize())
+    format!(
+        "\"identity-sha256-{:x}\"",
+        latent_core::digest::HexDigest(hash.finalize())
+    )
 }
 fn status(error: &PlatformError) -> u16 {
     match error.code {

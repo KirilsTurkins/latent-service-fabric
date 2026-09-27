@@ -59,12 +59,27 @@ obvious server/private output are rejected before writing package inputs.
 Exclusions cannot also be public assets. This is an explicit publication
 allowlist, not a secret scanner: review the selected bytes before signing.
 
-The profile bounds are 120 public assets, 8 MiB per asset, 16 MiB in aggregate,
-232 bytes per relative path, a 64 KiB input descriptor, and three to eight
+The profile bounds are 252 public assets, 8 MiB per asset, 16 MiB in aggregate,
+232 bytes per relative path, a 256 KiB input descriptor, and three to eight
 nonempty observation files of at most 1 MiB each. Exactly one source observation
 and at least one toolchain and build observation are required. Supported media
 are HTML, JavaScript, CSS, JSON, XML, text, SVG, PNG, JPEG, WebP, ICO and WOFF2. Explicit
 media declarations must agree with the supported extension mapping.
+
+The web manifest is also bounded to 256 KiB. Public paths count independently
+even when their content hashes match. The 252-file ceiling reserves four of the
+package format's 256 layers for web/capture metadata, its SBOM and build-input
+receipt. Extra custom package layers consume that same total budget. Native
+admission uses the same logical asset count, with a separately bounded 256-slot
+allocation allowance that is charged to retained metadata.
+
+Count and byte-limit diagnostics identify the bound, actual value and maximum.
+Reduce the complete reviewed output or use explicitly separate publications
+when a limit is exceeded; the adapter never silently drops files. The maintained
+generator builds and publishes a complete 250-file English/German documentation
+fixture at both root and mounted paths. See the
+[capacity decision](../../adr/0045-bound-larger-static-documentation-inventories.md)
+for the coupled package, SBOM, memory and serving limits.
 
 ## Sitemaps and fonts
 

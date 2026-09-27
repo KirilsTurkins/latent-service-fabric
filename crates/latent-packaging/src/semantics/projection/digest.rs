@@ -42,7 +42,10 @@ pub(super) fn calculate(value: &Value, maximum: usize) -> Result<String, Platfor
         maximum,
     };
     canonical(value, &mut output, true).map_err(|_| exhausted("contract-digest-byte-limit"))?;
-    Ok(format!("sha256:{:x}", output.hash.finalize()))
+    Ok(format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(output.hash.finalize())
+    ))
 }
 
 fn canonical(value: &Value, output: &mut HashWriter, skip_digest: bool) -> io::Result<()> {

@@ -15,10 +15,11 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_snapshot import SnapshotError, canonical, digest, is_reparse, owned_child, portable_path
 
-MAX_ASSETS = 120
+MAX_ASSETS = 252
 MAX_ASSET_BYTES = 8 * 1024 * 1024
 MAX_TREE_BYTES = 16 * 1024 * 1024
-MAX_INPUT_BYTES = 64 * 1024
+MAX_INPUT_BYTES = 256 * 1024
+MAX_WEB_MANIFEST_BYTES = 256 * 1024
 MEDIA = {'html': 'text/html', 'js': 'text/javascript', 'mjs': 'text/javascript',
          'css': 'text/css', 'json': 'application/json', 'xml': 'application/xml', 'txt': 'text/plain',
          'svg': 'image/svg+xml', 'png': 'image/png', 'jpg': 'image/jpeg',
@@ -28,6 +29,10 @@ MEDIA = {'html': 'text/html', 'js': 'text/javascript', 'mjs': 'text/javascript',
 def require(condition, message):
     if not condition:
         raise SnapshotError('static-site-' + message)
+
+
+def bounded(actual, maximum, name):
+    require(actual <= maximum, f'{name}: actual={actual} maximum={maximum}')
 
 
 def fields(value, required, optional=frozenset()):
@@ -44,7 +49,7 @@ def pairs(items):
 
 
 def decode(raw):
-    require(len(raw) <= MAX_INPUT_BYTES, 'input-bytes')
+    bounded(len(raw), MAX_INPUT_BYTES, 'input-bytes')
     try:
         return json.loads(raw, object_pairs_hook=pairs)
     except (ValueError, RecursionError) as error:
@@ -54,6 +59,7 @@ def decode(raw):
 def path(value):
     require(isinstance(value, str) and len(value) <= 232, 'path')
     portable_path(value)
+    require(all(len(part) <= 64 for part in value.split('/')), 'path-segment-bytes')
     return value
 
 
@@ -82,7 +88,8 @@ def read(root, relative, maximum):
     selected = root / relative
     owned_child(selected, root)
     before = selected.lstat()
-    require(stat.S_ISREG(before.st_mode) and not is_reparse(selected) and before.st_size <= maximum, 'source-file')
+    require(stat.S_ISREG(before.st_mode) and not is_reparse(selected), 'source-file')
+    bounded(before.st_size, maximum, 'source-bytes')
     flags = os.O_RDONLY | getattr(os, 'O_BINARY', 0) | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0)
     with os.fdopen(os.open(selected, flags), 'rb') as stream:
         opened = os.fstat(stream.fileno())
@@ -131,7 +138,8 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
     require(not any(piece.isdigit() and len(piece) > 1 and piece.startswith('0')
                     for piece in prerelease.split('.')), 'package-version')
     assets = config['assets']
-    require(isinstance(assets, list) and 1 <= len(assets) <= MAX_ASSETS, 'asset-count')
+    require(isinstance(assets, list) and assets, 'asset-count')
+    bounded(len(assets), MAX_ASSETS, 'asset-count')
     excluded = config['excluded']
     require(isinstance(excluded, list) and len(excluded) <= 128, 'excluded-count')
     exclusions = {path(item).casefold() for item in excluded}
@@ -147,7 +155,7 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
         names.add(name.casefold()); sources.add(source.casefold())
         data = read(root, source, MAX_ASSET_BYTES)
         total += len(data)
-        require(total <= MAX_TREE_BYTES, 'asset-tree-bytes')
+        bounded(total, MAX_TREE_BYTES, 'asset-tree-bytes')
         captured.append(({'path': name, 'layer': 'public' + name, 'digest': digest(data),
                           'size': len(data), 'mediaType': media}, data))
     captured.sort(key=lambda row: row[0]['path'])
@@ -189,6 +197,7 @@ def capture(root: Path, config: dict, destination: Path) -> dict:
            'assets': table, 'routes': routes, 'staticRouting': routing}
     if styles:
         web['styleHashes'] = styles
+    bounded(len(canonical(web)), MAX_WEB_MANIFEST_BYTES, 'web-manifest-bytes')
     observation = {'schemaVersion': 'latent.static-site.capture.v1', 'inputObservationTrust': 'operator-supplied',
                    'frameworkBuildExecuted': False, 'reproducibility': 'not-checked',
                    'observations': sorted(observations, key=lambda row: (row['kind'], row['name'])),

@@ -19,7 +19,10 @@ const XML_BYTES: usize = 32768;
 type Result<T> = std::result::Result<T, BlobError>;
 
 fn sha(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
+    format!(
+        "{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    )
 }
 fn hex(value: &str, size: usize) -> bool {
     value.len() == size

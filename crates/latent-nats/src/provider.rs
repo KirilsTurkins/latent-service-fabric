@@ -114,7 +114,10 @@ impl NatsPublisher {
         let mut entropy = [0_u8; 16];
         getrandom::fill(&mut entropy).map_err(|_| EventError::Unavailable)?;
         let inbox_namespace = format!("_INBOX.LSF.{:032x}", u128::from_le_bytes(entropy));
-        let digest = format!("sha256:{:x}", hash.finalize());
+        let digest = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        );
         let mut subjects: Vec<_> = config.topics.iter().map(|t| t.topic.as_str()).collect();
         subjects.sort_unstable();
         subjects.dedup();
