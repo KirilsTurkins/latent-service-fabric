@@ -75,7 +75,12 @@ def run(cli: Path, root: Path, origin: str, credential: Path, dns):
         pushed = call('package', 'push', package, '--registry-profile', writer, '--reference', digest,
                       '--evidence-index', evidence / 'index.json', '--evidence-root', evidence)
         confirmed = pushed['data']['transfer']['confirmedDigests']
-        if len(confirmed) < 4 or confirmed[0] != digest:
+        index = json.loads((evidence / 'index.json').read_bytes())
+        expected = {digest}
+        for kind in ('signatures', 'provenance', 'sboms'):
+            expected.update('sha256:' + hashlib.sha256((evidence / row['manifest']).read_bytes()).hexdigest()
+                            for row in index[kind])
+        if len(confirmed) != len(expected) or set(confirmed) != expected:
             raise RuntimeError('Harbor CLI exact package and evidence confirmation required')
         destination = work / (name + '-pulled'); destination.mkdir(mode=0o700)
         call('package', 'pull', '--registry-profile', reader, '--reference', digest,
