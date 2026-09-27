@@ -3556,7 +3556,7 @@
       "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
     },
     "tools/run_static_site_workflow.py": {
-      "sha256": "ea7e1bd25af22aba1c90571bd495f41eaf15a458da67f374a74d942d3aec6126"
+      "sha256": "adc350c4052e0640a21c34e1953947e4f86160fd4ef54b0dd0dfbcb8fd396760"
     },
     "tools/run_vault_secret_tests.py": {
       "sha256": "81ab09bf676f22fca2e1cb923353586cef8d36361980cac4091677bcbe9abcf4"

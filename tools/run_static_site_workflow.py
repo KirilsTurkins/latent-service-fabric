@@ -260,6 +260,9 @@ def run(args):
             for name, mount in [('generator', '/'), ('generator-docs', '/docs')]:
                 for method in ('GET', 'HEAD'):
                     receipts.append(apply(client, 'public-' + name + '-' + method.lower(), publications[name], hosts['navigation'], mount, method))
+            from tools.static_maintenance import restore_drill
+            node, maintenance = restore_drill(client, args, node_root, config, node, hosts, publications, apply, catalog_capacity)
+            selected_profile = client_profile(client, 2)
             dormant = idle(client)
             timings, immutable, etag = smoke(client, node, hosts, records, publications)
             browser_a = browser(client, args, hosts, 'A')
@@ -308,7 +311,8 @@ def run(args):
                 'foreignPublicationDenied': True, 'before': before, 'dormant': dormant, 'after': after,
                 'audit': audit_receipt, 'routeReconciliation': reconciliation,
                 'catalogCapacity': {'finitePublicationSequence': capacity_observations,
-                                    'afterRetirementAndRevocation': retained_capacity},
+                                    'afterRetirementAndRevocation': retained_capacity,
+                                    'stoppedRestoreAndExpansion': maintenance},
                 'requests': timings, 'shutdown': shutdown, 'cliProcesses': client.calls})
         finally:
             client.node = None

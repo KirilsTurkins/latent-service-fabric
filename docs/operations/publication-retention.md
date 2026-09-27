@@ -77,6 +77,12 @@ automatic migration. Measure and announce downtime. A restore drill must verify
 exact content, routes, current eligibility, protected policy, rollback and clean
 restart on the selected filesystem.
 
+The maintained native static-site workflow exercises a complete stopped restore
+on local Linux storage, including preserved hard links/modes, a larger finite
+publication limit, unchanged history and an explicit rollback. Its receipt is
+`catalogCapacity.stoppedRestoreAndExpansion`. This does not qualify an arbitrary
+backup product or network filesystem; repeat the drill on your selected storage.
+
 The [retention decision](../../adr/0050-plan-capacity-before-deleting-publication-history.md)
 defines the future deletion protocol. Current orphan cleanup retains committed
 publications, shared content and live preparation sources. Do not remove catalog

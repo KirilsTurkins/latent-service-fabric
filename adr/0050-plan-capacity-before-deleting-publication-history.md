@@ -98,8 +98,15 @@ Actual Linux filesystem tests cover shared hard links, active preparation and
 rollback pins, retirement without refunds, a finite three-publication sequence,
 near-budget rejection and interrupted uncommitted maintenance/reopen. Native
 static qualification records authenticated capacity after each of four signed
-publications and checks retained content after retirement/revocation. Node tests
-check exact integer accounting, thresholds and rejection of unavailable data.
+publications and checks retained content after retirement/revocation. Its
+stopped restore drill copies the complete private installation with hard links
+and modes preserved, verifies every byte before reopening, expands the finite
+publication limit and checks exact history, GET/HEAD routes, explicit rollback
+and an untouched mounted publication. The stopped original remains unchanged.
+The filesystem test additionally fills a three-entry catalog, preserves eligible
+and retired history across reopen, expands to four entries and admits exactly
+one more release. Node tests check exact integer accounting, thresholds and
+rejection of unavailable data.
 
 This qualifies current inventory and safe uncommitted maintenance, not a future
 deletion protocol, arbitrary backup software or cloud/network storage. The

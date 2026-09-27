@@ -87,6 +87,45 @@ fn capacity_observes_retained_history_shared_links_and_near_budget_rejection() {
         .unwrap()
         .check_current()
         .unwrap();
+    drop(reopened);
+    // Offline expansion preserves exact history and eligibility; it does not
+    // refund old publications or resurrect the retired rollback candidate.
+    let expanded = DirectoryArtifactRepository::open(
+        root.path(),
+        DirectoryArtifactRepositoryConfig {
+            max_index_entries: 4,
+            ..config
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        expanded.publication_capacity_snapshot().unwrap().storage,
+        before.storage
+    );
+    let fourth = block_on(expanded.publish_managed(
+        context("after-expansion", 0),
+        ManagedPublicationUpload::Local(artifact("revision-3", b"shared immutable component")),
+        &mut accept,
+    ))
+    .unwrap();
+    assert_eq!(
+        expanded
+            .publication_capacity_snapshot()
+            .unwrap()
+            .indexed_publications,
+        4
+    );
+    for publication in [&receipts[0].publication, &fourth.publication] {
+        expanded
+            .publication_execution_eligibility(publication)
+            .unwrap()
+            .check_current()
+            .unwrap();
+    }
+    assert!(expanded
+        .publication_execution_eligibility(&receipts[2].publication)
+        .and_then(|eligibility| eligibility.check_current())
+        .is_err());
 }
 
 #[test]
