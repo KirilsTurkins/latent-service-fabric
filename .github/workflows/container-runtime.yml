@@ -55,8 +55,9 @@ jobs:
         run: |
           docker build --tag lsf-container-runtime "$CONTAINER_WORK/context"
           docker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release
+          docker build --tag lsf-container-operator --file tools/container_runtime/operator-qualification.Dockerfile tools/container_runtime
       - name: Publish actual signed sites and verify restart
-        run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/container-qualification" --storage --ownership --probes
+        run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/container-qualification" --storage --ownership --probes --operator-image lsf-container-operator
       - name: Retain public container evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -66,5 +67,6 @@ jobs:
             ${{ runner.temp }}/container-build-inputs.json
             ${{ runner.temp }}/container-qualification/*.json
             ${{ runner.temp }}/container-qualification/*.jsonl
+            ${{ runner.temp }}/container-qualification/headless-journals/**
           if-no-files-found: error
           retention-days: 14

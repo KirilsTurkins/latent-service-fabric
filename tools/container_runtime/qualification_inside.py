@@ -16,12 +16,13 @@ from native_runtime import files
 STATE = Path('/var/cache/lsf/container-qualification.json')
 DEADLINE = time.monotonic() + 90
 CALLS = 0
+MAXIMUM_CALLS = 64
 
 
 def call(*arguments, codes=(0,)):
     global CALLS
     CALLS += 1
-    require(CALLS <= 64 and time.monotonic() < DEADLINE, 'container-qualification-operation-bound')
+    require(CALLS <= MAXIMUM_CALLS and time.monotonic() < DEADLINE, 'container-qualification-operation-bound')
     status, output = execute(['/opt/lsf/release/bin/latent', '--config', '/etc/lsf/client.json',
         '--output', 'json', *(str(value) for value in arguments)], maximum=300000,
         timeout=min(5, DEADLINE - time.monotonic()), stdout_only=True)
