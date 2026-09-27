@@ -5,6 +5,10 @@ use latent_oci::{OciReference, RegistryConfig, RegistryCredentials, RegistryLimi
 use serde::{Deserialize, Deserializer};
 use std::{net::SocketAddr, path::Path, time::Duration};
 
+mod advanced;
+#[cfg(test)]
+mod advanced_tests;
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Profile {
@@ -18,6 +22,10 @@ struct Profile {
     credential_file: Option<String>,
     #[serde(default)]
     root_certificates: Vec<String>,
+    #[serde(default, deserialize_with = "present")]
+    bearer_challenge: Option<advanced::Challenge>,
+    #[serde(default, deserialize_with = "present")]
+    network: Option<advanced::Network>,
 }
 #[derive(Deserialize)]
 #[serde(tag = "mode", rename_all = "kebab-case", deny_unknown_fields)]
@@ -28,6 +36,7 @@ enum Credentials {
 pub(super) struct Configured {
     pub config: RegistryConfig,
     pub reference: OciReference,
+    pub network: Option<latent_oci::RegistryNetworkPolicy>,
 }
 
 fn present<'de, D: Deserializer<'de>, T: Deserialize<'de>>(d: D) -> Result<Option<T>, D::Error> {
@@ -55,13 +64,35 @@ fn decode(bytes: &[u8]) -> Result<Profile, Failure> {
         return Err(profile_error());
     }
     let profile: Profile = serde_json::from_slice(bytes).map_err(|_| profile_error())?;
-    if profile.format_version != 1
+    if !matches!(profile.format_version, 1 | 2)
         || profile.origin.len() > 512
         || profile.repository.len() > 255
         || profile.addresses.len() > 16
         || profile.root_certificates.len() > 8
     {
         return Err(profile_error());
+    }
+    match profile.format_version {
+        1 if profile.bearer_challenge.is_some() || profile.network.is_some() => {
+            return Err(profile_error());
+        }
+        2 => {
+            let challenge = profile
+                .bearer_challenge
+                .as_ref()
+                .ok_or_else(profile_error)?;
+            challenge.validate()?;
+            if profile.credential_file.is_none() || profile.allow_insecure_loopback {
+                return Err(profile_error());
+            }
+            if let Some(network) = &profile.network {
+                network.validate()?;
+                if !profile.addresses.is_empty() || !challenge.addresses.is_empty() {
+                    return Err(profile_error());
+                }
+            }
+        }
+        _ => (),
     }
     for path in profile
         .root_certificates
@@ -123,6 +154,10 @@ pub(super) fn load(path: &Path, cli: &Cli, duration: Duration) -> Result<Configu
         }
         None => RegistryCredentials::Anonymous,
     };
+    let credentials = match profile.bearer_challenge {
+        Some(challenge) => challenge.bind(credentials)?,
+        None => credentials,
+    };
     let roots = profile
         .root_certificates
         .iter()
@@ -160,6 +195,7 @@ pub(super) fn load(path: &Path, cli: &Cli, duration: Duration) -> Result<Configu
     };
     Ok(Configured {
         reference,
+        network: profile.network.map(Into::into),
         config: RegistryConfig {
             origin: profile.origin,
             repository: profile.repository,

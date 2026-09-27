@@ -6062,6 +6062,8 @@
       "SplitPairedReplayTests.test_split_publication_requires_full_replay_and_preserves_source_bytes"
     ],
     "tools/tests/test_phase2_cli_schemas.py": [
+      "Phase2CliSchemas.test_challenge_network_profile_is_closed_versioned_and_bounded",
+      "Phase2CliSchemas.test_challenge_profile_allows_separate_static_token_resolution",
       "Phase2CliSchemas.test_credential_modes_are_closed_and_disjoint",
       "Phase2CliSchemas.test_evidence_requires_exact_subject_and_closed_portable_selection",
       "Phase2CliSchemas.test_registry_profile_rejects_inline_secrets_null_and_unbounded_sets"
