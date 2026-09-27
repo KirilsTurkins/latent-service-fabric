@@ -730,8 +730,9 @@ the shared scenarios, and a retained restart without redeployment. The node and
 compiler test must use the same observed packager. Interrupted or uncertain
 cleanup retains the private workspace and fails the report. These source checks
 do not authenticate a candidate or establish clean-host qualification.
-The node build uses the existing `.cargo/managed-guest.toml` compiler-library
-optimization overrides, records their digest and retains host debug assertions.
+The node build uses the existing `.cargo/managed-guest.toml` compiler and
+component-validation optimization overrides, records their digest and retains
+host debug assertions and checked arithmetic.
 An earlier unoptimized TypeScript node exhausted its cold activation deadline;
 the test retains the same finite activation budget with the reviewed build profile.
 Publication and deployment share a 300-second controller deadline. TypeScript

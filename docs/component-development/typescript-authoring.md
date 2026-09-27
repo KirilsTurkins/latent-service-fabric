@@ -30,8 +30,9 @@ cargo --config .cargo/managed-guest.toml build --locked -p latent -p latentd --b
 
 The installer requires a fresh output directory and uses the complete npm lock
 without lifecycle scripts. Keep `LSF_TYPESCRIPT_TOOLS` set when reusing an
-installation. The opt-in host build configuration optimizes compiler libraries;
-it does not remove host assertions or change guest containment.
+installation. The opt-in host build configuration optimizes compiler and
+component-validation libraries. Host assertions, checked arithmetic and every
+component-validation check remain enabled.
 
 Run the following six Bash blocks in one terminal.
 
@@ -258,7 +259,8 @@ outcomes. Use a new activation ID for a new request; an uncertain mutation must
 be inspected before any retry.
 
 The explicit 125-second operator profile above covers both deployment controls
-and cold invocations. The isolated node still caps each request at 120 seconds;
+and cold invocations. The isolated node caps each request at 120 seconds, while
+managed deployment preparation retains its separate 30-second ceiling;
 the automated experiment uses a 130-second CLI-process watchdog within its
 explicit 1,200-second overall deadline. Its fixture HTTP peer shares that same
 absolute deadline, including startup; ordinary peer defaults stay at 300 seconds.
