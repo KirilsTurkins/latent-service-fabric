@@ -14,6 +14,10 @@ struct Replacement {
     section: Vec<u8>,
 }
 
+fn position(reader: &BinaryReader<'_>) -> Result<usize> {
+    Ok(usize::try_from(reader.original_position())?)
+}
+
 /// Inputs are the already validated, hash-bound maintained fixture components.
 /// Only outer exported instance names and their enclosing lengths change.
 /// Nested components, core code, imports and custom sections remain byte-exact.
@@ -45,7 +49,10 @@ pub(super) fn retarget(
             return Err("engine namespace expected exports".into());
         }
     }
-    let mut reader = BinaryReader::new(&base[Component::HEADER.len()..], Component::HEADER.len());
+    let mut reader = BinaryReader::new(
+        &base[Component::HEADER.len()..],
+        u64::try_from(Component::HEADER.len())?,
+    );
     let mut replacements = Vec::new();
     let mut seen = [false; MAX_EXPORTS];
     let mut sections = 0;
@@ -54,7 +61,7 @@ pub(super) fn retarget(
         if sections > MAX_SECTIONS {
             return Err("engine namespace section count".into());
         }
-        let start = reader.original_position();
+        let start = position(&reader)?;
         let id = reader.read_u8()?;
         if id > u8::from(ComponentSectionId::Export) {
             return Err("engine namespace unknown outer section".into());
@@ -71,7 +78,7 @@ pub(super) fn retarget(
                 section.extend_from_slice(&exports);
                 replacements.push(Replacement {
                     start,
-                    end: reader.original_position(),
+                    end: position(&reader)?,
                     section,
                 });
             }
@@ -114,15 +121,15 @@ fn rewrite_exports(
         return Err("engine namespace export count".into());
     }
     // Preserve the original count, name discriminator and index encodings.
-    let mut output = bytes[..reader.original_position()].to_vec();
+    let mut output = bytes[..position(&reader)?].to_vec();
     for _ in 0..count {
-        let entry_start = reader.original_position();
+        let entry_start = position(&reader)?;
         let discriminator = reader.read_u8()?;
         if discriminator > 1 {
             return Err("engine namespace export name options".into());
         }
         let name = reader.read_string()?;
-        let suffix_start = reader.original_position();
+        let suffix_start = position(&reader)?;
         let kind: ComponentExternalKind = reader.read()?;
         reader.read_var_u32()?;
         if kind != ComponentExternalKind::Instance || reader.read_u8()? != 0 {
@@ -144,11 +151,13 @@ fn rewrite_exports(
             return Err("engine namespace renamed export bound".into());
         }
         if renamed == name {
-            output.extend_from_slice(&bytes[entry_start..reader.original_position()]);
+            let entry_end = position(&reader)?;
+            output.extend_from_slice(&bytes[entry_start..entry_end]);
         } else {
             output.push(discriminator);
             renamed.as_str().encode(&mut output);
-            output.extend_from_slice(&bytes[suffix_start..reader.original_position()]);
+            let suffix_end = position(&reader)?;
+            output.extend_from_slice(&bytes[suffix_start..suffix_end]);
         }
     }
     if !reader.eof() {
@@ -202,11 +211,12 @@ mod tests {
         let mut reader = BinaryReader::new(&bytes[8..], 8);
         let mut sections = Vec::new();
         while !reader.eof() {
-            let start = reader.original_position();
+            let start = position(&reader).unwrap();
             let id = reader.read_u8().unwrap();
             let len = usize::try_from(reader.read_var_u32().unwrap()).unwrap();
             reader.read_bytes(len).unwrap();
-            sections.push((id, &bytes[start..reader.original_position()]));
+            let end = position(&reader).unwrap();
+            sections.push((id, &bytes[start..end]));
         }
         sections
     }

@@ -9,6 +9,32 @@ contention failures. Their corrections require new source-bound qualification
 before delivery; the passing older head cannot qualify a changed source tree.
 This report does not authorize a release or replace newcomer review #345.
 
+## September 27 deployment validation profile repair
+
+[Run 36305743354](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36305743354)
+failed PR #613 at deployment control 018 with `deadline-exceeded`, after
+30.627 seconds. The preceding deployment controls took 6.164, 12.290, 18.395
+and 24.517 seconds as the candidate catalog grew. The caller retained its
+125-second RPC wait and 130-second process watchdog; managed deployment
+preparation has a separate 30-second ceiling. The operation lookup reported
+an unknown outcome, and the failed mutation was not retried.
+
+The opt-in [managed guest build profile](../../.cargo/managed-guest.toml) now
+optimizes `wasmparser` and `latent-packaging` alongside the compiler libraries.
+Candidate catalog preparation still inspects every distinct publication.
+Validation checks, host assertions, checked arithmetic, control deadlines and
+guest execution budgets remain unchanged.
+
+The five approximately 12.5 MB component packages retained in artifact
+`10928256036` were inspected locally with the `latent-packaging` `package`
+example, on Windows with Rust 1.97.1 and development base `834ee87d`.
+One sequential pass took **23.144 seconds** with the ordinary debug build and
+**9.634 seconds** with the updated managed guest profile. All five inspection
+results, including package and component digests, matched. Cargo's build records
+confirmed optimization level 3 with debug assertions and overflow checks enabled
+for both parser versions and the packaging crate. These are local inspection
+measurements, not a new Linux node or complete guest qualification result.
+
 ## Reviewed candidate and shared-runtime hold
 
 [TypeScript run 35987595334](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595334)

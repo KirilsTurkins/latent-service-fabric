@@ -478,7 +478,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "spdx",
- "wasmparser",
+ "wasmparser 0.259.0",
  "wit-parser",
 ]
 
@@ -601,9 +601,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "1.1.4"
+version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190"
+checksum = "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d"
 dependencies = [
  "bitflags",
  "errno",
@@ -804,6 +804,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3eb099dcadcde5be9eef55e3a337128efd4e44b4c93122487e4d2e4e1c6627c"
 dependencies = [
  "bitflags",
+ "indexmap",
+ "semver",
+]
+
+[[package]]
+name = "wasmparser"
+version = "0.259.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f7c12eac7bb587801590f6a67ff0bc84d0748513864b71108e4b311cc3df694"
+dependencies = [
+ "bitflags",
  "hashbrown",
  "indexmap",
  "semver",
@@ -995,7 +1006,7 @@ dependencies = [
  "log",
  "semver",
  "unicode-ident",
- "wasmparser",
+ "wasmparser 0.252.0",
 ]
 
 [[package]]

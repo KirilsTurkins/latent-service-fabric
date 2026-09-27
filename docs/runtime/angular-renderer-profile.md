@@ -1,7 +1,7 @@
 # Angular renderer execution profile
 
 [ADR-0037](../../adr/0037-qualify-a-closed-angular-component-renderer-profile.md)
-selects `angular-ssr-component-v1` for Phase 3's first renderer adapter.
+selects `angular-ssr-component-v1` for the supported renderer adapter.
 The [executable fixture](../../examples/renderer-profile/README.md) qualifies
 real Angular SSR and hydration. The [installed generic-cell adapter](angular-renderer-runtime.md)
 implements #233; the observed Angular build adapter remains #234. Exact package admission

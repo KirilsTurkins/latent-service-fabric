@@ -1,19 +1,17 @@
 # Wiki migration and removal
 
-The documentation site replaces the Wiki. Useful current explanations have
-been migrated and the essential guide review is accepted. The repository Wiki
-is disabled and its publishers are retired; final complete-site publication and
-replacement-route verification remain to be recorded. Old Wiki URLs, anchors,
-page bodies and archive notices are not a
-compatibility contract. This policy supersedes the original preservation plan
-for #356, following the maintainer decision of September 22, 2026.
+The complete documentation site replaces the Wiki. Useful current explanations
+have maintained replacements, the 27-topic guide review is accepted, and all
+26 mapped entries passed actual live destination checks on 2026-09-27.
+The [cutover review](wiki-cutover-review.md) links the exact public evidence.
+The Wiki and its publishers were already disabled and have been rechecked;
+their actual retirement dates remain in the
+[September 26 observation](../evidence/wiki-retirement-2026-09-26.json).
 
-The [cutover review](wiki-cutover-review.md) records the content map, historical
-live route checks and remaining execution steps. The
-[September 26 retirement observation](../evidence/wiki-retirement-2026-09-26.json)
-confirms the disabled Wiki, previously merged publisher removal, both disabled
-workflow registrations and zero active writer runs. It does not establish that
-the final site has been deployed.
+Old Wiki URLs, anchors, page bodies and archive notices are not a compatibility
+contract. The maintainer's September 22 decision supersedes the original
+preservation plan. Git history retains attribution without a second active
+documentation service.
 
 ## Preserved source and published identities
 
@@ -59,29 +57,18 @@ The tests cover encoded names, asset references, unknown pages, case collisions
 and traversal. Current product-site links use the repository link policy for
 root and project base paths and must resolve to maintained content.
 
-## Cutover and bounded rollback
+## Completed cutover and bounded rollback
 
-1. Finish protected publication under #355, record the exact source/run/attempt
-   and test real representative Pages routes, assets, search and version notices.
-2. Complete essential guide review under #345. Record the approved source and
-   execution receipts. Site publication alone is not runtime release or Phase 3
-   certification.
-3. Verify every maintained replacement route and switch repository/public entry
-   links to the tested site. Remove obsolete Wiki-specific navigation and active
-   content. Record the live deployment identity and content dispositions.
-4. Complete the Phase 3 gate. Content migration, guide review and successful
-   site publication are gate prerequisites. The Wiki setting and source
-   retirement were already in effect before this final gate; preserve their
-   actual observation dates instead of claiming a different execution order.
-5. Recheck the retired workflow registrations and disabled Wiki, record the
-   final live destinations, and close #356 after the gate and site checks.
-   Do not re-enable a publisher or restore the Wiki to repeat a completed step.
-   No archive-notice publication or redirect layer is required.
+The reviewed complete site passed protected publication and browser validation.
+Every maintained replacement route is live, repository/public entry links use
+the site, and the Wiki and both old writers remain disabled. The
+[collective decision](../phase-3-gate-review.md) consumes these content and site
+prerequisites; #356's final administrative recheck follows that decision.
+Source retirement and settings changes retain their actual earlier dates.
 
-If a destination check fails before removal, finish the site correction before
-cutover. If the deployed site later needs rollback, use its protected exact
-artifact flow. Do not restore the Wiki as a maintained documentation service or
-rewrite runtime tags, release evidence or old benchmark reports. Existing Git
-history and pinned receipts provide attribution without a second public site.
-Future prose belongs in `docs/`; website presentation and publication belong to
-the website owner. The retired Wiki writer must not resume synchronization.
+If the website later needs recovery, use the [protected publication procedure](website-publication.md)
+with a previously published complete artifact and the exact currently live
+source. Recheck live routes and retain the new publication receipt. Do not
+restore Wiki publishing, move runtime tags or rewrite historical measurements.
+Future prose belongs in `docs/`; presentation and publication belong to the
+website owner. The retired writers must not recreate a second public site.
