@@ -100,6 +100,8 @@ old implementation snapshots are not setup instructions.
 - [ADR-0045: Bound larger static documentation inventories](0045-bound-larger-static-documentation-inventories.md)
 - [ADR-0046: Opt in to public document navigation](0046-opt-in-public-document-navigation.md)
 - [ADR-0047: Reconcile static route sets with durable intent](0047-reconcile-static-route-sets-with-durable-intent.md)
+- [ADR-0048: Expose bounded OCI authority in the CLI](0048-expose-bounded-oci-authority-in-the-cli.md)
+- [ADR-0050: Plan capacity before deleting publication history](0050-plan-capacity-before-deleting-publication-history.md)
 - [ADR-0049: Scope cross-origin assets to explicit publications](0049-scope-cross-origin-assets-to-publications.md)
 - [ADR-0051: Author static release evidence without a Rust toolchain](0051-author-static-release-evidence-without-a-rust-toolchain.md)
 - [ADR-0052: Authorize exact static style identities](0052-authorize-exact-static-style-identities.md)

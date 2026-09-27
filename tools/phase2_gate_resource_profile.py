@@ -9,7 +9,7 @@ from tools.phase2_operator_process import require
 from tools.phase2_operator_scenario import NODE_ID, TOKEN
 
 PROFILE = {
-    "id": "phase2-dormant-32-r3", "preparation": "portable", "releases": 32,
+    "id": "phase2-dormant-32-r4", "preparation": "portable", "releases": 32,
     "deployments": 16, "referencedReleases": 2, "invocations": 32,
     "maximumControls": 256, "deadlineSeconds": 300, "shutdownSeconds": 10,
     "osSamples": 12, "samplesPerPhase": 3, "sampleIntervalMillis": 50,
@@ -32,7 +32,7 @@ ZERO_ROWS = (
 )
 OBSERVATION_ROWS = ("accepted-connections", "in-flight-rpcs", "control-jobs")
 FIXED_LIVE_ROWS = ("standalone-node", "wasmtime-compiler", "invocation-cleanup-driver",
-                   "rollout-coordinator")
+                   "rollout-coordinator", "publication-catalog")
 FIXED_RUNTIME_ROWS = ("invocation-runtime", "control-runtime")
 FIXED_UNKNOWN_ROWS = ("wasmtime-epoch", "grpc-listener")
 
