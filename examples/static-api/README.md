@@ -27,8 +27,13 @@ The source tests cover response filtering and rejection before dispatch:
 node --test status.test.mjs
 ```
 
-The integrated deployment walkthrough is being completed in issue
-[#632](https://github.com/KirilsTurkins/latent-service-fabric/issues/632). Building
-this source alone does not configure ingress, TLS trust, capability policy,
-credential injection or publication signing. This example is a public status
-endpoint; it does not implement application sessions or a confidential user API.
+Next, follow [Serve a static site and a TypeScript API](../../docs/how-to/static-site-and-api.md).
+The example launcher uses your completed build, publishes both parts separately,
+and opens a local site with a working button. It creates temporary test identities,
+a protected native node and a local TLS upstream, then removes its own temporary
+state on exit. Your developer workspace stays available for editing and rebuilding.
+
+The fixed upstream is `https://status.backend.test:8443/health`. Only the native
+provider holds its credential. The capsule forwards no browser headers and returns
+only a fixed public availability message. Application sessions and confidential
+user APIs need their own authentication and authorization design.

@@ -7,7 +7,7 @@ import { handle } from './status.js';
 export const application: typeof Contract = {
   handle(request) {
     return handle(request, () => send({
-      method: 'get', url: 'https://status.backend.test/health', headers: [],
+      method: 'get', url: 'https://status.backend.test:8443/health', headers: [],
       body: undefined, bodyMediaType: undefined, idempotencyKey: undefined,
       timeoutMillis: 1500n,
     }));
