@@ -59,7 +59,7 @@ pub fn caller(tenant: Option<&str>) -> Vec<u8> {
     );
     canonical.waitable_set_new();
     canonical.waitable_join();
-    canonical.waitable_set_wait(false, 0);
+    canonical.waitable_set_wait(0);
     canonical.subtask_drop();
     canonical.waitable_set_drop();
     component.section(&canonical);

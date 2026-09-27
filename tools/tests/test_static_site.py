@@ -4,11 +4,18 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from jsonschema import Draft202012Validator
+
 from tools import static_site as site
 from tools.build_snapshot import SnapshotError, canonical, digest
 
 
 class StaticSiteCaptureTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        schema = Path(__file__).resolve().parents[2] / 'schemas/web-application.schema.json'
+        cls.web_schema = Draft202012Validator(json.loads(schema.read_bytes()))
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -55,6 +62,7 @@ class StaticSiteCaptureTests(unittest.TestCase):
         self.assertNotIn('.env', first)
         self.assertNotIn(b'private token', b''.join(first.values()))
         web = json.loads(first['metadata/web-application.json'])
+        self.web_schema.validate(web)
         self.assertNotIn('renderer', web)
         self.assertEqual(web['routes'], [])
         self.assertEqual([a['path'] for a in web['assets']], sorted(a['path'] for a in web['assets']))
@@ -76,6 +84,7 @@ class StaticSiteCaptureTests(unittest.TestCase):
         self.assertEqual(original['assetsDigest'], changed['assetsDigest'])
         self.assertNotEqual(original['webManifestDigest'], changed['webManifestDigest'])
         web = json.loads((right / 'metadata/web-application.json').read_bytes())
+        self.web_schema.validate(web)
         self.assertEqual(web['routes'], [{'path': '/', 'mode': 'client', 'asset': '/index.html'}])
         self.assertEqual((left / 'public/index.html').read_bytes(), (right / 'public/index.html').read_bytes())
 

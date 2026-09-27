@@ -147,6 +147,13 @@ operation lookup RPC for the full receipt.
 
 ## Recovery and resource ownership
 
+For a complete GET/HEAD promotion with a durable client journal, use the
+[static route-set workflow](../operations/static-route-sets.md). It recovers
+receipts and checks live route identities after interruption, with bounded
+handling of unrelated catalog conflicts. The sequence remains non-atomic;
+uncertain operations are never automatically replayed with new preconditions.
+
+
 Catalog format 7 adds the optional HTTP table. Catalogs without HTTP state retain
 their existing format 5/6 encoding. All deployment, rollout and capability-binding
 writers preserve the HTTP table under the same catalog transaction fence.
