@@ -87,31 +87,39 @@ impl DirectoryArtifactRepository {
         drop(publication.metadata_bytes);
         drop(publication.manifest_bytes);
         drop(files);
-        let result = self.life_store().with_prepared(&lifecycle, &mut |fence| {
-            if let Some(proof) = &proof {
-                proof.with_current(&mut |check| {
+        let result = (|| {
+            // Staging authenticated package bytes can outlast a clock lease.
+            // Renew on this control owner before taking either commit fence;
+            // the retained grant must still pass every currentness check below.
+            if let Some(config) = &self.admission {
+                config.authority.renew_control_lease()?;
+            }
+            self.life_store().with_prepared(&lifecycle, &mut |fence| {
+                if let Some(proof) = &proof {
+                    proof.with_current(&mut |check| {
+                        self.commit_publication(
+                            &destination,
+                            staged.as_ref().map(|value| value.0.as_path()),
+                            &expected,
+                            Some(proof),
+                            &lifecycle,
+                            fence,
+                            &mut || check.check(),
+                        )
+                    })
+                } else {
                     self.commit_publication(
                         &destination,
                         staged.as_ref().map(|value| value.0.as_path()),
                         &expected,
-                        Some(proof),
+                        None,
                         &lifecycle,
                         fence,
-                        &mut || check.check(),
+                        &mut || Ok(()),
                     )
-                })
-            } else {
-                self.commit_publication(
-                    &destination,
-                    staged.as_ref().map(|value| value.0.as_path()),
-                    &expected,
-                    None,
-                    &lifecycle,
-                    fence,
-                    &mut || Ok(()),
-                )
-            }
-        });
+                }
+            })
+        })();
         if let Err(failure) = result {
             if legacy_errors {
                 return Err(failure);
