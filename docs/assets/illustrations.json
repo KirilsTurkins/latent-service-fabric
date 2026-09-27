@@ -127,6 +127,62 @@
       "sourceRevision": "44891f4158a663de5c08b177431686ec70c0bdf3",
       "generator": "website/scripts/snapshot.mjs",
       "reason": "Exact released alpha.3 historical illustration; preserved by the immutable version manifest, never recolored in place."
+    },
+    {
+      "path": "website/versioned_assets/version-0.1.0-alpha.4/docs/assets/phase0-gate-decision.svg",
+      "classification": "immutable-snapshot",
+      "sha256": "f0eaee952678ac1be2bcba3199715e2b59ece24dee54f802236b99134b7a6df7",
+      "sourceRevision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+      "generator": "website/scripts/snapshot.mjs",
+      "reason": "Exact alpha.4 documentation snapshot; current diagrams and dated evidence retain their recorded bytes."
+    },
+    {
+      "path": "website/versioned_assets/version-0.1.0-alpha.4/docs/assets/phase0-resource-lifecycle.svg",
+      "classification": "immutable-snapshot",
+      "sha256": "6ff9c70c2809fd064faca2677b04985029f36b77985a799494d6302baf52c6dd",
+      "sourceRevision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+      "generator": "website/scripts/snapshot.mjs",
+      "reason": "Exact alpha.4 documentation snapshot; current diagrams and dated evidence retain their recorded bytes."
+    },
+    {
+      "path": "website/versioned_assets/version-0.1.0-alpha.4/docs/assets/phase0-scope-boundary.svg",
+      "classification": "immutable-snapshot",
+      "sha256": "76e4450734b65b91fe4da487043c5cdca43654df53d8ca4f06ca880e0c9b3c6e",
+      "sourceRevision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+      "generator": "website/scripts/snapshot.mjs",
+      "reason": "Exact alpha.4 documentation snapshot; current diagrams and dated evidence retain their recorded bytes."
+    },
+    {
+      "path": "website/versioned_assets/version-0.1.0-alpha.4/docs/assets/phase1-delivery-boundary.svg",
+      "classification": "immutable-snapshot",
+      "sha256": "9fbfc43a52a5c2fcee967c543627f1b999a805e578698703f58c33ef75aab1b3",
+      "sourceRevision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+      "generator": "website/scripts/snapshot.mjs",
+      "reason": "Exact alpha.4 documentation snapshot; current diagrams and dated evidence retain their recorded bytes."
+    },
+    {
+      "path": "website/versioned_assets/version-0.1.0-alpha.4/docs/assets/phase2-delivery-boundary.svg",
+      "classification": "immutable-snapshot",
+      "sha256": "48d13eeb8997ca87d334417db5928a68c317ff0974a601a499482e359cbfeb12",
+      "sourceRevision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+      "generator": "website/scripts/snapshot.mjs",
+      "reason": "Exact alpha.4 documentation snapshot; current diagrams and dated evidence retain their recorded bytes."
+    },
+    {
+      "path": "website/versioned_assets/version-0.1.0-alpha.4/docs/assets/package-delivery.svg",
+      "classification": "immutable-snapshot",
+      "sha256": "beba75fcf25b125425e0a79ee90ae317dbfbe42e31410f6b6f111040b52fc18f",
+      "sourceRevision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+      "generator": "website/scripts/snapshot.mjs",
+      "reason": "Exact alpha.4 documentation snapshot; current diagrams and dated evidence retain their recorded bytes."
+    },
+    {
+      "path": "website/versioned_assets/version-0.1.0-alpha.4/docs/assets/activation-lifecycle.svg",
+      "classification": "immutable-snapshot",
+      "sha256": "6f4760963df2deec27d15175b5d3b6139e3f647c00244bd5f13b9f164ada2668",
+      "sourceRevision": "403ded53bf00a973f77e089786cef970ab7d5bfd",
+      "generator": "website/scripts/snapshot.mjs",
+      "reason": "Exact alpha.4 documentation snapshot; current diagrams and dated evidence retain their recorded bytes."
     }
   ],
   "maintained": [

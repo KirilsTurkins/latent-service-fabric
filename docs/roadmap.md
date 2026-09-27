@@ -115,28 +115,33 @@ identities, actual outcomes and failed or superseded attempts.
 
 ## Phase 3: capabilities and application hosting
 
-**Status: release completion in progress.**
+**Status: complete for the declared standalone profiles.**
 
-All six guest SDKs and the packaged developer workflow are implemented and
-qualified. The maintainer accepted the 27-topic guide review on September 26.
-The [completion gate](phase-3-gate-review.md) tracks the remaining exact-source
-native publication, complete-site deployment and final acceptance decision.
+All six guest SDKs, the packaged developer workflow, native distribution and
+complete learning site are delivered. The maintainer accepted the 27-topic
+guide review; final runtime CI, both real VM profiles, public tool downloads,
+18-project creation and protected live-site checks passed. The
+[completion decision](phase-3-gate-review.md) records the exact evidence and
+remaining platform/security limits. The
+[alpha.4 release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.4) and
+[matching guides](https://kirilsturkins.github.io/latent-service-fabric/docs/0.1.0-alpha.4/start/application-development/)
+are public. Runtime tags and historical measurements remain immutable.
 
 [Epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
-tracks the capability and application-hosting implementation now in progress,
+tracks the delivered capability and application-hosting implementation,
 including the architecture/security audit requirements and the retained
 [Angular umbrella #44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44).
 The tracker records scoped delivery, dependencies and acceptance evidence.
 The context, logging and clock surface already delivered in #10 remains the
 baseline.
 
-The sequence starts with exact versioned contracts, durable grants and a sealed
-broker. Shared I/O ownership, provider pools and descendant reservations then
-support real external providers and isolated local service calls. Web ingress and
-renderer work depend on those foundations and the existing package/lifecycle
-boundary. SDK and operator work must exercise the actual implementations.
+Exact versioned contracts, durable grants and a sealed broker govern capability
+use. Shared I/O ownership, provider pools and descendant reservations support
+external providers and isolated local service calls. Web ingress and rendering
+use those foundations and the package/lifecycle boundary. The linked gate keeps
+the original implementation, SDK and operator execution evidence.
 
-| Workstream | Planned capability and tickets |
+| Workstream | Delivered capability and acceptance tickets |
 | --- | --- |
 | Exact authority and ABI | [Versioned capability ABI and host profiles #202](https://github.com/KirilsTurkins/latent-service-fabric/issues/202), [durable policies/grant revisions #203](https://github.com/KirilsTurkins/latent-service-fabric/issues/203), [sealed activation broker and handles #204](https://github.com/KirilsTurkins/latent-service-fabric/issues/204). |
 | Shared resources and bindings | [Asynchronous I/O and stream ownership #205](https://github.com/KirilsTurkins/latent-service-fabric/issues/205), [provider pools/configuration epochs/shutdown #206](https://github.com/KirilsTurkins/latent-service-fabric/issues/206), [exact host and isolated-local bindings #207](https://github.com/KirilsTurkins/latent-service-fabric/issues/207). |
@@ -150,6 +155,7 @@ boundary. SDK and operator work must exercise the actual implementations.
 | Browser storage and responses | [Exact renderer/asset release admission #225](https://github.com/KirilsTurkins/latent-service-fabric/issues/225), [immutable asset serving #231](https://github.com/KirilsTurkins/latent-service-fabric/issues/231), [safe HTTP response-cache policy #232](https://github.com/KirilsTurkins/latent-service-fabric/issues/232). |
 | Angular SSR and hydration | [Execution-profile proof #224](https://github.com/KirilsTurkins/latent-service-fabric/issues/224), [bounded renderer cells #233](https://github.com/KirilsTurkins/latent-service-fabric/issues/233), [deterministic renderer/hydration packaging #234](https://github.com/KirilsTurkins/latent-service-fabric/issues/234), [browser isolation #235](https://github.com/KirilsTurkins/latent-service-fabric/issues/235), [real-browser reference workflow #236](https://github.com/KirilsTurkins/latent-service-fabric/issues/236), under [#44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44). |
 | SDKs and executable examples | [Typed guest bindings and Rust/C examples #221](https://github.com/KirilsTurkins/latent-service-fabric/issues/221), [six-SDK parity #227](https://github.com/KirilsTurkins/latent-service-fabric/issues/227), [real Rust transport #228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228), [bounded TypeScript/browser client #230](https://github.com/KirilsTurkins/latent-service-fabric/issues/230), and executable clients for [Go #260](https://github.com/KirilsTurkins/latent-service-fabric/issues/260), [C #261](https://github.com/KirilsTurkins/latent-service-fabric/issues/261), [Java #262](https://github.com/KirilsTurkins/latent-service-fabric/issues/262) and [.NET #263](https://github.com/KirilsTurkins/latent-service-fabric/issues/263). |
+| Guest authoring and development | Standalone authoring in Rust, C, TypeScript, Go, Java and C# (#544–#549), with packaged compiler tools, editable applications, test fixtures, diagnostics, recovery and the scoped Windows/WSL2, Linux, SSH and devcontainer workflow (#559). |
 | Operators and completion evidence | [Policy/provider/web management #226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226), [runbooks #237](https://github.com/KirilsTurkins/latent-service-fabric/issues/237), [adversarial isolation #238](https://github.com/KirilsTurkins/latent-service-fabric/issues/238), [resource/preparation measurements #239](https://github.com/KirilsTurkins/latent-service-fabric/issues/239), [collective gate #240](https://github.com/KirilsTurkins/latent-service-fabric/issues/240). |
 
 Every provider must preserve exact tenant/grant/owner identity and fail closed
@@ -159,11 +165,11 @@ cancellation until actual cleanup. Provider responses and secret values cannot
 escape into unrestricted logs or audit payloads. Pools, ingress listeners and
 consumer loops belong to the node, not dormant services.
 
-Angular support requires a selected and measured renderer profile; it does not
-assume that the current generic Wasm backend can execute arbitrary Node.js
-applications. Browser and SSR package schemas already exist in Phase 2, while
-actual HTTP serving, renderer execution and hydration integration remain Phase 3
-work. No application-owned listener or idle renderer is introduced by a package.
+Angular uses the selected and measured renderer profile, with actual HTTP
+serving, renderer execution and browser hydration qualified by the reference
+workflow. It does not support arbitrary Node.js applications. Static/CSR sites
+use the shared listener without a guest activation. Neither package type creates
+an application-owned listener or idle renderer.
 
 ## Phase 4: state and effects
 

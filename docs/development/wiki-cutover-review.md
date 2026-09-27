@@ -1,22 +1,45 @@
 # Wiki removal review
 
-The repository Wiki is disabled. [PR #507](https://github.com/KirilsTurkins/latent-service-fabric/pull/507)
-already removed its publisher from `docs/wiki`, and the remaining bootstrap and
-publisher registrations were disabled on September 26. The
-[retirement observation](../evidence/wiki-retirement-2026-09-26.json) confirms both
-registrations and zero active writer runs. The complete-site deployment and
-replacement-route checks still need their final receipt before #356 closes.
+**Content and live-site cutover verified on 2026-09-27.** All 26 inventoried Wiki
+entries have maintained destinations on the complete site. Actual HTTP checks
+passed all 20 distinct routes and checked their development-version identity.
+The repository Wiki remains disabled, both retired workflow registrations are
+`disabled_manually`, and neither has an active writer run.
 
-The maintainer decision of September 22 replaces the earlier plan to publish
-26 archive notices and preserve legacy navigation. Useful material belongs in
-current guides; old Wiki URLs, anchors and obsolete pages need not remain live.
+The complete site was published from `69a7b30dd89b298254a16b049180bbd9082ecdec` through
+[push CI 36285745230](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36285745230), attempt 1, and
+[protected publisher 36287023135](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36287023135), attempt 1.
+The immutable site artifact is `10920985707`,
+digest `sha256:13cbc99efb2e26e5302209f03b76f31b47c9595e2effa70969ed158804852727`; the deployed tree digest is
+`sha256:446a84536f367bb04290b4fd062e1a7201fa005a230e05edd7a837e485efb748`. The original publication, live-browser, build/theme/
+example/version/discovery receipts and final Wiki observations are retained in
+[documentation-validation-36287023135.zip](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.4/documentation-validation-36287023135.zip), 13,532 bytes, SHA-256
+`ecfbb7f76aec1bb41c10bade136b2f8b3445512bc29e5644a22ca1175abd1834`. Its public bytes were independently verified. This
+supplemental archive is separate from the native publisher's attested assets.
 
-The [migration inventory](../evidence/wiki-migration-2026-09-20.json) records source
-`d1035a50d2fd99b076c74dd958ca4437d909f2ec`, published Wiki
-`e0cc50fe654b783f189b30a8a6f7946d66177180`, all four assets and historical identities.
-These pinned references establish attribution without retaining an active Wiki.
-The route observations below are historical checks, not proof of a completed
-website cutover. The newer retirement observation does not change their results.
+[PR #507](https://github.com/KirilsTurkins/latent-service-fabric/pull/507) removed the old publisher source
+before this gate. The [September 26 retirement observation](../evidence/wiki-retirement-2026-09-26.json)
+records the disabled registrations and Wiki setting. The newer observation
+rechecks those facts; it does not claim they happened after the gate decision.
+
+The maintainer's September 22 decision replaces the old archive-notice and
+legacy-link preservation plan. Useful material belongs in current guides;
+obsolete Wiki URLs, anchors and pages need not remain live. The
+[migration inventory](../evidence/wiki-migration-2026-09-20.json) preserves
+original sources, assets and attribution.
+
+## Completed destination verification
+
+The final public receipt records each maintained destination URL, status 200,
+byte count and response SHA-256. It verifies the formerly absent runtime
+identities and migration pages as well as every other mapped destination.
+The inventory's `CONTRIBUTING.md` authority now uses the maintained
+[Contribute guide](../contribute/index.md) as its website entry point for the
+development-workflow and repository-map entries. The current receipt records
+that mapping separately; the original inventory remains unchanged. Architecture
+decisions use the site's `/decisions/` routes.
+The older observations below remain historical, including their 404 results.
+They are not rewritten as passes or used as proof of the newer site.
 
 ## Website and destination observations
 
@@ -62,33 +85,21 @@ learning path; that guide links to the repository contribution contract.
 | [_Footer](https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/_Footer.md) | [Wiki migration and publication continuity](wiki-migration.md) | 404; publication pending |
 | [_Sidebar](https://github.com/KirilsTurkins/latent-service-fabric/blob/d1035a50d2fd99b076c74dd958ca4437d909f2ec/wiki/pages/_Sidebar.md) | [Wiki migration and publication continuity](wiki-migration.md) | 404; publication pending |
 
-## Execution order
+## Final administrative closure and future ownership
 
-1. Preserve the accepted September 26 guide review and qualify subsequent guide
-   corrections. The maintainer delegated those updates without another approval.
-2. Publish the reviewed development site through the protected exact artifact
-   flow. Record source, successful push CI run, attempt, artifact, publisher run
-   and live receipt. Recheck every maintained destination, including the two
-   routes that were absent at the historical observation above.
-3. Switch repository and public entry links to the tested site and remove active
-   Wiki navigation. Obsolete page content can be retired rather than copied.
-4. Complete the Phase 3 gate using the content migration, guide reviews and live
-   website evidence. Keep the actual earlier source-removal and settings
-   observations; do not claim that those actions happened after this decision.
-5. Recheck the disabled Wiki, retired workflow registrations and maintained entry
-   links. Do not recreate or re-enable the old service to repeat its removal.
-6. Record the resulting site/source identity and Wiki removal receipt in the
-   [migration guide](wiki-migration.md), then close #356. Publishing archive
-   notices, preserving legacy links or maintaining redirect pages is unnecessary.
+The accepted guide review, complete-site publication and all destination checks
+satisfy the content prerequisites for #345 and the collective gate. After the
+[Phase 3 decision](../phase-3-gate-review.md) is merged and published, recheck
+the already disabled Wiki and retired writers and close #356. Do not recreate
+the service to repeat its removal or publish archive notices.
 
 Future prose belongs in `docs/`. Website presentation, search, version handling
 and publication belong to `website/` and its protected publisher. Git history
-and original evidence receipts retain attribution. The retired Wiki writer must
-not resume synchronization or recreate a second documentation service.
+and original receipts retain attribution. The retired Wiki writers must not
+resume synchronization or recreate another documentation service.
 
 ## Bounded rollback
 
-A failed live destination check delays cutover until the site is corrected.
-After removal, recover the website through its protected flow with a previously
-published complete artifact and the exact currently live source. Do not restore
-Wiki publishing, move runtime tags or rewrite historical benchmark receipts.
+Recover the website through its protected flow using a previously published
+complete artifact and the exact currently live source. Do not restore Wiki
+publishing, move runtime tags or rewrite historical benchmark receipts.

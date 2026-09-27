@@ -1,0 +1,64 @@
+{
+  "complete": true,
+  "sourceCommit": "cb00bf43e3f598e0f9d4bcaea2a4853d17dea8f4",
+  "qualificationRun": 36262353069,
+  "developerRun": 36259950144,
+  "nativeRun": 36259952635,
+  "reportSha256": "sha256:65d4b1c5501830282f5b8ceefad6541700778d8b38349275776217c898659495",
+  "selectionSha256": "sha256:90061eb15a5783466bd340ea9bc1bc81f93bda2abe4da1cdb26f536630cd0ba8",
+  "originalFailureHistoryPreserved": true,
+  "nativeServerReleaseQualified": false,
+  "scope": "Controlled development toolkit; actual packaged five-entry matrix. Physical host suspension, production Windows nodes, ARM64/macOS and production performance are excluded.",
+  "observations": [
+    {
+      "entry": "windows",
+      "artifact": 10913507174,
+      "path": "packaged-observation/observation.json",
+      "sha256": "sha256:9609b704000dd59cb2e9389ffa616abd96b6b1d3484071497ca4c837ed8a9400"
+    },
+    {
+      "entry": "recovery",
+      "artifact": 10913507174,
+      "path": "packaged-recovery/observation.json",
+      "sha256": "sha256:db9e6b63e3a04ec830c339138875a8c34db242afd27c4ab17fc318d21b7ddc6a"
+    },
+    {
+      "entry": "linux",
+      "artifact": 10914198475,
+      "path": "packaged-linux/observation.json",
+      "sha256": "sha256:de7015ff8fdfa4c55a033b0dd0d45e93433a82a6f70d36c32b8569020a95e307"
+    },
+    {
+      "entry": "linux-host",
+      "artifact": 10914198475,
+      "path": "packaged-linux/host-observation.json",
+      "sha256": "sha256:f5c4140bc52a66a8f3ba07e90c8761898ca95c3f9af11f32e64a1408790ba108"
+    },
+    {
+      "entry": "devcontainer",
+      "artifact": 10914198475,
+      "path": "packaged-devcontainer/observation.json",
+      "sha256": "sha256:9f39fe9f2ea5842e0bc83e5102f6fc9a05e078cfb8268ae6a3260465e78e5928"
+    },
+    {
+      "entry": "devcontainer-host",
+      "artifact": 10914198475,
+      "path": "packaged-devcontainer/host-observation.json",
+      "sha256": "sha256:faf5aea5a6c6f7452225a8da9891d726ad251aeae334268ec6cd0c9875cd57da"
+    }
+  ],
+  "committedSelectionSha256": "sha256:80ab671aa6010aeb7c41c29c98fceadad17be4bc9748d64fe6855cf50cbdd561",
+  "selectionByteNote": "Original review hashed its CRLF working copy; committed selection differs only by Git LF normalization. Both identities are retained.",
+  "windowsSeconds": {
+    "windows": 2320.87,
+    "recovery": 368.147
+  },
+  "linuxSeconds": {
+    "linux": 2650.659,
+    "devcontainer": 1802.03
+  },
+  "nativeCancellation": "before-start; running cancellation is separately observed on the Linux node",
+  "hostLifecycle": "owned WSL termination/resume; no physical host suspension",
+  "humanEditorReviewClaimed": false,
+  "newcomerReview": "review of actual automated packaged walkthrough commands at their recorded guide source"
+}
