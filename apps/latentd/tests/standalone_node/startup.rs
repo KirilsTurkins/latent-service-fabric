@@ -79,24 +79,7 @@ pub fn scenario() {
             assert!(inventory.cache_entries.is_empty());
             assert!(inventory.topology.available && inventory.topology.complete);
             assert_eq!(inventory.topology.entries.len(), 23);
-            let catalog = inventory
-                .topology
-                .entries
-                .iter()
-                .find(|row| row.name == "publication-catalog")
-                .expect("durable catalog capacity is part of the actual node inventory");
-            assert_eq!(catalog.ownership, ResourceOwnership::NodeFixed);
-            assert_eq!(
-                (catalog.configured_count, catalog.active_count),
-                (1, Some(1))
-            );
-            assert_eq!(
-                catalog
-                    .attributes
-                    .get("measurementStatus")
-                    .map(String::as_str),
-                Some("available")
-            );
+            assert_catalog_topology(&inventory.topology.entries);
             assert_compiler_topology(&inventory.topology.entries);
             assert_cleanup_topology(&inventory.topology.entries);
             for row in inventory
@@ -121,6 +104,25 @@ pub fn scenario() {
         }
     });
     runtimes.finish();
+}
+
+fn assert_catalog_topology(entries: &[NodeTopologyEntry]) {
+    let catalog = entries
+        .iter()
+        .find(|row| row.name == "publication-catalog")
+        .expect("durable catalog capacity is part of the actual node inventory");
+    assert_eq!(catalog.ownership, ResourceOwnership::NodeFixed);
+    assert_eq!(
+        (catalog.configured_count, catalog.active_count),
+        (1, Some(1))
+    );
+    assert_eq!(
+        catalog
+            .attributes
+            .get("measurementStatus")
+            .map(String::as_str),
+        Some("available")
+    );
 }
 
 fn assert_compiler_topology(entries: &[NodeTopologyEntry]) {
