@@ -101,6 +101,8 @@ Retain all state and configuration together; use the
 Wait for the configured supply-chain
 clock lease before a restart; the persisted lease can reject an early restart.
 Always wait for the old owner to exit before starting its replacement.
+Use the [container handover procedure](container-handover.md) for overlap
+rejection, interrupted replacement and explicitly eligible recovery.
 
 ## Diagnose a rejected host
 
