@@ -198,7 +198,7 @@ try {
     try {
       const wire = await new Promise((accept, reject) => {
         const request = https.request({hostname: '127.0.0.1', port: assetPort, path: '/a/main.js',
-          method: 'GET', rejectUnauthorized: false, agent: false, headers: {
+          method: 'GET', ca: options.cert, servername: 'localhost', agent: false, headers: {
             Host: new URL(assets).host, Origin: malformed, 'Sec-Fetch-Mode': 'cors',
             'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Dest': 'empty',
           }}, response => {
