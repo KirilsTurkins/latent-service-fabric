@@ -366,6 +366,17 @@ jobs:
           mkdir -m 0700 "$static_root/cors-tls"
           openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -sha256 -days 1 -subj '/CN=localhost' -keyout "$static_root/cors-tls/key.pem" -out "$static_root/cors-tls/server.pem"
           node tools/cross-origin/browser.mjs examples/renderer-profile "$(command -v google-chrome)" "$static_root/cors-tls" examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 "${RUNNER_TEMP}/phase2-gate/cross-origin-feasibility.json"
+      - name: Qualify actual Angular PrimeNG and bilingual Docusaurus publications
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          npm ci --prefix examples/framework-compatibility --ignore-scripts
+          framework_root="${RUNNER_TEMP}/framework-sites"
+          mkdir -p "$framework_root" "${RUNNER_TEMP}/phase2-gate"
+          python3 tools/build_framework_sites.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --chrome "$(command -v google-chrome)" --output "$framework_root/builds"
+          LSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS="$framework_root/builds" LSF_STATIC_FIXTURE_ROOT="$framework_root/fixture" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite static-site-fixture
+          python3 tools/run_framework_sites.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --node "${RUNNER_TEMP}/static-site/latentd" --fixture "$framework_root/fixture" --chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/framework-sites.json"
       - name: Validate bounded Phase 2 delivery and resource workflows
         timeout-minutes: 10
         shell: bash

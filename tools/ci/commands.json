@@ -1979,6 +1979,46 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "set -euo pipefail\ncontainer=$(docker create --label io.latent.frontend-qualification=\"$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT\" --cpus 2 --memory 2g --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=536870912,mode=1777 --mount \"type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly\" --mount \"type=bind,source=$RUNNER_TEMP/frontend-release/extracted,target=/release,readonly\" lsf-frontend-qualification /source/tools/static-release/qualification.mjs /release/bin/latent /tmp/result.json /release/bin/latentd)\n[[ \"$container\" =~ ^[0-9a-f]{64}$ ]]\ncleanup() { docker rm --force \"$container\" >/dev/null; }\ntrap cleanup EXIT\ntimeout --signal=TERM --kill-after=10s 180s docker start --attach \"$container\" > \"$RUNNER_TEMP/frontend-release/qualification.json\"\ntest \"$(docker inspect --format '{{.State.ExitCode}}' \"$container\")\" = 0\ncat \"$RUNNER_TEMP/frontend-release/qualification.json\""
+    },
+    ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify actual Angular PrimeNG and bilingual Docusaurus publications",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "npm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\""
+    },
+    ".github/workflows/container-runtime.yml:container:Authenticate and prepare the released image context": {
+      "workflow": ".github/workflows/container-runtime.yml",
+      "job": "container",
+      "name": "Authenticate and prepare the released image context",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "set -euo pipefail\numask 077\ncontainer_work=$(mktemp -d /tmp/lsf-container-XXXXXXXX)\necho \"CONTAINER_WORK=$container_work\" >> \"$GITHUB_ENV\"\nmkdir \"$container_work/release\" \"$container_work/trust\" \"$container_work/tools\"\ncp -R tools/native_runtime tools/container_runtime \"$container_work/tools/\"\ncp tools/prepare_container_runtime.py \"$container_work/tools/\"\ninstall -m 0755 \"$(command -v gh)\" \"$container_work/trust/gh\"\ngh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir \"$container_work/release\" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json --pattern lsf-install.pyz\ngh attestation trusted-root > \"$container_work/trust/root.jsonl\"\npython3 \"$container_work/tools/prepare_container_runtime.py\" --release-directory \"$container_work/release\" --version 0.1.0-alpha.4 --publisher-policy \"$container_work/tools/container_runtime/release-policy.json\" --trusted-root \"$container_work/trust/root.jsonl\" --verifier \"$container_work/trust/gh\" --output \"$container_work/context\" > \"$RUNNER_TEMP/container-build-inputs.json\""
+    },
+    ".github/workflows/container-runtime.yml:container:Build the runtime and disposable publisher images": {
+      "workflow": ".github/workflows/container-runtime.yml",
+      "job": "container",
+      "name": "Build the runtime and disposable publisher images",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker build --tag lsf-container-runtime \"$CONTAINER_WORK/context\"\ndocker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release"
+    },
+    ".github/workflows/container-runtime.yml:container:Publish actual signed sites and verify restart": {
+      "workflow": ".github/workflows/container-runtime.yml",
+      "job": "container",
+      "name": "Publish actual signed sites and verify restart",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3617,7 +3657,7 @@
       "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
     },
     "tools/static_site.py": {
-      "sha256": "a07592982539d5d575494bdb51a2ab1dd3b14e75501cf4ae1d40c3f5cd1e7618"
+      "sha256": "bf037162dcb6b332b50f4dd88175425b87bd2b209645e754ad6bddf74daedbd3"
     },
     "tools/test.py": {
       "sha256": "cd57b8d7a9e8df28e6bdd520e38f5614d27040842305a9f0a2081108e0608b93"
@@ -3657,6 +3697,18 @@
     },
     "tools/static-release/unpack.py": {
       "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
+    },
+    "tools/build_framework_sites.py": {
+      "sha256": "c82fe7e64de08e7e42e170a75148a24f2de8ebab71173cf4a8570b650b336fe8"
+    },
+    "tools/run_framework_sites.py": {
+      "sha256": "04fdc86bc19851aff707a91d3196e6a6bad7f976f00f53b81b26a541600821cd"
+    },
+    "tools/container_runtime/qualification.py": {
+      "sha256": "c2884188153ea1a40117b2a9823ab82e6c645af5185d54f49c021d868ca66c3a"
+    },
+    "tools/prepare_container_runtime.py": {
+      "sha256": "3527a1bb2296864c75a54d86f38579b67c94b8b10cf0964c59c33f4f66aa7d2e"
     }
   },
   "pythonCases": {
@@ -7078,7 +7130,7 @@
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
-    ".github/workflows/ci.yml": "925eea2c3f3ea37d533fbe0ee5616bde67a6f387204cc47a2285923bd5e0d283",
+    ".github/workflows/ci.yml": "701517ef7d268f278d77e534d001fa217565b58d18d78e6d3a9cfe4199b56acd",
     ".github/workflows/developer-packaged-qualification.yml": "aeda0753a6ee0d0ed0e4198334f7447761a72bf741623adbd9c9f0a210e57610",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "0566e5e88ab63c07bc1672993b1e26537ca56c4fbae949c6b0f782f0aaac3dce",
@@ -7095,6 +7147,7 @@
     ".github/workflows/security-baseline.yml": "660dce297ecd4e59abeda48a7c577a687ff889d0fce035e44b7581709853ba1b",
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
-    ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc"
+    ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
+    ".github/workflows/container-runtime.yml": "5e340398d2298e60c422929bdc363054ca97ea3064582baf45ecb2f3af402df9"
   }
 }

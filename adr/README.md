@@ -104,3 +104,6 @@ old implementation snapshots are not setup instructions.
 - [ADR-0050: Plan capacity before deleting publication history](0050-plan-capacity-before-deleting-publication-history.md)
 - [ADR-0049: Scope cross-origin assets to explicit publications](0049-scope-cross-origin-assets-to-publications.md)
 - [ADR-0051: Author static release evidence without a Rust toolchain](0051-author-static-release-evidence-without-a-rust-toolchain.md)
+- [ADR-0052: Authorize exact static style identities](0052-authorize-exact-static-style-identities.md)
+- [ADR-0053: Run authenticated native binaries in a bounded container profile](0053-run-authenticated-native-containers.md)
+- [ADR-0054: Preserve coupled local container state under a shared owner fence](0054-preserve-coupled-local-container-state.md)

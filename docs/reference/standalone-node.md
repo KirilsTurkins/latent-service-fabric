@@ -1,5 +1,8 @@
 # Standalone node
 
+For an authenticated non-root image, private mounts and foreground signal handling,
+follow [Run a node in a Linux container](../operations/container-runtime.md).
+
 The optional `capabilityPolicies` section enables one bounded durable policy
 owner on the existing control runtime and listener. See [capability policy
 configuration and recovery](../runtime/capability-policies.md#durable-owner-and-finite-retention).
