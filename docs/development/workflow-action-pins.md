@@ -21,6 +21,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/upload-artifact` | `v4` | `ea165f8d65b6e75b540449e92b4886f43607fa02` |
 | `actions/download-artifact` | `v4` | `d3f86a106a0bac45b974a628896c90dbdf5c8093` |
 | `actions/attest-build-provenance` | `v4.2.2` | `4d101475d8b20a2381f78447822ac1eab6504dd8` |
+| `actions/upload-pages-artifact` | `v5.0.0` | `fc324d3547104276b827a68afc52ff2a11cc49c9` |
 | `dtolnay/rust-toolchain` | `1.97.1` | `4716b85f2fac3e324e64fa2810f6b5c3905760a5` |
 | `dtolnay/rust-toolchain` | `1.94.1` | `9376cdc5a5e25b16da71af47712785cf06b0d6d4` |
 | `Swatinem/rust-cache` | `v2.9.2` | `6323deb102c322ba6fcbdcafc7e3dddab59af2b6` |
@@ -41,6 +42,14 @@ v4.2.1 action and preserves the `subject-path` input and `bundle-path` output us
 by the developer and native runtime workflows. Registry publication remains
 disabled by default. The workflow hashes in `tools/ci/commands.json` reflect the
 new action pin; required commands and job conditions are unchanged.
+
+The `actions/upload-pages-artifact` v5.0.0 identity was resolved and its action
+definition reviewed on **2026-09-27**. It delegates artifact upload to the pinned
+`actions/upload-artifact` v7.0.0 action and preserves the existing Pages archive,
+`name`, `path` and retention inputs. Its new `include-hidden-files` input defaults
+to false, preserving the site's current file selection. The Pages workflow hash
+in `tools/ci/commands.json` reflects the new pin; publication guards and required
+commands are unchanged.
 
 ## Updating a pin
 
