@@ -132,7 +132,10 @@ pub fn adversarial(name: &str) -> CapsuleArtifact {
 }
 
 pub fn artifact_bytes(component_bytes: Vec<u8>, exports: &[&str]) -> CapsuleArtifact {
-    let digest = ReleaseDigest(format!("sha256:{:x}", Sha256::digest(&component_bytes)));
+    let digest = ReleaseDigest(format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(&component_bytes))
+    ));
     let manifest = CapsuleManifest {
         api_version: "latent.dev/v1alpha1".to_owned(),
         metadata: ObjectMetadata {

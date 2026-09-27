@@ -66,7 +66,10 @@ async fn real_nats_audit_preserves_broker_ack_and_uncertainty_without_event_or_c
     );
     for secret in ["lsf-public-nats-password", "synthetic-event", "guest-key"] {
         assert!(!public.contains(secret));
-        assert!(!public.contains(&format!("{:x}", Sha256::digest(secret.as_bytes()))));
+        assert!(!public.contains(&format!(
+            "{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(secret.as_bytes()))
+        )));
     }
     drop(page);
     shutdown(&f).await;

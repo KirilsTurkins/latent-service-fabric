@@ -285,6 +285,12 @@ impl LocalBlobWriter {
             return Err(LocalBlobError::Corrupt);
         }
         self.directory.file_matches("data", &data, self.written)?;
-        Ok((format!("sha256:{:x}", hash.finalize()), identity))
+        Ok((
+            format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(hash.finalize())
+            ),
+            identity,
+        ))
     }
 }

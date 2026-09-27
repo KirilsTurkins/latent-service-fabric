@@ -67,7 +67,10 @@ impl LocalSecretProvider {
             hash.update((n as u64).to_le_bytes());
         }
         // No material, version, expiry or hash of a secret enters public identity.
-        let digest = format!("sha256:{:x}", hash.finalize());
+        let digest = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        );
         let installed = pools.install(
             ProviderSetup {
                 logical_id,

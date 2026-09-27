@@ -138,7 +138,10 @@ impl VaultConfig {
     pub(super) fn identity(&self) -> Result<String> {
         self.validate()?;
         let encoded = serde_json::to_vec(self).map_err(|_| SecretError::Unavailable)?;
-        Ok(format!("sha256:{:x}", Sha256::digest(&encoded)))
+        Ok(format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(&encoded))
+        ))
     }
     pub(super) fn host(&self) -> String {
         let o = &self.transport.destinations[0].origin;
