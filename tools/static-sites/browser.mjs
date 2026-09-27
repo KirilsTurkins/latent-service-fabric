@@ -103,6 +103,14 @@ try {
       assert.equal((await response.request().redirectedFrom().response()).status(), 308);
       assert.equal(await site.locator('#view').textContent(), 'Static guide');
       assert.equal(await site.locator('body').evaluate(element => getComputedStyle(element).color), 'rgb(20, 50, 80)');
+      for (const [locale, title] of [['en', 'Chapter 1'], ['de', 'Kapitel 1']]) {
+        const localized = await site.goto(base + mount + '/' + locale + '/chapter-001/', {waitUntil: 'networkidle', timeout: 15000});
+        assert.equal(localized.status(), 200);
+        assert.equal(await site.locator('html').getAttribute('lang'), locale);
+        assert.equal(await site.locator('#view').textContent(), title);
+      }
+      // An empty 404 can finish by committing Chromium's own error document.
+      // Keep that negative navigation last; no later request races its commit.
       const missingUrl = base + mount + '/guide/missing';
       const missingDocument = site.waitForResponse(response => response.url() === missingUrl, {timeout: 15000});
       const [notFound] = await Promise.all([missingDocument,
@@ -111,12 +119,6 @@ try {
           assert.match(error.message, /net::ERR_HTTP_RESPONSE_CODE_FAILURE/);
         })]);
       assert.equal(notFound.status(), 404);
-      for (const [locale, title] of [['en', 'Chapter 1'], ['de', 'Kapitel 1']]) {
-        const localized = await site.goto(base + mount + '/' + locale + '/chapter-001/', {waitUntil: 'networkidle', timeout: 15000});
-        assert.equal(localized.status(), 200);
-        assert.equal(await site.locator('html').getAttribute('lang'), locale);
-        assert.equal(await site.locator('#view').textContent(), title);
-      }
       await site.close();
     }
     result.version = version;
