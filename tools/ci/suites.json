@@ -546,6 +546,8 @@
         "local_repository::tests::admission::parent_sync_failure_retains_pending_bytes_without_positive_index",
         "local_repository::tests::admission::post_rename_expiry_does_not_adopt_and_exact_retry_recovers",
         "local_repository::tests::admission::preflight_runs_once_without_locks_and_cannot_stage_on_rejection",
+        "local_repository::tests::admission::publication_lease::capsule_publication_renews_after_preparation_and_reads_outside_policy_fence",
+        "local_repository::tests::admission::publication_lease::capsule_publication_staging_cannot_revive_revocation_or_failed_renewal",
         "local_repository::tests::admission::read_wait::scheduling_hook_cannot_supply_success_and_legacy_fetch_remains_immediate",
         "local_repository::tests::admission::read_wait::sealed_worker_fetch_cannot_upgrade_original_grant_during_post_read_wait",
         "local_repository::tests::admission::read_wait::sealed_worker_fetch_never_schedules_non_busy_or_malformed_errors",
@@ -761,7 +763,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 254,
+      "minimumCases": 256,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
