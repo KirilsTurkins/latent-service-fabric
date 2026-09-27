@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "latent.native-publisher-policy.v1",
+  "repository": "KirilsTurkins/latent-service-fabric",
+  "workflow": ".github/workflows/native-runtime-release.yml",
+  "sourceRef": "refs/tags/0.1.0-alpha.4",
+  "sourceCommit": "2d6cc2eafc0a17dfe573be4252fa49835bebbbd6",
+  "version": "0.1.0-alpha.4",
+  "purpose": "release"
+}
