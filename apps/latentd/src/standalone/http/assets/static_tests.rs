@@ -153,7 +153,7 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         assert_eq!((response.0, response.2.as_slice()), (200, body), "{path}");
         assert!(response.1.contains("Cache-Control: private, no-cache\r\n"));
         assert!(response.1.contains("Sec-Fetch-Dest"));
-        if path.ends_with(".xml") {
+        if matches!(path, "/sitemap.xml" | "/docs/sitemap.xml") {
             assert!(response.1.contains("Content-Type: application/xml\r\n"));
             assert!(response.1.contains("X-Content-Type-Options: nosniff\r\n"));
         }
