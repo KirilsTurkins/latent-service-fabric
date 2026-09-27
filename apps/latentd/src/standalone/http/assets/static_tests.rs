@@ -555,11 +555,15 @@ async fn static_concurrency_corruption_and_read_saturation_never_enter_renderer_
     // Saturate only after that owner and its ingress exchange have retired.
     node::wait(|| {
         let snapshot = h.owner.handle().snapshot();
-        snapshot.connections == 0 && snapshot.exchanges == 0 && store.work.available_permits() == 4
+        snapshot.connections == 0
+            && snapshot.exchanges == 0
+            && store.work.available_permits() == super::MAX_READS
     })
     .await;
     let rejected_before_saturation = store.snapshot().capacity_rejections;
-    let held = Arc::clone(&store.work).try_acquire_many_owned(4).unwrap();
+    let held = Arc::clone(&store.work)
+        .try_acquire_many_owned(u32::try_from(super::MAX_READS).unwrap())
+        .unwrap();
     for path in ["/index.html", "/guide/", "/orders/42"] {
         assert_eq!(get(&h, path, HTML).await.0, 503);
     }
