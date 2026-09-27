@@ -10,6 +10,87 @@ The permanent authority rules in [OCI registry adapter](oci-registry.md) continu
 to apply. A registry-provided challenge is untrusted protocol data, not authority
 to contact a new service or forward credentials.
 
+## Configure the CLI
+
+Use `latent package push` and `latent package pull` with a version 2
+[registry profile](../../schemas/cli-registry-profile.schema.json). Start from
+[the example profile](../../examples/guides/registry-challenge.json),
+copy it to a private directory, and replace its example authorities and address
+allowlists with values approved by your registry operator. The example addresses
+are documentation addresses, not a working registry.
+
+1. Set `origin` and `repository` to the exact registry and repository. Set
+   `bearerChallenge.realm` to the approved HTTPS token URL and `service` to the
+   exact challenge service. The CLI never discovers authority from a challenge.
+2. Set the trusted `identity` tenant, principal and positive `credentialEpoch`.
+   Select `pull` for download-only jobs or `pull-push` for publishers. These fields
+   partition local credential ownership; they do not grant server permissions.
+3. Have your CI secret provider write `credentials.json` beside the profile using
+   the [Basic credential shape](../../schemas/cli-registry-credentials.schema.json).
+   The username/password are sent only to the approved token realm. Use a private
+   runner directory and restrict the file to the job identity (0700 directory and
+   0600 file on Linux/WSL; an equivalent owner-only ACL on Windows). Pass only the
+   file path to LSF. Never put secret values in arguments, logs, Terraform state or
+   retained test receipts. A preissued Bearer credential file cannot be combined
+   with `bearerChallenge`.
+4. Choose explicit socket addresses in top-level `addresses` and
+   `bearerChallenge.addresses`, or configure `network` and leave both arrays empty.
+   Each network destination names an exact HTTPS origin, CIDR allowlist,
+   `specialAddresses` and either static IPs or one explicit numeric DNS server.
+   Every private, loopback, link-local or other special address needs exact
+   approval as well as CIDR membership. Configure a DNS TTL ceiling of 1–300
+   seconds. No system DNS, ambient HTTP proxy or credential helper is used.
+5. Keep `maximumRedirects: 0` unless the selected registry requires storage
+   redirects. Approve each required storage origin and bounded `contentPrefixes`
+   explicitly; the maximum is three redirects. Only bodyless blob GET/HEAD may
+   follow them, and redirected requests carry no registry or token credential.
+   Writes, token exchanges and unrelated paths cannot use this permission.
+6. Keep `rootCertificates: []` for the built-in public roots, or add approved DER
+   CA file paths relative to the profile. There are at most eight roots of 64 KiB
+   each. The version 2 profile always requires HTTPS and verified certificates.
+
+Then use the same commands as the [OCI transfer workflow](../phase-2-operator-workflows.md#oci-transfer):
+
+```sh
+latent package push package --registry-profile registry.json --reference candidate --evidence-index evidence/index.json --evidence-root evidence
+latent package pull --registry-profile registry.json --reference sha256:REPLACE_WITH_PUSH_DIGEST --output-dir received-package --evidence-output received-evidence
+```
+
+Use the exact returned digest for the second command. Inspect and verify the
+received package and evidence before publication; transport authentication alone
+does not grant publisher trust. One `--rpc-timeout-ms` budget covers profile
+loading, DNS, token exchange, redirects and all package/referrer transfers.
+Cleanup has a separate finite grace. An expired token can refresh on demand
+within that budget; an expired CI identity cannot be renewed by LSF. Provision a
+fresh protected credential and increment its epoch for a new command. A failed or
+uncertain write is never automatically replayed: inspect the recorded confirmed
+digests and uncertain outcome before submitting a new operation.
+
+The profile and credential documents are each capped at 16 KiB. Unknown,
+duplicate and present-null fields are rejected, including nested network fields.
+There are at most eight destinations, sixteen address ranges/IPs per destination
+and eight content prefixes. Exact URL, port, address and prefix semantics are
+also checked by the transport before any connection. Version 1 remains the
+explicit static profile; advanced fields cannot silently change its authority.
+
+### Azure qualification boundary
+
+Azure's [identity authentication](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-authentication)
+and [managed identity](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-authentication-managed-identity)
+options are provisioned outside LSF. An ACA identity used by the platform to pull
+a runtime image does not supply credentials to this package client. Give the CI
+package publisher its own approved repository permissions and private credential
+delivery. Capture provider output directly into a protected file in the job;
+disable command tracing and avoid displaying token responses.
+
+The CLI implementation does not establish ACR compatibility. Actual ACR
+qualification must record immutable package/evidence push and digest pull,
+subject verification, short-lived identity expiry/renewal, denied scope and
+addresses, DNS rotation, applicable redirects and unavailable endpoints. Mark
+features unused by that specific topology as unused. Do not copy a local Harbor
+or TLS-test-peer result into an Azure receipt. The registry support matrix stays
+unchanged until that real run passes.
+
 ## Configure one approved token authority
 
 Use `RegistryCredentials::BearerChallenge` only when the operator already knows
