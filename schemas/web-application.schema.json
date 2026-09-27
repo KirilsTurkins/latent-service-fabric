@@ -149,6 +149,18 @@
         ]
       }
     },
+    "styleHashes": {
+      "description": "Exact reviewed style-element bytes authorized only when the host enables allowStaticStyleHashes. Native validation additionally requires strict canonical ordering. No script hashes or style attributes are authorized.",
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 71,
+        "maxLength": 71,
+        "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+      }
+    },
     "staticRouting": {
       "type": "object",
       "additionalProperties": false,
@@ -270,6 +282,28 @@
               }
             }
           }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "styleHashes"
+        ],
+        "properties": {
+          "styleHashes": {
+            "minItems": 1
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "staticRouting"
+        ],
+        "not": {
+          "required": [
+            "renderer"
+          ]
         }
       }
     }

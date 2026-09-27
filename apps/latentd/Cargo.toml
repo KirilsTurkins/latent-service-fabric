@@ -19,6 +19,7 @@ development-test-node = ["latent-wasmtime/development-clock-fixture"]
 workspace = true
 
 [dependencies]
+base64.workspace = true
 clap.workspace = true
 latent-activation = { path = "../../crates/latent-activation" }
 latent-admission = { path = "../../crates/latent-admission" }
@@ -59,7 +60,6 @@ zeroize = { version = "=1.9.0", features = ["alloc"] }
 rustix = { version = "=1.1.5", features = ["fs", "process", "param"] }
 
 [dev-dependencies]
-base64.workspace = true
 latent-control-store = { path = "../../crates/latent-control-store", features = ["catalog-observation"] }
 latent-optimization-workloads = { path = "../../tools/optimization-workloads" }
 latent-packaging = { path = "../../crates/latent-packaging" }
