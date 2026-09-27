@@ -2,7 +2,7 @@
 
 This is the maintained application for [the build-to-browser delivery
 ticket](https://github.com/KirilsTurkins/latent-service-fabric/issues/236).
-It uses the pinned Angular 22.1.6, TypeScript 6.0.3 and Node 24.19.0 build
+It uses the pinned Angular 22.1.7, TypeScript 6.0.3 and Node 24.19.0 build
 toolchain in [the renderer profile](../renderer-profile/package.json).
 The resulting component is the server, not a resident Node.js process.
 Actual protected native preparation and browser acceptance are separate gates;
