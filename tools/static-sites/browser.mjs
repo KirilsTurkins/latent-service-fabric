@@ -2,6 +2,7 @@ import {createRequire} from 'node:module';
 import path from 'node:path';
 import {readFile, writeFile, rename} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {publicNavigation} from './public-navigation.mjs';
 
 const [toolchain, chrome, origin, generator, version, receipt, mode = 'navigation', ready, resume] = process.argv.slice(2);
 assert.ok(['navigation', 'cutover'].includes(mode));
@@ -118,6 +119,7 @@ try {
     result.lazyScripts = scripts.size;
     result.missingScriptAndJsonStay404 = true;
     result.rootAndMountedGeneratorRedirects = true;
+    result.publicNavigation = await publicNavigation(browser, origin);
   }
   assert.deepEqual(errors, []);
   delete result.stage;

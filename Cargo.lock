@@ -1661,7 +1661,7 @@ dependencies = [
  "serde_json",
  "sha2 0.11.0",
  "tokio",
- "wasm-encoder 0.252.0",
+ "wasm-encoder 0.259.0",
 ]
 
 [[package]]
@@ -1890,7 +1890,7 @@ dependencies = [
  "sha2 0.11.0",
  "spdx",
  "tempfile",
- "wasm-encoder 0.252.0",
+ "wasm-encoder 0.259.0",
  "wasmparser 0.259.0",
  "wit-parser 0.252.0",
 ]
@@ -1913,7 +1913,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tokio",
- "wasm-encoder 0.252.0",
+ "wasm-encoder 0.259.0",
 ]
 
 [[package]]
@@ -2191,7 +2191,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-rustls",
- "wasm-encoder 0.252.0",
+ "wasm-encoder 0.259.0",
  "wasmtime",
  "wit-parser 0.252.0",
  "zeroize",
@@ -2291,7 +2291,7 @@ dependencies = [
  "tokio-rustls",
  "tonic",
  "tower",
- "wasm-encoder 0.252.0",
+ "wasm-encoder 0.259.0",
  "wasmparser 0.259.0",
  "zeroize",
 ]

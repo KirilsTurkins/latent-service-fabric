@@ -15,6 +15,18 @@ LOCAL = {"formatVersion": 1, "bind": "127.0.0.1:8080",
 
 
 class NodeHttpIngressSchema(unittest.TestCase):
+    def test_public_document_navigation_requires_bounded_public_scope(self):
+        binding = {'authority': 'web.example.test', 'tenant': 'example', 'mount': '/docs'}
+        public = dict(LOCAL, authentication={'mode': 'public-origins', 'origins': [
+            {'authority': binding['authority'], 'tenant': binding['tenant'], 'subject': 'reader'}]})
+        VALIDATOR.validate(dict(public, publicDocumentNavigation=[binding]))
+        VALIDATOR.validate(dict(LOCAL, publicDocumentNavigation=[]))
+        self.assertFalse(VALIDATOR.is_valid(dict(LOCAL, publicDocumentNavigation=[binding])))
+        for value in (None, [dict(binding, extra=True)], [binding, binding],
+                      [dict(binding, mount='docs')], [dict(binding, tenant='')],
+                      [dict(binding, mount=f'/docs-{n}') for n in range(33)]):
+            self.assertFalse(VALIDATOR.is_valid(dict(public, publicDocumentNavigation=value)))
+
     def test_documented_tls_configuration_and_public_adapter(self):
         VALIDATOR.check_schema(SCHEMA)
         guide = (ROOT / "docs/reference/http-ingress.md").read_text(encoding="utf-8")

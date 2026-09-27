@@ -30,7 +30,8 @@ def configure(directory, fixture):
         reservation.bind(('127.0.0.1', 0))
         port = reservation.getsockname()[1]
     # Startup must acquire this endpoint itself. A racing listener causes failure.
-    hosts = {'csr': f'localhost:{port}', 'generator': f'127.0.0.1:{port}', 'foreign': f'foreign.static.test:{port}'}
+    hosts = {'csr': f'localhost:{port}', 'generator': f'127.0.0.1:{port}',
+             'navigation': f'docs.lsf.localhost:{port}', 'foreign': f'foreign.static.test:{port}'}
     path = configure_node(directory, fixture, 'tests')
     value = read_json(path)
     value['cells'][0]['queueCapacity'] = 8
@@ -42,6 +43,7 @@ def configure(directory, fixture):
         'authentication': {'mode': 'public-origins', 'origins': [
             {'authority': host, 'subject': 'static-browser', 'tenant': 'foreign' if name == 'foreign' else 'tests'}
             for name, host in hosts.items()]},
+        'publicDocumentNavigation': [{'authority': hosts['navigation'], 'tenant': 'tests', 'mount': '/'}],
         'limits': {'maximumConnections': 16, 'maximumExchanges': 8, 'maximumBufferBytes': 48 * 1024 * 1024,
                    'maximumRequestsPerConnection': 16, 'idleTimeoutMillis': 1000, 'headerTimeoutMillis': 1000}}
     replace_config(path, value)
@@ -251,6 +253,9 @@ def run(args):
             for name, host, mount in [('csr-a', hosts['csr'], '/'), ('generator', hosts['generator'], '/'), ('generator-docs', hosts['csr'], '/docs')]:
                 for method in ('GET', 'HEAD'):
                     receipts.append(apply(client, name + '-' + method.lower(), publications[name], host, mount, method))
+            for name, mount in [('generator', '/'), ('generator-docs', '/docs')]:
+                for method in ('GET', 'HEAD'):
+                    receipts.append(apply(client, 'public-' + name + '-' + method.lower(), publications[name], hosts['navigation'], mount, method))
             dormant = idle(client)
             timings, immutable, etag = smoke(client, node, hosts, records, publications)
             browser_a = browser(client, args, hosts, 'A')
@@ -275,6 +280,7 @@ def run(args):
             require(denied['category'] != 'success', 'static-foreign-publication')
             client.config = original_profile
             audit_receipt = audit(client, receipts)
+            reconciliation = route_reconciliation(client, args, directory, hosts['csr'], publications)
             # Disconnect a selected immutable read; its shared request owners must retire.
             asset = next(row for row in records['csr-b']['assets'] if row['mediaType'] == 'text/javascript')
             current_immutable = '/_lsf/assets/' + publications['csr-b'] + asset['path']
@@ -292,10 +298,30 @@ def run(args):
                 'ociExactDigestRoundtrip': True, 'browserA': browser_a, 'cutover': handoff, 'browserB': browser_b,
                 'rollback': rollback, 'revokedConditionalDenied': True, 'revokedRollbackDenied': True,
                 'foreignPublicationDenied': True, 'before': before, 'dormant': dormant, 'after': after,
-                'audit': audit_receipt, 'requests': timings, 'shutdown': shutdown, 'cliProcesses': client.calls})
+                'audit': audit_receipt, 'routeReconciliation': reconciliation,
+                'requests': timings, 'shutdown': shutdown, 'cliProcesses': client.calls})
         finally:
             client.node = None
             if node is not None: node.close()
+
+
+def route_reconciliation(client, args, directory, host, publications):
+    journal_root = directory / 'route-journals'
+    journal_root.mkdir(mode=0o700)
+    argv = [str(args.node_js), str(ROOT / 'tools/static-release/qualify.mjs'), str(args.cli),
+            str(client.config), NODE_ID, str(journal_root), host,
+            publications['generator'], publications['generator-docs']]
+    process = Process(argv, ROOT, client.environment, client.cancellation, maximum=262144)
+    try:
+        result = process.complete(min(client.deadline, time.monotonic() + 180))
+        require(result.returncode == 0, 'route-reconciliation-qualification-failed: ' +
+                redact(result.stderr.decode('utf-8', errors='replace'))[-1600:])
+        receipt = json.loads(result.stdout)
+        require(receipt['schemaVersion'] == 'latent.static.route-qualification.v1' and receipt['passed'],
+                'route-reconciliation-receipt')
+        return receipt
+    finally:
+        process.close()
 
 
 def main():
