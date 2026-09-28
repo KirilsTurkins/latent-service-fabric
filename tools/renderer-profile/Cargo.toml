@@ -12,6 +12,7 @@ publish = false
 workspace = true
 
 [dependencies]
+latent-core = { path = "../../crates/latent-core" }
 wasmtime.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

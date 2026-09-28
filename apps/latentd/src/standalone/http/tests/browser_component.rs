@@ -44,7 +44,7 @@ async fn actual_http_component_browser_policy_rejects_unsafe_output_without_refl
     let mut value = config(&root);
     value["httpIngress"]["browserOrigins"] = json!([{"authority":AUTHORITY, "tenant":"tests"}]);
     value["httpIngress"]["transport"] = json!({"mode":"trusted-proxy", "peers":["127.0.0.1"]});
-    let fixture = Fixture::start(root, value, Some(bytes)).await;
+    let fixture = Fixture::start(root, value, Some(bytes.clone())).await;
     let mut socket = fixture.connect().await;
     let input = request("GET", "/", TOKEN, 0, true).replace(
         "\r\n\r\n",
@@ -61,5 +61,22 @@ async fn actual_http_component_browser_policy_rejects_unsafe_output_without_refl
         assert!(!String::from_utf8_lossy(&reply.2).contains(forbidden));
     }
     fixture.idle().await;
+    fixture.shutdown().await;
+
+    // Even forged document metadata on an explicitly public mount cannot turn
+    // an application/API target into a static document or reserve a guest cell.
+    let root = TempDir::new().unwrap();
+    let mut value = config(&root);
+    value["httpIngress"]["authentication"] = json!({"mode":"public-origins", "origins":[
+        {"authority":AUTHORITY,"tenant":"tests","subject":"public"}]});
+    value["httpIngress"]["publicDocumentNavigation"] = json!([
+        {"authority":AUTHORITY,"tenant":"tests","mount":"/"}]);
+    let fixture = Fixture::start(root, value, Some(bytes)).await;
+    let mut socket = fixture.connect().await;
+    socket.write_all(format!("GET /api/data HTTP/1.1\r\nHost: {AUTHORITY}\r\nConnection: close\r\nSec-Fetch-Site: cross-site\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Dest: document\r\n\r\n").as_bytes()).await.unwrap();
+    assert_eq!(response(&mut socket).await.0, 403);
+    fixture.idle().await;
+    assert_eq!(fixture.node.manager.journal().snapshot().begun, 0);
+    assert_eq!(fixture.node.backend.resource_snapshot().stores_created, 0);
     fixture.shutdown().await;
 }

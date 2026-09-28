@@ -123,7 +123,10 @@ impl LocalBlobStore {
         hash.update((self.namespace().len() as u64).to_le_bytes());
         hash.update(self.namespace().as_bytes());
         hash.update(record(&self.limits())?);
-        Ok(format!("sha256:{:x}", hash.finalize()))
+        Ok(format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hash.finalize())
+        ))
     }
     pub fn snapshot(&self) -> Result<LocalBlobSnapshot> {
         let state = self.inner.state()?;

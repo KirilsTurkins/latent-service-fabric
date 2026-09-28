@@ -2,7 +2,7 @@ use super::{
     asset_tree_digest, inspect_web_layout, renderer_profile_digest, StaticDirectoryIndexMode,
     StaticFallbackMode, StaticWebFallback, StaticWebRouting, StaticWebRoutingProfile,
     WebApplicationManifest, WebAsset, WebRenderMode, WebRenderer, WebRendererProfile, WebRoute,
-    MAX_WEB_ASSETS, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
+    MAX_WEB_ASSETS, MAX_WEB_ASSET_CAPACITY, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
 };
 use crate::package::{
     artifact_blob_digest, encode_config, encode_manifest, inspect_package, ArtifactDescriptor,
@@ -83,6 +83,7 @@ fn manifest(renderer: bool) -> WebApplicationManifest {
                 Some("/index.html".into())
             },
         }],
+        style_hashes: Vec::new(),
         static_routing: None,
         renderer: renderer.then(|| WebRenderer {
             layer: "server/renderer.wasm".into(),
@@ -94,6 +95,61 @@ fn manifest(renderer: bool) -> WebApplicationManifest {
             assets_digest,
             backend_profile: super::WebBackendProfile::None,
         }),
+    }
+}
+
+#[test]
+fn xml_sitemaps_are_inert_exact_media_and_legacy_fonts_remain_rejected() {
+    let mut document = manifest(false);
+    document.assets.push(WebAsset {
+        path: "/sitemap.xml".into(),
+        layer: "public/sitemap.xml".into(),
+        digest: artifact_blob_digest(b"<urlset/>").to_string(),
+        size: 9,
+        media_type: "application/xml".into(),
+    });
+    document.assets_digest = asset_tree_digest(&document.assets).unwrap().to_string();
+    let (layout, bytes) = package(&document);
+    assert!(inspect_web_layout(&layout, &bytes).is_ok());
+    for media in ["text/xml", "text/html", "application/octet-stream"] {
+        let mut changed = document.assets.clone();
+        changed[1].media_type = media.into();
+        assert!(asset_tree_digest(&changed).is_err());
+    }
+    for (suffix, media) in [
+        ("woff", "font/woff"),
+        ("ttf", "font/ttf"),
+        ("eot", "application/vnd.ms-fontobject"),
+        ("bin", "application/xml"),
+    ] {
+        let mut changed = document.assets.clone();
+        changed[1].path = format!("/sitemap.{suffix}");
+        changed[1].layer = format!("public/sitemap.{suffix}");
+        changed[1].media_type = media.into();
+        assert!(asset_tree_digest(&changed).is_err());
+    }
+}
+
+#[test]
+fn static_contract_fixtures_agree_with_json_schema_acceptance() {
+    let fixtures: serde_json::Value = serde_json::from_str(include_str!(
+        "../../tests/fixtures/static-web-contracts.json"
+    ))
+    .unwrap();
+    for case in fixtures.as_array().unwrap() {
+        let raw = serde_json::to_vec(&case["manifest"]).unwrap();
+        let accepted = serde_json::from_slice::<WebApplicationManifest>(&raw)
+            .ok()
+            .is_some_and(|document| {
+                let (layout, bytes) = package_bytes(&document, raw);
+                inspect_web_layout(&layout, &bytes).is_ok()
+            });
+        assert_eq!(
+            accepted,
+            case["accepted"].as_bool().unwrap(),
+            "{}",
+            case["name"]
+        );
     }
 }
 
@@ -401,8 +457,40 @@ fn public_paths_media_types_order_and_spare_capacity_are_bounded() {
     document.assets.push(document.assets[0].clone());
     assert!(asset_tree_digest(&document.assets).is_err());
     document = manifest(false);
-    document.assets.reserve_exact(MAX_WEB_ASSETS + 1);
+    document.assets.reserve_exact(MAX_WEB_ASSET_CAPACITY + 1);
     assert!(asset_tree_digest(&document.assets).is_err());
+}
+
+#[test]
+fn documentation_asset_profile_admits_252_paths_and_rejects_the_next_with_a_named_bound() {
+    let mut document = manifest(false);
+    for i in 1..MAX_WEB_ASSETS {
+        let mut asset = document.assets[0].clone();
+        asset.path = format!("/page-{i:03}/{}/{}.html", "x".repeat(50), "y".repeat(50));
+        asset.layer = format!("public{}", asset.path);
+        document.assets.push(asset);
+    }
+    document
+        .assets
+        .sort_by(|left, right| left.path.cmp(&right.path));
+    document.assets_digest = asset_tree_digest(&document.assets).unwrap().to_string();
+    let (layout, bytes) = package(&document);
+    assert!(bytes.len() > 64 * 1024);
+    let checked = inspect_web_layout(&layout, &bytes).unwrap();
+    assert_eq!(checked.manifest().assets.len(), 252);
+    assert!(checked.retained_bytes() < 256 * 1024);
+    let mut asset = document.assets[0].clone();
+    asset.path = "/zzz.html".into();
+    asset.layer = "public/zzz.html".into();
+    document.assets.push(asset);
+    let error = asset_tree_digest(&document.assets).unwrap_err();
+    assert_eq!(error.message, "web-asset-count: actual=253 maximum=252");
+    let error =
+        inspect_web_layout(&layout, &vec![b' '; super::MAX_WEB_MANIFEST_BYTES + 1]).unwrap_err();
+    assert_eq!(
+        error.message,
+        "web-manifest-bytes: actual=262145 maximum=262144"
+    );
 }
 
 #[test]

@@ -95,6 +95,11 @@ write or reclamation failure requires reopening; it cannot refund a live owner.
 Unknown incomplete directories require offline inspection and repair. This
 implementation does not offer deletion of committed historical payloads.
 
+The authenticated node inventory exposes a fixed `publication-catalog` topology
+row with actual usage and limits. Use the [capacity and maintenance guide](../operations/publication-retention.md)
+to calculate remaining budgets and plan a stopped backup or explicit
+reprovisioning. Unavailable measurements are not zero usage.
+
 ## Supported storage and fresh state
 
 Current alpha builds accept the publication catalog and lifecycle format 2.

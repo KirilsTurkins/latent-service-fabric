@@ -43,6 +43,9 @@ pub(in crate::standalone::http) fn select(
     // public asset path only after resolving the captured checked manifest.
     let mut request = Request::parse_routed(raw, tenant, publication.clone(), String::new())?;
     let (asset, directory) = resolve(selection.layout().manifest(), site_path, navigation)?;
+    if head.public_document && asset.media_type != "text/html" {
+        return Err(403);
+    }
     if !accept.allows(&asset.media_type) {
         return Err(406);
     }
@@ -157,6 +160,7 @@ mod tests {
                     .into(),
                 })
                 .collect(),
+            style_hashes: Vec::new(),
             static_routing: Some(StaticWebRouting {
                 profile: StaticWebRoutingProfile::StaticSiteV1,
                 entry_document: "/index.html".into(),

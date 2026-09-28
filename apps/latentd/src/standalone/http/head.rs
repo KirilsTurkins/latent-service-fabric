@@ -13,6 +13,7 @@ pub(super) struct Head {
     pub principal: InvocationPrincipal,
     pub content_length: usize,
     pub close: bool,
+    pub public_document: bool,
     method: latent_ingress::http::Method,
 }
 impl Head {
@@ -111,7 +112,7 @@ pub(super) fn parse(
     let principal = authenticate(shared, collector.target().authority(), authorization)?;
     let method =
         latent_ingress::http::Method::parse(request.method.ok_or(400u16)?).map_err(|_| 405u16)?;
-    admit_browser(
+    let browser_admission = admit_browser(
         shared,
         collector.target(),
         &principal,
@@ -123,6 +124,7 @@ pub(super) fn parse(
         principal,
         content_length: content_length.unwrap_or(0),
         close: close.unwrap_or(false),
+        public_document: browser_admission == browser::Admission::PublicDocument,
         method,
     })
 }
@@ -142,7 +144,7 @@ fn admit_browser(
     principal: &InvocationPrincipal,
     method: latent_ingress::http::Method,
     headers: &[HeaderView<'_>],
-) -> Result<(), u16> {
+) -> Result<browser::Admission, u16> {
     let origins = &shared.settings.browser_origins;
     let approved = origins.iter().any(|origin| {
         origin.authority == target.authority()
@@ -154,12 +156,20 @@ fn admit_browser(
     if !origins.is_empty() && !approved {
         return Err(403);
     }
-    browser::admit(
+    let public_documents = principal.tenant.as_ref().is_some_and(|tenant| {
+        shared
+            .settings
+            .public_document_navigation
+            .iter()
+            .any(|policy| policy.matches(target, &tenant.0))
+    });
+    browser::admit_with_public_documents(
         target,
         method,
         headers,
         approved,
         matches!(shared.settings.authentication, Authentication::Bearer(_)),
+        public_documents,
     )
 }
 fn authenticate(

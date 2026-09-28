@@ -1,0 +1,951 @@
+[
+  {
+    "name": "generator-directory-index",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "csr-explicit-route",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [
+        {
+          "path": "/",
+          "mode": "client",
+          "asset": "/index.html"
+        }
+      ],
+      "staticRouting": {
+        "directoryIndex": "disabled",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "spa",
+          "document": "/index.html"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "static-spa-without-explicit-route",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "spa",
+          "document": "/index.html"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "explicit-route-without-static-routing",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [
+        {
+          "path": "/",
+          "mode": "client",
+          "asset": "/index.html"
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty-routes-without-static-routing",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": []
+    }
+  },
+  {
+    "name": "null-static-routing-with-empty-routes",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": null
+    }
+  },
+  {
+    "name": "unknown-routing-field",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1",
+        "host": "other.example.test"
+      }
+    }
+  },
+  {
+    "name": "unknown-fallback-field",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none",
+          "rewrite": true
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "unknown-profile",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v2"
+      }
+    }
+  },
+  {
+    "name": "unknown-directory-index-mode",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "rewrite",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "unknown-fallback-mode",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "rewrite"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "spa-without-document",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "spa"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "none-with-document",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none",
+          "document": "/index.html"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "missing-entry-document",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "missing-directory-index-document",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-relative",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-parent",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/../index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-dot",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/./index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-reserved",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/_lsf/assets/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-query",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html?x=1",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-empty",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "invalid-document-path-newline",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html\n",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      }
+    }
+  },
+  {
+    "name": "static-routing-with-renderer",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      },
+      "renderer": {
+        "layer": "server/renderer.wasm",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "size": 8,
+        "profile": "wasm-web-buffered-v1",
+        "profileDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4"
+      }
+    }
+  },
+  {
+    "name": "style-one",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      },
+      "styleHashes": [
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      ]
+    }
+  },
+  {
+    "name": "style-empty",
+    "accepted": true,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      },
+      "styleHashes": []
+    }
+  },
+  {
+    "name": "style-duplicate",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      },
+      "styleHashes": [
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      ]
+    }
+  },
+  {
+    "name": "style-policy-injection",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      },
+      "styleHashes": [
+        "'unsafe-inline'"
+      ]
+    }
+  },
+  {
+    "name": "style-too-many",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      },
+      "styleHashes": [
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000003",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000004",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000005",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000006",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000007",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000008",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000009",
+        "sha256:000000000000000000000000000000000000000000000000000000000000000a",
+        "sha256:000000000000000000000000000000000000000000000000000000000000000b",
+        "sha256:000000000000000000000000000000000000000000000000000000000000000c",
+        "sha256:000000000000000000000000000000000000000000000000000000000000000d",
+        "sha256:000000000000000000000000000000000000000000000000000000000000000e",
+        "sha256:000000000000000000000000000000000000000000000000000000000000000f",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000010",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000011",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000012",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000013",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000014",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000015",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000016",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000017",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000018",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000019",
+        "sha256:000000000000000000000000000000000000000000000000000000000000001a",
+        "sha256:000000000000000000000000000000000000000000000000000000000000001b",
+        "sha256:000000000000000000000000000000000000000000000000000000000000001c",
+        "sha256:000000000000000000000000000000000000000000000000000000000000001d",
+        "sha256:000000000000000000000000000000000000000000000000000000000000001e",
+        "sha256:000000000000000000000000000000000000000000000000000000000000001f",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000020",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000021",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000022",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000023",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000024",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000025",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000026",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000027",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000028",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000029",
+        "sha256:000000000000000000000000000000000000000000000000000000000000002a",
+        "sha256:000000000000000000000000000000000000000000000000000000000000002b",
+        "sha256:000000000000000000000000000000000000000000000000000000000000002c",
+        "sha256:000000000000000000000000000000000000000000000000000000000000002d",
+        "sha256:000000000000000000000000000000000000000000000000000000000000002e",
+        "sha256:000000000000000000000000000000000000000000000000000000000000002f",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000030",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000031",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000032",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000033",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000034",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000035",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000036",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000037",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000038",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000039",
+        "sha256:000000000000000000000000000000000000000000000000000000000000003a",
+        "sha256:000000000000000000000000000000000000000000000000000000000000003b",
+        "sha256:000000000000000000000000000000000000000000000000000000000000003c",
+        "sha256:000000000000000000000000000000000000000000000000000000000000003d",
+        "sha256:000000000000000000000000000000000000000000000000000000000000003e",
+        "sha256:000000000000000000000000000000000000000000000000000000000000003f",
+        "sha256:0000000000000000000000000000000000000000000000000000000000000040"
+      ]
+    }
+  },
+  {
+    "name": "style-uppercase",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      },
+      "styleHashes": [
+        "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ]
+    }
+  },
+  {
+    "name": "style-trailing-newline",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [],
+      "staticRouting": {
+        "directoryIndex": "redirect",
+        "directoryIndexDocument": "/index.html",
+        "entryDocument": "/index.html",
+        "fallback": {
+          "mode": "none"
+        },
+        "profile": "static-site-v1"
+      },
+      "styleHashes": [
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000\n"
+      ]
+    }
+  },
+  {
+    "name": "style-without-static-routing",
+    "accepted": false,
+    "manifest": {
+      "assets": [
+        {
+          "digest": "sha256:d9640d4a69b436b4d6117f4b86e4a3e703f17c5ec732d8ad840333e68c17aa45",
+          "layer": "public/index.html",
+          "mediaType": "text/html",
+          "path": "/index.html",
+          "size": 56
+        }
+      ],
+      "assetsDigest": "sha256:789bb20d3cb3a4892558b163946f566ddf0da6e14e4d7d761609ad3b65ce31b4",
+      "formatVersion": 1,
+      "profile": "lsf.web-release.v1",
+      "routes": [
+        {
+          "path": "/",
+          "mode": "client",
+          "asset": "/index.html"
+        }
+      ],
+      "styleHashes": [
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      ]
+    }
+  }
+]

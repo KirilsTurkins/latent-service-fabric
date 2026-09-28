@@ -25,11 +25,13 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `protoc-bin-vendored` |                                3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
 | Wasmtime |                               47.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
+| `wasmparser` |                               0.259.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
+| `wasm-encoder` |                               0.259.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-bindgen` |                               0.62.0 | Guest bindings and canonical ABI exports generated from WIT |
 | Serde / `serde_json` |                    1.0.229 / 1.0.150 | Rust contract serialization |
-| TOML |                                1.1.4 | Configuration parsing and serialization |
-| BLAKE3 / SHA-256 |                       1.8.7 / 0.10.9 | Cache/prepared identity and artifact digest verification |
-| Clap / `tempfile` |                       4.6.4 / 3.27.0 | CLI surfaces and test-only temporary storage |
+| TOML |                                1.1.6 | Configuration parsing and serialization |
+| BLAKE3 / SHA-256 |                       1.8.7 / 0.11.0 | Cache/prepared identity and artifact digest verification |
+| Clap / `tempfile` |                       4.6.7 / 3.27.0 | CLI surfaces and test-only temporary storage |
 | `wasm-tools` |                              1.254.0 | WIT parsing, validation, componentization, and interface extraction |
 | Buf |                               1.72.0 | Protobuf linting and independent descriptor-set generation |
 | Python / `jsonschema` |                      3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
@@ -38,7 +40,11 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Gradle (optional Java build) |                                9.1.0 | Java 25-compatible Gradle path; distribution SHA-256 pinned in `tools/toolchain.toml` |
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
 
-Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.4`; the resolved package may display `1.1.4+spec-1.1.0` in `Cargo.lock`.
+Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.6`; the resolved package may display `1.1.6+spec-1.1.0` in `Cargo.lock`.
+
+SHA-256 output arrays are formatted through the shared `HexDigest` byte formatter.
+The `sha2` 0.11 update preserves the existing lowercase, zero-padded digest text
+used by package identities, persisted records, audit receipts and cache keys.
 
 ## Shell completion tests
 

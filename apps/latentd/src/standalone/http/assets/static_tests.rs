@@ -10,6 +10,8 @@ use std::{sync::Arc, time::Duration};
 use tokio::{io::AsyncWriteExt, net::TcpStream, time::Instant};
 
 const HTML: &str = "Accept: text/html\r\n";
+const SITEMAP: &[u8] =
+    b"<?xml version=\"1.0\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"/>";
 const NAVIGATION: &str = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Dest: document\r\nSec-Fetch-Site: same-origin\r\n";
 
 fn publish(h: &Harness, operation: &str, page: &[u8]) -> PublicationRef {
@@ -20,6 +22,7 @@ fn publish(h: &Harness, operation: &str, page: &[u8]) -> PublicationRef {
             ("/index.html", "text/html", page),
             ("/main.js", "text/javascript", b"script"),
             ("/other.html", "text/html", b"explicit"),
+            ("/sitemap.xml", "application/xml", SITEMAP),
         ],
         Some(StaticWebRouting {
             profile: StaticWebRoutingProfile::StaticSiteV1,
@@ -117,6 +120,163 @@ async fn get(h: &Harness, path: &str, headers: &str) -> (u16, String, Vec<u8>) {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache() {
+    for enabled in [false, true] {
+        let h = Harness::configured_catalog(
+            |value| {
+                value["httpIngress"]["allowStaticStyleHashes"] = enabled.into();
+            },
+            None,
+            true,
+        )
+        .await;
+        let mut references = Vec::new();
+        for (name, hashes) in [
+            ("plain", Vec::new()),
+            ("style-a", vec![format!("sha256:{}", "00".repeat(32))]),
+            ("style-b", vec![format!("sha256:{}", "ff".repeat(32))]),
+        ] {
+            let upload = fixture::styled_upload(
+                &[("/index.html", "text/html", b"same immutable HTML")],
+                Some(StaticWebRouting {
+                    profile: StaticWebRoutingProfile::StaticSiteV1,
+                    entry_document: "/index.html".into(),
+                    directory_index: StaticDirectoryIndexMode::Redirect,
+                    directory_index_document: "/index.html".into(),
+                    fallback: StaticWebFallback {
+                        mode: StaticFallbackMode::None,
+                        document: None,
+                    },
+                }),
+                Vec::new(),
+                hashes.clone(),
+            );
+            let reference = h
+                .repository
+                .publish_web_package(fixture::context(name, 0), upload, &mut |_| Ok(()))
+                .unwrap()
+                .receipt
+                .publication;
+            for method in ["GET", "HEAD"] {
+                apply(
+                    &h,
+                    &format!("{name}-{method}"),
+                    &reference,
+                    &format!("/{name}"),
+                    "prefix",
+                    method,
+                    0,
+                );
+            }
+            let expected = if enabled || hashes.is_empty() {
+                200
+            } else {
+                403
+            };
+            let (status, headers, body) = get(&h, &format!("/{name}/"), "").await;
+            assert_eq!(status, expected);
+            if expected == 200 {
+                assert_eq!(body, b"same immutable HTML");
+                let policy = super::csp::policy(&hashes)
+                    .unwrap()
+                    .unwrap_or_else(|| latent_ingress::http::browser::CSP.into());
+                assert!(headers.contains(&format!("content-security-policy: {policy}\r\n")));
+                for (method, extra, code) in [
+                    ("HEAD", String::new(), 200),
+                    ("GET", format!("If-None-Match: {}\r\n", etag(&headers)), 304),
+                ] {
+                    let response = h
+                        .call(method, &format!("/{name}/"), &extra, node::TOKEN)
+                        .await;
+                    assert_eq!(response.0, code);
+                    assert!(response.2.is_empty());
+                    assert!(response
+                        .1
+                        .contains(&format!("content-security-policy: {policy}\r\n")));
+                }
+                let redirect = get(&h, &format!("/{name}"), "").await;
+                assert_eq!(redirect.0, 308);
+                assert!(redirect.1.contains(&policy));
+            } else {
+                assert!(body.is_empty());
+                assert!(!headers.contains("'sha256-"));
+            }
+            references.push(reference);
+        }
+        assert_ne!(references[0], references[1]);
+        assert_ne!(references[1], references[2]);
+        let (_, plain, _) = get(&h, "/plain/", "").await;
+        assert!(!plain.contains("'sha256-"));
+        let (missing, headers, _) = get(&h, "/style-a/missing.js", "").await;
+        assert_eq!(missing, 404);
+        assert!(!headers.contains("'sha256-"));
+        assert!(h.store().snapshot().cache_hits > 0);
+        no_execution(&h);
+        h.finish().await;
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn public_document_navigation_never_grants_asset_private_mount_or_unsafe_access() {
+    let h = Harness::configured_catalog(|value| {
+        value["httpIngress"]["authentication"] = serde_json::json!({"mode":"public-origins", "origins":[
+            {"authority":node::AUTHORITY, "subject":"reader", "tenant":"tests"}]});
+        value["httpIngress"]["publicDocumentNavigation"] = serde_json::json!([
+            {"authority":node::AUTHORITY, "tenant":"tests", "mount":"/docs"}]);
+    }, None, true).await;
+    let reference = publish(&h, "navigation", b"public document");
+    for (id, mount) in [("docs", "/docs"), ("private", "/private")] {
+        for method in ["GET", "HEAD"] {
+            apply(
+                &h,
+                &format!("{id}-{method}"),
+                &reference,
+                mount,
+                "prefix",
+                method,
+                0,
+            );
+        }
+    }
+    let metadata =
+        "Sec-Fetch-Site: cross-site\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Dest: document\r\n";
+    for (method, path, extra, expected) in [
+        ("GET", "/docs/", metadata, 200),
+        ("HEAD", "/docs/", metadata, 200),
+        ("GET", "/docs/guide", metadata, 308),
+        ("GET", "/docs/main.js", metadata, 403),
+        ("GET", "/private/", metadata, 403),
+        ("GET", "/docs-other/", metadata, 403),
+        ("POST", "/docs/", metadata, 403),
+        ("OPTIONS", "/docs/", metadata, 403),
+        (
+            "GET",
+            "/docs/",
+            "Sec-Fetch-Site: cross-site\r\nSec-Fetch-Mode: cors\r\nSec-Fetch-Dest: empty\r\n",
+            403,
+        ),
+        (
+            "GET",
+            "/docs/",
+            "Sec-Fetch-Site: cross-site\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-Dest: iframe\r\n",
+            403,
+        ),
+    ] {
+        let (status, headers, body) = h.call(method, path, extra, "").await;
+        assert_eq!(status, expected, "{method} {path}");
+        assert!(!headers
+            .to_ascii_lowercase()
+            .contains("access-control-allow"));
+        assert!(headers.contains("frame-ancestors 'none'"));
+        if method == "HEAD" {
+            assert!(body.is_empty());
+        }
+    }
+    no_execution(&h);
+    h.finish().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalidation_without_execution(
 ) {
     let h = Harness::static_site().await;
@@ -139,6 +299,8 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         ("/docs/", "", b"root"),
         ("/docs/exact.html", "", b"explicit"),
         ("/docs/main.js?version=1", "", b"script"),
+        ("/sitemap.xml", "", SITEMAP),
+        ("/docs/sitemap.xml", "", SITEMAP),
         ("/guide/", "", b"guide"),
         ("/docs/guide/", "", b"guide"),
         ("/orders/42?tab=history", NAVIGATION, b"root"),
@@ -148,12 +310,26 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         assert_eq!((response.0, response.2.as_slice()), (200, body), "{path}");
         assert!(response.1.contains("Cache-Control: private, no-cache\r\n"));
         assert!(response.1.contains("Sec-Fetch-Dest"));
+        if matches!(path, "/sitemap.xml" | "/docs/sitemap.xml") {
+            assert!(response.1.contains("Content-Type: application/xml\r\n"));
+            assert!(response
+                .1
+                .to_ascii_lowercase()
+                .contains("x-content-type-options: nosniff\r\n"));
+        }
         let conditional = format!("{headers}If-None-Match: {}\r\n", etag(&response.1));
         let cached = get(&h, path, &conditional).await;
         assert_eq!((cached.0, cached.2.len()), (304, 0));
         let head = h.call("HEAD", path, headers, node::TOKEN).await;
         assert_eq!((head.0, head.2.len()), (200, 0));
         assert_eq!(etag(&head.1), etag(&response.1));
+        if matches!(path, "/sitemap.xml" | "/docs/sitemap.xml") {
+            for headers in [&cached.1, &head.1] {
+                assert!(headers
+                    .to_ascii_lowercase()
+                    .contains("x-content-type-options: nosniff\r\n"));
+            }
+        }
     }
     for (path, location) in [
         ("/guide", "/guide/"),
@@ -379,11 +555,15 @@ async fn static_concurrency_corruption_and_read_saturation_never_enter_renderer_
     // Saturate only after that owner and its ingress exchange have retired.
     node::wait(|| {
         let snapshot = h.owner.handle().snapshot();
-        snapshot.connections == 0 && snapshot.exchanges == 0 && store.work.available_permits() == 4
+        snapshot.connections == 0
+            && snapshot.exchanges == 0
+            && store.work.available_permits() == super::MAX_READS
     })
     .await;
     let rejected_before_saturation = store.snapshot().capacity_rejections;
-    let held = Arc::clone(&store.work).try_acquire_many_owned(4).unwrap();
+    let held = Arc::clone(&store.work)
+        .try_acquire_many_owned(u32::try_from(super::MAX_READS).unwrap())
+        .unwrap();
     for path in ["/index.html", "/guide/", "/orders/42"] {
         assert_eq!(get(&h, path, HTML).await.0, 503);
     }

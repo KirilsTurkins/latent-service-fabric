@@ -361,9 +361,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.6.4"
+version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d91e0c145792ef73a6ad36d27c75ac09f1832222a3c209689d90f534685ee5b7"
+checksum = "aa8876b300ab35ba921adea3dfd70157a46249b33f95c9084ae5709785478946"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -371,9 +371,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.6.2"
+version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f09628afdcc538b57f3c6341e9c8e9970f18e4a481690a64974d7023bd33548b"
+checksum = "ec0797fb7aeb1406c84efac526901f7ec3ead2124f946b494e72879d4b54704d"
 dependencies = [
  "anstream",
  "anstyle",
@@ -392,9 +392,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.6.4"
+version = "4.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d012d2b9d65aca7f18f4d9878a045bc17899bba951561ba5ec3c2ba1eed9a061"
+checksum = "f9c751b79415d4e559e3d1fcf128e09e720eb673a06d26cf6f392d37d75b66e0"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -758,6 +758,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1dd6dbb5841937940781866fa1281a1ff7bd3bf827091440879f9994983d5c2"
 dependencies = [
  "block-buffer 0.12.1",
+ "const-oid",
  "crypto-common 0.2.2",
 ]
 
@@ -1486,7 +1487,7 @@ dependencies = [
 
 [[package]]
 name = "latent"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "clap",
@@ -1505,7 +1506,7 @@ dependencies = [
  "prost",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tonic",
@@ -1513,7 +1514,7 @@ dependencies = [
 
 [[package]]
 name = "latent-activation"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "latent-routing",
@@ -1521,7 +1522,7 @@ dependencies = [
 
 [[package]]
 name = "latent-admission"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "latent-routing",
@@ -1529,7 +1530,7 @@ dependencies = [
 
 [[package]]
 name = "latent-angular-renderer-adapter"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "serde",
@@ -1539,7 +1540,7 @@ dependencies = [
 
 [[package]]
 name = "latent-artifacts"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-audit",
  "latent-contracts",
@@ -1547,24 +1548,24 @@ dependencies = [
  "latent-manifest",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
 ]
 
 [[package]]
 name = "latent-audit"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "libc",
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
 ]
 
 [[package]]
 name = "latent-blobs"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "getrandom 0.4.3",
  "latent-artifacts",
@@ -1577,7 +1578,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "time",
  "tokio",
@@ -1586,7 +1587,7 @@ dependencies = [
 
 [[package]]
 name = "latent-capabilities"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "getrandom 0.4.3",
  "latent-activation",
@@ -1601,7 +1602,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "zeroize",
@@ -1609,7 +1610,7 @@ dependencies = [
 
 [[package]]
 name = "latent-commit"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "latent-effects",
@@ -1618,7 +1619,7 @@ dependencies = [
 
 [[package]]
 name = "latent-component-bindings"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "wasmtime",
  "wit-bindgen",
@@ -1626,20 +1627,20 @@ dependencies = [
 
 [[package]]
 name = "latent-contracts"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "semver",
- "sha2 0.10.9",
+ "sha2 0.11.0",
 ]
 
 [[package]]
 name = "latent-control"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 
 [[package]]
 name = "latent-control-store"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-activation",
  "latent-admission",
@@ -1658,14 +1659,14 @@ dependencies = [
  "latent-scheduler",
  "latent-telemetry",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
- "wasm-encoder 0.252.0",
+ "wasm-encoder 0.259.0",
 ]
 
 [[package]]
 name = "latent-core"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "tempfile",
  "tokio",
@@ -1673,14 +1674,14 @@ dependencies = [
 
 [[package]]
 name = "latent-effects"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-executor"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-activation",
  "latent-artifacts",
@@ -1689,7 +1690,7 @@ dependencies = [
 
 [[package]]
 name = "latent-guest"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-component-bindings",
  "zeroize",
@@ -1697,7 +1698,7 @@ dependencies = [
 
 [[package]]
 name = "latent-http"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "bytes",
  "flate2",
@@ -1724,7 +1725,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tokio-rustls",
@@ -1735,14 +1736,14 @@ dependencies = [
 
 [[package]]
 name = "latent-identity"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-ingress"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "latent-activation",
@@ -1756,17 +1757,17 @@ dependencies = [
 
 [[package]]
 name = "latent-manifest"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
 ]
 
 [[package]]
 name = "latent-nats"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "getrandom 0.4.3",
  "latent-activation",
@@ -1778,7 +1779,7 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
  "tokio-rustls",
  "webpki-roots",
@@ -1787,7 +1788,7 @@ dependencies = [
 
 [[package]]
 name = "latent-network"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "getrandom 0.4.3",
  "hickory-proto",
@@ -1798,7 +1799,7 @@ dependencies = [
 
 [[package]]
 name = "latent-node"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-activation",
  "latent-admission",
@@ -1815,7 +1816,7 @@ dependencies = [
 
 [[package]]
 name = "latent-oci"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "bytes",
@@ -1845,7 +1846,7 @@ dependencies = [
 
 [[package]]
 name = "latent-optimization-bench"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "clap",
  "latent-artifacts",
@@ -1860,15 +1861,15 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
  "tonic",
- "wasmparser 0.252.0",
+ "wasmparser 0.259.0",
 ]
 
 [[package]]
 name = "latent-optimization-workloads"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "serde",
  "serde_json",
@@ -1876,7 +1877,7 @@ dependencies = [
 
 [[package]]
 name = "latent-packaging"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "cap-fs-ext",
  "cap-std",
@@ -1886,17 +1887,17 @@ dependencies = [
  "latent-manifest",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "spdx",
  "tempfile",
- "wasm-encoder 0.252.0",
- "wasmparser 0.252.0",
+ "wasm-encoder 0.259.0",
+ "wasmparser 0.259.0",
  "wit-parser 0.252.0",
 ]
 
 [[package]]
 name = "latent-policy"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "blake3",
@@ -1912,12 +1913,12 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tokio",
- "wasm-encoder 0.252.0",
+ "wasm-encoder 0.259.0",
 ]
 
 [[package]]
 name = "latent-portable-test-host"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "getrandom 0.4.3",
@@ -1934,7 +1935,7 @@ dependencies = [
  "latent-wasmtime",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "socket2",
  "subtle",
  "tokio",
@@ -1943,7 +1944,7 @@ dependencies = [
 
 [[package]]
 name = "latent-protected-files"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "rustix",
@@ -1953,16 +1954,17 @@ dependencies = [
 
 [[package]]
 name = "latent-renderer-profile"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
+ "latent-core",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "wasmtime",
 ]
 
 [[package]]
 name = "latent-rollout"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-artifacts",
  "latent-audit",
@@ -1972,14 +1974,14 @@ dependencies = [
  "latent-telemetry",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
 ]
 
 [[package]]
 name = "latent-routing"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "latent-manifest",
@@ -1987,7 +1989,7 @@ dependencies = [
 
 [[package]]
 name = "latent-rpc"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "prost",
@@ -1999,7 +2001,7 @@ dependencies = [
 
 [[package]]
 name = "latent-scheduler"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-activation",
  "latent-admission",
@@ -2007,13 +2009,13 @@ dependencies = [
  "latent-routing",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
 ]
 
 [[package]]
 name = "latent-sdk"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "http",
  "http-body",
@@ -2032,7 +2034,7 @@ dependencies = [
 
 [[package]]
 name = "latent-secrets"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-capabilities",
  "latent-core",
@@ -2041,7 +2043,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "zeroize",
@@ -2049,7 +2051,7 @@ dependencies = [
 
 [[package]]
 name = "latent-signing"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "curve25519-dalek",
@@ -2065,26 +2067,26 @@ dependencies = [
 
 [[package]]
 name = "latent-state"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-telemetry"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-activation",
  "latent-core",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tokio",
 ]
 
 [[package]]
 name = "latent-testkit"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-activation",
  "latent-artifacts",
@@ -2101,7 +2103,7 @@ dependencies = [
 
 [[package]]
 name = "latent-toolchain-smoke"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "blake3",
  "clap",
@@ -2121,7 +2123,7 @@ dependencies = [
 
 [[package]]
 name = "latent-triggers"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -2130,7 +2132,7 @@ dependencies = [
 
 [[package]]
 name = "latent-vault"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "latent-capabilities",
@@ -2140,14 +2142,14 @@ dependencies = [
  "latent-secrets",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "time",
  "zeroize",
 ]
 
 [[package]]
 name = "latent-wasmtime"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "blake3",
@@ -2185,11 +2187,11 @@ dependencies = [
  "seccompiler",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tokio-rustls",
- "wasm-encoder 0.252.0",
+ "wasm-encoder 0.259.0",
  "wasmtime",
  "wit-parser 0.252.0",
  "zeroize",
@@ -2197,7 +2199,7 @@ dependencies = [
 
 [[package]]
 name = "latent-wire"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "http-body",
  "hyper-util",
@@ -2219,7 +2221,7 @@ dependencies = [
  "latent-telemetry",
  "prost",
  "serde",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tonic",
@@ -2228,7 +2230,7 @@ dependencies = [
 
 [[package]]
 name = "latent-workflows"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
  "latent-effects",
@@ -2237,7 +2239,7 @@ dependencies = [
 
 [[package]]
 name = "latent-wrpc"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -2246,7 +2248,7 @@ dependencies = [
 
 [[package]]
 name = "latentd"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "base64 0.23.1",
  "clap",
@@ -2283,14 +2285,14 @@ dependencies = [
  "rustls",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "tempfile",
  "tokio",
  "tokio-rustls",
  "tonic",
  "tower",
- "wasm-encoder 0.252.0",
- "wasmparser 0.252.0",
+ "wasm-encoder 0.259.0",
+ "wasmparser 0.259.0",
  "zeroize",
 ]
 
@@ -2977,9 +2979,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "1.1.4"
+version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190"
+checksum = "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d"
 dependencies = [
  "bitflags",
  "errno",
@@ -3535,9 +3537,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "1.1.4+spec-1.1.0"
+version = "1.1.6+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3aace63f4bbcdfc2c965b059de67119c89c4017a70d633be6c104910f67056f5"
+checksum = "920602543f0911ab71da12c50d59701da54c196d1a2bf5cb4b75667f137a406a"
 dependencies = [
  "serde_core",
  "serde_spanned",
@@ -3946,6 +3948,7 @@ dependencies = [
  "hashbrown 0.17.1",
  "indexmap",
  "semver",
+ "serde",
 ]
 
 [[package]]

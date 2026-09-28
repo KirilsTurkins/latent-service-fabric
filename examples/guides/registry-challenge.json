@@ -1,0 +1,49 @@
+{
+  "formatVersion": 2,
+  "origin": "https://registry.example",
+  "repository": "tenant/site",
+  "addresses": [],
+  "credentialFile": "credentials.json",
+  "rootCertificates": [],
+  "bearerChallenge": {
+    "realm": "https://auth.example/token",
+    "service": "registry.example",
+    "identity": {
+      "tenant": "tenant",
+      "principal": "publisher",
+      "credentialEpoch": 1
+    },
+    "actions": "pull-push",
+    "addresses": []
+  },
+  "network": {
+    "maximumRedirects": 0,
+    "destinations": [
+      {
+        "origin": "https://registry.example",
+        "addresses": {
+          "networks": ["192.0.2.0/24"],
+          "specialAddresses": ["192.0.2.10"]
+        },
+        "resolution": {
+          "mode": "dns",
+          "server": "127.0.0.1:53",
+          "maximumTtlSeconds": 60
+        },
+        "contentPrefixes": []
+      },
+      {
+        "origin": "https://auth.example",
+        "addresses": {
+          "networks": ["192.0.2.0/24"],
+          "specialAddresses": ["192.0.2.20"]
+        },
+        "resolution": {
+          "mode": "static",
+          "addresses": ["192.0.2.20"]
+        },
+        "contentPrefixes": []
+      }
+    ]
+  }
+}

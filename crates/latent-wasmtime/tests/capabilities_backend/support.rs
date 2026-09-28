@@ -121,7 +121,10 @@ pub fn artifact() -> CapsuleArtifact {
     let path = std::env::var_os("LSF_CAPABILITIES_COMPONENT")
         .expect("LSF_CAPABILITIES_COMPONENT must be supplied by contracts gate");
     let bytes = fs::read(path).expect("capabilities component");
-    let digest = ReleaseDigest(format!("sha256:{:x}", Sha256::digest(&bytes)));
+    let digest = ReleaseDigest(format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(&bytes))
+    ));
     CapsuleArtifact {
         descriptor: ArtifactDescriptor {
             reference: ArtifactReference("local://capabilities-fixture".to_owned()),

@@ -63,6 +63,13 @@ def receipt():
 
 
 class WebAdmissionSchemaTests(unittest.TestCase):
+    def test_static_contract_fixtures_agree_with_native_acceptance(self):
+        fixtures = json.loads((ROOT / 'crates/latent-artifacts/tests/fixtures/static-web-contracts.json').read_bytes())
+        validator = self.validators['web-application']
+        for case in fixtures:
+            with self.subTest(case=case['name']):
+                self.assertEqual(validator.is_valid(case['manifest']), case['accepted'])
+
     @classmethod
     def setUpClass(cls):
         schemas = {}
@@ -99,7 +106,7 @@ class WebAdmissionSchemaTests(unittest.TestCase):
             value["assets"][0]["layer"] = path
             self.assertFalse(validator.is_valid(value), path)
         for field, invalid in (("profile", "lsf.web-release.v2"), ("renderer", None),
-                               ("assets", application()["assets"] * 129),
+                               ("assets", application()["assets"] * 253),
                                ("routes", application()["routes"] * 129)):
             value = application()
             value[field] = invalid

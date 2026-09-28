@@ -1,5 +1,6 @@
 mod admission;
 mod admission_storage;
+mod capacity;
 mod component_reader;
 pub(crate) mod contract_metadata;
 mod document_reader;
@@ -16,6 +17,7 @@ mod publication_preparation;
 mod retained_package;
 mod root_durability;
 mod shared_content;
+pub use capacity::PublicationCapacitySnapshot;
 pub use shared_content::{PublicationContentReclamation, PublicationStorageSnapshot};
 mod sha256;
 mod web;

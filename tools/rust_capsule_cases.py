@@ -23,13 +23,13 @@ def tutorials(client, targets, result):
         for ordinal, (arguments, expected, code) in enumerate(cases):
             row = call(client, targets[template], template, function, arguments, f"authoring-{template}-{ordinal}")
             result["invocations"].append(row)
-            assert_value(row, expected, code)
+            assert_value(client, row, expected, code)
         # A byte-identical request must use a fresh activation even when the
         # shared compiled image is warm; record cold and warm timings separately.
         first = cases[0]
         row = call(client, targets[template], template, function, first[0], f"authoring-{template}-warm")
         result["invocations"].append(row)
-        assert_value(row, first[1])
+        assert_value(client, row, first[1])
 
 
 def faults(client, target, probe, result, population, *, language="rust"):
@@ -37,7 +37,7 @@ def faults(client, target, probe, result, population, *, language="rust"):
         row = call(client, target, "recovery", "run", [which], f"authoring-fault-{ordinal}")
         result["invocations"].append(row)
         if which == 0:
-            assert_value(row, [1])
+            assert_value(client, row, [1])
         else:
             require(row["exitCode"] == 4 and row["response"]["category"] == "platform-failure"
                     and row["response"]["outcomeKnown"], "authoring-fault-not-observed")
@@ -60,7 +60,7 @@ def faults(client, target, probe, result, population, *, language="rust"):
         result["samples"].append(sample(client, probe, "after-host-memory", population))
         row = call(client, target, "recovery", "run", [0], "authoring-after-host-memory")
         result["invocations"].append(row)
-        assert_value(row, [1])
+        assert_value(client, row, [1])
         result["samples"].append(sample(client, probe, "after-host-memory-fresh", population))
 
 
@@ -87,7 +87,7 @@ def http_cases(client, node, fixture, target, publication, port, control, probe,
     for ordinal, url in enumerate((allowed, denied, allowed)):
         row = call(client, target, "http-status", "check", [url], f"authoring-http-{ordinal}")
         result["invocations"].append(row)
-        assert_value(row, [{"err": {"case": "permission-denied"}}] if ordinal == 1 else [{"ok": 201}],
+        assert_value(client, row, [{"err": {"case": "permission-denied"}}] if ordinal == 1 else [{"ok": 201}],
                      3 if ordinal == 1 else 0)
         result["providerIdle"].append(provider_idle(client))
     for kind in ("deadline", "cancel", "disconnect"):
@@ -118,7 +118,7 @@ def http_cases(client, node, fixture, target, publication, port, control, probe,
         mode(control, "reply")
         row = call(client, target, "http-status", "check", [allowed], "authoring-after-" + kind)
         result["invocations"].append(row)
-        assert_value(row, [{"ok": 201}])
+        assert_value(client, row, [{"ok": 201}])
     return target
 
 

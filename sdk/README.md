@@ -3,6 +3,13 @@
 Start with [Invoke, cancel and recover with a client SDK](../docs/learn/use-a-client.mdx)
 for the shared six-language learning path, native setup and source-backed examples.
 
+The current SDK release is `0.1.0-alpha.5`. Rust, TypeScript, Java and .NET
+package metadata use that version; C and Go source SDKs follow the same repository
+tag without a separate package version. This does not imply publication to a
+language package registry. For guest authoring, install the authenticated
+alpha.5 [developer toolkit](../docs/start/developer-setup.md), keeping its
+selected compiler and disposable node together in a fresh workspace.
+
 The six maintained external clients now implement the common bounded
 numeric-loopback HTTP/2 + Protobuf transport on Linux x86-64. Their separately
 owned real-node qualification and full PR CI completed in

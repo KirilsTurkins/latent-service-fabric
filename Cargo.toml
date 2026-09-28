@@ -54,7 +54,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 edition = "2021"
 rust-version = "1.94.1"
 license = "Apache-2.0"
@@ -66,26 +66,26 @@ description = "Single-node stateless execution fabric for WebAssembly components
 [workspace.dependencies]
 base64 = "=0.23.1"
 blake3 = "=1.8.7"
-clap = { version = "=4.6.4", features = ["derive"] }
+clap = { version = "=4.6.7", features = ["derive"] }
 clap_complete = { version = "=4.6.4", default-features = false }
 prost = "=0.14.4"
 protoc-bin-vendored = "=3.2.0"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = { version = "=1.0.150", features = ["raw_value"] }
-sha2 = "=0.10.9"
+sha2 = "=0.11.0"
 hyper-util = { version = "=0.1.20", features = ["tokio"] }
 http-body = "=1.1.0"
 tower = { version = "=0.5.3", features = ["util"] }
 tempfile = "=3.27.0"
 tokio = { version = "=1.53.1", features = ["macros", "rt", "sync", "time"] }
-toml = { version = "=1.1.4", default-features = false, features = ["display", "parse", "serde"] }
+toml = { version = "=1.1.6", default-features = false, features = ["display", "parse", "serde"] }
 tonic = "=0.14.6"
 tonic-prost = "=0.14.6"
 tonic-prost-build = "=0.14.6"
 tracing = "=0.1.44"
 tracing-subscriber = "=0.3.23"
-wasm-encoder = "=0.252.0"
-wasmparser = "=0.252.0"
+wasm-encoder = "=0.259.0"
+wasmparser = "=0.259.0"
 wasmtime = { version = "=47.0.4", default-features = false, features = ["component-model", "component-model-async", "cranelift", "pooling-allocator", "runtime", "std", "wit-parser"] }
 wit-bindgen = "=0.62.0"
 

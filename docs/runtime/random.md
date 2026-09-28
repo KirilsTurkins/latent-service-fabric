@@ -33,7 +33,7 @@ On Linux the provider calls the kernel through `rustix::rand::getrandom` with
 interrupted syscall, unexpected short read or other error fails the whole call.
 There is no retry loop, device-file fallback or insecure flag. See the
 [Linux getrandom contract](https://man7.org/linux/man-pages/man2/getrandom.2.html)
-and [rustix API](https://docs.rs/rustix/1.1.4/rustix/rand/fn.getrandom.html).
+and [rustix API](https://docs.rs/rustix/1.1.5/rustix/rand/fn.getrandom.html).
 Other targets use the OS source selected by
 [`getrandom::fill`](https://docs.rs/getrandom/0.4.3/getrandom/fn.fill.html).
 The nonblocking Linux profile is not a hard scheduling guarantee for every OS.

@@ -137,7 +137,7 @@ impl ReferenceRecord {
             hash.update(value.as_bytes());
         }
         hash.update(self.size.to_le_bytes());
-        format!("{:x}", hash.finalize())
+        format!("{:x}", latent_core::digest::HexDigest(hash.finalize()))
     }
     pub fn validate(&self, namespace: &str, maximum: u64) -> Result<()> {
         if self.version != 1

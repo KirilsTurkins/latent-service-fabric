@@ -60,6 +60,22 @@ does not prove compatibility with hosted object-storage redirects: see the
 [precise network evidence boundary](oci-network-profile.md#maintained-conformance-and-limitations).
 No mutable fallback is authorized.
 
+The [CLI challenge profile](oci-bearer-read-auth.md#configure-the-cli) exposes
+these transport controls to `latent package push/pull`. The maintained
+`CLI registry qualification` workflow exercises the version 2 CLI against the
+real pinned Harbor fixture using a disposable private project's robot identity,
+explicit DNS and verified TLS. It pushes exact signed static-package digests and
+native evidence referrers, pulls them using a separate pull-only profile, and
+verifies publisher/build evidence against the fixture's approved test policy.
+Address, certificate, credential, repository-scope and unavailable-endpoint
+failures are also required. Its sanitized receipt records the source-built CLI
+digest; it is not released-binary authentication.
+
+Azure Container Registry remains unqualified. Harbor is the maintained local
+registry for the scoped bearer-authentication and network profile.
+No actual ACR package/evidence round trip, Azure identity renewal or hosted
+storage redirect result is claimed.
+
 Permanent rules apply to every profile: server-controlled challenges, DNS replies,
 redirects, links and manifests cannot grant endpoint or credential authority;
 all continuations consume one original operation deadline; physical network,

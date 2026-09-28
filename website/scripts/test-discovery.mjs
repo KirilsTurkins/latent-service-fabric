@@ -98,7 +98,15 @@ try {
       await page.getByLabel('Topic', {exact: true}).selectOption('angular-browser');
       await page.getByRole('status').getByText(/No tasks match/).waitFor();
       await page.getByRole('link', {name: 'Clear filters', exact: true}).click();
-      await page.getByRole('status').getByText(/27 tasks/).waitFor();
+      await page.getByRole('status').getByText(/39 tasks/).waitFor();
+      await page.getByLabel('Topic', {exact: true}).selectOption('static-web-delivery');
+      await page.locator('[data-guide="deliver-website"]').getByRole('link', {name: 'Deliver a website', exact: true}).click();
+      await page.waitForURL(`${prefix}docs/how-to/deliver-a-website/`);
+      assert.equal((await page.reload({waitUntil: 'networkidle'})).status(), 200);
+      await page.goto(`${prefix}guides/?topic=container-operations`, {waitUntil: 'networkidle'});
+      await page.locator('[data-guide="container-node"]').getByRole('link', {name: 'Run a node in a Linux container', exact: true}).click();
+      await page.waitForURL(`${prefix}docs/operations/container-runtime/`);
+      await page.goto(`${prefix}guides/`, {waitUntil: 'networkidle'});
       await audit('catalogue-light');
       const toggle = page.getByRole('button', {name: /Switch between dark and light mode/});
       for (let attempt = 0; attempt < 3 && await page.locator('html').getAttribute('data-theme') !== 'dark'; attempt++) await toggle.click();

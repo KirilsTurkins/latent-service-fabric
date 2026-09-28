@@ -2,7 +2,7 @@
 
 Choose the **developer toolkit** to create and test an application, or the
 **native Linux runtime** for a persistent standalone server. Both are distributed
-with [0.1.0-alpha.4](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.4).
+with [0.1.0-alpha.5](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.5).
 The developer toolkit includes a disposable test node and six compiler choices;
 the server runtime has its own installer, security profiles and systemd service.
 The historical `0.1.0-alpha.3` release is source-only.
@@ -16,7 +16,9 @@ The historical `0.1.0-alpha.3` release is source-only.
 | Build and inspect LSF itself | [Run your first node from source](start/first-node.md) |
 | Write a capsule after starting a node | [Create a capsule](component-development/creating-a-capsule.md) |
 | Connect an existing application | [Use a client SDK](learn/use-a-client.mdx) |
-| Serve a static or Angular website | [Static sites](component-development/static-sites.md) or [Angular walkthrough](learn/build-and-deliver-angular.mdx) |
+| Serve a static website | [Deliver a website](how-to/deliver-a-website.md), including Angular/PrimeNG and Docusaurus builds |
+| Render Angular on the server | [Angular walkthrough](learn/build-and-deliver-angular.mdx) |
+| Run a node in a Linux container | [Container runtime](operations/container-runtime.md), storage, private probes and ownership handover |
 | Change LSF itself | [Contribute](contribute/index.md) and [install the contributor toolchain](development/toolchain.md) |
 
 Running an SDK client does not install or start the node. Start one node first,
