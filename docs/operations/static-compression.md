@@ -38,7 +38,7 @@ and 304 agree on that validator. If-Match uses strong comparison; If-None-Match
 uses weak comparison. Supplying an identity ETag for a gzip If-Match returns 412.
 
 Set both GET and HEAD routes to the same publication using the
-[route reconciliation workflow](static-release-workflow.md). They remain
+[route reconciliation workflow](static-route-sets.md). They remain
 independent native routes: gzip HEAD checks HEAD, reads GET, and rejects a
 representation mismatch with 502. It does not silently choose one route.
 

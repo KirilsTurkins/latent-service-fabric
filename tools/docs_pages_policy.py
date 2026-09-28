@@ -19,6 +19,7 @@ BASE_URL = "/latent-service-fabric/"
 MAX_ARCHIVE = 128 * 1024 * 1024
 MAX_EXPANDED = 256 * 1024 * 1024
 MAX_FILE = 8 * 1024 * 1024
+MAX_SEARCH_INDEX = 16 * 1024 * 1024
 MAX_ENTRIES = 6000
 RECEIPTS = {
     ".generated/build-evidence.json", ".generated/theme-review/evidence.json",
@@ -98,11 +99,12 @@ def archive_files(data, expected_digest):
             if entry.is_dir():
                 require(kind != stat.S_IFREG, "archive-directory-kind")
                 continue
-            require(kind != stat.S_IFDIR and 0 <= entry.file_size <= MAX_FILE, "archive-file-size")
+            maximum = MAX_SEARCH_INDEX if name == "build/project/search-index.json" else MAX_FILE
+            require(kind != stat.S_IFDIR and 0 <= entry.file_size <= maximum, "archive-file-size")
             total += entry.file_size
             require(total <= MAX_EXPANDED, "archive-expanded-size")
             with archive.open(entry) as stream:
-                content = stream.read(MAX_FILE + 1)
+                content = stream.read(maximum + 1)
             require(len(content) == entry.file_size, "archive-file-length")
             files[name] = content
     return files
@@ -161,7 +163,8 @@ def verify_staged_site(directory: Path, receipt):
         require(path.is_file(), "staged-file-kind")
         size = path.stat().st_size
         total += size
-        require(size <= MAX_FILE and total <= MAX_EXPANDED, "staged-size")
+        maximum = MAX_SEARCH_INDEX if path.relative_to(directory).as_posix() == "search-index.json" else MAX_FILE
+        require(size <= maximum and total <= MAX_EXPANDED, "staged-size")
         paths.append(path)
         require(len(paths) <= MAX_ENTRIES, "staged-count")
     tree = hashlib.sha256()
