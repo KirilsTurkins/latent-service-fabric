@@ -1968,7 +1968,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "mkdir \"$RUNNER_TEMP/frontend-release\"\ngh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir \"$RUNNER_TEMP/frontend-release\" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json\ngh attestation verify \"$RUNNER_TEMP/frontend-release/SHA256SUMS\" --bundle \"$RUNNER_TEMP/frontend-release/SHA256SUMS.sigstore.json\" --repo KirilsTurkins/latent-service-fabric --cert-identity https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.4 --cert-oidc-issuer https://token.actions.githubusercontent.com --source-ref refs/tags/0.1.0-alpha.4 --source-digest 2d6cc2eafc0a17dfe573be4252fa49835bebbbd6 --signer-digest 2d6cc2eafc0a17dfe573be4252fa49835bebbbd6 --deny-self-hosted-runners --predicate-type https://slsa.dev/provenance/v1 --digest-alg sha256 --format json > \"$RUNNER_TEMP/frontend-release/authentication.json\"\npython3 tools/static-release/unpack.py \"$RUNNER_TEMP/frontend-release\" > \"$RUNNER_TEMP/frontend-release/archive-verification.json\""
+      "run": "mkdir \"$RUNNER_TEMP/frontend-release\"\ngh release download 0.1.0-alpha.5 --repo KirilsTurkins/latent-service-fabric --dir \"$RUNNER_TEMP/frontend-release\" --pattern lsf-0.1.0-alpha.5-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json\ngh attestation verify \"$RUNNER_TEMP/frontend-release/SHA256SUMS\" --bundle \"$RUNNER_TEMP/frontend-release/SHA256SUMS.sigstore.json\" --repo KirilsTurkins/latent-service-fabric --cert-identity https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.5 --cert-oidc-issuer https://token.actions.githubusercontent.com --source-ref refs/tags/0.1.0-alpha.5 --source-digest f6d8f32177208b60a68f14070f549f927052dd48 --signer-digest f6d8f32177208b60a68f14070f549f927052dd48 --deny-self-hosted-runners --predicate-type https://slsa.dev/provenance/v1 --digest-alg sha256 --format json > \"$RUNNER_TEMP/frontend-release/authentication.json\"\npython3 tools/static-release/unpack.py \"$RUNNER_TEMP/frontend-release\" > \"$RUNNER_TEMP/frontend-release/archive-verification.json\""
     },
     ".github/workflows/frontend-release.yml:frontend:Build the bounded frontend qualification environment": {
       "workflow": ".github/workflows/frontend-release.yml",
@@ -2008,7 +2008,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "set -euo pipefail\numask 077\ncontainer_work=$(mktemp -d /tmp/lsf-container-XXXXXXXX)\necho \"CONTAINER_WORK=$container_work\" >> \"$GITHUB_ENV\"\nmkdir \"$container_work/release\" \"$container_work/trust\" \"$container_work/tools\"\ncp -R tools/native_runtime tools/container_runtime \"$container_work/tools/\"\ncp tools/prepare_container_runtime.py \"$container_work/tools/\"\ninstall -m 0755 \"$(command -v gh)\" \"$container_work/trust/gh\"\ngh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir \"$container_work/release\" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json --pattern lsf-install.pyz\ngh attestation trusted-root > \"$container_work/trust/root.jsonl\"\npython3 \"$container_work/tools/prepare_container_runtime.py\" --release-directory \"$container_work/release\" --version 0.1.0-alpha.4 --publisher-policy \"$container_work/tools/container_runtime/release-policy.json\" --trusted-root \"$container_work/trust/root.jsonl\" --verifier \"$container_work/trust/gh\" --output \"$container_work/context\" > \"$RUNNER_TEMP/container-build-inputs.json\""
+      "run": "set -euo pipefail\numask 077\ncontainer_work=$(mktemp -d /tmp/lsf-container-XXXXXXXX)\necho \"CONTAINER_WORK=$container_work\" >> \"$GITHUB_ENV\"\nmkdir \"$container_work/release\" \"$container_work/trust\" \"$container_work/tools\"\ncp -R tools/native_runtime tools/container_runtime \"$container_work/tools/\"\ncp tools/prepare_container_runtime.py \"$container_work/tools/\"\ninstall -m 0755 \"$(command -v gh)\" \"$container_work/trust/gh\"\ngh release download 0.1.0-alpha.5 --repo KirilsTurkins/latent-service-fabric --dir \"$container_work/release\" --pattern lsf-0.1.0-alpha.5-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json --pattern lsf-install.pyz\ngh attestation trusted-root > \"$container_work/trust/root.jsonl\"\npython3 \"$container_work/tools/prepare_container_runtime.py\" --release-directory \"$container_work/release\" --version 0.1.0-alpha.5 --publisher-policy \"$container_work/tools/container_runtime/release-policy.json\" --trusted-root \"$container_work/trust/root.jsonl\" --verifier \"$container_work/trust/gh\" --output \"$container_work/context\" > \"$RUNNER_TEMP/container-build-inputs.json\""
     },
     ".github/workflows/container-runtime.yml:container:Build the runtime and disposable publisher images": {
       "workflow": ".github/workflows/container-runtime.yml",
@@ -3749,7 +3749,7 @@
       "sha256": "03236d40f9f94d7cdaf3b120c6d86cabb402593ab337e7806cad52e32288ebd1"
     },
     "tools/static-release/unpack.py": {
-      "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
+      "sha256": "1ae084a12a972b16be293e0a020c750074a57d856bc8264e47b9a1ace269b579"
     },
     "tools/container_runtime/qualification.py": {
       "sha256": "03e2fceb1077fba22ffd2144fc3783a4d1ca7165b0c9fe2e208034f8ad6ae94e"
@@ -7219,7 +7219,7 @@
     ".github/workflows/security-baseline.yml": "36c52f1ade3bb10f0f3b2af5c75d3c00c6a2d63febaa93f55eaa67a36f21fa30",
     ".github/workflows/security-rustsec.yml": "bb84f00e8aac8b3434151c569d64fa4a202322759f57aedff5e4fb663875cbbc",
     ".github/workflows/typescript-guest.yml": "1f6592e4ead2a49a5184df02a124af3cc81e2a00c8a4aea5b5503b4d9103ad97",
-    ".github/workflows/frontend-release.yml": "a831df9ae0203b799d0bbece5aa0aa620249dec93cce8fb2dab55cb5f6b54961",
-    ".github/workflows/container-runtime.yml": "dc94e9cef4b74a23a61c92d51c49c4585830213da84ce2cb8ec890984a654cd5"
+    ".github/workflows/frontend-release.yml": "c388392cfb32559c8615c89bf3ea303b0657bcf489400ad53d74c56e6985a918",
+    ".github/workflows/container-runtime.yml": "e7419f7e5e7c93924efec224928ef26600ad349200363fc27c1aae147743edcb"
   }
 }

@@ -40,5 +40,15 @@ The GitHub runner's kernel name does not qualify Azure Container Apps or storage
 The earlier failed native build is retained in the review index. Its standalone
 fixture lock was repaired before the selected candidates were built. The
 [alpha.4 observations](../developer-toolkit-36262353069/README.md) keep their
-original identities. Final server publication still requires its own exact
-release CI, installed-VM acceptance and public artifact verification.
+original identities. Server publication has its separate
+[native release gate](../../development/native-release-gate.md#published-alpha5-evidence).
+
+All 41 files were also downloaded from the public alpha.5 release and checked
+against the qualified selection; all ten original publisher signatures were
+authenticated again. The [public download record](public-downloads.json) keeps
+their exact byte identities.
+
+The [original qualification archive](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.5/developer-qualification-0.1.0-alpha.5.zip)
+retains all eight original observation/selection files and the review index.
+It is 743,737 bytes, SHA-256
+`37547dab768bf37ae4b4f10eb22a48208034e5346b620ea70dc6b620b8087540`.
