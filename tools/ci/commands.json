@@ -4569,6 +4569,7 @@
       "DocsPagesPolicyTests.test_exact_successful_push_run",
       "DocsPagesPolicyTests.test_guard_rechecks_freshness_after_environment_approval",
       "DocsPagesPolicyTests.test_incomplete_dirty_wrong_source_and_synthetic_site_are_refused",
+      "DocsPagesPolicyTests.test_large_search_index_survives_selection_and_protected_recheck",
       "DocsPagesPolicyTests.test_only_exact_clean_complete_site_is_staged_as_data",
       "DocsPagesPolicyTests.test_prior_publication_requires_successful_default_branch_dispatch",
       "DocsPagesPolicyTests.test_rechecks_every_staged_byte_before_deploy",
@@ -4577,6 +4578,7 @@
       "DocsPagesPolicyTests.test_rejects_symlink_and_special_file_modes",
       "DocsPagesPolicyTests.test_rejects_traversal_absolute_ambiguous_and_control_paths",
       "DocsPagesPolicyTests.test_rollback_binds_prior_published_receipt_to_exact_artifact",
+      "DocsPagesPolicyTests.test_search_exception_keeps_exact_path_and_aggregate_archive_limits",
       "DocsPagesPolicyTests.test_unexpected_output_and_candidate_publisher_record_are_refused"
     ],
     "tools/tests/test_dotnet_capsule_authoring.py": [
