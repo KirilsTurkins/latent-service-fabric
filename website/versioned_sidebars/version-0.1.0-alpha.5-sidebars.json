@@ -1,0 +1,1394 @@
+{
+  "start": [
+    {
+      "type": "category",
+      "label": "Your first application",
+      "collapsed": false,
+      "items": [
+        {
+          "type": "doc",
+          "id": "start/index",
+          "label": "Start with LSF"
+        },
+        {
+          "type": "doc",
+          "id": "start/application-development",
+          "label": "Application development"
+        },
+        {
+          "type": "doc",
+          "id": "start/developer-setup",
+          "label": "Get the developer tools"
+        },
+        {
+          "type": "doc",
+          "id": "start/development-workspace",
+          "label": "Set up your development workspace"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Install a node",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "installation",
+          "label": "Install or build LSF"
+        },
+        {
+          "type": "doc",
+          "id": "reference/standalone-node",
+          "label": "Standalone node"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Build from source",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "start/first-node",
+          "label": "Run your first node from source"
+        }
+      ]
+    }
+  ],
+  "learn": [
+    {
+      "type": "category",
+      "label": "Write and run capsules",
+      "collapsed": false,
+      "items": [
+        {
+          "type": "doc",
+          "id": "component-development/creating-a-capsule",
+          "label": "Creating a capsule"
+        },
+        {
+          "type": "doc",
+          "id": "learn/author-your-first-capsule",
+          "label": "Understand your first capsule"
+        },
+        {
+          "type": "doc",
+          "id": "learn/deliver-and-recover-a-capsule",
+          "label": "Edit, deploy and recover a capsule"
+        },
+        {
+          "type": "doc",
+          "id": "learn/use-capabilities",
+          "label": "Use capabilities in your capsule"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Call services",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "learn/use-a-client",
+          "label": "Call a capsule from your application"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Build web applications",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "learn/build-and-deliver-angular",
+          "label": "Build an Angular application and deliver it through LSF"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/angular-build",
+          "label": "Build your first Angular application"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Contracts and execution",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "learn/runtime-identities",
+          "label": "How a capsule becomes a running service"
+        },
+        {
+          "type": "doc",
+          "id": "learn/read-contracts-and-evidence",
+          "label": "Read a capsule contract"
+        }
+      ]
+    }
+  ],
+  "howTo": [
+    {
+      "type": "category",
+      "label": "Application development",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "how-to/developer-commands",
+          "label": "Developer commands"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/portable-tests",
+          "label": "Run portable capsule tests on Windows"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/devcontainer",
+          "label": "Optional terminal devcontainer"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Web delivery",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "how-to/deliver-a-website",
+          "label": "Deliver a website"
+        },
+        {
+          "type": "doc",
+          "id": "how-to/serve-angular-and-docusaurus",
+          "label": "Serve Angular and Docusaurus sites"
+        },
+        {
+          "type": "doc",
+          "id": "how-to/static-site-and-api",
+          "label": "Serve a static site and a TypeScript API"
+        },
+        {
+          "type": "doc",
+          "id": "operations/static-release-workflow",
+          "label": "Release an existing frontend build"
+        },
+        {
+          "type": "doc",
+          "id": "operations/static-route-sets",
+          "label": "Publish and recover a static route set"
+        },
+        {
+          "type": "doc",
+          "id": "operations/static-compression",
+          "label": "Serve gzip through the HTTPS edge"
+        },
+        {
+          "type": "doc",
+          "id": "operations/publication-retention",
+          "label": "Plan publication storage and maintenance"
+        },
+        {
+          "type": "doc",
+          "id": "how-to/diagnose-angular-delivery",
+          "label": "Diagnose Angular build, delivery and hydration failures"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Run a container node",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "operations/container-runtime",
+          "label": "Run a node in a Linux container"
+        },
+        {
+          "type": "doc",
+          "id": "operations/local-storage-recovery",
+          "label": "Preserve and restore local node state"
+        },
+        {
+          "type": "doc",
+          "id": "operations/local-https-edge",
+          "label": "Serve a static site through a local HTTPS edge"
+        },
+        {
+          "type": "doc",
+          "id": "operations/readiness-probes",
+          "label": "Expose private HTTP readiness checks"
+        },
+        {
+          "type": "doc",
+          "id": "operations/headless-publication-ci",
+          "label": "Publish sites from a private CI runner"
+        },
+        {
+          "type": "doc",
+          "id": "operations/container-handover",
+          "label": "Replace a standalone container safely"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Operate a node",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "how-to/operate-and-contribute",
+          "label": "Inspect and stop a local node"
+        },
+        {
+          "type": "doc",
+          "id": "how-to/reconcile-a-policy-change",
+          "label": "Change and revoke a capability policy"
+        },
+        {
+          "type": "doc",
+          "id": "phase-2-delivery",
+          "label": "Deliver packages and recover changes"
+        },
+        {
+          "type": "doc",
+          "id": "how-to/operate-capability-providers",
+          "label": "Diagnose provider failures"
+        },
+        {
+          "type": "doc",
+          "id": "operations/topology",
+          "label": "Operational topology"
+        }
+      ]
+    }
+  ],
+  "reference": [
+    {
+      "type": "category",
+      "label": "Command-line tools",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "reference/operator-cli",
+          "label": "Operator CLI"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Capsule language profiles",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "component-development/rust-authoring",
+          "label": "Rust compiler and runtime profile"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/c-authoring",
+          "label": "C compiler and runtime profile"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/typescript-authoring",
+          "label": "TypeScript compiler and runtime profile"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/go-authoring",
+          "label": "Go compiler and runtime profile"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/java-authoring",
+          "label": "Java compiler and runtime profile"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/dotnet-authoring",
+          "label": "C# compiler and runtime profile"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Client SDKs",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "reference/rust-client",
+          "label": "Bounded Rust RPC client"
+        },
+        {
+          "type": "doc",
+          "id": "reference/typescript-client",
+          "label": "Bounded Node.js client"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Capsules and publication",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "component-development/guest-sdk",
+          "label": "Guest SDK capability reference"
+        },
+        {
+          "type": "doc",
+          "id": "reference/developer-test-fixtures",
+          "label": "Developer test fixtures"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/packaging",
+          "label": "Deterministic package build and inspection"
+        },
+        {
+          "type": "doc",
+          "id": "component-development/sbom",
+          "label": "Package SBOMs and bounded content policy"
+        },
+        {
+          "type": "doc",
+          "id": "reference/build-provenance",
+          "label": "Build observations and current builder trust"
+        },
+        {
+          "type": "doc",
+          "id": "reference/oci-bearer-read-auth",
+          "label": "Bounded OCI Bearer authentication"
+        },
+        {
+          "type": "doc",
+          "id": "reference/oci-network-profile",
+          "label": "Bounded OCI DNS and content redirects"
+        },
+        {
+          "type": "doc",
+          "id": "reference/oci-registry",
+          "label": "Bounded OCI registry adapter"
+        },
+        {
+          "type": "doc",
+          "id": "reference/package-admission",
+          "label": "Authenticated package admission"
+        },
+        {
+          "type": "doc",
+          "id": "reference/publication-api",
+          "label": "Publication selection in management APIs"
+        },
+        {
+          "type": "doc",
+          "id": "reference/publication-catalog",
+          "label": "Tenant-scoped publication catalog"
+        },
+        {
+          "type": "doc",
+          "id": "reference/publication-runtime",
+          "label": "Publication-bound deployment and execution"
+        },
+        {
+          "type": "doc",
+          "id": "reference/publisher-trust",
+          "label": "Package publisher signatures and current trust"
+        },
+        {
+          "type": "doc",
+          "id": "reference/raw-artifact-cache",
+          "label": "Bounded raw artifact cache"
+        },
+        {
+          "type": "doc",
+          "id": "reference/release-compatibility",
+          "label": "Release and runtime compatibility"
+        },
+        {
+          "type": "doc",
+          "id": "reference/release-lifecycle",
+          "label": "Release lifecycle and evidence renewal"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "HTTP and web delivery",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "component-development/static-sites",
+          "label": "Package an observed static site"
+        },
+        {
+          "type": "doc",
+          "id": "reference/http-ingress",
+          "label": "Shared HTTP application ingress"
+        },
+        {
+          "type": "doc",
+          "id": "reference/http-response-cache",
+          "label": "Bounded HTTP response cache"
+        },
+        {
+          "type": "doc",
+          "id": "reference/http-triggers",
+          "label": "Scoped HTTP trigger routes"
+        },
+        {
+          "type": "doc",
+          "id": "reference/web-release-admission",
+          "label": "Exact web release admission"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Rollouts and recovery",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "phase-2-audit",
+          "label": "Durable administrative audit"
+        },
+        {
+          "type": "doc",
+          "id": "phase-2-canary-observation",
+          "label": "Observe canary outcomes"
+        },
+        {
+          "type": "doc",
+          "id": "phase-2-canary-promotion",
+          "label": "Controlled canary promotion"
+        },
+        {
+          "type": "doc",
+          "id": "phase-2-operator-workflows",
+          "label": "Package and deployment operations"
+        },
+        {
+          "type": "doc",
+          "id": "phase-2-rollback",
+          "label": "Atomic eligible-release rollback"
+        },
+        {
+          "type": "doc",
+          "id": "phase-2-rollouts",
+          "label": "Durable single-node rollouts"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Protocols and management",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "api-surface",
+          "label": "API surface map"
+        },
+        {
+          "type": "doc",
+          "id": "protocol/activation-lifecycle",
+          "label": "Activation lifecycle protocol"
+        },
+        {
+          "type": "doc",
+          "id": "protocol/commit-protocol",
+          "label": "Activation commit protocol"
+        },
+        {
+          "type": "doc",
+          "id": "protocol/http-applications",
+          "label": "Bounded HTTP application contract"
+        },
+        {
+          "type": "doc",
+          "id": "protocol/invocation-service",
+          "label": "Generic invocation service"
+        },
+        {
+          "type": "doc",
+          "id": "protocol/manifest-codec",
+          "label": "Manifest codec and admission contract"
+        },
+        {
+          "type": "doc",
+          "id": "protocol/package-format",
+          "label": "Package identity and artifact format"
+        },
+        {
+          "type": "doc",
+          "id": "protocol/platform-errors",
+          "label": "Platform error model"
+        },
+        {
+          "type": "doc",
+          "id": "protocol/wit-values",
+          "label": "WIT value payloads"
+        },
+        {
+          "type": "doc",
+          "id": "reference/management-services",
+          "label": "Standalone management services"
+        },
+        {
+          "type": "doc",
+          "id": "reference/standalone-providers",
+          "label": "Configure standalone providers"
+        }
+      ]
+    }
+  ],
+  "understand": [
+    {
+      "type": "category",
+      "label": "Architecture",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "architecture/blob-model",
+          "label": "Blob model"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/cluster-topology",
+          "label": "Cluster topology"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/contracts-and-bindings",
+          "label": "Contracts and bindings"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/control-plane",
+          "label": "Control-plane architecture"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/data-plane",
+          "label": "Data-plane architecture"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/execution-cells",
+          "label": "Execution-cell architecture"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/identity-and-capabilities",
+          "label": "Identity and capability architecture"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/ingress-and-triggers",
+          "label": "Ingress and trigger architecture"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/overview",
+          "label": "LSF architecture overview"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/security",
+          "label": "Security architecture"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/state-and-effects",
+          "label": "State and effect architecture"
+        },
+        {
+          "type": "doc",
+          "id": "architecture/versioning-and-deployment",
+          "label": "Versioning and deployment"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Runtime and capabilities",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "runtime/angular-backend-profile",
+          "label": "Scoped Angular render data"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/angular-renderer-profile",
+          "label": "Angular renderer execution profile"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/angular-renderer-runtime",
+          "label": "Angular in generic execution cells"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/async-host-io",
+          "label": "Bounded asynchronous host I/O"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/capabilities",
+          "label": "Activation-scoped capabilities"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/capability-audit",
+          "label": "Capability audit and inspection"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/capability-bindings",
+          "label": "Exact capability bindings"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/capability-broker",
+          "label": "Sealed activation capability broker"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/capability-policies",
+          "label": "Durable capability policies"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/custom-metrics",
+          "label": "Bounded guest custom metrics"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/descendant-budgets",
+          "label": "Budgets and cancellation trees"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/execution-security-profiles",
+          "label": "Execution security profiles"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/host-abi-profile",
+          "label": "Host ABI compatibility profiles"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/local-blobs",
+          "label": "Durable bounded local immutable blobs"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/local-secrets",
+          "label": "Protected local secrets"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/local-service-invocation",
+          "label": "Isolated local service invocation"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/nats-events",
+          "label": "Bounded NATS JetStream publication"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/nats-triggers",
+          "label": "Bounded NATS JetStream triggers"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/outbound-http",
+          "label": "Policy-scoped outbound HTTP"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/protected-configuration",
+          "label": "Protected standalone configuration files"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/provider-pools",
+          "label": "Shared provider pools"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/random",
+          "label": "Budgeted cryptographic randomness"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/resource-budgets",
+          "label": "Resource budgets, deadlines, and cancellation"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/s3-blobs",
+          "label": "S3 immutable blobs"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/streaming-http",
+          "label": "Bounded streaming HTTP"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/transport-connection-deadlines",
+          "label": "Standalone transport connection deadlines"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/trusted-aot",
+          "label": "Isolated trusted-local AOT compilation and native cache"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/vault-secrets",
+          "label": "Vault KV-v2 secrets"
+        },
+        {
+          "type": "doc",
+          "id": "runtime/wasmtime",
+          "label": "Generic Wasmtime execution"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Security and trust",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "security/browser-boundary",
+          "label": "Browser and hydration boundary: same-origin-v1"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Execution and data models",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "activation-lifecycle",
+          "label": "Local activation lifecycle"
+        },
+        {
+          "type": "doc",
+          "id": "admission-control",
+          "label": "Single-node admission and overload control"
+        },
+        {
+          "type": "doc",
+          "id": "cli-completions",
+          "label": "Offline shell completions"
+        },
+        {
+          "type": "doc",
+          "id": "deployment-routing",
+          "label": "Embedded deployment catalog and local routing"
+        },
+        {
+          "type": "doc",
+          "id": "immutable-browser-assets",
+          "label": "Immutable browser asset HTTP profile"
+        },
+        {
+          "type": "doc",
+          "id": "scheduling",
+          "label": "Bounded single-node fair scheduling"
+        },
+        {
+          "type": "doc",
+          "id": "telemetry",
+          "label": "Shared telemetry and node inventory"
+        }
+      ]
+    }
+  ],
+  "contribute": [
+    {
+      "type": "doc",
+      "id": "contribute/index",
+      "label": "Contribute to LSF"
+    },
+    {
+      "type": "doc",
+      "id": "development/toolchain",
+      "label": "Toolchain and reproducibility baseline"
+    },
+    {
+      "type": "doc",
+      "id": "development/local-tests",
+      "label": "Local test entry point"
+    },
+    {
+      "type": "doc",
+      "id": "development/deterministic-tests",
+      "label": "Deterministic timing and cancellation tests"
+    },
+    {
+      "type": "doc",
+      "id": "development/ci-profiles",
+      "label": "CI validation profiles"
+    },
+    {
+      "type": "category",
+      "label": "Documentation and website",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "development/website-code-examples",
+          "label": "Review language-switching examples"
+        },
+        {
+          "type": "doc",
+          "id": "development/website-discovery",
+          "label": "Maintain documentation discovery and local search"
+        },
+        {
+          "type": "doc",
+          "id": "development/website-examples",
+          "label": "Source-backed documentation examples"
+        },
+        {
+          "type": "doc",
+          "id": "development/website-publication",
+          "label": "Protected documentation publication"
+        },
+        {
+          "type": "doc",
+          "id": "development/website-theme",
+          "label": "Website theme and illustration review"
+        },
+        {
+          "type": "doc",
+          "id": "development/website-versions",
+          "label": "Documentation publication identities"
+        },
+        {
+          "type": "doc",
+          "id": "development/website",
+          "label": "Website development and validation"
+        },
+        {
+          "type": "doc",
+          "id": "svg-style",
+          "label": "Documentation SVG convention"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Build and testing references",
+      "collapsed": true,
+      "items": [
+        {
+          "type": "doc",
+          "id": "development/aot-test-inputs",
+          "label": "Prepared AOT test inputs"
+        },
+        {
+          "type": "doc",
+          "id": "development/build-foundation",
+          "label": "Executable build foundation"
+        },
+        {
+          "type": "doc",
+          "id": "development/c-capsule-qualification",
+          "label": "Standalone C capsule qualification"
+        },
+        {
+          "type": "doc",
+          "id": "development/ci-caching",
+          "label": "CI dependency caching"
+        },
+        {
+          "type": "doc",
+          "id": "development/dotnet-capsule-qualification",
+          "label": "C# capsule qualification"
+        },
+        {
+          "type": "doc",
+          "id": "development/editor-task-integration",
+          "label": "Executed Windows editor tasks"
+        },
+        {
+          "type": "doc",
+          "id": "development/go-capsule-qualification",
+          "label": "Standalone Go capsule qualification"
+        },
+        {
+          "type": "doc",
+          "id": "development/legacy-code-audit-2026-09-23",
+          "label": "Legacy code and test audit"
+        },
+        {
+          "type": "doc",
+          "id": "development/local-release-catalog",
+          "label": "Local publication catalog"
+        },
+        {
+          "type": "doc",
+          "id": "development/manual-guide-checks",
+          "label": "Manual guide checks, 2026-09-23"
+        },
+        {
+          "type": "doc",
+          "id": "development/native-windows-qualification",
+          "label": "Native Windows capsule qualification"
+        },
+        {
+          "type": "doc",
+          "id": "development/owned-test-processes",
+          "label": "Owned selected test processes"
+        },
+        {
+          "type": "doc",
+          "id": "development/packaged-developer-qualification",
+          "label": "Packaged developer qualification"
+        },
+        {
+          "type": "doc",
+          "id": "development/packaged-platform-handoff",
+          "label": "Packaged Windows and Linux platform handoff"
+        },
+        {
+          "type": "doc",
+          "id": "development/provider-source-walkthrough",
+          "label": "Exercise provider integration from source"
+        },
+        {
+          "type": "doc",
+          "id": "development/rust-capsule-qualification",
+          "label": "Standalone Rust capsule qualification"
+        },
+        {
+          "type": "doc",
+          "id": "development/security-baseline",
+          "label": "Security baseline"
+        },
+        {
+          "type": "doc",
+          "id": "development/standalone-quickstart",
+          "label": "Standalone echo quickstart"
+        },
+        {
+          "type": "doc",
+          "id": "development/typescript-capsule-qualification",
+          "label": "TypeScript capsule qualification"
+        },
+        {
+          "type": "doc",
+          "id": "development/wasmtime-security-update",
+          "label": "Wasmtime 47.0.4 security baseline"
+        },
+        {
+          "type": "doc",
+          "id": "development/windows-developer-workflow",
+          "label": "Windows developer controller implementation"
+        },
+        {
+          "type": "doc",
+          "id": "development/windows-qualification-handoff",
+          "label": "Windows developer workflow qualification"
+        },
+        {
+          "type": "doc",
+          "id": "development/workflow-action-pins",
+          "label": "GitHub Actions pin review"
+        },
+        {
+          "type": "doc",
+          "id": "how-to/exercise-provider-failure-and-recovery",
+          "label": "Test provider denial and recovery"
+        },
+        {
+          "type": "doc",
+          "id": "operations/maintained-security-monitoring",
+          "label": "Activate and verify maintained-branch security monitoring"
+        },
+        {
+          "type": "doc",
+          "id": "operations/native-release-promotion",
+          "label": "Review and promote a native runtime release"
+        },
+        {
+          "type": "doc",
+          "id": "testing/angular-guide-workflow",
+          "label": "Angular learning path execution"
+        },
+        {
+          "type": "doc",
+          "id": "testing/angular-reference-workflow",
+          "label": "Actual Angular reference qualification"
+        },
+        {
+          "type": "doc",
+          "id": "testing/angular-renderer-qualification",
+          "label": "Angular renderer qualification observation"
+        },
+        {
+          "type": "doc",
+          "id": "testing/angular-t1-workflow",
+          "label": "Actual Angular T1 management qualification"
+        },
+        {
+          "type": "doc",
+          "id": "testing/benchmark-retention",
+          "label": "Benchmark evidence retention"
+        },
+        {
+          "type": "doc",
+          "id": "testing/browser-boundary",
+          "label": "Browser boundary validation observations"
+        },
+        {
+          "type": "doc",
+          "id": "testing/ci-cargo-recipes",
+          "label": "CI Cargo recipes and dependency-cache experiment"
+        },
+        {
+          "type": "doc",
+          "id": "testing/ci-lanes",
+          "label": "Bounded runtime, provider and renderer CI lanes"
+        },
+        {
+          "type": "doc",
+          "id": "testing/ci-suite-inventory",
+          "label": "Exact CI suites and host correctness"
+        },
+        {
+          "type": "doc",
+          "id": "testing/docker-comparison",
+          "label": "Docker comparison collection and replay"
+        },
+        {
+          "type": "doc",
+          "id": "testing/go-client-qualification",
+          "label": "Go client qualification evidence"
+        },
+        {
+          "type": "doc",
+          "id": "testing/invariants",
+          "label": "Test invariants"
+        },
+        {
+          "type": "doc",
+          "id": "testing/java-guest-authoring",
+          "label": "Java guest authoring qualification"
+        },
+        {
+          "type": "doc",
+          "id": "testing/kubernetes-comparison",
+          "label": "Kubernetes Service comparison"
+        },
+        {
+          "type": "doc",
+          "id": "testing/metadata-working-set",
+          "label": "Metadata compilation: correctness and physical working set"
+        },
+        {
+          "type": "doc",
+          "id": "testing/s3-fixture",
+          "label": "Source-built S3 conformance fixture"
+        },
+        {
+          "type": "doc",
+          "id": "testing/sdk-browser-application",
+          "label": "TypeScript browser application qualification"
+        },
+        {
+          "type": "doc",
+          "id": "testing/sdk-provider-evidence",
+          "label": "Native SDK provider qualification observations"
+        }
+      ]
+    },
+    {
+      "type": "link",
+      "label": "Engineering records",
+      "href": "/docs/development/engineering-records/"
+    }
+  ],
+  "records": [
+    {
+      "type": "doc",
+      "id": "development/engineering-records",
+      "label": "Engineering records"
+    },
+    {
+      "type": "doc",
+      "id": "architecture/cluster-freshness-handoff",
+      "label": "Route freshness: Phase 5 implementation handoff"
+    },
+    {
+      "type": "doc",
+      "id": "development/activation-containment",
+      "label": "Phase 0 activation containment"
+    },
+    {
+      "type": "doc",
+      "id": "development/angular-build-evidence",
+      "label": "Angular build implementation and validation"
+    },
+    {
+      "type": "doc",
+      "id": "development/application-guide-validation",
+      "label": "Packaged application guide validation"
+    },
+    {
+      "type": "doc",
+      "id": "development/core-guide-validation",
+      "label": "Core learning-path validation"
+    },
+    {
+      "type": "doc",
+      "id": "development/feature-audit-2026-09-07",
+      "label": "Feature audit — September 7, 2026"
+    },
+    {
+      "type": "doc",
+      "id": "development/fixed-cell-pool",
+      "label": "Phase 0 fixed execution-cell pool"
+    },
+    {
+      "type": "doc",
+      "id": "development/native-release-gate",
+      "label": "Native release gate"
+    },
+    {
+      "type": "doc",
+      "id": "development/operator-guide-acceptance",
+      "label": "Operator guide evidence and publication handoff"
+    },
+    {
+      "type": "doc",
+      "id": "development/phase-0-wasmtime",
+      "label": "Phase 0 Wasmtime echo backend"
+    },
+    {
+      "type": "doc",
+      "id": "development/phase3-guide-review",
+      "label": "Review the Phase 3 learning paths"
+    },
+    {
+      "type": "doc",
+      "id": "development/security-baseline-evidence",
+      "label": "Security baseline evidence"
+    },
+    {
+      "type": "doc",
+      "id": "development/standalone-provider-validation",
+      "label": "Validate standalone providers"
+    },
+    {
+      "type": "doc",
+      "id": "development/website-publication-evidence",
+      "label": "Protected documentation publication evidence"
+    },
+    {
+      "type": "doc",
+      "id": "development/wiki-cutover-review",
+      "label": "Wiki removal review"
+    },
+    {
+      "type": "doc",
+      "id": "development/wiki-migration",
+      "label": "Wiki migration and removal"
+    },
+    {
+      "type": "doc",
+      "id": "evidence/developer-toolkit-36262353069/README",
+      "label": "Alpha.4 developer toolkit qualification"
+    },
+    {
+      "type": "doc",
+      "id": "evidence/developer-toolkit-36440862340/README",
+      "label": "Alpha.5 developer toolkit checks"
+    },
+    {
+      "type": "doc",
+      "id": "evidence/native-upgrade-35821200294/README",
+      "label": "Native alpha.4 compatible-upgrade rehearsal"
+    },
+    {
+      "type": "doc",
+      "id": "evidence/phase3-integration-35818046307/README",
+      "label": "Current Phase 3 integration evidence"
+    },
+    {
+      "type": "doc",
+      "id": "evidence/phase3-sdk-guides-35509915448/README",
+      "label": "Six-client guide qualification"
+    },
+    {
+      "type": "doc",
+      "id": "evidence/phase3-sdk-matrix-0b99cd92/README",
+      "label": "Six-client qualification after development integration"
+    },
+    {
+      "type": "doc",
+      "id": "evidence/phase3-sdk-matrix-e07abf72/README",
+      "label": "Six native clients against the real provider node"
+    },
+    {
+      "type": "doc",
+      "id": "phase-0-baselines",
+      "label": "Phase 0 activation, containment, and resource baselines"
+    },
+    {
+      "type": "doc",
+      "id": "phase-0-completion",
+      "label": "Phase 0 completion gate"
+    },
+    {
+      "type": "doc",
+      "id": "phase-0-hot-path-profiling",
+      "label": "Phase 0 execution hot-path profiling and Phase 1 handoff"
+    },
+    {
+      "type": "doc",
+      "id": "phase-0-spike",
+      "label": "Phase 0 executable spike"
+    },
+    {
+      "type": "doc",
+      "id": "phase-1-completion",
+      "label": "Phase 1 completion report"
+    },
+    {
+      "type": "doc",
+      "id": "phase-1-extension-completion",
+      "label": "Phase 1 extension: measured results and Phase 2 handoff"
+    },
+    {
+      "type": "doc",
+      "id": "phase-2-completion",
+      "label": "Phase 2 completion review"
+    },
+    {
+      "type": "doc",
+      "id": "phase-3-gate-review",
+      "label": "Phase 3 gate review"
+    },
+    {
+      "type": "doc",
+      "id": "phase3-management-integration",
+      "label": "Phase 3 management integration (#226)"
+    },
+    {
+      "type": "doc",
+      "id": "protocol/phase-1-contract-hardening",
+      "label": "Phase 1 contract hardening"
+    },
+    {
+      "type": "doc",
+      "id": "roadmap",
+      "label": "Engineering roadmap"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-1-conformance",
+      "label": "Bounded Phase 1 conformance"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-1-controlled-comparison",
+      "label": "Controlled historical/current comparison"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-1-measurements",
+      "label": "Phase 1 scale, soak and benchmark measurements"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-2-offline-validation",
+      "label": "Phase 2 offline trust and registry availability"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase-2-resource-profile",
+      "label": "Phase 2 resource profile"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase3-resource-acceptance",
+      "label": "Bounded resource acceptance matrix for #239"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase3-resource-checkpoint",
+      "label": "Resource campaign implementation checkpoint"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase3-resource-events",
+      "label": "Event resource checkpoint"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase3-resource-evidence/README",
+      "label": "Resource campaign attempt ledger"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase3-resource-methodology",
+      "label": "Phase 3 resource campaign (#239)"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase3-resource-oci",
+      "label": "OCI pool resource qualification"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase3-resource-recovery",
+      "label": "Resource recovery qualification, 20 September 2026"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase3-resource-renderer",
+      "label": "Renderer memory and shared storage qualification"
+    },
+    {
+      "type": "doc",
+      "id": "testing/phase3-security",
+      "label": "Phase 3 integrated runtime security conformance"
+    },
+    {
+      "type": "doc",
+      "id": "testing/sdk-provider-workflow",
+      "label": "Separate-node SDK provider workflow"
+    }
+  ]
+}
