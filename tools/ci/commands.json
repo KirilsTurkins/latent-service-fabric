@@ -1980,16 +1980,6 @@
       "shell": "default",
       "run": "set -euo pipefail\ncontainer=$(docker create --label io.latent.frontend-qualification=\"$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT\" --cpus 2 --memory 2g --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=536870912,mode=1777 --mount \"type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly\" --mount \"type=bind,source=$RUNNER_TEMP/frontend-release/extracted,target=/release,readonly\" lsf-frontend-qualification /source/tools/static-release/qualification.mjs /release/bin/latent /tmp/result.json /release/bin/latentd)\n[[ \"$container\" =~ ^[0-9a-f]{64}$ ]]\ncleanup() { docker rm --force \"$container\" >/dev/null; }\ntrap cleanup EXIT\ntimeout --signal=TERM --kill-after=10s 180s docker start --attach \"$container\" > \"$RUNNER_TEMP/frontend-release/qualification.json\"\ntest \"$(docker inspect --format '{{.State.ExitCode}}' \"$container\")\" = 0\ncat \"$RUNNER_TEMP/frontend-release/qualification.json\""
     },
-    ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "rust",
-      "name": "Qualify actual Angular PrimeNG and bilingual Docusaurus publications",
-      "jobIf": "needs.profile.outputs.profile == 'full'",
-      "stepIf": "needs.profile.outputs.renderer == 'true'",
-      "workingDirectory": ".",
-      "shell": "bash",
-      "run": "npm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\""
-    },
     ".github/workflows/container-runtime.yml:container:Authenticate and prepare the released image context": {
       "workflow": ".github/workflows/container-runtime.yml",
       "job": "container",
@@ -2018,7 +2008,17 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage --ownership"
+      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage --ownership --probes"
+    },
+    ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Qualify actual Angular PrimeNG and bilingual Docusaurus publications",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "needs.profile.outputs.renderer == 'true'",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "run": "npm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\""
     },
     ".github/workflows/developer-tools.yml:guest-tools:Qualify the static site and TypeScript API in Chromium": {
       "workflow": ".github/workflows/developer-tools.yml",
@@ -3708,17 +3708,17 @@
     "tools/static-release/unpack.py": {
       "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
     },
+    "tools/container_runtime/qualification.py": {
+      "sha256": "6f2cae55ebb7510a48eb9d1a51ba5bc119b4d6090544211551a87cc2e52f4669"
+    },
+    "tools/prepare_container_runtime.py": {
+      "sha256": "def3f330f6d50dc10f9b949260d0b429deb968cf96aa362b323232b95f09cfc4"
+    },
     "tools/build_framework_sites.py": {
       "sha256": "c82fe7e64de08e7e42e170a75148a24f2de8ebab71173cf4a8570b650b336fe8"
     },
     "tools/run_framework_sites.py": {
       "sha256": "04fdc86bc19851aff707a91d3196e6a6bad7f976f00f53b81b26a541600821cd"
-    },
-    "tools/container_runtime/qualification.py": {
-      "sha256": "11aa932c5ee899de7ba3e7f2916af09210749276f401cd74ec8cc5da6446bade"
-    },
-    "tools/prepare_container_runtime.py": {
-      "sha256": "3527a1bb2296864c75a54d86f38579b67c94b8b10cf0964c59c33f4f66aa7d2e"
     },
     "tools/static_api/ci.py": {
       "sha256": "c60f503924a68e7e03c16a3d0c024b8010af324164b459560c4f9a7a1b974917"
@@ -7171,6 +7171,6 @@
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
-    ".github/workflows/container-runtime.yml": "275cdc6366b005a9b4fd0e7de2aae12d1c455aa2acac5fe58f727e4171ff3849"
+    ".github/workflows/container-runtime.yml": "84981e0f872a168ee4dbbeeed4ed760f605c7dd3ce8ef516ea3d6310a92162c7"
   }
 }
