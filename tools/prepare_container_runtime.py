@@ -37,11 +37,11 @@ def prepare(args) -> dict:
         recipe = []
         paths = [ROOT / 'tools/native_runtime' / (name + '.py')
                  for name in ('__init__', 'common', 'files', 'host', 'verify')]
-        paths += [ROOT / 'tools/container_runtime' / name for name in ('entrypoint.py', 'ownership.py', 'Dockerfile')]
+        paths += [ROOT / 'tools/container_runtime' / name for name in ('entrypoint.py', 'ownership.py', 'probe.py', 'Dockerfile')]
         for source in paths:
             data = files.read(source.absolute(), 262144, owners={0, identity[0]})
             destination = (output if source.name == 'Dockerfile' else
-                           runtime if source.name in {'entrypoint.py', 'ownership.py'} else modules) / source.name
+                           runtime if source.name in {'entrypoint.py', 'ownership.py', 'probe.py'} else modules) / source.name
             files.create(destination, data, 0o644)
             recipe.append({'path': source.relative_to(ROOT).as_posix(), 'sha256': hashlib.sha256(data).hexdigest()})
         files.create(output / '.dockerignore', b'*\n!Dockerfile\n!release/**\n!runtime/**\n', 0o644)

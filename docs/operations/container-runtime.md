@@ -96,6 +96,8 @@ docker stop --time 10 lsf-node
 Require a known successful result, the expected node identity and
 `data.inventory.health.ready: true`. A listening TCP port is insufficient.
 SIGTERM reaches native PID 1, which owns bounded drain and orderly persistence.
+Supervisors that require HTTP checks can use the optional
+[private readiness adapter](readiness-probes.md), with explicit resource limits.
 Retain all state and configuration together; use the
 [stopped local backup and restore workflow](local-storage-recovery.md).
 Wait for the configured supply-chain
