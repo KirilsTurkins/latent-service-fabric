@@ -2020,16 +2020,6 @@
       "shell": "default",
       "run": "python3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/edge-qualification\""
     },
-    ".github/workflows/container-runtime.yml:container:Verify bounded gzip identities and actual native eligibility": {
-      "workflow": ".github/workflows/container-runtime.yml",
-      "job": "container",
-      "name": "Verify bounded gzip identities and actual native eligibility",
-      "jobIf": "success()",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "docker run --rm --network none --cpus 2 --memory 256m --pids-limit 32 --mount \"type=bind,source=$PWD,target=/source,readonly\" lsf-container-publisher --test /source/tools/trusted_edge/representation.test.mjs\npython3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/compression-qualification\" --compression"
-    },
     ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications": {
       "workflow": ".github/workflows/ci.yml",
       "job": "rust",
@@ -2049,6 +2039,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "npm ci --ignore-scripts --no-audit --no-fund --prefix tools/static_api\nnode tools/static_api/node_modules/playwright-core/cli.js install --with-deps chromium\npython tools/static_api/ci.py --bin target/dev-tools/source-node/bin --signer target/dev-tools/payload/sdk/bin/capsule-test-signer --build \"$RUNNER_TEMP/dev-projects/static-api/build\" --browser-tools tools/static_api --output \"$RUNNER_TEMP/dev-projects/static-api\""
+    },
+    ".github/workflows/container-runtime.yml:container:Verify bounded gzip identities and actual native eligibility": {
+      "workflow": ".github/workflows/container-runtime.yml",
+      "job": "container",
+      "name": "Verify bounded gzip identities and actual native eligibility",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker run --rm --network none --cpus 2 --memory 256m --pids-limit 32 --mount \"type=bind,source=$PWD,target=/source,readonly\" lsf-container-publisher --test /source/tools/trusted_edge/representation.test.mjs\npython3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/compression-qualification\" --compression"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
