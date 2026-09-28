@@ -89,8 +89,9 @@ Maintain the newest and previous runtime documentation, with one additional
 slot for an attributable correction. Retiring a channel is an explicit PR that
 updates the inventory and removes that complete snapshot's files together.
 History remains in Git. A missing retained version must fail the build rather
-than quietly use development. Future snapshot upkeep belongs to the continuous
-documentation milestone; Phase 3 does not require a future Phase 3 release tag.
+than quietly use development. Each runtime release needs a reviewed snapshot
+bound to its actual release source; later documentation corrections keep a
+separate attributable identity.
 
 ## Validation and complete-site rollback
 
