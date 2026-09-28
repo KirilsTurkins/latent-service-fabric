@@ -1,0 +1,85 @@
+name: Native container runtime
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/container-runtime.yml'
+      - 'tools/container_runtime/**'
+      - 'tools/trusted_edge/**'
+      - 'tools/prepare_container_runtime.py'
+      - 'tools/native_runtime/**'
+      - 'tools/static-release/**'
+      - 'examples/static-release/**'
+      - 'docs/operations/container-runtime.md'
+  push:
+    branches: [development]
+    paths:
+      - '.github/workflows/container-runtime.yml'
+      - 'tools/container_runtime/**'
+      - 'tools/trusted_edge/**'
+      - 'tools/prepare_container_runtime.py'
+      - 'tools/native_runtime/**'
+      - 'tools/static-release/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-runtime-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  container:
+    name: Authenticated non-root container and persistent restart
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Authenticate and prepare the released image context
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          umask 077
+          container_work=$(mktemp -d /tmp/lsf-container-XXXXXXXX)
+          echo "CONTAINER_WORK=$container_work" >> "$GITHUB_ENV"
+          mkdir "$container_work/release" "$container_work/trust" "$container_work/tools"
+          cp -R tools/native_runtime tools/container_runtime "$container_work/tools/"
+          cp tools/prepare_container_runtime.py "$container_work/tools/"
+          install -m 0755 "$(command -v gh)" "$container_work/trust/gh"
+          gh release download 0.1.0-alpha.4 --repo KirilsTurkins/latent-service-fabric --dir "$container_work/release" --pattern lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json --pattern lsf-install.pyz
+          gh attestation trusted-root > "$container_work/trust/root.jsonl"
+          python3 "$container_work/tools/prepare_container_runtime.py" --release-directory "$container_work/release" --version 0.1.0-alpha.4 --publisher-policy "$container_work/tools/container_runtime/release-policy.json" --trusted-root "$container_work/trust/root.jsonl" --verifier "$container_work/trust/gh" --output "$container_work/context" > "$RUNNER_TEMP/container-build-inputs.json"
+      - name: Build the runtime and disposable publisher images
+        run: |
+          docker build --tag lsf-container-runtime "$CONTAINER_WORK/context"
+          docker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release
+          docker build --tag lsf-container-operator --file tools/container_runtime/operator-qualification.Dockerfile tools/container_runtime
+          docker build --tag lsf-trusted-edge --file tools/trusted_edge/Dockerfile .
+      - name: Publish actual signed sites and verify restart
+        run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/container-qualification" --storage --ownership --probes --operator-image lsf-container-operator
+      - name: Verify exact HTTPS edge peers and native browser policy
+        run: python3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/edge-qualification"
+      - name: Verify bounded gzip identities and actual native eligibility
+        run: |
+          docker run --rm --network none --cpus 2 --memory 256m --pids-limit 32 --mount "type=bind,source=$PWD,target=/source,readonly" lsf-container-publisher --test /source/tools/trusted_edge/representation.test.mjs
+          python3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/compression-qualification" --compression
+      - name: Retain public container evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-container-qualification
+          path: |
+            ${{ runner.temp }}/container-build-inputs.json
+            ${{ runner.temp }}/container-qualification/*.json
+            ${{ runner.temp }}/container-qualification/*.jsonl
+            ${{ runner.temp }}/container-qualification/headless-journals/**
+            ${{ runner.temp }}/edge-qualification/*.json
+            ${{ runner.temp }}/edge-qualification/*.jsonl
+            ${{ runner.temp }}/compression-qualification/*.json
+            ${{ runner.temp }}/compression-qualification/*.jsonl
+          if-no-files-found: error
+          retention-days: 14

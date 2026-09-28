@@ -34,6 +34,9 @@ on:
       - tools/dev_typescript_distribution.py
       - tools/guest_runtime_profiles.py
       - tools/run_dev_guest_tools_tests.py
+      - tools/static_api_build.py
+      - tools/static_api/**
+      - examples/static-api/**
       - tools/dev_node_application_probe.py
       - tools/dev_clock_fixture_probe.py
       - tools/run_dev_clock_portable.py
@@ -175,6 +178,16 @@ jobs:
         run: python tools/build_dev_guest_tools.py --language "$LSF_DEV_LANGUAGE" --output target/dev-tools --python-prefix "$LSF_DEV_PYTHON_PREFIX" --node-tests
       - name: Compile actual projects with isolated tools and separate operator packaging
         run: python tools/run_dev_guest_tools_tests.py --language "$LSF_DEV_LANGUAGE" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-projects"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: matrix.language == 'typescript'
+        with:
+          node-version: 24.19.0
+      - name: Qualify the static site and TypeScript API in Chromium
+        if: matrix.language == 'typescript'
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix tools/static_api
+          node tools/static_api/node_modules/playwright-core/cli.js install --with-deps chromium
+          python tools/static_api/ci.py --bin target/dev-tools/source-node/bin --signer target/dev-tools/payload/sdk/bin/capsule-test-signer --build "$RUNNER_TEMP/dev-projects/static-api/build" --browser-tools tools/static_api --output "$RUNNER_TEMP/dev-projects/static-api"
       - name: Compare explicit clock fixtures on signed nodes and the Linux portable host
         if: matrix.language == 'rust'
         run: |

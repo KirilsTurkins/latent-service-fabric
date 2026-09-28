@@ -42,9 +42,15 @@ pub const WEB_WORLD: &str = "latent:web/application-service@0.1.0";
 pub const WEB_HTTP_WORLD: &str = "latent:web-http/application-service@0.1.0";
 pub const WEB_HTTP_CONTRACT: &str = "latent:http/client@0.2.0";
 pub const IMMUTABLE_ASSET_PREFIX: &str = "/_lsf/assets/";
-pub const MAX_WEB_MANIFEST_BYTES: usize = 64 * 1024;
-pub const MAX_WEB_ASSETS: usize = 128;
+pub const MAX_WEB_MANIFEST_BYTES: usize = 256 * 1024;
+/// Four of the package's 256 layers remain available for capture metadata,
+/// embedded SBOM and its input receipt.
+pub const MAX_WEB_ASSETS: usize = 252;
+/// Deserialization may round vector allocation up to the next power of two.
+/// Logical admission is independently bounded by MAX_WEB_ASSETS.
+pub const MAX_WEB_ASSET_CAPACITY: usize = 256;
 pub const MAX_WEB_ROUTES: usize = 128;
+pub const MAX_WEB_STYLE_HASHES: usize = 64;
 pub const MAX_WEB_ASSET_BYTES: u64 = 8 * 1024 * 1024;
 pub const MAX_WEB_ASSET_TREE_BYTES: u64 = 16 * 1024 * 1024;
 pub const MAX_WEB_RENDERER_BYTES: u64 = 32 * 1024 * 1024;

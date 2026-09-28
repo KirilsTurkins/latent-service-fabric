@@ -559,6 +559,8 @@
         "local_repository::tests::admission::retained_package::historical_read_does_not_renew_expired_execution_authority",
         "local_repository::tests::admission::retained_package::undersized_budget_and_corrupt_retained_package_fail_closed",
         "local_repository::tests::aggregate_index_byte_budget_is_enforced_before_persistence",
+        "local_repository::tests::capacity::capacity_is_unavailable_during_writes_and_indeterminate_maintenance",
+        "local_repository::tests::capacity::capacity_observes_retained_history_shared_links_and_near_budget_rejection",
         "local_repository::tests::catalog_queries::descriptor_sizing_matches_storage_json_without_materializing_it",
         "local_repository::tests::catalog_queries::eight_index_adoptions_precharge_capacity_and_preserve_every_scope_path",
         "local_repository::tests::catalog_queries::first_summary_too_large_fails_without_clones_or_empty_continuation_loop",
@@ -748,6 +750,7 @@
         "web::tests::backend_data_requires_an_explicit_angular_profile_and_nonoptional_import",
         "web::tests::browser_and_ssr_layouts_have_exact_asset_and_package_identity_without_capsule_identity",
         "web::tests::browser_routes_cannot_claim_a_renderer_and_server_routes_cannot_name_arbitrary_files",
+        "web::tests::documentation_asset_profile_admits_252_paths_and_rejects_the_next_with_a_named_bound",
         "web::tests::public_paths_media_types_order_and_spare_capacity_are_bounded",
         "web::tests::renderer_requires_the_same_asset_tree_and_supported_compatibility_identity",
         "web::tests::static_contract_fixtures_agree_with_json_schema_acceptance",
@@ -764,7 +767,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 257,
+      "minimumCases": 260,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -7926,7 +7929,10 @@
         "config::tests::events::event_binding_requires_exact_tenant_and_provider_service",
         "config::tests::events::event_protected_configuration_rejects_foreign_topics_paths_and_colliding_identity",
         "standalone::http::tests::browser_config::public_document_navigation_is_explicit_public_tenant_scoped_and_mount_bounded",
-        "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access"
+        "standalone::http::assets::static_tests::public_document_navigation_never_grants_asset_private_mount_or_unsafe_access",
+        "standalone::measurements::scale::tests::catalog_content_growth_does_not_mask_owner_or_capacity_changes",
+        "standalone::http::assets::csp::tests::signed_style_identities_only_extend_styles_and_reject_policy_text",
+        "standalone::http::assets::static_tests::signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -7989,7 +7995,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 237,
+      "minimumCases": 240,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
