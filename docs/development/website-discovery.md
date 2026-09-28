@@ -2,8 +2,10 @@
 
 The website offers Start, Learn, How-to, Reference, Understand and Contribute
 entry points plus a [task catalogue](../../website/src/pages/guides.tsx). The
-catalogue uses the existing `website/content/coverage.json` rows and published
-pages. It does not create new guide acceptance claims: a reference remains
+catalogue uses the existing `website/content/coverage.json` rows and the explicit
+integration tasks in `website/plugins/discovery.mjs`. Both resolve only published
+pages. The original 27-topic review contract is not a limit on discoverable tasks.
+Catalogue entries do not create new guide acceptance claims: a reference remains
 labelled as a reference until its owner supplies a reviewed walkthrough.
 
 ## Search ownership and scope
@@ -26,7 +28,9 @@ unreferenced snippet regions, Wiki trees, component review pages and test-only
 build directories are never added to the corpus. An archived page can remain
 readable while opting out of search using Docusaurus `noIndex: true` front matter.
 
-The index is limited to 6,000 records and 8 MiB. Individual rendered sections are
+The index is limited to 6,000 records and 16 MiB. This byte budget accommodates
+the current guides and three retained release snapshots, including alpha.5,
+without silently omitting older searchable guides. Individual rendered sections are
 limited to 256 KiB and split into 6,000-character search records without dropping
 their remaining text. Exceeding these limits fails the build and requires review.
 The maintained build check recomputes the expected index from the actual HTML
@@ -46,7 +50,9 @@ does not prevent a version-labelled URL from working.
 1. Add current prose under `docs/`, following the existing coverage contract and
    [authoring ownership](website.md). Use registered source examples instead of
    copied SDK programs.
-2. Update the relevant coverage row's page path and role. Audience, SDK language
+2. Update the relevant coverage row's page path and role, or register a new
+   integration task in the discovery plugin without rewriting historical review
+   receipts. Missing pages and duplicate task IDs fail the build. Audience, SDK language
    and topic filters only expose values backed by existing catalogue entries.
    Catalogue filters have stable `audience`, `language` and `topic` query fields.
 3. Keep each heading meaningful: search results link directly to its rendered

@@ -1,4 +1,4 @@
-export const SEARCH_LIMITS = Object.freeze({bytes: 8 * 1024 * 1024, records: 6000, query: 128, results: 20});
+export const SEARCH_LIMITS = Object.freeze({bytes: 16 * 1024 * 1024, records: 6000, query: 128, results: 20});
 export const searchOptions = Object.freeze({fields: ['title', 'heading', 'text'], storeFields: ['title', 'heading', 'route', 'version', 'profile', 'excerpt'],
   searchOptions: {boost: {title: 4, heading: 2}, prefix: true, fuzzy: 0.15, combineWith: 'AND'}});
 

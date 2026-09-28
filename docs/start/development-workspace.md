@@ -25,7 +25,7 @@ param(
     [ValidatePattern('^test-[a-z0-9][a-z0-9-]*$')][string]$Workspace = 'test-my-greeting',
     [string]$Project = (Join-Path $env:USERPROFILE 'Projects\My greeting'),
     [ValidateRange(1024,65535)][int]$Port = 18080,
-    [string]$Inputs = (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4'),
+    [string]$Inputs = (Join-Path $env:USERPROFILE 'LSF-inputs-alpha5'),
     [string]$State = (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial'),
     [switch]$Provision,
     [switch]$SessionOnly
@@ -122,7 +122,7 @@ supplies this interpreter; the downloaded frontend contains the helper.
 ```bash
 set -euo pipefail
 umask 077
-export Inputs="${LSF_INPUTS:-$HOME/LSF-inputs-alpha4}"
+export Inputs="${LSF_INPUTS:-$HOME/LSF-inputs-alpha5}"
 export Language="${1:-rust}"
 export Workspace="${2:-test-my-greeting}"
 Project="${3:-$HOME/Projects/My greeting}"

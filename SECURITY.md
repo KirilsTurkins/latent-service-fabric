@@ -72,6 +72,15 @@ sanitize arbitrary HTML, make malicious same-origin scripts safe, or provide
 browser end-user authentication. Tenant origins and application disclosure
 decisions remain explicit operator/application responsibilities.
 
+Anonymous public-document navigation and exact static stylesheet hashes require
+explicit host opt-ins. They do not enable credentialed cross-origin asset access
+or arbitrary inline execution. The optional
+[local HTTPS edge](docs/operations/local-https-edge.md),
+[compression adapter](docs/operations/static-compression.md) and
+[private readiness adapter](docs/operations/readiness-probes.md) become trusted
+node-level components when selected. Management credentials remain private;
+forwarded headers and health probes cannot grant tenant or principal authority.
+
 The optional [capability policy owner](docs/runtime/capability-policies.md) is now
 part of the trusted computing base. It enforces closed rule parsing, tenant-scoped
 revision/CAS history, protected storage and final policy/publication currentness.

@@ -36,7 +36,11 @@ publisher code from the dispatch's immutable release commit and pinned Actions,
 with candidate site files treated as data. The single concurrency group does
 not cancel an active deployment. Each job has a ten-minute bound. Site archives
 are limited to 128 MiB compressed, 256 MiB expanded, 6000 entries and 8 MiB per
-file; paths, duplicates, symlinks and special files fail closed. These limits do
+file. Only the root `search-index.json` may use up to 16 MiB, accommodating the
+current guides and retained release snapshots. The archive selector and the
+protected deployment recheck both enforce that exact path and bound; nested or
+differently cased names receive no exception. Paths, duplicates, symlinks and
+special files fail closed. These limits do
 not alter runtime budgets or turn website files into a package authority.
 
 The live `publication.json` records the source, CI run/attempt, exact artifact
