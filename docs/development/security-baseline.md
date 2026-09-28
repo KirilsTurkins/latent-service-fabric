@@ -56,7 +56,7 @@ digests before execution, then the exact version. It uses prebuilt binaries, not
 | zizmor | [1.30.1](https://github.com/zizmorcore/zizmor/releases/tag/v1.30.1) | `99a054ed9283c90abdd2d5b9fb5101d27dde9783` |
 
 External actions keep the [#281 immutable action policy](workflow-action-pins.md):
-checkout `11d5960a326750d5838078e36cf38b85af677262` and setup-python
+checkout `3d3c42e5aac5ba805825da76410c181273ba90b1` and setup-python
 `5fda3b95a4ea91299a34e894583c3862153e4b97`. Only static/canary jobs install the
 reviewed PyYAML 6.0.3 CPython 3.13 wheel from the
 [hash-locked requirements](../../.github/security/requirements.txt), with binary
