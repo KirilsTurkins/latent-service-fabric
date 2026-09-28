@@ -1,0 +1,103 @@
+{
+  "version": "0.1.0-alpha.5",
+  "runtimeSource": "f6d8f32177208b60a68f14070f549f927052dd48",
+  "nativeReleaseRun": 36470347745,
+  "ciRun": 36462067906,
+  "archive": {
+    "name": "lsf-0.1.0-alpha.5-x86_64-unknown-linux-gnu.tar.gz",
+    "sha256": "873e597e5b3f4694e2204bf58b05d1be41a624927f02ef25be5ab5899f071725",
+    "size": 30519375
+  },
+  "archiveEntriesVerified": 469,
+  "authenticatedSubjects": [
+    "SHA256SUMS",
+    "developer-selection.json",
+    "native-release-acceptance.json",
+    "local-experimental-v1.json",
+    "external-capsule-v1.json"
+  ],
+  "independentTrustedRootsSha256": "65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+  "publicAssets": [
+    {
+      "name": "SHA256SUMS",
+      "sha256": "579c9f2417ea8dad7040e86a73ea20c4518a64ec79c162b87bc9f2edd94d29e7",
+      "size": 277
+    },
+    {
+      "name": "SHA256SUMS.sigstore.json",
+      "sha256": "addac7937e3dd6eb404020b2e6a109ee7456fd5c6ed9bd4187c76af98b597c03",
+      "size": 11977
+    },
+    {
+      "name": "VM-EVIDENCE.sigstore.json",
+      "sha256": "af9c683adf31e0f33478e2438794a6ed78dcecd0122e8cac1a56aa6967150a72",
+      "size": 12389
+    },
+    {
+      "name": "developer-selection.json",
+      "sha256": "6a510c216c39597c2b27f030d6a1f0d9b010682702f0b2e65942bb2bb7674fcd",
+      "size": 11851
+    },
+    {
+      "name": "external-capsule-v1.json",
+      "sha256": "1a058aa06229ae42cd0fd174c0a17ebecdeeea3a7f284bc7487276d258366d31",
+      "size": 9427
+    },
+    {
+      "name": "local-experimental-v1.json",
+      "sha256": "4ee00d7edb79a8a0307e25747078637b1051342e7e700dbe3ecbb1c44752dad0",
+      "size": 9940
+    },
+    {
+      "name": "lsf-0.1.0-alpha.5-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "873e597e5b3f4694e2204bf58b05d1be41a624927f02ef25be5ab5899f071725",
+      "size": 30519375
+    },
+    {
+      "name": "lsf-install.pyz",
+      "sha256": "d04f58cca7fdaba8ca5870702210a25d7fec7b4b8d6c8e241bedfb76ccba8800",
+      "size": 25723
+    },
+    {
+      "name": "native-release-acceptance.json",
+      "sha256": "0a73716c7c64c15ed5af0563f9b0277d341785a8d0f4eba23f5e54904515a720",
+      "size": 1953
+    },
+    {
+      "name": "release.json",
+      "sha256": "2b38e79f206543d0e573552aec8e0e6a9cc51b2e51203beb3c54cacd6480e2da",
+      "size": 71549
+    }
+  ],
+  "developerSelectionSha256": "6a510c216c39597c2b27f030d6a1f0d9b010682702f0b2e65942bb2bb7674fcd",
+  "predecessor": {
+    "version": "0.1.0-alpha.4",
+    "sourceCommit": "2d6cc2eafc0a17dfe573be4252fa49835bebbbd6",
+    "archiveSha256": "a823a3c5b06ee81a09e39053451e768ee7b22199e37c3b524f89843db7b045b3"
+  },
+  "profiles": {
+    "local-experimental-v1": {
+      "receiptSha256": "4ee00d7edb79a8a0307e25747078637b1051342e7e700dbe3ecbb1c44752dad0",
+      "acceptanceComplete": true,
+      "initialBootId": "b69814b6-db9d-4b69-b03a-aaeb342a0b9c",
+      "rebootedBootId": "ee6bcafc-4be4-4440-ba55-8261cf2b763d",
+      "phases": [
+        "initial",
+        "retained",
+        "rootless",
+        "upgrade"
+      ]
+    },
+    "external-capsule-v1": {
+      "receiptSha256": "1a058aa06229ae42cd0fd174c0a17ebecdeeea3a7f284bc7487276d258366d31",
+      "acceptanceComplete": true,
+      "initialBootId": "69a36b32-d0f7-418f-89e8-d2bf9eee9124",
+      "rebootedBootId": "40a9901a-9e46-4069-81cf-a7306fb9111d",
+      "phases": [
+        "initial",
+        "retained",
+        "upgrade"
+      ]
+    }
+  }
+}

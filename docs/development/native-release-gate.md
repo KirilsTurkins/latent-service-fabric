@@ -3,25 +3,42 @@
 This is the maintainer gate for [native standalone installation](../installation.md)
 and [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
 
-## Alpha.5 release verification
+## Published alpha.5 evidence
 
-The alpha.5 runtime source is
-`f6d8f32177208b60a68f14070f549f927052dd48`, integrated by
-[promotion #721](https://github.com/KirilsTurkins/latent-service-fabric/pull/721).
-The September 28 maintainer instruction authorizes its publication and matching
-Pages deployment after the required checks.
+**The native `0.1.0-alpha.5` release is published and independently verified.**
+[Promotion #721](https://github.com/KirilsTurkins/latent-service-fabric/pull/721) integrated the complete reviewed development
+tree at `f6d8f32177208b60a68f14070f549f927052dd48`. [Exact-source CI 36462067906](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36462067906) and
+[protected native release 36470347745](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36470347745) passed.
+The maintainer's September 28 instruction authorized this publication and the
+matching website deployment after the required checks.
 
-Require successful CI at that exact source and both complete native VM profiles,
-including the actual alpha.4 upgrade declared in
-`packaging/linux/compatibility.json`. The
-[alpha.5 release assets](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.5)
-must include the original acceptance, VM receipts and publisher attestations;
-source promotion or a documentation snapshot alone is not a publication receipt.
-The separately authenticated developer bundles passed the
-[complete packaged-toolkit schedules](../evidence/developer-toolkit-36440862340/README.md).
-Follow the [promotion runbook](../operations/native-release-promotion.md) for
-the verification and publication sequence. Historical alpha.4 evidence below
-retains its original source and archive identities.
+The [public release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.5) includes the authenticated
+native archive, original acceptance evidence and the newly qualified developer
+toolkit. [Independent public-download verification](../evidence/native-release-alpha5.json)
+checked all ten native assets, 469 archive files,
+the exact hosted publisher/source/signer identities and the committed developer
+selection. The native archive is `lsf-0.1.0-alpha.5-x86_64-unknown-linux-gnu.tar.gz`, 30,519,375 bytes,
+SHA-256 `873e597e5b3f4694e2204bf58b05d1be41a624927f02ef25be5ab5899f071725`.
+
+| Original public evidence | Qualified scope |
+| --- | --- |
+| [Native release acceptance](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.5/native-release-acceptance.json) | Actual release source, successful CI, archive identity, published alpha.4 predecessor and both complete VM profiles. |
+| [Local experimental VM](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.5/local-experimental-v1.json) | Native installation, retained invocation, real reboot, stopped recovery and removal lifecycle, non-root foreground evaluation, alpha.4 upgrade and unsupported downgrade rejection. |
+| [External capsule VM](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.5/external-capsule-v1.json) | Persistent lifecycle and alpha.4 upgrade with enforced admission, isolated compilation, protected key rejection and interrupted-install recovery. |
+| [VM evidence attestation](https://github.com/KirilsTurkins/latent-service-fabric/releases/download/0.1.0-alpha.5/VM-EVIDENCE.sigstore.json) | Publisher identity binding for the original acceptance and both VM receipts. |
+| [Packaged developer review](../evidence/developer-toolkit-36440862340/README.md) | Fresh alpha.5 bundles, six-language execution, Windows/WSL2 and native Windows, direct Linux, SSH, devcontainer and interrupted-operation recovery. |
+
+Both native profiles report `acceptanceComplete:true`, empty `gaps`, changed
+boot IDs and successful guest phases. The supported upgrade pair is published
+alpha.4 source `2d6cc2eafc0a17dfe573be4252fa49835bebbbd6` to the exact alpha.5 source
+above. Installer/configuration formats remain 1 with no migration selected;
+this evidence does not extend compatibility to arbitrary alpha versions.
+
+The developer bundles retain their original candidate workflow/source identities
+and their separate disposable-test purpose. The standalone server archive has
+its own release identity. Azure/ACA/ACR and network filesystems remain unqualified.
+See the [promotion runbook](../operations/native-release-promotion.md) for future
+releases; historical evidence below keeps its original identities.
 
 ## Published alpha.4 evidence
 

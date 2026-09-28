@@ -10,16 +10,16 @@ import tarfile
 
 def unpack(root: Path):
     sums = {line.split()[1]: line.split()[0] for line in (root / 'SHA256SUMS').read_text().splitlines()}
-    source = '2d6cc2eafc0a17dfe573be4252fa49835bebbbd6'
-    archive_digest = 'a823a3c5b06ee81a09e39053451e768ee7b22199e37c3b524f89843db7b045b3'
+    source = 'f6d8f32177208b60a68f14070f549f927052dd48'
+    archive_digest = '873e597e5b3f4694e2204bf58b05d1be41a624927f02ef25be5ab5899f071725'
     manifest = root / 'release.json'
     assert manifest.stat().st_size <= 1024 * 1024
     raw = manifest.read_bytes()
     assert hashlib.sha256(raw).hexdigest() == sums['release.json']
     release = json.loads(raw)
-    assert release['sourceCommit'] == source and release['version'] == '0.1.0-alpha.4'
-    archive = root / 'lsf-0.1.0-alpha.4-x86_64-unknown-linux-gnu.tar.gz'
-    assert archive.stat().st_size == release['archive']['size'] == 29453861
+    assert release['sourceCommit'] == source and release['version'] == '0.1.0-alpha.5'
+    archive = root / 'lsf-0.1.0-alpha.5-x86_64-unknown-linux-gnu.tar.gz'
+    assert archive.stat().st_size == release['archive']['size'] == 30519375
     with archive.open('rb') as stream:
         assert hashlib.file_digest(stream, 'sha256').hexdigest() == sums[archive.name] == archive_digest
     destination = root / 'extracted'
