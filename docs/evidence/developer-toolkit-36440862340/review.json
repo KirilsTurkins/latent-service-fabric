@@ -1,0 +1,135 @@
+{
+  "version": "0.1.0-alpha.5",
+  "sourceCommit": "42e549dd86b902ce887643b3bb339bb2a9ad8f50",
+  "qualificationRun": 36440862340,
+  "developerRun": 36390061275,
+  "nativeRun": 36390058387,
+  "packagedSchedulesPassed": true,
+  "selectionSha256": "6a510c216c39597c2b27f030d6a1f0d9b010682702f0b2e65942bb2bb7674fcd",
+  "bundleCount": 10,
+  "selectedFiles": 41,
+  "languagesOnWindowsWslAndNative": {
+    "c": {
+      "node": true,
+      "portable": true,
+      "authorSourcePreserved": true
+    },
+    "dotnet": {
+      "node": true,
+      "portable": true,
+      "authorSourcePreserved": true
+    },
+    "go": {
+      "node": true,
+      "portable": true,
+      "authorSourcePreserved": true
+    },
+    "java": {
+      "node": true,
+      "portable": true,
+      "authorSourcePreserved": true
+    },
+    "rust": {
+      "node": true,
+      "portable": true,
+      "authorSourcePreserved": true
+    },
+    "typescript": {
+      "node": true,
+      "portable": true,
+      "authorSourcePreserved": true
+    }
+  },
+  "linuxAndSshRustApplicationsPassed": true,
+  "devcontainerPassed": true,
+  "dedicatedWindowsRecoveryPassed": true,
+  "newcomerGuide": {
+    "conductorSourceCommit": "42e549dd86b902ce887643b3bb339bb2a9ad8f50",
+    "execution": "automated-public-command-walkthrough",
+    "interactiveEditorReview": false,
+    "path": "docs/learn/deliver-and-recover-a-capsule.md",
+    "sha256": "sha256:0af9cf816640d52812bc757cf9583233059c8cee2c729c225b4c4f2500cce0d2"
+  },
+  "observations": [
+    {
+      "path": "packaged-linux-observation-36440862340-1/packaged-devcontainer/host-observation.json",
+      "artifactId": 10983585611,
+      "artifactDigest": "sha256:d20f85094568a0b00d225c1beccbef12acc9248877757e75e35ced997a2cd478",
+      "sha256": "e43f9553749fc95ff0355382a16b2b7b379b13bc511f8945aa0b1f5aa2e626cd",
+      "bytes": 38624,
+      "schemaVersion": "latent.dev.packaged-devcontainer-host.v1",
+      "passed": true,
+      "qualificationComplete": false,
+      "cleanup": "owned-containers-stopped-private-volume-and-source-retained",
+      "seconds": 1799.772
+    },
+    {
+      "path": "packaged-linux-observation-36440862340-1/packaged-devcontainer/observation.json",
+      "artifactId": 10983585611,
+      "artifactDigest": "sha256:d20f85094568a0b00d225c1beccbef12acc9248877757e75e35ced997a2cd478",
+      "sha256": "28b364f147e70e1d52f78ed4136622578493a1f9b3c6be141986da8a583f7ab4",
+      "bytes": 1205521,
+      "schemaVersion": "latent.dev.packaged-devcontainer-probe.v1",
+      "passed": true,
+      "qualificationComplete": false,
+      "cleanup": "owned-remote-node-reaped-workspace-purged-client-state-retained",
+      "seconds": 1766.826
+    },
+    {
+      "path": "packaged-linux-observation-36440862340-1/packaged-linux/host-observation.json",
+      "artifactId": 10983585611,
+      "artifactDigest": "sha256:d20f85094568a0b00d225c1beccbef12acc9248877757e75e35ced997a2cd478",
+      "sha256": "2acdd6a6fe76831dc52d9cb77c8a08a12396a9bc174a69aa88c67723733b01bc",
+      "bytes": 142841,
+      "schemaVersion": "latent.dev.packaged-linux-container.v1",
+      "passed": true,
+      "qualificationComplete": false,
+      "cleanup": "owned-container-stopped-private-state-retained-until-runner-teardown",
+      "seconds": null
+    },
+    {
+      "path": "packaged-linux-observation-36440862340-1/packaged-linux/observation.json",
+      "artifactId": 10983585611,
+      "artifactDigest": "sha256:d20f85094568a0b00d225c1beccbef12acc9248877757e75e35ced997a2cd478",
+      "sha256": "d49064929b7b51a1cc40b5638eb24dca4243fcd0fd3b320b8005a69661ce8a08",
+      "bytes": 2180201,
+      "schemaVersion": "latent.dev.packaged-linux-probe.v1",
+      "passed": true,
+      "qualificationComplete": false,
+      "cleanup": "both-owned-node-workspaces-purged-author-source-retained",
+      "seconds": 2557.318
+    },
+    {
+      "path": "packaged-windows-observation-36440862340-1/packaged-observation/observation.json",
+      "artifactId": 10980828992,
+      "artifactDigest": "sha256:3e65faffc88fe358605031c9004b516027d9b85288f5e6f7d8155c200e55848c",
+      "sha256": "883034f7e53f3988a0e109d3f52d7a4a5c867541b8908e0cf759670fedf47f05",
+      "bytes": 2286815,
+      "schemaVersion": "latent.dev.packaged-windows-probe.v1",
+      "passed": true,
+      "qualificationComplete": false,
+      "cleanup": "owned-workspaces-and-distribution-purged-author-source-retained",
+      "seconds": 2543.822
+    },
+    {
+      "path": "packaged-windows-observation-36440862340-1/packaged-recovery/observation.json",
+      "artifactId": 10980828992,
+      "artifactDigest": "sha256:3e65faffc88fe358605031c9004b516027d9b85288f5e6f7d8155c200e55848c",
+      "sha256": "9b3ec32ab0fdbead701b6c67ccce36cee409f39ed19741166c5dbaaa7f7efe06",
+      "bytes": 386271,
+      "schemaVersion": "latent.dev.packaged-recovery-probe.v1",
+      "passed": true,
+      "qualificationComplete": false,
+      "cleanup": "owned-nodes-and-distro-stopped-private-original-intents-retained",
+      "seconds": 392.105
+    }
+  ],
+  "humanEditorReviewClaimed": false,
+  "nativeServerReleaseQualified": false,
+  "scope": "Controlled developer toolkit; real packaged Windows/WSL2, native Windows portable subset, direct Linux, explicit SSH and optional devcontainer. No Azure/ACA qualification, physical host suspension, macOS/ARM64, production Windows node or production-performance claim.",
+  "previousNativeBuildFailure": {
+    "run": 36387766446,
+    "sourceCommit": "5e5b48c72f9c68e3523de9657ffa55fb6d58ee4d",
+    "reason": "Outdated standalone fixture dependency lock; repaired before the selected candidate builds."
+  }
+}
