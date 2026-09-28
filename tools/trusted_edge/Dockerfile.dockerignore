@@ -1,0 +1,9 @@
+**
+!tools/
+!tools/trusted_edge/
+!tools/trusted_edge/config.mjs
+!tools/trusted_edge/request.mjs
+!tools/trusted_edge/edge.mjs
+!tools/static-release/
+!tools/static-release/files.mjs
+!tools/static-release/model.mjs
