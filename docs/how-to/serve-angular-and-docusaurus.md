@@ -4,8 +4,9 @@ This guide prepares a client-only Angular application and a bilingual Docusaurus
 site for static publication. Readers can navigate lazy routes, change themes and
 switch languages after the files are served by an LSF node.
 
-Use a current development build of the native CLI and node for this profile.
-The `allowStaticStyleHashes` option is newer than `0.1.0-alpha.4`.
+Use the `0.1.0-alpha.5` native CLI, node and matching repository checkout for
+this profile. Follow [native installation](../installation.md) to get the
+released binaries; building LSF from Rust source is unnecessary.
 These examples use Angular **20.3.32**, PrimeNG **20.4.0**, Aura/Lara themes
 **1.2.5** and Docusaurus **3.10.2**. Other versions and plugins need their own
 browser checks.

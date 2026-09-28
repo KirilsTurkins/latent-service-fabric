@@ -25,7 +25,7 @@ For a persistent Linux server, follow [native installation](docs/installation.md
 [Run a node from source](docs/start/first-node.md) remains available for
 contributors and readers who want to inspect the lower-level steps.
 
-LSF is experimental. The `0.1.0-alpha.4` distribution separates the native
+LSF is experimental. The `0.1.0-alpha.5` distribution separates the native
 server runtime from the controlled development toolkit. Use the matching
 [installation and support instructions](docs/installation.md); an alpha release
 does not certify hostile multitenancy or production performance. The historical
@@ -43,7 +43,9 @@ describe their own release and may differ from the current source.
 | Run a stateless service | Typed Component Model contracts, bounded execution and fresh state per activation | [Create a capsule](docs/component-development/creating-a-capsule.md) |
 | Call a service from an application | Native Rust, C, TypeScript, Go, Java and C# clients using the shared local RPC profile | [Client guide](docs/learn/use-a-client.mdx) |
 | Use host capabilities | Policy-controlled providers with shared pools and activation-owned resources | [Use capabilities](docs/learn/use-capabilities.md) |
-| Serve a website | Static assets through the shared HTTP listener, without a guest activation for static responses | [Static sites](docs/component-development/static-sites.md) |
+| Serve a website | Angular/PrimeNG and Docusaurus build recipes, signed static packages, recoverable GET/HEAD cutover and optional edge gzip | [Deliver a website](docs/how-to/deliver-a-website.md) |
+| Combine a website and an API | Static publications and a restricted TypeScript HTTP service under one origin | [Static site and API](docs/how-to/static-site-and-api.md) |
+| Operate a container node | Non-root Linux profile, private CI and probes, TLS edge, consistent backup and exclusive ownership handover | [Container guide](docs/operations/container-runtime.md) |
 | Render an Angular application | A supported, bounded server-rendering profile with browser assets | [Angular walkthrough](docs/learn/build-and-deliver-angular.mdx) |
 | Deliver and recover changes | Signed packages, OCI transfer, admission, managed deployment, staged rollout, canary observation and rollback | [Delivery guide](docs/phase-2-delivery.md) |
 
@@ -52,6 +54,11 @@ languages can call LSF, and each has a dedicated guest authoring path with
 documented supported profiles and limitations. The
 [guest SDK guide](docs/component-development/guest-sdk.md) describes the available
 build paths without implying that every external client is also a guest SDK.
+
+SDK packages and developer bundles in this release use `0.1.0-alpha.5`.
+C and Go source SDKs follow the repository release tag; they do not have a
+separate package version. Keep the toolkit and its authenticated selection
+together when upgrading, using a fresh input directory as described in setup.
 
 Standalone node configuration exposes outbound HTTP, local blobs, activation
 clocks and OS-backed randomness through explicit provider installations.
