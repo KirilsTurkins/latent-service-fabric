@@ -28,7 +28,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `wasmparser` |                               0.259.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
 | `wasm-encoder` |                               0.259.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-bindgen` |                               0.62.0 | Guest bindings and canonical ABI exports generated from WIT |
-| Serde / `serde_json` |                    1.0.229 / 1.0.150 | Rust contract serialization |
+| Serde / `serde_json` |                    1.0.229 / 1.0.151 | Rust contract serialization |
 | TOML |                                1.1.6 | Configuration parsing and serialization |
 | BLAKE3 / SHA-256 |                       1.8.7 / 0.11.0 | Cache/prepared identity and artifact digest verification |
 | Clap / `tempfile` |                       4.6.7 / 3.27.0 | CLI surfaces and test-only temporary storage |

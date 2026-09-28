@@ -171,6 +171,25 @@ workflow. It does not support arbitrary Node.js applications. Static/CSR sites
 use the shared listener without a guest activation. Neither package type creates
 an application-owned listener or idle renderer.
 
+## First integration feedback: delivered scope
+
+The original #626–#643 tickets deliver the static-schema correction, larger
+bounded site inventory, XML sitemaps, public-document navigation, framework CSP
+recipes, static/API composition, released-binary publication and recoverable
+route sets. See [website delivery](how-to/deliver-a-website.md) for the application
+workflow and [container operation](operations/container-runtime.md) for the
+non-root local node, private CI/probes, HTTPS/gzip, coupled backup and ownership
+handover. The CLI's bounded authentication/network controls were qualified with
+a real local Harbor registry. No Azure resources or cloud simulation were used.
+
+The accepted CORS work establishes design and browser feasibility; native asset
+grants remain [#660](https://github.com/KirilsTurkins/latent-service-fabric/issues/660).
+Capacity planning and maintenance are delivered; committed-history deletion
+remains [#662](https://github.com/KirilsTurkins/latent-service-fabric/issues/662).
+The intermittent Go guest trap remains under
+[investigation #675](https://github.com/KirilsTurkins/latent-service-fabric/issues/675).
+These boundaries remain explicit in the alpha.5 release description and guides.
+
 ## Phase 4: state and effects
 
 Transactional keyed state, optimistic concurrency, durable outbox, effect
