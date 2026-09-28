@@ -59,7 +59,7 @@ commands below use the default setup paths; use your own values if you changed t
 **If you use Windows (PowerShell):**
 
 ```powershell
-& (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4/frontend/bin/latent-dev.exe') `
+& (Join-Path $env:USERPROFILE 'LSF-inputs-alpha5/frontend/bin/latent-dev.exe') `
     --state-root (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial') --editor-diagnostics `
     dev up --workspace test-my-greeting --project "$env:USERPROFILE/Projects/My greeting" `
     --watch --test-select greeting-0
@@ -68,7 +68,7 @@ commands below use the default setup paths; use your own values if you changed t
 **If you use Linux (Bash):**
 
 ```bash
-"$HOME/LSF-inputs-alpha4/frontend/bin/latent-dev" --state-root "$HOME/.latent-dev-tutorial" \
+"$HOME/LSF-inputs-alpha5/frontend/bin/latent-dev" --state-root "$HOME/.latent-dev-tutorial" \
     --editor-diagnostics dev up --workspace test-my-greeting --project "$HOME/Projects/My greeting" \
     --watch --test-select greeting-0
 ```
