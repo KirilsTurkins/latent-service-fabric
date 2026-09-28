@@ -2019,6 +2019,16 @@
       "workingDirectory": ".",
       "shell": "bash",
       "run": "npm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\""
+    },
+    ".github/workflows/developer-tools.yml:guest-tools:Qualify the static site and TypeScript API in Chromium": {
+      "workflow": ".github/workflows/developer-tools.yml",
+      "job": "guest-tools",
+      "name": "Qualify the static site and TypeScript API in Chromium",
+      "jobIf": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
+      "stepIf": "matrix.language == 'typescript'",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "npm ci --ignore-scripts --no-audit --no-fund --prefix tools/static_api\nnode tools/static_api/node_modules/playwright-core/cli.js install --with-deps chromium\npython tools/static_api/ci.py --bin target/dev-tools/source-node/bin --signer target/dev-tools/payload/sdk/bin/capsule-test-signer --build \"$RUNNER_TEMP/dev-projects/static-api/build\" --browser-tools tools/static_api --output \"$RUNNER_TEMP/dev-projects/static-api\""
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3567,7 +3577,7 @@
       "sha256": "13c37e3b2036a4a2bf7cb58ef475eda5c33656226c65741d2754946f1d2c2152"
     },
     "tools/run_dev_guest_tools_tests.py": {
-      "sha256": "73074d091d249186c7d787286b67ab8556b4c8966191d4454617dc8c87190c12"
+      "sha256": "a364e2b5ee0e9b625f4cd71233049ae213adeb1d6c9d0c17fe88fd1b7a2ae24b"
     },
     "tools/run_dev_http_portable.py": {
       "sha256": "54550250e8f97a40db7ae737cb2029f70d8a20c61854835ef7738173cd2744a9"
@@ -3709,6 +3719,9 @@
     },
     "tools/run_framework_sites.py": {
       "sha256": "04fdc86bc19851aff707a91d3196e6a6bad7f976f00f53b81b26a541600821cd"
+    },
+    "tools/static_api/ci.py": {
+      "sha256": "c60f503924a68e7e03c16a3d0c024b8010af324164b459560c4f9a7a1b974917"
     }
   },
   "pythonCases": {
@@ -7133,7 +7146,7 @@
     ".github/workflows/ci.yml": "701517ef7d268f278d77e534d001fa217565b58d18d78e6d3a9cfe4199b56acd",
     ".github/workflows/developer-packaged-qualification.yml": "aeda0753a6ee0d0ed0e4198334f7447761a72bf741623adbd9c9f0a210e57610",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
-    ".github/workflows/developer-tools.yml": "0566e5e88ab63c07bc1672993b1e26537ca56c4fbae949c6b0f782f0aaac3dce",
+    ".github/workflows/developer-tools.yml": "bd0ceb323c2feadd2a79ef19b6d8b2cebf92faf5d44d35b84d0a303874d388bc",
     ".github/workflows/docs-pages.yml": "b6dd6a1e1f82c00bf6c7b26c3d9a9b6d78cf7fcdf13787f0d22a0f2b01b7593d",
     ".github/workflows/docs-site.yml": "0c1292592fb6371d493bc66467677eae6d3fa72bc68365bb5b4c640c9a32c5d2",
     ".github/workflows/dotnet-guest.yml": "3f77e7916f170ee11c86144e82a9ae35afc9f5497a6a1632a2ed9e12fae3c212",
