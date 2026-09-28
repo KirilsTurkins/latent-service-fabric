@@ -3,15 +3,25 @@
 This is the maintainer gate for [native standalone installation](../installation.md)
 and [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
 
-## Alpha.5 release preparation
+## Alpha.5 release verification
 
-The September 28 maintainer instruction authorizes alpha.5 SDK updates,
-development-to-release promotion, native publication and Pages deployment after
-the required checks. The selected predecessor is the published alpha.4 archive
-in `packaging/linux/compatibility.json`. Alpha.5 still needs its own exact-source
-CI, newly authenticated developer bundles and both complete native VM profiles,
-including a real alpha.4 upgrade. Follow the
-[current promotion runbook](../operations/native-release-promotion.md).
+The alpha.5 runtime source is
+`f6d8f32177208b60a68f14070f549f927052dd48`, integrated by
+[promotion #721](https://github.com/KirilsTurkins/latent-service-fabric/pull/721).
+The September 28 maintainer instruction authorizes its publication and matching
+Pages deployment after the required checks.
+
+Require successful CI at that exact source and both complete native VM profiles,
+including the actual alpha.4 upgrade declared in
+`packaging/linux/compatibility.json`. The
+[alpha.5 release assets](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.5)
+must include the original acceptance, VM receipts and publisher attestations;
+source promotion or a documentation snapshot alone is not a publication receipt.
+The separately authenticated developer bundles passed the
+[complete packaged-toolkit schedules](../evidence/developer-toolkit-36440862340/README.md).
+Follow the [promotion runbook](../operations/native-release-promotion.md) for
+the verification and publication sequence. Historical alpha.4 evidence below
+retains its original source and archive identities.
 
 ## Published alpha.4 evidence
 
