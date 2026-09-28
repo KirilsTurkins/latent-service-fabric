@@ -12,6 +12,7 @@
     {"path": "examples/framework-compatibility/package.json", "kind": "npm", "lock": "examples/framework-compatibility/package-lock.json", "absent_when_directory_missing": "examples/framework-compatibility"},
     {"path": "website/package.json", "kind": "npm", "lock": "website/package-lock.json", "absent_when_directory_missing": "website"},
     {"path": "website/toolchain/package.json", "kind": "npm", "lock": "website/toolchain/package-lock.json", "bundled_package": "npm", "absent_when_directory_missing": "website/toolchain"},
+    {"path": "tools/static_api/package.json", "kind": "npm", "lock": "tools/static_api/package-lock.json", "absent_when_directory_missing": "tools/static_api"},
     {"path": "tools/requirements.lock", "kind": "pypi"},
     {"path": ".github/security/requirements.txt", "kind": "pypi", "absent_when_directory_missing": ".github/security"},
     {"path": "sdk/go/go.mod", "kind": "go-locked", "lock": "sdk/go/dependencies.lock.json", "sum": "sdk/go/go.sum", "module": "latent.dev/sdk/go", "legacy_sha256": "c4f1425518140f59773083b82a768a3783befd47246460586999d32fa8d3b28f"},
