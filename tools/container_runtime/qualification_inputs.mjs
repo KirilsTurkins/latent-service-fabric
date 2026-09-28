@@ -11,10 +11,12 @@ assert.equal(candidates.length, 1);
 const work = '/work/' + candidates[0];
 await writeFile('/config/policy.json', await readFile(work + '/policy.json'), {mode: 0o600, flag: 'wx'});
 const token = randomBytes(32).toString('base64url');
+const invokeToken = randomBytes(32).toString('base64url');
 const node = {formatVersion: 1, securityProfile: 'local-experimental-v1', dataDirectory: '/var/lib/lsf',
   nodeId: 'container-qualification', bind: '127.0.0.1:50051', shutdownGraceMillis: 5000,
   supplyChain: {mode: 'enforced', policyFile: '/etc/lsf/policy.json', clockLeaseSeconds: 5},
-  credentials: [{token, subject: 'container-operator', tenant: 'tests', role: 'operator'}],
+  credentials: [{token, subject: 'container-operator', tenant: 'tests', role: 'operator'},
+    {token: invokeToken, subject: 'container-invoker', tenant: 'tests', role: 'invoke'}],
   audit: {mode: 'durable'}, limits: {maximumPayloadBytes: 2097152},
   execution: {maximumWallTimeMillis: 10000},
   httpIngress: {formatVersion: 1, bind: '127.0.0.1:18080', transport: {mode: 'loopback'},
@@ -27,6 +29,12 @@ const client = {formatVersion: 1, defaultProfile: 'local', profiles: [{name: 'lo
 for (const [name, value] of [['node.json', node], ['client.json', client]]) {
   await writeFile('/config/' + name, JSON.stringify(value), {mode: 0o600, flag: 'wx'});
 }
+// CI holds no copy of this credential. The operator receiver reads the protected
+// mount inside the node namespace; selection documents contain identities only.
+await writeFile('/config/ci-client.json', JSON.stringify(client), {mode: 0o600, flag: 'wx'});
+const invokeClient = structuredClone(client);
+invokeClient.profiles[0].token = invokeToken;
+await writeFile('/config/invoke-client.json', JSON.stringify(invokeClient), {mode: 0o600, flag: 'wx'});
 await mkdir('/config/private', {mode: 0o700});
 await writeFile('/config/private/native-aot.key', randomBytes(32), {mode: 0o600, flag: 'wx'});
 const release = JSON.parse(await readFile('/native/release.json', 'utf8'));

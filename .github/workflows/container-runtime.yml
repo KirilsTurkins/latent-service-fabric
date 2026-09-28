@@ -57,9 +57,10 @@ jobs:
         run: |
           docker build --tag lsf-container-runtime "$CONTAINER_WORK/context"
           docker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release
+          docker build --tag lsf-container-operator --file tools/container_runtime/operator-qualification.Dockerfile tools/container_runtime
           docker build --tag lsf-trusted-edge --file tools/trusted_edge/Dockerfile .
       - name: Publish actual signed sites and verify restart
-        run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/container-qualification" --storage --ownership --probes
+        run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/container-qualification" --storage --ownership --probes --operator-image lsf-container-operator
       - name: Verify exact HTTPS edge peers and native browser policy
         run: python3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/edge-qualification"
       - name: Retain public container evidence
@@ -71,6 +72,7 @@ jobs:
             ${{ runner.temp }}/container-build-inputs.json
             ${{ runner.temp }}/container-qualification/*.json
             ${{ runner.temp }}/container-qualification/*.jsonl
+            ${{ runner.temp }}/container-qualification/headless-journals/**
             ${{ runner.temp }}/edge-qualification/*.json
             ${{ runner.temp }}/edge-qualification/*.jsonl
           if-no-files-found: error

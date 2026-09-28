@@ -1998,7 +1998,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "docker build --tag lsf-container-runtime \"$CONTAINER_WORK/context\"\ndocker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release\ndocker build --tag lsf-trusted-edge --file tools/trusted_edge/Dockerfile ."
+      "run": "docker build --tag lsf-container-runtime \"$CONTAINER_WORK/context\"\ndocker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release\ndocker build --tag lsf-container-operator --file tools/container_runtime/operator-qualification.Dockerfile tools/container_runtime\ndocker build --tag lsf-trusted-edge --file tools/trusted_edge/Dockerfile ."
     },
     ".github/workflows/container-runtime.yml:container:Publish actual signed sites and verify restart": {
       "workflow": ".github/workflows/container-runtime.yml",
@@ -2008,7 +2008,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage --ownership --probes"
+      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage --ownership --probes --operator-image lsf-container-operator"
     },
     ".github/workflows/container-runtime.yml:container:Verify exact HTTPS edge peers and native browser policy": {
       "workflow": ".github/workflows/container-runtime.yml",
@@ -3719,10 +3719,10 @@
       "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
     },
     "tools/container_runtime/qualification.py": {
-      "sha256": "6f2cae55ebb7510a48eb9d1a51ba5bc119b4d6090544211551a87cc2e52f4669"
+      "sha256": "03e2fceb1077fba22ffd2144fc3783a4d1ca7165b0c9fe2e208034f8ad6ae94e"
     },
     "tools/prepare_container_runtime.py": {
-      "sha256": "def3f330f6d50dc10f9b949260d0b429deb968cf96aa362b323232b95f09cfc4"
+      "sha256": "de3bb9f2e814513ef974e775a6538a87bf3d2a8aee74a29251a340535f25836a"
     },
     "tools/trusted_edge/qualification.py": {
       "sha256": "83774b48abf485f97930dc972e0bb6c1066316b6fec3ae6c0b7ece8c9d88f43f"
@@ -4057,6 +4057,15 @@
       "CapabilityPolicySchemaTests.test_identifiers_and_paths_reject_trailing_newlines_and_dot_segments",
       "CapabilityPolicySchemaTests.test_policy_operation_table_matches_each_frozen_wit_interface",
       "CapabilityPolicySchemaTests.test_published_examples_and_closed_required_fields"
+    ],
+    "tools/tests/test_capsule_invocation_diagnostics.py": [
+      "InvocationDiagnosticsTests.test_audit_failure_keeps_original_failure_and_redacts_exception_text",
+      "InvocationDiagnosticsTests.test_byte_limit_preserves_original_failure_without_oversized_output",
+      "InvocationDiagnosticsTests.test_exhausted_original_call_budget_never_starts_another_process",
+      "InvocationDiagnosticsTests.test_failed_result_stays_unchanged_and_only_recent_audit_is_read",
+      "InvocationDiagnosticsTests.test_page_limit_preserves_incomplete_evidence",
+      "InvocationDiagnosticsTests.test_repeated_cursor_stops_and_does_not_hide_original_failure",
+      "InvocationDiagnosticsTests.test_success_performs_no_diagnostic_io"
     ],
     "tools/tests/test_check_tool_versions.py": [
       "JavaQualificationTests.test_default_validation_keeps_all_sdk_checks",
@@ -6917,6 +6926,7 @@
     "tools/tests/test_build_snapshot.py",
     "tools/tests/test_c_capsule_authoring.py",
     "tools/tests/test_capability_policy_schema.py",
+    "tools/tests/test_capsule_invocation_diagnostics.py",
     "tools/tests/test_check_tool_versions.py",
     "tools/tests/test_ci_browser_artifacts.py",
     "tools/tests/test_ci_cargo.py",
@@ -7174,6 +7184,6 @@
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
-    ".github/workflows/container-runtime.yml": "dd2590b865ffe4b8da21a354eb39ad4943e4cb38569c21a5bd4b5391b0d7bfee"
+    ".github/workflows/container-runtime.yml": "b3df1d43eb325dbb74f8437266ad980a158df61056e757bc8d534c1eedca8646"
   }
 }
