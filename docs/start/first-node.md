@@ -14,7 +14,7 @@ it holds the paths and helper functions used by later steps.
 
 ## 1. Get the source and build LSF
 
-This walkthrough uses the `0.1.0-alpha.4` source tag. Use Linux with Git,
+This walkthrough uses the `0.1.0-alpha.5` source tag. Use Linux with Git,
 Python 3.13.5, Rust 1.97.1 and wasm-tools 1.254.0 installed.
 The [toolchain setup](../development/toolchain.md) describes those prerequisites.
 You do not need Docker, Kubernetes or a cloud account. Windows users can use a
@@ -23,7 +23,7 @@ Linux environment such as WSL for these commands.
 ```bash
 set -euo pipefail
 umask 077
-git clone --branch 0.1.0-alpha.4 https://github.com/KirilsTurkins/latent-service-fabric.git
+git clone --branch 0.1.0-alpha.5 https://github.com/KirilsTurkins/latent-service-fabric.git
 cd latent-service-fabric
 export CARGO_TARGET_DIR="$PWD/target"
 python3 -m venv target/guide-venv

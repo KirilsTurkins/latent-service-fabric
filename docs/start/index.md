@@ -25,7 +25,8 @@ No LSF source checkout or host language compiler is needed for this path.
 | What you want to do | Start here |
 | --- | --- |
 | Call a capsule from an existing application | [Client SDK guide](../learn/use-a-client.mdx) |
-| Build and deliver an Angular website | [Angular application guide](../learn/build-and-deliver-angular.mdx) |
+| Serve an existing frontend or documentation site | [Deliver a website](../how-to/deliver-a-website.md), including Angular/PrimeNG and Docusaurus |
+| Render Angular on the server | [Angular application guide](../learn/build-and-deliver-angular.mdx) |
 | Install a persistent node | [Native installation](../installation.md) |
 | Learn individual node commands or contribute to LSF | [Run your first node](first-node.md) from source |
 | Find a development command | [Developer commands](../how-to/developer-commands.md) |

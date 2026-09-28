@@ -14,6 +14,16 @@ implemented components and the [node reference](docs/reference/standalone-node.m
 for configuration. Provider availability depends on the configured standalone
 or trusted Rust embedding profile.
 
+The [container profile](docs/operations/container-runtime.md) runs the same
+standalone node as a non-root process. Optional node-level adapters provide
+[private readiness probes](docs/operations/readiness-probes.md),
+[TLS termination](docs/operations/local-https-edge.md) and
+[bounded gzip delivery](docs/operations/static-compression.md).
+[Private CI operations](docs/operations/headless-publication-ci.md) and
+[route-set reconciliation](docs/operations/static-route-sets.md) retain explicit
+operation identities and recovery. These helpers do not add an idle process per
+capsule or establish support for unqualified cloud hosts and storage mounts.
+
 State transactions, durable effect outboxes, clustering and durable workflows
 are planned designs. Their architecture pages state that boundary explicitly;
 they are not installation instructions. Maintainer acceptance and historical

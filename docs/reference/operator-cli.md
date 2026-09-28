@@ -4,10 +4,16 @@
 OCI, and manages the [standalone Linux node](standalone-node.md). Node commands
 connect once and send one generated gRPC request. Local paths never name the
 node's catalogs, and the CLI does not execute components locally.
-Start with the [scriptable echo quickstart](../development/standalone-quickstart.md)
-and the [package and deployment workflows](../phase-2-operator-workflows.md).
+Install the released CLI with [native installation](../installation.md). For
+day-to-day capsule creation, build, test and watch, use
+[`latent-dev` and `latent-dev-workspace`](../how-to/developer-commands.md).
+Use `latent` when operating a persistent node or an explicit deployment pipeline.
+The [website delivery guide](../how-to/deliver-a-website.md) and
+[package and deployment workflows](../phase-2-operator-workflows.md) show that path.
 
-Build the binaries with `cargo build -p latent -p latentd --locked`. The existing
+Contributors can instead build the binaries with
+`cargo build -p latent -p latentd --locked` and follow the
+[scriptable echo quickstart](../development/standalone-quickstart.md). The existing
 `make echo-capsule` build produces `echo-capsule.wasm`, `capsule.json`,
 `contracts.json`, `deployment.json`, and `input.json` under `target/capsules/echo/`.
 The typed metadata is checked against the component's extracted WIT; the generated
@@ -41,7 +47,7 @@ Package commands use explicitly supplied local files and a separate OCI profile:
 
 | Command | Behavior |
 | --- | --- |
-| `package build --source FILE --input-root DIR --output-dir DIR [--sbom-inputs FILE]` | Packages selected existing bytes and optional SBOM inventory. Does not compile source, run scripts, sign, or manufacture provenance. |
+| `package build --source FILE --input-root DIR --output-dir DIR [--sbom-inputs FILE] [--validate-web]` | Packages selected existing bytes and optional SBOM inventory. Use `--validate-web` for web-package validation. Does not compile source, run scripts, sign, or manufacture provenance. |
 | `package inspect DIR` | Checks exact package inventory, digests and supported semantics; does not establish trust. |
 | `package verify DIR --evidence-index FILE --evidence-root DIR --policy FILE --tenant TENANT` | Checks publisher, builder, SBOM and tenant using an explicit local policy; returns a diagnostic report without execution authority. |
 | `package push DIR --registry-profile FILE --reference REF [--evidence-index FILE --evidence-root DIR]` | Publishes exact package and selected referrers. Evidence flags must be supplied together. |
