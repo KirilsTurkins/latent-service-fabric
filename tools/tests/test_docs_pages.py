@@ -129,6 +129,42 @@ class DocsPagesPolicyTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 policy.stage_site(files(), SOURCE, site)
 
+    def test_large_search_index_survives_selection_and_protected_recheck(self):
+        contents = files() | {"build/project/search-index.json": b" " * (policy.MAX_FILE + 1)}
+        data = archive(contents)
+        selected = policy.archive_files(data, policy.digest(data))
+        with tempfile.TemporaryDirectory() as temporary:
+            site = Path(temporary) / "site"
+            receipt = policy.stage_site(selected, SOURCE, site)
+            (site / "publication.json").write_text(json.dumps(receipt), encoding="utf-8")
+            policy.verify_staged_site(site, receipt)
+            script = site / "assets/app.js"
+            script.write_bytes(b" " * (policy.MAX_FILE + 1))
+            with self.assertRaisesRegex(ValueError, "staged-size"):
+                policy.verify_staged_site(site, receipt)
+            script.write_bytes(contents["build/project/assets/app.js"])
+            (site / "search-index.json").write_bytes(b" " * (policy.MAX_SEARCH_INDEX + 1))
+            with self.assertRaisesRegex(ValueError, "staged-size"):
+                policy.verify_staged_site(site, receipt)
+
+    def test_search_exception_keeps_exact_path_and_aggregate_archive_limits(self):
+        with patch.object(policy, "MAX_FILE", 4), patch.object(policy, "MAX_SEARCH_INDEX", 8):
+            accepted = {"build/project/search-index.json": b"12345678"}
+            data = archive(accepted)
+            self.assertEqual(policy.archive_files(data, policy.digest(data)), accepted)
+            with patch.object(policy, "MAX_EXPANDED", 7), self.assertRaisesRegex(ValueError, "archive-expanded-size"):
+                policy.archive_files(data, policy.digest(data))
+            rejected = {"build/project/search-index.json": b"123456789",
+                        "build/project/assets/search-index.json": b"12345",
+                        "build/project/Search-Index.json": b"12345",
+                        "build/root/search-index.json": b"12345",
+                        "search-index.json": b"12345",
+                        ".generated/discovery-review/evidence.json": b"12345"}
+            for name, content in rejected.items():
+                with self.subTest(name=name), self.assertRaisesRegex(ValueError, "archive-file-size"):
+                    data = archive({name: content})
+                    policy.archive_files(data, policy.digest(data))
+
     def test_incomplete_dirty_wrong_source_and_synthetic_site_are_refused(self):
         for change in ({"dirty": True}, {"revision": RELEASE}, {"baseUrl": "/"},
                        {"versions": []}, {"versions": [{"profile": "synthetic-fixture"}]}):
