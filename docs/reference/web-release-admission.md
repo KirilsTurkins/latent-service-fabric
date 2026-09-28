@@ -167,9 +167,9 @@ superseded/interrupted evidence; shared zero-reference blob collection remains
 the existing catalog maintenance operation. A failed deletion retains its
 conservative charge until recovery.
 
-| Bound | Initial profile/default |
+| Bound | Current profile/default |
 | --- | --- |
-| Web manifest | 64 KiB; 128 public assets and 128 exact routes |
+| Web manifest | 256 KiB; 252 public assets and 128 exact routes |
 | Public asset | 8 MiB each; 16 MiB aggregate |
 | Renderer input | 32 MiB; lower repository limits still apply |
 | Catalog index | Shared 250,000 entries / 64 MiB conservative metadata; lifecycle entry limits also apply |
@@ -177,6 +177,10 @@ conservative charge until recovery.
 | Recent web operations | 256 scoped receipts; lower lifecycle settings apply |
 | Evidence revisions | 2 MiB each / 256 MiB aggregate by default, including interrupted revisions |
 | Active web reads/selections | 32 owners / 64 MiB retained capacity across the repository |
+
+The asset ceiling reserves four of the package's 256 layers for metadata, SBOM
+and its input receipt. See the [static-site inventory profile](../component-development/static-sites.md)
+for the adapter's matching count and byte limits.
 
 These are explicit ownership ceilings, not total RSS or allocated filesystem
 blocks. One bounded control operation may additionally hold its input, recovery
