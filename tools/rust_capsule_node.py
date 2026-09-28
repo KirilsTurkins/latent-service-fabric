@@ -206,8 +206,10 @@ def start_call(client, target, template, function, arguments, activation, *, wal
         "--rpc-timeout-ms", str(client.invocation_timeout_millis), "invoke", "--service", target["service"], "--route", target["name"],
         "--contract", f"examples:{template}/api@1.0.0", "--function", function, "--activation-id", activation,
         "--input", str(path), "--budget", str(budget_path), "--budget-profile", "phase3"]
+    started_unix_millis = time.time_ns() // 1_000_000
     process = Process(argv, client.directory, client.environment, client.cancellation, maximum=32768)
     process.authoring_activation = activation
+    process.authoring_started_unix_millis = started_unix_millis
     process.authoring_started = time.monotonic_ns()
     return process
 
@@ -226,6 +228,7 @@ def finish_call(client, process):
                 "authoring-typed-result")
         decoded = json.loads(base64.b64decode(payload["data"], validate=True))
     result = {"activation": process.authoring_activation, "exitCode": completed.returncode,
+        "startedAtUnixMillis": str(process.authoring_started_unix_millis),
         "elapsedNanos": str(time.monotonic_ns() - process.authoring_started), "decoded": decoded,
         "response": value, "processReaped": process.owner.finished}
     write_json(client.evidence / (process.authoring_activation + ".json"), result)
@@ -236,9 +239,13 @@ def call(client, target, template, function, arguments, activation, **kwargs):
     return finish_call(client, start_call(client, target, template, function, arguments, activation, **kwargs))
 
 
-def assert_value(result, expected, code=0):
-    require(result["exitCode"] == code and result["decoded"] == expected
-            and result["response"]["outcomeKnown"] is True, "authoring-application-result")
+def assert_value(client, result, expected, code=0):
+    matched = (result["exitCode"] == code and result["decoded"] == expected
+               and result["response"]["outcomeKnown"] is True)
+    if not matched:
+        from tools.capsule_invocation_diagnostics import capture
+        capture(client, result)
+    require(matched, "authoring-application-result")
 
 
 def sample(client, probe: Probe, phase, population, *, active=False):
