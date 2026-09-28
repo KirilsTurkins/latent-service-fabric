@@ -13,7 +13,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | Action | Reviewed upstream ref | Commit |
 | --- | --- | --- |
 | `actions/checkout` | `v4` | `11d5960a326750d5838078e36cf38b85af677262` |
-| `actions/setup-python` | `v5` | `a26af69be951a213d495a4c3e4e4022e16d87065` |
+| `actions/setup-python` | `v7.0.0` | `5fda3b95a4ea91299a34e894583c3862153e4b97` |
 | `actions/setup-go` | `v5` | `40f1582b2485089dde7abd97c1529aa768e1baff` |
 | `actions/setup-node` | `v4` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
 | `actions/setup-java` | `v6.0.1` | `de7274f081f381c8f8158605e0321c36c376e2e6` |
@@ -50,6 +50,13 @@ definition reviewed on **2026-09-27**. It delegates artifact upload to the pinne
 to false, preserving the site's current file selection. The Pages workflow hash
 in `tools/ci/commands.json` reflects the new pin; publication guards and required
 commands are unchanged.
+
+The `actions/setup-python` v7.0.0 identity, release notes and action-definition
+diff were reviewed on **2026-09-27**. It uses Node 24 and retains the explicitly
+selected Python versions and cache inputs. These workflows do not use the
+removed `pip-install` input; dependency installation still uses the existing
+locked commands. The workflow hashes in `tools/ci/commands.json` reflect the new
+pin; required commands and job conditions are unchanged.
 
 The `actions/setup-dotnet` v6.0.0 identity, release notes and action-definition
 diff were reviewed on **2026-09-27**. It uses Node 24 and keeps the explicit
