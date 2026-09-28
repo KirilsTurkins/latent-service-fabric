@@ -4,11 +4,19 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from jsonschema import Draft202012Validator
+
 from tools import static_site as site
 from tools.build_snapshot import SnapshotError, canonical, digest
+from tools.static_fonts import prepare_primeicons
 
 
 class StaticSiteCaptureTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        schema = Path(__file__).resolve().parents[2] / 'schemas/web-application.schema.json'
+        cls.web_schema = Draft202012Validator(json.loads(schema.read_bytes()))
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -55,6 +63,7 @@ class StaticSiteCaptureTests(unittest.TestCase):
         self.assertNotIn('.env', first)
         self.assertNotIn(b'private token', b''.join(first.values()))
         web = json.loads(first['metadata/web-application.json'])
+        self.web_schema.validate(web)
         self.assertNotIn('renderer', web)
         self.assertEqual(web['routes'], [])
         self.assertEqual([a['path'] for a in web['assets']], sorted(a['path'] for a in web['assets']))
@@ -76,8 +85,46 @@ class StaticSiteCaptureTests(unittest.TestCase):
         self.assertEqual(original['assetsDigest'], changed['assetsDigest'])
         self.assertNotEqual(original['webManifestDigest'], changed['webManifestDigest'])
         web = json.loads((right / 'metadata/web-application.json').read_bytes())
+        self.web_schema.validate(web)
         self.assertEqual(web['routes'], [{'path': '/', 'mode': 'client', 'asset': '/index.html'}])
         self.assertEqual((left / 'public/index.html').read_bytes(), (right / 'public/index.html').read_bytes())
+
+    def test_xml_sitemap_bytes_and_exact_media_are_preserved_without_parsing(self):
+        xml = b'<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>'
+        (self.root / 'sitemap.xml').write_bytes(xml)
+        config = copy.deepcopy(self.config)
+        config['assets'].append({'path': '/sitemap.xml', 'source': 'sitemap.xml'})
+        output, _ = self.capture(config)
+        self.assertEqual((output / 'public/sitemap.xml').read_bytes(), xml)
+        web = json.loads((output / 'metadata/web-application.json').read_bytes())
+        self.assertEqual(next(row['mediaType'] for row in web['assets'] if row['path'] == '/sitemap.xml'), 'application/xml')
+        config['assets'][-1]['mediaType'] = 'text/xml'
+        self.reject(config)
+        for suffix in ('woff', 'ttf', 'eot', 'bin'):
+            with self.assertRaises(SnapshotError):
+                site.public_file('fonts/font.' + suffix)
+
+    def test_font_preparation_keeps_glyphs_and_only_one_woff2_resource(self):
+        package = Path(self.temp.name) / 'primeicons'
+        (package / 'fonts').mkdir(parents=True)
+        (package / 'package.json').write_text('{"name":"primeicons","version":"7.0.0"}')
+        (package / 'LICENSE').write_text('Test-only fixture license')
+        (package / 'fonts/primeicons.woff2').write_bytes(b'wOF2' + b'\0' * 44)
+        css = "@font-face { font-family: 'primeicons'; src: url('./fonts/old.eot'); src: url('./fonts/primeicons.woff2') format('woff2'); }\n.pi-check:before { content: '\\e909'; }"
+        (package / 'primeicons.css').write_text(css)
+        output = Path(self.temp.name) / 'prepared-fonts'
+        prepare_primeicons(package, output)
+        prepared = (output / 'primeicons.css').read_text()
+        self.assertNotIn('.eot', prepared)
+        self.assertEqual(prepared.count('url('), 1)
+        self.assertIn('.pi-check:before', prepared)
+        self.assertEqual({p.name for p in output.iterdir()}, {'primeicons.css', 'primeicons.woff2', 'LICENSE.txt'})
+        for unsupported in [css + '\n@import "https://example.test/other.css";', css + '\n.other { background: url(foreign.svg); }', css + css]:
+            (package / 'primeicons.css').write_text(unsupported)
+            rejected = Path(self.temp.name) / 'rejected-fonts'
+            with self.assertRaises(SnapshotError):
+                prepare_primeicons(package, rejected)
+            self.assertFalse(rejected.exists())
 
     def test_closed_input_rejects_duplicate_fields_unknown_authority_and_executable_hooks(self):
         with self.assertRaises(SnapshotError):
@@ -132,13 +179,33 @@ class StaticSiteCaptureTests(unittest.TestCase):
             self.reject(config)
 
     def test_excessive_counts_paths_input_bytes_and_asset_bytes_fail_before_emission(self):
-        config = copy.deepcopy(self.config); config['assets'] *= 31
+        config = copy.deepcopy(self.config); config['assets'] *= 64
         self.reject(config)
         config = copy.deepcopy(self.config); config['assets'][0]['path'] = '/' + 'x' * 233 + '.html'
         self.reject(config)
         with self.assertRaises(SnapshotError): site.decode(b' ' * (site.MAX_INPUT_BYTES + 1))
         with (self.root / 'assets/main.js').open('wb') as stream: stream.truncate(site.MAX_ASSET_BYTES + 1)
         self.reject(self.config)
+
+    def test_complete_multilingual_inventory_at_the_limit_and_exact_count_diagnostics(self):
+        config = copy.deepcopy(self.config)
+        config['assets'] = [{'path': '/index.html', 'source': 'index.html'}]
+        for number in range(1, 252):
+            locale = 'en' if number % 2 else 'de'
+            name = f'{locale}/page-{number:03}/' + 'x' * 50 + '/' + 'y' * 50 + '.html'
+            file = self.root / name
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_bytes(f'<html lang="{locale}"><title>Page {number}</title></html>'.encode())
+            config['assets'].append({'path': '/' + name, 'source': name})
+        output, _ = self.capture(config)
+        raw = (output / 'metadata/web-application.json').read_bytes()
+        self.assertGreater(len(raw), 64 * 1024)
+        self.assertEqual(len(json.loads(raw)['assets']), 252)
+        self.assertEqual(len(json.loads((output / 'package-source.json').read_bytes())['layers']), 254)
+        config['assets'].append({'path': '/extra.html', 'source': 'extra.html'})
+        with self.assertRaisesRegex(SnapshotError, 'asset-count: actual=253 maximum=252'):
+            self.capture(config, 'too-many')
+        self.assertFalse((Path(self.temp.name) / 'too-many').exists())
 
     def test_missing_foreign_or_changed_observation_is_not_accepted_as_build_proof(self):
         for change in ['digest', 'missing', 'foreign', 'kind']:

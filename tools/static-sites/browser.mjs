@@ -2,6 +2,7 @@ import {createRequire} from 'node:module';
 import path from 'node:path';
 import {readFile, writeFile, rename} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {publicNavigation} from './public-navigation.mjs';
 
 const [toolchain, chrome, origin, generator, version, receipt, mode = 'navigation', ready, resume] = process.argv.slice(2);
 assert.ok(['navigation', 'cutover'].includes(mode));
@@ -103,6 +104,36 @@ try {
       assert.equal((await response.request().redirectedFrom().response()).status(), 308);
       assert.equal(await site.locator('#view').textContent(), 'Static guide');
       assert.equal(await site.locator('body').evaluate(element => getComputedStyle(element).color), 'rgb(20, 50, 80)');
+      await site.evaluate(() => document.fonts.ready);
+      assert.equal(await site.evaluate(() => document.fonts.check('16px primeicons')), true);
+      assert.match(await site.locator('#font-icon').evaluate(element => getComputedStyle(element, '::before').content), /[^"\s]/);
+      const media = await site.evaluate(async () => {
+        const url = document.querySelector('#sitemap').href;
+        const response = await fetch(url, {cache: 'no-store'});
+        const xml = await response.text();
+        const head = await fetch(url, {method: 'HEAD', cache: 'no-store'});
+        const conditional = await fetch(url, {cache: 'no-store', headers: {'If-None-Match': response.headers.get('etag')}});
+        return {status: response.status, type: response.headers.get('content-type'), nosniff: response.headers.get('x-content-type-options'),
+          xml, head: head.status, headBytes: (await head.text()).length, conditional: conditional.status,
+          fonts: performance.getEntriesByType('resource').filter(r => /\.(woff2?|ttf|eot)(?:[?#]|$)/.test(r.name)).map(r => r.name)};
+      });
+      assert.equal(media.status, 200);
+      assert.equal(media.type, 'application/xml');
+      assert.equal(media.nosniff, 'nosniff');
+      assert.match(media.xml, /<urlset/);
+      assert.equal(media.head, 200);
+      assert.equal(media.headBytes, 0);
+      assert.equal(media.conditional, 304);
+      assert.equal(media.fonts.length, 1);
+      assert.ok(media.fonts[0].endsWith('/assets/primeicons/primeicons.woff2'));
+      for (const [locale, title] of [['en', 'Chapter 1'], ['de', 'Kapitel 1']]) {
+        const localized = await site.goto(base + mount + '/' + locale + '/chapter-001/', {waitUntil: 'networkidle', timeout: 15000});
+        assert.equal(localized.status(), 200);
+        assert.equal(await site.locator('html').getAttribute('lang'), locale);
+        assert.equal(await site.locator('#view').textContent(), title);
+      }
+      // An empty 404 can finish by committing Chromium's own error document.
+      // Keep that negative navigation last; no later request races its commit.
       const missingUrl = base + mount + '/guide/missing';
       const missingDocument = site.waitForResponse(response => response.url() === missingUrl, {timeout: 15000});
       const [notFound] = await Promise.all([missingDocument,
@@ -118,6 +149,9 @@ try {
     result.lazyScripts = scripts.size;
     result.missingScriptAndJsonStay404 = true;
     result.rootAndMountedGeneratorRedirects = true;
+    result.sitemapAndWoff2OnlyFonts = true;
+    result.multilingual250FilePublication = true;
+    result.publicNavigation = await publicNavigation(browser, origin);
   }
   assert.deepEqual(errors, []);
   delete result.stage;

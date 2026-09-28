@@ -65,7 +65,10 @@ impl BoundedBindingCompiler {
             consumer: consumer.id.clone(),
             provider: provider.id.clone(),
             required_adapters: Vec::new(),
-            plan_digest: format!("sha256:{:x}", hash.finalize()),
+            plan_digest: format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(hash.finalize())
+            ),
         })
     }
 }

@@ -75,5 +75,8 @@ impl Counts {
 }
 
 pub(super) fn digest(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(bytes))
+    )
 }

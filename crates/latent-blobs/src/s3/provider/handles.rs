@@ -67,8 +67,10 @@ impl Staging {
                 self.written += count;
                 bytes = &bytes[count..];
                 if self.written.is_multiple_of(crate::s3::PART_BYTES) {
-                    self.hashes
-                        .push(format!("{:x}", self.part_hash.finalize_reset()));
+                    self.hashes.push(format!(
+                        "{:x}",
+                        latent_core::digest::HexDigest(self.part_hash.finalize_reset())
+                    ));
                 }
             }
         }
@@ -79,8 +81,10 @@ impl Staging {
             return Err(BlobError::InvalidRange);
         }
         if !self.written.is_multiple_of(crate::s3::PART_BYTES) {
-            self.hashes
-                .push(format!("{:x}", self.part_hash.finalize_reset()));
+            self.hashes.push(format!(
+                "{:x}",
+                latent_core::digest::HexDigest(self.part_hash.finalize_reset())
+            ));
         }
         Ok(())
     }
@@ -142,7 +146,10 @@ impl BlobWriter for Writer {
         } else {
             data.hashes.len() + 2
         };
-        let digest = format!("sha256:{:x}", data.full_hash.clone().finalize());
+        let digest = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(data.full_hash.clone().finalize())
+        );
         let cost = CapabilityCallCost::new(512)
             .with_typed_input_bytes(8)
             .with_typed_request_digest(CapabilityRequestDigest::from_parts(&[

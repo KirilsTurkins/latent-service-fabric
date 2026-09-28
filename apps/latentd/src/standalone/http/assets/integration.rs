@@ -54,7 +54,7 @@ impl Harness {
         )
         .await
     }
-    async fn configured_catalog(
+    pub(super) async fn configured_catalog(
         configure: impl FnOnce(&mut serde_json::Value),
         component: Option<Vec<u8>>,
         static_catalog: bool,
@@ -162,6 +162,11 @@ impl Harness {
         let mut socket = TcpStream::connect(self.owner.local_addr()).await.unwrap();
         let request = node_fixture::request(method, path, token, 0, true)
             .replace("\r\n\r\n", &format!("\r\n{extra}\r\n"));
+        let request = if token.is_empty() {
+            request.replace("Authorization: Bearer \r\n", "")
+        } else {
+            request
+        };
         socket.write_all(request.as_bytes()).await.unwrap();
         let mut bytes = Vec::new();
         tokio::time::timeout(
@@ -502,11 +507,20 @@ async fn read_capacity_rejection_has_no_queue_or_renderer_fallback() {
     let h = Harness::new().await;
     let path = h.publish("first", b"hello");
     let store = h.store();
-    let held = Arc::clone(&store.work).try_acquire_many_owned(4).unwrap();
+    let mut responses = Vec::new();
+    let raw = node_fixture::request("GET", &path, node_fixture::TOKEN, 0, true);
+    // Hold completed outputs, as slow browser sockets do, through the complete
+    // fixed window. The ninth read must fail without queuing or renderer work.
+    for _ in 0..8 {
+        let request = Request::parse(raw.as_bytes(), &TenantId("tests".into())).unwrap();
+        responses.push(store.begin(request).unwrap().await.unwrap().unwrap());
+    }
+    assert_eq!(store.snapshot().active_reads, 8);
+    let misses = store.snapshot().cache_misses;
     assert_eq!(h.call("GET", &path, "", node_fixture::TOKEN).await.0, 503);
-    assert_eq!(store.snapshot().cache_misses, 0);
+    assert_eq!(store.snapshot().cache_misses, misses);
     assert_eq!(store.snapshot().capacity_rejections, 1);
-    drop(held);
+    drop(responses);
     assert_eq!(h.call("GET", &path, "", node_fixture::TOKEN).await.0, 200);
     h.finish().await;
 }

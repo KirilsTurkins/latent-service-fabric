@@ -9,7 +9,7 @@ require(GradleVersion.current() >= GradleVersion.version("9.1.0")) {
 }
 
 group = "dev.latent"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 
 java {
     toolchain {

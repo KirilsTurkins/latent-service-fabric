@@ -52,7 +52,12 @@ export function buildSidebars(pages) {
   ], 'Application concepts');
   sidebars.howTo = sections(sidebars.howTo, [
     {label: 'Application development', ids: ['how-to/developer-commands', 'component-development/portable-tests', 'component-development/devcontainer']},
-    {label: 'Web delivery', ids: ['how-to/diagnose-angular-delivery']},
+    {label: 'Web delivery', ids: ['how-to/deliver-a-website', 'how-to/serve-angular-and-docusaurus',
+      'how-to/static-site-and-api', 'operations/static-release-workflow', 'operations/static-route-sets',
+      'operations/static-compression', 'operations/publication-retention', 'how-to/diagnose-angular-delivery']},
+    {label: 'Run a container node', ids: ['operations/container-runtime', 'operations/local-storage-recovery',
+      'operations/local-https-edge', 'operations/readiness-probes', 'operations/headless-publication-ci',
+      'operations/container-handover']},
     {label: 'Operate a node', ids: ['how-to/operate-and-contribute', 'how-to/reconcile-a-policy-change', 'phase-2-delivery',
       'how-to/operate-capability-providers'], match: id => id.startsWith('operations/')},
   ], 'Operations tasks');

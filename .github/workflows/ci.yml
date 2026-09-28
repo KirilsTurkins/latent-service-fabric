@@ -48,7 +48,7 @@ jobs:
       fast_packages: ${{ steps.select.outputs.fast_packages }}
       expected_jobs: ${{ steps.select.outputs.expected_jobs }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -62,10 +62,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
           cache: pip
@@ -96,10 +96,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -136,7 +136,7 @@ jobs:
     if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -169,7 +169,7 @@ jobs:
             ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
                 (github.event_name == 'workflow_dispatch' &&
                  (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
           cache: pip
@@ -354,12 +354,29 @@ jobs:
         shell: bash
         run: |
           # Reviewed capture owner: tools/static_site.py
+          node --test tools/static-release/route-set.test.mjs tools/static-release/io.test.mjs
+          node --test tools/catalog-capacity.test.mjs
           static_root="${RUNNER_TEMP}/static-site"
           mkdir -p "$static_root" "${RUNNER_TEMP}/phase2-gate"
           objcopy --strip-debug "${PWD}/target/debug/latentd" "${static_root}/latentd"
           python3 tools/build_static_sites.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --toolchain examples/renderer-profile --output "${static_root}/builds"
           LSF_STATIC_BUILDS="${static_root}/builds" LSF_STATIC_FIXTURE_ROOT="${static_root}/fixture" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite static-site-fixture
           python3 tools/run_static_site_workflow.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --node "${static_root}/latentd" --fixture "${static_root}/fixture" --toolchain examples/renderer-profile --chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/static-site-receipt.json"
+          node --test tools/cross-origin/contract.test.mjs
+          mkdir -m 0700 "$static_root/cors-tls"
+          openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -sha256 -days 1 -subj '/CN=localhost' -keyout "$static_root/cors-tls/key.pem" -out "$static_root/cors-tls/server.pem"
+          node tools/cross-origin/browser.mjs examples/renderer-profile "$(command -v google-chrome)" "$static_root/cors-tls" examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 "${RUNNER_TEMP}/phase2-gate/cross-origin-feasibility.json"
+      - name: Qualify actual Angular PrimeNG and bilingual Docusaurus publications
+        if: needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          npm ci --prefix examples/framework-compatibility --ignore-scripts
+          framework_root="${RUNNER_TEMP}/framework-sites"
+          mkdir -p "$framework_root" "${RUNNER_TEMP}/phase2-gate"
+          python3 tools/build_framework_sites.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --chrome "$(command -v google-chrome)" --output "$framework_root/builds"
+          LSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS="$framework_root/builds" LSF_STATIC_FIXTURE_ROOT="$framework_root/fixture" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite static-site-fixture
+          python3 tools/run_framework_sites.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --node "${RUNNER_TEMP}/static-site/latentd" --fixture "$framework_root/fixture" --chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/framework-sites.json"
       - name: Validate bounded Phase 2 delivery and resource workflows
         timeout-minutes: 10
         shell: bash
@@ -520,7 +537,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -549,7 +566,7 @@ jobs:
           path: target/capsules/echo-provenance
       - name: Fetch pinned disposable registry
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
       - name: Check owned registry prerequisites before building
@@ -599,7 +616,7 @@ jobs:
     # 60m publication + 30m reopen, with build/cleanup/evidence-upload headroom.
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
@@ -651,7 +668,7 @@ jobs:
     if: needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@9376cdc5a5e25b16da71af47712785cf06b0d6d4 # 1.94.1
@@ -697,10 +714,10 @@ jobs:
     if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
           cache: pip
@@ -752,13 +769,13 @@ jobs:
           go-version: 1.27.1
           cache-dependency-path: sdk/go/go.sum
       - name: Set up the Java SDK provider participant
-        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.
           java-version: "25.0.4+101.0.LTS"
       - name: Set up the .NET SDK provider participant
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 8.0.425
       - name: Validate contracts, echo component, and generated bindings
@@ -834,10 +851,10 @@ jobs:
     if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -853,12 +870,12 @@ jobs:
           node-version: 24.19.0
           cache: npm
           cache-dependency-path: sdk/typescript-client/package-lock.json
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           # Exact Temurin runtime 25.0.4.1+1; Adoptium SemVer patch/build encoding.
           java-version: "25.0.4+101.0.LTS"
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 8.0.425
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
@@ -919,7 +936,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Require every selected validation job

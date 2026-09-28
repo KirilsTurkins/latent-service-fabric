@@ -9,6 +9,50 @@ contention failures. Their corrections require new source-bound qualification
 before delivery; the passing older head cannot qualify a changed source tree.
 This report does not authorize a release or replace newcomer review #345.
 
+## September 27 deployment validation profile repair
+
+[Run 36305743354](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36305743354)
+failed PR #613 at deployment control 018 with `deadline-exceeded`, after
+30.627 seconds. The preceding deployment controls took 6.164, 12.290, 18.395
+and 24.517 seconds as the candidate catalog grew. The caller retained its
+125-second RPC wait and 130-second process watchdog; managed deployment
+preparation has a separate 30-second ceiling. The operation lookup reported
+an unknown outcome, and the failed mutation was not retried.
+
+The opt-in [managed guest build profile](../../.cargo/managed-guest.toml) now
+optimizes `wasmparser` and `latent-packaging` alongside the compiler libraries.
+Candidate catalog preparation still inspects every distinct publication.
+Validation checks, host assertions, checked arithmetic, control deadlines and
+guest execution budgets remain unchanged.
+
+The five approximately 12.5 MB component packages retained in artifact
+`10928256036` were inspected locally with the `latent-packaging` `package`
+example, on Windows with Rust 1.97.1 and development base `834ee87d`.
+One sequential pass took **23.144 seconds** with the ordinary debug build and
+**9.634 seconds** with the updated managed guest profile. All five inspection
+results, including package and component digests, matched. Cargo's build records
+confirmed optimization level 3 with debug assertions and overflow checks enabled
+for both parser versions and the packaging crate. These are local inspection
+measurements, not a new Linux node or complete guest qualification result.
+
+## September 27 package publication lease repair
+
+[Run 36323564017](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36323564017)
+failed the first signed publication after 5.745 seconds with an unknown outcome
+and no retained operation receipt. Package staging followed admission verification
+without renewing the five-second clock lease before the commit fence.
+Replaying the retained component locally on Linux reproduced the failure and
+identified `admission-clock-lease-uncovered` at that boundary.
+
+Package publication renews the existing control lease after preparation and
+preflight, then again after immutable payload reads and directory synchronization.
+The implementation integrated with #655 keeps that I/O outside the policy fence
+and checks the original grant before the final commit. This neither extends the
+configured lease nor retries a mutation. A deterministic regression advances the
+clock beyond the lease during preflight and checks one successful publication;
+clock regression, expired policy and a retired authority still reject publication.
+The new case is registered in the exact CI suite inventory.
+
 ## Reviewed candidate and shared-runtime hold
 
 [TypeScript run 35987595334](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595334)

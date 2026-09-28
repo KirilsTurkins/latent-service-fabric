@@ -1,5 +1,10 @@
 # Package publisher signatures and current trust
 
+For a Node.js workflow that signs existing frontend output with organization
+keys and verifies it using released binaries, see
+[Release an existing frontend build](../operations/static-release-workflow.md).
+The library contract below also supports custom signing integrations.
+
 `latent-signing` signs exact immutable package subjects and verifies publisher
 authority against explicit, bounded policy and revocation snapshots. The result
 is a point-in-time publisher proof. It does not publish a catalog release,

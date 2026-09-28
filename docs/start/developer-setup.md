@@ -1,6 +1,6 @@
 # Get the developer tools
 
-Download the `0.1.0-alpha.4` toolkit once, then create applications without an
+Download the `0.1.0-alpha.5` toolkit once, then create applications without an
 LSF source checkout or a host language compiler. Choose Rust, C, TypeScript,
 Go, Java or C#. The toolkit contains the frontend, selected compiler and templates,
 and a development-test node. Windows also uses a managed WSL2 image.
@@ -31,7 +31,7 @@ script** to read exactly what it does; you do not need to copy or edit the scrip
 It keeps the publisher and package checks in place and stops if any check fails.
 
 The download can be several hundred megabytes. The default destination is
-`LSF-inputs-alpha4` in your home folder and must not already exist. If Downloads
+`LSF-inputs-alpha5` in your home folder and must not already exist. If Downloads
 is elsewhere on your machine, substitute that folder in the command.
 
 ### If you use Windows
@@ -41,10 +41,10 @@ is elsewhere on your machine, substitute that folder in the command.
 ```powershell
 param(
     [ValidateSet('rust','c','typescript','go','java','dotnet')][string]$Language = 'rust',
-    [string]$Inputs = (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4')
+    [string]$Inputs = (Join-Path $env:USERPROFILE 'LSF-inputs-alpha5')
 )
 $ErrorActionPreference = 'Stop'
-$Version = '0.1.0-alpha.4'
+$Version = '0.1.0-alpha.5'
 $Repo = 'KirilsTurkins/latent-service-fabric'
 if (Test-Path -LiteralPath $Inputs) { throw 'Choose a new input directory.' }
 if ($Language -notin @('rust','c','typescript','go','java','dotnet')) { throw 'Choose a supported language.' }
@@ -118,7 +118,7 @@ Open PowerShell and run:
 set -euo pipefail
 umask 077
 export LSF_LANGUAGE="${1:-rust}"
-export LSF_INPUTS="${2:-$HOME/LSF-inputs-alpha4}"
+export LSF_INPUTS="${2:-$HOME/LSF-inputs-alpha5}"
 case "$LSF_LANGUAGE" in rust|c|typescript|go|java|dotnet) ;; *) echo 'Choose a supported language.' >&2; exit 2;; esac
 mkdir "$LSF_INPUTS"
 cd "$LSF_INPUTS"
@@ -127,7 +127,7 @@ import hashlib, json, os, pathlib, subprocess, zipfile
 
 root = pathlib.Path.cwd()
 repository = 'KirilsTurkins/latent-service-fabric'
-version, language = '0.1.0-alpha.4', os.environ['LSF_LANGUAGE']
+version, language = '0.1.0-alpha.5', os.environ['LSF_LANGUAGE']
 assert language in ('rust', 'c', 'typescript', 'go', 'java', 'dotnet')
 def gh(*args):
     return subprocess.check_output(['gh', *args], timeout=900).decode('utf-8')

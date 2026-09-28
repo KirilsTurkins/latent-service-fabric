@@ -1,8 +1,17 @@
 # Opt-in managed-guest correctness profile. Keep host debug assertions and
-# overflow checks; optimize only the compiler's hot implementation libraries.
+# overflow checks; optimize compiler and component-validation hot paths.
 # This does not change Wasmtime's guest optimization or weaken guest budgets.
 [profile.dev.package.cranelift-codegen]
 opt-level = 3
 
 [profile.dev.package.regalloc2]
+opt-level = 3
+
+# Deployment preparation revalidates each distinct published component in the
+# candidate catalog. Large managed guests must fit the existing 30-second
+# control deadline without omitting validation or retrying a mutation.
+[profile.dev.package.wasmparser]
+opt-level = 3
+
+[profile.dev.package.latent-packaging]
 opt-level = 3

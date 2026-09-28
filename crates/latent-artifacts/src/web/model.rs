@@ -12,6 +12,10 @@ pub struct WebApplicationManifest {
     pub assets_digest: String,
     pub assets: Vec<WebAsset>,
     pub routes: Vec<WebRoute>,
+    /// Exact SHA-256 identities of reviewed runtime style element text. These
+    /// request the host's opt-in static style profile; they are not CSP text.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub style_hashes: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub static_routing: Option<StaticWebRouting>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -231,6 +235,13 @@ impl CheckedWebLayout {
                 + asset.media_type.capacity();
         }
         bytes += self.manifest.routes.capacity() * std::mem::size_of::<WebRoute>();
+        bytes += self.manifest.style_hashes.capacity() * std::mem::size_of::<String>();
+        bytes += self
+            .manifest
+            .style_hashes
+            .iter()
+            .map(String::capacity)
+            .sum::<usize>();
         for route in &self.manifest.routes {
             bytes += route.path.capacity() + route.asset.as_ref().map_or(0, String::capacity);
         }

@@ -4,9 +4,10 @@ import CodeExample from '@site/src/components/CodeExample';
 
 Build the maintained application, publish its exact renderer and browser assets,
 then observe server rendering, hydration, navigation and a controlled update
-through a real node. This is the **development** Linux x86_64 profile. Keep the
-source checkout and its generated receipts together; older released-alpha
-documentation does not imply support for these commands.
+through a real node. Use the matching alpha.5 source checkout on Linux x86_64
+and keep its build outputs together. On Windows, run the commands in WSL2.
+For an existing Angular CLI build without server rendering, use the
+[static framework guide](../how-to/serve-angular-and-docusaurus.md).
 
 ## Use the supported profile
 
@@ -22,7 +23,7 @@ Express servers, native addons or application lifecycle scripts.
 
 | Input | Exact maintained selection |
 | --- | --- |
-| Angular / TypeScript | 22.1.6 / 6.0.3 |
+| Angular / TypeScript | 22.1.7 / 6.0.3 |
 | Node / Python | 24.19.0 / 3.13.5 |
 | Rust / Wasm tools | 1.97.1 / wasm-tools 1.254.0 |
 | Authoring / dependency profile | `angular-ssr-component-v1` / `scoped-http-get-v1` |

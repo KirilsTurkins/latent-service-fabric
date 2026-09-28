@@ -1,8 +1,8 @@
 use super::{
     exhausted, incompatible, invalid, CheckedWebLayout, StaticFallbackMode, WebApplicationManifest,
-    WebAsset, WebRenderMode, MAX_WEB_ASSETS, MAX_WEB_ASSET_BYTES, MAX_WEB_ASSET_TREE_BYTES,
-    MAX_WEB_MANIFEST_BYTES, MAX_WEB_RENDERER_BYTES, MAX_WEB_ROUTES, WEB_MANIFEST_PATH,
-    WEB_RELEASE_PROFILE,
+    WebAsset, WebRenderMode, MAX_WEB_ASSETS, MAX_WEB_ASSET_BYTES, MAX_WEB_ASSET_CAPACITY,
+    MAX_WEB_ASSET_TREE_BYTES, MAX_WEB_MANIFEST_BYTES, MAX_WEB_RENDERER_BYTES, MAX_WEB_ROUTES,
+    WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
 };
 use crate::package::{
     artifact_blob_digest, validate_package_json, validate_package_path, verify_layer_bytes,
@@ -15,9 +15,15 @@ use std::collections::BTreeSet;
 /// Domain-separated, ordered asset table identity. Empty trees, ambiguous paths,
 /// duplicate layer aliases, unsupported media types and excessive capacity fail.
 pub fn asset_tree_digest(assets: &Vec<WebAsset>) -> Result<ArtifactBlobDigest, PlatformError> {
-    if assets.is_empty() || assets.capacity() > MAX_WEB_ASSETS {
+    if assets.is_empty() {
         return Err(exhausted());
     }
+    bound("web-asset-count", assets.len(), MAX_WEB_ASSETS)?;
+    bound(
+        "web-asset-capacity",
+        assets.capacity(),
+        MAX_WEB_ASSET_CAPACITY,
+    )?;
     let mut hash = Sha256::new();
     part(&mut hash, b"lsf-web-public-assets-v1");
     let mut paths = BTreeSet::new();
@@ -45,9 +51,8 @@ pub fn asset_tree_digest(assets: &Vec<WebAsset>) -> Result<ArtifactBlobDigest, P
             return Err(invalid("web-asset-media-type"));
         }
         total = total.checked_add(asset.size).ok_or_else(exhausted)?;
-        if asset.size > MAX_WEB_ASSET_BYTES || total > MAX_WEB_ASSET_TREE_BYTES {
-            return Err(exhausted());
-        }
+        bound("web-asset-bytes", asset.size, MAX_WEB_ASSET_BYTES)?;
+        bound("web-asset-tree-bytes", total, MAX_WEB_ASSET_TREE_BYTES)?;
         for value in [&asset.path, &asset.layer, &asset.digest, &asset.media_type] {
             part(&mut hash, value.as_bytes());
         }
@@ -65,9 +70,10 @@ pub fn inspect_web_layout(
     package: &PackageLayout,
     bytes: &[u8],
 ) -> Result<CheckedWebLayout, PlatformError> {
+    bound("web-manifest-bytes", bytes.len(), MAX_WEB_MANIFEST_BYTES)?;
     let limits = PackageLimits {
         max_document_bytes: MAX_WEB_MANIFEST_BYTES,
-        max_layers: MAX_WEB_ASSETS.max(MAX_WEB_ROUTES),
+        max_layers: MAX_WEB_ASSET_CAPACITY.max(MAX_WEB_ROUTES),
         max_depth: 8,
         max_string_bytes: 512,
         ..PackageLimits::default()
@@ -78,6 +84,7 @@ pub fn inspect_web_layout(
     if manifest.format_version != 1 || manifest.profile != WEB_RELEASE_PROFILE {
         return Err(incompatible());
     }
+    style_hashes(&manifest)?;
     let config = package.config();
     if !matches!(
         config.kind,
@@ -165,6 +172,40 @@ pub fn inspect_web_layout(
     })
 }
 
+fn style_hashes(manifest: &WebApplicationManifest) -> Result<(), PlatformError> {
+    if manifest.style_hashes.capacity() > super::MAX_WEB_STYLE_HASHES {
+        return Err(exhausted());
+    }
+    if !manifest.style_hashes.is_empty()
+        && (manifest.static_routing.is_none() || manifest.renderer.is_some())
+    {
+        return Err(invalid("web-style-hashes-require-static-publication"));
+    }
+    let mut previous: Option<&str> = None;
+    for hash in &manifest.style_hashes {
+        if hash.capacity() > 71 || previous.is_some_and(|value| value >= hash.as_str()) {
+            return Err(invalid("web-style-hash-order-or-bound"));
+        }
+        hash.parse::<ArtifactBlobDigest>()
+            .map_err(|_| invalid("web-style-hash-identity"))?;
+        previous = Some(hash);
+    }
+    Ok(())
+}
+
+fn bound<T: Copy + Ord + std::fmt::Display>(
+    name: &'static str,
+    actual: T,
+    maximum: T,
+) -> Result<(), PlatformError> {
+    if actual > maximum {
+        let mut error = exhausted();
+        error.message = format!("{name}: actual={actual} maximum={maximum}");
+        return Err(error);
+    }
+    Ok(())
+}
+
 fn routes(manifest: &WebApplicationManifest) -> Result<(), PlatformError> {
     if manifest.routes.capacity() > MAX_WEB_ROUTES
         || (manifest.routes.is_empty() && manifest.static_routing.is_none())
@@ -247,6 +288,7 @@ fn media_type(path: &str) -> Option<&'static str> {
         "js" | "mjs" => Some("text/javascript"),
         "css" => Some("text/css"),
         "json" => Some("application/json"),
+        "xml" => Some("application/xml"),
         "txt" => Some("text/plain"),
         "svg" => Some("image/svg+xml"),
         "png" => Some("image/png"),
@@ -264,7 +306,10 @@ fn part(hash: &mut Sha256, value: &[u8]) {
 }
 
 fn finish(hash: Sha256) -> ArtifactBlobDigest {
-    format!("sha256:{:x}", hash.finalize())
-        .parse()
-        .expect("SHA-256")
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(hash.finalize())
+    )
+    .parse()
+    .expect("SHA-256")
 }

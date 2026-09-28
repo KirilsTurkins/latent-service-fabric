@@ -102,7 +102,7 @@ def source_receipt(before: dict, after: dict, binary: Path | None) -> dict:
 
 def run(arguments) -> dict:
     before = source_snapshot()
-    if arguments.test_binary is None and not arguments.check_fixture:
+    if arguments.test_binary is None and not arguments.check_fixture and not arguments.cli:
         subprocess.run(['cargo', 'test', '-p', 'latent-oci', '--test', 'registry', '--locked', '--no-run'],
                        cwd=ROOT, check=True, timeout=900)
     owned_base = ROOT / 'target/phase3-harbor/runs'
@@ -135,7 +135,12 @@ def run(arguments) -> dict:
         if arguments.network:
             origin = f'https://harbor.test:{port}'
             dns = DnsFixture()
-        if arguments.check_fixture:
+        if arguments.cli:
+            if not dns:
+                raise RuntimeError('CLI qualification requires explicit network profile')
+            from tools.harbor_registry.cli import run as run_cli
+            receipt = run_cli(arguments.cli, root, origin, credential, dns)
+        elif arguments.check_fixture:
             receipt = {'fixtureReady': True}
         else:
             environment = os.environ.copy()
@@ -162,6 +167,8 @@ def run(arguments) -> dict:
         receipt.update(source_receipt(before, source_snapshot(), arguments.test_binary))
         if arguments.check_fixture:
             receipt['testBinarySource'] = 'not executed; fixture readiness only'
+        if arguments.cli:
+            receipt['testBinarySource'] = 'CLI only; source-built path and digest recorded, no Rust test binary executed'
         if dns:
             receipt['dnsQueries'] = dns.count
     finally:
@@ -181,10 +188,13 @@ def run(arguments) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--test-binary', type=Path)
+    parser.add_argument('--cli', type=Path, help='qualify the actual CLI version 2 profile on signed static packages')
     parser.add_argument('--check-fixture', action='store_true')
     parser.add_argument('--network', action='store_true', help='exercise the explicit bounded DNS and connected-peer profile')
     parser.add_argument('--output', type=Path)
     arguments = parser.parse_args()
+    if arguments.cli and (arguments.test_binary or arguments.check_fixture or not arguments.network):
+        parser.error('--cli requires --network and excludes --test-binary/--check-fixture')
     receipt = run(arguments)
     rendered = json.dumps(receipt, indent=2) + '\n'
     if arguments.output:
