@@ -57,7 +57,7 @@ digests before execution, then the exact version. It uses prebuilt binaries, not
 
 External actions keep the [#281 immutable action policy](workflow-action-pins.md):
 checkout `3d3c42e5aac5ba805825da76410c181273ba90b1` and setup-python
-`a26af69be951a213d495a4c3e4e4022e16d87065`. Only static/canary jobs install the
+`5fda3b95a4ea91299a34e894583c3862153e4b97`. Only static/canary jobs install the
 reviewed PyYAML 6.0.3 CPython 3.13 wheel from the
 [hash-locked requirements](../../.github/security/requirements.txt), with binary
 wheels, `--no-deps` and `--require-hashes`. Docs-only scanning needs no Python

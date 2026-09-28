@@ -126,6 +126,14 @@ try {
       assert.equal(media.conditional, 304);
       assert.equal(media.fonts.length, 1);
       assert.ok(media.fonts[0].endsWith('/assets/primeicons/primeicons.woff2'));
+      for (const [locale, title] of [['en', 'Chapter 1'], ['de', 'Kapitel 1']]) {
+        const localized = await site.goto(base + mount + '/' + locale + '/chapter-001/', {waitUntil: 'networkidle', timeout: 15000});
+        assert.equal(localized.status(), 200);
+        assert.equal(await site.locator('html').getAttribute('lang'), locale);
+        assert.equal(await site.locator('#view').textContent(), title);
+      }
+      // An empty 404 can finish by committing Chromium's own error document.
+      // Keep that negative navigation last; no later request races its commit.
       const missingUrl = base + mount + '/guide/missing';
       const missingDocument = site.waitForResponse(response => response.url() === missingUrl, {timeout: 15000});
       const [notFound] = await Promise.all([missingDocument,
@@ -142,6 +150,7 @@ try {
     result.missingScriptAndJsonStay404 = true;
     result.rootAndMountedGeneratorRedirects = true;
     result.sitemapAndWoff2OnlyFonts = true;
+    result.multilingual250FilePublication = true;
     result.publicNavigation = await publicNavigation(browser, origin);
   }
   assert.deepEqual(errors, []);

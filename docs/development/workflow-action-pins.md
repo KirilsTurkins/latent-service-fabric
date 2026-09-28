@@ -13,11 +13,11 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | Action | Reviewed upstream ref | Commit |
 | --- | --- | --- |
 | `actions/checkout` | `v7.0.1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
-| `actions/setup-python` | `v5` | `a26af69be951a213d495a4c3e4e4022e16d87065` |
+| `actions/setup-python` | `v7.0.0` | `5fda3b95a4ea91299a34e894583c3862153e4b97` |
 | `actions/setup-go` | `v5` | `40f1582b2485089dde7abd97c1529aa768e1baff` |
 | `actions/setup-node` | `v4` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
 | `actions/setup-java` | `v6.0.1` | `de7274f081f381c8f8158605e0321c36c376e2e6` |
-| `actions/setup-dotnet` | `v4` | `67a3573c9a986a3f9c594539f4ab511d57bb3ce9` |
+| `actions/setup-dotnet` | `v6.0.0` | `a98b56852c35b8e3190ac28c8c2271da59106c68` |
 | `actions/upload-artifact` | `v4` | `ea165f8d65b6e75b540449e92b4886f43607fa02` |
 | `actions/download-artifact` | `v4` | `d3f86a106a0bac45b974a628896c90dbdf5c8093` |
 | `actions/attest-build-provenance` | `v4.2.2` | `4d101475d8b20a2381f78447822ac1eab6504dd8` |
@@ -57,6 +57,19 @@ were reviewed on **2026-09-27**. It uses Node 24. All repository checkouts retai
 guard remains enabled; these workflows do not use `pull_request_target` or
 `workflow_run`. The reviewed workflow hashes reflect the new pin without
 changing required commands or publication conditions.
+
+The `actions/setup-python` v7.0.0 identity, release notes and action-definition
+diff were reviewed on **2026-09-27**. It uses Node 24 and retains the explicitly
+selected Python versions and cache inputs. These workflows do not use the
+removed `pip-install` input; dependency installation still uses the existing
+locked commands. The workflow hashes in `tools/ci/commands.json` reflect the new
+pin; required commands and job conditions are unchanged.
+
+The `actions/setup-dotnet` v6.0.0 identity, release notes and action-definition
+diff were reviewed on **2026-09-27**. It uses Node 24 and keeps the explicit
+.NET SDK and cache inputs selected by the workflows. No new installer options
+or package sources are enabled. The workflow hashes in `tools/ci/commands.json`
+reflect the new pin; required commands and job conditions are unchanged.
 
 ## Updating a pin
 

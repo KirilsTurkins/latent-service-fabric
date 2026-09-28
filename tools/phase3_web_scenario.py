@@ -69,7 +69,8 @@ def foreign_profile(client, profile):
     return path
 
 
-def tree_inventory(directory, client, maximum_bytes=512 * MIB):
+def tree_inventory(directory, client, maximum_bytes=512 * MIB, *, maximum_entries=1024):
+    require(type(maximum_entries) is int and 1 <= maximum_entries <= 8192, "angular-inventory-entry-limit")
     entries = {}
     pending = [directory]
     total = 0
@@ -81,7 +82,7 @@ def tree_inventory(directory, client, maximum_bytes=512 * MIB):
             client.cancellation.check()
             require(time.monotonic() < client.deadline, "workflow-deadline")
             seen += 1
-            require(seen <= 1024 and not path.is_symlink(), "angular-inventory-count-or-link")
+            require(seen <= maximum_entries and not path.is_symlink(), "angular-inventory-count-or-link")
             if path.is_dir():
                 pending.append(path)
                 continue
