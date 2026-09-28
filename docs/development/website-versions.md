@@ -85,8 +85,11 @@ at the original implementation unless an explicitly reviewed example correction
 is needed. Changed instructions must match `documentationSource`. Do not edit
 signed release, benchmark or prior test receipts to make them match newer prose.
 
-Maintain the newest and previous runtime documentation, with one additional
-slot for an attributable correction. Retiring a channel is an explicit PR that
+Maintain at most three released documentation snapshots. Alpha.5 retains the
+alpha.5, alpha.4 and alpha.3 guides, each bound to its original runtime and
+documentation source. A later release or attributable correction must retire
+the oldest supported snapshot before exceeding that limit; it cannot overwrite
+an existing snapshot. Retiring a channel is an explicit PR that
 updates the inventory and removes that complete snapshot's files together.
 History remains in Git. A missing retained version must fail the build rather
 than quietly use development. Each runtime release needs a reviewed snapshot

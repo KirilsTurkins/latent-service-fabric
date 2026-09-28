@@ -10,6 +10,20 @@ This workflow uses the released `0.1.0-alpha.5` CLI and ordinary Node/Python
 tools. Run it on Linux; on Windows, open your WSL2 terminal. For capsule source
 code, use the separate [developer commands](developer-commands.md) instead.
 
+Have these inputs ready before starting the release steps:
+
+| Input | What to use |
+| --- | --- |
+| Frontend output | The directory produced by your normal website build, often `dist/` or `build/`. |
+| Public address | Your hostname and mount path, such as `docs.example.com` and `/docs/`; build the site for that path. |
+| Node access | A running node and its protected operator connection profile. |
+| Signing authority | Your organization's publisher and builder identities, signing approval and admission policy. The walkthrough explains where each is used. |
+| Package transfer | A registry profile and repository if you transfer the package through OCI. |
+
+At the end, visitors can open the site at your chosen address. You will also
+have a publication ID and a private route journal to use for the next update
+or rollback. Keep those records between CI jobs.
+
 ## 1. Install a node and the matching tools
 
 Follow [native installation](../installation.md) for a persistent server, or
