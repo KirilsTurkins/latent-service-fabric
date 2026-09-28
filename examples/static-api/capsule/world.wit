@@ -1,0 +1,6 @@
+package examples:static-api@1.0.0;
+
+world service {
+    import latent:http/client@0.2.0;
+    export latent:web/application@0.1.0;
+}

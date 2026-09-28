@@ -102,6 +102,15 @@ route, media or current publication eligibility checks. See
 
 ### Response headers
 
+Static HTML can additionally use the bounded, signed style identities described
+in [ADR-0052](../../adr/0052-authorize-exact-static-style-identities.md) when the
+host explicitly enables `httpIngress.allowStaticStyleHashes`. The host adds only
+those SHA-256 sources to `style-src`. Script policy, style-attribute restrictions
+and every other directive remain unchanged. The same selected publication policy
+appears on HTML HEAD, 304 and directory redirects; errors keep the strict policy.
+No nonce or HTML rewrite is involved. See the
+[framework guide](../how-to/serve-angular-and-docusaurus.md) for application changes.
+
 All writable dynamic, error and immutable-asset responses, including HEAD and
 304, receive these headers. A failed/expired transport may close without a
 response; it does not promise to write headers after losing ownership.

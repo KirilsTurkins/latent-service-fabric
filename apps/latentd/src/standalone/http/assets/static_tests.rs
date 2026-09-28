@@ -120,6 +120,103 @@ async fn get(h: &Harness, path: &str, headers: &str) -> (u16, String, Vec<u8>) {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache() {
+    for enabled in [false, true] {
+        let h = Harness::configured_catalog(
+            |value| {
+                value["httpIngress"]["allowStaticStyleHashes"] = enabled.into();
+            },
+            None,
+            true,
+        )
+        .await;
+        let mut references = Vec::new();
+        for (name, hashes) in [
+            ("plain", Vec::new()),
+            ("style-a", vec![format!("sha256:{}", "00".repeat(32))]),
+            ("style-b", vec![format!("sha256:{}", "ff".repeat(32))]),
+        ] {
+            let upload = fixture::styled_upload(
+                &[("/index.html", "text/html", b"same immutable HTML")],
+                Some(StaticWebRouting {
+                    profile: StaticWebRoutingProfile::StaticSiteV1,
+                    entry_document: "/index.html".into(),
+                    directory_index: StaticDirectoryIndexMode::Redirect,
+                    directory_index_document: "/index.html".into(),
+                    fallback: StaticWebFallback {
+                        mode: StaticFallbackMode::None,
+                        document: None,
+                    },
+                }),
+                Vec::new(),
+                hashes.clone(),
+            );
+            let reference = h
+                .repository
+                .publish_web_package(fixture::context(name, 0), upload, &mut |_| Ok(()))
+                .unwrap()
+                .receipt
+                .publication;
+            for method in ["GET", "HEAD"] {
+                apply(
+                    &h,
+                    &format!("{name}-{method}"),
+                    &reference,
+                    &format!("/{name}"),
+                    "prefix",
+                    method,
+                    0,
+                );
+            }
+            let expected = if enabled || hashes.is_empty() {
+                200
+            } else {
+                403
+            };
+            let (status, headers, body) = get(&h, &format!("/{name}/"), "").await;
+            assert_eq!(status, expected);
+            if expected == 200 {
+                assert_eq!(body, b"same immutable HTML");
+                let policy = super::csp::policy(&hashes)
+                    .unwrap()
+                    .unwrap_or_else(|| latent_ingress::http::browser::CSP.into());
+                assert!(headers.contains(&format!("content-security-policy: {policy}\r\n")));
+                for (method, extra, code) in [
+                    ("HEAD", String::new(), 200),
+                    ("GET", format!("If-None-Match: {}\r\n", etag(&headers)), 304),
+                ] {
+                    let response = h
+                        .call(method, &format!("/{name}/"), &extra, node::TOKEN)
+                        .await;
+                    assert_eq!(response.0, code);
+                    assert!(response.2.is_empty());
+                    assert!(response
+                        .1
+                        .contains(&format!("content-security-policy: {policy}\r\n")));
+                }
+                let redirect = get(&h, &format!("/{name}"), "").await;
+                assert_eq!(redirect.0, 308);
+                assert!(redirect.1.contains(&policy));
+            } else {
+                assert!(body.is_empty());
+                assert!(!headers.contains("'sha256-"));
+            }
+            references.push(reference);
+        }
+        assert_ne!(references[0], references[1]);
+        assert_ne!(references[1], references[2]);
+        let (_, plain, _) = get(&h, "/plain/", "").await;
+        assert!(!plain.contains("'sha256-"));
+        let (missing, headers, _) = get(&h, "/style-a/missing.js", "").await;
+        assert_eq!(missing, 404);
+        assert!(!headers.contains("'sha256-"));
+        assert!(h.store().snapshot().cache_hits > 0);
+        no_execution(&h);
+        h.finish().await;
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn public_document_navigation_never_grants_asset_private_mount_or_unsafe_access() {
     let h = Harness::configured_catalog(|value| {
         value["httpIngress"]["authentication"] = serde_json::json!({"mode":"public-origins", "origins":[
@@ -458,11 +555,15 @@ async fn static_concurrency_corruption_and_read_saturation_never_enter_renderer_
     // Saturate only after that owner and its ingress exchange have retired.
     node::wait(|| {
         let snapshot = h.owner.handle().snapshot();
-        snapshot.connections == 0 && snapshot.exchanges == 0 && store.work.available_permits() == 4
+        snapshot.connections == 0
+            && snapshot.exchanges == 0
+            && store.work.available_permits() == super::MAX_READS
     })
     .await;
     let rejected_before_saturation = store.snapshot().capacity_rejections;
-    let held = Arc::clone(&store.work).try_acquire_many_owned(4).unwrap();
+    let held = Arc::clone(&store.work)
+        .try_acquire_many_owned(u32::try_from(super::MAX_READS).unwrap())
+        .unwrap();
     for path in ["/index.html", "/guide/", "/orders/42"] {
         assert_eq!(get(&h, path, HTML).await.0, 503);
     }

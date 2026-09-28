@@ -194,6 +194,7 @@ pub(super) fn publish(
             mode: WebRenderMode::Server,
             asset: None,
         }],
+        style_hashes: Vec::new(),
         static_routing: None,
         renderer: Some(WebRenderer {
             layer: "server/renderer.wasm".into(),

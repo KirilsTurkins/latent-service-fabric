@@ -614,6 +614,7 @@ impl StandaloneNode {
                 cleanup,
                 threads,
             )
+            .with_catalog(catalogs.artifacts.clone())
             .with_policies(
                 self.policies
                     .as_ref()
