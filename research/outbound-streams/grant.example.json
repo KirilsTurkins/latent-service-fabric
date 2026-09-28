@@ -1,0 +1,47 @@
+{
+  "formatVersion": 1,
+  "enabled": false,
+  "capability": "outbound-stream",
+  "profile": "bounded-streams-v1",
+  "tenant": "research-only",
+  "provider": "not-installed",
+  "providerDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "epoch": 1,
+  "destinations": [
+    {
+      "alias": "mail-fixture",
+      "hostname": "mail.test",
+      "ports": [
+        2525
+      ],
+      "permittedNetworks": [
+        "127.0.0.1/32"
+      ],
+      "specialAddressExceptions": [
+        "127.0.0.1"
+      ],
+      "resolution": {
+        "kind": "static",
+        "addresses": [
+          "127.0.0.1"
+        ]
+      },
+      "tls": {
+        "mode": "plain-tcp"
+      }
+    }
+  ],
+  "limits": {
+    "activationConnections": 2,
+    "tenantConnections": 16,
+    "providerConnections": 32,
+    "queuedCalls": 0,
+    "chunkBytes": 16384,
+    "liveBytesPerConnection": 65536,
+    "totalBytesPerDirection": 1048576,
+    "idleMillis": 2000,
+    "absoluteMillis": 10000,
+    "activationConnectAttempts": 32,
+    "activationTransferBytes": 2097152
+  }
+}
