@@ -35,6 +35,24 @@ confirmed optimization level 3 with debug assertions and overflow checks enabled
 for both parser versions and the packaging crate. These are local inspection
 measurements, not a new Linux node or complete guest qualification result.
 
+## September 27 package publication lease repair
+
+[Run 36323564017](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36323564017)
+failed the first signed publication after 5.745 seconds with an unknown outcome
+and no retained operation receipt. Package staging followed admission verification
+without renewing the five-second clock lease before the commit fence.
+Replaying the retained component locally on Linux reproduced the failure and
+identified `admission-clock-lease-uncovered` at that boundary.
+
+Package publication renews the existing control lease after preparation and
+preflight, then again after immutable payload reads and directory synchronization.
+The implementation integrated with #655 keeps that I/O outside the policy fence
+and checks the original grant before the final commit. This neither extends the
+configured lease nor retries a mutation. A deterministic regression advances the
+clock beyond the lease during preflight and checks one successful publication;
+clock regression, expired policy and a retired authority still reject publication.
+The new case is registered in the exact CI suite inventory.
+
 ## Reviewed candidate and shared-runtime hold
 
 [TypeScript run 35987595334](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35987595334)

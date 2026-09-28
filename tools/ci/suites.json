@@ -3500,6 +3500,7 @@
         "supply_chain::tests::catalog::malformed_or_missing_evidence_never_creates_preparation_authority",
         "supply_chain::tests::catalog::revocation_blocks_source_and_original_evidence_can_reverify_after_approved_update",
         "supply_chain::tests::catalog::signed_package_roundtrips_metadata_and_sealed_preparation_source",
+        "supply_chain::tests::catalog::slow_package_publication_renews_its_lease_without_bypassing_currentness",
         "supply_chain::tests::clock::mutation_renewal_persists_a_full_window_even_before_the_sampler_margin",
         "supply_chain::tests::clock::renewal_post_sync_regression_cannot_forget_newly_covered_observation",
         "supply_chain::tests::clock::renewal_without_persistence_retains_covered_clock_observation",
@@ -3579,7 +3580,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 101,
+      "minimumCases": 102,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [

@@ -85,6 +85,8 @@ reviewed local edge and operator reach that loopback endpoint; it grants no
 public management access. For application traffic, configure the
 [HTTP/TLS ingress](../reference/http-ingress.md) explicitly. A container's separate
 loopback namespace cannot be reached merely by publishing an unrelated port.
+For a separate TLS terminator, use the [qualified local HTTPS edge](local-https-edge.md)
+with its exact native peer and private probe topology.
 
 Readiness is an authenticated operation:
 
