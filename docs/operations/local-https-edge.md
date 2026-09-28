@@ -72,6 +72,10 @@ same-origin resource policy and HSTS. Directory redirects retain the mount.
 An external-origin request can still be rejected by native browser policy;
 the edge never removes Origin or Fetch Metadata to make it succeed.
 
+To reduce transfer bytes, explicitly enable the [bounded gzip profile](static-compression.md).
+It has its own representation validators and a larger memory budget; identity
+streaming remains the default.
+
 The edge accepts bodyless GET/HEAD and one authority. It rejects forwarding,
 platform identity and deadline headers, upgrades, duplicate headers and request
 bodies. It does not provide arbitrary API proxy rules. The `/__lsf/` prefix is

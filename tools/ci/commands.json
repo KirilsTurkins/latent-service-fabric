@@ -2039,6 +2039,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "npm ci --ignore-scripts --no-audit --no-fund --prefix tools/static_api\nnode tools/static_api/node_modules/playwright-core/cli.js install --with-deps chromium\npython tools/static_api/ci.py --bin target/dev-tools/source-node/bin --signer target/dev-tools/payload/sdk/bin/capsule-test-signer --build \"$RUNNER_TEMP/dev-projects/static-api/build\" --browser-tools tools/static_api --output \"$RUNNER_TEMP/dev-projects/static-api\""
+    },
+    ".github/workflows/container-runtime.yml:container:Verify bounded gzip identities and actual native eligibility": {
+      "workflow": ".github/workflows/container-runtime.yml",
+      "job": "container",
+      "name": "Verify bounded gzip identities and actual native eligibility",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "docker run --rm --network none --cpus 2 --memory 256m --pids-limit 32 --mount \"type=bind,source=$PWD,target=/source,readonly\" lsf-container-publisher --test /source/tools/trusted_edge/representation.test.mjs\npython3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/compression-qualification\" --compression"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3725,7 +3735,7 @@
       "sha256": "de3bb9f2e814513ef974e775a6538a87bf3d2a8aee74a29251a340535f25836a"
     },
     "tools/trusted_edge/qualification.py": {
-      "sha256": "83774b48abf485f97930dc972e0bb6c1066316b6fec3ae6c0b7ece8c9d88f43f"
+      "sha256": "af626191e30624a2fe3a047d195c4e300eecac43ab6569dc4849e49cbb6679b2"
     },
     "tools/build_framework_sites.py": {
       "sha256": "c82fe7e64de08e7e42e170a75148a24f2de8ebab71173cf4a8570b650b336fe8"
@@ -7184,6 +7194,6 @@
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
-    ".github/workflows/container-runtime.yml": "b3df1d43eb325dbb74f8437266ad980a158df61056e757bc8d534c1eedca8646"
+    ".github/workflows/container-runtime.yml": "39fe99934ce7db39c7dd634bc66cf0cc86fc8bd8ded7a4660e886b1a92d9ba79"
   }
 }

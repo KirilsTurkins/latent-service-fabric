@@ -63,6 +63,10 @@ jobs:
         run: python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/container-qualification" --storage --ownership --probes --operator-image lsf-container-operator
       - name: Verify exact HTTPS edge peers and native browser policy
         run: python3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/edge-qualification"
+      - name: Verify bounded gzip identities and actual native eligibility
+        run: |
+          docker run --rm --network none --cpus 2 --memory 256m --pids-limit 32 --mount "type=bind,source=$PWD,target=/source,readonly" lsf-container-publisher --test /source/tools/trusted_edge/representation.test.mjs
+          python3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory "$CONTAINER_WORK/context/release" --output "$RUNNER_TEMP/compression-qualification" --compression
       - name: Retain public container evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -75,5 +79,7 @@ jobs:
             ${{ runner.temp }}/container-qualification/headless-journals/**
             ${{ runner.temp }}/edge-qualification/*.json
             ${{ runner.temp }}/edge-qualification/*.jsonl
+            ${{ runner.temp }}/compression-qualification/*.json
+            ${{ runner.temp }}/compression-qualification/*.jsonl
           if-no-files-found: error
           retention-days: 14

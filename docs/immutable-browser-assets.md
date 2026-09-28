@@ -166,7 +166,13 @@ Only GET and HEAD are supported; other methods receive 405 with `Allow: GET, HEA
 
 This initial profile does not implement byte ranges. It ignores `Range` and `If-Range` and serves the full representation with 200, unless an independent supported precondition determines a different status. It does not send 206 or claim range support. Multi-range input cannot create additional read/output owners.
 
-Only the identity representation is served. There is no gzip/Brotli negotiation, on-demand compression, archive extraction, or decompression. Requesting gzip or Brotli does not prohibit identity by itself; explicit exclusion of identity (including an applicable `*;q=0`) returns 406. The bounded parser validates quality values instead of guessing. No `Content-Encoding` header is emitted. Future compressed variants require separately admitted identities and explicit compressed/decompressed byte limits; this profile must not transparently decompress package data.
+The native service serves only the identity representation. It has no gzip/Brotli negotiation, on-demand compression, archive extraction, or decompression. Requesting gzip or Brotli does not prohibit identity by itself; explicit exclusion of identity (including an applicable `*;q=0`) returns 406. The bounded parser validates quality values instead of guessing. No `Content-Encoding` header is emitted. Future native compressed variants require separately admitted identities and explicit compressed/decompressed byte limits; this profile must not transparently decompress package data.
+
+The optional [trusted edge gzip profile](operations/static-compression.md) is a
+separate qualified composition. The node authenticates original bytes; that edge
+transforms them under explicit bounds, supplies representation-specific strong
+validators and authenticates delivery with TLS. Its derived bytes are not signed
+native variants, and its closed conditional-header contract is documented separately.
 
 Modification-date preconditions are not implemented: the service has an immutable content identity, not an authoritative Last-Modified clock. `If-Modified-Since` and `If-Unmodified-Since` are ignored, and no Last-Modified is emitted. No new anonymous/public-authentication mode, CDN cache policy, origin routing API, or mutable deployment-alias endpoint is introduced.
 

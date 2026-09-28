@@ -110,3 +110,4 @@ old implementation snapshots are not setup instructions.
 - [ADR-0055: Project private HTTP readiness from authenticated observations](0055-project-private-http-readiness-from-authenticated-observations.md)
 - [ADR-0056: Run headless operators through a private local transport](0056-run-headless-operators-through-a-private-local-transport.md)
 - [ADR-0057: Pin a local HTTPS edge to an exact native peer](0057-pin-a-local-https-edge-to-an-exact-native-peer.md)
+- [ADR-0058: Transform static identity bytes at a bounded trusted edge](0058-transform-static-identity-bytes-at-a-bounded-trusted-edge.md)
