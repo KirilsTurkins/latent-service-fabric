@@ -28,7 +28,9 @@ unreferenced snippet regions, Wiki trees, component review pages and test-only
 build directories are never added to the corpus. An archived page can remain
 readable while opting out of search using Docusaurus `noIndex: true` front matter.
 
-The index is limited to 6,000 records and 8 MiB. Individual rendered sections are
+The index is limited to 6,000 records and 16 MiB. This byte budget accommodates
+the current guides and three retained release snapshots, including alpha.5,
+without silently omitting older searchable guides. Individual rendered sections are
 limited to 256 KiB and split into 6,000-character search records without dropping
 their remaining text. Exceeding these limits fails the build and requires review.
 The maintained build check recomputes the expected index from the actual HTML
