@@ -3,6 +3,18 @@
 This is the maintainer gate for [native standalone installation](../installation.md)
 and [#308](https://github.com/KirilsTurkins/latent-service-fabric/issues/308).
 
+## Alpha.5 release preparation
+
+The September 28 maintainer instruction authorizes alpha.5 SDK updates,
+development-to-release promotion, native publication and Pages deployment after
+the required checks. The selected predecessor is the published alpha.4 archive
+in `packaging/linux/compatibility.json`. Alpha.5 still needs its own exact-source
+CI, newly authenticated developer bundles and both complete native VM profiles,
+including a real alpha.4 upgrade. Follow the
+[current promotion runbook](../operations/native-release-promotion.md).
+
+## Published alpha.4 evidence
+
 **The native `0.1.0-alpha.4` release is published and independently verified.**
 [Promotion #606](https://github.com/KirilsTurkins/latent-service-fabric/pull/606)
 integrated the runtime at `2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`.
@@ -50,8 +62,7 @@ used the release-workflow/tag identity and the same authenticated archive;
 the [retained receipt](../evidence/native-foundation-35811188306.json) records its SHA-256,
 real boot IDs, receipt hashes and independent publisher verification.
 
-The distinct `0.1.0-alpha.4` source declares only that observed foundation in
-[`compatibility.json`](../../packaging/linux/compatibility.json). Both versions
+The distinct `0.1.0-alpha.4` source declared only that observed foundation in its release-time compatibility file. Both versions
 use current publication-aware catalog formats and HTTP table/receipt format 2.
 Installer and node configuration format 1 remain current. No obsolete storage
 reader or migration is restored for this compatible pair.

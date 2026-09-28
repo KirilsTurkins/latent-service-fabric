@@ -7,7 +7,9 @@ publication through GET/HEAD routes.
 
 Run these tools on Linux. On Windows, use your WSL environment. Install Node.js
 24, Python 3.12 or newer and the [authenticated released CLI](../installation.md).
-Use a reviewed checkout of the helper tools that matches your intended profile.
+Use the `0.1.0-alpha.5` CLI and matching helper checkout. The
+[website delivery guide](../how-to/deliver-a-website.md) covers installation,
+framework compatibility and the complete path to a running site.
 Keep organization credentials and signing files outside the build checkout.
 
 ## Prepare the reviewed files
@@ -128,7 +130,9 @@ Keep failed and uncertain outcomes available to the next job; serialize updates
 to the same route set and use its state fences for unrelated concurrent changes.
 
 The maintained `Released frontend publication workflow` tests this sequence with
-authenticated release binaries in a clean non-root container, without Rust. It
+the authenticated release selected by that workflow's explicit policy in a
+clean non-root container, without Rust. Its receipt names the tested runtime;
+changing the documentation version does not requalify another binary. It
 uses fresh disposable test identities, a real TLS registry and a real node.
 Its small [examples](../../examples/static-release/README.md) exercise static
 and documentation publications, renewal, rollback and restart. These test keys

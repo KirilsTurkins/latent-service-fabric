@@ -71,8 +71,8 @@ Address, certificate, credential, repository-scope and unavailable-endpoint
 failures are also required. Its sanitized receipt records the source-built CLI
 digest; it is not released-binary authentication.
 
-Azure Container Registry remains unqualified. The owner excludes Azure resources
-and cloud simulation from this delivery; Harbor is the real local alternative.
+Azure Container Registry remains unqualified. Harbor is the maintained local
+registry for the scoped bearer-authentication and network profile.
 No actual ACR package/evidence round trip, Azure identity renewal or hosted
 storage redirect result is claimed.
 

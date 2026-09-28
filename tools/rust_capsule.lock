@@ -496,7 +496,7 @@ dependencies = [
 
 [[package]]
 name = "latent-component-bindings"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "wasmtime",
  "wit-bindgen",
@@ -504,7 +504,7 @@ dependencies = [
 
 [[package]]
 name = "latent-guest"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 dependencies = [
  "latent-component-bindings",
  "zeroize",

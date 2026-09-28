@@ -76,14 +76,14 @@ workspace name if you chose another one.
 **Windows (PowerShell):**
 
 ```powershell
-& (Join-Path $env:USERPROFILE 'LSF-inputs-alpha4/frontend/bin/latent-dev.exe') `
+& (Join-Path $env:USERPROFILE 'LSF-inputs-alpha5/frontend/bin/latent-dev.exe') `
     --state-root (Join-Path $env:LOCALAPPDATA 'LatentDev-tutorial') dev up --workspace test-my-greeting
 ```
 
 **Linux (Bash):**
 
 ```bash
-"$HOME/LSF-inputs-alpha4/frontend/bin/latent-dev" --state-root "$HOME/.latent-dev-tutorial" \
+"$HOME/LSF-inputs-alpha5/frontend/bin/latent-dev" --state-root "$HOME/.latent-dev-tutorial" \
     dev up --workspace test-my-greeting
 ```
 
