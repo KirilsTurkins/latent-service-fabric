@@ -75,6 +75,59 @@ fn release(fixture: &Fixture) -> ReleaseDigest {
 }
 
 #[test]
+fn slow_package_publication_renews_its_lease_without_bypassing_currentness() {
+    for case in 0..4 {
+        let fixture = Fixture::new();
+        let root = tempfile::tempdir().unwrap();
+        let authority = authority(&fixture, &root.path().join("trust"));
+        let repo = catalog(&root.path().join("catalog"), &authority);
+        let digest = release(&fixture);
+        let mut callbacks = 0;
+        let result = ready(repo.admit_package(&tenant(), fixture.upload(), &mut |_| {
+            callbacks += 1;
+            // Deterministically model slow response preflight/staging after
+            // verification, with no timer owner renewing the five-second lease.
+            fixture.clock.set(match case {
+                1 => NOW - 1,
+                2 => 3001,
+                _ => NOW + 6,
+            });
+            if case == 3 {
+                authority.retire();
+            }
+            Ok(())
+        }));
+        assert_eq!(callbacks, 1, "publication must never be retried");
+        if case == 0 {
+            let summary = result.unwrap();
+            assert_eq!(summary.descriptor.release_digest, digest);
+            assert_eq!(
+                authority.inner.lock().unwrap().floor.restart_not_before,
+                NOW + 11
+            );
+            repo.release_eligibility(&digest)
+                .unwrap()
+                .unwrap()
+                .check_current()
+                .unwrap();
+        } else {
+            assert_eq!(
+                result.unwrap_err().message,
+                [
+                    "",
+                    "admission-clock-regression",
+                    "admission-policy-expired",
+                    "admission-owner-retired"
+                ][case]
+            );
+            assert!(ready(repo.get_catalog_entry(&tenant(), &digest))
+                .unwrap()
+                .is_none());
+        }
+    }
+}
+
+#[test]
 fn signed_package_roundtrips_metadata_and_sealed_preparation_source() {
     let fixture = Fixture::new();
     let root = tempfile::tempdir().unwrap();
