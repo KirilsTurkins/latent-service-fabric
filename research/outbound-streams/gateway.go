@@ -20,7 +20,7 @@ import (
 const (
 	maxBody           = 4096
 	handleMetadata    = 256
-	operationMetadata = 16 * 1024 // Includes bounded textproto buffers; logical, not RSS.
+	operationMetadata = 32 * 1024 // Reply envelope plus parser/copy allowance; logical, not RSS.
 	kernelReservation = 96 * 1024 // Conservative logical charge, not kernel measurement.
 	tlsReservation    = 64 * 1024 // Not a verified bound on Go's TLS implementation.
 	maxAbsolute       = 5 * time.Second
@@ -294,7 +294,9 @@ func (p *Provider) Send(parent context.Context, h *Handle, m Message) (out Outco
 	// not submitted an SMTP command, although the TCP/TLS peer was contacted.
 	app := &boundedConn{Conn: conn, deadline: h.deadline, idle: p.cfg.Idle,
 		chunk: p.cfg.Chunk, limit: 16 * 1024, faultAfter: p.faultAfter}
-	client, err := smtp.NewClient(app, p.cfg.Hostname)
+	framed := &smtpReplyConn{Conn: app}
+	defer framed.clear()
+	client, err := smtp.NewClient(framed, p.cfg.Hostname)
 	if err == nil {
 		// Frozen net/smtp may try HELO after EHLO fails. boundedConn's sticky
 		// transport error prevents any additional I/O after an I/O failure.
@@ -383,6 +385,7 @@ func (c *boundedConn) Read(b []byte) (int, error) {
 	}
 	n, err := c.Conn.Read(b[:nmax])
 	c.read += n
+
 	if err != nil {
 		c.terminal = err
 	}

@@ -4,149 +4,162 @@ Research for [#696](https://github.com/KirilsTurkins/latent-service-fabric/issue
 part of the SDK library ecosystem. **Not an installed provider, guest adapter,
 standalone server, or supported socket profile.** The proposed decision is
 [ADR-0059](../../adr/0059-defer-general-outbound-streams.md): defer production
-streams and new protocol providers, preserve existing typed capability boundaries,
-and revisit a specific use case only with production qualification evidence.
+streams and new protocol providers. The [second-pass investigation](deepening.md)
+adds real-broker regression coverage, strict SMTP reply bounds and stronger
+receipt validation without claiming production enablement.
 
 ## Reproduce the local experiment
 
-From the repository root, using an already installed Go compiler and Python with
-`jsonschema` (also used by repository schema validation):
+Use an already installed Go compiler and Python with `jsonschema`, from the
+repository root. A full research run includes Go tests and eleven Python checks:
 
 ```sh
 python3 research/outbound-streams/run.py
 python3 research/outbound-streams/run.py --verify target/outbound-streams/receipt.json
 ```
 
-The runner does not download a toolchain or dependency. It disables Go modules,
-workspaces, proxy/checksum lookups and automatic toolchain selection. Its finite
-commands run `gofmt` verification, Go vet, race-enabled real-network tests and
-five Python contract tests. A missing compiler, race prerequisite, Python package,
-failed test or timeout returns nonzero **and writes failure evidence**. Source
-hashes bind each receipt; `--verify` rejects edited sources. The output is a local
-observation, not signed build provenance. The test-only package is opt-in and is
-not added to the production SDK/workspace or a new per-ticket CI workflow.
+To reproduce the **executed second-pass native profile**, which excludes the five
+schema/acceptance-map tests, use:
 
-The retained [receipt](evidence/receipt.json) identifies the actual compiler,
-selected standard-library source hashes, commands, test durations, outcomes and
-source hashes. The historical run used Go 1.23.2 on Linux/amd64; this is an
-available laboratory compiler, **not a new LSF toolchain pin or production security
-recommendation**. A different installed Go version produces a different evidence
-identity. The race runtime needs its normal supported C/compiler environment.
+```sh
+python3 research/outbound-streams/run.py --native-only --output target/outbound-streams/native.json
+python3 research/outbound-streams/run.py --verify target/outbound-streams/native.json
+python3 research/outbound-streams/run.py --verify research/outbound-streams/evidence/deepening-receipt.json
+```
+
+The retained [second-pass receipt](evidence/deepening-receipt.json) records **20
+top-level Go tests, 63 cases including subtests, six Python evidence checks, Go
+vet and formatting**, with no skipped cases. It includes all sixteen original Go
+tests. Native means a host Go executable, **not a Go capsule**. It neither runs nor
+claims the Rust regression, WIT parser, guest compilation, production DNS/secret
+conformance or complete repository CI. Those boundaries are recorded in `notRun`.
+The current full research profile is available but was not rerun in that receipt.
+
+The runner disables Go modules, workspaces, proxy/checksum lookups and automatic
+toolchain selection. No compiler or dependency is downloaded. Receipts record
+actual commands, source hashes, tool identity and test durations; they are not
+signatures or execution attestations. Verification recomputes the selected input
+set, checks all top-level Go test identities across all `*_test.go` files, rejects
+skips/duplicates, requires the race-test command profile and checks Python counts.
+It cannot certify unexecuted branches or prove authenticity of an arbitrary
+caller-authored receipt. Negative subprocess exits are retained as failures.
+
+The original [v1 receipt](evidence/receipt.json) and
+[address-policy negative](evidence/development-negative.json) remain immutable
+history from commit `1a91f79f254e3484b514b2b142e7e05d0e240881`. Use that revision's
+runner to verify that receipt. The current v2 verifier rejects v1 rather than
+misrepresenting the old source/test set as current. Both observed native runs used
+Go 1.23.2 on Linux/amd64; this is a laboratory identity, **not a new LSF pin or a
+production security recommendation**. The race runtime needs its normal supported
+C/compiler environment.
+
+## What the native prototype executes
 
 Go's real `net/smtp` client communicates with a bounded, test-owned SMTP peer on
-an ephemeral **127.0.0.1** port. No internet, real mailbox, mail relay, reusable
-private key, credential or persistent application worker is used. TLS tests
-create ephemeral in-memory certificates. The protocol peer validates SMTP framing
-and records DATA acceptance; it is a maintained fixture, not a commercial mail
-server qualification. The only injected failures are short I/O, a finite write
-fault, protocol rejection, a missing reply, or a peer waiting at a witnessed
-protocol boundary. Channels establish readiness; timers bound failure cleanup.
+an ephemeral **127.0.0.1** port. No external mail, real credentials, persistent
+application worker or reusable private key is involved. TLS cases generate
+in-memory certificates. Peers record DATA acceptance before optional lost replies;
+channels witness readiness and timers are finite failure watchdogs. Parser-only
+comparisons additionally use joined `net.Pipe` peers, not claimed as TCP tests.
 
-### What actually executes
+`Provider.Send` accepts a typed message with fixed sender and recipient, not an
+arbitrary target or SMTP command. Bind and dispatch check an exact trusted
+provider/tenant/destination/port/operation/epoch tuple. Affine pointer/incarnation
+handles reject copying, cross-provider use and stale reuse. Metadata, private body
+and an audit slot are reserved before connect. One socket belongs to the active
+operation; no queue, retry, reconnect or cross-activation pool is created.
+Cancellation closes the actual socket and joins its callback before refund.
 
-`Provider.Send` takes a typed message with fixed approved sender and recipient,
-not a socket descriptor, target URL or arbitrary SMTP command. A trusted exact
-provider/tenant/destination/port/operation/epoch tuple is checked at bind and
-again at dispatch. Handles are pointer-and-incarnation scoped, single-use, and
-cannot be reused across providers or activations. Capacity and an audit slot are
-reserved before the private body copy and connect. There is one active socket,
-no work queue, no connection pool and no reconnect. Cancellation closes the
-actual socket; its callback is joined before physical ownership is refunded.
+The injected transport honors short-write semantics and sticky I/O failure.
+A [complete-line reply owner](reply_bounds.go) now bounds text passed to the
+standard parser. It withholds invalid or unterminated lines instead of returning
+a partial successful-looking prefix alongside an error. The retained
+[failed first attempt](evidence/deepening-negative.json) explains why byte counting
+alone was insufficient. Explicit valid protocol errors may cause the library's
+EHLO-to-HELO fallback; framing/transport failures cannot perform further writes.
+There is no AUTH, STARTTLS, QUIT, session resumption or message replay.
 
-The experiment calls `smtp.NewClient` with an injected connection. A bounded
-wrapper honors `io.Writer`'s short-write contract and makes I/O failure sticky,
-including against the client's EHLO-to-HELO fallback. Explicit protocol error
-responses may trigger that library fallback, but do not trigger connection or
-message replay. No AUTH, STARTTLS, QUIT, automatic retry or session resumption is
-selected. The optional TLS mode is implicit host TLS before SMTP bytes, with an
-explicit root pool, original hostname verification, minimum TLS 1.2 and no session
-cache. No downgrade to cleartext follows TLS failure.
+Optional implicit TLS precedes SMTP bytes and requires an explicit root pool,
+original hostname validation and TLS 1.2 minimum. TLS failure never downgrades.
+`peer-accepted` means a complete final SMTP 250 was observed, not recipient delivery.
+All other failures after attempted application writes conservatively remain
+`uncertain`, including the known 550 fixture. Denial means no connect; before-write
+TLS failure means the TCP/TLS peer was contacted but no SMTP command was sent.
 
-`peer-accepted` means a complete final SMTP 250 response was observed, not recipient
-delivery. Other failures after attempted application writes conservatively return
-`uncertain`, even a known 550 response in this intentionally narrow prototype.
-Protocol-specific richer rejection evidence would be separate production work.
-Before-write TLS failure is not marked as SMTP mutation, but the peer **was**
-contacted. Denial before dispatch contacts nothing. This distinction is tested.
-
-### Concrete prototype bounds
+## Current prototype bounds
 
 | Owner/dimension | Selected test profile / hard constructor maximum |
 | --- | --- |
 | Live handles | 2 provider, 1 per tenant / 8 provider |
 | Queued calls, idle pool entries | 0 / 0 |
-| One private message | 1..4,096 bytes; fixed approved envelope |
+| Private message | 1..4,096 bytes; fixed approved envelope |
 | Internal transport slice | 7 bytes in most tests / 4,096 bytes |
 | Application read/write totals | 16 KiB each per operation |
 | Raw wire read/write totals, including TLS | 64 KiB each / 128 KiB each |
+| SMTP reply line | 512 bytes including CRLF, one fixed retained line |
+| SMTP multiline reply | 16 lines, 8 KiB total, matching status prefixes |
 | Handle metadata | 256 logical bytes each |
-| Operation metadata | 16 KiB; includes a logical allowance for textproto buffers |
+| Operation metadata | 32 KiB parser/copy allowance, reserved before connect |
 | Socket buffer request / logical kernel reservation | 16 KiB send, 32 KiB receive / 96 KiB |
-| Additional TLS reservation | 64 KiB logical allowance, **not a proven allocator bound** |
+| Additional TLS reservation | 64 KiB logical allowance, not a proven allocator bound |
 | Shared charged live bytes | 512 KiB / 4 MiB |
-| Retained audit outcomes | 32 / 128; reserve before dispatch; no payload/error strings |
-| Idle / absolute lifetime | 1 second / at most 5 seconds; parent deadline may narrow |
+| Retained audit outcomes | 32 / 128; no payload/error strings |
+| Idle / absolute lifetime | 1 second / at most 5 seconds; parent may narrow |
 
-Positive I/O can renew the idle deadline but cannot extend the original absolute
-one. No new transport read is issued while synchronous consumption is blocked;
-there is no unbounded async queue. The fixed provider configuration, bounded map
-capacity and audit records are provider-owned metadata separate from the reported
-live handle/operation counter. The counters are logical reservations, not total
-allocator, kernel, GC or process RSS measurements. TLS/textproto may retain copies
-outside the explicitly zeroized private body; **this is a production blocker**,
-not an assertion of end-to-end secret zeroization or hostile-peer containment.
+Positive I/O can renew idle time but cannot extend the original absolute deadline.
+The line owner uses deliberately conservative one-byte transport reads and has no
+read-ahead queue; no throughput claim is made. Fixed configuration, maps and audit
+storage remain bounded provider-owned metadata distinct from live operation
+counters. Kernel/allocator/GC/TLS memory is not proven by these logical allowances.
+The private body and reply buffer are cleared; complete secret-copy zeroization
+inside the Go library/runtime is not established.
 
-The cancellation test holds an explicit retirement barrier after the socket
-cleanup. Its source-bound measurement retains one handle, one active operation
-and 114,971 logical bytes until the operation is allowed to retire. It then checks
-all three live counters are zero. This is a tested ownership fact, not a bound
-on OS scheduling or peer-side termination. The 80 ms stall test uses an idle
-expiry and a separate finite watchdog; it does not establish a production SLO.
+At the controlled cancellation retirement barrier, the new measured charge is
+**one handle, one active operation and 131,355 logical bytes**, then all three
+counters return to zero after retirement. The historical 114,971-byte value is
+unchanged in the old receipt; the 16 KiB difference is the increased parser
+reservation. Neither value proves peer rollback or OS scheduling latency.
 
-### Reuse versus modelling
+## Production broker boundary
 
-The production reuse path is
-`CapabilitySession -> IoRuntime::admit_until -> IoReady -> dispatch -> IoCall`,
-with the existing shared provider pool/metadata owners and original budget ledger.
-See the [broker](../../docs/runtime/capability-broker.md),
-[I/O substrate](../../docs/runtime/async-host-io.md),
-[provider pools](../../docs/runtime/provider-pools.md) and
-[HTTP provider](../../docs/runtime/outbound-http.md).
+The [Rust regression](../../crates/latent-http/src/tests/gateway_boundary.rs)
+uses the actual broker, original activation ledger, `IoRuntime`, provider pools
+and HTTP provider with a controlled local HTTP peer. It extends the existing
+registered `tests::http::lost_mutation_reply_is_uncertain_and_never_retried` case:
 
-This Go experiment **models that ownership order but does not invoke the Rust
-broker, Wasmtime, admission, durable audit, original/descendant ledgers, or a real
-capsule**. Its public Go `Grant` structure is trusted test setup, not sealed
-production authority. Putting it behind an unauthenticated HTTP handler would
-be unsafe; no such handler is shipped. A production typed gateway would be called
-through an already-authorized HTTP request or typed local service and would
-independently authenticate/map tenant, operation and credentials on its side.
+```sh
+cargo test -p latent-http --lib --locked tests::http::lost_mutation_reply_is_uncertain_and_never_retried -- --exact --nocapture
+```
 
-Native Go was available locally; Rust/Cargo, a checked-out production workspace,
-WIT parser and real guest compiler inputs were not. Those tests are recorded as
-not run, never passed. Adding unexecuted broker integration code or silently
-substituting an external Go client for a Go capsule would not close this gap.
-The proposal therefore does not approve a new production capability. The existing
-production owner APIs are reused in the design, not claimed as execution evidence.
+It checks cancellation after the peer records an effect, host-owner reclamation
+while the external owner remains live, and a successful fresh independent
+activation. Peer tasks are owned by a `JoinSet`; failure does not detach them.
+See [deepening.md](deepening.md) for the precise scope and source-bound CI identity.
+This is neither a new SMTP host provider nor an end-to-end Wasmtime-to-SMTP gateway.
+Its controlled peer is not the Go SMTP prototype. Passing the two separately must
+not be presented as passing their composition. An HTTP grant cannot authorize a
+raw downstream socket, and host cleanup cannot prove external cleanup.
 
-## Evidence and acceptance map
+The Go `Grant` is still test setup, not sealed authority. Any externally operated
+gateway must independently authenticate tenant/operation, bind downstream
+credentials and enforce its own deadline, admission, cancellation and cleanup.
+Do not expose the Go model as an unauthenticated HTTP handler. Moving it into
+another capsule would not create missing compiler or transport support.
 
-[requirements.json](requirements.json) maps every numbered acceptance criterion to
-its documents and actual tests. [compatibility.md](compatibility.md) covers real
-library APIs across all six languages and the PostgreSQL counterexample.
+## Design and acceptance evidence
+
+[requirements.json](requirements.json) maps the original nine acceptance criteria.
+The [second-pass map](deepening.md#acceptance-delta) adds concrete boundary and
+parser evidence. [compatibility.md](compatibility.md) reviews all six language
+API seams and PostgreSQL constraints; it is not six guest compile qualification.
 [stream-profile.md](stream-profile.md), [streams.wit](streams.wit), and the
-[grant schema](grant.schema.json) specify the **uninstalled candidate**, not the
-Go prototype's public API. They are deliberately outside `wit/platform` and
-`schemas`. The schema structurally validates a disabled example; semantic host/IP
-normalization and WIT parser/component conformance remain unexecuted blockers.
+[grant schema](grant.schema.json) remain **uninstalled research proposals**, outside
+production WIT and schemas. Schema structure is not semantic DNS/IP validation;
+WIT text is not a parser or runtime conformance result.
 
-The retained [development negative](evidence/development-negative.json) includes
-the exact superseded function and source digest from the initial failing test.
-An incomplete special-address blacklist missed an IPv6 documentation range. The
-fix removed public routing from the experiment rather than presenting another
-partial blacklist as a production security policy. Production must reuse LSF's
-complete address-policy implementation and current review, not copy this fixture.
-
-Other retained negative results include TLS trust/hostname failure, post-write
-uncertainty despite peer acceptance, limit exhaustion without connect, and missing
-production/guest qualification. Research completion does not turn any of these
-negative results into a library compatibility certification.
+See the production [broker](../../docs/runtime/capability-broker.md),
+[I/O owners](../../docs/runtime/async-host-io.md),
+[provider pools](../../docs/runtime/provider-pools.md) and
+[HTTP provider](../../docs/runtime/outbound-http.md) for existing contracts.
+Ordinary library and HTTP adapter delivery remains independent. No new production
+direction, operator workflow, capability or dependency on sockets is approved here.

@@ -4,6 +4,7 @@
 - Status: Proposed for review; decision is **defer production enablement**.
 - Investigation: [#696](https://github.com/KirilsTurkins/latent-service-fabric/issues/696)
 - Baseline: development `a7b5d2088471b7368cd85ab74f3292afcdfca00e`
+- Continuation: [second-pass ownership and parser investigation](../research/outbound-streams/deepening.md)
 
 ## Context
 
@@ -69,7 +70,11 @@ not a parallel executor. HTTP #211/#212's destination/trust/ownership and uncert
 rules inform the design, but an HTTP method/path grant never authorizes raw TCP.
 No application-owned connection remains when dormant.
 
-## Executed evidence and negative results
+## Initial executed evidence and negative results
+
+This section records commit `1a91f79f254e3484b514b2b142e7e05d0e240881` and its
+unchanged v1 receipt. Current source and second-pass results are distinguished
+in the next section; historical numbers are not assertions about the new parser.
 
 The [local prototype](../research/outbound-streams/README.md) uses Go's real
 `net/smtp` against bounded local TCP and TLS SMTP peers. Sixteen top-level Go tests
@@ -102,6 +107,40 @@ The Go TLS/textproto allocation allowances and zeroization scope are also not a
 hostile-peer memory/security proof. These are explicit reasons to defer production,
 not missing results relabelled as passes. The [requirement map](../research/outbound-streams/requirements.json)
 distinguishes actual tests, design artifacts and unexecuted qualification.
+
+## Second-pass evidence and decision refinement
+
+The [continuation](../research/outbound-streams/deepening.md) adds a Rust regression
+using the actual sealed broker, original activation ledger, IoRuntime and HTTP
+provider. A controlled external HTTP peer remains active after the cancelled host
+operation is reclaimed; a fresh activation succeeds independently. The helper
+extends the existing registered lost-mutation test, with channel readiness and
+owned peer tasks. This is not a guest-to-HTTP-to-SMTP integration: the Rust peer
+is a controlled effect/ownership witness, separate from the native SMTP proof.
+Its exact source/CI record and execution checkpoint are linked in the continuation;
+the native receipt claims no Rust execution.
+
+Real-library negative tests additionally expose oversized SMTP replies and a
+failed streaming guard whose unterminated prefix was accepted as a greeting.
+The current prototype withholds a complete validated line in fixed storage,
+limits reply lines to 512 bytes and multiline replies to 16 lines/8 KiB, and
+makes failures terminal before any fallback write. Parser storage is prepaid;
+transport byte caps alone are not treated as parser conformance.
+
+The source-bound [second-pass native receipt](../research/outbound-streams/evidence/deepening-receipt.json)
+records 20 top-level Go tests, 63 cases including subtests, six Python evidence
+checks, Go vet and formatting. It reruns the original sixteen Go tests. The new
+parser reservation raises the controlled retirement charge to 131,355 logical
+bytes, not a measured allocator or TLS memory bound. The original five schema/map
+checks are excluded from this native-only profile, not silently counted again.
+Receipt format 2 checks complete selected inputs and top-level test identities;
+old v1 evidence remains verifiable only against its original source/runner.
+
+**The decision remains defer.** A typed gateway needs independent authenticated
+admission, bounded downstream ownership and explicit reconciliation; host cleanup
+is not proof of downstream cleanup or rollback. Callback compatibility also needs
+parser-level resource controls. Neither result approves a new production provider,
+raw WIT import, broad socket grant, automatic retry or hidden resident worker.
 
 ## Consequences and approval gate
 
