@@ -1998,7 +1998,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "docker build --tag lsf-container-runtime \"$CONTAINER_WORK/context\"\ndocker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release"
+      "run": "docker build --tag lsf-container-runtime \"$CONTAINER_WORK/context\"\ndocker build --tag lsf-container-publisher --file tools/static-release/qualification.Dockerfile tools/static-release\ndocker build --tag lsf-container-operator --file tools/container_runtime/operator-qualification.Dockerfile tools/container_runtime"
     },
     ".github/workflows/container-runtime.yml:container:Publish actual signed sites and verify restart": {
       "workflow": ".github/workflows/container-runtime.yml",
@@ -2008,7 +2008,7 @@
       "stepIf": "success()",
       "workingDirectory": ".",
       "shell": "default",
-      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage --ownership --probes"
+      "run": "python3 tools/container_runtime/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/container-qualification\" --storage --ownership --probes --operator-image lsf-container-operator"
     },
     ".github/workflows/registry-cli.yml:harbor:Build the exact CLI and check owned registry guards": {
       "workflow": ".github/workflows/registry-cli.yml",
@@ -3729,10 +3729,10 @@
       "sha256": "51fc70b6c6664dc9fb0297b4cba09e413793ff46863e401d7950026a8960ae8c"
     },
     "tools/container_runtime/qualification.py": {
-      "sha256": "6f2cae55ebb7510a48eb9d1a51ba5bc119b4d6090544211551a87cc2e52f4669"
+      "sha256": "03e2fceb1077fba22ffd2144fc3783a4d1ca7165b0c9fe2e208034f8ad6ae94e"
     },
     "tools/prepare_container_runtime.py": {
-      "sha256": "def3f330f6d50dc10f9b949260d0b429deb968cf96aa362b323232b95f09cfc4"
+      "sha256": "de3bb9f2e814513ef974e775a6538a87bf3d2a8aee74a29251a340535f25836a"
     },
     "tools/run_harbor_registry_tests.py": {
       "sha256": "ebcefe5489127650cbdb634060222da39fb853a3155aa9653c58207b96c3203b"
@@ -7194,7 +7194,7 @@
     ".github/workflows/security-rustsec.yml": "811ac2f78591443cfd1158e5f0de8ad775969edf54f4ee0e86d75b00c48deb2b",
     ".github/workflows/typescript-guest.yml": "164d0fe5cf662517e9dc1f859b2d92b55895ef5602e943d6d3313fc3f6c31e41",
     ".github/workflows/frontend-release.yml": "d98345d8b033c913f02351eb3d924cd0f99828759dcf6f878d1c60021f950ecc",
-    ".github/workflows/container-runtime.yml": "84981e0f872a168ee4dbbeeed4ed760f605c7dd3ce8ef516ea3d6310a92162c7",
+    ".github/workflows/container-runtime.yml": "505cc9170ac4d79ccfaaa8cc6990b067bd35dcb3ef0f9240833420656b3c9a09",
     ".github/workflows/registry-cli.yml": "a3ff58b3330ba14d79b1394693b2262964e3ff08649062ddb5bd503df055310a"
   }
 }

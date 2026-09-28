@@ -105,6 +105,8 @@ clock lease before a restart; the persisted lease can reject an early restart.
 Always wait for the old owner to exit before starting its replacement.
 Use the [container handover procedure](container-handover.md) for overlap
 rejection, interrupted replacement and explicitly eligible recovery.
+Use the [private CI publishing workflow](headless-publication-ci.md) to change
+publications and routes without restarting the runtime or exposing management.
 
 ## Diagnose a rejected host
 

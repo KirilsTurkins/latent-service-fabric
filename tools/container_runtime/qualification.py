@@ -54,8 +54,8 @@ class Drill:
         self.containers.append(name)
         return name
 
-    def attached(self, name, destination, codes=(0,)):
-        status, output = self.docker('start', '--attach', name, codes=codes, timeout=120)
+    def attached(self, name, destination, codes=(0,), timeout=120):
+        status, output = self.docker('start', '--attach', name, codes=codes, timeout=timeout)
         (self.output / destination).write_bytes(output)
         actual = json.loads(self.docker('inspect', '--format', '{{.State.ExitCode}}', name)[1])
         if actual not in codes or status not in codes:
@@ -110,7 +110,11 @@ class Drill:
         if self.args.probes:
             from qualification_probes import run
             probes = run(self, node, volumes, mount)
-        published = self.exec_json(node, '/usr/local/bin/python3', INSIDE, 'publish')
+        operator = None
+        if self.args.operator_image:
+            from qualification_headless import run
+            operator = run(self, node, mount, source)
+        published = self.exec_json(node, '/usr/local/bin/python3', INSIDE, 'reopen' if operator else 'publish')
         (self.output / 'publication.json').write_text(json.dumps(published) + '\n')
         begin = time.monotonic()
         self.docker('stop', '--time', '10', node, timeout=15)
@@ -143,7 +147,7 @@ class Drill:
                   'cloudQualified': False, 'negativeChecks': ['root-identity-rejected'],
                   'dockerProcesses': self.calls, 'maximumDockerProcesses': 160,
                   'maximumSeconds': 300, 'privilegedRuntime': False,
-                  'storage': storage, 'handover': handover, 'probes': probes}
+                  'storage': storage, 'handover': handover, 'probes': probes, 'operator': operator}
         (self.output / 'receipt.json').write_text(json.dumps(report, indent=2) + '\n')
         return report
 
@@ -172,8 +176,9 @@ def main():
     parser.add_argument('--storage', action='store_true', help='also qualify stopped local storage recovery')
     parser.add_argument('--ownership', action='store_true', help='also qualify overlapping owners and interrupted handover')
     parser.add_argument('--probes', action='store_true', help='also qualify the private HTTP status projection')
+    parser.add_argument('--operator-image', help='also qualify actual noninteractive CI execution')
     args = parser.parse_args()
-    for identity in (args.image, args.frontend_image):
+    for identity in (args.image, args.frontend_image, *([args.operator_image] if args.operator_image else [])):
         if not re.fullmatch(r'[a-z0-9][a-zA-Z0-9/_.:@-]{0,255}', identity):
             parser.error('explicit built image identity required')
     drill = Drill(args)
