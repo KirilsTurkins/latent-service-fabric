@@ -62,7 +62,9 @@ successful CI, squash merge with `--admin`, then require successful CI at the
 actual resulting release commit. A pre-merge PR commit is a different identity.
 
 Inspect the registered native release workflow and its protected
-`native-runtime-publish` environment. Create the immutable `0.1.0-alpha.5` tag
+`native-runtime-publish` environment. Its deployment allowlist must include the
+exact approved tag, while retaining the required reviewer and existing protection
+rules. Do not substitute a wildcard or disable the review. Create the immutable `0.1.0-alpha.5` tag
 once at that exact release commit. Do not move an existing tag to a rebuild.
 
 ## 4. Qualify and publish the runtime
