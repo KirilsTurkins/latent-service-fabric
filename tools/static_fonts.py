@@ -20,10 +20,10 @@ def prepare_primeicons(package: Path, output: Path) -> None:
             and package != output and package not in output.parents
             and not any(is_reparse(p) for p in [output.parent, *output.parents]), 'font-output')
     metadata = json.loads(read(package, 'package.json', 65536))
-    require(metadata.get('name') == 'primeicons' and metadata.get('version') == '7.0.0', 'font-package-version')
+    require(metadata.get('name') == 'primeicons' and metadata.get('version') == '8.0.1', 'font-package-version')
     css = read(package, 'primeicons.css', 128 * 1024).decode('utf-8')
     font = read(package, 'fonts/primeicons.woff2', 1024 * 1024)
-    license_bytes = read(package, 'LICENSE', 65536)
+    license_bytes = read(package, 'LICENSE.md', 65536)
     require(font.startswith(b'wOF2') and len(font) >= 48 and license_bytes, 'font-input')
     faces = list(re.finditer(r'@font-face\s*\{[^{}]*\}', css))
     require(len(faces) == 1 and re.search(r'font-family\s*:\s*[\'"]primeicons[\'"]', faces[0][0]), 'font-face-profile')
