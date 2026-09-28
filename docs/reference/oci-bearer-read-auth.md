@@ -282,3 +282,35 @@ immutable release claim. The separate [network conformance path](oci-network-pro
 adds explicit DNS and controlled-peer redirect validation without claiming
 untested hosted-storage topology support. No mutable referrers-tag fallback is
 introduced.
+
+## Run the CLI on the real local registry
+
+The CLI qualification uses the same owned Harbor instance and a fresh project
+robot with pull/push scope. On a Linux test host with the repository's Node.js,
+Python and Rust tools installed, run:
+
+```sh
+cargo build --locked --package latent --bin latent
+python tools/run_harbor_registry_tests.py --network --cli target/debug/latent --output target/harbor-cli.json
+```
+
+The runner builds two signed static packages with the CLI and ordinary Node.js
+tools, pushes packages and evidence to Harbor, pulls immutable digests, and
+verifies the exact subjects with explicit publisher/builder policy. It uses no
+Rust application build and no Azure resource. A source-built CLI receipt does
+not claim authentication as a published release.
+
+Credentials live only in private fixture files, never command arguments or the
+public receipt. The project robot expires after one day and the owned registry
+is destroyed when the bounded run ends. A real deployment must provision and
+rotate its own least-privilege package-client credential separately from any
+container-image pull identity. Do not place it in Terraform state or copy test
+identities into a deployment.
+
+Each CLI process owns a fresh token cache. Expiry/refresh within an operation,
+DNS rotation and credential-free redirects retain their separate real TLS/DNS
+conformance tests; the Harbor drill does not claim to induce all of them. This
+specific topology uses local registry storage and disables redirects. It does
+check rejected DNS address authority, wrong TLS trust, invalid credentials,
+foreign-project scope, pull-only writes and a refused endpoint. Failed writes
+are never replayed by the drill; follow the immutable-digest recovery contract.

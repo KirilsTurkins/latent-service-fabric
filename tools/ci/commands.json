@@ -1,5 +1,25 @@
 {
   "after": {
+    ".github/workflows/registry-cli.yml:harbor:Build the exact CLI and check owned registry guards": {
+      "workflow": ".github/workflows/registry-cli.yml",
+      "job": "harbor",
+      "name": "Build the exact CLI and check owned registry guards",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_harbor_registry_runner\ncargo build --locked --package latent --bin latent"
+    },
+    ".github/workflows/registry-cli.yml:harbor:Qualify the CLI against real Harbor": {
+      "workflow": ".github/workflows/registry-cli.yml",
+      "job": "harbor",
+      "name": "Qualify the CLI against real Harbor",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "umask 077\npython3 tools/run_harbor_registry_tests.py --network --cli target/debug/latent --output \"$RUNNER_TEMP/harbor-cli.json\""
+    },
     ".github/workflows/c-guest-authoring.yml:runtime:Build and execute signed C and Rust capability packages": {
       "job": "runtime",
       "jobIf": "success()",
@@ -3377,6 +3397,9 @@
     }
   },
   "delegatedOwners": {
+    "tools/run_harbor_registry_tests.py": {
+      "sha256": "ebcefe5489127650cbdb634060222da39fb853a3155aa9653c58207b96c3203b"
+    },
     "sdk/c/tools/validate.py": {
       "sha256": "60d239e77fc42814896aeede9e765d0c988983fa8d3a801bd905e2e126377716"
     },
@@ -7175,6 +7198,7 @@
   ],
   "schemaVersion": "latent.ci.commands.v1",
   "workflowIdentities": {
+    ".github/workflows/registry-cli.yml": "a3ff58b3330ba14d79b1394693b2262964e3ff08649062ddb5bd503df055310a",
     ".github/workflows/c-guest-authoring.yml": "8de82640520b2b15d7c58610c1e727064807de8da26d79bd1a581d454e9ab79e",
     ".github/workflows/ci.yml": "701517ef7d268f278d77e534d001fa217565b58d18d78e6d3a9cfe4199b56acd",
     ".github/workflows/developer-packaged-qualification.yml": "aeda0753a6ee0d0ed0e4198334f7447761a72bf741623adbd9c9f0a210e57610",
