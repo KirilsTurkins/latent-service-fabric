@@ -137,6 +137,12 @@ policy; document routing remains signed package metadata. Regex rewrites,
 directory listings, arbitrary filesystem roots, reverse proxying, custom
 error-page fallbacks and transparent compression are outside this profile.
 
+An operator can separately select the
+[bounded gzip HTTPS edge](operations/static-compression.md). It transforms
+verified identity bytes at a trusted node-level adapter, with its own encoding
+negotiation and validators; compressed bytes are not publisher-signed native
+asset representations.
+
 The `static_tests` real-node suite covers root/non-root mounts, exact route
 precedence, queries, redirects, hostile paths, missing assets, methods,
 negotiation, GET/HEAD/304, cutover, rollback, delete/recreate, revocation,

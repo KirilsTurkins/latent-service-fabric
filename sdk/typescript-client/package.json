@@ -1,6 +1,6 @@
 {
   "name": "@latent/sdk",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-alpha.5",
   "description": "Typed LSF interfaces and an explicitly bounded Node.js RPC client",
   "type": "module",
   "exports": {
