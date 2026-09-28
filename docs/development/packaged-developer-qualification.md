@@ -1,6 +1,11 @@
 # Packaged developer qualification
 
-The [final Windows developer handoff](windows-qualification-handoff.md) records
+The [alpha.5 toolkit checks](../evidence/developer-toolkit-36440862340/README.md)
+record fresh passing packaged schedules for the current release selection,
+including all six guest languages, Windows recovery and the five supported
+platform entries. Their original observations retain their individual scope.
+
+The earlier [Windows developer handoff](windows-qualification-handoff.md) records
 all five passing packaged entries, dedicated Windows recovery and the reviewed
 clean-machine newcomer walkthrough at approved source `8b6dc33f`. Its combined
 report passes the existing qualification schema validator.

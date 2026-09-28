@@ -1,6 +1,6 @@
-# Selected developer toolkit qualification
+# Alpha.4 developer toolkit qualification
 
-The selected toolkit at source
+The alpha.4 toolkit at source
 `cb00bf43e3f598e0f9d4bcaea2a4853d17dea8f4` passed the complete five-entry packaged
 qualification in [run 36262353069](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36262353069).
 The [aggregate report](report.json) records the actual supported platforms and
@@ -8,7 +8,7 @@ scenarios. The [independent review index](review.json) binds the original raw
 observations, artifact IDs and hashes. It retains the earlier failed attempts;
 none is relabelled as a pass.
 
-The [release selection](../../../packaging/dev/release-selection.json) identifies
+The [original release selection](https://github.com/KirilsTurkins/latent-service-fabric/blob/2d6cc2eafc0a17dfe573be4252fa49835bebbbd6/packaging/dev/release-selection.json) identifies
 all ten authenticated bundles and their original publisher policies. Developer
 packages came from [run 36259950144](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36259950144);
 the disposable development runtime came from

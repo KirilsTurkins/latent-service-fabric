@@ -1,7 +1,7 @@
 # Windows developer workflow qualification
 
 This records the earlier qualification source. The
-[selected release toolkit](../evidence/developer-toolkit-36262353069/README.md)
+[alpha.4 release toolkit](../evidence/developer-toolkit-36262353069/README.md)
 has a later complete packaged qualification with its own original receipts.
 
 The Windows developer workflow is qualified for the scoped developer workloads
