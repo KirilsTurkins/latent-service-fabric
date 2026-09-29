@@ -4,26 +4,27 @@ The authoritative operator/author instructions are in
 [`docs/development/website.md`](../docs/development/website.md), with the ownership
 decision in [ADR-0041](../adr/0041-publish-single-source-version-bound-documentation.md).
 
-Use Node 24.19.0 and npm 11.19.1. From this directory:
+Use Node 24.19.0 and the locally patched npm 11.19.1. Complete the
+[security bootstrap](#package-manager-security-bootstrap) from the repository
+root first, then run these commands from `website/`:
 
-The separately locked `toolchain/` package selects npm 11.19.1 because its
-maintained security backport patches npm's bundled dependencies. Both the
+The separately locked `toolchain/` package selects npm 11.19.1 as its reviewed
+base and replaces its vulnerable bundled `ip-address` before use. Both the
 package-manager graph and website graph are included in the security inventory.
 CI verifies every installed package-manager version against that lock and
 disables dependency lifecycle scripts. The reviewed source and reason are in
 `content/toolchain.json`; a higher npm major is not an automatic upgrade.
 
 ```text
-npm ci --ignore-scripts --no-audit --no-fund
-npm run check
-npm test
-npm run build
-npm run build:root
-npm run browser:install
-npm run test:build
+node toolchain/node_modules/npm/bin/npm-cli.js run check
+node toolchain/node_modules/npm/bin/npm-cli.js test
+node toolchain/node_modules/npm/bin/npm-cli.js run build
+node toolchain/node_modules/npm/bin/npm-cli.js run build:root
+node toolchain/node_modules/npm/bin/npm-cli.js run browser:install
+node toolchain/node_modules/npm/bin/npm-cli.js run test:build
 ```
 
-`npm run start` previews on loopback only. Builds consume `../docs` and `../adr`
+`node toolchain/node_modules/npm/bin/npm-cli.js run start` previews on loopback only. Builds consume `../docs` and `../adr`
 without moving or duplicating them, and never compile Cargo/SDK code or start an
 LSF node. Local outputs are development-only; #345's other children and #237
 still own guide acceptance, versions, theme, search, Wiki migration and Pages.
