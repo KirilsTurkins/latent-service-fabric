@@ -31,6 +31,7 @@ jobs:
           python-version: 3.13.5
       - name: Apply the previously tested security candidate and the download repair
         run: |
+          python3 -m pip install --requirement source/tools/requirements.lock
           git -C source apply "$RUNNER_TEMP/security-candidate/candidate.patch"
           python3 controls/.github/maintenance/pr700_download.py edit source
           python3 controls/.github/maintenance/pr700_repair.py inventory source
@@ -39,7 +40,6 @@ jobs:
       - name: Qualify real source inventory and download regressions
         working-directory: source
         run: |
-          python3 -m pip install --requirement tools/requirements.lock
           python3 -m unittest tools.tests.test_dev_tools tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner tools.tests.test_ci_coverage tools.tests.test_native_loader_boundary
           python3 tools/ci_coverage.py
           python3 tools/validate_repository.py
@@ -57,8 +57,61 @@ jobs:
           path: ${{ runner.temp }}/combined-candidate
           if-no-files-found: error
           retention-days: 7
-  publish:
+  rust:
     needs: qualify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 5c7aaa47243fa1ebf760dce314fbfda44be7a71a
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: pr700-combined-candidate
+          path: ${{ runner.temp }}/combined-candidate
+      - name: Apply the complete candidate
+        run: git apply --index "$RUNNER_TEMP/combined-candidate/candidate.patch"
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Run the exact required CI lint policy
+        env:
+          CARGO_TERM_COLOR: never
+        run: |
+          status=0
+          python3 tools/ci_cargo.py run clippy > "$RUNNER_TEMP/clippy.log" 2>&1 || status=$?
+          tail -n 60 "$RUNNER_TEMP/clippy.log"
+          exit "$status"
+      - name: Run runtime and value admission regression suites
+        env:
+          CARGO_TERM_COLOR: never
+        run: |
+          status=0
+          cargo test --locked -p latent-manifest -p latent-wasmtime --lib --all-features > "$RUNNER_TEMP/runtime-tests.log" 2>&1 || status=$?
+          tail -n 100 "$RUNNER_TEMP/runtime-tests.log"
+          exit "$status"
+      - name: Run native loader compiler async and broker integration suites
+        env:
+          CARGO_TERM_COLOR: never
+        run: |
+          status=0
+          cargo test --locked -p latent-wasmtime --all-features --test native_aot_cache --test isolated_aot --test async_application --test broker > "$RUNNER_TEMP/runtime-integration.log" 2>&1 || status=$?
+          tail -n 100 "$RUNNER_TEMP/runtime-integration.log"
+          exit "$status"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: pr700-rust-qualification-logs
+          path: |
+            ${{ runner.temp }}/clippy.log
+            ${{ runner.temp }}/runtime-tests.log
+            ${{ runner.temp }}/runtime-integration.log
+          retention-days: 7
+          if-no-files-found: warn
+  publish:
+    needs: [qualify, rust]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
