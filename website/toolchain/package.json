@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "ip-address": "10.5.1",
-    "npm": "11.19.1"
+    "npm": "11.19.1",
+    "undici": "6.28.1"
   }
 }

@@ -69,3 +69,27 @@ that the entire `64:ff9b:1::/48` range is private without guessing an embedded
 IPv4 address. This addresses [GHSA-2vr4-cq9g-pvrc](https://github.com/advisories/GHSA-2vr4-cq9g-pvrc)
 in build tooling; it is not evidence of a reachable LSF runtime SSRF exploit
 or a replacement for DNS, connected-peer and redirect validation.
+
+## Additional security-baseline repair
+
+The same bootstrap also replaces npm's bundled Undici 6.28.0 with the complete,
+separately integrity-pinned Undici 6.28.1 package for
+[GHSA-3wwx-pv8p-q78v](https://github.com/nodejs/undici/security/advisories/GHSA-3wwx-pv8p-q78v).
+The lock describes both final patched packages, not the unmodified npm archive.
+The checker verifies the installed Undici bytes and npm's module resolution;
+a bounded child-process regression checks normal decompression and rejects an
+oversized malformed compressed message without an unhandled zlib error. Run the
+same patch command after every clean toolchain installation. No lifecycle hooks,
+advisory exceptions or changes to Node's separately bundled global fetch are made.
+
+The Java compiler recipes separately select Jackson 2.18.10 in both buildscript
+and project configurations. Their three jar identities and Gradle module/POM
+checksums are updated together; strict dependency verification remains enabled.
+This removes the three Jackson advisory matches blocking this PR's security
+baseline without treating the inventory as proof of runtime exploitability.
+
+Jackson annotations 2.18.10's published Gradle module lists a different jar
+checksum and size from the final Maven jar. The reviewed lock uses the final
+jar, whose bytes match Maven's separate SHA-256 and SHA-512 checksum files;
+it does not permit the module's alternative jar hash. The module itself is
+independently SHA-256-pinned in Gradle verification metadata.

@@ -1,7 +1,9 @@
 import {fileURLToPath} from 'node:url';
-import {replaceBundledIpAddress} from '../lib/package-manager-security.mjs';
+import {replaceBundledIpAddress, replaceBundledUndici} from '../lib/package-manager-security.mjs';
 
-replaceBundledIpAddress(fileURLToPath(new URL('../', import.meta.url)));
+const root = fileURLToPath(new URL('../', import.meta.url));
+replaceBundledIpAddress(root);
+replaceBundledUndici(root);
 // This verifies every locked dependency and executes the NAT64 regression
 // against the package actually resolved by npm, before npm performs any work.
 await import('./check-package-manager.mjs');

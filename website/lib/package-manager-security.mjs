@@ -6,8 +6,10 @@ import path from 'node:path';
 
 export const ipAddressVersion = '10.5.1';
 export const ipAddressIntegrity = 'sha512-EXujUp9jyOI/chPgtqk6uy7fDq8AeCB/WlfEuPg9LN0fN9lzKAKfuDYi60SMhHwgUiEhZvVYsbGZN+RUU1INiA==';
-const sourceLocation = 'node_modules/ip-address';
-const bundleLocation = 'node_modules/npm/node_modules/ip-address';
+export const undiciVersion = '6.28.1';
+export const undiciIntegrity = 'sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA==';
+const ipAddress = Object.freeze({name: 'ip-address', version: ipAddressVersion, integrity: ipAddressIntegrity, previousVersion: '10.5.0'});
+const undici = Object.freeze({name: 'undici', version: undiciVersion, integrity: undiciIntegrity, previousVersion: '6.28.0'});
 const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
 
 function directory(root, relative) {
@@ -45,37 +47,40 @@ function inventory(root) {
   return files;
 }
 
-function inputs(websiteRoot) {
+function inputs(websiteRoot, selected) {
+  const {name, version, integrity} = selected;
+  const sourceLocation = `node_modules/${name}`;
+  const bundleLocation = `node_modules/npm/node_modules/${name}`;
   const root = directory(fs.realpathSync(websiteRoot), 'toolchain');
   const manifest = read(path.join(root, 'package.json'));
   const lock = read(path.join(root, 'package-lock.json'));
-  assert.equal(manifest.dependencies['ip-address'], ipAddressVersion);
-  assert.equal(lock.packages[''].dependencies['ip-address'], ipAddressVersion);
+  assert.equal(manifest.dependencies[name], version);
+  assert.equal(lock.packages[''].dependencies[name], version);
   for (const location of [sourceLocation, bundleLocation]) {
     const entry = lock.packages[location];
-    assert.equal(entry.version, ipAddressVersion, `Unpatched lock entry: ${location}`);
-    assert.equal(entry.integrity, ipAddressIntegrity);
-    assert.equal(entry.resolved, `https://registry.npmjs.org/ip-address/-/ip-address-${ipAddressVersion}.tgz`);
+    assert.equal(entry.version, version, `Unpatched lock entry: ${location}`);
+    assert.equal(entry.integrity, integrity);
+    assert.equal(entry.resolved, `https://registry.npmjs.org/${name}/-/${name}-${version}.tgz`);
     assert.ok(!entry.inBundle, 'The replacement is separately integrity-pinned, not supplied by npm');
   }
   const source = directory(root, sourceLocation);
   const files = inventory(source);
   const actual = read(path.join(source, 'package.json'));
-  assert.equal(actual.name, 'ip-address');
-  assert.equal(actual.version, ipAddressVersion);
-  return {root, source, files};
+  assert.equal(actual.name, name);
+  assert.equal(actual.version, version);
+  return {root, source, files, bundleLocation};
 }
 
 // npm ci extracts bundled dependencies even when overrides or edited lock entries
 // request another version. Install the reviewed replacement before running npm.
-export function replaceBundledIpAddress(websiteRoot) {
-  const {root, source, files} = inputs(websiteRoot);
+function replaceBundledDependency(websiteRoot, selected) {
+  const {root, source, files, bundleLocation} = inputs(websiteRoot, selected);
   const target = directory(root, bundleLocation);
   const old = read(path.join(target, 'package.json'));
-  assert.equal(old.name, 'ip-address');
-  assert.ok(['10.5.0', ipAddressVersion].includes(old.version), 'Unexpected npm bundle; review it before replacing it');
+  assert.equal(old.name, selected.name);
+  assert.ok([selected.previousVersion, selected.version].includes(old.version), 'Unexpected npm bundle; review it before replacing it');
   const parent = path.dirname(target);
-  const staged = fs.mkdtempSync(path.join(parent, '.ip-address-patched-'));
+  const staged = fs.mkdtempSync(path.join(parent, `.${selected.name}-patched-`));
   try {
     fs.cpSync(source, staged, {recursive: true, errorOnExist: true, force: false});
     assert.deepEqual(inventory(staged), files);
@@ -89,6 +94,14 @@ export function replaceBundledIpAddress(websiteRoot) {
     fs.rmSync(path.join(root, relative), {force: true});
   }
   assert.deepEqual(inventory(target), files);
+}
+
+export function replaceBundledIpAddress(websiteRoot) {
+  replaceBundledDependency(websiteRoot, ipAddress);
+}
+
+export function replaceBundledUndici(websiteRoot) {
+  replaceBundledDependency(websiteRoot, undici);
 }
 
 export function assertNat64Classification(Address6) {
@@ -120,7 +133,7 @@ export function assertNat64Classification(Address6) {
 }
 
 export function verifyBundledIpAddress(websiteRoot) {
-  const {root, files} = inputs(websiteRoot);
+  const {root, files, bundleLocation} = inputs(websiteRoot, ipAddress);
   const target = directory(root, bundleLocation);
   assert.deepEqual(inventory(target), files, 'npm must contain the complete reviewed replacement, not the original bundle');
   const npmRequire = createRequire(path.join(root, 'node_modules/npm/package.json'));
@@ -129,4 +142,16 @@ export function verifyBundledIpAddress(websiteRoot) {
     'The real npm SOCKS dependency must load the patched bundled copy');
   const cases = assertNat64Classification(socksRequire('ip-address').Address6);
   return {advisory: 'GHSA-2vr4-cq9g-pvrc', ipAddress: ipAddressVersion, classificationCases: cases};
+}
+
+export function verifyBundledUndici(websiteRoot) {
+  const {root, files, bundleLocation} = inputs(websiteRoot, undici);
+  const target = directory(root, bundleLocation);
+  assert.deepEqual(inventory(target), files, 'npm must contain the complete reviewed Undici replacement');
+  const npmRequire = createRequire(path.join(root, 'node_modules/npm/package.json'));
+  assert.equal(fs.realpathSync(npmRequire.resolve('undici')), fs.realpathSync(path.join(target, 'index.js')),
+    'npm must resolve the patched bundled Undici, not another installed copy');
+  assert.equal(npmRequire('undici/package.json').version, undiciVersion);
+  assert.equal(typeof npmRequire('undici').fetch, 'function');
+  return {undiciAdvisory: 'GHSA-3wwx-pv8p-q78v', undici: undiciVersion};
 }
