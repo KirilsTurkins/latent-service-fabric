@@ -6,74 +6,103 @@ on:
 permissions:
   contents: read
 jobs:
-  java-patch:
+  verify-patch:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          distribution: temurin
-          java-version: '25.0.4+101.0.LTS'
-      - name: Prepare the exact patched compiler closure
+          node-version: 24.19.0
+      - name: Apply only the locally tested content-addressed patch
         shell: bash
         run: |
-          curl --fail --location --retry 2 --max-time 180 https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o "$RUNNER_TEMP/gradle.zip"
-          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
-          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
           python3 - <<'PY'
-          import json, re
-          from pathlib import Path
-          for name in ('sdk/java-guest/compiler.gradle', 'sdk/java-guest/feasibility/build.gradle'):
-              path = Path(name)
-              text = path.read_text()
-              assert text.count('2.18.9') == 2
-              path.write_text(text.replace('2.18.9', '2.18.10'))
-          updates = {
-              'jackson-annotations': ('67634a683cfb1695e55c78e351c5f38f4de0d8c64ed567419b8fe2d1dc354ada', 78413),
-              'jackson-core': ('e4544eec5754d2dd06c6b16cfc9d2883a523f7177c2429ab04b29ab5fab445c9', 592948),
-              'jackson-databind': ('ead55a0c649b11af6148a0c097323f5438afc5f563e7139681ad8277fff520bf', 1665063),
+          import base64, gzip, hashlib, json, os, pathlib, subprocess, urllib.request
+          root = pathlib.Path.cwd()
+          parts = ['6f17c038fe0ede863dfa11b35df40396ddcd2388', '1d86c1426c9692903ac919006c91b62d510316bc', '00496a81aa56abd6a7577f325a0492070bc3ae84', 'e8a0893e3d431fbc5de0cc03b79b6334a5d4728d']
+          compressed = bytearray()
+          for sha in parts:
+              url = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs/' + sha
+              with urllib.request.urlopen(url, timeout=30) as response:
+                  data = response.read(32769)
+              assert len(data) <= 32768
+              raw = base64.b64decode(json.loads(data)['content'])
+              assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == sha
+              compressed.extend(raw)
+          assert hashlib.sha256(compressed).hexdigest() == 'badfd029695e2caf7869680400a7b320c15931aa505860b30814c89831573281'
+          patch = gzip.decompress(compressed)
+          assert len(patch) == 54736 and hashlib.sha256(patch).hexdigest() == 'ca2ba04a381fe9fb6651010bb54a64a78bfef1650627bb15a628ae89f02e633f'
+          patch_file = pathlib.Path(os.environ['RUNNER_TEMP']) / 'reviewed.patch'
+          patch_file.write_bytes(patch)
+          subprocess.run(['git', 'apply', '--check', str(patch_file)], check=True)
+          subprocess.run(['git', 'apply', str(patch_file)], check=True)
+          expected = {
+              '.github/security/inventory.json': 'c908f95e803c3d82107abfd8b7ee49285e7441ee',
+              '.github/workflows/docs-pages.yml': '9321db7bae9c7f2333d46643c4526fb79fe2d3a3',
+              '.github/workflows/docs-site.yml': 'd7d9127d8d7f1c64bb8975c543049ca6b7ba0f0f',
+              'docs/development/website.md': '4b06ecbae52263725c3f4ac18cef9d0ec7e5a843',
+              'sdk/java-guest/compiler.gradle': 'fe11c2b2ac01795dd4d5949147b6a33863018e79',
+              'sdk/java-guest/feasibility/build.gradle': '33cb8136ae8b26e6453d98ab622ab62c23476dd4',
+              'sdk/java-guest/feasibility/dependencies.lock.json': 'b3e3c113a3e2143ca95f5f42ee074e1cbfa57738',
+              'sdk/java-guest/feasibility/gradle/verification-metadata.xml': 'a2692c9caf7833fe4ab14dbc36b7f6a6db944f92',
+              'tools/ci/commands.json': 'd854eb2e9d4b0dda3df7ef7dfbe817a3bd34cc72',
+              'tools/security_inventory.py': '8f60ecf44e89773592282ccc4d793f77ecf89291',
+              'tools/tests/test_security_baseline.py': 'de3e77578a4c426efb60db526a34323ab437d55b',
+              'website/README.md': '3b3ac5554c43c1d43dde99f997e0cd038cab6009',
+              'website/content/toolchain.json': 'fef19d6c8d57abec8e2275c5025fd6c653bf0106',
+              'website/scripts/check-package-manager.mjs': '13fb6e96f6d2f0bace2ca989e118f5cddf861a46',
+              'website/toolchain/package-lock.json': '50541ea81c11bf8fa3461e3cae047215fa99f006',
+              'website/toolchain/package.json': 'e32468d5eab042f36590e45d82a4ad6649b110f0',
+              'website/toolchain/prepare.py': '969df1f661e9c89f15d0affe1aa22fb0c9dbd12c',
+              'website/toolchain/source.json': 'dc7df6a1d12e15bc26658718c4af1eb0d6fc61be',
+              'website/toolchain/tests/test_prepare.py': '7195c689d05eb1a2ab099d4ac0c76e6ad740c668'
           }
-          path = Path('sdk/java-guest/feasibility/dependencies.lock.json')
-          lock = json.loads(path.read_text())
-          count = 0
-          for item in lock['artifacts']:
-              name = item['path'].split('/')[-3]
-              if name in updates:
-                  item['path'] = item['path'].replace('2.18.9', '2.18.10')
-                  item['sha256'], item['size'] = updates[name]
-                  count += 1
-          assert count == 3
-          path.write_text(json.dumps(lock, indent=2) + '\n')
-          path = Path('sdk/java-guest/feasibility/gradle/verification-metadata.xml')
-          text = path.read_text()
-          text, count = re.subn(r'      <component group="com\.fasterxml\.jackson[^\"]*" name="[^\"]+" version="2\.18\.9">.*?</component>\n', '', text, flags=re.S)
-          assert count == 5
-          path.write_text(text)
+          for name, sha in expected.items():
+              raw = (root / name).read_bytes()
+              assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == sha, name
+          (patch_file.parent / 'expected-files.json').write_text(json.dumps(expected))
+          subprocess.run(['git', 'add', '--', *expected], check=True)
+          subprocess.run(['git', 'rm', '--', '.github/workflows/ci-pin-probe-723.yml'], check=True)
+          changed = set(subprocess.check_output(['git', 'diff', '--cached', '--name-only']).decode().splitlines())
+          assert changed == set(expected) | {'.github/workflows/ci-pin-probe-723.yml'}
+          print('EXACT_PATCH_VERIFIED', len(expected))
           PY
-          export GRADLE_USER_HOME="$RUNNER_TEMP/jackson-gradle"
-          "$RUNNER_TEMP/gradle-9.1.0/bin/gradle" --no-daemon -p sdk/java-guest/feasibility --write-verification-metadata sha256 probeJvm generateC
-          "$RUNNER_TEMP/gradle-9.1.0/bin/gradle" --no-daemon -p sdk/java-guest/feasibility --dependency-verification strict clean probeJvm generateC
+      - name: Verify the complete installed graph and focused regressions
+        shell: bash
+        run: |
+          python3 -m venv "$RUNNER_TEMP/validation-venv"
+          "$RUNNER_TEMP/validation-venv/bin/pip" install --require-hashes -r .github/security/requirements.txt
+          "$RUNNER_TEMP/validation-venv/bin/python" -m unittest tools.tests.test_security_baseline -v
+          "$RUNNER_TEMP/validation-venv/bin/python" tools/ci_coverage.py
+          python3 -m unittest discover -s website/toolchain/tests -v
+          python3 -m unittest discover -s sdk/java-guest/tests -p test_dependencies.py -v
+          python3 website/toolchain/prepare.py
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node website/scripts/check-package-manager.mjs
+          "$RUNNER_TEMP/validation-venv/bin/python" tools/security_scan.py dependencies --repo . --tools "$RUNNER_TEMP/scan-tools" --scratch "$RUNNER_TEMP/dependency-scan" > "$RUNNER_TEMP/dependency-scan.json"
+          cat "$RUNNER_TEMP/dependency-scan.json"
+          git diff --cached --check
+      - name: Store verified file blobs only; do not update branches or create commits
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
           python3 - <<'PY'
-          import importlib.util, json, os
-          from pathlib import Path
-          spec = importlib.util.spec_from_file_location('deps', 'sdk/java-guest/tools/dependencies.py')
-          module = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(module)
-          cache = Path(os.environ['GRADLE_USER_HOME']) / 'caches/modules-2/files-2.1'
-          project = Path('sdk/java-guest/feasibility')
-          observed = module.cache_inventory(cache)
-          lock = json.loads((project / 'dependencies.lock.json').read_text())
-          module.verify_inventory(observed, lock, project / 'gradle/verification-metadata.xml')
-          print('STRICT_PATCHED_JAVA_CLOSURE', len(observed['artifacts']), len(lock['artifacts']))
+          import base64, hashlib, json, os, pathlib, urllib.request
+          root = pathlib.Path.cwd()
+          expected = json.loads((pathlib.Path(os.environ['RUNNER_TEMP']) / 'expected-files.json').read_text())
+          for name, sha in expected.items():
+              raw = (root / name).read_bytes()
+              assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == sha, name
+              body = json.dumps({'content': base64.b64encode(raw).decode(), 'encoding': 'base64'}).encode()
+              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs', data=body, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'}, method='POST')
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  result = json.load(response)
+              assert result['sha'] == sha, name
+              print('VERIFIED_BLOB', name, sha)
           PY
-          tar -cf "$RUNNER_TEMP/java-patch.tar" sdk/java-guest/compiler.gradle sdk/java-guest/feasibility/build.gradle sdk/java-guest/feasibility/dependencies.lock.json sdk/java-guest/feasibility/gradle/verification-metadata.xml
-          git diff --stat
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: verified-java-patch
-          path: ${{ runner.temp }}/java-patch.tar
-          if-no-files-found: error
-          retention-days: 1
