@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "NestedPathReplayTests.test_fresh_hash_cannot_replace_the_registered_nested_identity",
+    "NestedPathReplayTests.test_nested_binding_works_for_absolute_relative_and_normalized_roots",
+    "NestedPathReplayTests.test_real_behavior_graph_replays_identically_from_relative_root",
+    "NestedPathReplayTests.test_relative_fix_preserves_path_digest_size_and_registration_rejections",
+    "NestedPathReplayTests.test_whole_backend_suite_and_fresh_relative_cli_replay_match"
+  ],
+  "guards": {
+    "NestedPathReplayTests.test_fresh_hash_cannot_replace_the_registered_nested_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8355afe8366d0d029628ceda6fe5ed6d6ac8fb6dd26d0f99c387fae32c98d1db",
+        "class:setup-sha256:03c8b63ed2e743c94a5350148e79f4c20191064f5592daa3543e2c52955d7dca"
+      ],
+      "skipSites": []
+    },
+    "NestedPathReplayTests.test_nested_binding_works_for_absolute_relative_and_normalized_roots": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8355afe8366d0d029628ceda6fe5ed6d6ac8fb6dd26d0f99c387fae32c98d1db",
+        "class:setup-sha256:03c8b63ed2e743c94a5350148e79f4c20191064f5592daa3543e2c52955d7dca"
+      ],
+      "skipSites": []
+    },
+    "NestedPathReplayTests.test_real_behavior_graph_replays_identically_from_relative_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8355afe8366d0d029628ceda6fe5ed6d6ac8fb6dd26d0f99c387fae32c98d1db",
+        "class:setup-sha256:03c8b63ed2e743c94a5350148e79f4c20191064f5592daa3543e2c52955d7dca"
+      ],
+      "skipSites": []
+    },
+    "NestedPathReplayTests.test_relative_fix_preserves_path_digest_size_and_registration_rejections": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8355afe8366d0d029628ceda6fe5ed6d6ac8fb6dd26d0f99c387fae32c98d1db",
+        "class:setup-sha256:03c8b63ed2e743c94a5350148e79f4c20191064f5592daa3543e2c52955d7dca"
+      ],
+      "skipSites": []
+    },
+    "NestedPathReplayTests.test_whole_backend_suite_and_fresh_relative_cli_replay_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8355afe8366d0d029628ceda6fe5ed6d6ac8fb6dd26d0f99c387fae32c98d1db",
+        "class:setup-sha256:03c8b63ed2e743c94a5350148e79f4c20191064f5592daa3543e2c52955d7dca"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_nested_paths.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

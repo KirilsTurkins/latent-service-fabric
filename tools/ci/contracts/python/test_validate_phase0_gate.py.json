@@ -1,0 +1,366 @@
+{
+  "cases": [
+    "BaselineSourceIdentityTests.test_canonical_identity_mismatch_fails",
+    "BaselineSourceIdentityTests.test_different_commit_with_same_canonical_identity_passes",
+    "BaselineSourceIdentityTests.test_exact_current_commit_still_passes",
+    "BaselineSourceIdentityTests.test_malformed_commit_fails_before_resolution",
+    "BaselineSourceIdentityTests.test_resolution_failure_is_controlled",
+    "Phase0GateEvidenceTests.test_arbitrary_archive_bytes_cannot_substitute_for_raw_soak_evidence",
+    "Phase0GateEvidenceTests.test_baseline_and_soak_require_the_same_canonical_measurement_identity",
+    "Phase0GateEvidenceTests.test_checked_in_calibration_archive_is_lossless",
+    "Phase0GateEvidenceTests.test_checked_in_calibration_is_regenerated_from_raw_runs",
+    "Phase0GateEvidenceTests.test_current_calibration_schema_requires_durable_ref_provenance",
+    "Phase0GateEvidenceTests.test_current_schema_soak_inherits_only_the_omitted_derived_tree_proof",
+    "Phase0GateEvidenceTests.test_current_schema_soak_rejects_mismatched_raw_capsule_and_ref_provenance",
+    "Phase0GateEvidenceTests.test_current_schema_soak_requires_durable_provenance_and_capsule_identity",
+    "Phase0GateEvidenceTests.test_fully_current_receipt_authorizes_and_stale_profile_calibration_blocks_gate",
+    "Phase0GateEvidenceTests.test_historical_calibration_and_soak_archives_are_verified_but_profile_is_not_gate_eligible",
+    "Phase0GateEvidenceTests.test_historical_calibration_fixture_is_integrity_verifiable_but_non_authorizing",
+    "Phase0GateEvidenceTests.test_historical_profile_fixture_is_not_gate_eligible_under_v5_schema",
+    "Phase0GateEvidenceTests.test_identity_blockers_compare_canonical_measurement_and_source_provenance",
+    "Phase0GateEvidenceTests.test_passing_summary_fields_cannot_authorize_without_raw_evidence",
+    "Phase0GateEvidenceTests.test_profile_receipt_propagates_validated_durable_source_provenance",
+    "Phase0GateEvidenceTests.test_profile_rejects_mismatched_execution_provenance_and_full_proof",
+    "Phase0GateEvidenceTests.test_profile_reverification_preserves_reference_and_experiment_run_counts",
+    "Phase0GateEvidenceTests.test_safe_extractor_rejects_duplicate_normalized_paths",
+    "Phase0GateEvidenceTests.test_safe_extractor_rejects_path_traversal_and_links",
+    "Phase0GateEvidenceTests.test_smoke_baseline_can_pass_validation_but_never_authorize",
+    "Phase0GateEvidenceTests.test_smoke_workload_cannot_be_relabelled_as_a_full_baseline"
+  ],
+  "guards": {
+    "BaselineSourceIdentityTests.test_canonical_identity_mismatch_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "patch('tools.validate_phase0_gate.execution_evidence_identity_for_commit')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:5c8c6b2ce09d1c099f2a22a62a9d6a4a18bf2df2554d045c7527199d03800808"
+      ],
+      "skipSites": []
+    },
+    "BaselineSourceIdentityTests.test_different_commit_with_same_canonical_identity_passes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "patch('tools.validate_phase0_gate.execution_evidence_identity_for_commit')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:5c8c6b2ce09d1c099f2a22a62a9d6a4a18bf2df2554d045c7527199d03800808"
+      ],
+      "skipSites": []
+    },
+    "BaselineSourceIdentityTests.test_exact_current_commit_still_passes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "patch('tools.validate_phase0_gate.execution_evidence_identity_for_commit')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:5c8c6b2ce09d1c099f2a22a62a9d6a4a18bf2df2554d045c7527199d03800808"
+      ],
+      "skipSites": []
+    },
+    "BaselineSourceIdentityTests.test_malformed_commit_fails_before_resolution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:5c8c6b2ce09d1c099f2a22a62a9d6a4a18bf2df2554d045c7527199d03800808"
+      ],
+      "skipSites": []
+    },
+    "BaselineSourceIdentityTests.test_resolution_failure_is_controlled": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "patch('tools.validate_phase0_gate.execution_evidence_identity_for_commit')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:5c8c6b2ce09d1c099f2a22a62a9d6a4a18bf2df2554d045c7527199d03800808"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_arbitrary_archive_bytes_cannot_substitute_for_raw_soak_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_baseline_and_soak_require_the_same_canonical_measurement_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_checked_in_calibration_archive_is_lossless": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('zstd'), 'zstd is required for archive integration verification')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": [
+        "skip-control-sha256:92ed8bf5447eb11aa3d09c148e03f88c90a88c954f8ef62f05e05b6fdf4ad9a7",
+        "unittest.skipUnless(shutil.which('zstd'), 'zstd is required for archive integration verification')"
+      ]
+    },
+    "Phase0GateEvidenceTests.test_checked_in_calibration_is_regenerated_from_raw_runs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_current_calibration_schema_requires_durable_ref_provenance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_current_schema_soak_inherits_only_the_omitted_derived_tree_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_current_schema_soak_rejects_mismatched_raw_capsule_and_ref_provenance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_current_schema_soak_requires_durable_provenance_and_capsule_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_fully_current_receipt_authorizes_and_stale_profile_calibration_blocks_gate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_historical_calibration_and_soak_archives_are_verified_but_profile_is_not_gate_eligible": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('zstd'), 'zstd is required for archive integration verification')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": [
+        "skip-control-sha256:e183e91f7e153773e4e59273680fcbb2612b25269bdb8158db7a87eb72726d80",
+        "unittest.skipUnless(shutil.which('zstd'), 'zstd is required for archive integration verification')"
+      ]
+    },
+    "Phase0GateEvidenceTests.test_historical_calibration_fixture_is_integrity_verifiable_but_non_authorizing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_historical_profile_fixture_is_not_gate_eligible_under_v5_schema": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_identity_blockers_compare_canonical_measurement_and_source_provenance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_passing_summary_fields_cannot_authorize_without_raw_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_profile_receipt_propagates_validated_durable_source_provenance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_profile_rejects_mismatched_execution_provenance_and_full_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_profile_reverification_preserves_reference_and_experiment_run_counts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_safe_extractor_rejects_duplicate_normalized_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_safe_extractor_rejects_path_traversal_and_links": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_smoke_baseline_can_pass_validation_but_never_authorize": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    },
+    "Phase0GateEvidenceTests.test_smoke_workload_cannot_be_relabelled_as_a_full_baseline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b2e6ebc15a23a7c6ff1999fd34c4cef19c859cf428fcf7b76730b90272bc3ad5",
+        "class:setup-sha256:1d5d737f58522039cd3c14e13a85b9a1b7970a08ef6d075c4130fdf0de74c580"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_validate_phase0_gate.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

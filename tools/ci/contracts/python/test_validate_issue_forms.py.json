@@ -1,0 +1,263 @@
+{
+  "cases": [
+    "IssueFormValidationTests.test_alias_anchor_tag_and_directive_features_are_rejected",
+    "IssueFormValidationTests.test_both_label_representations_and_empty_optional_text_are_supported",
+    "IssueFormValidationTests.test_chooser_can_be_added_and_known_files_deleted",
+    "IssueFormValidationTests.test_config_rejects_string_boolean_and_non_https_or_credentialed_urls",
+    "IssueFormValidationTests.test_depth_collection_node_and_string_boundaries",
+    "IssueFormValidationTests.test_document_and_scalar_errors_fail_cleanly_at_the_cli",
+    "IssueFormValidationTests.test_duplicate_ids_unknown_attributes_and_string_boolean_are_rejected",
+    "IssueFormValidationTests.test_flow_depth_and_node_budgets_apply_before_construction",
+    "IssueFormValidationTests.test_invalid_utf8_directory_and_fifo_are_rejected",
+    "IssueFormValidationTests.test_malformed_contact_urls_are_validation_errors",
+    "IssueFormValidationTests.test_malformed_duplicate_and_multiple_documents_are_rejected",
+    "IssueFormValidationTests.test_nested_duplicates_and_non_string_mapping_keys_fail_closed",
+    "IssueFormValidationTests.test_read_is_bounded_even_when_file_growth_is_hidden_by_metadata",
+    "IssueFormValidationTests.test_repository_forms_pass_with_the_current_optional_inventory",
+    "IssueFormValidationTests.test_size_depth_and_unsafe_file_types_are_rejected",
+    "IssueFormValidationTests.test_supported_subset_requires_user_input_and_valid_ids",
+    "IssueFormValidationTests.test_symlinked_template_directory_is_not_followed",
+    "IssueFormValidationTests.test_unknown_structures_and_wrong_optional_types_are_rejected",
+    "IssueFormValidationTests.test_valid_optional_config_uses_https_contact_links"
+  ],
+  "guards": {
+    "IssueFormValidationTests.test_alias_anchor_tag_and_directive_features_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_both_label_representations_and_empty_optional_text_are_supported": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_chooser_can_be_added_and_known_files_deleted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_config_rejects_string_boolean_and_non_https_or_credentialed_urls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_depth_collection_node_and_string_boundaries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_document_and_scalar_errors_fail_cleanly_at_the_cli": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_duplicate_ids_unknown_attributes_and_string_boolean_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_flow_depth_and_node_budgets_apply_before_construction": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_invalid_utf8_directory_and_fifo_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_malformed_contact_urls_are_validation_errors": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_malformed_duplicate_and_multiple_documents_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_nested_duplicates_and_non_string_mapping_keys_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_read_is_bounded_even_when_file_growth_is_hidden_by_metadata": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_repository_forms_pass_with_the_current_optional_inventory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_size_depth_and_unsafe_file_types_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": [
+        "self.skipTest('symlinks unavailable')",
+        "skip-control-sha256:0a97693fd56a99506a43d7c9f76a3154e0d71a3a6c0eee59dfa7bf8d6c31d17b"
+      ]
+    },
+    "IssueFormValidationTests.test_supported_subset_requires_user_input_and_valid_ids": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_symlinked_template_directory_is_not_followed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": [
+        "self.skipTest('symlinks unavailable')",
+        "skip-control-sha256:c51e832ad53c76037de685b527cc768dccab5fb9f57788222f26ade9cd03aa80"
+      ]
+    },
+    "IssueFormValidationTests.test_unknown_structures_and_wrong_optional_types_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    },
+    "IssueFormValidationTests.test_valid_optional_config_uses_https_contact_links": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6fff2e486b8b6f363b44924080d903de59c0593d83225383a45cf75b51d71ce",
+        "class:setup-sha256:14441d3c5f3afb54dcafaafd530c6057bb5bc9dd1df6fa88bf5320a1e6e0df47"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_validate_issue_forms.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

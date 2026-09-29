@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "PublisherTrustSchemaTests.test_envelope_has_one_signature_and_canonical_bounded_base64",
+    "PublisherTrustSchemaTests.test_every_structural_field_is_required_and_unknown_fields_are_rejected",
+    "PublisherTrustSchemaTests.test_explicit_revocation_sets_reject_duplicates_and_overflow",
+    "PublisherTrustSchemaTests.test_external_signature_fixture_exact_association",
+    "PublisherTrustSchemaTests.test_policy_key_shape_and_hard_array_ceiling",
+    "PublisherTrustSchemaTests.test_unsigned_integer_and_identity_boundaries"
+  ],
+  "guards": {
+    "PublisherTrustSchemaTests.test_envelope_has_one_signature_and_canonical_bounded_base64": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f676c6372f14b78972d05419e36b71dbc7b8424fcdcc615ce5759fc6a9159ad7",
+        "class:setup-sha256:f96c14e953be34d92b747f34a1176ab6b49a345a2d2e0635234e5c9953872c3f"
+      ],
+      "skipSites": []
+    },
+    "PublisherTrustSchemaTests.test_every_structural_field_is_required_and_unknown_fields_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f676c6372f14b78972d05419e36b71dbc7b8424fcdcc615ce5759fc6a9159ad7",
+        "class:setup-sha256:f96c14e953be34d92b747f34a1176ab6b49a345a2d2e0635234e5c9953872c3f"
+      ],
+      "skipSites": []
+    },
+    "PublisherTrustSchemaTests.test_explicit_revocation_sets_reject_duplicates_and_overflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f676c6372f14b78972d05419e36b71dbc7b8424fcdcc615ce5759fc6a9159ad7",
+        "class:setup-sha256:f96c14e953be34d92b747f34a1176ab6b49a345a2d2e0635234e5c9953872c3f"
+      ],
+      "skipSites": []
+    },
+    "PublisherTrustSchemaTests.test_external_signature_fixture_exact_association": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f676c6372f14b78972d05419e36b71dbc7b8424fcdcc615ce5759fc6a9159ad7",
+        "class:setup-sha256:f96c14e953be34d92b747f34a1176ab6b49a345a2d2e0635234e5c9953872c3f"
+      ],
+      "skipSites": []
+    },
+    "PublisherTrustSchemaTests.test_policy_key_shape_and_hard_array_ceiling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f676c6372f14b78972d05419e36b71dbc7b8424fcdcc615ce5759fc6a9159ad7",
+        "class:setup-sha256:f96c14e953be34d92b747f34a1176ab6b49a345a2d2e0635234e5c9953872c3f"
+      ],
+      "skipSites": []
+    },
+    "PublisherTrustSchemaTests.test_unsigned_integer_and_identity_boundaries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f676c6372f14b78972d05419e36b71dbc7b8424fcdcc615ce5759fc6a9159ad7",
+        "class:setup-sha256:f96c14e953be34d92b747f34a1176ab6b49a345a2d2e0635234e5c9953872c3f"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_publisher_trust_schemas.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

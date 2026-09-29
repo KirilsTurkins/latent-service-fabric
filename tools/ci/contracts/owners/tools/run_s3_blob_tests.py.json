@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_s3_blob_tests.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b91f43999f1eebdf3c0180eecd7302a67ba45bba2c21b51a66eed4ecb365ea21"
+}

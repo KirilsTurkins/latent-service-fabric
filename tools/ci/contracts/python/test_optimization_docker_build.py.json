@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "DockerBuildBindings.test_changed_source_recipe_or_unclean_owner_cannot_qualify_build",
+    "DockerBuildBindings.test_source_closure_includes_authoritative_metadata_and_excludes_historical_archives",
+    "DockerBuildBindings.test_source_recipe_and_exact_byte_receipt_accepts_then_tamper_rejects"
+  ],
+  "guards": {
+    "DockerBuildBindings.test_changed_source_recipe_or_unclean_owner_cannot_qualify_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5702697475c384e38f5829ae5e0dee6e642f9f87e66c589d4b41933fff27d0b9",
+        "class:setup-sha256:e47d3d9349e041dade5721881566b0b8781b66a362e065dcc73f4b21312db5ec"
+      ],
+      "skipSites": []
+    },
+    "DockerBuildBindings.test_source_closure_includes_authoritative_metadata_and_excludes_historical_archives": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5702697475c384e38f5829ae5e0dee6e642f9f87e66c589d4b41933fff27d0b9",
+        "class:setup-sha256:e47d3d9349e041dade5721881566b0b8781b66a362e065dcc73f4b21312db5ec"
+      ],
+      "skipSites": []
+    },
+    "DockerBuildBindings.test_source_recipe_and_exact_byte_receipt_accepts_then_tamper_rejects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5702697475c384e38f5829ae5e0dee6e642f9f87e66c589d4b41933fff27d0b9",
+        "class:setup-sha256:e47d3d9349e041dade5721881566b0b8781b66a362e065dcc73f4b21312db5ec"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_docker_build.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

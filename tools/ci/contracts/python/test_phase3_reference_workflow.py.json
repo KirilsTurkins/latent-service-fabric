@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "ReferenceBuildTests.test_reference_fixture_rejects_wrapper_only_releases",
+    "ReferenceBuildTests.test_reference_inputs_request_one_capability_but_never_claim_principal_authority",
+    "ReferenceBuildTests.test_releases_capture_different_maintained_version_sources",
+    "ReferenceCellBypassTests.test_lease_age_can_advance_without_admitting_a_render",
+    "ReferencePeerTests.test_only_complete_authorized_bounded_get_profile_is_accepted",
+    "ReferencePeerTests.test_unbounded_ambiguous_or_body_bearing_requests_are_rejected",
+    "ReferencePromotionTests.test_rejection_is_observed_without_replaying_or_fabricating_certainty"
+  ],
+  "guards": {
+    "ReferenceBuildTests.test_reference_fixture_rejects_wrapper_only_releases": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c0a8b6d8273e2ca37a260cc7ba7fa3c5784a4901360fcbe53ba785825923c5e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReferenceBuildTests.test_reference_inputs_request_one_capability_but_never_claim_principal_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c0a8b6d8273e2ca37a260cc7ba7fa3c5784a4901360fcbe53ba785825923c5e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReferenceBuildTests.test_releases_capture_different_maintained_version_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c0a8b6d8273e2ca37a260cc7ba7fa3c5784a4901360fcbe53ba785825923c5e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReferenceCellBypassTests.test_lease_age_can_advance_without_admitting_a_render": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c0a8b6d8273e2ca37a260cc7ba7fa3c5784a4901360fcbe53ba785825923c5e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReferencePeerTests.test_only_complete_authorized_bounded_get_profile_is_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c0a8b6d8273e2ca37a260cc7ba7fa3c5784a4901360fcbe53ba785825923c5e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReferencePeerTests.test_unbounded_ambiguous_or_body_bearing_requests_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c0a8b6d8273e2ca37a260cc7ba7fa3c5784a4901360fcbe53ba785825923c5e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReferencePromotionTests.test_rejection_is_observed_without_replaying_or_fabricating_certainty": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c0a8b6d8273e2ca37a260cc7ba7fa3c5784a4901360fcbe53ba785825923c5e9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase3_reference_workflow.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

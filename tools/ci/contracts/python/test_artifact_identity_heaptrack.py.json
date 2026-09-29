@@ -1,0 +1,192 @@
+{
+  "cases": [
+    "HeaptrackReplayTests.test_all_reference_tables_are_checked",
+    "HeaptrackReplayTests.test_bytes_lines_records_and_tables_have_independent_bounds",
+    "HeaptrackReplayTests.test_complete_footer_is_required_and_consistent",
+    "HeaptrackReplayTests.test_headers_reject_unknown_version_missing_fields_and_attachment",
+    "HeaptrackReplayTests.test_invalid_record_bytes_and_non_regular_inputs_are_rejected",
+    "HeaptrackReplayTests.test_missing_free_reference_or_live_owner_is_rejected",
+    "HeaptrackReplayTests.test_peak_is_global_live_bytes_not_sum_of_separate_peaks",
+    "HeaptrackReplayTests.test_raw_remaining_totals_ignore_declared_leak_suppression",
+    "HeaptrackReplayTests.test_record_numbers_and_shapes_are_strict",
+    "HeaptrackReplayTests.test_shared_allocation_info_counts_live_multiplicity",
+    "HeaptrackReplayTests.test_supported_instruction_variants_and_raw_string_byte_lengths",
+    "HeaptrackReplayTests.test_timestamps_are_monotonic_and_required",
+    "HeaptrackReplayTests.test_unsigned_64_bit_counter_overflow_is_rejected",
+    "HeaptrackReplayTests.test_zero_size_allocations_still_require_matching_frees"
+  ],
+  "guards": {
+    "HeaptrackReplayTests.test_all_reference_tables_are_checked": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_bytes_lines_records_and_tables_have_independent_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_complete_footer_is_required_and_consistent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_headers_reject_unknown_version_missing_fields_and_attachment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_invalid_record_bytes_and_non_regular_inputs_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_missing_free_reference_or_live_owner_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_peak_is_global_live_bytes_not_sum_of_separate_peaks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_raw_remaining_totals_ignore_declared_leak_suppression": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_record_numbers_and_shapes_are_strict": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_shared_allocation_info_counts_live_multiplicity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_supported_instruction_variants_and_raw_string_byte_lengths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_timestamps_are_monotonic_and_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_unsigned_64_bit_counter_overflow_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    },
+    "HeaptrackReplayTests.test_zero_size_allocations_still_require_matching_frees": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f071335e0c44d1f2b309c356ff753d8f87ca3e312ca71e05c1b113a7d8f1cfe",
+        "class:setup-sha256:5b6497b0ff2de4fc86f4b40b9b6c2fd9bdb89b6f8740da797c4702bb0c453f56"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_artifact_identity_heaptrack.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

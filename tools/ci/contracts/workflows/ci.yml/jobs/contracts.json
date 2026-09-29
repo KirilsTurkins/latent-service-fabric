@@ -1,0 +1,264 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/ci.yml:contracts:Install Python validator dependencies": {
+      "job": "contracts",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Install Python validator dependencies",
+      "run": "python -m pip install --requirement tools/requirements.lock",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:contracts:Install verified guest binding generator": {
+      "job": "contracts",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Install verified guest binding generator",
+      "run": "python3 tools/install_guest_bindgen.py \"${RUNNER_TEMP}/lsf-guest-tools\" >> \"${GITHUB_PATH}\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:contracts:Record echo capsule build evidence": {
+      "job": "contracts",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Record echo capsule build evidence",
+      "run": "cat target/capsules/echo/build.json\ncat target/capsules/echo/sha256.txt",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:contracts:Validate contracts, echo component, and generated bindings": {
+      "job": "contracts",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Validate contracts, echo component, and generated bindings",
+      "run": "unset CARGO_INCREMENTAL\ntools/validate_contracts.sh",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": {
+      "job": "contracts",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Validate standalone optimization benchmark smoke",
+      "run": "unset CARGO_INCREMENTAL\npython3 tools/run_optimization_benchmarks.py --profile smoke",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/ci.yml:contracts:Install Python validator dependencies": {
+      "after": ".github/workflows/ci.yml:contracts:Install Python validator dependencies",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/ci.yml:contracts:Install verified guest binding generator": {
+      "after": ".github/workflows/ci.yml:contracts:Install verified guest binding generator",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/ci.yml:contracts:Record echo capsule build evidence": {
+      "after": ".github/workflows/ci.yml:contracts:Record echo capsule build evidence",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/ci.yml:contracts:Validate contracts, echo component, and generated bindings": {
+      "after": ".github/workflows/ci.yml:contracts:Validate contracts, echo component, and generated bindings",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": {
+      "after": ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "if": "needs.profile.outputs.profile == 'full'",
+    "name": "Repository contracts",
+    "needs": "profile",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "cache": "pip",
+          "cache-dependency-path": "tools/requirements.lock",
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install Python validator dependencies",
+        "run": "python -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-wasip2,wasm32-unknown-unknown"
+        }
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
+          "prefix-key": "lsf-ci-dependencies-v1",
+          "save-if": "${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||\n    (github.event_name == 'workflow_dispatch' &&\n     (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "bufbuild/buf-setup-action",
+        "with": {
+          "github_token": "${{ github.token }}",
+          "version": "1.72.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install verified guest binding generator",
+        "run": "python3 tools/install_guest_bindgen.py \"${RUNNER_TEMP}/lsf-guest-tools\" >> \"${GITHUB_PATH}\""
+      },
+      {
+        "name": "Set up the Node SDK provider participant",
+        "uses": "actions/setup-node",
+        "with": {
+          "cache": "npm",
+          "cache-dependency-path": "sdk/typescript-client/package-lock.json",
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "name": "Set up the Go SDK provider participant",
+        "uses": "actions/setup-go",
+        "with": {
+          "cache-dependency-path": "sdk/go/go.sum",
+          "go-version": "1.27.1"
+        }
+      },
+      {
+        "name": "Set up the Java SDK provider participant",
+        "uses": "actions/setup-java",
+        "with": {
+          "distribution": "temurin",
+          "java-version": "25.0.4+101.0.LTS"
+        }
+      },
+      {
+        "name": "Set up the .NET SDK provider participant",
+        "uses": "actions/setup-dotnet",
+        "with": {
+          "dotnet-version": "8.0.425"
+        }
+      },
+      {
+        "name": "Validate contracts, echo component, and generated bindings",
+        "run": "unset CARGO_INCREMENTAL\ntools/validate_contracts.sh\n"
+      },
+      {
+        "name": "Pass bounded observed build inputs to registry verification",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "phase-2-observed-echo-${{ github.sha }}",
+          "path": "target/capsules/echo-provenance/",
+          "retention-days": 1
+        }
+      },
+      {
+        "name": "Pass the bounded public web component to registry verification",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "phase-3-web-contract-${{ github.sha }}",
+          "path": "target/capsules/web-contract/component.wasm",
+          "retention-days": 1
+        }
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded conformance and provider diagnostics",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "phase-1-bounded-conformance-${{ github.sha }}",
+          "path": "target/phase1-conformance/\ntarget/phase3-management/provider-receipt.json\ntarget/phase3-sdk/\n",
+          "retention-days": 14
+        }
+      },
+      {
+        "if": "always()",
+        "name": "Retain Phase 1 measurement collector smoke diagnostics",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "phase-1-measurement-smoke-${{ github.sha }}",
+          "path": "target/phase1-measurements/",
+          "retention-days": 14
+        }
+      },
+      {
+        "name": "Validate standalone optimization benchmark smoke",
+        "run": "unset CARGO_INCREMENTAL\npython3 tools/run_optimization_benchmarks.py --profile smoke\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain optimization benchmark smoke evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "phase-1-optimization-smoke-${{ github.sha }}",
+          "path": "target/optimization-benchmarks/",
+          "retention-days": 14
+        }
+      },
+      {
+        "name": "Record echo capsule build evidence",
+        "run": "cat target/capsules/echo/build.json\ncat target/capsules/echo/sha256.txt\n"
+      },
+      {
+        "name": "Upload echo capsule build evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "phase-0-echo-capsule-${{ github.sha }}",
+          "path": "target/capsules/echo/echo-capsule.wasm\ntarget/capsules/echo/capsule.json\ntarget/capsules/echo/build.json\ntarget/capsules/echo/interface.json\ntarget/capsules/echo/interface/\ntarget/capsules/echo/sha256.txt\n",
+          "retention-days": 14
+        }
+      }
+    ]
+  },
+  "jobId": "contracts",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/ci.yml"
+}

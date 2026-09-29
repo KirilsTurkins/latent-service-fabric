@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "KubectlArchive.test_exact_member_hash_and_worker_hash_all_bind",
+    "KubectlArchive.test_rehashed_extra_member_or_crossed_stat_header_rejected",
+    "OriginalBootstrapJournal.test_incomplete_transport_clock_or_worker_result_cannot_qualify",
+    "OriginalBootstrapJournal.test_original_fourteen_operations_replay_without_keys_binaries_or_api",
+    "OriginalBootstrapJournal.test_rehashed_crossed_node_uid_alias_and_path_are_rejected",
+    "WindowsSetupCommands.test_original_outputs_and_rehashed_active_job_failure"
+  ],
+  "guards": {
+    "KubectlArchive.test_exact_member_hash_and_worker_hash_all_bind": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a",
+        "class:setup-sha256:8a80b5c5f75e50209c709884e1f8c7e305db11368afdda95f4c9921384d9beea"
+      ],
+      "skipSites": []
+    },
+    "KubectlArchive.test_rehashed_extra_member_or_crossed_stat_header_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a",
+        "class:setup-sha256:8a80b5c5f75e50209c709884e1f8c7e305db11368afdda95f4c9921384d9beea"
+      ],
+      "skipSites": []
+    },
+    "OriginalBootstrapJournal.test_incomplete_transport_clock_or_worker_result_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a",
+        "class:setup-sha256:133e3aef353812bb6c98978f8c614a25739e98f0f04c9f145547200595c243fe"
+      ],
+      "skipSites": []
+    },
+    "OriginalBootstrapJournal.test_original_fourteen_operations_replay_without_keys_binaries_or_api": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a",
+        "class:setup-sha256:133e3aef353812bb6c98978f8c614a25739e98f0f04c9f145547200595c243fe"
+      ],
+      "skipSites": []
+    },
+    "OriginalBootstrapJournal.test_rehashed_crossed_node_uid_alias_and_path_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a",
+        "class:setup-sha256:133e3aef353812bb6c98978f8c614a25739e98f0f04c9f145547200595c243fe"
+      ],
+      "skipSites": []
+    },
+    "WindowsSetupCommands.test_original_outputs_and_rehashed_active_job_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5f43636bcda5f63793b1a99d77b3a2754c16b889cd9a629fea1a3f3653566c4a",
+        "class:setup-sha256:958a38d5fb778b494a768c175f28b7dfb1f9fa07cb262d1c466a28889da0f275"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_bootstrap_evidence.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

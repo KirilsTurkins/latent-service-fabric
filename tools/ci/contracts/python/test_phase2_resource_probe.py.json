@@ -1,0 +1,93 @@
+{
+  "cases": [
+    "ProcSnapshotTests.test_continuous_disappearance_has_a_finite_attempt_bound",
+    "ProcSnapshotTests.test_disappearance_does_not_refresh_the_original_deadline",
+    "ProcSnapshotTests.test_disappearance_does_not_reset_aggregate_read_bytes",
+    "ProcSnapshotTests.test_fd_closing_during_enumeration_requires_a_new_complete_snapshot",
+    "ProcSnapshotTests.test_other_io_failures_remain_visible",
+    "ProcSnapshotTests.test_owner_exit_is_not_treated_as_a_transient_entry"
+  ],
+  "guards": {
+    "ProcSnapshotTests.test_continuous_disappearance_has_a_finite_attempt_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:979fd131a5b218a17a744a21285995b66df939dbed0d0268d0e211e655bfa772",
+        "class:setup-sha256:59892038950b73ef5207d9a964ecd4459dd4bad9c93e927bb2d19ccb0eb14ac9"
+      ],
+      "skipSites": []
+    },
+    "ProcSnapshotTests.test_disappearance_does_not_refresh_the_original_deadline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:979fd131a5b218a17a744a21285995b66df939dbed0d0268d0e211e655bfa772",
+        "class:setup-sha256:59892038950b73ef5207d9a964ecd4459dd4bad9c93e927bb2d19ccb0eb14ac9"
+      ],
+      "skipSites": []
+    },
+    "ProcSnapshotTests.test_disappearance_does_not_reset_aggregate_read_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:979fd131a5b218a17a744a21285995b66df939dbed0d0268d0e211e655bfa772",
+        "class:setup-sha256:59892038950b73ef5207d9a964ecd4459dd4bad9c93e927bb2d19ccb0eb14ac9"
+      ],
+      "skipSites": []
+    },
+    "ProcSnapshotTests.test_fd_closing_during_enumeration_requires_a_new_complete_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'requires an owned Linux proc process')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:979fd131a5b218a17a744a21285995b66df939dbed0d0268d0e211e655bfa772",
+        "class:setup-sha256:59892038950b73ef5207d9a964ecd4459dd4bad9c93e927bb2d19ccb0eb14ac9"
+      ],
+      "skipSites": [
+        "skip-control-sha256:d1f6da117fd6e363b5d9eef6ad8ac9e8193012cb98c67d6c1d3e3125ebc3fa97",
+        "unittest.skipUnless(sys.platform == 'linux', 'requires an owned Linux proc process')"
+      ]
+    },
+    "ProcSnapshotTests.test_other_io_failures_remain_visible": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:979fd131a5b218a17a744a21285995b66df939dbed0d0268d0e211e655bfa772",
+        "class:setup-sha256:59892038950b73ef5207d9a964ecd4459dd4bad9c93e927bb2d19ccb0eb14ac9"
+      ],
+      "skipSites": []
+    },
+    "ProcSnapshotTests.test_owner_exit_is_not_treated_as_a_transient_entry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:979fd131a5b218a17a744a21285995b66df939dbed0d0268d0e211e655bfa772",
+        "class:setup-sha256:59892038950b73ef5207d9a964ecd4459dd4bad9c93e927bb2d19ccb0eb14ac9"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase2_resource_probe.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

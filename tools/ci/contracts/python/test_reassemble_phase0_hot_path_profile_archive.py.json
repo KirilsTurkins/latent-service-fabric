@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "ReassembleHotPathArchiveTests.test_checked_in_zstd_archive_and_manifest_are_valid",
+    "ReassembleHotPathArchiveTests.test_reassembles_verified_portable_parts",
+    "ReassembleHotPathArchiveTests.test_reassembles_verified_profile_parts_without_overwriting_output",
+    "ReassembleHotPathArchiveTests.test_rejects_a_fragment_above_the_connector_transport_limit"
+  ],
+  "guards": {
+    "ReassembleHotPathArchiveTests.test_checked_in_zstd_archive_and_manifest_are_valid": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e3030dfa72cfc418b8c675e61570eb6d620685553ce8e5ff47e1f3b106a6f0f1",
+        "class:setup-sha256:130252446476573fa7348ff0c398c6d56bd1d8c651abcc55423dc8e70de8a746"
+      ],
+      "skipSites": []
+    },
+    "ReassembleHotPathArchiveTests.test_reassembles_verified_portable_parts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e3030dfa72cfc418b8c675e61570eb6d620685553ce8e5ff47e1f3b106a6f0f1",
+        "class:setup-sha256:130252446476573fa7348ff0c398c6d56bd1d8c651abcc55423dc8e70de8a746"
+      ],
+      "skipSites": []
+    },
+    "ReassembleHotPathArchiveTests.test_reassembles_verified_profile_parts_without_overwriting_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e3030dfa72cfc418b8c675e61570eb6d620685553ce8e5ff47e1f3b106a6f0f1",
+        "class:setup-sha256:130252446476573fa7348ff0c398c6d56bd1d8c651abcc55423dc8e70de8a746"
+      ],
+      "skipSites": []
+    },
+    "ReassembleHotPathArchiveTests.test_rejects_a_fragment_above_the_connector_transport_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e3030dfa72cfc418b8c675e61570eb6d620685553ce8e5ff47e1f3b106a6f0f1",
+        "class:setup-sha256:130252446476573fa7348ff0c398c6d56bd1d8c651abcc55423dc8e70de8a746"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_reassemble_phase0_hot_path_profile_archive.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

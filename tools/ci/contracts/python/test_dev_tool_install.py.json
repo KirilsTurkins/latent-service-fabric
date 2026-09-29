@@ -1,0 +1,100 @@
+{
+  "cases": [
+    "GuestTools.test_changed_completed_payload_is_rejected_and_not_implicitly_repaired",
+    "GuestTools.test_install_reuse_exact_pins_and_purge_preserves_source",
+    "GuestTools.test_interrupted_extraction_requires_explicit_resume_and_reauthentication",
+    "GuestTools.test_rejected_authentication_never_extracts_or_selects_tools",
+    "GuestTools.test_unsafe_partial_payload_cannot_be_followed_or_purged",
+    "GuestTools.test_wrong_version_or_verifier_rejected_before_transfer"
+  ],
+  "guards": {
+    "GuestTools.test_changed_completed_payload_is_rejected_and_not_implicitly_repaired": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'private Linux compiler installation')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f32e7f9c5168054a7aa3a7851bce2455348428039db9808e8bc01eaa80c7de",
+        "class:setup-sha256:e9b3c6288d80becaf7bcd4debbd4b2ca8a709a09bc8e336420a583759e8ebdf6"
+      ],
+      "skipSites": []
+    },
+    "GuestTools.test_install_reuse_exact_pins_and_purge_preserves_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'private Linux compiler installation')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f32e7f9c5168054a7aa3a7851bce2455348428039db9808e8bc01eaa80c7de",
+        "class:setup-sha256:e9b3c6288d80becaf7bcd4debbd4b2ca8a709a09bc8e336420a583759e8ebdf6"
+      ],
+      "skipSites": []
+    },
+    "GuestTools.test_interrupted_extraction_requires_explicit_resume_and_reauthentication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'private Linux compiler installation')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f32e7f9c5168054a7aa3a7851bce2455348428039db9808e8bc01eaa80c7de",
+        "class:setup-sha256:e9b3c6288d80becaf7bcd4debbd4b2ca8a709a09bc8e336420a583759e8ebdf6"
+      ],
+      "skipSites": []
+    },
+    "GuestTools.test_rejected_authentication_never_extracts_or_selects_tools": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'private Linux compiler installation')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f32e7f9c5168054a7aa3a7851bce2455348428039db9808e8bc01eaa80c7de",
+        "class:setup-sha256:e9b3c6288d80becaf7bcd4debbd4b2ca8a709a09bc8e336420a583759e8ebdf6"
+      ],
+      "skipSites": []
+    },
+    "GuestTools.test_unsafe_partial_payload_cannot_be_followed_or_purged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'private Linux compiler installation')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f32e7f9c5168054a7aa3a7851bce2455348428039db9808e8bc01eaa80c7de",
+        "class:setup-sha256:e9b3c6288d80becaf7bcd4debbd4b2ca8a709a09bc8e336420a583759e8ebdf6"
+      ],
+      "skipSites": []
+    },
+    "GuestTools.test_wrong_version_or_verifier_rejected_before_transfer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'private Linux compiler installation')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:78f32e7f9c5168054a7aa3a7851bce2455348428039db9808e8bc01eaa80c7de",
+        "class:setup-sha256:e9b3c6288d80becaf7bcd4debbd4b2ca8a709a09bc8e336420a583759e8ebdf6"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_tool_install.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

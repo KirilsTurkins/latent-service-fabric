@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/check_testkit_dependencies.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "eb61e1a2502a110a9331caad2922f219a82a7106c8a6892d851edfb333e49008"
+}

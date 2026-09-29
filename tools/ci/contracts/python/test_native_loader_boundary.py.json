@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators",
+    "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function",
+    "NativeLoaderBoundaryTests.test_engine_update_requires_review",
+    "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof",
+    "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe",
+    "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled",
+    "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact",
+    "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints",
+    "NativeLoaderBoundaryTests.test_reviewed_boundary_passes",
+    "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail"
+  ],
+  "guards": {
+    "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    },
+    "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    },
+    "NativeLoaderBoundaryTests.test_engine_update_requires_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    },
+    "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    },
+    "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    },
+    "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    },
+    "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    },
+    "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    },
+    "NativeLoaderBoundaryTests.test_reviewed_boundary_passes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    },
+    "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:a590145ac1ecaf1d436b365d7745a6fcb42788589779c0f511fb47dbfd2d5002"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_native_loader_boundary.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

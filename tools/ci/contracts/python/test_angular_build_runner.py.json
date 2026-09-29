@@ -1,0 +1,23 @@
+{
+  "cases": [
+    "AngularHarnessTests.test_source_ownership_separates_same_named_integration_targets_and_requires_successful_build"
+  ],
+  "guards": {
+    "AngularHarnessTests.test_source_ownership_separates_same_named_integration_targets_and_requires_successful_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:62b5683c4613752aef3ca60bfb346213519f05e08676f9c2acf0d9a7c13c7c3b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_angular_build_runner.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

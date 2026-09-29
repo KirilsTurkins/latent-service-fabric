@@ -1,0 +1,23 @@
+{
+  "cases": [
+    "CatalogEnvelopeTests.test_envelopes_accept_the_fixed_plans_and_reject_outside_bounds"
+  ],
+  "guards": {
+    "CatalogEnvelopeTests.test_envelopes_accept_the_fixed_plans_and_reject_outside_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:37a6faa1349862be64809cd97b2a1faad4676388f3e6ea0ad3ac397f77fcc887",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_catalog_schemas.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,45 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": "${{ github.event_name == 'pull_request' }}",
+      "group": "security-${{ github.workflow }}-${{ github.ref }}"
+    },
+    "name": "Security baseline",
+    "on": {
+      "pull_request": {
+        "branches": [
+          "development",
+          "release"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development",
+          "release"
+        ]
+      },
+      "schedule": [
+        {
+          "cron": "23 4 * * 1"
+        }
+      ],
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "dependencies",
+    "result",
+    "rustsec",
+    "scope",
+    "secrets",
+    "self-test",
+    "static"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/security-baseline.yml"
+}

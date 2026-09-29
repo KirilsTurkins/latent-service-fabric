@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_nats_event_tests.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "65af7a9eb855be44b4724fe1a183bf4d4d379c37566076a1b12ae26ecd8e38c8"
+}

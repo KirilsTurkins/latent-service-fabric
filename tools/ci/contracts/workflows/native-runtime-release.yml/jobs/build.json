@@ -1,0 +1,170 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/native-runtime-release.yml:build:Build the three native executables, bootstrap, SBOM and provenance": {
+      "job": "build",
+      "jobIf": "success()",
+      "name": "Build the three native executables, bootstrap, SBOM and provenance",
+      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$NATIVE_VERSION\" --output \"$PWD/target/native-release\"\ncargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check\ncargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \\\n  --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2\ninstall -D -m 0755 target/native-fixture-build/x86_64-unknown-linux-gnu/release/latent-native-vm-fixture target/native-test-tools/fixture-helper",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime-release.yml:build:Prepare private exact-source host workspace": {
+      "job": "build",
+      "jobIf": "success()",
+      "name": "Prepare private exact-source host workspace",
+      "run": "python3 tools/prepare_native_workspace.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime-release.yml:build:Retain disconnected verification material": {
+      "job": "build",
+      "jobIf": "success()",
+      "name": "Retain disconnected verification material",
+      "run": "install -m 0644 \"$ATTESTATION_BUNDLE\" \"$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime-release.yml:build:Use maintained validation profile and pinned dependencies": {
+      "job": "build",
+      "jobIf": "success()",
+      "name": "Use maintained validation profile and pinned dependencies",
+      "run": "python3 tools/ci_profile.py\npython3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_native_runtime tools.tests.test_native_release_gate\npython3 tools/validate_workflow_actions.py\npython3 tools/validate_docs.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/native-runtime-release.yml:build:Build the three native executables, bootstrap, SBOM and provenance": {
+      "after": ".github/workflows/native-runtime-release.yml:build:Build the three native executables, bootstrap, SBOM and provenance",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime-release.yml:build:Prepare private exact-source host workspace": {
+      "after": ".github/workflows/native-runtime-release.yml:build:Prepare private exact-source host workspace",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime-release.yml:build:Retain disconnected verification material": {
+      "after": ".github/workflows/native-runtime-release.yml:build:Retain disconnected verification material",
+      "disposition": "extended",
+      "reason": "Retain the exact reviewed developer package selection beside its release-workflow attestation; existing native verification material is unchanged."
+    },
+    ".github/workflows/native-runtime-release.yml:build:Use maintained validation profile and pinned dependencies": {
+      "after": ".github/workflows/native-runtime-release.yml:build:Use maintained validation profile and pinned dependencies",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "name": "Exact-source authenticated native release artifact",
+    "needs": "gate",
+    "permissions": {
+      "attestations": "write",
+      "contents": "read",
+      "id-token": "write"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Prepare private exact-source host workspace",
+        "run": "python3 tools/prepare_native_workspace.py"
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "cache": "pip",
+          "cache-dependency-path": "tools/requirements.lock",
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Use maintained validation profile and pinned dependencies",
+        "run": "python3 tools/ci_profile.py\npython3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_native_runtime tools.tests.test_native_release_gate\npython3 tools/validate_workflow_actions.py\npython3 tools/validate_docs.py\n"
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-wasip2,wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "env": {
+          "NATIVE_VERSION": "${{ needs.gate.outputs.version }}"
+        },
+        "name": "Build the three native executables, bootstrap, SBOM and provenance",
+        "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$NATIVE_VERSION\" --output \"$PWD/target/native-release\"\ncargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check\ncargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \\\n  --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2\ninstall -D -m 0755 target/native-fixture-build/x86_64-unknown-linux-gnu/release/latent-native-vm-fixture target/native-test-tools/fixture-helper\n"
+      },
+      {
+        "id": "attest",
+        "name": "Authenticate the exact checksum inventory and separate test helper",
+        "uses": "actions/attest-build-provenance",
+        "with": {
+          "subject-path": "${{ env.NATIVE_WORKSPACE }}/target/native-release/SHA256SUMS\n${{ env.NATIVE_WORKSPACE }}/target/native-test-tools/fixture-helper\n${{ env.NATIVE_WORKSPACE }}/packaging/dev/release-selection.json\n"
+        }
+      },
+      {
+        "env": {
+          "ATTESTATION_BUNDLE": "${{ steps.attest.outputs.bundle-path }}"
+        },
+        "name": "Retain disconnected verification material",
+        "run": "install -m 0644 \"$ATTESTATION_BUNDLE\" \"$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json\"\ninstall -m 0644 \"$NATIVE_WORKSPACE/packaging/dev/release-selection.json\" \"$NATIVE_WORKSPACE/target/native-release/developer-selection.json\"\n"
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "native-runtime-release-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-release/",
+          "retention-days": 90
+        }
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "native-runtime-test-tools-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-test-tools/",
+          "retention-days": 90
+        }
+      },
+      {
+        "if": "failure()",
+        "name": "Retain bounded build failure",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "ignore",
+          "name": "native-runtime-release-build-failure-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-build-failure.*",
+          "retention-days": 14
+        }
+      }
+    ],
+    "timeout-minutes": 90
+  },
+  "jobId": "build",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/native-runtime-release.yml"
+}

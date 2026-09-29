@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "CatalogMutationProfileRunnerTests.test_both_profile_owners_forward_only_the_declared_temporary_folded_allowance",
+    "CatalogMutationProfileRunnerTests.test_reopen_exports_profiles_without_changing_the_logical_owner",
+    "CatalogMutationProfileRunnerTests.test_unsupported_override_rejects_before_platform_import_or_spawn"
+  ],
+  "guards": {
+    "CatalogMutationProfileRunnerTests.test_both_profile_owners_forward_only_the_declared_temporary_folded_allowance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:02f7cf61c0045fd1cee024a1714bc906caf16e8ed0230e9e3fa980a81f1b9669",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationProfileRunnerTests.test_reopen_exports_profiles_without_changing_the_logical_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:02f7cf61c0045fd1cee024a1714bc906caf16e8ed0230e9e3fa980a81f1b9669",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationProfileRunnerTests.test_unsupported_override_rejects_before_platform_import_or_spawn": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:02f7cf61c0045fd1cee024a1714bc906caf16e8ed0230e9e3fa980a81f1b9669",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_catalog_mutation_runner.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

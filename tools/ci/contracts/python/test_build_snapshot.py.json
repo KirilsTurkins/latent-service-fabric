@@ -1,0 +1,106 @@
+{
+  "cases": [
+    "BuildSnapshotTests.test_archive_entry_file_and_aggregate_ceilings",
+    "BuildSnapshotTests.test_capture_rejects_git_symlink_and_cleans_its_owned_directory",
+    "BuildSnapshotTests.test_cleanup_refuses_root_and_outside_targets",
+    "BuildSnapshotTests.test_directory_headers_have_a_separate_finite_allowance",
+    "BuildSnapshotTests.test_executable_mode_changes_inventory",
+    "BuildSnapshotTests.test_real_capture_uses_committed_bytes_excludes_evidence_and_is_repeatable",
+    "BuildSnapshotTests.test_unsafe_members_cannot_escape_or_introduce_special_files"
+  ],
+  "guards": {
+    "BuildSnapshotTests.test_archive_entry_file_and_aggregate_ceilings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:39e7e35aac82b90c2563deb8ae7825c6cd2b775b83f94190a9b1eeb9e4c2954f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildSnapshotTests.test_capture_rejects_git_symlink_and_cleans_its_owned_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:39e7e35aac82b90c2563deb8ae7825c6cd2b775b83f94190a9b1eeb9e4c2954f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildSnapshotTests.test_cleanup_refuses_root_and_outside_targets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:39e7e35aac82b90c2563deb8ae7825c6cd2b775b83f94190a9b1eeb9e4c2954f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildSnapshotTests.test_directory_headers_have_a_separate_finite_allowance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:39e7e35aac82b90c2563deb8ae7825c6cd2b775b83f94190a9b1eeb9e4c2954f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildSnapshotTests.test_executable_mode_changes_inventory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipIf(os.name == 'nt', 'Unix executable modes are preserved directly')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:39e7e35aac82b90c2563deb8ae7825c6cd2b775b83f94190a9b1eeb9e4c2954f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:67d8db70fc69995f24b080f681ee80a56e19e2f3261538d44fa95217169f2694",
+        "unittest.skipIf(os.name == 'nt', 'Unix executable modes are preserved directly')"
+      ]
+    },
+    "BuildSnapshotTests.test_real_capture_uses_committed_bytes_excludes_evidence_and_is_repeatable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:39e7e35aac82b90c2563deb8ae7825c6cd2b775b83f94190a9b1eeb9e4c2954f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildSnapshotTests.test_unsafe_members_cannot_escape_or_introduce_special_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:39e7e35aac82b90c2563deb8ae7825c6cd2b775b83f94190a9b1eeb9e4c2954f",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_build_snapshot.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

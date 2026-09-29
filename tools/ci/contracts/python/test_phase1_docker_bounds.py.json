@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "DockerBounds.test_actual_docker_count_fits_but_6001_and_other_kind_5001_reject",
+    "DockerBounds.test_docker_discriminator_and_ordinary_file_size_are_bound",
+    "DockerBounds.test_extractor_requires_explicit_bounded_member_override"
+  ],
+  "guards": {
+    "DockerBounds.test_actual_docker_count_fits_but_6001_and_other_kind_5001_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d51e7fd83c2fccb212a326f43fe4f02cff584d9ab198fc03c3ca8d24d8168e00",
+        "class:setup-sha256:0e723aaf8da239e1f43e751eddb73f09b82ac57ee6efdedaf9e767ddff141c52"
+      ],
+      "skipSites": []
+    },
+    "DockerBounds.test_docker_discriminator_and_ordinary_file_size_are_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d51e7fd83c2fccb212a326f43fe4f02cff584d9ab198fc03c3ca8d24d8168e00",
+        "class:setup-sha256:0e723aaf8da239e1f43e751eddb73f09b82ac57ee6efdedaf9e767ddff141c52"
+      ],
+      "skipSites": []
+    },
+    "DockerBounds.test_extractor_requires_explicit_bounded_member_override": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d51e7fd83c2fccb212a326f43fe4f02cff584d9ab198fc03c3ca8d24d8168e00",
+        "class:setup-sha256:0e723aaf8da239e1f43e751eddb73f09b82ac57ee6efdedaf9e767ddff141c52"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_docker_bounds.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

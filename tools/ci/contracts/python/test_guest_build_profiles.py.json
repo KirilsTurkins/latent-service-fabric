@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "GeneratorArchive.test_links_missing_duplicate_and_oversized_binary_fail",
+    "GeneratorArchive.test_pinned_generator_version_matches_toolchain_and_lock",
+    "GeneratorArchive.test_verified_regular_binary_only",
+    "GuestProfileSchemas.test_echo_snapshot_can_still_capture_every_workspace_member",
+    "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate",
+    "GuestProfileSchemas.test_java_recipe_requires_its_closed_compiler_inputs_and_separate_type"
+  ],
+  "guards": {
+    "GeneratorArchive.test_links_missing_duplicate_and_oversized_binary_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77b3022e606231dfcf725201c07a0e3b971632b83cc71180f4d113656f25dc55",
+        "class:setup-sha256:3021c987583e3c10cd9cebdc000e74c81bca5071b64224eab3a008d7dd8e9703"
+      ],
+      "skipSites": []
+    },
+    "GeneratorArchive.test_pinned_generator_version_matches_toolchain_and_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77b3022e606231dfcf725201c07a0e3b971632b83cc71180f4d113656f25dc55",
+        "class:setup-sha256:3021c987583e3c10cd9cebdc000e74c81bca5071b64224eab3a008d7dd8e9703"
+      ],
+      "skipSites": []
+    },
+    "GeneratorArchive.test_verified_regular_binary_only": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77b3022e606231dfcf725201c07a0e3b971632b83cc71180f4d113656f25dc55",
+        "class:setup-sha256:3021c987583e3c10cd9cebdc000e74c81bca5071b64224eab3a008d7dd8e9703"
+      ],
+      "skipSites": []
+    },
+    "GuestProfileSchemas.test_echo_snapshot_can_still_capture_every_workspace_member": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77b3022e606231dfcf725201c07a0e3b971632b83cc71180f4d113656f25dc55",
+        "class:setup-sha256:bc26ca2ed959f7c627e435193784c21a6852909d7bc53d7d4694f97ea5819307"
+      ],
+      "skipSites": []
+    },
+    "GuestProfileSchemas.test_guest_and_legacy_profiles_are_separate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77b3022e606231dfcf725201c07a0e3b971632b83cc71180f4d113656f25dc55",
+        "class:setup-sha256:bc26ca2ed959f7c627e435193784c21a6852909d7bc53d7d4694f97ea5819307"
+      ],
+      "skipSites": []
+    },
+    "GuestProfileSchemas.test_java_recipe_requires_its_closed_compiler_inputs_and_separate_type": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77b3022e606231dfcf725201c07a0e3b971632b83cc71180f4d113656f25dc55",
+        "class:setup-sha256:bc26ca2ed959f7c627e435193784c21a6852909d7bc53d7d4694f97ea5819307"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_guest_build_profiles.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

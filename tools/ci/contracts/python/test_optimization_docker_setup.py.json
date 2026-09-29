@@ -1,0 +1,155 @@
+{
+  "cases": [
+    "DockerBuildImport.test_exact_closure_and_pax_modes_hashes_retained_tar",
+    "DockerBuildImport.test_extra_duplicate_traversal_link_and_special_members_reject_before_extract",
+    "DockerBuildImport.test_import_destination_source_and_nonempty_scratch_are_rejected_without_download",
+    "DockerBuildImport.test_physical_pax_and_file_bounds_are_checked_before_allocation",
+    "DockerBuildImport.test_source_ref_hash_change_rejects_and_keeps_download",
+    "DockerImageSetup.test_deterministic_context_tar_preserves_explicit_mode_and_rejects_extra_file",
+    "DockerImageSetup.test_failed_stream_or_crossed_image_keeps_tar_raw_receipts_and_no_final_envelope",
+    "DockerImageSetup.test_retained_context_budget_preflight_happens_before_writes_or_api",
+    "DockerImageSetup.test_scratch_separation_counts_only_one_import_and_one_current_context",
+    "DockerImageSetup.test_three_actual_context_streams_bind_raw_http_and_distinct_images"
+  ],
+  "guards": {
+    "DockerBuildImport.test_exact_closure_and_pax_modes_hashes_retained_tar": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'POSIX permission preservation')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:1c90cb31c84e2566ac545eb6e462768591d3f50ccf8fa7f726959f478d16b14e",
+        "unittest.skipUnless(os.name == 'posix', 'POSIX permission preservation')"
+      ]
+    },
+    "DockerBuildImport.test_extra_duplicate_traversal_link_and_special_members_reject_before_extract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerBuildImport.test_import_destination_source_and_nonempty_scratch_are_rejected_without_download": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerBuildImport.test_physical_pax_and_file_bounds_are_checked_before_allocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerBuildImport.test_source_ref_hash_change_rejects_and_keeps_download": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerImageSetup.test_deterministic_context_tar_preserves_explicit_mode_and_rejects_extra_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerImageSetup.test_failed_stream_or_crossed_image_keeps_tar_raw_receipts_and_no_final_envelope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'POSIX executable context modes')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:6b29d01eefaac00cdb2d1d74bcdf4908d5f1be438165f0980e6927313e206f77",
+        "unittest.skipUnless(os.name == 'posix', 'POSIX executable context modes')"
+      ]
+    },
+    "DockerImageSetup.test_retained_context_budget_preflight_happens_before_writes_or_api": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerImageSetup.test_scratch_separation_counts_only_one_import_and_one_current_context": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerImageSetup.test_three_actual_context_streams_bind_raw_http_and_distinct_images": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'POSIX executable context modes')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:d8bde19bc054d1d651d23d1dfc2ea5868a4e3581481c7ac61bff0a970afa5e1b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:b34a0d4e7f53e7e3b23a50f2811382dfdf9fc4e09dcbe9a396bfb9fcc0ae6195",
+        "unittest.skipUnless(os.name == 'posix', 'POSIX executable context modes')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_docker_setup.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

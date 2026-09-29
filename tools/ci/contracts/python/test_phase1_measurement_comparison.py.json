@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "MeasurementComparisonTests.test_exact_engine_cold_population_can_compare",
+    "MeasurementComparisonTests.test_matched_warm_population_requires_matching_budget",
+    "MeasurementComparisonTests.test_missing_engine_options_never_imply_historical_defaults",
+    "MeasurementComparisonTests.test_replayed_aggregate_rejects_changed_statistic",
+    "MeasurementComparisonTests.test_rpc_boundary_cannot_be_relabelled_as_direct_latency",
+    "MeasurementComparisonTests.test_same_cpu_does_not_remove_component_mismatch",
+    "MeasurementComparisonTests.test_smoke_comparison_replays_and_retains_noncomparability",
+    "MeasurementComparisonTests.test_unverified_forged_reference_is_rejected",
+    "MeasurementComparisonTests.test_zero_reference_has_absolute_delta_but_no_ratio"
+  ],
+  "guards": {
+    "MeasurementComparisonTests.test_exact_engine_cold_population_can_compare": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:840588a703d1ad066770a9d631f3644bd66ac185ab4cd6c8741aed933bc35099",
+        "class:setup-sha256:b82cf9237eaf155e43c4d70530bb63c4a59196dfa359246b61cd2ba45630fb88"
+      ],
+      "skipSites": []
+    },
+    "MeasurementComparisonTests.test_matched_warm_population_requires_matching_budget": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:840588a703d1ad066770a9d631f3644bd66ac185ab4cd6c8741aed933bc35099",
+        "class:setup-sha256:b82cf9237eaf155e43c4d70530bb63c4a59196dfa359246b61cd2ba45630fb88"
+      ],
+      "skipSites": []
+    },
+    "MeasurementComparisonTests.test_missing_engine_options_never_imply_historical_defaults": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:840588a703d1ad066770a9d631f3644bd66ac185ab4cd6c8741aed933bc35099",
+        "class:setup-sha256:b82cf9237eaf155e43c4d70530bb63c4a59196dfa359246b61cd2ba45630fb88"
+      ],
+      "skipSites": []
+    },
+    "MeasurementComparisonTests.test_replayed_aggregate_rejects_changed_statistic": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:840588a703d1ad066770a9d631f3644bd66ac185ab4cd6c8741aed933bc35099",
+        "class:setup-sha256:b82cf9237eaf155e43c4d70530bb63c4a59196dfa359246b61cd2ba45630fb88"
+      ],
+      "skipSites": []
+    },
+    "MeasurementComparisonTests.test_rpc_boundary_cannot_be_relabelled_as_direct_latency": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:840588a703d1ad066770a9d631f3644bd66ac185ab4cd6c8741aed933bc35099",
+        "class:setup-sha256:b82cf9237eaf155e43c4d70530bb63c4a59196dfa359246b61cd2ba45630fb88"
+      ],
+      "skipSites": []
+    },
+    "MeasurementComparisonTests.test_same_cpu_does_not_remove_component_mismatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:840588a703d1ad066770a9d631f3644bd66ac185ab4cd6c8741aed933bc35099",
+        "class:setup-sha256:b82cf9237eaf155e43c4d70530bb63c4a59196dfa359246b61cd2ba45630fb88"
+      ],
+      "skipSites": []
+    },
+    "MeasurementComparisonTests.test_smoke_comparison_replays_and_retains_noncomparability": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:840588a703d1ad066770a9d631f3644bd66ac185ab4cd6c8741aed933bc35099",
+        "class:setup-sha256:b82cf9237eaf155e43c4d70530bb63c4a59196dfa359246b61cd2ba45630fb88"
+      ],
+      "skipSites": []
+    },
+    "MeasurementComparisonTests.test_unverified_forged_reference_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:840588a703d1ad066770a9d631f3644bd66ac185ab4cd6c8741aed933bc35099",
+        "class:setup-sha256:b82cf9237eaf155e43c4d70530bb63c4a59196dfa359246b61cd2ba45630fb88"
+      ],
+      "skipSites": []
+    },
+    "MeasurementComparisonTests.test_zero_reference_has_absolute_delta_but_no_ratio": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:840588a703d1ad066770a9d631f3644bd66ac185ab4cd6c8741aed933bc35099",
+        "class:setup-sha256:b82cf9237eaf155e43c4d70530bb63c4a59196dfa359246b61cd2ba45630fb88"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_measurement_comparison.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

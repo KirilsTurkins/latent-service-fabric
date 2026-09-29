@@ -27,6 +27,12 @@ For exact local planning, preparation, execution, and failure reproduction, use 
 
 For timing and cancellation tests, use the [deterministic testing guide](docs/development/deterministic-tests.md), shared clock and current-readiness helpers, and executable deadline/cancellation examples. Assert actual resource ownership; do not use sleeps or yield counts as readiness witnesses.
 
+For workflow, delegated-script or Python-test changes, use the
+[ownership-local CI contract guide](docs/testing/ci-command-contracts.md). Prepare
+only the affected review fragments, retain historical obligations, and run the
+read-only coverage validator. Immutable action-pin-only changes do not require a
+contract refresh; upstream action review and full CI remain mandatory.
+
 ## Change categories
 
 - **ADR:** a decision that changes a core invariant, dependency direction, execution model, or compatibility promise.

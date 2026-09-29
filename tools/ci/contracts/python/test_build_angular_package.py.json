@@ -1,0 +1,165 @@
+{
+  "cases": [
+    "AngularBuildInputTests.test_backend_authority_is_an_explicit_closed_optional_profile",
+    "AngularBuildInputTests.test_capture_excludes_unlisted_files_and_uses_fixed_destination_bytes",
+    "AngularBuildInputTests.test_capture_rejects_a_selected_link_before_compilers_run",
+    "AngularBuildInputTests.test_closed_build_schema_accepts_the_real_application_and_rejects_hooks",
+    "AngularBuildInputTests.test_identical_installation_aliases_deduplicate_without_hiding_conflicting_attribution",
+    "AngularBuildInputTests.test_profile_rejects_commands_native_modules_cross_area_assets_and_excessive_inputs",
+    "AngularBuildInputTests.test_selected_file_limit_duplicate_json_and_prerender_hydration_are_bounded",
+    "AngularBuildInputTests.test_supplied_html_matches_runtime_transfer_recognition_and_recovers",
+    "AngularHydrationWrapperTests.test_actual_typescript_preflight_rejects_server_templates_and_outside_reference_directives",
+    "AngularHydrationWrapperTests.test_production_adapter_rejects_shorthand_resources_before_package_output",
+    "AngularHydrationWrapperTests.test_real_wrapper_enforces_aggregate_data_complete_tags_and_closed_attributes"
+  ],
+  "guards": {
+    "AngularBuildInputTests.test_backend_authority_is_an_explicit_closed_optional_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularBuildInputTests.test_capture_excludes_unlisted_files_and_uses_fixed_destination_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularBuildInputTests.test_capture_rejects_a_selected_link_before_compilers_run": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "self.skipTest('Windows user cannot create symlinks; Linux gate is required')",
+        "skip-control-sha256:0cf96ad8b956c14aac4b20f02b9ada80c1faecce838b986acc2fb76544439b49"
+      ]
+    },
+    "AngularBuildInputTests.test_closed_build_schema_accepts_the_real_application_and_rejects_hooks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularBuildInputTests.test_identical_installation_aliases_deduplicate_without_hiding_conflicting_attribution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularBuildInputTests.test_profile_rejects_commands_native_modules_cross_area_assets_and_excessive_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularBuildInputTests.test_selected_file_limit_duplicate_json_and_prerender_hydration_are_bounded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularBuildInputTests.test_supplied_html_matches_runtime_transfer_recognition_and_recovers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularHydrationWrapperTests.test_actual_typescript_preflight_rejects_server_templates_and_outside_reference_directives": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "self.skipTest('the renderer gate provisions the exact Node/TypeScript toolchain')",
+        "skip-control-sha256:86580921b7588fd20339ffb429c8f4db0ec41c3fe0d85a2299ed6366014845d5"
+      ]
+    },
+    "AngularHydrationWrapperTests.test_production_adapter_rejects_shorthand_resources_before_package_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "self.skipTest('the renderer gate provisions the exact Node/TypeScript toolchain')",
+        "skip-control-sha256:173faa504e3281aefdbab30a2b0d4d4cc04acb10354e59fc92658b44e6d8564b"
+      ]
+    },
+    "AngularHydrationWrapperTests.test_real_wrapper_enforces_aggregate_data_complete_tags_and_closed_attributes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:806d53895d0cd51265f9f6508af10ff548d6c0ab1a3e0403706ee721616215be",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "self.skipTest('Node required for executable JavaScript wrapper checks')",
+        "skip-control-sha256:6dffd2913aa2e4e25d1d7311fa6b68be29f60380c64c3d7edbe66a2acc05177e"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_build_angular_package.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

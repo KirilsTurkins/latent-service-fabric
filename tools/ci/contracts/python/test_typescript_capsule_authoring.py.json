@@ -1,0 +1,192 @@
+{
+  "cases": [
+    "TypeScriptAuthoringTests.test_all_current_capability_fixtures_are_editable_typed_projects",
+    "TypeScriptAuthoringTests.test_every_template_captures_editable_sources_and_exact_sdk",
+    "TypeScriptAuthoringTests.test_fresh_project_and_safe_names_never_overwrite_source",
+    "TypeScriptAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
+    "TypeScriptAuthoringTests.test_import_identity_follows_selected_world_and_never_arena_indexes",
+    "TypeScriptAuthoringTests.test_public_contract_rejection_precedes_guest_compiler_execution",
+    "TypeScriptAuthoringTests.test_qualification_watchdogs_remain_explicit_and_finite",
+    "TypeScriptAuthoringTests.test_sdk_wit_and_compiler_lock_drift_are_rejected",
+    "TypeScriptAuthoringTests.test_source_and_compiler_directory_overlap_is_rejected_before_execution",
+    "TypeScriptAuthoringTests.test_uncaptured_application_dependency_or_config_overrides_fail_closed",
+    "TypeScriptControlWaitTests.test_invalid_wait_count_and_output_bounds_fail_closed",
+    "TypeScriptControlWaitTests.test_process_deadline_keeps_one_timed_attempt_and_never_retries",
+    "TypeScriptControlWaitTests.test_selected_wait_preserves_ordinary_defaults_and_shorter_overall_deadline",
+    "TypeScriptControlWaitTests.test_uncertain_apply_remains_one_attempt_with_separate_bounded_diagnostics"
+  ],
+  "guards": {
+    "TypeScriptAuthoringTests.test_all_current_capability_fixtures_are_editable_typed_projects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptAuthoringTests.test_every_template_captures_editable_sources_and_exact_sdk": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptAuthoringTests.test_fresh_project_and_safe_names_never_overwrite_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptAuthoringTests.test_identity_budget_and_lock_formats_are_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptAuthoringTests.test_import_identity_follows_selected_world_and_never_arena_indexes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptAuthoringTests.test_public_contract_rejection_precedes_guest_compiler_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptAuthoringTests.test_qualification_watchdogs_remain_explicit_and_finite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptAuthoringTests.test_sdk_wit_and_compiler_lock_drift_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptAuthoringTests.test_source_and_compiler_directory_overlap_is_rejected_before_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptAuthoringTests.test_uncaptured_application_dependency_or_config_overrides_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:e821bf70129e1d0720bcfd927ce569f02ec72f5a67475e2cd52151376ac9e261"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptControlWaitTests.test_invalid_wait_count_and_output_bounds_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptControlWaitTests.test_process_deadline_keeps_one_timed_attempt_and_never_retries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptControlWaitTests.test_selected_wait_preserves_ordinary_defaults_and_shorter_overall_deadline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptControlWaitTests.test_uncertain_apply_remains_one_attempt_with_separate_bounded_diagnostics": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9814383bf1a06314d39ad189cab1fafec751c4b4b498908906cb1b776fd868d9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_capsule_authoring.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "ObservationTests.test_duplicate_json_keys_are_rejected",
+    "ObservationTests.test_exact_complete_observations",
+    "ObservationTests.test_missing_duplicate_reordered_and_small_substitute_fail",
+    "ObservationTests.test_missing_scenario_or_incomplete_publication_fails",
+    "ObservationTests.test_zero_missing_negative_or_malformed_memory_is_never_a_measurement",
+    "SuiteTests.test_inherited_child_modes_faults_and_unsupported_host_never_run",
+    "SuiteTests.test_inventory_declares_exact_linux_physical_owner",
+    "SuiteTests.test_one_ignored_execution_preserves_observations_and_full_deadline",
+    "SuiteTests.test_real_process_output_cap_and_deadline_still_fail_closed",
+    "SuiteTests.test_success_without_observations_or_missing_ignored_test_is_rejected"
+  ],
+  "guards": {
+    "ObservationTests.test_duplicate_json_keys_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_exact_complete_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_missing_duplicate_reordered_and_small_substitute_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_missing_scenario_or_incomplete_publication_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_zero_missing_negative_or_malformed_memory_is_never_a_measurement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SuiteTests.test_inherited_child_modes_faults_and_unsupported_host_never_run": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:696f6ca14214f04c063d99c9f8b2d75e75c4adb1e1bc4e307f42a49e5c1b154d"
+      ],
+      "skipSites": []
+    },
+    "SuiteTests.test_inventory_declares_exact_linux_physical_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:696f6ca14214f04c063d99c9f8b2d75e75c4adb1e1bc4e307f42a49e5c1b154d"
+      ],
+      "skipSites": []
+    },
+    "SuiteTests.test_one_ignored_execution_preserves_observations_and_full_deadline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:696f6ca14214f04c063d99c9f8b2d75e75c4adb1e1bc4e307f42a49e5c1b154d"
+      ],
+      "skipSites": []
+    },
+    "SuiteTests.test_real_process_output_cap_and_deadline_still_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:696f6ca14214f04c063d99c9f8b2d75e75c4adb1e1bc4e307f42a49e5c1b154d"
+      ],
+      "skipSites": []
+    },
+    "SuiteTests.test_success_without_observations_or_missing_ignored_test_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:132d35b878a42cc8ebed26494b7463a0bf45bba7a8653cf1364c1d1aa3612145",
+        "class:setup-sha256:696f6ca14214f04c063d99c9f8b2d75e75c4adb1e1bc4e307f42a49e5c1b154d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_metadata_working_set.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

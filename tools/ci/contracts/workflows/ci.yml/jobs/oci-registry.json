@@ -1,0 +1,195 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/ci.yml:oci-registry:Check runner ownership and cleanup guards": {
+      "job": "oci-registry",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Check runner ownership and cleanup guards",
+      "run": "python3 -m unittest discover -s tools/tests -p test_oci_registry_runner.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:oci-registry:Fetch pinned disposable registry": {
+      "job": "oci-registry",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Fetch pinned disposable registry",
+      "run": "docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:oci-registry:Recover only this job's disposable registry": {
+      "job": "oci-registry",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Recover only this job's disposable registry",
+      "run": "python3 tools/run_oci_registry_tests.py --cleanup-state \"$RUNNER_TEMP/lsf-oci-registry.json\"",
+      "shell": "default",
+      "stepIf": "always()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:oci-registry:Validate bounded authenticated OCI distribution": {
+      "job": "oci-registry",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Validate bounded authenticated OCI distribution",
+      "run": "python3 tools/run_oci_registry_tests.py --state-file \"$RUNNER_TEMP/lsf-oci-registry.json\" --provenance-input target/capsules/echo-provenance",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:oci-registry:Validate signed web package registry and catalog round trips": {
+      "job": "oci-registry",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Validate signed web package registry and catalog round trips",
+      "run": "python3 tools/run_oci_registry_tests.py --state-file \"$RUNNER_TEMP/lsf-oci-registry.json\" --web-admission-component target/capsules/web-contract/component.wasm",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/ci.yml:oci-registry:Check runner ownership and cleanup guards": {
+      "after": ".github/workflows/ci.yml:oci-registry:Check runner ownership and cleanup guards",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/ci.yml:oci-registry:Fetch pinned disposable registry": {
+      "after": ".github/workflows/ci.yml:oci-registry:Fetch pinned disposable registry",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/ci.yml:oci-registry:Recover only this job's disposable registry": {
+      "after": ".github/workflows/ci.yml:oci-registry:Recover only this job's disposable registry",
+      "disposition": "extended",
+      "reason": "Retain the original validation and add the merged owned-process prerequisites and diagnostic handoff."
+    },
+    ".github/workflows/ci.yml:oci-registry:Validate bounded authenticated OCI distribution": {
+      "after": ".github/workflows/ci.yml:oci-registry:Validate bounded authenticated OCI distribution",
+      "disposition": "extended",
+      "reason": "Retain the original validation and add the merged owned-process prerequisites and diagnostic handoff."
+    },
+    ".github/workflows/ci.yml:oci-registry:Validate signed web package registry and catalog round trips": {
+      "after": ".github/workflows/ci.yml:oci-registry:Validate signed web package registry and catalog round trips",
+      "disposition": "extended",
+      "reason": "Retain the original validation and add the merged owned-process prerequisites and diagnostic handoff."
+    }
+  },
+  "definition": {
+    "if": "needs.profile.outputs.profile == 'full'",
+    "name": "OCI registry TLS integration",
+    "needs": [
+      "profile",
+      "contracts"
+    ],
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
+          "prefix-key": "lsf-ci-dependencies-v1",
+          "save-if": "${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||\n    (github.event_name == 'workflow_dispatch' &&\n     (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}"
+        }
+      },
+      {
+        "name": "Receive bounded observed echo inputs",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "phase-2-observed-echo-${{ github.sha }}",
+          "path": "target/capsules/echo-provenance"
+        }
+      },
+      {
+        "name": "Fetch pinned disposable registry",
+        "run": "docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395"
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "id": "oci_preflight",
+        "name": "Check owned registry prerequisites before building",
+        "run": "python3 tools/run_oci_registry_tests.py --preflight --diagnostic-root \"$RUNNER_TEMP/owned-oci\""
+      },
+      {
+        "env": {
+          "LSF_LIVE_OCI_DEMO": "1",
+          "LSF_OWNED_DEMO_DIAGNOSTICS": "${{ runner.temp }}/owned-oci-demo",
+          "LSF_REQUIRE_NATIVE_PROCESS_TESTS": "1"
+        },
+        "name": "Demonstrate live provider startup and injected failure cleanup",
+        "run": "python3 -m unittest tools.tests.test_owned_runners.NativeRunnerDemonstrations.test_live_provider_normal_and_injected_failure_leave_no_owned_container"
+      },
+      {
+        "name": "Prepare exact OCI and web admission harnesses",
+        "run": "cargo test -p latent-oci --test registry --locked --no-run --message-format=json,json-render-diagnostics > \"$RUNNER_TEMP/lsf-oci-tests.jsonl\"\ncargo test -p latent-policy --lib --locked --no-run --message-format=json,json-render-diagnostics > \"$RUNNER_TEMP/lsf-web-registry-tests.jsonl\"\n"
+      },
+      {
+        "name": "Check runner ownership and cleanup guards",
+        "run": "python3 -m unittest discover -s tools/tests -p test_oci_registry_runner.py"
+      },
+      {
+        "name": "Validate bounded authenticated OCI distribution",
+        "run": "python3 tools/run_oci_registry_tests.py --test-manifest \"$RUNNER_TEMP/lsf-oci-tests.jsonl\" --state-file \"$RUNNER_TEMP/lsf-oci-registry.json\" --provenance-input target/capsules/echo-provenance --diagnostic-root \"$RUNNER_TEMP/owned-oci\""
+      },
+      {
+        "name": "Receive bounded public web component",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "phase-3-web-contract-${{ github.sha }}",
+          "path": "target/capsules/web-contract"
+        }
+      },
+      {
+        "name": "Validate signed web package registry and catalog round trips",
+        "run": "python3 tools/run_oci_registry_tests.py --test-manifest \"$RUNNER_TEMP/lsf-web-registry-tests.jsonl\" --state-file \"$RUNNER_TEMP/lsf-oci-registry.json\" --web-admission-component target/capsules/web-contract/component.wasm --diagnostic-root \"$RUNNER_TEMP/owned-oci\""
+      },
+      {
+        "if": "always()",
+        "name": "Recover only this job's disposable registry",
+        "run": "python3 tools/run_oci_registry_tests.py --cleanup-state \"$RUNNER_TEMP/lsf-oci-registry.json\" --diagnostic-root \"$RUNNER_TEMP/owned-oci\""
+      },
+      {
+        "if": "always() && steps.oci_preflight.outcome != '' && steps.oci_preflight.outcome != 'skipped'",
+        "name": "Retain attempted registry ownership diagnostics",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "owned-oci-${{ github.sha }}",
+          "path": "${{ runner.temp }}/owned-oci/*.json\n${{ runner.temp }}/owned-oci-demo/*.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "oci-registry",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/ci.yml"
+}

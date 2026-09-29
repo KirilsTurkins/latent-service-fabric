@@ -1,0 +1,54 @@
+{
+  "cases": [
+    "JavaProviderLaunchTests.test_default_sdk_tests_keep_jvm_warnings_visible",
+    "JavaProviderLaunchTests.test_flags_precede_jar_and_paths_remain_single_arguments",
+    "JavaProviderLaunchTests.test_only_java_participant_has_the_compatibility_flags"
+  ],
+  "guards": {
+    "JavaProviderLaunchTests.test_default_sdk_tests_keep_jvm_warnings_visible": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2525d32ec9356516335f51597a27faafb664b12c89b49d0cf1409725802a2275",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaProviderLaunchTests.test_flags_precede_jar_and_paths_remain_single_arguments": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('bash'), 'shell argument test requires bash')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:2525d32ec9356516335f51597a27faafb664b12c89b49d0cf1409725802a2275",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:afc9b723395f8e786b7d80b33c30bd7493e216dcdfc8ea917fec7a44161eecd2",
+        "unittest.skipUnless(shutil.which('bash'), 'shell argument test requires bash')"
+      ]
+    },
+    "JavaProviderLaunchTests.test_only_java_participant_has_the_compatibility_flags": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2525d32ec9356516335f51597a27faafb664b12c89b49d0cf1409725802a2275",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_provider_launch.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

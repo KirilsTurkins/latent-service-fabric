@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "ProxyReplayTests.test_changed_result_rules_clock_and_reused_call_reject",
+    "ProxyReplayTests.test_historical_port_is_only_the_original_failed_smoke02_group",
+    "ProxyReplayTests.test_original_worker_rules_are_replayed_with_exact_commands",
+    "ProxyReplayTests.test_qualified_replay_rejects_continuing_after_first_ready",
+    "ProxyTests.test_absent_rule_and_hook_are_unavailable_not_connectivity_proofs",
+    "ProxyTests.test_attempt_and_elapsed_bounds_retain_nonready_evidence",
+    "ProxyTests.test_exact_observed_kind_rule_shape_binds_service_and_pod",
+    "ProxyTests.test_extra_unreachable_or_conditional_endpoint_selection_does_not_pass",
+    "ProxyTests.test_first_ready_stops_polling_without_a_network_operation",
+    "ProxyTests.test_multiple_endpoint_selection_or_wrong_service_comment_is_not_ready",
+    "ProxyTests.test_only_rejects_matching_current_service_are_relevant",
+    "ProxyTests.test_table_framing_and_finite_bounds",
+    "ProxyTests.test_wrong_or_multiple_dnat_and_extra_endpoint_matches_reject"
+  ],
+  "guards": {
+    "ProxyReplayTests.test_changed_result_rules_clock_and_reused_call_reject": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:00aeba35e6a72a80325925a1f640f18327e7b27162f1c764396b45a9014a70a1"
+      ],
+      "skipSites": []
+    },
+    "ProxyReplayTests.test_historical_port_is_only_the_original_failed_smoke02_group": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:00aeba35e6a72a80325925a1f640f18327e7b27162f1c764396b45a9014a70a1"
+      ],
+      "skipSites": []
+    },
+    "ProxyReplayTests.test_original_worker_rules_are_replayed_with_exact_commands": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:00aeba35e6a72a80325925a1f640f18327e7b27162f1c764396b45a9014a70a1"
+      ],
+      "skipSites": []
+    },
+    "ProxyReplayTests.test_qualified_replay_rejects_continuing_after_first_ready": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:00aeba35e6a72a80325925a1f640f18327e7b27162f1c764396b45a9014a70a1"
+      ],
+      "skipSites": []
+    },
+    "ProxyTests.test_absent_rule_and_hook_are_unavailable_not_connectivity_proofs": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProxyTests.test_attempt_and_elapsed_bounds_retain_nonready_evidence": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProxyTests.test_exact_observed_kind_rule_shape_binds_service_and_pod": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProxyTests.test_extra_unreachable_or_conditional_endpoint_selection_does_not_pass": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProxyTests.test_first_ready_stops_polling_without_a_network_operation": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProxyTests.test_multiple_endpoint_selection_or_wrong_service_comment_is_not_ready": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProxyTests.test_only_rejects_matching_current_service_are_relevant": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProxyTests.test_table_framing_and_finite_bounds": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProxyTests.test_wrong_or_multiple_dnat_and_extra_endpoint_matches_reject": {
+      "bases": [
+        "TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6ad2da9de81363fa42f247a04f2bd447751be0611a833e8ca45f5a713987c54c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_proxy.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

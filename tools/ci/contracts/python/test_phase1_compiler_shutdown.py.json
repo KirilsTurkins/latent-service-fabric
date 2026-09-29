@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "CompilerShutdownTests.test_capacity_algebra_is_verified",
+    "CompilerShutdownTests.test_every_live_owner_prevents_clean_replay",
+    "CompilerShutdownTests.test_missing_null_extra_and_boolean_counts_are_not_zero",
+    "CompilerShutdownTests.test_original_reports_and_actual_joined_extension_are_accepted",
+    "CompilerShutdownTests.test_quiescence_without_join_or_closed_admission_is_rejected",
+    "CompilerShutdownTests.test_validated_input_is_not_mutated"
+  ],
+  "guards": {
+    "CompilerShutdownTests.test_capacity_algebra_is_verified": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f58a75380b2af9cc7ed9f5926e1eed3aff7835c5e6bb8cca01be9696a9c68c0b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompilerShutdownTests.test_every_live_owner_prevents_clean_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f58a75380b2af9cc7ed9f5926e1eed3aff7835c5e6bb8cca01be9696a9c68c0b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompilerShutdownTests.test_missing_null_extra_and_boolean_counts_are_not_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f58a75380b2af9cc7ed9f5926e1eed3aff7835c5e6bb8cca01be9696a9c68c0b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompilerShutdownTests.test_original_reports_and_actual_joined_extension_are_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f58a75380b2af9cc7ed9f5926e1eed3aff7835c5e6bb8cca01be9696a9c68c0b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompilerShutdownTests.test_quiescence_without_join_or_closed_admission_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f58a75380b2af9cc7ed9f5926e1eed3aff7835c5e6bb8cca01be9696a9c68c0b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompilerShutdownTests.test_validated_input_is_not_mutated": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f58a75380b2af9cc7ed9f5926e1eed3aff7835c5e6bb8cca01be9696a9c68c0b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_compiler_shutdown.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

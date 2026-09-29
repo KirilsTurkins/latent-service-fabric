@@ -1,0 +1,374 @@
+{
+  "cases": [
+    "CssTokenTests.test_all_css_escape_spellings_are_explicitly_rejected",
+    "CssTokenTests.test_comments_and_non_url_strings_are_inert",
+    "CssTokenTests.test_comments_inside_unquoted_urls_are_not_stripped",
+    "CssTokenTests.test_comments_never_join_identifier_tokens",
+    "CssTokenTests.test_deep_input_uses_no_recursive_parser",
+    "CssTokenTests.test_import_is_rejected_with_any_literal_target_or_case",
+    "CssTokenTests.test_indirect_string_resource_functions_are_not_accepted",
+    "CssTokenTests.test_malformed_tokens_fail_without_browser_style_recovery",
+    "CssTokenTests.test_multiple_and_nested_functions_preserve_source_offsets",
+    "CssTokenTests.test_quoted_unquoted_case_and_ascii_whitespace",
+    "SvgReferenceTests.test_all_resource_locations_reject_external_references",
+    "SvgReferenceTests.test_animation_values_retain_the_external_url_tripwire",
+    "SvgReferenceTests.test_comments_cdata_and_namespaced_style_have_the_same_policy",
+    "SvgReferenceTests.test_current_documentation_assets_pass_without_byte_changes",
+    "SvgReferenceTests.test_docs_cli_rejects_then_accepts_a_repaired_resource",
+    "SvgReferenceTests.test_each_css_source_fails_closed_and_other_sources_continue",
+    "SvgReferenceTests.test_each_supported_css_attribute_uses_the_shared_policy",
+    "SvgReferenceTests.test_empty_missing_encoded_and_whitespace_fragments_are_rejected",
+    "SvgReferenceTests.test_every_missing_reference_is_reported_in_order",
+    "SvgReferenceTests.test_existing_safety_and_accessibility_failures_are_retained",
+    "SvgReferenceTests.test_five_original_reproductions",
+    "SvgReferenceTests.test_ids_are_case_sensitive_and_scoped_per_file",
+    "SvgReferenceTests.test_multiple_forward_resources_and_namespaced_links_pass",
+    "SvgReferenceTests.test_non_css_metadata_is_not_interpreted_as_css",
+    "SvgReferenceTests.test_real_asset_missing_definitions_fail_on_both_paths",
+    "SvgReferenceTests.test_resource_validation_never_fetches_or_executes_a_reference",
+    "SvgReferenceTests.test_xml_base_cannot_redirect_fragment_resolution",
+    "SvgReferenceTests.test_xml_character_references_are_checked_after_xml_decoding"
+  ],
+  "guards": {
+    "CssTokenTests.test_all_css_escape_spellings_are_explicitly_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "CssTokenTests.test_comments_and_non_url_strings_are_inert": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "CssTokenTests.test_comments_inside_unquoted_urls_are_not_stripped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "CssTokenTests.test_comments_never_join_identifier_tokens": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "CssTokenTests.test_deep_input_uses_no_recursive_parser": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "CssTokenTests.test_import_is_rejected_with_any_literal_target_or_case": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "CssTokenTests.test_indirect_string_resource_functions_are_not_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "CssTokenTests.test_malformed_tokens_fail_without_browser_style_recovery": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "CssTokenTests.test_multiple_and_nested_functions_preserve_source_offsets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "CssTokenTests.test_quoted_unquoted_case_and_ascii_whitespace": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:0b3aaab5df5294952b39b69cad72c4c52405dea18ae2341f8baa8e7adba8aa4e"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_all_resource_locations_reject_external_references": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_animation_values_retain_the_external_url_tripwire": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_comments_cdata_and_namespaced_style_have_the_same_policy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_current_documentation_assets_pass_without_byte_changes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_docs_cli_rejects_then_accepts_a_repaired_resource": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_each_css_source_fails_closed_and_other_sources_continue": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_each_supported_css_attribute_uses_the_shared_policy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_empty_missing_encoded_and_whitespace_fragments_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_every_missing_reference_is_reported_in_order": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_existing_safety_and_accessibility_failures_are_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_five_original_reproductions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_ids_are_case_sensitive_and_scoped_per_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_multiple_forward_resources_and_namespaced_links_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_non_css_metadata_is_not_interpreted_as_css": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_real_asset_missing_definitions_fail_on_both_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_resource_validation_never_fetches_or_executes_a_reference": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_xml_base_cannot_redirect_fragment_resolution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    },
+    "SvgReferenceTests.test_xml_character_references_are_checked_after_xml_decoding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bfae2a5a9db5952e46388fbdfb3ae56587b3a176b9d026eca7e9b7a2af6b66ce",
+        "class:setup-sha256:757beb945080e1eb3160721aac1785cc3505b26ae3a331afbf58f00d9b6f79d5"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_svg_references.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "name": "Documentation website validation",
+    "on": {
+      "workflow_call": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "website"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/docs-site.yml"
+}

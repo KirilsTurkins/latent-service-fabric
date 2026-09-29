@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "ReleaseCompatibilitySchemaTests.test_empty_lists_and_target_count_boundary",
+    "ReleaseCompatibilitySchemaTests.test_existing_capsules_keep_optional_requirements_absent",
+    "ReleaseCompatibilitySchemaTests.test_reference_examples_are_actual_schema_valid_members",
+    "ReleaseCompatibilitySchemaTests.test_requirement_objects_reject_unknown_missing_and_null_values",
+    "ReleaseCompatibilitySchemaTests.test_target_and_cpu_collections_are_bounded_and_unique",
+    "ReleaseCompatibilitySchemaTests.test_target_syntax_closed_feature_vocabulary_and_string_bound"
+  ],
+  "guards": {
+    "ReleaseCompatibilitySchemaTests.test_empty_lists_and_target_count_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:246411a2589f650aa6822a1605b4ab5d9db6fe24681d5ff324956d0c468e4f71",
+        "class:setup-sha256:0a374f10a6422769cfabd682e27565cc2f8e3f3dde2432175ba6bb2950a32199"
+      ],
+      "skipSites": []
+    },
+    "ReleaseCompatibilitySchemaTests.test_existing_capsules_keep_optional_requirements_absent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:246411a2589f650aa6822a1605b4ab5d9db6fe24681d5ff324956d0c468e4f71",
+        "class:setup-sha256:0a374f10a6422769cfabd682e27565cc2f8e3f3dde2432175ba6bb2950a32199"
+      ],
+      "skipSites": []
+    },
+    "ReleaseCompatibilitySchemaTests.test_reference_examples_are_actual_schema_valid_members": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:246411a2589f650aa6822a1605b4ab5d9db6fe24681d5ff324956d0c468e4f71",
+        "class:setup-sha256:0a374f10a6422769cfabd682e27565cc2f8e3f3dde2432175ba6bb2950a32199"
+      ],
+      "skipSites": []
+    },
+    "ReleaseCompatibilitySchemaTests.test_requirement_objects_reject_unknown_missing_and_null_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:246411a2589f650aa6822a1605b4ab5d9db6fe24681d5ff324956d0c468e4f71",
+        "class:setup-sha256:0a374f10a6422769cfabd682e27565cc2f8e3f3dde2432175ba6bb2950a32199"
+      ],
+      "skipSites": []
+    },
+    "ReleaseCompatibilitySchemaTests.test_target_and_cpu_collections_are_bounded_and_unique": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:246411a2589f650aa6822a1605b4ab5d9db6fe24681d5ff324956d0c468e4f71",
+        "class:setup-sha256:0a374f10a6422769cfabd682e27565cc2f8e3f3dde2432175ba6bb2950a32199"
+      ],
+      "skipSites": []
+    },
+    "ReleaseCompatibilitySchemaTests.test_target_syntax_closed_feature_vocabulary_and_string_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:246411a2589f650aa6822a1605b4ab5d9db6fe24681d5ff324956d0c468e4f71",
+        "class:setup-sha256:0a374f10a6422769cfabd682e27565cc2f8e3f3dde2432175ba6bb2950a32199"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_release_compatibility_schema.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

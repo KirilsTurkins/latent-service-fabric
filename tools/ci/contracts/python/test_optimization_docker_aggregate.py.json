@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "DockerAggregateTests.test_children_wrappers_and_each_leaf_cgroup_are_distinct_sums",
+    "DockerAggregateTests.test_csv_preserves_large_decimal_strings_nulls_and_nested_outcomes",
+    "DockerAggregateTests.test_duplicate_or_unmatched_arms_are_rejected",
+    "DockerAggregateTests.test_first_warmup_and_measured_are_separate_populations",
+    "DockerAggregateTests.test_lifecycle_uses_parent_clock_and_keeps_sequential_provisioning",
+    "DockerAggregateTests.test_missing_pair_metric_stays_unavailable_and_zero_stays_zero",
+    "DockerAggregateTests.test_one_missing_component_does_not_become_partial_cohort_total",
+    "DockerAggregateTests.test_pairs_are_differenced_before_medians_and_keep_order_strata",
+    "DockerAggregateTests.test_phase_throughput_uses_each_actual_denominator",
+    "DockerAggregateTests.test_stats_missing_and_boolean_values_do_not_become_cpu_zeroes",
+    "DockerAggregateTests.test_unvalidated_input_rejected_before_publication",
+    "DockerAggregateTests.test_writer_never_overwrites_an_existing_directory"
+  ],
+  "guards": {
+    "DockerAggregateTests.test_children_wrappers_and_each_leaf_cgroup_are_distinct_sums": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_csv_preserves_large_decimal_strings_nulls_and_nested_outcomes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_duplicate_or_unmatched_arms_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_first_warmup_and_measured_are_separate_populations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_lifecycle_uses_parent_clock_and_keeps_sequential_provisioning": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_missing_pair_metric_stays_unavailable_and_zero_stays_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_one_missing_component_does_not_become_partial_cohort_total": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_pairs_are_differenced_before_medians_and_keep_order_strata": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_phase_throughput_uses_each_actual_denominator": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_stats_missing_and_boolean_values_do_not_become_cpu_zeroes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_unvalidated_input_rejected_before_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DockerAggregateTests.test_writer_never_overwrites_an_existing_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e5a3b5144a1410747c1f652852bfd75ae9979766878811dfdd95b9a25681566c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_docker_aggregate.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,160 @@
+{
+  "cases": [
+    "BuildProvenanceTests.test_actual_toolchain_binaries_are_selected_instead_of_shims",
+    "BuildProvenanceTests.test_clock_regression_duration_and_empty_output_suppress_observation",
+    "BuildProvenanceTests.test_environment_drops_secrets_wrappers_and_cargo_flag_overrides",
+    "BuildProvenanceTests.test_existing_output_is_preserved_without_starting_a_build",
+    "BuildProvenanceTests.test_failed_build_or_changed_source_or_tool_leaves_no_output",
+    "BuildProvenanceTests.test_failed_legacy_staging_or_second_publication_rolls_back_both_outputs",
+    "BuildProvenanceTests.test_normal_termination_between_commands_cleans_snapshot_and_suppresses_outputs",
+    "BuildProvenanceTests.test_optional_legacy_export_reuses_exact_build_without_receipt_authority",
+    "BuildProvenanceTests.test_pipeline_publishes_only_exact_package_inputs_and_compact_observation",
+    "BuildProvenanceTests.test_repository_label_rejects_credentials_private_paths_and_ambiguous_urls",
+    "BuildProvenanceTests.test_windows_installer_discovery_matches_the_approved_host_environment"
+  ],
+  "guards": {
+    "BuildProvenanceTests.test_actual_toolchain_binaries_are_selected_instead_of_shims": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_clock_regression_duration_and_empty_output_suppress_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_environment_drops_secrets_wrappers_and_cargo_flag_overrides": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_existing_output_is_preserved_without_starting_a_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_failed_build_or_changed_source_or_tool_leaves_no_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_failed_legacy_staging_or_second_publication_rolls_back_both_outputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_normal_termination_between_commands_cleans_snapshot_and_suppresses_outputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_optional_legacy_export_reuses_exact_build_without_receipt_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_pipeline_publishes_only_exact_package_inputs_and_compact_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_repository_label_rejects_credentials_private_paths_and_ambiguous_urls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": []
+    },
+    "BuildProvenanceTests.test_windows_installer_discovery_matches_the_approved_host_environment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'nt', 'Windows compiler installation discovery')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:34b3f8b3b8121b8c90b541a3db52888a094c710705d82f0ebcecdf2f63e2c04e",
+        "class:setup-sha256:6a9b3830ce87ae02933164da81bab2e8fe7f2034fa1d2efbef3c2d4b13cc8126"
+      ],
+      "skipSites": [
+        "self.skipTest('Visual Studio discovery is unavailable')",
+        "self.skipTest('Windows installer root is unavailable')",
+        "skip-control-sha256:c63988def574a310d44d3997bc7f32308a5f1950da0c323049f54a6a13c6d1c9",
+        "unittest.skipUnless(os.name == 'nt', 'Windows compiler installation discovery')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_build_provenance.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

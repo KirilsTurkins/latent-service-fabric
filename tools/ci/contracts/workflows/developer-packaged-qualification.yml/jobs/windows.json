@@ -1,0 +1,63 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "inputs.platform == 'all' || inputs.platform == 'windows' || inputs.platform == 'windows-recovery'",
+    "name": "Actual packaged Windows and WSL2 schedule",
+    "needs": "support",
+    "runs-on": "windows-2025",
+    "steps": [
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "packaged-qualification-support",
+          "path": "${{ runner.temp }}/packaged-support"
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Download only selected exact-source candidate inputs",
+        "run": "$ErrorActionPreference = 'Stop'\n$Support = Join-Path $env:RUNNER_TEMP 'packaged-support'\n$Selection = Get-Content (Join-Path $Support 'selection.json') -Raw | ConvertFrom-Json -AsHashtable\n$Artifacts = Join-Path $env:RUNNER_TEMP 'packaged-candidates'\nNew-Item -ItemType Directory -Path $Artifacts | Out-Null\n$Sha = $Selection.sourceCommit\nif ($Sha -notmatch '^[a-f0-9]{40}$') { throw 'Exact candidate source required.' }\n$Names = [ordered]@{ windows=\"developer-windows-candidate-$Sha\"; wsl=\"developer-wsl-candidate-$Sha\" }\nforeach ($Language in @('rust','c','java','dotnet','go','typescript')) {\n    $Names[$Language] = \"developer-$Language-tools-candidate-$Sha\"\n}\n$Selection.artifacts = @{}\nforeach ($Name in $Names.Keys) {\n    $Destination = Join-Path $Artifacts $Name\n    & gh run download $Selection.candidateRuns.developer.id --repo KirilsTurkins/latent-service-fabric --name $Names[$Name] --dir $Destination\n    if ($LASTEXITCODE -ne 0) { throw \"Candidate download failed: $Name\" }\n    $Selection.artifacts[$Name] = $Destination\n}\n$Destination = Join-Path $Artifacts 'native'\n& gh run download $Selection.candidateRuns.runtime.id --repo KirilsTurkins/latent-service-fabric --name \"native-runtime-candidate-development-test-$Sha\" --dir $Destination\nif ($LASTEXITCODE -ne 0) { throw 'Native candidate download failed.' }\n$Selection.artifacts.native = $Destination\n$Selection.trust = @{\n    developerPolicy=(Join-Path $Support 'developer-policy.json'); runtimePolicy=(Join-Path $Support 'runtime-policy.json');\n    trustedRoot=(Join-Path $Support 'trusted_root.jsonl'); trustedRootSha256=$Selection.verificationInputs.trustedRootSha256;\n    hostVerifier=(Join-Path $Support 'gh.exe'); hostVerifierSha256=$Selection.verificationInputs.verifierSha256.windows;\n    guestVerifier=(Join-Path $Support 'gh-linux'); guestVerifierSha256=$Selection.verificationInputs.verifierSha256.linux\n}\n$Selection.faultProbe = Join-Path $Support 'dev_node_fault_probe.py'\n$Selection | ConvertTo-Json -Depth 15 | Set-Content (Join-Path $Support 'inputs.json') -Encoding utf8\n",
+        "shell": "pwsh"
+      },
+      {
+        "if": "inputs.platform != 'windows-recovery'",
+        "name": "Exercise packaged frontend with host SDKs and Python absent from its PATH",
+        "run": "$Support = Join-Path $env:RUNNER_TEMP 'packaged-support'\n$Observation = Join-Path $env:RUNNER_TEMP 'packaged-observation'\nSet-Location $Support\npython -I -B dev_packaged_probe.py --inputs (Join-Path $Support 'inputs.json') --output $Observation\nif ($LASTEXITCODE -ne 0) { throw 'Packaged schedule failed; retain the original attempt.' }\n",
+        "shell": "pwsh"
+      },
+      {
+        "if": "inputs.platform == 'all' || inputs.platform == 'windows-recovery'",
+        "name": "Observe actual receipt expiry and conflicting actors without replay",
+        "run": "$Support = Join-Path $env:RUNNER_TEMP 'packaged-support'\n$Observation = Join-Path $env:RUNNER_TEMP 'packaged-recovery'\nSet-Location $Support\npython -I -B dev_packaged_recovery_windows.py --inputs (Join-Path $Support 'inputs.json') --output $Observation\nif ($LASTEXITCODE -ne 0) { throw 'Packaged recovery failed; retain the original operation intent.' }\n",
+        "shell": "pwsh"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public success or failure receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "packaged-windows-observation-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/packaged-observation/observation.json\n${{ runner.temp }}/packaged-recovery/observation.json\n${{ runner.temp }}/packaged-support/selection.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 150
+  },
+  "jobId": "windows",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-packaged-qualification.yml"
+}

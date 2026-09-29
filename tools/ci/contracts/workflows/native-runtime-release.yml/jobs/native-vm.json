@@ -1,0 +1,136 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/native-runtime-release.yml:native-vm:Native packaged execution, real reboot, preservation and selected upgrade": {
+      "job": "native-vm",
+      "jobIf": "success()",
+      "name": "Native packaged execution, real reboot, preservation and selected upgrade",
+      "run": "cd \"$NATIVE_WORKSPACE\"\narguments=()\nif test -n \"$PREDECESSOR_RUN\"; then\n  arguments+=(--predecessor-directory \"$PWD/target/native-predecessor\" --predecessor-policy \"$NATIVE_TRUST/predecessor-policy.json\")\nfi\nif test \"$PUBLISH\" = true; then arguments+=(--require-upgrade); fi\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-release\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$GITHUB_SHA\" --source-ref \"$GITHUB_REF\" \\\n  --purpose release --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\" \"${arguments[@]}\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime-release.yml:native-vm:Prepare private exact-source host workspace": {
+      "job": "native-vm",
+      "jobIf": "success()",
+      "name": "Prepare private exact-source host workspace",
+      "run": "python3 tools/prepare_native_workspace.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime-release.yml:native-vm:Provision host QEMU and independently installed verification roots": {
+      "job": "native-vm",
+      "jobIf": "success()",
+      "name": "Provision host QEMU and independently installed verification roots",
+      "run": "cd \"$NATIVE_WORKSPACE\"\nsudo apt-get update\nsudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client\nif test -c /dev/kvm; then sudo setfacl -m \"u:$(id -un):rw\" /dev/kvm; fi\ngh --version\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"\nif test -n \"$PREDECESSOR_RUN\"; then\n  gh run download \"$PREDECESSOR_RUN\" --repo \"$GITHUB_REPOSITORY\" \\\n    --name \"native-runtime-release-$PREDECESSOR_COMMIT\" --dir target/native-predecessor\n  python3 - <<'PY'\nimport json\nimport os\nfrom pathlib import Path\nfrom tools.native_runtime.verify import publisher_policy, RELEASE_WORKFLOW, REPOSITORY\npolicy = publisher_policy({\"schemaVersion\": \"latent.native-publisher-policy.v1\", \"repository\": REPOSITORY,\n                          \"workflow\": RELEASE_WORKFLOW, \"sourceRef\": \"refs/tags/\" + os.environ[\"PREDECESSOR_VERSION\"],\n                          \"sourceCommit\": os.environ[\"PREDECESSOR_COMMIT\"], \"version\": os.environ[\"PREDECESSOR_VERSION\"],\n                          \"purpose\": \"release\"}, os.environ[\"PREDECESSOR_VERSION\"])\n(Path(os.environ[\"NATIVE_TRUST\"]) / \"predecessor-policy.json\").write_text(json.dumps(policy))\nPY\nfi",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/native-runtime-release.yml:native-vm:Native packaged execution, real reboot, preservation and selected upgrade": {
+      "after": ".github/workflows/native-runtime-release.yml:native-vm:Native packaged execution, real reboot, preservation and selected upgrade",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime-release.yml:native-vm:Prepare private exact-source host workspace": {
+      "after": ".github/workflows/native-runtime-release.yml:native-vm:Prepare private exact-source host workspace",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime-release.yml:native-vm:Provision host QEMU and independently installed verification roots": {
+      "after": ".github/workflows/native-runtime-release.yml:native-vm:Provision host QEMU and independently installed verification roots",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "name": "Native release VM (${{ matrix.profile }})",
+    "needs": [
+      "gate",
+      "build"
+    ],
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Prepare private exact-source host workspace",
+        "run": "python3 tools/prepare_native_workspace.py"
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "native-runtime-release-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-release"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "native-runtime-test-tools-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-test-tools"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}",
+          "PREDECESSOR_COMMIT": "${{ needs.gate.outputs.predecessor-commit }}",
+          "PREDECESSOR_RUN": "${{ inputs.predecessor_run }}",
+          "PREDECESSOR_VERSION": "${{ needs.gate.outputs.predecessor-version }}"
+        },
+        "name": "Provision host QEMU and independently installed verification roots",
+        "run": "cd \"$NATIVE_WORKSPACE\"\nsudo apt-get update\nsudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client\nif test -c /dev/kvm; then sudo setfacl -m \"u:$(id -un):rw\" /dev/kvm; fi\ngh --version\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"\nif test -n \"$PREDECESSOR_RUN\"; then\n  gh run download \"$PREDECESSOR_RUN\" --repo \"$GITHUB_REPOSITORY\" \\\n    --name \"native-runtime-release-$PREDECESSOR_COMMIT\" --dir target/native-predecessor\n  python3 - <<'PY'\nimport json\nimport os\nfrom pathlib import Path\nfrom tools.native_runtime.verify import publisher_policy, RELEASE_WORKFLOW, REPOSITORY\npolicy = publisher_policy({\"schemaVersion\": \"latent.native-publisher-policy.v1\", \"repository\": REPOSITORY,\n                          \"workflow\": RELEASE_WORKFLOW, \"sourceRef\": \"refs/tags/\" + os.environ[\"PREDECESSOR_VERSION\"],\n                          \"sourceCommit\": os.environ[\"PREDECESSOR_COMMIT\"], \"version\": os.environ[\"PREDECESSOR_VERSION\"],\n                          \"purpose\": \"release\"}, os.environ[\"PREDECESSOR_VERSION\"])\n(Path(os.environ[\"NATIVE_TRUST\"]) / \"predecessor-policy.json\").write_text(json.dumps(policy))\nPY\nfi\n"
+      },
+      {
+        "env": {
+          "NATIVE_PROFILE": "${{ matrix.profile }}",
+          "NATIVE_VERSION": "${{ needs.gate.outputs.version }}",
+          "PREDECESSOR_RUN": "${{ inputs.predecessor_run }}",
+          "PUBLISH": "${{ inputs.publish }}"
+        },
+        "name": "Native packaged execution, real reboot, preservation and selected upgrade",
+        "run": "cd \"$NATIVE_WORKSPACE\"\narguments=()\nif test -n \"$PREDECESSOR_RUN\"; then\n  arguments+=(--predecessor-directory \"$PWD/target/native-predecessor\" --predecessor-policy \"$NATIVE_TRUST/predecessor-policy.json\")\nfi\nif test \"$PUBLISH\" = true; then arguments+=(--require-upgrade); fi\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-release\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$GITHUB_SHA\" --source-ref \"$GITHUB_REF\" \\\n  --purpose release --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\" \"${arguments[@]}\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain compact redacted actual VM results, including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "native-runtime-release-vm-${{ matrix.profile }}-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-vm/*.json",
+          "retention-days": 90
+        }
+      }
+    ],
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "profile": [
+          "local-experimental-v1",
+          "external-capsule-v1"
+        ]
+      }
+    },
+    "timeout-minutes": 40
+  },
+  "jobId": "native-vm",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/native-runtime-release.yml"
+}

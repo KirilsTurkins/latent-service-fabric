@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "ProviderLifetimeTests.test_authoring_profile_is_typescript_only_and_cleanup_cannot_erase_original_failure",
+    "ProviderLifetimeTests.test_child_rejects_invalid_or_startup_expired_deadline_before_opening_listener",
+    "ProviderLifetimeTests.test_default_explicit_and_shorter_owner_use_absolute_expiry_despite_startup_delay",
+    "ProviderLifetimeTests.test_failed_peer_lifecycle_is_reaped_without_exposing_raw_output_or_rechecking_reaped_pid",
+    "ProviderLifetimeTests.test_invalid_owner_or_lifetime_fails_before_process_creation",
+    "ProviderLifetimeTests.test_observation_and_cleanup_failure_or_cancellation_remain_closed_negative_facts",
+    "ProviderLifetimeTests.test_real_loop_keeps_default300_and_stops_at_explicit1200_without_reset",
+    "ProviderLifetimeTests.test_request_and_physical_close_wait_are_clipped_to_owner_without_widening_local_caps",
+    "ProviderLifetimeTests.test_request_count_bound_remains32_with_one_attempt_each"
+  ],
+  "guards": {
+    "ProviderLifetimeTests.test_authoring_profile_is_typescript_only_and_cleanup_cannot_erase_original_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31760f34b8d1024690f8a89bb2e10dac714afc1abb85ea6dada0cc3262dcb256",
+        "class:setup-sha256:ca4c27e85cf934a44344557d963830c2d6a55a02929138d6e06238654cd9f82b"
+      ],
+      "skipSites": []
+    },
+    "ProviderLifetimeTests.test_child_rejects_invalid_or_startup_expired_deadline_before_opening_listener": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31760f34b8d1024690f8a89bb2e10dac714afc1abb85ea6dada0cc3262dcb256",
+        "class:setup-sha256:ca4c27e85cf934a44344557d963830c2d6a55a02929138d6e06238654cd9f82b"
+      ],
+      "skipSites": []
+    },
+    "ProviderLifetimeTests.test_default_explicit_and_shorter_owner_use_absolute_expiry_despite_startup_delay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31760f34b8d1024690f8a89bb2e10dac714afc1abb85ea6dada0cc3262dcb256",
+        "class:setup-sha256:ca4c27e85cf934a44344557d963830c2d6a55a02929138d6e06238654cd9f82b"
+      ],
+      "skipSites": []
+    },
+    "ProviderLifetimeTests.test_failed_peer_lifecycle_is_reaped_without_exposing_raw_output_or_rechecking_reaped_pid": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31760f34b8d1024690f8a89bb2e10dac714afc1abb85ea6dada0cc3262dcb256",
+        "class:setup-sha256:ca4c27e85cf934a44344557d963830c2d6a55a02929138d6e06238654cd9f82b"
+      ],
+      "skipSites": []
+    },
+    "ProviderLifetimeTests.test_invalid_owner_or_lifetime_fails_before_process_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31760f34b8d1024690f8a89bb2e10dac714afc1abb85ea6dada0cc3262dcb256",
+        "class:setup-sha256:ca4c27e85cf934a44344557d963830c2d6a55a02929138d6e06238654cd9f82b"
+      ],
+      "skipSites": []
+    },
+    "ProviderLifetimeTests.test_observation_and_cleanup_failure_or_cancellation_remain_closed_negative_facts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31760f34b8d1024690f8a89bb2e10dac714afc1abb85ea6dada0cc3262dcb256",
+        "class:setup-sha256:ca4c27e85cf934a44344557d963830c2d6a55a02929138d6e06238654cd9f82b"
+      ],
+      "skipSites": []
+    },
+    "ProviderLifetimeTests.test_real_loop_keeps_default300_and_stops_at_explicit1200_without_reset": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31760f34b8d1024690f8a89bb2e10dac714afc1abb85ea6dada0cc3262dcb256",
+        "class:setup-sha256:ca4c27e85cf934a44344557d963830c2d6a55a02929138d6e06238654cd9f82b"
+      ],
+      "skipSites": []
+    },
+    "ProviderLifetimeTests.test_request_and_physical_close_wait_are_clipped_to_owner_without_widening_local_caps": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31760f34b8d1024690f8a89bb2e10dac714afc1abb85ea6dada0cc3262dcb256",
+        "class:setup-sha256:ca4c27e85cf934a44344557d963830c2d6a55a02929138d6e06238654cd9f82b"
+      ],
+      "skipSites": []
+    },
+    "ProviderLifetimeTests.test_request_count_bound_remains32_with_one_attempt_each": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31760f34b8d1024690f8a89bb2e10dac714afc1abb85ea6dada0cc3262dcb256",
+        "class:setup-sha256:ca4c27e85cf934a44344557d963830c2d6a55a02929138d6e06238654cd9f82b"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sdk_provider_lifetime.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
