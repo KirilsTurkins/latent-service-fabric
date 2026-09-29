@@ -21,6 +21,8 @@ jobs:
           node-version: 24.19.0
       - name: Install the reviewed website dependency graph without lifecycle scripts
         run: |
+          python3 -m unittest discover -s website/toolchain/tests -v
+          python3 website/toolchain/prepare.py
           npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
           echo "$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin" >> "$GITHUB_PATH"
           node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund

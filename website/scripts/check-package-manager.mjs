@@ -8,9 +8,16 @@ const read = name => JSON.parse(fs.readFileSync(path.join(root, name), 'utf8'));
 const website = read('package.json');
 const toolchain = read('toolchain/package.json');
 const lock = read('toolchain/package-lock.json');
-assert.equal(toolchain.dependencies.npm, website.engines.npm);
-assert.equal(website.packageManager, `npm@${toolchain.dependencies.npm}`);
-assert.equal(read('content/toolchain.json').npm, toolchain.dependencies.npm);
+const source = read('toolchain/source.json');
+const npmVersion = source.base.version;
+assert.equal(toolchain.dependencies.npm, lock.packages['node_modules/npm'].resolved);
+assert.equal(lock.packages['node_modules/npm'].version, npmVersion);
+assert.equal(npmVersion, website.engines.npm);
+assert.equal(website.packageManager, `npm@${npmVersion}`);
+assert.equal(read('content/toolchain.json').npm, npmVersion);
+for (const patch of source.patches) {
+  assert.equal(read(`toolchain/node_modules/npm/node_modules/${patch.name}/package.json`).version, patch.version);
+}
 assert.ok(Object.keys(lock.packages).length > 1 && Object.keys(lock.packages).length <= 300);
 let packages = 0;
 for (const [location, expected] of Object.entries(lock.packages)) {
@@ -21,4 +28,4 @@ for (const [location, expected] of Object.entries(lock.packages)) {
   assert.equal(actual.version, expected.version, `Installed package manager dependency differs: ${location}`);
   packages++;
 }
-console.log(JSON.stringify({npm: toolchain.dependencies.npm, verifiedInstalledPackages: packages}));
+console.log(JSON.stringify({npm: npmVersion, distribution: source.profile, verifiedInstalledPackages: packages}));
