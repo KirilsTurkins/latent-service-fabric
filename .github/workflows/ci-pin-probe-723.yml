@@ -32,7 +32,7 @@ jobs:
           import hashlib, json, pathlib, subprocess
           dev = 'eebee56224f25f2c328fa6b2555a35584237c0af'
           ours = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
-          assert subprocess.check_output(['git', 'rev-parse', 'HEAD^']).decode().strip() == 'fcb6231e692a80e65fde9166e6b6500d05ffbe59'
+          subprocess.run(['git', 'merge-base', '--is-ancestor', 'fcb6231e692a80e65fde9166e6b6500d05ffbe59', ours], check=True)
           base = subprocess.check_output(['git', 'merge-base', ours, dev]).decode().strip()
           assert base == 'a7b5d2088471b7368cd85ab74f3292afcdfca00e'
           result = subprocess.run(['git', 'merge', '--no-commit', '--no-ff', dev])
@@ -52,14 +52,12 @@ jobs:
               assert path in allowed, path
               return hashlib.sha256(pathlib.Path(path[1]).read_bytes()).hexdigest()
           merged = combine(document(base), document(ours), document(dev))
-          # Both independently edited identities must describe the actual merged workflow.
           for _, name in allowed:
               merged['workflowIdentities'][name] = hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest()
           pathlib.Path('tools/ci/commands.json').write_text(json.dumps(merged, indent=2) + '\n')
           subprocess.run(['git', 'add', 'tools/ci/commands.json'], check=True)
           subprocess.run(['git', 'rm', '.github/workflows/ci-pin-probe-723.yml'], check=True)
           assert not subprocess.check_output(['git', 'diff', '--name-only', '--diff-filter=U']).strip()
-          # Existing source-bound experiments and verified security inputs must remain untouched.
           protected = ['adr', 'research/outbound-streams', 'sdk/java-guest', 'website/toolchain', '.github/security', 'tools/security_inventory.py', 'tools/tests/test_security_baseline.py']
           assert not subprocess.check_output(['git', 'diff', '--cached', '--name-only', 'HEAD', '--', *protected]).strip()
           print('MERGE_RECONCILED', ours, dev)
@@ -90,8 +88,11 @@ jobs:
               request = urllib.request.Request(api + endpoint, data=json.dumps(value).encode(), headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'}, method='POST')
               with urllib.request.urlopen(request, timeout=30) as response: return json.load(response)
           head = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+          dev = 'eebee56224f25f2c328fa6b2555a35584237c0af'
           base_tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}']).decode().strip()
           merged_tree = subprocess.check_output(['git', 'write-tree']).decode().strip()
+          # All objects already reachable from either parent exist remotely.
+          known = {row.split()[2].decode() for ref in (head, dev) for row in subprocess.check_output(['git', 'ls-tree', '-r', ref]).splitlines()}
           records = subprocess.check_output(['git', 'diff', '--cached', '--raw', '--no-abbrev', '-z', 'HEAD']).split(b'\0')
           elements = []
           for i in range(0, len(records) - 1, 2):
@@ -101,11 +102,13 @@ jobs:
                   elements.append({'path': path, 'mode': old_mode[1:], 'type': 'blob', 'sha': None})
               else:
                   assert state in ('A', 'M') and mode == '100644', (path, state, mode)
-                  raw = subprocess.check_output(['git', 'cat-file', 'blob', sha])
-                  assert post('blobs', {'content': base64.b64encode(raw).decode(), 'encoding': 'base64'})['sha'] == sha
+                  if sha not in known:
+                      assert path in {'tools/ci/commands.json', '.github/workflows/docs-site.yml', '.github/workflows/docs-pages.yml'}, path
+                      raw = subprocess.check_output(['git', 'cat-file', 'blob', sha])
+                      assert post('blobs', {'content': base64.b64encode(raw).decode(), 'encoding': 'base64'})['sha'] == sha
                   elements.append({'path': path, 'mode': mode, 'type': 'blob', 'sha': sha})
           tree = post('trees', {'base_tree': base_tree, 'tree': elements})['sha']
           assert tree == merged_tree
-          commit = post('commits', {'message': 'Merge development into feat/696-outbound-streams-feasibility\n\nPreserve upstream Action pins and release documentation while retaining the\nverified dependency remediation. Reconcile only the overlapping command\ninventory identities; retain all required commands and advisory coverage.\nRemove the temporary verification workflow. No runtime/research changes.', 'tree': tree, 'parents': [head, 'eebee56224f25f2c328fa6b2555a35584237c0af']})
+          commit = post('commits', {'message': 'Merge development into feat/696-outbound-streams-feasibility\n\nPreserve upstream Action pins and release documentation while retaining the\nverified dependency remediation. Reconcile only the overlapping command\ninventory identities; retain all required commands and advisory coverage.\nRemove the temporary verification workflow. No runtime/research changes.', 'tree': tree, 'parents': [head, dev]})
           print('VERIFIED_MERGE_COMMIT', commit['sha'], tree)
           PY
