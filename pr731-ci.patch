@@ -1,0 +1,222 @@
+diff --git a/crates/latent-wasmtime/tests/phase3_resource/observation.rs b/crates/latent-wasmtime/tests/phase3_resource/observation.rs
+index fd62e51..00fd7b3 100644
+--- a/crates/latent-wasmtime/tests/phase3_resource/observation.rs
++++ b/crates/latent-wasmtime/tests/phase3_resource/observation.rs
+@@ -180,0 +181,4 @@ pub fn process() -> Value {
++// Native all-features debug harnesses include the runtime/compiler and can
++// exceed 512 MiB. This bounds identity input, not guest memory or provider use.
++const MAX_EXECUTABLE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
++
+@@ -183 +187,13 @@ pub fn file_digest(path: &Path) -> String {
+-    assert!(file.metadata().unwrap().len() <= 512 * 1024 * 1024);
++    let metadata = file.metadata().unwrap();
++    assert!(metadata.is_file());
++    assert!(metadata.len() <= MAX_EXECUTABLE_BYTES);
++    let (digest, observed) = read_digest(&mut file, metadata.len());
++    assert_eq!(observed, metadata.len(), "identity input was truncated");
++    assert_eq!(file.metadata().unwrap().len(), observed);
++    digest
++}
++
++fn read_digest(reader: impl Read, maximum: u64) -> (String, u64) {
++    let began = Instant::now();
++    // Read at most one byte past the bound so growing inputs cannot extend work.
++    let mut reader = reader.take(maximum.checked_add(1).unwrap());
+@@ -185 +201 @@ pub fn file_digest(path: &Path) -> String {
+-    let mut bytes = vec![0; 65536];
++    let mut bytes = [0; 65536];
+@@ -188 +204,2 @@ pub fn file_digest(path: &Path) -> String {
+-        let length = file.read(&mut bytes).unwrap();
++        let length = reader.read(&mut bytes).unwrap();
++        assert!(began.elapsed() < Duration::from_secs(30));
+@@ -193 +210 @@ pub fn file_digest(path: &Path) -> String {
+-        assert!(observed_bytes <= 512 * 1024 * 1024);
++        assert!(observed_bytes <= maximum, "identity input exceeds byte limit");
+@@ -196,3 +213,6 @@ pub fn file_digest(path: &Path) -> String {
+-    format!(
+-        "sha256:{:x}",
+-        latent_core::digest::HexDigest(hasher.finalize())
++    (
++        format!(
++            "sha256:{:x}",
++            latent_core::digest::HexDigest(hasher.finalize())
++        ),
++        observed_bytes,
+@@ -201,0 +222,44 @@ pub fn file_digest(path: &Path) -> String {
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::io::Cursor;
++
++    #[test]
++    fn executable_identity_hashes_all_bytes_with_a_fixed_buffer() {
++        let input = vec![42; 2 * 65536 + 7];
++        let expected = format!(
++            "sha256:{:x}",
++            latent_core::digest::HexDigest(Sha256::digest(&input))
++        );
++        assert_eq!(
++            read_digest(Cursor::new(&input), input.len() as u64),
++            (expected.clone(), input.len() as u64)
++        );
++        let directory = tempfile::tempdir().unwrap();
++        let path = directory.path().join("harness");
++        fs::write(&path, &input).unwrap();
++        assert_eq!(file_digest(&path), expected);
++        assert_eq!(
++            read_digest(Cursor::new([]), 0),
++            (
++                "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".into(),
++                0
++            )
++        );
++    }
++
++    #[test]
++    fn executable_identity_rejects_overflow_without_unbounded_reading() {
++        let mut input = Cursor::new([42; 64]);
++        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++            read_digest(&mut input, 7)
++        }));
++        assert!(result.is_err());
++        assert_eq!(input.position(), 8);
++        // A sparse oversized file must be rejected before any payload is read.
++        let file = tempfile::NamedTempFile::new().unwrap();
++        file.as_file().set_len(MAX_EXECUTABLE_BYTES + 1).unwrap();
++        assert!(std::panic::catch_unwind(|| file_digest(file.path())).is_err());
++    }
++}
++
+diff --git a/docs/development/windows-developer-workflow.md b/docs/development/windows-developer-workflow.md
+index 571086b..cf32608 100644
+--- a/docs/development/windows-developer-workflow.md
++++ b/docs/development/windows-developer-workflow.md
+@@ -158,3 +158,6 @@ helper to finish that cleanup. Exceeding the grace period remains uncertain.
+-Four build attempts are retained, each monitored every 500 ms for a 32,768-entry,
+-4 GiB ceiling. This is an observed limit, not a filesystem quota: temporary
+-overshoot can occur before cancellation. Known failed or superseded attempts can
++Four build attempts are retained, each monitored every 500 ms for a 65,536-entry,
++4 GiB ceiling. The entry count includes directories, extracted Cargo registry
++sources and the private linker SDK; compiler inputs are not exempted from the
++limit. The larger entry ceiling accommodates the reviewed Wasmtime 48 Rust
++closure without raising the byte or attempt ceilings. This is an observed limit,
++not a filesystem quota: temporary overshoot can occur before cancellation. Known failed or superseded attempts can
+diff --git a/tools/ci/commands.json b/tools/ci/commands.json
+index acfd3b6..82985db 100644
+--- a/tools/ci/commands.json
++++ b/tools/ci/commands.json
+@@ -4332,0 +4333 @@
++      "BuildAttempts.test_failed_attempt_cleanup_uses_the_same_entry_ceiling",
+@@ -4334,0 +4336 @@
++      "BuildAttempts.test_observed_entry_overflow_reaps_compiler_and_preserves_previous_build",
+@@ -4337,0 +4340 @@
++      "BuildAttempts.test_usage_counts_directories_and_files_at_the_exact_entry_limit",
+@@ -4673,0 +4677 @@
++      "HostAbiProfileTests.test_active_and_historical_generator_mismatches_are_rejected",
+diff --git a/tools/ci/suites.json b/tools/ci/suites.json
+index be03e96..1843b50 100644
+--- a/tools/ci/suites.json
++++ b/tools/ci/suites.json
+@@ -6921,0 +6922,2 @@
++        "observation::tests::executable_identity_hashes_all_bytes_with_a_fixed_buffer",
++        "observation::tests::executable_identity_rejects_overflow_without_unbounded_reading",
+@@ -6929 +6931 @@
+-      "minimumCases": 1,
++      "minimumCases": 3,
+diff --git a/tools/dev_workflow/build_cache.py b/tools/dev_workflow/build_cache.py
+index 3b85447..06d3dc4 100644
+--- a/tools/dev_workflow/build_cache.py
++++ b/tools/dev_workflow/build_cache.py
+@@ -14 +14,4 @@ MAX_ATTEMPTS = 4
+-MAX_ENTRIES = 32768
++# Count the entire private compiler tree, including extracted registry sources
++# and the offline linker SDK. The reviewed Rust closure outgrew 32,768 entries;
++# retain a finite 65,536-entry ceiling rather than excluding those inputs.
++MAX_ENTRIES = 65536
+diff --git a/tools/tests/test_dev_build_cache.py b/tools/tests/test_dev_build_cache.py
+index 29f1819..7b6a402 100644
+--- a/tools/tests/test_dev_build_cache.py
++++ b/tools/tests/test_dev_build_cache.py
+@@ -87,0 +88,41 @@ class BuildAttempts(unittest.TestCase):
++    def test_usage_counts_directories_and_files_at_the_exact_entry_limit(self):
++        child = self.root / "compiler-inputs"
++        paths.new_directory(child)
++        (child / "source.rs").write_bytes(b"fn main() {}")
++        with patch.object(build_cache, "MAX_ENTRIES", 2):
++            self.assertEqual(build_cache.usage(self.root), (2, 12))
++            (child / "extra.rs").write_bytes(b"x")
++            with self.assertRaisesRegex(common.DevError, "build-cache-file-limit"):
++                build_cache.usage(self.root)
++        self.assertEqual(build_cache.MAX_ENTRIES, 65536)
++        self.assertEqual(build_cache.MAX_BYTES, 4 * 1024 * 1024 * 1024)
++        self.assertEqual(build_cache.MAX_ATTEMPTS, 4)
++
++    def test_observed_entry_overflow_reaps_compiler_and_preserves_previous_build(self):
++        self.inputs(b"from pathlib import Path\nimport time\n"
++                    b"for i in range(64): Path('../entry-' + str(i)).touch()\n"
++                    b"time.sleep(60)\n")
++        previous = {"sourceDirectory": "earlier", "receipt": {"source": "earlier"}}
++        state.atomic(self.root, "last-build.json", previous)
++        with patch.object(build_cache, "MAX_ENTRIES", 32), \
++                self.assertRaisesRegex(common.DevError, "build-cache-file-limit") as error:
++            self.execute()
++        self.assertFalse(error.exception.uncertain)
++        attempt, = (self.root / "builds").iterdir()
++        self.assertEqual(build_cache.owner(attempt)["state"], "failed")
++        self.assertTrue(list((attempt / "source").glob("entry-*")), "the compiler must actually have run")
++        self.assertEqual(state.load(self.root, "last-build.json"), previous)
++
++    @unittest.skipUnless(os.name == "posix", "anchored Linux cache removal")
++    def test_failed_attempt_cleanup_uses_the_same_entry_ceiling(self):
++        self.inputs(b"import sys\nsys.exit(1)\n")
++        for _ in range(build_cache.MAX_ATTEMPTS):
++            with self.assertRaisesRegex(common.DevError, "guest-build-failed"):
++                self.execute()
++        from tools.native_runtime import files
++        with patch.object(files, "remove_tree", wraps=files.remove_tree) as remove:
++            with self.assertRaisesRegex(common.DevError, "guest-build-failed"):
++                self.execute()
++            self.assertEqual(remove.call_count, 1)
++            self.assertEqual(remove.call_args.kwargs["maximum"], build_cache.MAX_ENTRIES + 8)
++
+diff --git a/tools/tests/test_host_abi_profile.py b/tools/tests/test_host_abi_profile.py
+index 8113029..15e4285 100644
+--- a/tools/tests/test_host_abi_profile.py
++++ b/tools/tests/test_host_abi_profile.py
+@@ -13,0 +14,6 @@ from jsonschema import Draft202012Validator
++# Superseded matrices are historical qualification records, not active pins.
++HISTORICAL_MATRICES = {
++    2: "dc045e56df0bfbf132a485e24c89447768fa5c8d3eb2787c322e2426b43c261f",
++    3: "e566e93362c4c9174a5fc50aa7b7cd93c3414719d0f69df7f08b7bf1c13dd58f",
++}
++
+@@ -26 +32,4 @@ class HostAbiProfileTests(unittest.TestCase):
+-        matrix = json.loads(path.read_text(encoding="utf-8"))
++        raw = path.read_bytes()
++        if version in HISTORICAL_MATRICES:
++            self.assertEqual(hashlib.sha256(raw).hexdigest(), HISTORICAL_MATRICES[version])
++        matrix = json.loads(raw)
+@@ -54,2 +63,21 @@ class HostAbiProfileTests(unittest.TestCase):
+-        self.assertEqual(dependencies["wasmtime"]["version"], "=" + matrix["wasmtimeVersion"])
+-        self.assertEqual("wit-bindgen@" + dependencies["wit-bindgen"].lstrip("="), matrix["guestGenerator"])
++        self.check_generator_pins(version, matrix, dependencies)
++
++    def check_generator_pins(self, version, matrix, dependencies):
++        self.assertEqual(matrix["id"], f"lsf-host-abi-phase3-v{version}")
++        if version in HISTORICAL_MATRICES:
++            self.assertEqual(matrix["wasmtimeVersion"], "47.0.4")
++            self.assertEqual(matrix["guestGenerator"], "wit-bindgen@0.62.0")
++        else:
++            self.assertEqual(version, 4, "new active ABI profiles require explicit review")
++            self.assertEqual(dependencies["wasmtime"]["version"], "=" + matrix["wasmtimeVersion"])
++            self.assertEqual("wit-bindgen@" + dependencies["wit-bindgen"].lstrip("="), matrix["guestGenerator"])
++
++    def test_active_and_historical_generator_mismatches_are_rejected(self):
++        dependencies = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]["dependencies"]
++        for version in (2, 3, 4):
++            matrix = json.loads((ROOT / f"wit/host-abi-phase3-v{version}.json").read_bytes())
++            for field, invalid in (("wasmtimeVersion", "0.0.0"), ("guestGenerator", "wit-bindgen@0.0.0")):
++                with self.subTest(version=version, field=field), self.assertRaises(AssertionError):
++                    self.check_generator_pins(version, {**matrix, field: invalid}, dependencies)
++        with self.assertRaises(AssertionError):
++            self.check_generator_pins(5, {**matrix, "id": "lsf-host-abi-phase3-v5"}, dependencies)
