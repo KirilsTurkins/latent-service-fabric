@@ -140,6 +140,7 @@ jobs:
       - name: Install the reviewed browser tools in an unprivileged job
         run: |
           npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node website/scripts/patch-package-manager.mjs
           node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
           node website/node_modules/playwright/cli.js install-deps chromium
           node website/scripts/site.mjs browser-install

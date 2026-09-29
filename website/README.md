@@ -34,3 +34,37 @@ the current head using these commands; `.generated/build-evidence.json` records
 that run's identity. Parent review owns ADR acceptance and merge. Coverage's
 27 practical-guide reviews remain pending and its acceptance-mode failure is
 intentional until their delegated owners provide reviewed execution evidence.
+
+## Package-manager security bootstrap
+
+From the repository root, install and verify the toolchain before invoking it:
+
+```sh
+npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+node website/scripts/patch-package-manager.mjs
+node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+```
+
+The reviewed npm 11.19.1 tarball still bundles `ip-address` 10.5.0. Even npm
+11.20.0 retains that version. A normal npm override or a lockfile-only edit
+does not replace bundled files. The explicit bootstrap therefore copies the
+complete, separately installed and SHA-512-pinned upstream 10.5.1 package
+over npm's bundled copy, removes stale hidden lock inventories, and verifies
+every locked dependency before the selected npm performs any work. It never
+enables dependency lifecycle scripts or downloads code itself.
+
+The toolchain lock describes the final patched installation, including both
+copies of 10.5.1. A bare `npm ci` is only the first bootstrap step: always run
+the patch command after a clean reinstall. The read-only identity checker
+rejects an unpatched installation. When refreshing this lock, retain the
+separately pinned replacement entries and run the clean-install regression;
+do not accept npm's regenerated 10.5.0 bundle record. Remove this replacement
+only after reviewing an npm distribution whose actual bundle is patched.
+
+The regression exercises the package resolved from npm's SOCKS dependency,
+including local-use NAT64 boundaries, several prefix layouts, loopback,
+metadata, private IPv4 destinations and public-address controls. It confirms
+that the entire `64:ff9b:1::/48` range is private without guessing an embedded
+IPv4 address. This addresses [GHSA-2vr4-cq9g-pvrc](https://github.com/advisories/GHSA-2vr4-cq9g-pvrc)
+in build tooling; it is not evidence of a reachable LSF runtime SSRF exploit
+or a replacement for DNS, connected-peer and redirect validation.
