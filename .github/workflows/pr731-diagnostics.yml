@@ -1,0 +1,60 @@
+name: PR 731 bounded diagnostics
+on:
+  push:
+    branches: [security/dependabot-1-ci-diagnostics]
+    paths: [.github/workflows/pr731-diagnostics.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  collect:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/security/dependabot-1-ci-diagnostics'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 81cd2540a4f6e91fd559728a791ec31a903a2ae9
+          persist-credentials: false
+      - name: Export reviewed text sources and bounded failure excerpts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, subprocess, urllib.request, zipfile, re
+          root = pathlib.Path.cwd()
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr731-diagnostics'
+          output.mkdir()
+          total = 0
+          with zipfile.ZipFile(output / 'source.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+              for name in subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0'):
+                  if not name: continue
+                  path = root / name
+                  if not path.is_file() or path.is_symlink() or path.stat().st_size > 4 * 1024 * 1024: continue
+                  data = path.read_bytes()
+                  try: data.decode('utf-8')
+                  except UnicodeDecodeError: continue
+                  total += len(data)
+                  if total > 256 * 1024 * 1024: raise RuntimeError('source export exceeds bound')
+                  archive.writestr(name, data)
+          print('Source identity: 81cd2540a4f6e91fd559728a791ec31a903a2ae9; text bytes:', total)
+          for job in [109466233709, 109465377918]:
+              request = urllib.request.Request(f'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/jobs/{job}/logs', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(request, timeout=60) as response: data = response.read(32 * 1024 * 1024 + 1)
+              if len(data) > 32 * 1024 * 1024: raise RuntimeError('log exceeds bound')
+              lines = data.decode('utf-8-sig').splitlines()
+              selected = set()
+              for i, line in enumerate(lines):
+                  if re.search(r'panicked at|^.*FAIL: |^.*ERROR: |##\[error\]|test result: FAILED|Traceback|Error:|failed:', line):
+                      selected.update(range(max(0, i-2), min(len(lines), i+12)))
+              text = '\n'.join(lines[i] for i in sorted(selected))
+              (output / f'job-{job}-failures.log').write_text(text)
+              print(f'Job {job} failure excerpt:\n{text[-16000:]}')
+          PY
+      - name: Retain only public tracked text and diagnostic excerpts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr731-source-and-failures
+          path: ${{ runner.temp }}/pr731-diagnostics/
+          retention-days: 1
+          if-no-files-found: error
