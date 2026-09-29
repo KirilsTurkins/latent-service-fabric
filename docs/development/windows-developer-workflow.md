@@ -155,10 +155,13 @@ retained snapshots, 256 KiB of supervisor logs, 32 retained operation receipts,
 language recipe six seconds to reap its nested process groups, then allows five
 seconds for the outer group sweep. The transport allows twelve seconds for the
 helper to finish that cleanup. Exceeding the grace period remains uncertain.
-Four build attempts are retained, each monitored every 500 ms for a 32,768-entry,
-4 GiB ceiling. This is an observed limit, not a filesystem quota: temporary
-overshoot can occur before cancellation. Known failed or superseded attempts can
-be removed; accepted, deployed and uncertain attempts stay protected. A full
+Four build attempts are retained, each monitored every 500 ms for a 65,536-entry,
+4 GiB ceiling. The entry count includes directories, extracted Cargo registry
+sources and the private linker SDK; compiler inputs are not exempted from the
+limit. The larger entry ceiling accommodates the reviewed Wasmtime 48 Rust
+closure without raising the byte or attempt ceilings. This is an observed limit,
+not a filesystem quota: temporary overshoot can occur before cancellation.
+Known failed or superseded attempts can be removed; accepted, deployed and uncertain attempts stay protected. A full
 cache of protected attempts rejects a new build. Package assembly shares the
 original build deadline. Compiler timeout/output overflow is distinguished from
 unconfirmed child cleanup, which requires inspection before purge.

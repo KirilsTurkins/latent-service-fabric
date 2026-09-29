@@ -4330,11 +4330,14 @@
       "BuildAttempts.test_actual_packager_cache_hit_tampering_and_separate_source_tree",
       "BuildAttempts.test_build_key_separates_source_recipe_tools_abi_host_target_and_packager",
       "BuildAttempts.test_changed_tool_is_rejected_before_allocating_or_running",
+      "BuildAttempts.test_failed_attempt_cleanup_uses_the_same_entry_ceiling",
       "BuildAttempts.test_failed_attempts_are_fresh_and_preserve_accepted_build",
       "BuildAttempts.test_observed_cache_overflow_reaps_compiler_and_retains_no_success",
+      "BuildAttempts.test_observed_entry_overflow_reaps_compiler_and_preserves_previous_build",
       "BuildAttempts.test_reaped_deadline_can_be_cleaned_without_claiming_remote_outcome",
       "BuildAttempts.test_slow_usage_scan_leaves_time_for_build_progress",
       "BuildAttempts.test_uncertain_attempts_are_retained_at_capacity",
+      "BuildAttempts.test_usage_counts_directories_and_files_at_the_exact_entry_limit",
       "BuildAttempts.test_usage_scan_failure_is_not_hidden_by_polling"
     ],
     "tools/tests/test_dev_contracts.py": [
@@ -4671,6 +4674,7 @@
       "LiveDirectoryWatchTests.test_nested_output_total_failure_kills_and_reaps_helper"
     ],
     "tools/tests/test_host_abi_profile.py": [
+      "HostAbiProfileTests.test_active_and_historical_generator_mismatches_are_rejected",
       "HostAbiProfileTests.test_frozen_matrix_matches_exact_sources_world_and_pinned_generators"
     ],
     "tools/tests/test_illustration_palette.py": [

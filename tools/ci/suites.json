@@ -6919,6 +6919,8 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "observation::tests::executable_identity_hashes_all_bytes_with_a_fixed_buffer",
+        "observation::tests::executable_identity_rejects_overflow_without_unbounded_reading",
         "phase3_resource_small_provider_ownership_checkpoint"
       ],
       "expectedIgnored": [],
@@ -6926,7 +6928,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 1,
+      "minimumCases": 3,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
