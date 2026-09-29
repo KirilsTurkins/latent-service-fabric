@@ -33,7 +33,9 @@ jobs:
           python3 -m pip install --requirement source/tools/requirements.lock
           python3 controls/.github/maintenance/pr700_repair.py edit source
           python3 controls/.github/maintenance/pr700_repair.py locks source
+          python3 controls/.github/maintenance/pr700_finish.py finish source
           python3 controls/.github/maintenance/pr700_repair.py inventory source
+          python3 controls/.github/maintenance/pr700_finish.py compact source
           python3 controls/.github/maintenance/pr700_repair.py export source "$RUNNER_TEMP/candidate"
       - name: Run exact source contracts and regression suites
         working-directory: source
