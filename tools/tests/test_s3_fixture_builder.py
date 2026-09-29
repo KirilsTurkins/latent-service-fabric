@@ -325,6 +325,197 @@ class FixtureReceiptTests(unittest.TestCase):
         self.assertIs(caught.exception, original)
 
 
+class FixtureCompilerPullTests(unittest.TestCase):
+    def setUp(self):
+        self.now = 100.0
+        self.owner_deadline = 1600.0
+        clock = patch.object(builder.time, "monotonic", side_effect=lambda: self.now)
+        clock.start()
+        self.addCleanup(clock.stop)
+        self.run = Mock()
+        self.run.cancel.is_set.return_value = False
+        self.run.cancel.wait.side_effect = self.wait
+        self.run.remaining.side_effect = self.remaining
+        self.run.cleanup = []
+        self.run.run_id = TOKEN
+
+    def wait(self, delay):
+        self.now += delay
+        return False
+
+    def remaining(self, limit=None):
+        left = self.owner_deadline - self.now
+        builder.require(left > 0, "infrastructure-timeout", "total-run-watchdog")
+        return left if limit is None else min(left, limit)
+
+    def failure(self, status=502):
+        return Result(1, f"Error response from daemon: received unexpected HTTP status: {status} Bad Gateway\n".encode())
+
+    def test_success_pulls_the_exact_digest_and_platform_once_without_waiting(self):
+        self.run.command.return_value = Result(0, b"pulled")
+        builder.pull_builder(self.run)
+        self.run.command.assert_called_once_with(
+            ["docker", "pull", "--platform", "linux/amd64", builder.BUILDER], timeout=240.0, check=False)
+        self.run.cancel.wait.assert_not_called()
+
+    def test_observed_502_can_recover_without_changing_digest_or_resetting_budget(self):
+        replies = iter([self.failure(), self.failure(503), Result(0, b"pulled")])
+
+        def command(*_args, **_kwargs):
+            self.now += 10
+            return next(replies)
+
+        self.run.command.side_effect = command
+        builder.pull_builder(self.run)
+        self.assertEqual([call.kwargs["timeout"] for call in self.run.command.call_args_list],
+                         [240.0, 228.0, 214.0])
+        self.assertEqual([call.args for call in self.run.cancel.wait.call_args_list], [(2,), (4,)])
+        for call in self.run.command.call_args_list:
+            self.assertEqual(call.args[0], ["docker", "pull", "--platform", "linux/amd64", builder.BUILDER])
+            self.assertIs(call.kwargs["check"], False)
+
+    def test_only_explicit_transient_http_statuses_are_retried(self):
+        for status in (429, 500, 502, 503, 504):
+            with self.subTest(status=status):
+                self.run.command.reset_mock()
+                self.run.command.side_effect = [self.failure(status), Result(0, b"pulled")]
+                builder.pull_builder(self.run)
+                self.assertEqual(self.run.command.call_count, 2)
+
+    def test_three_failed_attempts_preserve_the_final_failure(self):
+        replies = [self.failure(502), self.failure(503), self.failure(504)]
+        self.run.command.side_effect = replies
+        with self.assertRaises(ProcessFailure) as caught:
+            builder.pull_builder(self.run)
+        self.assertEqual(caught.exception.reason, "child-exit-failure")
+        self.assertIs(caught.exception.result, replies[-1])
+        self.assertEqual(self.run.command.call_count, 3)
+        self.assertEqual(self.run.cancel.wait.call_count, 2)
+
+    def test_permanent_or_unknown_errors_are_not_retried(self):
+        messages = [self.failure(status).output for status in (400, 401, 403, 404, 408, 501, 505)]
+        messages.extend([b"unauthorized", b"manifest unknown", b"digest mismatch",
+                         b"Cannot connect to the Docker daemon", b"", b"unknown error 502",
+                         self.failure().output + b"digest verification failed\n"])
+        for message in messages:
+            with self.subTest(message=message):
+                self.run.command.reset_mock()
+                result = Result(1, message)
+                self.run.command.return_value = result
+                with self.assertRaises(ProcessFailure) as caught:
+                    builder.pull_builder(self.run)
+                self.assertIs(caught.exception.result, result)
+                self.run.command.assert_called_once()
+        self.run.cancel.wait.assert_not_called()
+
+    def test_a_permanent_failure_after_a_transient_reply_stops_immediately(self):
+        permanent = Result(1, b"manifest unknown")
+        self.run.command.side_effect = [self.failure(), permanent]
+        with self.assertRaises(ProcessFailure) as caught:
+            builder.pull_builder(self.run)
+        self.assertIs(caught.exception.result, permanent)
+        self.assertEqual(self.run.command.call_count, 2)
+        self.run.cancel.wait.assert_called_once_with(2)
+
+    def test_signals_and_other_exit_codes_are_not_retried_even_with_502_text(self):
+        for code in (-9, -15, 2, 125):
+            with self.subTest(code=code):
+                self.run.command.reset_mock()
+                self.run.command.return_value = Result(code, self.failure().output)
+                with self.assertRaises(ProcessFailure):
+                    builder.pull_builder(self.run)
+                self.run.command.assert_called_once()
+        self.run.cancel.wait.assert_not_called()
+
+    def test_owned_process_failures_are_forwarded_without_retry(self):
+        for category, reason in (("cancelled", "runner-interrupted"),
+                                 ("infrastructure-timeout", "child-timeout"),
+                                 ("invalid-fixture", "output-limit")):
+            with self.subTest(category=category):
+                self.run.command.reset_mock()
+                original = ProcessFailure(category, reason, self.failure())
+                self.run.command.side_effect = original
+                with self.assertRaises(ProcessFailure) as caught:
+                    builder.pull_builder(self.run)
+                self.assertIs(caught.exception, original)
+                self.run.command.assert_called_once()
+        self.run.cancel.wait.assert_not_called()
+
+    def test_cancellation_before_pull_starts_no_child(self):
+        self.run.cancel.is_set.return_value = True
+        with self.assertRaises(ProcessFailure) as caught:
+            builder.pull_builder(self.run)
+        self.assertEqual(caught.exception.category, "cancelled")
+        self.run.command.assert_not_called()
+        self.run.cancel.wait.assert_not_called()
+
+    def test_cancellation_interrupts_backoff_without_another_pull(self):
+        self.run.command.return_value = self.failure()
+        self.run.cancel.wait.side_effect = lambda _delay: True
+        with self.assertRaises(ProcessFailure) as caught:
+            builder.pull_builder(self.run)
+        self.assertEqual(caught.exception.category, "cancelled")
+        self.run.command.assert_called_once()
+        self.run.cancel.wait.assert_called_once_with(2)
+
+    def test_elapsed_pull_budget_prevents_backoff_or_another_child(self):
+        def command(*_args, **_kwargs):
+            self.now += 239
+            return self.failure()
+
+        self.run.command.side_effect = command
+        with self.assertRaises(ProcessFailure) as caught:
+            builder.pull_builder(self.run)
+        self.assertEqual(caught.exception.reason, "minio-builder-pull-watchdog")
+        self.run.command.assert_called_once()
+        self.run.cancel.wait.assert_not_called()
+
+    def test_owner_deadline_is_never_extended_by_retry_budget(self):
+        self.owner_deadline = self.now + 1
+        self.run.command.return_value = self.failure()
+        with self.assertRaises(ProcessFailure) as caught:
+            builder.pull_builder(self.run)
+        self.assertEqual(caught.exception.reason, "minio-builder-pull-watchdog")
+        self.assertEqual(self.run.command.call_args.kwargs["timeout"], 1.0)
+        self.run.command.assert_called_once()
+        self.run.cancel.wait.assert_not_called()
+
+    def test_deadline_expiring_during_backoff_prevents_another_child(self):
+        self.run.command.return_value = self.failure()
+        self.run.cancel.wait.side_effect = lambda _delay: self.wait(240)
+        with self.assertRaises(ProcessFailure) as caught:
+            builder.pull_builder(self.run)
+        self.assertEqual(caught.exception.reason, "minio-builder-pull-watchdog")
+        self.run.command.assert_called_once()
+        self.run.cancel.wait.assert_called_once_with(2)
+
+    def test_failed_pull_does_not_create_compiler_or_publish_success(self):
+        self.run.command.side_effect = [Result(0, b"downloaded"), Result(1, b"unauthorized")]
+        with tempfile.TemporaryDirectory() as temporary, patch.object(builder, "inspect_archive", return_value={}):
+            output = Path(temporary) / "fixture"
+            with self.assertRaises(ProcessFailure):
+                builder.build(self.run, output)
+            self.assertFalse((output / "fixture.json").exists())
+        self.assertEqual(self.run.command.call_count, 2)
+        self.assertEqual(self.run.command.call_args_list[-1].args[0][:2], ["docker", "pull"])
+        self.assertEqual(self.run.cleanup, [])
+
+    def test_recovery_retries_only_pull_not_source_download_or_compiler_creation(self):
+        stop = ProcessFailure("invalid-fixture", "synthetic-create-stop")
+        self.run.command.side_effect = [Result(0, b"downloaded"), self.failure(), Result(0, b"pulled"), stop]
+        with tempfile.TemporaryDirectory() as temporary, patch.object(builder, "inspect_archive", return_value={}):
+            with self.assertRaises(ProcessFailure) as caught:
+                builder.build(self.run, Path(temporary) / "fixture")
+        self.assertIs(caught.exception, stop)
+        calls = [call.args[0] for call in self.run.command.call_args_list]
+        self.assertEqual(len(calls), 4)
+        self.assertIn("--download-source", calls[0])
+        self.assertEqual([args[:2] for args in calls[1:]],
+                         [["docker", "pull"], ["docker", "pull"], ["docker", "create"]])
+        self.assertIn("--pull=never", calls[-1])
+        self.assertEqual(len(self.run.cleanup), 1)
+
+
 class FixtureOwnerTests(unittest.TestCase):
     def owner(self, **changes):
         value = {"Id": CONTAINER, "Config": {"Labels": {builder.OWNER_LABEL: TOKEN}}}
