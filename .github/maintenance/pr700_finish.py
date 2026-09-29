@@ -92,18 +92,20 @@ fn fixed_length_types() -> Vec<Type> {
     # Only maintained instructions: archived benchmark/source observations and
     # versioned documentation retain the versions actually measured.
     for name in ('docs/runtime/angular-renderer-profile.md',
-                 'docs/runtime/trusted-aot-cache.md',
+                 'docs/runtime/trusted-aot.md',
                  'docs/runtime/execution-security-profiles.md',
-                 'docs/runtime/host-abi-phase3-v2.md',
+                 'docs/runtime/host-abi-profile.md',
                  'docs/testing/phase3-security.md',
                  'docs/development/phase-0-wasmtime.md'):
         replace(name, '47.0.4', '48.0.3')
-    for name in ('docs/runtime/async-component-execution.md', 'docs/runtime/streaming-http-render.md'):
+    for name in ('docs/runtime/async-host-io.md', 'docs/runtime/streaming-http.md'):
         path = ROOT / name
         lines = path.read_text().splitlines(keepends=True)
         for index, line in enumerate(lines):
-            if '47.0.4' in line and ('reviewed Wasmtime' in line or 'The baseline pins' in line):
+            if '47.0.4' in line and 'reviewed Wasmtime' in line:
                 lines[index] = line.replace('47.0.4', '48.0.3')
+            elif 'The baseline remains Wasmtime 47.0.4.' in line:
+                lines[index] = line.replace('The baseline remains Wasmtime 47.0.4.', 'The baseline is Wasmtime 48.0.3.')
         path.write_text(''.join(lines))
     metadata = json.loads(subprocess.check_output(
         ['cargo', 'metadata', '--locked', '--format-version', '1', '--filter-platform', 'x86_64-unknown-linux-gnu'], cwd=ROOT))
