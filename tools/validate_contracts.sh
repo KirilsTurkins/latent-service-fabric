@@ -133,7 +133,9 @@ wasm-tools component wit "${ENGINE_MEMORY_COMPONENT}" --json \
 
 # The registered local/CI selection supplies the same four exact cases and
 # fixture paths. Earlier explicit builders are reused; run never invokes Cargo.
-ECHO_INVENTORY="${TARGET_ROOT}/local-tests/echo-runtime.jsonl"
+# This invocation owns a fresh inventory under the already-cleared OUTPUT.
+# Reusing a developer inventory here would bypass Cargo's source freshness check.
+ECHO_INVENTORY="${OUTPUT}/echo-runtime.jsonl"
 python3 tools/test.py prepare --suite selection.echo-runtime --inventory "${ECHO_INVENTORY}" --context ci
 python3 tools/test.py check --suite selection.echo-runtime --inventory "${ECHO_INVENTORY}" --context ci
 python3 tools/test.py run --suite selection.echo-runtime --inventory "${ECHO_INVENTORY}" --context ci

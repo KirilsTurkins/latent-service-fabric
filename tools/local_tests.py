@@ -21,7 +21,8 @@ from tools import ci_suite_inventory as registry
 from tools import phase3_security_artifacts as security
 from tools.build_process import BuildProcessError, run_bounded_result as run_bounded
 from tools.owned_test_process import run_owned as owned_run
-from tools.test_run import FAILURE_SCHEMA, ProcessFailure, TestRun, case_digest, digest as file_digest, redact
+from tools.test_run import (FAILURE_SCHEMA, MAX_TAIL, ProcessFailure, TestRun,
+                            case_digest, digest as file_digest, redact)
 
 REPO = Path(__file__).resolve().parents[1]
 SELECTION_PREFIX = "selection."
@@ -681,6 +682,77 @@ def _test_run_summary(output: bytes) -> dict | None:
 
 
 
+def _angular_child_completion(record: dict, summary: dict, run: TestRun,
+                              plan: dict, fault: str | None, result) -> list[str]:
+    """Validate the identities available at the child's observed failure stage."""
+    reproduction = record.get("reproduction")
+    fixtures = record.get("fixtures")
+    child = record.get("child")
+    outcome, category = record.get("outcome"), record.get("category")
+    early = (result.returncode not in {None, 0} and outcome in ("failed", "not-run")
+             and record.get("stage") == "prerequisites")
+    if (not isinstance(outcome, str) or category is not None and not isinstance(category, str)
+            or not isinstance(reproduction, dict) or set(reproduction) - REPRODUCTION_KEYS
+            or not isinstance(fixtures, dict) or not isinstance(child, dict)
+            or set(child) != {"exit", "signal", "cleanupAcknowledged"}
+            or not isinstance(record.get("logTail"), str) or len(record["logTail"]) > MAX_TAIL
+            or not isinstance(record.get("stage"), str)
+            or re.fullmatch(r"[a-z][a-z0-9-]{0,63}", record["stage"]) is None
+            or not isinstance(record.get("cleanupFailures"), list)
+            or len(record["cleanupFailures"]) > 128
+            or not all(isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9_.:-]{1,256}", name)
+                       for name in record["cleanupFailures"])):
+        raise ProcessFailure("invalid-fixture", "angular-owner-diagnostic-invalid", result)
+    if (outcome not in {"passed", "failed", "not-run"}
+            or outcome == "passed" and (category is not None or record.get("reason") is not None)
+            or outcome != "passed" and (
+                category not in {"assertion-failure", "invalid-fixture", "unavailable-environment",
+                                 "cancelled", "infrastructure-timeout", "output-overflow"}
+                or not isinstance(record.get("reason"), str)
+                or re.fullmatch(r"[A-Za-z0-9_.:-]{1,256}", record["reason"]) is None)
+            or (outcome == "not-run") != (category == "unavailable-environment")
+            or child["exit"] is not None and (type(child["exit"]) is not int or not 0 <= child["exit"] <= 255)
+            or child["signal"] is not None and (type(child["signal"]) is not int or not 0 < child["signal"] < 128)
+            or child["exit"] is not None and child["signal"] is not None
+            or child["cleanupAcknowledged"] is not None and type(child["cleanupAcknowledged"]) is not bool):
+        raise ProcessFailure("invalid-fixture", "angular-owner-diagnostic-invalid", result)
+    if (record.get("suite") != "angular-renderer" or record.get("runId") != summary.get("runId")
+            or outcome != summary.get("outcome") or record.get("reason") != summary.get("reason")
+            or record.get("source") != run.source or reproduction.get("source") != run.source
+            or reproduction.get("fixtures") != fixtures
+            or any(role not in run.fixture_ids or identity != run.fixture_ids[role]
+                   for role, identity in fixtures.items())
+            or not early and fixtures != run.fixture_ids):
+        raise ProcessFailure("invalid-fixture", "angular-owner-result-identity-mismatch", result)
+    expected = {"suite": "angular-renderer", "preflight": False, "fault": fault or "none",
+                "recipe": plan["recipe"], "recipeIdentity": plan["recipeIdentity"], "mode": "process",
+                "caseSetDigest": case_digest(plan["cases"]), "requiredCaseCount": len(plan["cases"])}
+    for key, value in expected.items():
+        # Prerequisites run before artifact discovery and case declaration. A
+        # missing identity is not a mismatched identity, but supplied identities
+        # must agree even when the child has not run a single test.
+        if early and key not in reproduction and key not in {"suite", "preflight", "fault"}:
+            continue
+        if type(reproduction.get(key)) is not type(value) or reproduction[key] != value:
+            raise ProcessFailure("invalid-fixture", "angular-owner-result-identity-mismatch", result)
+    if ("cases" in reproduction and reproduction["cases"] != plan["cases"]
+            or "caseSelection" in reproduction and reproduction["caseSelection"] != "registered"):
+        raise ProcessFailure("invalid-fixture", "angular-owner-result-identity-mismatch", result)
+    required = record.get("requiredCaseCount")
+    completed = record.get("completedCaseCount")
+    if (type(required) is not int or required != reproduction.get("requiredCaseCount", 0)
+            or type(completed) is not int or not 0 <= completed <= required
+            or early and completed != 0):
+        raise ProcessFailure("invalid-fixture", "angular-owner-case-completion-mismatch", result)
+    # The maintained Angular owner executes these cases serially in catalogue
+    # order and stops at the first failure. Authenticate that exact prefix; a
+    # count alone (or a digest for different/out-of-order cases) is not coverage.
+    prefix = plan["cases"][:completed]
+    if record.get("completedCaseDigest") != case_digest(prefix):
+        raise ProcessFailure("invalid-fixture", "angular-owner-case-completion-mismatch", result)
+    return prefix
+
+
 def _execute_angular_process(run: TestRun, repo: Path, plan: dict, inventory: Path,
                              fault: str | None) -> None:
     diagnostic_root = run.root / "angular-diagnostics"
@@ -705,36 +777,34 @@ def _execute_angular_process(run: TestRun, repo: Path, plan: dict, inventory: Pa
         record = _read_record(diagnostic_root / name)
     except LocalTestError as error:
         raise ProcessFailure("invalid-fixture", "angular-owner-diagnostic-unavailable", result) from error
-    reproduction = record.get("reproduction", {})
-    if (record.get("suite") != "angular-renderer" or record.get("runId") != summary.get("runId")
-            or record.get("outcome") != summary.get("outcome")
-            or record.get("source") != run.source
-            or record.get("fixtures") != run.fixture_ids
-            or reproduction.get("recipeIdentity") != plan["recipeIdentity"]
-            or reproduction.get("caseSetDigest") != case_digest(plan["cases"])
-            or reproduction.get("requiredCaseCount") != len(plan["cases"])):
-        raise ProcessFailure("invalid-fixture", "angular-owner-result-identity-mismatch", result)
-    if result.returncode or record.get("outcome") != "passed":
-        category = record.get("category")
-        if category not in {"assertion-failure", "invalid-fixture", "unavailable-environment",
-                            "cancelled", "infrastructure-timeout", "output-overflow"}:
-            category = "assertion-failure"
-        error = ProcessFailure(category, "angular-owner-failed", result)
-        child = record.get("child", {})
-        # The owner CLI returns 1; preserve an independently recorded inner
-        # failing libtest status without changing the observed parent result.
-        if type(child.get("exit")) is int and 0 < child["exit"] <= 255:
+    completed = _angular_child_completion(record, summary, run, plan, fault, result)
+    if result.returncode or record["outcome"] != "passed":
+        if completed:
+            run.complete_cases(completed)
+        # The child's private diagnostic is removed with run.root. Retain its
+        # bounded assertion tail and stage before teardown, using the same
+        # redactor as TestRun.observe rather than exporting raw captured output.
+        detail = f"\nangular-renderer {record['stage']}: {record['reason']}\n{record['logTail']}"
+        safe = redact(detail, (str(run.root), str(repo), str(Path.home())), run.secrets)
+        run.log_tail = (run.log_tail + safe)[-MAX_TAIL:]
+        run.cleanup_failures.extend("angular-owner:" + name for name in record["cleanupFailures"])
+        if record["child"]["cleanupAcknowledged"] is False:
+            run.cleanup_failures.append("angular-owner:child-cleanup-unconfirmed")
+        reason = redact(record["reason"] or "angular-owner-failed", secrets=run.secrets)
+        error = ProcessFailure(record["category"] or "assertion-failure", reason, result)
+        child = record["child"]
+        # Preserve the independently observed inner failure without relabelling
+        # the result of the outer owner process.
+        if type(child["exit"]) is int and child["exit"] > 0:
             error.selected_exit_code = child["exit"]
-        elif type(child.get("signal")) is int and 0 < child["signal"] < 128:
+        elif type(child["signal"]) is int:
             error.selected_exit_code = 128 + child["signal"]
         raise error
-    if (record.get("requiredCaseCount") != len(plan["cases"])
-            or record.get("completedCaseCount") != len(plan["cases"])
-            or record.get("completedCaseDigest") != case_digest(plan["cases"])
-            or record.get("cleanupFailures") != []
-            or record.get("child", {}).get("cleanupAcknowledged") is not True):
+    if (len(completed) != len(plan["cases"]) or record["cleanupFailures"] != []
+            or record["child"]["exit"] != 0 or record["child"]["signal"] is not None
+            or record["child"]["cleanupAcknowledged"] is not True):
         raise ProcessFailure("assertion-failure", "angular-owner-case-completion-mismatch", result)
-    run.complete_cases(plan["cases"])
+    run.complete_cases(completed)
 
 
 def execute(repo: Path, plan: dict, inventory: Path, fault: str | None = None) -> tuple[int, dict]:

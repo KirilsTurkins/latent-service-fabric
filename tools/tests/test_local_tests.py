@@ -598,5 +598,258 @@ class NativeEntrypointTests(unittest.TestCase):
         self.assertEqual(record["outcome"], "failed")
 
 
+
+class ReviewRegressionTests(unittest.TestCase):
+    def test_contract_handoff_rebuilds_changed_body_on_second_invocation(self):
+        """Run the actual shell cleanup/path twice, with a compiler-free build double."""
+        import os
+        import subprocess
+
+        script = (ROOT / "tools/validate_contracts.sh").read_text()
+        # Isolate the script-owned handoff from unrelated WIT/provider builders.
+        # Neither its cleanup nor its inventory path is reimplemented here.
+        prelude = script.split("python3 tools/validate_repository.py", 1)[0]
+        assignment = next(line for line in script.splitlines() if line.startswith("ECHO_INVENTORY="))
+        plan = local.plan_suite(ROOT, "selection.echo-runtime")
+        for target in (None, "relative-target", "external"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory)
+                repo = base / "repo"
+                (repo / "tools").mkdir(parents=True)
+                shell = repo / "tools/validate_contracts.sh"
+                shell.write_text(prelude + assignment + '\nprintf "%s" "$ECHO_INVENTORY"\n')
+                source = repo / "crates/latent-wasmtime/tests/echo_backend.rs"
+                source.parent.mkdir(parents=True)
+                source.write_text("#[test] fn unchanged_name() { assert!(true); }\n")
+                environment = dict(os.environ)
+                environment.pop("CARGO_TARGET_DIR", None)
+                if target is not None:
+                    environment["CARGO_TARGET_DIR"] = str(base / target) if target == "external" else target
+                builds = []
+                binary = base / "prepared-echo"
+
+                def build(command, cwd, env, timeout, maximum):
+                    self.assertEqual(command, plan["preparation"]["buildCommand"])
+                    body = source.read_text()
+                    builds.append(body)
+                    failed = "assert!(false)" in body
+                    binary.write_text("#!/bin/sh\nprintf '%s\\n' " +
+                                      ("NEW_TEST_BODY_FAILED\nexit 101\n" if failed else
+                                       "OLD_TEST_BODY_PASSED\nexit 0\n"))
+                    binary.chmod(0o700)
+                    return SimpleNamespace(returncode=0, stderr=b"",
+                                           stdout=b'{"reason":"build-finished","success":true}\n')
+
+                with patch.dict(os.environ, environment, clear=True), \
+                        patch.object(local.shutil, "which", return_value="available"), \
+                        patch.object(local, "run_bounded", side_effect=build), \
+                        patch.object(local, "_fixtures_for", return_value={}), \
+                        patch.object(local, "_validate_generic_inventory"), \
+                        patch.object(local, "validate_prepared"):
+                    observed = []
+                    for body in ("true", "false"):
+                        source.write_text(f"#[test] fn unchanged_name() {{ assert!({body}); }}\n")
+                        path = subprocess.check_output(["bash", str(shell)], env=environment, timeout=10)
+                        inventory = Path(path.decode())
+                        prepared = local.prepare(repo, plan, inventory)
+                        result = subprocess.run([str(binary)], capture_output=True, timeout=10)
+                        observed.append((prepared["reused"], result.returncode, result.stdout))
+                self.assertEqual(observed, [(False, 0, b"OLD_TEST_BODY_PASSED\n"),
+                                            (False, 101, b"NEW_TEST_BODY_FAILED\n")])
+                self.assertEqual(len(builds), 2)
+                self.assertIn("assert!(false)", builds[1])
+
+
+class AngularReviewRegressionTests(unittest.TestCase):
+    """Real TestRun publication/cleanup around a controlled child-owner handoff."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.repo = Path(self.temp.name)
+        self.inventory = self.repo / "inventory.jsonl"
+        self.inventory.write_text("synthetic prepared inventory\n")
+        self.plan = local.plan_suite(ROOT, local.ANGULAR_PROCESS)
+        self.source = {"revision": "a" * 40, "dirty": False, "observed": True}
+        self.fixtures = {"test-manifest": local.file_digest(self.inventory, local.MAX_REPORT),
+                         "component": "sha256:" + "1" * 64}
+        self.private_diagnostics = None
+
+    def child_record(self, *, early=False, passed=False):
+        from tools.owned_test_process import Result
+        from tools import check_tool_versions as versions
+        from tools.tests.test_owned_test_process import policy
+
+        owner = local.TestRun("angular-renderer", policy(), repo=self.repo,
+                              reproduction={"suite": "angular-renderer", "preflight": False, "fault": "none"},
+                              synthetic=True, secrets=("PRIVATE_MARKER_730",),
+                              diagnostic_root=self.repo / "child-staging")
+        caught = None
+        with redirect_stdout(io.StringIO()):
+            try:
+                with owner:
+                    owner.source = dict(self.source)
+                    if early:
+                        owner.policy["prerequisites"]["versionScopes"] = ["python"]
+                        with patch.object(versions.platform, "python_version", return_value="0.0.0"):
+                            owner.prerequisites(before_build=True)
+                        self.fail("the authoritative Python version check must fail")
+                    owner.fixture_ids.update(self.fixtures)
+                    owner.declare_cases(self.plan["cases"])
+                    owner.reproduction.update(recipe=self.plan["recipe"], mode="process",
+                                              recipeIdentity=self.plan["recipeIdentity"])
+                    owner.mark("execution")
+                    owner.complete_cases(self.plan["cases"] if passed else self.plan["cases"][:1])
+                    result = Result(0 if passed else 101,
+                                    b"DISTINCTIVE_ANGULAR_ASSERTION: expected 2, got 1\n"
+                                    b"token=PRIVATE_MARKER_730\n", cleaned=True)
+                    owner.observe(result)
+                    if not passed:
+                        raise local.ProcessFailure("assertion-failure", "child-exit-failure", result)
+            except local.ProcessFailure as error:
+                caught = error
+        self.assertEqual(caught is None, passed)
+        self.assertFalse(owner.root.exists())
+        return json.loads(owner.record_path.read_text())
+
+    def run_child_record(self, record, *, status=1):
+        import os
+        from tools import test_run
+        from tools.owned_test_process import Result
+
+        def child(command, **kwargs):
+            self.assertEqual(command[1], "tools/run_angular_renderer_tests.py")
+            folder = Path(command[command.index("--diagnostic-root") + 1])
+            folder.mkdir()
+            self.private_diagnostics = folder
+            name = "angular-renderer-" + record["runId"] + ".json"
+            (folder / name).write_text(json.dumps(record))
+            summary = {key: record[key] for key in ("suite", "runId", "outcome", "reason")}
+            summary["diagnostic"] = name
+            return Result(status, json.dumps(summary).encode(), cleaned=True)
+
+        def source(owner):
+            owner.source = dict(self.source)
+
+        with patch.dict(os.environ, {"CARGO_TARGET_DIR": str(self.repo / "target")}), \
+                patch.object(local, "validate_prepared"), \
+                patch.object(local, "_fixture_identities", return_value={"component": self.fixtures["component"]}), \
+                patch.object(local, "_validate_angular_inventory", return_value={}), \
+                patch.object(local.TestRun, "source_identity", source), \
+                patch.object(test_run, "run_owned", side_effect=child), \
+                redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            code, result = local.execute(self.repo, self.plan, self.inventory)
+        self.assertFalse(self.private_diagnostics.exists())
+        permanent = self.repo / "target/test-diagnostics" / (result["suite"] + "-" + result["runId"] + ".json")
+        self.assertEqual(json.loads(permanent.read_text()), result)
+        return code, result
+
+    def test_partial_angular_failure_survives_private_diagnostic_cleanup(self):
+        child = self.child_record()
+        code, record = self.run_child_record(child)
+        self.assertEqual(code, 101)
+        self.assertEqual(record["outcome"], "failed")
+        self.assertEqual(record["reason"], "child-exit-failure")
+        self.assertIn("DISTINCTIVE_ANGULAR_ASSERTION", record["logTail"])
+        self.assertNotIn("PRIVATE_MARKER_730", json.dumps(record))
+        self.assertEqual(record["requiredCaseCount"], len(self.plan["cases"]))
+        self.assertEqual(record["completedCaseCount"], 1)
+        self.assertEqual(record["completedCaseDigest"], local.case_digest(self.plan["cases"][:1]))
+        self.assertEqual(local.read_failure(next((self.repo / "target/test-diagnostics").glob("*.json"))), record)
+
+    def test_early_python_version_failure_remains_not_run(self):
+        child = self.child_record(early=True)
+        self.assertEqual(child["fixtures"], {})
+        self.assertEqual(child["requiredCaseCount"], 0)
+        code, record = self.run_child_record(child)
+        self.assertEqual(code, 3)
+        self.assertEqual(record["outcome"], "not-run")
+        self.assertEqual(record["category"], "unavailable-environment")
+        self.assertEqual(record["reason"], "authoritative-tool-version-check-failed")
+        self.assertEqual(record["completedCaseCount"], 0)
+
+    def test_early_cancellation_and_timeout_keep_their_categories(self):
+        base = self.child_record(early=True)
+        for category, reason, expected in (("cancelled", "runner-interrupted", 130),
+                                            ("infrastructure-timeout", "total-run-watchdog", 124)):
+            child = json.loads(json.dumps(base))
+            child.update(outcome="failed", category=category, reason=reason)
+            with self.subTest(category=category):
+                code, record = self.run_child_record(child)
+                self.assertEqual(code, expected)
+                self.assertEqual(record["category"], category)
+                self.assertEqual(record["reason"], reason)
+                self.assertEqual(record["completedCaseCount"], 0)
+
+    def test_child_failure_details_are_bounded_and_redacted_again(self):
+        from tools.test_run import MAX_TAIL
+        base = self.child_record()
+        base["logTail"] = "token=UNSAFE_CHILD_TOKEN\nDISTINCTIVE_ANGULAR_ASSERTION\n"
+        code, record = self.run_child_record(base)
+        self.assertEqual(code, 101)
+        self.assertNotIn("UNSAFE_CHILD_TOKEN", json.dumps(record))
+        self.assertIn("DISTINCTIVE_ANGULAR_ASSERTION", record["logTail"])
+        self.assertLessEqual(len(record["logTail"]), MAX_TAIL)
+        for field, value in (("logTail", "x" * (MAX_TAIL + 1)), ("logTail", []),
+                             ("category", []), ("child", {})):
+            child = json.loads(json.dumps(base))
+            child[field] = value
+            with self.subTest(field=field, kind=type(value).__name__):
+                code, record = self.run_child_record(child)
+                self.assertNotEqual(code, 0)
+                self.assertEqual(record["category"], "invalid-fixture")
+                self.assertEqual(record["completedCaseCount"], 0)
+
+    def test_early_failure_does_not_accept_conflicting_available_identities(self):
+        base = self.child_record(early=True)
+        for field in ("source", "fixtures", "recipe", "completed"):
+            child = json.loads(json.dumps(base))
+            if field == "source":
+                child["source"]["revision"] = "b" * 40
+                child["reproduction"]["source"] = child["source"]
+            elif field == "fixtures":
+                child["fixtures"] = {"component": "sha256:" + "9" * 64}
+                child["reproduction"]["fixtures"] = child["fixtures"]
+            elif field == "recipe":
+                child["reproduction"]["recipeIdentity"] = "sha256:" + "9" * 64
+            else:
+                child["completedCaseCount"] = 1
+                child["completedCaseDigest"] = local.case_digest(self.plan["cases"][:1])
+            with self.subTest(field=field):
+                code, record = self.run_child_record(child)
+                self.assertNotEqual(code, 0)
+                self.assertEqual(record["category"], "invalid-fixture")
+                self.assertEqual(record["completedCaseCount"], 0)
+
+    def test_partial_completion_requires_the_ordered_case_digest(self):
+        child = self.child_record()
+        child["completedCaseDigest"] = local.case_digest(self.plan["cases"][1:2])
+        code, record = self.run_child_record(child)
+        self.assertNotEqual(code, 0)
+        self.assertEqual(record["completedCaseCount"], 0)
+
+    def test_success_still_requires_complete_identities_and_cleanup(self):
+        base = self.child_record(passed=True)
+        code, record = self.run_child_record(base, status=0)
+        self.assertEqual(code, 0)
+        self.assertEqual(record["completedCaseCount"], len(self.plan["cases"]))
+        for field in ("fixtures", "recipeIdentity", "cleanup", "count", "exit"):
+            child = json.loads(json.dumps(base))
+            if field == "fixtures":
+                child["fixtures"] = {}
+                child["reproduction"]["fixtures"] = {}
+            elif field == "recipeIdentity":
+                child["reproduction"].pop(field)
+            elif field == "cleanup":
+                child["child"]["cleanupAcknowledged"] = False
+            elif field == "exit":
+                child["child"]["exit"] = 101
+            else:
+                child["completedCaseCount"] -= 1
+            with self.subTest(field=field):
+                code, record = self.run_child_record(child, status=0)
+                self.assertNotEqual(code, 0)
+                self.assertEqual(record["outcome"], "failed")
+
+
 if __name__ == "__main__":
     unittest.main()

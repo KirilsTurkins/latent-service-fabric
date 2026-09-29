@@ -3732,7 +3732,7 @@
       "sha256": "535a99c354e65b17b2bcf9d60a5cf9273634d130f23a243ed847aa678d02842c"
     },
     "tools/validate_contracts.sh": {
-      "sha256": "aa40bfb1a63d19b40f643df80d98412d3c5b104085275470f951eba5042fc178"
+      "sha256": "c56e1c7d874239e97a3f5e7d263e93d85d3bc6618634cf3bd297f5d1d5e674ef"
     },
     "tools/validate_docs.py": {
       "sha256": "3f4a311d4ed13b261df0fe476ab3c9fe3670073c6b4e2ccb05f8e5ebe835abc3"
@@ -4710,6 +4710,13 @@
       "BytecodeTests.test_jar_requires_classes_and_rejects_mixed_target_or_preview"
     ],
     "tools/tests/test_local_tests.py": [
+      "AngularReviewRegressionTests.test_child_failure_details_are_bounded_and_redacted_again",
+      "AngularReviewRegressionTests.test_early_cancellation_and_timeout_keep_their_categories",
+      "AngularReviewRegressionTests.test_early_failure_does_not_accept_conflicting_available_identities",
+      "AngularReviewRegressionTests.test_early_python_version_failure_remains_not_run",
+      "AngularReviewRegressionTests.test_partial_angular_failure_survives_private_diagnostic_cleanup",
+      "AngularReviewRegressionTests.test_partial_completion_requires_the_ordered_case_digest",
+      "AngularReviewRegressionTests.test_success_still_requires_complete_identities_and_cleanup",
       "CommandTests.test_check_missing_inventory_is_not_success",
       "CommandTests.test_optional_interfaces_do_not_fallback",
       "CommandTests.test_prepare_reuses_existing_inventory_without_build",
@@ -4749,7 +4756,8 @@
       "PlanningTests.test_planning_reads_only_the_shared_inventory",
       "PlanningTests.test_prepare_and_run_commands_keep_exact_suite_and_case",
       "PlanningTests.test_provider_selection_keeps_its_existing_fixture_owner",
-      "PlanningTests.test_registered_selection_reuses_same_owner_and_cases"
+      "PlanningTests.test_registered_selection_reuses_same_owner_and_cases",
+      "ReviewRegressionTests.test_contract_handoff_rebuilds_changed_body_on_second_invocation"
     ],
     "tools/tests/test_manifest_codec_contract.py": [
       "ManifestCodecContractTests.test_buffered_http_profile_is_closed_and_requires_exact_target_pins",
