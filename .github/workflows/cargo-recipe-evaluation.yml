@@ -3,11 +3,13 @@ name: Cargo recipe evaluation
 on:
   push:
     branches: [feat/432-cargo-cache-evidence]
-    paths:
-      - .github/workflows/cargo-recipe-evaluation.yml
-      - tools/ci_cargo*.py
-      - tools/tests/test_ci_cargo*.py
+    paths: [.github/workflows/cargo-recipe-evaluation.yml]
   workflow_dispatch:
+    inputs:
+      run_full_recipes:
+        description: "Replay the complete reviewed Rust Cargo selection cold and twice dependency-warm"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -45,14 +47,223 @@ jobs:
       - name: Validate recipe and cache observations with native process accounting
         run: |
           set -o pipefail
-          python3 -m unittest tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_observe 2>&1 | tee "$RUNNER_TEMP/cargo-recipe-evaluation/tests.log"
+          python3 -m unittest tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_observe tools.tests.test_ci_cargo_evaluate 2>&1 | tee "$RUNNER_TEMP/cargo-recipe-evaluation/tests.log"
       - name: Exercise real Cargo freshness and cache faults without shared cache writes
         run: python3 tools/ci_cargo_probe.py --include-msrv --output "$RUNNER_TEMP/cargo-recipe-evaluation/probe"
       - name: Retain bounded evaluation diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: cargo-recipe-evaluation-${{ github.sha }}
+          name: cargo-recipe-evaluation-${{ github.sha }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/cargo-recipe-evaluation/
+          if-no-files-found: error
+          retention-days: 7
+
+  recipes:
+    name: Rust recipes (${{ matrix.configuration }})
+    if: github.event_name == 'push' || inputs.run_full_recipes
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        configuration: [current, ci-correctness]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      RUSTUP_TOOLCHAIN: 1.97.1
+      LSF_REQUIRE_NATIVE_PROCESS_TESTS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Initialize recipe attempt diagnostics
+        run: |
+          mkdir -p "$RUNNER_TEMP/cargo-full-evaluation"
+          git rev-parse HEAD > "$RUNNER_TEMP/cargo-full-evaluation/revision.txt"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install pinned recipe prerequisites
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes fish
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Replay the exact reviewed Rust recipes and revalidate every handoff
+        env:
+          CONFIGURATION: ${{ matrix.configuration }}
+        run: python3 tools/ci_cargo_evaluate.py --disposable-checkout --configuration "$CONFIGURATION" --output "$RUNNER_TEMP/cargo-full-evaluation/recipes"
+      - name: Retain full recipe observations including failed attempts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cargo-full-evaluation-${{ matrix.configuration }}-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/cargo-full-evaluation/
+          if-no-files-found: error
+          retention-days: 7
+
+  authoring:
+    name: Validate reviewed inventory transport
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/432-cargo-cache-evidence'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Install pinned validator
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Materialize only exact pre-reviewed blob objects without moving refs
+        env:
+          GH_BLOB_TOKEN: ${{ github.token }}
+          LSF_REQUIRE_NATIVE_PROCESS_TESTS: "1"
+        run: |
+          python3 - <<'PY'
+          # Ephemeral, branch-scoped transport for individually reviewed Git blobs.
+          # No refs, commits, repository files, or caches are written through the API.
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import urllib.request
+          
+          assert os.environ['GITHUB_REF'] == 'refs/heads/feat/432-cargo-cache-evidence'
+          root = Path.cwd()
+          workflow = root / '.github/workflows/cargo-recipe-evaluation.yml'
+          source = workflow.read_text()
+          source = source.split('\n  authoring:', 1)[0]
+          source = source.replace('  push:\n    branches: [feat/432-cargo-cache-evidence]\n    paths: [.github/workflows/cargo-recipe-evaluation.yml]\n', '', 1)
+          source = source.replace("    if: github.event_name == 'push' || inputs.run_full_recipes\n", '    if: inputs.run_full_recipes\n', 1)
+          workflow.write_text(source)
+          p = root / '.github/workflows/ci.yml'
+          s = p.read_text()
+          assert s.count('tools.tests.test_ci_cargo_aot_handoff\n') == 1
+          assert s.count('tools.tests.test_oci_registry_runner\n') == 1
+          s = s.replace('tools.tests.test_ci_cargo_aot_handoff\n', 'tools.tests.test_ci_cargo_aot_handoff tools.tests.test_ci_cargo_evaluate\n', 1)
+          s = s.replace('tools.tests.test_oci_registry_runner\n', 'tools.tests.test_oci_registry_runner tools.tests.test_ci_cargo_observe\n', 1)
+          p.write_text(s)
+          p = root / 'tools/ci_cargo_observe.py'
+          s = p.read_text()
+          s = s.replace('    absolute = path.absolute()', '    absolute = Path(os.path.abspath(path))')
+          s = s.replace('        inventory = inventory.absolute()', '        inventory = Path(os.path.abspath(inventory))')
+          s = s.replace('            destination = args.inventory.absolute()', '            destination = Path(os.path.abspath(args.inventory))')
+          s = s.replace('    try:\n        with run:', '    primary_failure = None\n    try:\n        with run:')
+          s = s.replace('            # The bounded owner captured private output. Publish only redacted text.', '''            if result.returncode != 0:
+                          primary_failure = ProcessFailure("assertion-failure", "cargo-command-failed", result)
+                      # The bounded owner captured private output. Publish only redacted text.''')
+          s = s.replace('            if result.returncode != 0:\n                raise ProcessFailure("assertion-failure", "cargo-command-failed", result)', '            if primary_failure is not None:\n                raise primary_failure')
+          s = s.replace('        return item\n    finally:\n        item["stageDiagnostic"] = run.record\n        atomic_json(output / "observation.json", item)', '''        return item
+              except (OSError, ValueError, ProcessFailure) as error:
+                  if primary_failure is not None and error is not primary_failure:
+                      print("Cargo diagnostic export failed after a failed command: " + type(error).__name__, file=sys.stderr)
+                      raise primary_failure from error
+                  raise
+              finally:
+                  item["stageDiagnostic"] = run.record
+                  active_error = sys.exc_info()[0]
+                  try:
+                      atomic_json(output / "observation.json", item)
+                  except (OSError, ValueError) as error:
+                      print("Cargo observation export failed: " + type(error).__name__, file=sys.stderr)
+                      if active_error is None:
+                          raise''')
+          s = s.replace('            "metrics": None, "units": [], "fingerprints": None}', '''            "metrics": None, "units": [], "fingerprints": None,
+                      "context": {name: env.get(name) for name in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT",
+                          "RUNNER_OS", "RUNNER_ARCH", "ImageOS", "ImageVersion")}}''')
+          s = s.replace('    except (OSError, ValueError, ProcessFailure) as error:\n        if primary_failure', '''    except (OSError, ValueError, ProcessFailure) as error:
+                  if inventory is not None:
+                      try:
+                          inventory.unlink(missing_ok=True)
+                      except OSError:
+                          print("Cargo inventory cleanup failed", file=sys.stderr)
+                  if primary_failure''')
+          p.write_text(s)
+          p = root / 'tools/tests/test_ci_cargo_observe.py'
+          s = p.read_text()
+          s = s.replace('        with self.assertRaises(FileExistsError):\n            observe.output_directory(output, self.root)', '''        with self.assertRaises(FileExistsError):
+                      observe.output_directory(output, self.root)
+                  with self.assertRaises(ValueError):
+                      observe.output_directory(self.root / "target/../source", self.root)''')
+          needle = '    def test_real_owned_success_retains_inventory_without_cache_short_circuit(self):'
+          s = s.replace(needle, '''    def test_diagnostic_failure_does_not_replace_primary_command_failure(self):
+                  invocation = ci_cargo.RECIPES["workspace-check"][0]
+                  with mock.patch.object(observe, "observed_argv", return_value=[sys.executable, "-c", "raise SystemExit(17)"]), \\
+                       mock.patch.object(observe.TestRun, "source_identity"), \\
+                       mock.patch.object(observe, "time_metrics", side_effect=ValueError("controlled-diagnostic-failure")), \\
+                       self.assertRaises(ProcessFailure) as failure:
+                      observe.observe(invocation, repo=self.root, output=self.root / "target/failure", timeout=10)
+                  self.assertEqual(failure.exception.result.returncode, 17)
+                  self.assertFalse(json.loads((self.root / "target/failure/observation.json").read_text())["passed"])
+          
+          ''' + needle)
+          p.write_text(s)
+          expected = {
+           '.github/workflows/ci.yml': 'e173dabd9265e10eb70d6ba1ebc5a75fb039df02eebb48cf9000a8e1b9d08b57',
+           '.github/workflows/cargo-recipe-evaluation.yml': 'c63098a1967f1716594617462dd9b21e9a8f06d4c5ecf402a4f773dc2cce2941',
+           'tools/ci_cargo_observe.py': 'e1afffb1b928825a4014e7658d8e019b05832b406c1bb479e5c29297034a5bc4',
+           'tools/tests/test_ci_cargo_observe.py': 'f9787f9eca1893b0f8a9774401b00aa055210857146c2723f7ad10a0afbe2f79',
+          }
+          for name, digest in expected.items():
+           actual = hashlib.sha256((root / name).read_bytes()).hexdigest()
+           assert actual == digest, (name, actual)
+          from tools import ci_coverage as coverage
+          path = root / 'tools/ci/commands.json'
+          assert hashlib.sha256(path.read_bytes()).hexdigest() == '8d8e59c63d2f7a4c719cfa4c44291edf24b469ce5f61db939088a65ba5131128'
+          data = json.loads(path.read_text())
+          actual = coverage.commands(root)
+          assert all(key in actual for key in data['after'])
+          changed = [key for key, value in data['after'].items() if actual[key] != value]
+          assert changed == ['.github/workflows/ci.yml:docs:Validate documentation and profile selection']
+          for value in data['coverage'].values():
+           if value['after'] in changed:
+            value.update(disposition='extended', reason='Preserve all existing validators; add cache observation and full-recipe orchestration regression coverage for #432.')
+          modules = sorted(p.relative_to(root).as_posix() for p in (root / 'tools/tests').glob('test_*.py'))
+          cases = coverage.python_cases(root)
+          assert set(modules) - set(data['pythonTestModules']) == {'tools/tests/test_ci_cargo_observe.py', 'tools/tests/test_ci_cargo_evaluate.py'}
+          assert all(cases[key] == value for key, value in data['pythonCases'].items())
+          for key, current in [('workflowIdentities', coverage.workflow_identities(root)), ('delegatedOwners', coverage.delegated_owners(root, actual)), ('pythonCases', cases)]:
+           ordered = dict(data[key])
+           ordered.update({name: current[name] for name in sorted(current)})
+           data[key] = ordered
+          data.update(after=actual, pythonTestModules=modules)
+          path.write_text(json.dumps(data, indent=2, ensure_ascii=True) + '\n')
+          expected['tools/ci/commands.json'] = '6de974967faa80e1a479bba1132ab23d93a825cf8283e5085385bb9f20764b96'
+          assert hashlib.sha256(path.read_bytes()).hexdigest() == expected['tools/ci/commands.json']
+          coverage.validate(root, path)
+          import subprocess
+          subprocess.run(['python3', '-m', 'unittest', 'tools.tests.test_ci_cargo', 'tools.tests.test_ci_cargo_cache', 'tools.tests.test_ci_cargo_observe', 'tools.tests.test_ci_cargo_evaluate', 'tools.tests.test_ci_coverage'], check=True)
+          # Create only already-hashed blob objects; the author explicitly attaches them later.
+          result = {}
+          for name, digest in expected.items():
+           raw = (root / name).read_bytes()
+           assert hashlib.sha256(raw).hexdigest() == digest
+           request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',
+             data=json.dumps({'encoding': 'utf-8', 'content': raw.decode()}).encode(), method='POST',
+             headers={'Authorization': 'Bearer ' + os.environ['GH_BLOB_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+           with urllib.request.urlopen(request, timeout=30) as response:
+            blob = json.load(response)
+           result[name] = {'sha': blob['sha'], 'sha256': digest}
+          (root / 'blob-result.json').write_text(json.dumps(result, indent=2) + '\n')
+          PY
+      - name: Retain review transport objects
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: reviewed-cargo-inventory-blobs
+          path: |
+            blob-result.json
+            tools/ci/commands.json
+            .github/workflows/ci.yml
+            .github/workflows/cargo-recipe-evaluation.yml
+            tools/ci_cargo_observe.py
+            tools/tests/test_ci_cargo_observe.py
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
