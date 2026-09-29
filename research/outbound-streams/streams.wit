@@ -1,0 +1,49 @@
+package latent-research:outbound-streams@0.1.0;
+
+// Candidate ONLY: not installed, admitted, generated into SDKs, or production WIT.
+// Exact canonical async syntax follows the existing latent:http@0.3.0 profile.
+interface client {
+    resource connection;
+    resource chunk;
+    enum state { open, read-eof, stopping, closed, failed }
+    enum shutdown-mode { send, receive, both }
+    enum error-code {
+        invalid-input, invalid-state, unsupported, denied, revoked,
+        exhausted, dns-failed, tls-failed, connect-failed,
+        timeout, cancelled, unexpected-eof, io-failed,
+    }
+    record observation {
+        state: state,
+        accepted-write-bytes: u64,
+        delivered-read-bytes: u64,
+        application-write-attempted: bool,
+    }
+    record stream-error {
+        code: error-code,
+        // Lower bound for this write call only; zero does not prove no effect.
+        accepted-prefix-bytes: u32,
+        may-have-applied: bool,
+    }
+    record connect-request {
+        // Exact preconfigured alias, not a URL, hostname, address, or credential.
+        destination: string,
+        port: u16,
+        // May narrow, never extend, the original activation/parent deadline.
+        timeout-millis: option<u32>,
+    }
+    connect: async func(request: connect-request) -> result<connection, stream-error>;
+    // Nonempty <= 16 KiB. A successful short prefix is permitted; no hidden retry
+    // after an error. Success says nothing about protocol acknowledgement.
+    write: async func(target: borrow<connection>, bytes: list<u8>) -> result<u32, stream-error>;
+    // maximum-bytes is 1..16384. None means transport EOF, not transaction commit.
+    read: async func(source: borrow<connection>, maximum-bytes: u32) -> result<option<chunk>, stream-error>;
+    // At most once per chunk. Canonical lowering copy is separately reserved.
+    chunk-bytes: async func(value: borrow<chunk>) -> result<list<u8>, stream-error>;
+    inspect: func(target: borrow<connection>) -> observation;
+    // V1 only supports both (abort). send/receive return unsupported without
+    // changing state; TLS close_notify and TCP half-close are not equated.
+    shutdown: async func(target: borrow<connection>, how: shutdown-mode) -> result<observation, stream-error>;
+    // Consume and physically retire the connection; outstanding chunks retain
+    // their own charge. Implicit resource Drop requests the same local abort.
+    close: async func(target: connection) -> result<observation, stream-error>;
+}

@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lsf:research:outbound-stream-grant:0.1.0",
+  "title": "Research-only bounded outbound stream grant candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "enabled",
+    "capability",
+    "profile",
+    "tenant",
+    "provider",
+    "providerDigest",
+    "epoch",
+    "destinations",
+    "limits"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "enabled": {
+      "const": false
+    },
+    "capability": {
+      "const": "outbound-stream"
+    },
+    "profile": {
+      "const": "bounded-streams-v1"
+    },
+    "tenant": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "providerDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "epoch": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "destinations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "alias",
+          "hostname",
+          "ports",
+          "permittedNetworks",
+          "specialAddressExceptions",
+          "resolution",
+          "tls"
+        ],
+        "properties": {
+          "alias": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "hostname": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 253,
+            "pattern": "^[a-z0-9.-]+$"
+          },
+          "ports": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            }
+          },
+          "permittedNetworks": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 49
+            }
+          },
+          "specialAddressExceptions": {
+            "type": "array",
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 45
+            }
+          },
+          "resolution": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "addresses"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "static"
+                  },
+                  "addresses": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 45
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "resolver",
+                  "maximumTtlSeconds"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "explicit-dns"
+                  },
+                  "resolver": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 64
+                  },
+                  "maximumTtlSeconds": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 300
+                  }
+                }
+              }
+            ]
+          },
+          "tls": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "mode"
+                ],
+                "properties": {
+                  "mode": {
+                    "const": "plain-tcp"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "mode",
+                  "serverName",
+                  "rootBundleDigest"
+                ],
+                "properties": {
+                  "mode": {
+                    "const": "host-tls"
+                  },
+                  "serverName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 253
+                  },
+                  "rootBundleDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activationConnections",
+        "tenantConnections",
+        "providerConnections",
+        "queuedCalls",
+        "chunkBytes",
+        "liveBytesPerConnection",
+        "totalBytesPerDirection",
+        "idleMillis",
+        "absoluteMillis",
+        "activationConnectAttempts",
+        "activationTransferBytes"
+      ],
+      "properties": {
+        "activationConnections": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "tenantConnections": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "providerConnections": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "queuedCalls": {
+          "const": 0
+        },
+        "chunkBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        },
+        "liveBytesPerConnection": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "totalBytesPerDirection": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "idleMillis": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2000
+        },
+        "absoluteMillis": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "activationConnectAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "activationTransferBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2097152
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "formatVersion": 1,
+  "stage": "initial-local-test",
+  "go": "go1.23.2 linux/amd64",
+  "sourceSha256": "b6f34ec2afa7b6666070e13f09291041425eea190e12d865b0cda16ea199244f",
+  "failedTest": "TestLiteralAndSpecialAddressPolicy",
+  "observed": "2001:db8::1 was not rejected by the draft subset blacklist",
+  "supersededFunction": "func addressAllowed(addr netip.Addr, fixture bool) bool {\n\taddr = addr.Unmap()\n\tif addr.IsLoopback() {\n\t\treturn fixture && addr == netip.MustParseAddr(\"127.0.0.1\")\n\t}\n\tif !addr.IsGlobalUnicast() || addr.IsPrivate() || addr.IsLinkLocalUnicast() {\n\t\treturn false\n\t}\n\tfor _, prefix := range []string{\"0.0.0.0/8\", \"100.64.0.0/10\", \"192.0.0.0/24\", \"192.0.2.0/24\", \"198.18.0.0/15\", \"198.51.100.0/24\", \"203.0.113.0/24\", \"240.0.0.0/4\", \"2001::/23\", \"2002::/16\", \"64:ff9b::/96\", \"64:ff9b:1::/48\"} {\n\t\tif netip.MustParsePrefix(prefix).Contains(addr) {\n\t\t\treturn false\n\t\t}\n\t}\n\t// This fixture is not a complete IANA special-address policy. Production\n\t// must reuse and qualify LSF's full policy, including future registry changes.\n\treturn true\n}\n",
+  "resolution": "Remove the incomplete public-address policy from the experiment. Accept only the exact explicit loopback fixture. Production must reuse the complete LSF address policy."
+}
