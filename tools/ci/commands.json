@@ -164,7 +164,7 @@
       "job": "docs",
       "jobIf": "success()",
       "name": "Validate documentation and profile selection",
-      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner\npython3 tools/validate_docs.py",
+      "run": "LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner\npython3 tools/validate_docs.py",
       "shell": "default",
       "stepIf": "success()",
       "workflow": ".github/workflows/ci.yml",
@@ -2069,6 +2069,16 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "docker run --rm --network none --cpus 2 --memory 256m --pids-limit 32 --mount \"type=bind,source=$PWD,target=/source,readonly\" lsf-container-publisher --test /source/tools/trusted_edge/representation.test.mjs\npython3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/compression-qualification\" --compression"
+    },
+    ".github/workflows/ci.yml:rust:Exercise the local exact-case entry point with prepared workspace inputs": {
+      "workflow": ".github/workflows/ci.yml",
+      "job": "rust",
+      "name": "Exercise the local exact-case entry point with prepared workspace inputs",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "python3 tools/test.py prepare --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py check --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py run --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -3494,7 +3504,7 @@
       "sha256": "62bbebe6115eb6932a4aaf92d68ab1794457a4c069c1d32a51eba82b7c829a44"
     },
     "tools/ci_lane_worker.py": {
-      "sha256": "6212cd840e2bddfcd3feccfd01b7c07538362d821188085997934efe9c8b7261"
+      "sha256": "94074afb9b2549ad9c04b8c36c9dee9e0411b866b0874c5bda5b9f8e4e1d723e"
     },
     "tools/ci_profile.py": {
       "sha256": "63949a0f50b4b7e3554383ade3a5f0ab51fed79a182fa301478df31501359fc8"
@@ -3503,7 +3513,7 @@
       "sha256": "3a4a88afcbab08033ba6afa7bcccdcbc96e811784dfa4a3a5e3c60160d275063"
     },
     "tools/ci_rust_artifacts.py": {
-      "sha256": "5c5743c001f65a141ad42150fe763d52cdb6ca4f6fa6ab7c918df7f29da10cc4"
+      "sha256": "07a2c681d97e95f512e9781f9bc27c8759778780bf9c55ab6f47cb8d3bbfbeb2"
     },
     "tools/ci_suite_discovery.py": {
       "sha256": "9880f5400a645b52e6e618d5027eac10d3a558e14abe1697a7ae024a8d2e307a"
@@ -3599,7 +3609,7 @@
       "sha256": "20c2f4c5cf389bf105c2c37c15cf976655f6352a1640a65bb9aef99e6ca1b2dc"
     },
     "tools/run_angular_renderer_tests.py": {
-      "sha256": "2cbf01c9f6bdd0f81d2824e07ce382cd298717758c86b67fd7b03360b08662df"
+      "sha256": "a7d70adf32d05b9862eb70d1d3289500776fa8a7860ba68735da3d4520a53dd7"
     },
     "tools/run_angular_t1_workflow.py": {
       "sha256": "75adf306aa051e3fb0731b4a9713b64b5663bf20f5a65b790c7e5db50917deef"
@@ -3722,7 +3732,7 @@
       "sha256": "535a99c354e65b17b2bcf9d60a5cf9273634d130f23a243ed847aa678d02842c"
     },
     "tools/validate_contracts.sh": {
-      "sha256": "19a9c1c469cdf4ec6fd26b7d882ad979107f91e66ae50bcb72fb74d6890ea7ba"
+      "sha256": "aa40bfb1a63d19b40f643df80d98412d3c5b104085275470f951eba5042fc178"
     },
     "tools/validate_docs.py": {
       "sha256": "3f4a311d4ed13b261df0fe476ab3c9fe3670073c6b4e2ccb05f8e5ebe835abc3"
@@ -4706,6 +4716,23 @@
       "CommandTests.test_prepare_uses_only_the_registered_build_recipe",
       "CommandTests.test_run_requires_explicit_suite_and_prepared_inventory",
       "CommandTests.test_unscoped_version_checker_is_not_executed",
+      "CompletionRegressionTests.test_angular_result_cannot_pass_without_a_complete_owned_record",
+      "CompletionRegressionTests.test_ci_uses_registered_core_and_complete_echo_entrypoints",
+      "CompletionRegressionTests.test_declared_fixture_digest_does_not_authorize_different_echo_bytes",
+      "CompletionRegressionTests.test_diagnostic_summary_must_be_unique",
+      "CompletionRegressionTests.test_duplicate_or_partial_case_completion_cannot_pass",
+      "CompletionRegressionTests.test_exact_physical_case_keeps_its_observation_owner",
+      "CompletionRegressionTests.test_large_case_intent_is_bounded_but_never_truncated",
+      "CompletionRegressionTests.test_local_and_ci_plans_have_identical_commands_cases_and_fixtures",
+      "CompletionRegressionTests.test_missing_fixture_tool_is_reported_before_any_cargo_build",
+      "CompletionRegressionTests.test_preparation_failure_keeps_exit_and_does_not_publish_inventory",
+      "CompletionRegressionTests.test_raw_provider_case_cannot_bypass_service_owner",
+      "CompletionRegressionTests.test_recipe_features_profile_and_target_root_are_checked_without_execution",
+      "CompletionRegressionTests.test_recipe_tamper_is_rejected_before_source_or_executable_query",
+      "CompletionRegressionTests.test_runtime_case_selects_only_its_required_fixture_builders",
+      "CompletionRegressionTests.test_strict_failure_record_rejects_malformed_nested_values_and_options",
+      "CompletionRegressionTests.test_unsupported_owner_is_never_ready_even_with_inventory",
+      "CompletionRegressionTests.test_wasm_header_accepts_real_magic_and_rejects_literal_escape",
       "DriftTests.test_ci_routes_a_real_prepared_selection_through_the_same_entrypoint",
       "DriftTests.test_contributor_guide_links_the_local_entrypoint",
       "DriftTests.test_documented_commands_parse_and_cover_three_workflows",
@@ -4713,6 +4740,9 @@
       "FailureRecordTests.test_changed_checkout_requires_explicit_label_even_with_same_artifact",
       "FailureRecordTests.test_passing_unknown_duplicate_and_oversized_records_are_rejected",
       "FailureRecordTests.test_reproduction_does_not_accept_a_different_artifact_identity",
+      "NativeEntrypointTests.test_actual_nonzero_and_empty_execution_are_not_success_or_retried",
+      "NativeEntrypointTests.test_actual_owned_prepared_entrypoint_passes_exactly_one_case",
+      "NativeEntrypointTests.test_actual_swallowed_build_tool_failure_still_fails_the_run",
       "PlanningTests.test_custom_harness_is_never_treated_as_libtest",
       "PlanningTests.test_exact_host_case_never_becomes_a_substring_filter",
       "PlanningTests.test_ignored_runtime_suite_requires_an_exact_case",
@@ -7205,7 +7235,7 @@
   "workflowIdentities": {
     ".github/workflows/registry-cli.yml": "3c1d5f00843a27e857782e1f7177408f74d8ece7b3cda68597f06a2308a5cc95",
     ".github/workflows/c-guest-authoring.yml": "260ca7130416a58b9b0514aaf5e1eb366635c2726bf76d95163ab99af0c8707b",
-    ".github/workflows/ci.yml": "45209920e6afe00a914fe5dfd293a721b6fd1c0782cbe76fda50d0e28ed35bf7",
+    ".github/workflows/ci.yml": "11445414c4635b38899a79d44935912ed80cb98905bfd93b3d5045c4b9a20012",
     ".github/workflows/developer-packaged-qualification.yml": "067b3d8317fb623a2ae4608342adede22548f4fe10ab8ca12ffd1985deaa753f",
     ".github/workflows/developer-platform-preflight.yml": "2fa2a690ccb49f38dae907f63ba5a4f1eb36ab1cd65638b4f5bfd01c5277231f",
     ".github/workflows/developer-tools.yml": "12539f559f5283ab812780aef0f1d60fd81c6c5e9ca9787505c8f2e8a05bdf39",
