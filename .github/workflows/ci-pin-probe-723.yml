@@ -1,46 +1,79 @@
 name: Temporary dependency pin probe
-
 on:
   push:
     branches: [feat/696-outbound-streams-feasibility]
     paths: [.github/workflows/ci-pin-probe-723.yml]
-
 permissions:
   contents: read
-
 jobs:
-  identities:
+  java-patch:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Retain bounded tracked inputs and integrity-verified upstream archives
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - name: Prepare the exact patched compiler closure
         shell: bash
         run: |
-          mkdir -p "$RUNNER_TEMP/pin-inputs"
-          git archive --format=tar HEAD tools .github sdk/java-guest website/toolchain website/scripts website/tests website/package.json website/package-lock.json website/content/toolchain.json website/README.md docs/development/website.md > "$RUNNER_TEMP/pin-inputs/source.tar"
+          curl --fail --location --retry 2 --max-time 180 https://services.gradle.org/distributions/gradle-9.1.0-bin.zip -o "$RUNNER_TEMP/gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
           python3 - <<'PY'
-          import base64, hashlib, os, pathlib, urllib.request
-          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pin-inputs'
-          assets = {
-              'npm-11.19.1.tgz': ('npm', 'sha512-ztsxKxt/kkIaAs+2i0GU6I+DRmUdrNasxTZKJe9TCdSjKxlhah/4r/hl5ygMD6XAg1qZ9c2TNomR4qgOydp10g=='),
-              'ip-address-10.5.1.tgz': ('ip-address', 'sha512-EXujUp9jyOI/chPgtqk6uy7fDq8AeCB/WlfEuPg9LN0fN9lzKAKfuDYi60SMhHwgUiEhZvVYsbGZN+RUU1INiA=='),
-              'undici-6.28.1.tgz': ('undici', 'sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA=='),
+          import json, re
+          from pathlib import Path
+          for name in ('sdk/java-guest/compiler.gradle', 'sdk/java-guest/feasibility/build.gradle'):
+              path = Path(name)
+              text = path.read_text()
+              assert text.count('2.18.9') == 2
+              path.write_text(text.replace('2.18.9', '2.18.10'))
+          updates = {
+              'jackson-annotations': ('67634a683cfb1695e55c78e351c5f38f4de0d8c64ed567419b8fe2d1dc354ada', 78413),
+              'jackson-core': ('e4544eec5754d2dd06c6b16cfc9d2883a523f7177c2429ab04b29ab5fab445c9', 592948),
+              'jackson-databind': ('ead55a0c649b11af6148a0c097323f5438afc5f563e7139681ad8277fff520bf', 1665063),
           }
-          for filename, (name, expected) in assets.items():
-              url = f'https://registry.npmjs.org/{name}/-/{filename}'
-              with urllib.request.urlopen(url, timeout=30) as response:
-                  raw = response.read(16 * 1024 * 1024 + 1)
-              assert len(raw) <= 16 * 1024 * 1024
-              assert 'sha512-' + base64.b64encode(hashlib.sha512(raw).digest()).decode() == expected
-              (output / filename).write_bytes(raw)
-              print(filename, len(raw), hashlib.sha256(raw).hexdigest())
+          path = Path('sdk/java-guest/feasibility/dependencies.lock.json')
+          lock = json.loads(path.read_text())
+          count = 0
+          for item in lock['artifacts']:
+              name = item['path'].split('/')[-3]
+              if name in updates:
+                  item['path'] = item['path'].replace('2.18.9', '2.18.10')
+                  item['sha256'], item['size'] = updates[name]
+                  count += 1
+          assert count == 3
+          path.write_text(json.dumps(lock, indent=2) + '\n')
+          path = Path('sdk/java-guest/feasibility/gradle/verification-metadata.xml')
+          text = path.read_text()
+          text, count = re.subn(r'      <component group="com\.fasterxml\.jackson[^\"]*" name="[^\"]+" version="2\.18\.9">.*?</component>\n', '', text, flags=re.S)
+          assert count == 5
+          path.write_text(text)
           PY
+          export GRADLE_USER_HOME="$RUNNER_TEMP/jackson-gradle"
+          "$RUNNER_TEMP/gradle-9.1.0/bin/gradle" --no-daemon -p sdk/java-guest/feasibility --write-verification-metadata sha256 probeJvm generateC
+          "$RUNNER_TEMP/gradle-9.1.0/bin/gradle" --no-daemon -p sdk/java-guest/feasibility --dependency-verification strict clean probeJvm generateC
+          python3 - <<'PY'
+          import importlib.util, json, os
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location('deps', 'sdk/java-guest/tools/dependencies.py')
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          cache = Path(os.environ['GRADLE_USER_HOME']) / 'caches/modules-2/files-2.1'
+          project = Path('sdk/java-guest/feasibility')
+          observed = module.cache_inventory(cache)
+          lock = json.loads((project / 'dependencies.lock.json').read_text())
+          module.verify_inventory(observed, lock, project / 'gradle/verification-metadata.xml')
+          print('STRICT_PATCHED_JAVA_CLOSURE', len(observed['artifacts']), len(lock['artifacts']))
+          PY
+          tar -cf "$RUNNER_TEMP/java-patch.tar" sdk/java-guest/compiler.gradle sdk/java-guest/feasibility/build.gradle sdk/java-guest/feasibility/dependencies.lock.json sdk/java-guest/feasibility/gradle/verification-metadata.xml
+          git diff --stat
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: dependency-pin-inputs
-          path: ${{ runner.temp }}/pin-inputs/
+          name: verified-java-patch
+          path: ${{ runner.temp }}/java-patch.tar
           if-no-files-found: error
           retention-days: 1
