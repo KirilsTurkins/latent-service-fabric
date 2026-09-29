@@ -1,0 +1,42 @@
+name: Temporary dependency pin probe
+
+on:
+  push:
+    branches: [feat/696-outbound-streams-feasibility]
+    paths: [.github/workflows/ci-pin-probe-723.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  identities:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read bounded upstream patch metadata without running package code
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, urllib.request, urllib.error
+          import xml.etree.ElementTree as ET
+          def read(url, limit=4*1024*1024):
+              with urllib.request.urlopen(url, timeout=30) as response:
+                  value = response.read(limit + 1)
+              if len(value) > limit:
+                  raise ValueError('download bound')
+              return value
+          for name in ('jackson-annotations', 'jackson-core', 'jackson-databind'):
+              path = f'com/fasterxml/jackson/core/{name}/2.18.10/{name}-2.18.10'
+              base = 'https://repo.maven.apache.org/maven2/' + path
+              try:
+                  jar = read(base + '.jar')
+                  pom = read(base + '.pom')
+                  print('PATCH_ARTIFACT ' + json.dumps({'path': path + '.jar', 'sha256': hashlib.sha256(jar).hexdigest(), 'size': len(jar), 'platform': 'any'}))
+                  doc = ET.fromstring(pom)
+                  print('PATCH_POM ' + json.dumps({'name': name, 'dependencies': [''.join(e.itertext()).strip() for e in doc.findall('.//{*}dependencies/{*}dependency')]}))
+              except urllib.error.HTTPError as error:
+                  print('PATCH_UNAVAILABLE ' + json.dumps({'path': path, 'status': error.code}))
+          for package, version in (('npm', 'latest'), ('ip-address', '10.5.1'), ('undici', '6.28.1')):
+              doc = json.loads(read(f'https://registry.npmjs.org/{package}/{version}'))
+              print('NPM_PATCH ' + json.dumps({key: doc.get(key) for key in ('name', 'version', 'dist', 'dependencies', 'engines')}))
+          PY
