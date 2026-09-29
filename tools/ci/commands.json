@@ -3491,7 +3491,7 @@
       "sha256": "67df58fbde773857194e74f52810f8a5e1458efbfe3d7dfe4166ec19aa1461f1"
     },
     "tools/ci_fast.py": {
-      "sha256": "62bbebe6115eb6932a4aaf92d68ab1794457a4c069c1d32a51eba82b7c829a44"
+      "sha256": "1390b3da76421fbdfd8941359b495e4b6441364724fe70aebc9d952dadb91eaf"
     },
     "tools/ci_lane_worker.py": {
       "sha256": "6212cd840e2bddfcd3feccfd01b7c07538362d821188085997934efe9c8b7261"
@@ -3563,7 +3563,7 @@
       "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
-      "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
+      "sha256": "261070388f3aefc3604aa07b58d28f79b3dd2cb26bd2e58217619caf0bca232e"
     },
     "tools/prepare_dev_packaged_probe.py": {
       "sha256": "da346e6f90223ba2edd3b18a3f0ba6bb0df3d21c268e5f3f6ffa9641649ac449"
@@ -3686,7 +3686,7 @@
       "sha256": "99bd586c5df8f3ad03bd811fa86c10fde9034cd3c1a0de76731585b0d51ae7bf"
     },
     "tools/run_security_profile_workflow.py": {
-      "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
+      "sha256": "0f8787c5b61f9a27e943cafcc3ec32f1fd27633d9f4012e8b2f227f3ee2a8f8d"
     },
     "tools/run_static_site_workflow.py": {
       "sha256": "cb06179e97b1b7122579e7137fab5508ca5566131ba4e0ee2e860cc77cd0d788"
@@ -7202,7 +7202,7 @@
   "workflowIdentities": {
     ".github/workflows/registry-cli.yml": "a713a8b94a6165e048cbb65688f6c767010393b619c8c9cc9e080830786be854",
     ".github/workflows/c-guest-authoring.yml": "9517e1d2a98749f05121d389421f649c3b8aff8323e97046d5f456f1d489bc42",
-    ".github/workflows/ci.yml": "757a1841908f6f25de27a981bf85f7c197060d8fd7895664c8ad382dc3001dc4",
+    ".github/workflows/ci.yml": "de96fb23dc62d831a4c67ed9468478326e6bc7eca81848a5b5795421f8e79a24",
     ".github/workflows/developer-packaged-qualification.yml": "e9ec2f74bb293bd7694830746f8d23bc00eb439413ce8aa2312f6e223acea758",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "ba8a97d024e2735da86ff0e82c4ec20866195ad00b9cd7b77526d670aa94b27f",

@@ -9,7 +9,7 @@
   "allowedComponentImports": [],
   "requiredPublicWorld": "latent:web/application-service@0.1.0",
   "proofInterface": "lsf:renderer-qualification/renderer",
-  "wasmtime": "47.0.4",
+  "wasmtime": "48.0.3",
   "compiler": "cranelift-speed",
   "allocator": "on-demand",
   "stackBytes": 2097152,

@@ -1,5 +1,10 @@
 # Isolated trusted-local AOT compilation and native cache
 
+The current security baseline selects **Wasmtime 48.0.3**. References below to
+47.0.4 describe the earlier qualification, not the current supported dependency.
+See the [September security update](../development/wasmtime-security-update.md)
+for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+
 `latent-wasmtime` provides bounded isolated compilation.
 Its `IsolatedAotCompiler` launches an approved one-job executable, verifies its input
 and output, and returns locally authenticated native bytes with an owned memory

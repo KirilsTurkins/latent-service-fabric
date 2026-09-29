@@ -25,14 +25,14 @@ The exact dependency baseline is recorded in both the root `Cargo.toml` and `too
 
 | Area | Version |
 | --- | ---: |
-| Rust toolchain / MSRV | 1.97.1 / 1.94.1 |
+| Rust toolchain / MSRV | 1.97.1 / 1.95.0 |
 | Tokio | 1.53.1 |
 | Prost | 0.14.4 |
 | Tonic / Tonic Prost | 0.14.6 / 0.14.6 |
 | Tonic Prost Build | 0.14.6 |
 | Vendored `protoc` | 3.2.0 |
 | Tracing / tracing-subscriber | 0.1.44 / 0.3.23 |
-| Wasmtime | 47.0.4 |
+| Wasmtime | 48.0.3 |
 | `wit-bindgen` | 0.62.0 |
 
 The committed root `Cargo.lock` is authoritative. Local commands and CI use `--locked`; they do not silently replace the dependency graph.
@@ -104,7 +104,7 @@ Run:
 ```bash
 rustup toolchain install 1.97.1 --profile minimal --component rustfmt,clippy \
   --target wasm32-wasip2,wasm32-unknown-unknown
-rustup toolchain install 1.94.1 --profile minimal
+rustup toolchain install 1.95.0 --profile minimal
 
 python3.13 -m venv .venv
 . .venv/bin/activate
