@@ -1,64 +1,177 @@
-name: PR 731 bounded diagnostics
+name: PR 731 CI repair validation
 on:
   push:
     branches: [security/dependabot-1-ci-diagnostics]
     paths: [.github/workflows/pr731-diagnostics.yml]
 permissions:
   contents: read
-  actions: read
 jobs:
-  collect:
+  candidate:
     if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/security/dependabot-1-ci-diagnostics'
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.candidate.outputs.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: 81cd2540a4f6e91fd559728a791ec31a903a2ae9
           persist-credentials: false
-      - name: Export reviewed text sources and bounded failure excerpts
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt
+      - name: Apply only the reviewed seven-file patch
+        run: |
+          git fetch --no-tags --depth=1 origin d79a8e5e564595d40384c5a4a76d48469eaf90c1
+          git show FETCH_HEAD:pr731-ci.patch > "$RUNNER_TEMP/repair.patch"
+          echo "d0fb5c547f2bf72dbd9017f0d2186c8f375197dc3c5e13fdd10ca993fd215bb7  $RUNNER_TEMP/repair.patch" | sha256sum --check
+          git apply --index --unidiff-zero "$RUNNER_TEMP/repair.patch"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('docs/development/windows-developer-workflow.md')
+          text = p.read_text().replace('not a filesystem quota: temporary overshoot can occur before cancellation. Known failed or superseded attempts can\nbe removed;', 'not a filesystem quota: temporary overshoot can occur before cancellation.\nKnown failed or superseded attempts can be removed;')
+          p.write_text(text)
+          p = Path('crates/latent-wasmtime/tests/phase3_resource/observation.rs')
+          text = p.read_text()
+          start, end = text.index('#[cfg(test)]\nmod tests {'), text.index('pub fn publish(')
+          tests = text[start:end]
+          p.write_text(text[:start] + text[end:].rstrip() + '\n\n' + tests.rstrip() + '\n')
+          PY
+          cargo fmt --all
+          git add crates/latent-wasmtime/tests/phase3_resource/observation.rs docs/development/windows-developer-workflow.md
+          git diff --exit-code
+          git diff --cached --check
+          test "$(git diff --cached --name-only | wc -l)" -eq 7
+      - name: Validate exact ABI, ownership, documentation and CI inventories
+        run: |
+          python -m pip install --requirement tools/requirements.lock
+          python -m unittest tools.tests.test_host_abi_profile tools.tests.test_dev_build_cache tools.tests.test_dev_tools tools.tests.test_ci_coverage tools.tests.test_ci_suite_inventory tools.tests.test_validate_docs
+          python tools/ci_coverage.py
+          python tools/validate_docs.py
+          python tools/validate_repo.py
+      - name: Publish the candidate without modifying the PR branch
+        id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(ci): preserve historical ABI evidence and bound larger native build inputs'
+          git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' push origin HEAD:refs/heads/security/dependabot-1-ci-candidate
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git show --stat --oneline HEAD
+  resource:
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.candidate.outputs.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Build the real all-features resource harness
+        run: cargo test --workspace --all-features --locked --test phase3_resource --no-run --message-format=json > "$RUNNER_TEMP/resource-artifacts.jsonl"
+      - name: Verify exact test discovery and execute the resource checkpoint
+        run: |
           python3 - <<'PY'
-          import os, pathlib, subprocess, zipfile, re
-          root = pathlib.Path.cwd()
-          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr731-diagnostics'
-          output.mkdir()
-          total = 0
-          with zipfile.ZipFile(output / 'source.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
-              for name in subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0'):
-                  if not name: continue
-                  path = root / name
-                  if not path.is_file() or path.is_symlink() or path.stat().st_size > 4 * 1024 * 1024: continue
-                  data = path.read_bytes()
-                  try: data.decode('utf-8')
-                  except UnicodeDecodeError: continue
-                  total += len(data)
-                  if total > 256 * 1024 * 1024: raise RuntimeError('source export exceeds bound')
-                  archive.writestr(name, data)
-          print('Source identity: 81cd2540a4f6e91fd559728a791ec31a903a2ae9; text bytes:', total)
-          for job in [109466233709, 109465377918]:
-              log = output / f'job-{job}.log'
-              result = subprocess.run(['curl', '--fail', '--silent', '--show-error', '--location', '--max-time', '60', '--max-filesize', '33554432', '--header', 'Authorization: Bearer ' + os.environ['GH_TOKEN'], '--output', str(log), f'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/jobs/{job}/logs'], timeout=65)
-              if result.returncode: raise RuntimeError(f'log fetch failed for job {job}')
-              lines = log.read_text(encoding='utf-8-sig').splitlines()
-              selected = set()
-              for i, line in enumerate(lines):
-                  if re.search(r'panicked at|FAIL: |ERROR: |##\[error\]|test result: FAILED|Traceback|Error:|failed:', line):
-                      selected.update(range(max(0, i-2), min(len(lines), i+12)))
-              text = '\n'.join(lines[i] for i in sorted(selected))
-              (output / f'job-{job}-failures.log').write_text(text)
-              log.unlink()
-              print(f'Job {job} failure excerpt:\n{text[-16000:]}')
+          import json, os, pathlib, subprocess
+          records = [json.loads(line) for line in pathlib.Path(os.environ['RUNNER_TEMP'], 'resource-artifacts.jsonl').read_text().splitlines()]
+          matches = [r for r in records if r.get('reason') == 'compiler-artifact' and r.get('target', {}).get('name') == 'phase3_resource' and r.get('executable')]
+          assert len(matches) == 1
+          binary = pathlib.Path(matches[0]['executable'])
+          print('Exact resource executable bytes:', binary.stat().st_size, flush=True)
+          listing = subprocess.check_output([str(binary), '--list', '--format', 'terse'], text=True, timeout=30)
+          actual = sorted(line.removesuffix(': test') for line in listing.splitlines() if line.endswith(': test'))
+          suites = json.loads(pathlib.Path('tools/ci/suites.json').read_text())
+          expected = next(s for s in suites['suites'] if s['id'] == 'latent-wasmtime.test.phase3-resource')['expectedCases']
+          assert actual == expected, (actual, expected)
+          subprocess.run([str(binary), '--test-threads=1'], timeout=180, check=True, env={**os.environ, 'LSF_PHASE3_RESOURCE_REPORT': os.environ['RUNNER_TEMP'] + '/resource-report.json'})
           PY
-      - name: Retain only public tracked text and diagnostic excerpts
+          cargo clippy --locked --all-features -p latent-wasmtime --test phase3_resource --no-deps
+          git diff --exit-code
+      - name: Retain bounded resource evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: pr731-source-and-failures
+          name: pr731-resource-repair
           path: |
-            ${{ runner.temp }}/pr731-diagnostics/source.zip
-            ${{ runner.temp }}/pr731-diagnostics/*-failures.log
-          retention-days: 1
+            ${{ runner.temp }}/resource-artifacts.jsonl
+            ${{ runner.temp }}/resource-report.json
+          retention-days: 3
           if-no-files-found: error
+  rust-developer:
+    needs: candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.candidate.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613
+        with:
+          version: 1.254.0
+      - name: Stage the pinned relocatable Python prefix
+        run: |
+          image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'
+          container=$(docker create "$image")
+          trap 'docker rm "$container"' EXIT
+          prefix="$RUNNER_TEMP/guest-tools-cpython"
+          mkdir "$prefix"
+          docker cp "$container:/usr/local/." "$prefix"
+          printf 'LSF_DEV_PYTHON_PREFIX=%s\n' "$prefix" >> "$GITHUB_ENV"
+      - name: Rebuild the pinned Rust compiler distribution and source node
+        run: python tools/build_dev_guest_tools.py --language rust --output target/dev-tools --python-prefix "$LSF_DEV_PYTHON_PREFIX" --node-tests
+      - name: Execute real isolated Rust projects and record observed cache peaks
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, sys
+          from tools.dev_workflow import build_cache
+          from tools.run_dev_guest_tools_tests import main
+          original = build_cache.usage
+          peak = {'entries': 0, 'bytes': 0, 'observations': 0}
+          def observed(directory):
+              entries, size = original(directory)
+              peak['entries'] = max(entries, peak['entries'])
+              peak['bytes'] = max(size, peak['bytes'])
+              peak['observations'] += 1
+              return entries, size
+          build_cache.usage = observed
+          sys.argv = ['probe', '--language', 'rust', '--payload', 'target/dev-tools/payload', '--packager', 'target/dev-tools/latent-test', '--source-node', 'target/dev-tools/source-node', '--output', os.environ['RUNNER_TEMP'] + '/dev-projects']
+          try:
+              status = main()
+              assert status == 0
+          finally:
+              peak.update(maximumEntries=build_cache.MAX_ENTRIES, maximumBytes=build_cache.MAX_BYTES, maximumAttempts=build_cache.MAX_ATTEMPTS)
+              print(json.dumps(peak), flush=True)
+              pathlib.Path(os.environ['RUNNER_TEMP'], 'cache-peaks.json').write_text(json.dumps(peak))
+          PY
+          git diff --exit-code
+      - name: Retain bounded compiler and application evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr731-rust-developer-repair
+          path: |
+            ${{ runner.temp }}/cache-peaks.json
+            ${{ runner.temp }}/dev-projects/receipt.json
+            ${{ runner.temp }}/dev-projects/failed-attempts/
+            target/dev-tools/logs/
+          retention-days: 3
+          if-no-files-found: warn
