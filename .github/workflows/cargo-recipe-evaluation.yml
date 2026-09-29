@@ -28,18 +28,26 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Initialize attempt diagnostics before prerequisites
+        run: |
+          mkdir -p "$RUNNER_TEMP/cargo-recipe-evaluation"
+          git rev-parse HEAD > "$RUNNER_TEMP/cargo-recipe-evaluation/revision.txt"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
+      - name: Install pinned validation dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
       - uses: dtolnay/rust-toolchain@9376cdc5a5e25b16da71af47712785cf06b0d6d4 # 1.94.1
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           components: rustfmt, clippy
           targets: wasm32-wasip2,wasm32-unknown-unknown
       - name: Validate recipe and cache observations with native process accounting
-        run: python3 -m unittest tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_observe
+        run: |
+          set -o pipefail
+          python3 -m unittest tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_observe 2>&1 | tee "$RUNNER_TEMP/cargo-recipe-evaluation/tests.log"
       - name: Exercise real Cargo freshness and cache faults without shared cache writes
-        run: python3 tools/ci_cargo_probe.py --include-msrv --output "$RUNNER_TEMP/cargo-recipe-evaluation"
+        run: python3 tools/ci_cargo_probe.py --include-msrv --output "$RUNNER_TEMP/cargo-recipe-evaluation/probe"
       - name: Retain bounded evaluation diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
