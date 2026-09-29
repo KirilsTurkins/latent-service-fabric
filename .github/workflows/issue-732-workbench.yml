@@ -32,6 +32,7 @@ jobs:
           PY
           git worktree add --detach "$RUNNER_TEMP/candidate" 2c52ff1a9d260da2fbcd81aa0c420926a5820d98
           python3 .issue-732/build.py "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/issue732-overlay.json" "$RUNNER_TEMP/candidate-evidence"
+          python3 .issue-732/finalize.py "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/candidate-evidence"
       - name: Native documentation and inventory qualification
         working-directory: ${{ runner.temp }}/candidate
         env:
@@ -68,28 +69,44 @@ jobs:
       actions: read
       contents: write
     steps:
-      # This isolated publisher never checks out, imports, or executes candidate
-      # code. It accepts only a hardcoded digest of reviewed Git tree data and
-      # creates unattached Git objects. The connector separately updates the PR.
+      # No checkout or execution of candidate code. The workflow-aware connector
+      # performs workflow writes separately; this token only stores ordinary
+      # content objects and cannot update branches through this script.
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: issue-732-exact-candidate
           path: candidate-data
-      - name: Store the exactly validated tree without updating any branch
+      - name: Store validated non-workflow objects for the authorized connector
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import hashlib, json, os, urllib.request
+          import hashlib, json, os, urllib.error, urllib.request
           from pathlib import Path
           payload = Path('candidate-data/candidate-tree.json').read_bytes()
-          assert hashlib.sha256(payload).hexdigest() == '4b8eea6d7dbc24acd7803e847dd096851a25be8e6ff8e7c55d35f7d221e35c82'
+          assert hashlib.sha256(payload).hexdigest() == 'fa678a9af882b69f8ea56df1555b19c385b515936a2cc0e7ab9a7e1983c53806'
           document = json.loads(payload)
           assert document['base_tree'] == 'da458ba6dec0efd929bd5a8daa0dd4067b72eb08'
           assert len(document['tree']) == 480
-          request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/trees', data=payload, method='POST', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
-          with urllib.request.urlopen(request, timeout=120) as response:
-              result = json.load(response)
-          assert result['sha'] == '65a3bfa45523532437f7953d820392a3b22052a6', result['sha']
-          print('VALIDATED_CANDIDATE_TREE=' + result['sha'])
+          def post(endpoint, value):
+              data = json.dumps(value, ensure_ascii=False, separators=(',', ':')).encode()
+              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/' + endpoint, data=data, method='POST', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
+              try:
+                  with urllib.request.urlopen(request, timeout=120) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as error:
+                  print('Git object publication denied:', error.code, error.read().decode()[:1000])
+                  raise SystemExit(1)
+          ordinary = [row for row in document['tree'] if not row['path'].startswith('.github/workflows/')]
+          workflows = [row for row in document['tree'] if row['path'].startswith('.github/workflows/')]
+          assert len(workflows) == 5
+          result = post('trees', {'base_tree': document['base_tree'], 'tree': ordinary})
+          assert result['sha'] == 'b60143bbb6192eb80ac3c6e7973d0c5ceafcfb1f'
+          print('VALIDATED_NON_WORKFLOW_TREE=' + result['sha'])
+          for row in workflows:
+              content = row['content'].encode()
+              expected = hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
+              blob = post('blobs', {'content': row['content'], 'encoding': 'utf-8'})
+              assert blob['sha'] == expected
+              print(json.dumps({'path': row['path'], 'mode': row['mode'], 'type': 'blob', 'sha': blob['sha']}))
           PY
