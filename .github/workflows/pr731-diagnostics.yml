@@ -53,7 +53,7 @@ jobs:
           python -m unittest tools.tests.test_host_abi_profile tools.tests.test_dev_build_cache tools.tests.test_dev_tools tools.tests.test_ci_coverage tools.tests.test_ci_suite_inventory tools.tests.test_validate_docs
           python tools/ci_coverage.py
           python tools/validate_docs.py
-          python tools/validate_repo.py
+          python tools/validate_repository.py
       - name: Publish the candidate without modifying the PR branch
         id: candidate
         env:
