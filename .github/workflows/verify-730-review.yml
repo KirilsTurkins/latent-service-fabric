@@ -1,0 +1,28 @@
+name: Verify PR 730 review fixes
+on:
+  push:
+    branches: [fix/730-review-validation]
+    paths: [.github/workflows/verify-730-review.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Capture reviewed file bytes
+        run: |
+          mkdir -p "$RUNNER_TEMP/pr730-source"
+          git rev-parse HEAD^ > "$RUNNER_TEMP/pr730-source/revision.txt"
+          git ls-tree -r HEAD^ > "$RUNNER_TEMP/pr730-source/tree.txt"
+          git archive --format=tar.gz HEAD^ tools .github/workflows/ci.yml docs/development/local-tests.md > "$RUNNER_TEMP/pr730-source/source.tar.gz"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr730-reviewed-source
+          path: ${{ runner.temp }}/pr730-source/
+          if-no-files-found: error
+          retention-days: 1
