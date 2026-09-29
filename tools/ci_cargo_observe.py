@@ -49,7 +49,7 @@ def atomic_json(path: Path, value: object) -> None:
 
 def output_directory(path: Path, repo: Path) -> Path:
     """Only fresh diagnostic directories; never overwrite sources or old evidence."""
-    absolute = path.absolute()
+    absolute = Path(os.path.abspath(path))
     if any(parent.is_symlink() for parent in (absolute, *absolute.parents)):
         raise ValueError("linked-observation-directory")
     repo = repo.resolve()
@@ -180,7 +180,7 @@ def observe(invocation: ci_cargo.Invocation, *, repo: Path, output: Path,
         raise ValueError("observation-timeout-limit")
     argv = observed_argv(invocation, configuration)
     if inventory is not None:
-        inventory = inventory.absolute()
+        inventory = Path(os.path.abspath(inventory))
         if (not invocation.inventory
                 or any(p.is_symlink() for p in (inventory, *inventory.parents))
                 or inventory.is_relative_to(repo) and not inventory.is_relative_to(repo / "target")):
@@ -197,10 +197,13 @@ def observe(invocation: ci_cargo.Invocation, *, repo: Path, output: Path,
     item = {"schemaVersion": SCHEMA, "invocation": asdict(invocation),
             "configuration": configuration, "passed": False,
             "environmentDigest": ci_cargo_cache.canonical_digest(ci_cargo_cache.environment_identity(env)),
-            "metrics": None, "units": [], "fingerprints": None}
+            "metrics": None, "units": [], "fingerprints": None,
+            "context": {name: env.get(name) for name in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT",
+                "RUNNER_OS", "RUNNER_ARCH", "ImageOS", "ImageVersion")}}
     # No shell, no user-supplied command, no second process owner.
     run = TestRun("cargo-" + invocation.name, {"timeoutSeconds": timeout}, repo=repo,
                   reproduction={"recipe": invocation.name}, diagnostic_root=output / "stages")
+    primary_failure = None
     try:
         with run:
             run.source_identity()
@@ -210,6 +213,8 @@ def observe(invocation: ci_cargo.Invocation, *, repo: Path, output: Path,
             timer = Path("/usr/bin/time")
             command = [str(timer), "-f", TIME_FORMAT, "-o", str(output / "time.txt"), *argv] if timer.is_file() else argv
             result = run.command(command, timeout=timeout, maximum=MAX_BYTES, env=env, check=False)
+            if result.returncode != 0:
+                primary_failure = ProcessFailure("assertion-failure", "cargo-command-failed", result)
             # The bounded owner captured private output. Publish only redacted text.
             (output / "cargo.log").write_text(redact(result.output.decode("utf-8", "replace"),
                 (str(repo), str(Path.home())), run.secrets), encoding="utf-8")
@@ -220,8 +225,8 @@ def observe(invocation: ci_cargo.Invocation, *, repo: Path, output: Path,
             item["fingerprints"] = {"before": before, "after": after,
                 "changed": sorted(name for name, digest in after.items() if before.get(name) != digest),
                 "removed": sorted(set(before) - set(after))}
-            if result.returncode != 0:
-                raise ProcessFailure("assertion-failure", "cargo-command-failed", result)
+            if primary_failure is not None:
+                raise primary_failure
             records, units = cargo_records(result.output)
             item["units"] = units
             item["freshArtifactRecords"] = sum(unit["fresh"] for unit in units)
@@ -246,9 +251,25 @@ def observe(invocation: ci_cargo.Invocation, *, repo: Path, output: Path,
                 shutil.copyfile(timings, output / "cargo-timing.html")
         item["passed"] = True
         return item
+    except (OSError, ValueError, ProcessFailure) as error:
+        if inventory is not None:
+            try:
+                inventory.unlink(missing_ok=True)
+            except OSError:
+                print("Cargo inventory cleanup failed", file=sys.stderr)
+        if primary_failure is not None and error is not primary_failure:
+            print("Cargo diagnostic export failed after a failed command: " + type(error).__name__, file=sys.stderr)
+            raise primary_failure from error
+        raise
     finally:
         item["stageDiagnostic"] = run.record
-        atomic_json(output / "observation.json", item)
+        active_error = sys.exc_info()[0]
+        try:
+            atomic_json(output / "observation.json", item)
+        except (OSError, ValueError) as error:
+            print("Cargo observation export failed: " + type(error).__name__, file=sys.stderr)
+            if active_error is None:
+                raise
 
 
 def main() -> int:
@@ -263,7 +284,7 @@ def main() -> int:
         if any(row.inventory for row in invocations) != (args.inventory is not None):
             raise ValueError("inventory-required-only-for-prepare")
         if args.inventory is not None:
-            destination = args.inventory.absolute()
+            destination = Path(os.path.abspath(args.inventory))
             if (any(p.is_symlink() for p in (destination, *destination.parents))
                     or destination.is_relative_to(ci_cargo.ROOT) and not destination.is_relative_to(ci_cargo.ROOT / "target")):
                 raise ValueError("unsafe-inventory-destination")

@@ -11,8 +11,10 @@ faster default. Passing recipe CI does not complete those performance criteria.
 
 **The existing dependency cache and ordinary dev/test profiles remain the
 selected defaults. No compile/check invocation has been removed.** There are
-no comparable cold/warm measurements for the new candidates yet; choosing a
-faster default or calling an invocation redundant would be unsupported.
+no completed, equivalent end-to-end cache-service comparisons for the new
+candidates yet; choosing a faster default or calling an invocation redundant
+would be unsupported. The real-compiler mechanism observations below are not
+a substitute for that comparison.
 
 The ordinary CI workflow invokes reviewed recipes instead of duplicating Cargo
 argument lists in shell blocks. Existing job selection, required checks,
@@ -101,8 +103,9 @@ preserves `cache-workspace-crates: false`, `cache-bin: false`,
 `cache-all-crates: false`, `cache-on-failure: false` and the same directory scope.
 It does not cache all of `target`, workspace executables, credentials, signing
 keys, fixture state, raw captures or positive/derived proof receipts. The action
-also manages its ordinary dependency-download cache; this change does not add a
-second archive implementation or compiler-cache service.
+also manages its ordinary dependency-download cache. The production cache does
+not gain a second backend or compiler-cache service. Disposable local archives
+used by the manual experiments below never read or write shared caches.
 
 The compatibility digest includes the recipe's package/feature/target/profile
 selection, root and nested manifests/locks/build scripts, toolchain declarations,
@@ -126,9 +129,10 @@ Only a push to `development`, or an explicit manual run on `development` or
 are read-only. A cache identity failure fails the selected candidate step.
 A restore miss can rebuild normally. A corrupt restored dependency may be rebuilt
 by Cargo or cause a nonzero Cargo result; the latter remains a CI failure. The
-unit tests exercise propagation of that failure, not real archive corruption.
-An actual corrupted-archive recovery/failure trial remains required before
-promoting the candidate.
+real-compiler mechanism trial now observes both outcomes: an invalid fingerprint
+rebuilds and a damaged dependency library produces Cargo exit 101. The local
+archive control rejects a damaged digest before extracting anything. These are
+not GitHub cache-service corruption trials or proof of full-suite equivalence.
 
 ## Opt-in correctness profile
 
@@ -208,8 +212,107 @@ favorable sample. A cache hit with no successful downstream validation is not a
 performance win. Preserve negative and inconclusive observations as well as
 improvements. Promote a default or remove an invocation only after that evidence
 shows equivalent completed coverage and a net benefit including cache overhead.
-Actual corruption/mismatch trials and a complete affected CI run are also still
-required; Python mocks in the regression tests do not satisfy those criteria.
+The retained mechanism corruption/mismatch trials do not establish the complete
+affected-CI/cache-service comparison. Python mocks in the regression tests do
+not satisfy those performance criteria either.
+
+## Actual observations and manual replay
+
+The manual-only `Cargo recipe evaluation` workflow installs the repository's
+existing pinned Rust/MSRV/Python versions. It has read-only repository
+permissions and no cache restore/save action. It is not a required PR build lane
+and does not split or duplicate compilation in normal CI.
+
+`tools/ci_cargo_observe.py` runs the existing immutable recipe vectors through
+`TestRun` and the shared descendant-process owner. It records source/attempt
+identity, Cargo JSON artifact freshness, hashed before/after fingerprint files,
+Cargo timing HTML, bounded redacted logs, GNU time wall/CPU time and maximum
+child RSS. Fresh/compiled **artifact records are not rustc invocation counts**.
+Maximum child RSS is not simultaneous process-tree or job peak memory. Missing
+GNU time data remains unavailable, never zero. Diagnostic export failures cannot
+replace an already-observed failed Cargo exit status. A failed observer removes
+its inventory handoff, and no retained observation is an artifact qualification.
+
+```sh
+python3 tools/ci_cargo_observe.py workspace-check --output "$RUNNER_TEMP/cargo-observations"
+python3 tools/ci_cargo_probe.py --include-msrv --output "$RUNNER_TEMP/cargo-probe"
+```
+
+Output directories must be new; source-tree destinations, traversals and links
+are rejected. The raw stream is bounded to 16 MiB, fingerprint observations to
+20,000 files/16 MiB, and each JSON line to 1 MiB. These bounds fail explicitly,
+not by truncating a successful sample. Evidence stays outside dependency caches.
+
+### Retained real-compiler mechanism control
+
+[Run 36546155736](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36546155736),
+commit `4d65364ec0217f1224879b2c2a67331283142ac1`, completed on September 29, 2026.
+All 60 recipe/cache/observer tests passed on native Linux, without native-test
+skips. Artifact `11022761400` has ZIP SHA-256
+`a204ccd8a3d5932574b65dfac0f268a928de75f3cc1704e55866f724496fad18`.
+The retained [mechanism report](evidence/cargo-cache-mechanism-2026-09-29.json)
+is copied from its `probe/probe.json`, not generated from mocks.
+
+The fixture contains one application and one dependency with exactly three
+executed tests. Each configuration has one cold and two restored dependency-warm
+observations on the same runner. Application outputs are pruned before saving;
+every warm invocation rebuilds the application and executes all three tests.
+
+| Configuration | Cargo elapsed cold / warm 1 / warm 2 | Built / fresh artifact records cold; each warm | Local archive bytes | Maximum child RSS KiB cold / warm 1 / warm 2 |
+| --- | --- | --- | --- | --- |
+| Current | 0.23 / 0.11 / 0.11 s | 2 / 0; 1 / 1 | 3,668 | 237,012 / 237,508 / 237,012 |
+| Correctness | 0.15 / 0.10 / 0.11 s | 2 / 0; 1 / 1 | 3,649 | 234,976 / 236,864 / 235,024 |
+
+Current local archive save took 0.00329 s and restores 0.00268 / 0.00260 s;
+correctness save took 0.00245 s and restores 0.00254 / 0.00256 s. Pruning cost
+0.05561 / 0.05642 s respectively. Stage-owner totals in the JSON are separate
+from Cargo wall time; the first current stage includes first-use setup overhead.
+The report does not hide that cost by labeling it compiler time.
+
+All nine controls completed with the required outcome: a corrupt fingerprint
+rebuilt both artifact records; a corrupt dependency product failed explicitly
+with exit 101; a corrupt local archive was rejected before extraction; changed
+flags, features, target, toolchain and dependency each built new artifacts; an
+absent cache built and executed successfully. The target-change control is an
+explicit wasm check, not a claim that wasm tests executed. Expected corruption
+failures are mechanism outcomes, never successful performance samples.
+
+These tiny sequential trials have only one cold/two warm samples per profile,
+10 ms Cargo timer resolution, no randomized ordering and no network transfer.
+They establish invalidation/failure behavior, not a statistically supported LSF
+speedup. No confidence interval, default promotion or redundant-command removal
+is justified by them.
+
+### Actual Rust recipe replay
+
+Enable `run_full_recipes` in the manual workflow to replay both configurations
+on separate disposable runners. For a fresh disposable checkout with **no
+existing `target` directory**, the equivalent local command is:
+
+```sh
+python3 tools/ci_cargo_evaluate.py --disposable-checkout \
+  --configuration current --output /absolute/path/outside-the-checkout/cargo-evaluation
+```
+
+The runner executes every entry in `RUST_RECIPES`, including deterministic helper
+checks, host/guest checks, production packages, both Clippy policies, preparation,
+workspace tests, explicit doctests and signing compatibility, cold and twice
+warm. It compares exact discovered case identities, recreates and authenticates
+AOT inputs after every preparation, and invokes the existing custom/doctest/
+signing execution validators. It never equates shared artifact hashes with
+redundant coverage. The former target must not exist, diagnostics must live
+outside the checkout, and only the target newly owned by this invocation is
+reset. Archives are bounded to 16 GiB/100,000 regular files, checked for traversal,
+links, duplicates, workspace products and integrity before extraction.
+
+The output includes per-invocation observations, exact case-identity digests,
+complete selected-suite wall time, discovery/AOT preparation, local prune/save/
+restore costs and bytes. Partial, failed or differently selected samples remain
+failed in `evaluation.json`. Local dependency archive timings are **not** GitHub
+cache download/upload timings. Downstream renderer/provider qualification,
+MSRV, release and calibration jobs are explicitly excluded from this local
+recipe measurement and remain in normal CI. Consequently this runner cannot
+promote a default on its own or replace the shared #426/#342 end-to-end evidence.
 
 ## Rollback
 
@@ -229,11 +332,16 @@ Do not delete unrelated shared caches to force an experimental cold run.
 ## Fast regression checks
 
 ```sh
-python3 -m unittest tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache
+python3 -m pip install --requirement tools/requirements.lock
+python3 -m unittest tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache \
+  tools.tests.test_ci_cargo_observe tools.tests.test_ci_cargo_evaluate
 ```
 
-These standard-library tests require no Rust compiler. They validate argument
+These regression tests require no Rust compiler. Existing foundation validators
+use the pinned Python dependencies. They validate argument
 and coverage retention, failure and inventory handoff behavior, compatibility
 invalidation, secret exclusion, candidate configuration limits and the existing
 workflow's writer/scope/default invariants. They also run in the existing docs
-job and repository-contract test discovery; no new permanent workflow is added.
+job and repository-contract test discovery. Native process tests are required on
+CI Linux; an unsupported local environment reports a skip, not passing native
+coverage. Real compilation/fault probes live in the manual-only workflow.

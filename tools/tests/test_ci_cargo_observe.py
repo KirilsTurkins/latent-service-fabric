@@ -92,6 +92,8 @@ class ObservationTests(unittest.TestCase):
         observe.output_directory(output, self.root)
         with self.assertRaises(FileExistsError):
             observe.output_directory(output, self.root)
+        with self.assertRaises(ValueError):
+            observe.output_directory(self.root / "target/../source", self.root)
 
     def test_gnu_time_requires_finite_complete_fields_and_defines_rss(self):
         path = self.root / "time.txt"
@@ -134,6 +136,16 @@ class NativeObservationTests(unittest.TestCase):
         self.assertFalse(record["passed"])
         self.assertEqual(record["stageDiagnostic"]["outcome"], "failed")
         self.assertTrue(record["stageDiagnostic"]["child"]["cleanupAcknowledged"])
+
+    def test_diagnostic_failure_does_not_replace_primary_command_failure(self):
+        invocation = ci_cargo.RECIPES["workspace-check"][0]
+        with mock.patch.object(observe, "observed_argv", return_value=[sys.executable, "-c", "raise SystemExit(17)"]), \
+             mock.patch.object(observe.TestRun, "source_identity"), \
+             mock.patch.object(observe, "time_metrics", side_effect=ValueError("controlled-diagnostic-failure")), \
+             self.assertRaises(ProcessFailure) as failure:
+            observe.observe(invocation, repo=self.root, output=self.root / "target/failure", timeout=10)
+        self.assertEqual(failure.exception.result.returncode, 17)
+        self.assertFalse(json.loads((self.root / "target/failure/observation.json").read_text())["passed"])
 
     def test_real_owned_success_retains_inventory_without_cache_short_circuit(self):
         invocation = ci_cargo.RECIPES["prepare"][1]
