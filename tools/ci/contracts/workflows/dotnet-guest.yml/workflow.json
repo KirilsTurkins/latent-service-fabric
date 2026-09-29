@@ -1,0 +1,46 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "dotnet-guest-${{ github.ref }}"
+    },
+    "name": ".NET guest qualification",
+    "on": {
+      "pull_request": {
+        "paths": [
+          "sdk/dotnet-guest/**",
+          "tools/dotnet_guest*",
+          "tools/dotnet_guest/**",
+          "tools/dotnet_capsule.py",
+          "tools/*dotnet*guest*capsules.py",
+          "tools/*dotnet_capsule*.py",
+          "tools/*rust_capsule*.py",
+          "tools/guest_runtime_grants.py",
+          "tools/wait_capsule_audit_idle.py",
+          "tools/tests/test_dotnet_capsule_authoring.py",
+          "docs/component-development/dotnet-authoring.md",
+          "crates/latent-signing/**",
+          "crates/latent-packaging/**",
+          "crates/latent-policy/**",
+          "apps/latentd/**",
+          ".cargo/managed-guest.toml",
+          "tools/toolchain-smoke/**",
+          "wit/**",
+          "crates/latent-wasmtime/**",
+          ".github/workflows/dotnet-guest.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "toolchain"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/dotnet-guest.yml"
+}

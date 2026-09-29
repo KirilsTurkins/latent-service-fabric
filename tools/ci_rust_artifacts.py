@@ -305,7 +305,8 @@ def validate_metadata_observations(output: bytes) -> list[dict]:
     return observations
 
 
-def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) -> None:
+def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str], *, execute=None,
+              target: Path | None = None) -> None:
     if suite.platforms and sys.platform not in suite.platforms:
         raise ArtifactError("unsupported-suite-platform")
     if suite.observation_schema == METADATA_SCHEMA:
@@ -313,12 +314,13 @@ def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) ->
         if any(key in env for key in ("LSF_DEPLOYMENT_MEMORY_MODE", "LSF_DEPLOYMENT_MEMORY_ROOT",
                                       "LSF_METADATA_RETAIN")):
             raise ArtifactError("unexpected-metadata-probe-input")
-    artifact = read_inventory(inventory, repo, suite)
-    runtime_env = cargo_environment(repo, artifact, env)
+    execute = execute or run_owned
+    artifact = read_inventory(inventory, repo, suite, target=target)
+    runtime_env = cargo_environment(repo, artifact, env, execute=execute, target=target)
     command = [str(artifact.executable), suite.filter, "--ignored"]
     if suite.exact:
         command.append("--exact")
-    status, output = run_owned([*command, "--list"], cwd=artifact.package, env=runtime_env,
+    status, output = execute([*command, "--list"], cwd=artifact.package, env=runtime_env,
                                timeout=30, maximum=MAX_LIST_BYTES)
     if status:
         raise ArtifactError("libtest-list-failed")
@@ -326,15 +328,15 @@ def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) ->
     execution = [*command, "--test-threads=1"]
     if suite.observation_schema is not None:
         execution.append("--show-output")
-    status, output = run_owned(execution, cwd=artifact.package, env=runtime_env,
+    status, output = execute(execution, cwd=artifact.package, env=runtime_env,
                                timeout=suite.timeout, maximum=MAX_OUTPUT_BYTES)
     print(output.decode("utf-8", errors="replace"), end="", flush=True)
     if status:
         raise ArtifactError("ignored-libtest-failed")
     expected = len(suite.names)
-    result = re.search(rb"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;",
+    results = re.findall(rb"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;",
                        output, re.MULTILINE)
-    if result is None or tuple(int(value) for value in result.groups()) != (expected, 0, 0):
+    if results != [(str(expected).encode(), b"0", b"0")]:
         raise ArtifactError("ignored-libtest-result-mismatch")
     if suite.observation_schema == METADATA_SCHEMA:
         validate_metadata_observations(output)
@@ -364,6 +366,62 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     finally:
         signal.signal(signal.SIGTERM, previous)
+
+
+
+def validate_recipe(inventory: Path, repo: Path, rows: list[dict], recipe: dict) -> None:
+    """Validate selected Cargo products against the shared registered recipe.
+
+    This is not retrospective build provenance: the successful inventory must
+    still originate from this checkout's explicit preparation.
+    """
+    import tomllib
+    expected = {}
+    for row in rows:
+        path = (repo / row["manifest"]).resolve(strict=True)
+        package = tomllib.loads(path.read_text(encoding="utf-8"))
+        features = set(package.get("features", {}))
+        # Cargo's implicit optional-dependency features are suppressed only by an
+        # explicit dep: reference. Keep the names as Cargo reports them.
+        explicit = {item.removeprefix("dep:") for values in package.get("features", {}).values()
+                    for item in values if isinstance(item, str) and item.startswith("dep:")}
+        for section in ("dependencies", "build-dependencies"):
+            for name, dependency in package.get(section, {}).items():
+                if isinstance(dependency, dict) and dependency.get("optional") is True and name not in explicit:
+                    features.add(name)
+        expected[(path, row["target"], row["kind"])] = features
+    seen = set()
+    consumed = 0
+    with inventory.open("rb") as source:
+        for raw in source:
+            consumed += len(raw)
+            if len(raw) > MAX_LINE_BYTES or consumed > MAX_INVENTORY_BYTES:
+                raise ArtifactError("inventory-limit")
+            if not raw.strip():
+                continue
+            entry = json.loads(raw, object_pairs_hook=unique_object)
+            if entry.get("reason") != "compiler-artifact":
+                continue
+            target, profile = entry.get("target", {}), entry.get("profile", {})
+            kinds = target.get("kind", [])
+            if not profile.get("test") or len(kinds) != 1:
+                continue
+            key = (Path(entry["manifest_path"]).resolve(), target.get("name"), kinds[0])
+            if key not in expected:
+                continue
+            features = entry.get("features")
+            if (not isinstance(features, list) or not all(isinstance(item, str) for item in features)
+                    or len(features) != len(set(features))):
+                raise ArtifactError("invalid-cargo-feature-set")
+            if recipe.get("features", "").startswith("all") and set(features) != expected[key]:
+                raise ArtifactError("prepared-cargo-features-mismatch")
+            if recipe.get("profile", "debug") == "debug" and str(profile.get("opt_level")) != "0":
+                raise ArtifactError("prepared-cargo-profile-mismatch")
+            if key in seen:
+                raise ArtifactError("ambiguous-cargo-recipe-product")
+            seen.add(key)
+    if seen != set(expected):
+        raise ArtifactError("missing-prepared-cargo-recipe-product")
 
 
 if __name__ == "__main__":

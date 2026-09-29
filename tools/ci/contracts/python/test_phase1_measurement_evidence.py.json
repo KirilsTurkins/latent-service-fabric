@@ -1,0 +1,296 @@
+{
+  "cases": [
+    "Phase1MeasurementEvidenceTests.test_all_extra_repetitions_are_retained",
+    "Phase1MeasurementEvidenceTests.test_benchmark_populations_and_concurrent_elapsed_are_separate",
+    "Phase1MeasurementEvidenceTests.test_duplicate_keys_and_nonfinite_numbers_are_rejected",
+    "Phase1MeasurementEvidenceTests.test_failed_truncated_attempt_is_retained_not_filtered",
+    "Phase1MeasurementEvidenceTests.test_load_changes_do_not_rewrite_per_run_identity",
+    "Phase1MeasurementEvidenceTests.test_missing_inner_cleanup_cannot_be_hidden_by_footer",
+    "Phase1MeasurementEvidenceTests.test_passed_parent_must_reap_same_process",
+    "Phase1MeasurementEvidenceTests.test_rehashed_artifact_path_escape_is_rejected",
+    "Phase1MeasurementEvidenceTests.test_rehashed_benchmark_metadata_cannot_cross_fixture",
+    "Phase1MeasurementEvidenceTests.test_rehashed_crossed_management_release_is_rejected",
+    "Phase1MeasurementEvidenceTests.test_rehashed_dormant_store_is_rejected",
+    "Phase1MeasurementEvidenceTests.test_rehashed_duplicate_initial_preparation_is_rejected",
+    "Phase1MeasurementEvidenceTests.test_rehashed_live_cancellation_owner_is_rejected",
+    "Phase1MeasurementEvidenceTests.test_rehashed_mixed_outcome_omission_is_rejected",
+    "Phase1MeasurementEvidenceTests.test_rehashed_scale_counts_cannot_replace_missing_scale",
+    "Phase1MeasurementEvidenceTests.test_rehashed_success_cannot_impersonate_fault_population",
+    "Phase1MeasurementEvidenceTests.test_rehashed_thread_growth_is_rejected",
+    "Phase1MeasurementEvidenceTests.test_rehashed_wrong_scheduler_sum_is_rejected",
+    "Phase1MeasurementEvidenceTests.test_rss_allowance_is_fixed_and_includes_all_batches",
+    "Phase1MeasurementEvidenceTests.test_scale_and_soak_smoke_are_observations_not_full_gate",
+    "Phase1MeasurementEvidenceTests.test_schema_documents_accept_selected_realistic_smoke_rows",
+    "Phase1MeasurementEvidenceTests.test_shutdown_requires_zero_live_owners"
+  ],
+  "guards": {
+    "Phase1MeasurementEvidenceTests.test_all_extra_repetitions_are_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_benchmark_populations_and_concurrent_elapsed_are_separate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_duplicate_keys_and_nonfinite_numbers_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_failed_truncated_attempt_is_retained_not_filtered": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_load_changes_do_not_rewrite_per_run_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_missing_inner_cleanup_cannot_be_hidden_by_footer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_passed_parent_must_reap_same_process": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_artifact_path_escape_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_benchmark_metadata_cannot_cross_fixture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_crossed_management_release_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_dormant_store_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_duplicate_initial_preparation_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_live_cancellation_owner_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_mixed_outcome_omission_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_scale_counts_cannot_replace_missing_scale": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_success_cannot_impersonate_fault_population": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_thread_growth_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rehashed_wrong_scheduler_sum_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_rss_allowance_is_fixed_and_includes_all_batches": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_scale_and_soak_smoke_are_observations_not_full_gate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_schema_documents_accept_selected_realistic_smoke_rows": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    },
+    "Phase1MeasurementEvidenceTests.test_shutdown_requires_zero_live_owners": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b83f8855cbc9d9efa447c63a457162bd10d5cbc59d4e29bfac903167982053c",
+        "class:setup-sha256:ac2fe39dd938dccff2fe4e561610bb983c326ff2de7a5888b56341902abc814d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_measurement_evidence.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

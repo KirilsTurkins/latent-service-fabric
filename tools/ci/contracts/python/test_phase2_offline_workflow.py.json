@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "OfflineWorkflowLifetimeTests.test_readiness_failure_cleans_registry_and_never_runs_scenario",
+    "OfflineWorkflowLifetimeTests.test_repeated_cleanup_cancellation_suppresses_an_already_computed_receipt",
+    "OfflineWorkflowLifetimeTests.test_setup_cancellation_cleans_launched_registry_before_any_scenario",
+    "OfflineWorkflowLifetimeTests.test_unconfirmed_registry_cleanup_never_emits_a_success_receipt"
+  ],
+  "guards": {
+    "OfflineWorkflowLifetimeTests.test_readiness_failure_cleans_registry_and_never_runs_scenario": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:955ecb9119386139f61e36c6e9deef08715664c74c1a66768cea022a3dc586d9",
+        "class:setup-sha256:4c04cfaf87af43440652227477bb8e581b891086860bea9dc4bff6dc4e8713af"
+      ],
+      "skipSites": []
+    },
+    "OfflineWorkflowLifetimeTests.test_repeated_cleanup_cancellation_suppresses_an_already_computed_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:955ecb9119386139f61e36c6e9deef08715664c74c1a66768cea022a3dc586d9",
+        "class:setup-sha256:4c04cfaf87af43440652227477bb8e581b891086860bea9dc4bff6dc4e8713af"
+      ],
+      "skipSites": []
+    },
+    "OfflineWorkflowLifetimeTests.test_setup_cancellation_cleans_launched_registry_before_any_scenario": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:955ecb9119386139f61e36c6e9deef08715664c74c1a66768cea022a3dc586d9",
+        "class:setup-sha256:4c04cfaf87af43440652227477bb8e581b891086860bea9dc4bff6dc4e8713af"
+      ],
+      "skipSites": []
+    },
+    "OfflineWorkflowLifetimeTests.test_unconfirmed_registry_cleanup_never_emits_a_success_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:955ecb9119386139f61e36c6e9deef08715664c74c1a66768cea022a3dc586d9",
+        "class:setup-sha256:4c04cfaf87af43440652227477bb8e581b891086860bea9dc4bff6dc4e8713af"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase2_offline_workflow.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

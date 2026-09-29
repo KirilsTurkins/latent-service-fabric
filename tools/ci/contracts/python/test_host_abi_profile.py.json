@@ -1,0 +1,23 @@
+{
+  "cases": [
+    "HostAbiProfileTests.test_frozen_matrix_matches_exact_sources_world_and_pinned_generators"
+  ],
+  "guards": {
+    "HostAbiProfileTests.test_frozen_matrix_matches_exact_sources_world_and_pinned_generators": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:213cba61d4c6668789ad213e258963728de3d20e549142d8621487ac02309be4",
+        "class:setup-sha256:44b0d6e203df0cc7306c82d00007e5c6ffbfd165d84379acde54dab1a2c44e9c"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_abi_profile.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

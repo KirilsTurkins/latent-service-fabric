@@ -1,0 +1,83 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/ci.yml:msrv:Check workspace at MSRV": {
+      "job": "msrv",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Check workspace at MSRV",
+      "run": "cargo +1.94.1 check --workspace --all-targets --all-features --locked",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/ci.yml:msrv:Check workspace at MSRV": {
+      "after": ".github/workflows/ci.yml:msrv:Check workspace at MSRV",
+      "disposition": "extended",
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+    }
+  },
+  "definition": {
+    "name": "Rust MSRV 1.95.0",
+    "needs": "profile",
+    "if": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "prefix-key": "lsf-ci-dependencies-v1",
+          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
+          "cache-targets": false,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
+          "save-if": "${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||\n    (github.event_name == 'workflow_dispatch' &&\n     (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}"
+        }
+      },
+      {
+        "name": "Check workspace at MSRV",
+        "if": "needs.profile.outputs.profile == 'full'",
+        "run": "python3 tools/ci_cargo.py run msrv"
+      },
+      {
+        "name": "Check all selected reverse dependents at MSRV",
+        "if": "needs.profile.outputs.profile == 'fast'",
+        "env": {
+          "CI_FAST_PACKAGES": "${{ needs.profile.outputs.fast_packages }}"
+        },
+        "run": "python3 tools/ci_fast.py --msrv --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast-msrv\""
+      },
+      {
+        "name": "Retain narrow MSRV timing evidence",
+        "if": "always() && needs.profile.outputs.profile == 'fast'",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "name": "ci-host-msrv-${{ github.sha }}",
+          "path": "${{ runner.temp }}/ci-fast-msrv/",
+          "if-no-files-found": "error",
+          "retention-days": 7
+        }
+      }
+    ]
+  },
+  "jobId": "msrv",
+  "kind": "job",
+  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/ci.yml"
+}

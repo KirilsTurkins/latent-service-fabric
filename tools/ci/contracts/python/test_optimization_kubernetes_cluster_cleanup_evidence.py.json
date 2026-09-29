@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "ClusterCleanupEvidence.test_changed_original_setup_bytes_do_not_rebind_the_relative_credential",
+    "ClusterCleanupEvidence.test_linux_credential_absence_is_required_even_with_rehashed_sidecar",
+    "ClusterCleanupEvidence.test_original_emitted_cleanup_replays_after_all_private_copies_are_gone",
+    "ClusterCleanupEvidence.test_original_windows_credential_and_retained_helper_are_mandatory",
+    "ClusterCleanupEvidence.test_rehashed_foreign_network_or_crossed_node_is_rejected",
+    "ClusterCleanupEvidence.test_volume_deletion_or_missing_absence_cannot_be_relabelled_as_valid",
+    "ClusterCleanupEvidence.test_windows_relative_identity_still_requires_safe_bounded_original_scope"
+  ],
+  "guards": {
+    "ClusterCleanupEvidence.test_changed_original_setup_bytes_do_not_rebind_the_relative_credential": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:68a97b97f45e308bc119ec07e0122f9ce9cad6a0396595716e84859e981e1e19",
+        "class:setup-sha256:fcee0becfa42215801ff74e6aebd17e3f156e950e09d354b084a57ad629dc629"
+      ],
+      "skipSites": []
+    },
+    "ClusterCleanupEvidence.test_linux_credential_absence_is_required_even_with_rehashed_sidecar": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:68a97b97f45e308bc119ec07e0122f9ce9cad6a0396595716e84859e981e1e19",
+        "class:setup-sha256:fcee0becfa42215801ff74e6aebd17e3f156e950e09d354b084a57ad629dc629"
+      ],
+      "skipSites": []
+    },
+    "ClusterCleanupEvidence.test_original_emitted_cleanup_replays_after_all_private_copies_are_gone": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:68a97b97f45e308bc119ec07e0122f9ce9cad6a0396595716e84859e981e1e19",
+        "class:setup-sha256:fcee0becfa42215801ff74e6aebd17e3f156e950e09d354b084a57ad629dc629"
+      ],
+      "skipSites": []
+    },
+    "ClusterCleanupEvidence.test_original_windows_credential_and_retained_helper_are_mandatory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:68a97b97f45e308bc119ec07e0122f9ce9cad6a0396595716e84859e981e1e19",
+        "class:setup-sha256:fcee0becfa42215801ff74e6aebd17e3f156e950e09d354b084a57ad629dc629"
+      ],
+      "skipSites": []
+    },
+    "ClusterCleanupEvidence.test_rehashed_foreign_network_or_crossed_node_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:68a97b97f45e308bc119ec07e0122f9ce9cad6a0396595716e84859e981e1e19",
+        "class:setup-sha256:fcee0becfa42215801ff74e6aebd17e3f156e950e09d354b084a57ad629dc629"
+      ],
+      "skipSites": []
+    },
+    "ClusterCleanupEvidence.test_volume_deletion_or_missing_absence_cannot_be_relabelled_as_valid": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:68a97b97f45e308bc119ec07e0122f9ce9cad6a0396595716e84859e981e1e19",
+        "class:setup-sha256:fcee0becfa42215801ff74e6aebd17e3f156e950e09d354b084a57ad629dc629"
+      ],
+      "skipSites": []
+    },
+    "ClusterCleanupEvidence.test_windows_relative_identity_still_requires_safe_bounded_original_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:68a97b97f45e308bc119ec07e0122f9ce9cad6a0396595716e84859e981e1e19",
+        "class:setup-sha256:fcee0becfa42215801ff74e6aebd17e3f156e950e09d354b084a57ad629dc629"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_cluster_cleanup_evidence.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

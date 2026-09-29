@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "EngineMemoryTests.test_available_zero_and_missing_field_remain_distinct",
+    "EngineMemoryTests.test_resource_identity_clock_and_high_water_mutations",
+    "EngineMemoryTests.test_unavailable_identity_and_unsupported_platform_are_bound",
+    "EngineModelTests.test_all_generated_plans_validate_and_schema_rejects_crossings",
+    "EngineModelTests.test_complete_work_denominators_include_functional_and_setup",
+    "EngineModelTests.test_configuration_contrasts_reference_same_actual_D0",
+    "EngineModelTests.test_exact_rotation_and_shared_control_population",
+    "EngineModelTests.test_model_rejects_reordered_or_crossed_selection",
+    "EngineSemanticTests.test_functional_plan_has_real_faults_and_three_recovery_reset_boundaries",
+    "EngineSemanticTests.test_guest_log_uses_declared_struct_order_and_same_activation",
+    "EngineSemanticTests.test_rehashed_payload_and_crossed_response_projection_reject"
+  ],
+  "guards": {
+    "EngineMemoryTests.test_available_zero_and_missing_field_remain_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:3cc3c976e90af8a9301e7307091eca382a080bcbc1077d3208b0df23dda34f25"
+      ],
+      "skipSites": []
+    },
+    "EngineMemoryTests.test_resource_identity_clock_and_high_water_mutations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:3cc3c976e90af8a9301e7307091eca382a080bcbc1077d3208b0df23dda34f25"
+      ],
+      "skipSites": []
+    },
+    "EngineMemoryTests.test_unavailable_identity_and_unsupported_platform_are_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:3cc3c976e90af8a9301e7307091eca382a080bcbc1077d3208b0df23dda34f25"
+      ],
+      "skipSites": []
+    },
+    "EngineModelTests.test_all_generated_plans_validate_and_schema_rejects_crossings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineModelTests.test_complete_work_denominators_include_functional_and_setup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineModelTests.test_configuration_contrasts_reference_same_actual_D0": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineModelTests.test_exact_rotation_and_shared_control_population": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineModelTests.test_model_rejects_reordered_or_crossed_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineSemanticTests.test_functional_plan_has_real_faults_and_three_recovery_reset_boundaries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:50563ff80f2094f338b9255cc0f02954654afce4ea835f490d646f5346e64cd2"
+      ],
+      "skipSites": []
+    },
+    "EngineSemanticTests.test_guest_log_uses_declared_struct_order_and_same_activation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:50563ff80f2094f338b9255cc0f02954654afce4ea835f490d646f5346e64cd2"
+      ],
+      "skipSites": []
+    },
+    "EngineSemanticTests.test_rehashed_payload_and_crossed_response_projection_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b760ccf108a24bd47953b6c5b70d57cd722fb6f021a82019b4de8524a25b167",
+        "class:setup-sha256:50563ff80f2094f338b9255cc0f02954654afce4ea835f490d646f5346e64cd2"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_engine.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

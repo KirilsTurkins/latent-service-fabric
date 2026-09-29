@@ -1,0 +1,124 @@
+{
+  "cases": [
+    "MeasurementRunnerTests.test_empty_or_escaping_artifact_cannot_be_referenced",
+    "MeasurementRunnerTests.test_evidence_is_never_overwritten",
+    "MeasurementRunnerTests.test_failed_collector_attempt_is_retained_in_suite",
+    "MeasurementRunnerTests.test_full_cannot_be_shortened_into_smoke",
+    "MeasurementRunnerTests.test_group_cleanup_precedes_reaping_even_after_success",
+    "MeasurementRunnerTests.test_missing_fixture_prevents_build_and_execution",
+    "MeasurementRunnerTests.test_parent_receipt_binds_actual_child_and_records_reap",
+    "MeasurementRunnerTests.test_unavailable_host_observation_is_not_zero"
+  ],
+  "guards": {
+    "MeasurementRunnerTests.test_empty_or_escaping_artifact_cannot_be_referenced": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cc5e21d8ee56dee79956192fff0e6016e5b1af5d705df87759bcae6e4022e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "MeasurementRunnerTests.test_evidence_is_never_overwritten": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cc5e21d8ee56dee79956192fff0e6016e5b1af5d705df87759bcae6e4022e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "MeasurementRunnerTests.test_failed_collector_attempt_is_retained_in_suite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cc5e21d8ee56dee79956192fff0e6016e5b1af5d705df87759bcae6e4022e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "MeasurementRunnerTests.test_full_cannot_be_shortened_into_smoke": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cc5e21d8ee56dee79956192fff0e6016e5b1af5d705df87759bcae6e4022e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "MeasurementRunnerTests.test_group_cleanup_precedes_reaping_even_after_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux process-group ownership')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:74cc5e21d8ee56dee79956192fff0e6016e5b1af5d705df87759bcae6e4022e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:b766d8965d801ffc09736e9227295c0d7590f6a77ea23a280930c9c845710d09",
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux process-group ownership')"
+      ]
+    },
+    "MeasurementRunnerTests.test_missing_fixture_prevents_build_and_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cc5e21d8ee56dee79956192fff0e6016e5b1af5d705df87759bcae6e4022e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "MeasurementRunnerTests.test_parent_receipt_binds_actual_child_and_records_reap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux child identity')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:74cc5e21d8ee56dee79956192fff0e6016e5b1af5d705df87759bcae6e4022e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:171066e61ec7355b6d47f9e8915452bedfa91ceed6a53ad1034f09f75c954a11",
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux child identity')"
+      ]
+    },
+    "MeasurementRunnerTests.test_unavailable_host_observation_is_not_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74cc5e21d8ee56dee79956192fff0e6016e5b1af5d705df87759bcae6e4022e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_measurement_runner.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

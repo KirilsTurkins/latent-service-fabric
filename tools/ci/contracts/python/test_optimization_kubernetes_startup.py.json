@@ -1,0 +1,187 @@
+{
+  "cases": [
+    "StartupCommandTests.test_absent_empty_started_only_and_each_partial_ready_record_fail",
+    "StartupCommandTests.test_actual_original_both_arms_and_later_records",
+    "StartupCommandTests.test_directory_and_symlink_are_rejected",
+    "StartupCommandTests.test_malformed_or_crossed_complete_lines_fail",
+    "StartupProtocolTests.test_current_owner_rejects_extra_probe_connection_and_forward_failure",
+    "StartupProtocolTests.test_every_historical_identity_field_and_probe_are_bound",
+    "StartupProtocolTests.test_historical_plan_bytes_and_four_actual_identities",
+    "StartupProtocolTests.test_new_plan_is_explicit_and_old_sources_cannot_be_relabelled",
+    "StartupProtocolTests.test_original_small_records_keep_exact_bytes",
+    "StartupProtocolTests.test_probe_action_and_exact_control_fields_cannot_cross_protocols",
+    "StartupProtocolTests.test_residual_connection_count_is_exact_for_each_arm_and_density",
+    "StartupProtocolTests.test_resource_pod_validation_requires_explicit_old_protocol",
+    "StartupProtocolTests.test_schemas_reject_crossed_or_unbound_old_and_new_plans"
+  ],
+  "guards": {
+    "StartupCommandTests.test_absent_empty_started_only_and_each_partial_ready_record_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'posix' and Path('/bin/sh').is_file() and Path('/usr/bin/head').is_file(), 'executes the exact POSIX startup command; Windows retains pure protocol tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:f9370b7646b25c7f46a895af5ab34e21f644159b4a3466fbdddee04029997aa1"
+      ],
+      "skipSites": []
+    },
+    "StartupCommandTests.test_actual_original_both_arms_and_later_records": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'posix' and Path('/bin/sh').is_file() and Path('/usr/bin/head').is_file(), 'executes the exact POSIX startup command; Windows retains pure protocol tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:f9370b7646b25c7f46a895af5ab34e21f644159b4a3466fbdddee04029997aa1"
+      ],
+      "skipSites": []
+    },
+    "StartupCommandTests.test_directory_and_symlink_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'posix' and Path('/bin/sh').is_file() and Path('/usr/bin/head').is_file(), 'executes the exact POSIX startup command; Windows retains pure protocol tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:f9370b7646b25c7f46a895af5ab34e21f644159b4a3466fbdddee04029997aa1"
+      ],
+      "skipSites": []
+    },
+    "StartupCommandTests.test_malformed_or_crossed_complete_lines_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'posix' and Path('/bin/sh').is_file() and Path('/usr/bin/head').is_file(), 'executes the exact POSIX startup command; Windows retains pure protocol tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:f9370b7646b25c7f46a895af5ab34e21f644159b4a3466fbdddee04029997aa1"
+      ],
+      "skipSites": []
+    },
+    "StartupProtocolTests.test_current_owner_rejects_extra_probe_connection_and_forward_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StartupProtocolTests.test_every_historical_identity_field_and_probe_are_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StartupProtocolTests.test_historical_plan_bytes_and_four_actual_identities": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StartupProtocolTests.test_new_plan_is_explicit_and_old_sources_cannot_be_relabelled": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StartupProtocolTests.test_original_small_records_keep_exact_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StartupProtocolTests.test_probe_action_and_exact_control_fields_cannot_cross_protocols": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StartupProtocolTests.test_residual_connection_count_is_exact_for_each_arm_and_density": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StartupProtocolTests.test_resource_pod_validation_requires_explicit_old_protocol": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StartupProtocolTests.test_schemas_reject_crossed_or_unbound_old_and_new_plans": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49e135fc94fc4ae42ba724f34cbacd11032768b6592a312d583e55190e686336",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_startup.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

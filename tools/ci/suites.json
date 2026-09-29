@@ -126,6 +126,39 @@
       "features": "all (including default)",
       "profile": "debug",
       "target": "host"
+    },
+    "echo-runtime": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-wasmtime",
+        "--test",
+        "echo_backend",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
+    },
+    "core-host": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-core",
+        "--lib",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
     }
   },
   "rendererPackages": [
@@ -194,7 +227,8 @@
       "runner": "ci_rust_artifacts",
       "suite": "latent-control-store.lib.latent-control-store",
       "testThreads": 1,
-      "timeoutSeconds": 930
+      "timeoutSeconds": 930,
+      "executionOnly": true
     },
     "nats-events": {
       "exact": false,
@@ -347,6 +381,23 @@
       "suite": "latent-wasmtime.test.vault-secrets",
       "testThreads": 1,
       "timeoutSeconds": 300
+    },
+    "echo-runtime": {
+      "exact": false,
+      "filter": "",
+      "ignored": true,
+      "names": [
+        "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
+        "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
+        "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latent-wasmtime.test.echo-backend",
+      "testThreads": 1,
+      "timeoutSeconds": 900,
+      "executionOnly": true
     }
   },
   "sourceRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -1625,7 +1676,7 @@
         "pinned Rust toolchain",
         "successful source-matched Cargo artifact inventory"
       ],
-      "recipe": "workspace-all-features",
+      "recipe": "core-host",
       "resourceClass": "host-bounded",
       "source": "src/lib.rs",
       "target": "latent_core",
@@ -6283,11 +6334,19 @@
         "pinned Rust toolchain",
         "successful source-matched Cargo artifact inventory"
       ],
-      "recipe": "workspace-all-features",
+      "recipe": "echo-runtime",
       "resourceClass": "runtime-bounded",
       "source": "tests/echo_backend.rs",
       "target": "echo_backend",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "fixtures": [
+        "echo-capsule"
+      ],
+      "caseFixtures": {
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel": [
+          "oversized-log"
+        ]
+      }
     },
     {
       "boundary": "runtime",
@@ -8424,7 +8483,13 @@
         "latent-wasmtime.test.angular-renderer",
         "latentd.lib.latentd"
       ],
-      "timeoutSeconds": 840
+      "timeoutSeconds": 840,
+      "caseFilters": {
+        "latentd.lib.latentd": "actual_angular_http_"
+      },
+      "fixtures": [
+        "angular-renderer"
+      ]
     },
     "oci-registry": {
       "platforms": [
@@ -8502,6 +8567,151 @@
         "latent-policy.lib.latent-policy"
       ],
       "timeoutSeconds": 240
+    }
+  },
+  "fixtureRecipes": {
+    "echo-capsule": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "python3",
+            "tools/build_echo_capsule.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1800
+        }
+      ],
+      "outputs": {
+        "echo-component": {
+          "path": "{target}/capsules/echo/echo-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ECHO_COMPONENT"
+        },
+        "echo-capsule": {
+          "path": "{target}/capsules/echo/capsule.json",
+          "kind": "json",
+          "maximumBytes": 1048576,
+          "environment": "LSF_ECHO_CAPSULE"
+        },
+        "echo-build": {
+          "path": "{target}/capsules/echo/build.json",
+          "kind": "json",
+          "maximumBytes": 1048576
+        }
+      }
+    },
+    "oversized-log": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "build",
+            "-p",
+            "latent-toolchain-smoke",
+            "--example",
+            "oversized-log-capsule",
+            "--target",
+            "wasm32-unknown-unknown",
+            "--release",
+            "--locked"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 900
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "component",
+            "new",
+            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
+            "-o",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "validate",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        }
+      ],
+      "outputs": {
+        "oversized-log-component": {
+          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_OVERSIZED_LOG_COMPONENT"
+        }
+      }
+    },
+    "angular-renderer": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "node",
+        "npm",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "npm",
+            "ci",
+            "--ignore-scripts",
+            "--no-audit",
+            "--no-fund"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "python3",
+            "tools/build_angular_renderer.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1200
+        }
+      ],
+      "outputs": {
+        "component": {
+          "path": "examples/renderer-profile/dist/runtime/application.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_COMPONENT"
+        },
+        "private-renderer": {
+          "path": "examples/renderer-profile/dist/runtime/renderer.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT"
+        }
+      }
     }
   }
 }

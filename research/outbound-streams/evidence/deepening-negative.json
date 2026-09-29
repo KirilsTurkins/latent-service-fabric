@@ -1,0 +1,17 @@
+{
+  "formatVersion": 1,
+  "status": "observed-negative",
+  "observation": "A streaming byte gate returned a partial, unterminated reply prefix plus an error. Go net/textproto accepted that buffered prefix as a successful greeting. Complete lines must be withheld until framing validation succeeds.",
+  "test": "TestRealSMTPParserNeedsExplicitReplyEnvelope/true",
+  "command": "GO111MODULE=off GOWORK=off GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off go test -race -count=1 -timeout=30s -json .",
+  "exitCode": 1,
+  "goVersion": "go1.23.2",
+  "sourceSha256": {
+    "gateway.go": "b8e4ff7d2d3a4cf6eed431ae3d005b8e0ae6e01e2b26b0816af2a9cd8a6a39cf",
+    "reply_bounds.go": "4b51b41a87f14054b5c8f50098d3df6b5bb9bbd75ece4837a159b375df8901e6",
+    "reply_bounds_test.go": "03112974e332355d2ca65d81c8e490f4880cee585a39806ee1cbb0969e877b1b"
+  },
+  "logSha256": "2b8c92a09005cec06e7d947cbefb1ee7776d0249e56f1328e62a2fc9628e8347",
+  "failure": "reply_bounds_test.go:89: envelope did not fail before any SMTP command",
+  "correction": "A fixed 512-byte line owner validates a complete CRLF line before returning any part of it to the standard parser; terminal failures prohibit writes and fallback."
+}

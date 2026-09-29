@@ -1,0 +1,84 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "environment": {
+      "name": "github-pages",
+      "url": "${{ steps.deployment.outputs.page_url }}"
+    },
+    "needs": "select",
+    "permissions": {
+      "actions": "read",
+      "contents": "read",
+      "id-token": "write",
+      "pages": "write"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false,
+          "ref": "${{ github.sha }}"
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "artifact-ids": "${{ needs.select.outputs.artifact_id }}",
+          "merge-multiple": true,
+          "path": "candidate"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Recheck exact site bytes and source after protected environment approval",
+        "run": "python3 tools/docs_pages.py guard --receipt candidate/publication.json"
+      },
+      {
+        "uses": "actions/upload-pages-artifact",
+        "with": {
+          "name": "github-pages-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "candidate/site",
+          "retention-days": 14
+        }
+      },
+      {
+        "id": "deployment",
+        "uses": "actions/deploy-pages",
+        "with": {
+          "artifact_name": "github-pages-${{ github.run_id }}-${{ github.run_attempt }}",
+          "timeout": 300000
+        }
+      },
+      {
+        "name": "Verify live publication identity and direct static routes",
+        "run": "python3 tools/docs_pages.py verify --receipt candidate/publication.json"
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "docs-pages-receipt-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "candidate/publication.json",
+          "retention-days": 14
+        }
+      }
+    ],
+    "timeout-minutes": 10
+  },
+  "jobId": "deploy",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/docs-pages.yml"
+}

@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "Phase0BuildEnvironmentTests.test_accepts_an_inherited_cargo_target_directory",
+    "Phase0BuildEnvironmentTests.test_rejects_inherited_build_override_families",
+    "Phase0BuildEnvironmentTests.test_release_cargo_exports_the_committed_recipe",
+    "Phase0BuildEnvironmentTests.test_release_rejects_ancestor_cargo_configuration",
+    "Phase0BuildEnvironmentTests.test_release_rejects_command_line_cargo_configuration",
+    "Phase0BuildEnvironmentTests.test_release_rejects_hidden_cargo_home_configuration",
+    "Phase0BuildEnvironmentTests.test_release_rustflags_puts_nested_target_after_source_root"
+  ],
+  "guards": {
+    "Phase0BuildEnvironmentTests.test_accepts_an_inherited_cargo_target_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:70d5be24a04172f764cffbfce409d8dccb5d3df6251b7ce1c265e5aab2c7ea35",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "Phase0BuildEnvironmentTests.test_rejects_inherited_build_override_families": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:70d5be24a04172f764cffbfce409d8dccb5d3df6251b7ce1c265e5aab2c7ea35",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "Phase0BuildEnvironmentTests.test_release_cargo_exports_the_committed_recipe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:70d5be24a04172f764cffbfce409d8dccb5d3df6251b7ce1c265e5aab2c7ea35",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "Phase0BuildEnvironmentTests.test_release_rejects_ancestor_cargo_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:70d5be24a04172f764cffbfce409d8dccb5d3df6251b7ce1c265e5aab2c7ea35",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "Phase0BuildEnvironmentTests.test_release_rejects_command_line_cargo_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:70d5be24a04172f764cffbfce409d8dccb5d3df6251b7ce1c265e5aab2c7ea35",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "Phase0BuildEnvironmentTests.test_release_rejects_hidden_cargo_home_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:70d5be24a04172f764cffbfce409d8dccb5d3df6251b7ce1c265e5aab2c7ea35",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "Phase0BuildEnvironmentTests.test_release_rustflags_puts_nested_target_after_source_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:70d5be24a04172f764cffbfce409d8dccb5d3df6251b7ce1c265e5aab2c7ea35",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase0_build_environment.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

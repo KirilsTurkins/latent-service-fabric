@@ -1,0 +1,106 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": 2,
+      "CARGO_INCREMENTAL": 0,
+      "CARGO_PROFILE_DEV_DEBUG": 0
+    },
+    "name": "TypeScript guest value and ownership boundary",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Capture immutable qualification source inputs",
+        "run": "# Retain every input used below, including the pinned compiler lock.\n# Historical benchmark archives are not inputs to this runtime lane.\ngit archive --format=tar.gz --output \"$RUNNER_TEMP/typescript-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/typescript-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/typescript-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/typescript-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/typescript-guest-source.sha\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Retain the exact reviewed command contract input",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "typescript-guest-command-contract-${{ github.sha }}",
+          "path": "tools/ci/contracts/\n${{ runner.temp }}/typescript-guest-source.tar.gz\n${{ runner.temp }}/typescript-guest-source.sha\n",
+          "retention-days": 7
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "cache": "npm",
+          "cache-dependency-path": "sdk/typescript-guest/tools/package-lock.json",
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "key": "typescript-guest-runtime-optimized-compiler"
+        }
+      },
+      {
+        "name": "Install the reviewed JavaScript compiler inputs",
+        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\""
+      },
+      {
+        "name": "Install pinned component validator",
+        "run": "cargo install --locked wasm-tools --version 1.254.0"
+      },
+      {
+        "name": "Compile the real async-boundary diagnostic",
+        "run": "python3 tools/typescript_guest/probe.py --output \"$RUNNER_TEMP/typescript-guest-probe\" --node \"$(command -v node)\" --wasm-tools \"$(command -v wasm-tools)\" --compiler \"$RUNNER_TEMP/typescript-guest-tools/node_modules/@bytecodealliance/componentize-js/src/componentize.js\""
+      },
+      {
+        "name": "Execute the compiled async-boundary diagnostic",
+        "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example typescript_runtime_probe -- \"$RUNNER_TEMP/typescript-guest-probe/component.wasm\" 2>&1 | tee \"$RUNNER_TEMP/typescript-guest-probe/runtime.log\"\n"
+      },
+      {
+        "name": "Execute supplementary value and ownership models",
+        "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts sdk/typescript-guest/tests/model/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime/tests/model\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Check captured sources and actual generated-resource owners",
+        "run": "set -euo pipefail\npython3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_typescript_capsule_authoring tools.tests.test_build_provenance_schemas\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-owner-tests sdk/typescript-guest/capabilities/owner.ts sdk/typescript-guest/capabilities/result.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-owner-tests/package.json\nLSF_TYPESCRIPT_OWNERS=\"$PWD/target/typescript-owner-tests\" node --test sdk/typescript-guest/tests/owner.test.mjs sdk/typescript-guest/tests/signed64.test.mjs 2>&1 | tee target/typescript-guest-runtime/owner-tests.log\n"
+      },
+      {
+        "name": "Qualify captured projects, all SDK owners, enforced node and printed guide",
+        "run": "python3 tools/qualify_typescript_capsules.py --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\""
+      },
+      {
+        "if": "always()",
+        "name": "Preserve attempted runtime test evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-guest-runtime-${{ github.sha }}",
+          "path": "target/typescript-guest-runtime/runtime-tests.log\ntarget/typescript-guest-runtime/owner-tests.log\n${{ runner.temp }}/typescript-guest-probe/\n${{ runner.temp }}/typescript-capsule-authoring/\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 75
+  },
+  "jobId": "boundary",
+  "kind": "job",
+  "reviewReason": "Issue #732: retain sharded review inputs, run contract regressions, and upload commit-bound failure diagnostics without changing required result coverage.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}

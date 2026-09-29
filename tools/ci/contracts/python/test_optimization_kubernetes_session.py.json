@@ -1,0 +1,74 @@
+{
+  "cases": [
+    "KubernetesSessionTests.test_ack_rejects_crossed_identity_duplicate_offset_and_extra_lines",
+    "KubernetesSessionTests.test_changed_downloaded_plan_is_retained_and_never_claims_complete",
+    "KubernetesSessionTests.test_complete_transport_keeps_ready_and_raw_files_separate",
+    "KubernetesSessionTests.test_out_of_order_command_retains_failure_and_forces_attach_cleanup"
+  ],
+  "guards": {
+    "KubernetesSessionTests.test_ack_rejects_crossed_identity_duplicate_offset_and_extra_lines": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "patch('tools.optimization_kubernetes.session.Attach', FakeAttach)",
+        "patch('tools.optimization_kubernetes.session.time.sleep')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:04088fbc0280c697bafd4d7cea665b10e1b0a1a1a1be8b0951fbc5b018dcb18d",
+        "class:setup-sha256:47ec9577925a2e0679194599661dda3a8e37f7064aec26681a6a783cbf51cf9e"
+      ],
+      "skipSites": []
+    },
+    "KubernetesSessionTests.test_changed_downloaded_plan_is_retained_and_never_claims_complete": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "patch('tools.optimization_kubernetes.session.Attach', FakeAttach)",
+        "patch('tools.optimization_kubernetes.session.time.sleep')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:04088fbc0280c697bafd4d7cea665b10e1b0a1a1a1be8b0951fbc5b018dcb18d",
+        "class:setup-sha256:47ec9577925a2e0679194599661dda3a8e37f7064aec26681a6a783cbf51cf9e"
+      ],
+      "skipSites": []
+    },
+    "KubernetesSessionTests.test_complete_transport_keeps_ready_and_raw_files_separate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "patch('tools.optimization_kubernetes.session.Attach', FakeAttach)",
+        "patch('tools.optimization_kubernetes.session.time.sleep')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:04088fbc0280c697bafd4d7cea665b10e1b0a1a1a1be8b0951fbc5b018dcb18d",
+        "class:setup-sha256:47ec9577925a2e0679194599661dda3a8e37f7064aec26681a6a783cbf51cf9e"
+      ],
+      "skipSites": []
+    },
+    "KubernetesSessionTests.test_out_of_order_command_retains_failure_and_forces_attach_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "patch('tools.optimization_kubernetes.session.Attach', FakeAttach)",
+        "patch('tools.optimization_kubernetes.session.time.sleep')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:04088fbc0280c697bafd4d7cea665b10e1b0a1a1a1be8b0951fbc5b018dcb18d",
+        "class:setup-sha256:47ec9577925a2e0679194599661dda3a8e37f7064aec26681a6a783cbf51cf9e"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_session.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

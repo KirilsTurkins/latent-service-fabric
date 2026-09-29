@@ -16,7 +16,7 @@
     "@bytecodealliance/jco": "1.34.0",
     "esbuild": "0.28.2",
     "playwright-core": "1.63.0",
-    "primeicons": "7.0.0",
+    "primeicons": "8.0.1",
     "rxjs": "7.8.2",
     "typescript": "6.0.3"
   },

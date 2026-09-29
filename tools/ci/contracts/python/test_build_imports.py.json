@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "BuildImportTests.test_direct_cli_entrypoints_work_outside_repository_current_directory",
+    "BuildImportTests.test_tools_path_and_legacy_spec_loader_cannot_split_shared_module_identity"
+  ],
+  "guards": {
+    "BuildImportTests.test_direct_cli_entrypoints_work_outside_repository_current_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1563a3c30117823b631be342b79a98974966e2198139a8b1ff6e00423afe2e1a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildImportTests.test_tools_path_and_legacy_spec_loader_cannot_split_shared_module_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1563a3c30117823b631be342b79a98974966e2198139a8b1ff6e00423afe2e1a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_build_imports.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

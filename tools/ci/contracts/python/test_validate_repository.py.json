@@ -1,0 +1,322 @@
+{
+  "cases": [
+    "BenchmarkRetentionTests.test_budget_counts_combined_files_including_generated_directory_names",
+    "GeneratedBoundaryTests.test_accepts_exhaustive_out_dir_generation_owners",
+    "GeneratedBoundaryTests.test_rejects_unlisted_proto_and_checked_in_generated_source",
+    "GeneratedBoundaryTests.test_rejects_wasmtime_build_script_binding_generation",
+    "RetainedEmptyEvidenceTests.test_manifest_bound_empty_receipt_preserves_original_bytes",
+    "RetainedEmptyEvidenceTests.test_manifests_outside_conformance_cannot_exempt_source",
+    "RetainedEmptyEvidenceTests.test_nonempty_tampering_of_declared_empty_receipt_is_rejected",
+    "RetainedEmptyEvidenceTests.test_traversal_or_duplicate_reference_never_grants_exemption",
+    "RetainedEmptyEvidenceTests.test_unbound_empty_evidence_and_empty_source_remain_rejected",
+    "RetainedEmptyEvidenceTests.test_wrong_hash_or_declared_size_does_not_exempt_empty_file",
+    "SourceTraversalTests.test_authoritative_source_remains_validated",
+    "SourceTraversalTests.test_documentation_svg_allows_same_id_in_separate_files",
+    "SourceTraversalTests.test_documentation_svg_labels_reference_its_title_and_description",
+    "SourceTraversalTests.test_documentation_svg_rejects_active_or_incomplete_content",
+    "SourceTraversalTests.test_documentation_svg_rejects_duplicate_definition_ids",
+    "SourceTraversalTests.test_documentation_svg_rejects_duplicate_title_and_shape_id",
+    "SourceTraversalTests.test_documentation_svg_requires_accessibility_contract",
+    "SourceTraversalTests.test_generated_directories_are_excluded",
+    "SourceTraversalTests.test_json_allows_same_key_in_separate_objects",
+    "SourceTraversalTests.test_json_rejects_duplicate_keys_in_each_bad_file",
+    "SourceTraversalTests.test_tool_binary_and_library_sources_are_checked",
+    "SourceTraversalTests.test_wit_ignores_installed_dependencies_but_checks_owned_sources",
+    "WorkspaceDependencyTests.test_accepts_an_acyclic_path_dependency_graph",
+    "WorkspaceDependencyTests.test_detects_path_dependency_cycles"
+  ],
+  "guards": {
+    "BenchmarkRetentionTests.test_budget_counts_combined_files_including_generated_directory_names": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "GeneratedBoundaryTests.test_accepts_exhaustive_out_dir_generation_owners": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:90e9100b0f05c8b988781ec39fe0be76b990847b610b9db4fb310a1dc4e3ea00"
+      ],
+      "skipSites": []
+    },
+    "GeneratedBoundaryTests.test_rejects_unlisted_proto_and_checked_in_generated_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:90e9100b0f05c8b988781ec39fe0be76b990847b610b9db4fb310a1dc4e3ea00"
+      ],
+      "skipSites": []
+    },
+    "GeneratedBoundaryTests.test_rejects_wasmtime_build_script_binding_generation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:90e9100b0f05c8b988781ec39fe0be76b990847b610b9db4fb310a1dc4e3ea00"
+      ],
+      "skipSites": []
+    },
+    "RetainedEmptyEvidenceTests.test_manifest_bound_empty_receipt_preserves_original_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:417dd627305882b9cb55234ec5b8d33acaca512c298f7ab6f6166fcedbe7876d"
+      ],
+      "skipSites": []
+    },
+    "RetainedEmptyEvidenceTests.test_manifests_outside_conformance_cannot_exempt_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:417dd627305882b9cb55234ec5b8d33acaca512c298f7ab6f6166fcedbe7876d"
+      ],
+      "skipSites": []
+    },
+    "RetainedEmptyEvidenceTests.test_nonempty_tampering_of_declared_empty_receipt_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:417dd627305882b9cb55234ec5b8d33acaca512c298f7ab6f6166fcedbe7876d"
+      ],
+      "skipSites": []
+    },
+    "RetainedEmptyEvidenceTests.test_traversal_or_duplicate_reference_never_grants_exemption": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:417dd627305882b9cb55234ec5b8d33acaca512c298f7ab6f6166fcedbe7876d"
+      ],
+      "skipSites": []
+    },
+    "RetainedEmptyEvidenceTests.test_unbound_empty_evidence_and_empty_source_remain_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:417dd627305882b9cb55234ec5b8d33acaca512c298f7ab6f6166fcedbe7876d"
+      ],
+      "skipSites": []
+    },
+    "RetainedEmptyEvidenceTests.test_wrong_hash_or_declared_size_does_not_exempt_empty_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:417dd627305882b9cb55234ec5b8d33acaca512c298f7ab6f6166fcedbe7876d"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_authoritative_source_remains_validated": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_documentation_svg_allows_same_id_in_separate_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_documentation_svg_labels_reference_its_title_and_description": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_documentation_svg_rejects_active_or_incomplete_content": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_documentation_svg_rejects_duplicate_definition_ids": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_documentation_svg_rejects_duplicate_title_and_shape_id": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_documentation_svg_requires_accessibility_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_generated_directories_are_excluded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_json_allows_same_key_in_separate_objects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_json_rejects_duplicate_keys_in_each_bad_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_tool_binary_and_library_sources_are_checked": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "SourceTraversalTests.test_wit_ignores_installed_dependencies_but_checks_owned_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    },
+    "WorkspaceDependencyTests.test_accepts_an_acyclic_path_dependency_graph": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0eb9a0828a97b9dfcc0cf52f46e34d5af34f4a584c8ee93527888cfb97ee446c"
+      ],
+      "skipSites": []
+    },
+    "WorkspaceDependencyTests.test_detects_path_dependency_cycles": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e87aee10c09b06993982047ea6ecb353efc2729ee9edd5b8026c27e8bfa1b47b",
+        "class:setup-sha256:0eb9a0828a97b9dfcc0cf52f46e34d5af34f4a584c8ee93527888cfb97ee446c"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_validate_repository.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

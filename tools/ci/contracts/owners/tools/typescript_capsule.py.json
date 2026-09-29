@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/typescript_capsule.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "9bde963d139e42fc9788f9200ed81f98276824ebd175e149deb20996806fb842"
+}

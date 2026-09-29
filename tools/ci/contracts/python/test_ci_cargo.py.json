@@ -1,0 +1,374 @@
+{
+  "cases": [
+    "CargoRecipeTests.test_all_five_host_guest_binding_checks_are_retained",
+    "CargoRecipeTests.test_cli_plan_is_json_and_execution_errors_return_failure",
+    "CargoRecipeTests.test_every_command_has_a_coverage_tuple",
+    "CargoRecipeTests.test_failed_first_build_removes_stale_inventory",
+    "CargoRecipeTests.test_failure_stops_later_commands",
+    "CargoRecipeTests.test_format_and_clippy_policy_are_retained",
+    "CargoRecipeTests.test_independent_production_feature_resolution_is_retained",
+    "CargoRecipeTests.test_invalid_or_unsuccessful_stream_never_publishes",
+    "CargoRecipeTests.test_inventory_cannot_overwrite_source_or_follow_symlinks",
+    "CargoRecipeTests.test_inventory_option_is_exclusive_to_preparation",
+    "CargoRecipeTests.test_missing_toolchain_declaration_fails_without_executing",
+    "CargoRecipeTests.test_msrv_is_independent_and_comes_from_workspace_declaration",
+    "CargoRecipeTests.test_no_cache_hit_short_circuit",
+    "CargoRecipeTests.test_options_precede_rustc_separator",
+    "CargoRecipeTests.test_overlong_inventory_line_fails",
+    "CargoRecipeTests.test_partial_inventory_is_removed_on_cargo_failure",
+    "CargoRecipeTests.test_signal_exit_is_a_failure",
+    "CargoRecipeTests.test_successful_inventory_is_published_atomically",
+    "CargoRecipeTests.test_tests_doctests_and_compatibility_negative_controls_are_retained",
+    "CargoRecipeTests.test_timings_do_not_change_formatting",
+    "CargoRecipeTests.test_unknown_recipes_and_configurations_fail_closed",
+    "CargoRecipeTests.test_workflow_keeps_required_recipes_and_runtime_inventory_handoff",
+    "CargoRecipeTests.test_workspace_build_and_check_are_not_assumed_redundant",
+    "FoundationRecipeTests.test_comment_cannot_replace_binding_execution",
+    "FoundationRecipeTests.test_conditionally_skipped_binding_step_does_not_satisfy_foundation",
+    "FoundationRecipeTests.test_real_invocations_satisfy_foundation",
+    "FoundationRecipeTests.test_recipe_must_contain_host_and_guest_binding_checks",
+    "FoundationRecipeTests.test_workspace_locked_scope_is_not_optional"
+  ],
+  "guards": {
+    "FoundationRecipeTests.test_real_invocations_satisfy_foundation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:4507ed7d04025b53a3f28b205c78258efa53715dae5c89022d9cf4d49bcab6f8"
+      ]
+    },
+    "FoundationRecipeTests.test_comment_cannot_replace_binding_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:4507ed7d04025b53a3f28b205c78258efa53715dae5c89022d9cf4d49bcab6f8"
+      ]
+    },
+    "FoundationRecipeTests.test_conditionally_skipped_binding_step_does_not_satisfy_foundation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:4507ed7d04025b53a3f28b205c78258efa53715dae5c89022d9cf4d49bcab6f8"
+      ]
+    },
+    "FoundationRecipeTests.test_recipe_must_contain_host_and_guest_binding_checks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:4507ed7d04025b53a3f28b205c78258efa53715dae5c89022d9cf4d49bcab6f8"
+      ]
+    },
+    "FoundationRecipeTests.test_workspace_locked_scope_is_not_optional": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:4507ed7d04025b53a3f28b205c78258efa53715dae5c89022d9cf4d49bcab6f8"
+      ]
+    },
+    "CargoRecipeTests.test_workspace_build_and_check_are_not_assumed_redundant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_independent_production_feature_resolution_is_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_all_five_host_guest_binding_checks_are_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_tests_doctests_and_compatibility_negative_controls_are_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_format_and_clippy_policy_are_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_msrv_is_independent_and_comes_from_workspace_declaration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_unknown_recipes_and_configurations_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_options_precede_rustc_separator": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_timings_do_not_change_formatting": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_every_command_has_a_coverage_tuple": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_workflow_keeps_required_recipes_and_runtime_inventory_handoff": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_missing_toolchain_declaration_fails_without_executing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_failure_stops_later_commands": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_no_cache_hit_short_circuit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_signal_exit_is_a_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_inventory_option_is_exclusive_to_preparation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_failed_first_build_removes_stale_inventory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_successful_inventory_is_published_atomically": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_partial_inventory_is_removed_on_cargo_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_invalid_or_unsuccessful_stream_never_publishes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_inventory_cannot_overwrite_source_or_follow_symlinks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_overlong_inventory_line_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    },
+    "CargoRecipeTests.test_cli_plan_is_json_and_execution_errors_return_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6be1134d62ec8388d3cdb1f7e260e8de4020a357b9d76eab86202922b4c4fb8d",
+        "class:setup-sha256:e7a3bccbddaefee643b7247ac03ab6ad0ec3bbddb23c6a843a442870a8ea85a5"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_ci_cargo.py",
+  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

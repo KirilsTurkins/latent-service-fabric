@@ -1,0 +1,387 @@
+{
+  "cases": [
+    "AggregateHotPathProfilesTests.test_aggregate_accepts_targeted_profiles_and_quantifies_contributors",
+    "AggregateHotPathProfilesTests.test_extracts_the_tab_delimited_linux_cpu_model",
+    "AggregateHotPathProfilesTests.test_heaptrack_copy_attribution_requires_a_wit_or_canonical_symbol",
+    "AggregateHotPathProfilesTests.test_heaptrack_owner_attribution_ignores_outer_platform_error_type",
+    "AggregateHotPathProfilesTests.test_rejects_a_phase0_baseline_decoy_outside_the_profiled_child_position",
+    "AggregateHotPathProfilesTests.test_rejects_a_process_host_different_from_the_wrapper_host",
+    "AggregateHotPathProfilesTests.test_rejects_a_process_whose_static_host_identity_changes_after_execution",
+    "AggregateHotPathProfilesTests.test_rejects_an_incomplete_host_comparability_context",
+    "AggregateHotPathProfilesTests.test_rejects_an_incomplete_per_run_environment_identity",
+    "AggregateHotPathProfilesTests.test_rejects_an_unknown_wrapper_cpu_model",
+    "AggregateHotPathProfilesTests.test_rejects_calibration_from_a_different_host_context",
+    "AggregateHotPathProfilesTests.test_rejects_candidate_runs_with_mixed_artifact_identities",
+    "AggregateHotPathProfilesTests.test_rejects_candidate_without_a_direct_cache_reuse_control",
+    "AggregateHotPathProfilesTests.test_rejects_candidate_without_fixed_memory_evidence",
+    "AggregateHotPathProfilesTests.test_rejects_candidate_without_matching_per_run_host_context",
+    "AggregateHotPathProfilesTests.test_rejects_command_with_execution_identity_different_from_full_proof",
+    "AggregateHotPathProfilesTests.test_rejects_command_with_published_source_identity_mismatch",
+    "AggregateHotPathProfilesTests.test_rejects_compact_allocation_totals_not_bound_to_raw_heaptrack",
+    "AggregateHotPathProfilesTests.test_rejects_compact_allocation_with_non_owner_frame_method",
+    "AggregateHotPathProfilesTests.test_rejects_duplicate_targeted_semantics",
+    "AggregateHotPathProfilesTests.test_rejects_full_proof_executed_at_a_different_commit",
+    "AggregateHotPathProfilesTests.test_rejects_missing_canonical_hard_check_from_matrix_run",
+    "AggregateHotPathProfilesTests.test_rejects_one_run_experiment_matrix",
+    "AggregateHotPathProfilesTests.test_rejects_perf_and_heaptrack_configuration_mismatch",
+    "AggregateHotPathProfilesTests.test_rejects_profile_with_the_wrong_distinct_contention_boundary",
+    "AggregateHotPathProfilesTests.test_rejects_profile_without_its_named_selective_boundary",
+    "AggregateHotPathProfilesTests.test_rejects_targeted_profile_artifact_different_from_full_proof",
+    "AggregateHotPathProfilesTests.test_rejects_targeted_profile_capsule_different_from_full_proof",
+    "AggregateHotPathProfilesTests.test_rejects_unreadable_or_zero_allocation_folded_evidence"
+  ],
+  "guards": {
+    "AggregateHotPathProfilesTests.test_aggregate_accepts_targeted_profiles_and_quantifies_contributors": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_extracts_the_tab_delimited_linux_cpu_model": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_heaptrack_copy_attribution_requires_a_wit_or_canonical_symbol": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_heaptrack_owner_attribution_ignores_outer_platform_error_type": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_a_phase0_baseline_decoy_outside_the_profiled_child_position": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_a_process_host_different_from_the_wrapper_host": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_a_process_whose_static_host_identity_changes_after_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_an_incomplete_host_comparability_context": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_an_incomplete_per_run_environment_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_an_unknown_wrapper_cpu_model": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_calibration_from_a_different_host_context": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_candidate_runs_with_mixed_artifact_identities": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_candidate_without_a_direct_cache_reuse_control": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_candidate_without_fixed_memory_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_candidate_without_matching_per_run_host_context": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_command_with_execution_identity_different_from_full_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_command_with_published_source_identity_mismatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_compact_allocation_totals_not_bound_to_raw_heaptrack": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_compact_allocation_with_non_owner_frame_method": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_duplicate_targeted_semantics": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_full_proof_executed_at_a_different_commit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_missing_canonical_hard_check_from_matrix_run": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_one_run_experiment_matrix": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_perf_and_heaptrack_configuration_mismatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_profile_with_the_wrong_distinct_contention_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_profile_without_its_named_selective_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_targeted_profile_artifact_different_from_full_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_targeted_profile_capsule_different_from_full_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    },
+    "AggregateHotPathProfilesTests.test_rejects_unreadable_or_zero_allocation_folded_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a9cd9cf0758333412ab152271330bd02cad35cc1c916fa9c8ce8867406d0380",
+        "class:setup-sha256:8080fa1a8f62fbe381b22fc60f857281887eb0031e3b7dd0984bd8064b11f89f"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_aggregate_phase0_hot_path_profiles.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

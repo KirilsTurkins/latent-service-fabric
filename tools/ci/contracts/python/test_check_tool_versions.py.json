@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "JavaQualificationTests.test_default_validation_keeps_all_sdk_checks",
+    "JavaQualificationTests.test_explicit_home_is_used_for_both_tools",
+    "JavaQualificationTests.test_qualifies_exact_temurin_with_and_without_lts_suffix",
+    "JavaQualificationTests.test_rejects_mismatched_java_even_when_compiler_is_exact",
+    "JavaQualificationTests.test_rejects_wrong_compiler_version_build_vendor_and_malformed_output",
+    "VersionParsingTests.test_exact_version_mismatch_fails",
+    "VersionParsingTests.test_extracts_versions",
+    "VersionParsingTests.test_parses_temurin_runtime_version",
+    "VersionProbeTests.test_java_probe_keeps_finite_timeout",
+    "VersionProbeTests.test_main_returns_one_for_probe_timeout",
+    "VersionProbeTests.test_run_passes_finite_timeout",
+    "VersionProbeTests.test_run_reports_timeout_without_captured_output"
+  ],
+  "guards": {
+    "JavaQualificationTests.test_default_validation_keeps_all_sdk_checks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:3af9deee18df754d4687febd3a4f0ab0c97404bebaa7def2bf74f6707101d279"
+      ],
+      "skipSites": []
+    },
+    "JavaQualificationTests.test_explicit_home_is_used_for_both_tools": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:3af9deee18df754d4687febd3a4f0ab0c97404bebaa7def2bf74f6707101d279"
+      ],
+      "skipSites": []
+    },
+    "JavaQualificationTests.test_qualifies_exact_temurin_with_and_without_lts_suffix": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:3af9deee18df754d4687febd3a4f0ab0c97404bebaa7def2bf74f6707101d279"
+      ],
+      "skipSites": []
+    },
+    "JavaQualificationTests.test_rejects_mismatched_java_even_when_compiler_is_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:3af9deee18df754d4687febd3a4f0ab0c97404bebaa7def2bf74f6707101d279"
+      ],
+      "skipSites": []
+    },
+    "JavaQualificationTests.test_rejects_wrong_compiler_version_build_vendor_and_malformed_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:3af9deee18df754d4687febd3a4f0ab0c97404bebaa7def2bf74f6707101d279"
+      ],
+      "skipSites": []
+    },
+    "VersionParsingTests.test_exact_version_mismatch_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "VersionParsingTests.test_extracts_versions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "VersionParsingTests.test_parses_temurin_runtime_version": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "VersionProbeTests.test_java_probe_keeps_finite_timeout": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "VersionProbeTests.test_main_returns_one_for_probe_timeout": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "VersionProbeTests.test_run_passes_finite_timeout": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "VersionProbeTests.test_run_reports_timeout_without_captured_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ce5128fa4d6cf73de5667c2985550613dc9a563c7a53bcf450d3fe03d223cee3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_check_tool_versions.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

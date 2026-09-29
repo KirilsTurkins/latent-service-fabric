@@ -15,6 +15,7 @@ from pathlib import Path
 import platform
 import re
 import shutil
+import shlex
 import signal
 import stat
 import sys
@@ -31,6 +32,15 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 FAILURE_SCHEMA = "latent.test-run.v1"
 MAX_TAIL = 4096
+# Detection at the maintained command/PATH boundary, not an OS security sandbox.
+BUILD_TOOLS = ("cargo", "rustc", "rustup", "npm", "npx", "yarn", "pnpm", "corepack",
+               "pip", "pip3", "uv", "mvn", "gradle", "go", "dotnet",
+               "objcopy", "strip", "curl", "wget")
+
+
+def case_digest(cases: list[str]) -> str:
+    encoded = json.dumps(cases, separators=(",", ":"), ensure_ascii=True).encode()
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
 
 
 def require(condition: object, category: str, reason: str) -> None:
@@ -139,12 +149,14 @@ class TestRun:
                         and len(value) >= 4))
         self.reproduction = reproduction or {"suite": suite}
         # Records are selections, not command scripts or captured environments.
-        allowed = {"suite", "cases", "recipe", "mode", "web", "observed", "fixtureOnly", "preflight", "fault"}
+        allowed = {"suite", "cases", "recipe", "recipeIdentity", "mode", "web", "observed",
+                   "fixtureOnly", "preflight", "fault", "caseSelection", "caseSetDigest", "requiredCaseCount"}
         require(set(self.reproduction) <= allowed, "invalid-fixture", "unsafe-reproduction-fields")
         for key, value in self.reproduction.items():
             values = value if isinstance(value, list) else [value]
-            require(len(values) <= 128 and all(type(v) is bool or isinstance(v, str)
-                    and re.fullmatch(r"[a-zA-Z0-9_:.-]{1,256}", v) for v in values),
+            require(len(values) <= 128 and all(type(v) is bool
+                    or key == "requiredCaseCount" and type(v) is int and 0 < v <= 10000
+                    or isinstance(v, str) and re.fullmatch(r"[a-zA-Z0-9_:.-]{1,256}", v) for v in values),
                     "invalid-fixture", "unsafe-reproduction-selection")
         self.run_id = os.urandom(16).hex()
         self.stage = "prerequisites"
@@ -165,6 +177,74 @@ class TestRun:
         self.old_signals: dict = {}
         self.alarm = False
         self.record: dict | None = None
+        self.required_cases = list(self.reproduction.get("cases", []))
+        self.completed_cases: list[str] = []
+        self.track_case_completions = False
+        self.build_tool_log: Path | None = None
+
+
+    def declare_cases(self, cases: list[str]) -> None:
+        """Retain a bounded intent, including cases not reached before failure."""
+        require(isinstance(cases, list) and 0 < len(cases) <= 10000
+                and all(isinstance(name, str) and re.fullmatch(r"[a-zA-Z0-9_:.-]{1,256}", name)
+                        for name in cases)
+                and len(cases) == len(set(cases)),
+                "invalid-fixture", "invalid-required-case-set")
+        require(set(self.completed_cases) <= set(cases), "invalid-fixture", "changed-completed-case-set")
+        self.required_cases = list(cases)
+        self.track_case_completions = True
+        self.reproduction["requiredCaseCount"] = len(cases)
+        self.reproduction["caseSetDigest"] = case_digest(cases)
+        # A large whole-suite selection must not fail while writing its bounded
+        # diagnostic. Re-resolve its registered identity and compare this digest
+        # during reproduction; never truncate or silently narrow the case set.
+        if len(cases) <= 128 and len(json.dumps(cases).encode()) <= 16000:
+            self.reproduction["cases"] = list(cases)
+            self.reproduction.pop("caseSelection", None)
+        else:
+            self.reproduction.pop("cases", None)
+            self.reproduction["caseSelection"] = "registered"
+
+    def complete_cases(self, cases: list[str]) -> None:
+        require(cases and len(cases) == len(set(cases))
+                and set(cases) <= set(self.required_cases)
+                and not set(cases).intersection(self.completed_cases),
+                "assertion-failure", "duplicate-or-unregistered-case-completion")
+        self.completed_cases.extend(cases)
+        self.track_case_completions = True
+
+    def execution_environment(self, base: dict[str, str]) -> dict[str, str]:
+        """Reject build/install attempts while keeping the read-only rustc query.
+
+        The exact ``rustc --print target-libdir`` query is the existing prepared
+        artifact reader's runtime-library probe, not compilation. Toolchain
+        auto-install is disabled. Absolute-path subprocesses can bypass PATH;
+        the maintained runner/fixture selection is the other half of this guard.
+        """
+        environment = dict(base)
+        if self.build_tool_log is None:
+            directory = self.root / "execution-tools"
+            directory.mkdir(mode=0o700)
+            self.build_tool_log = directory / "unexpected-tool"
+            rustc = shutil.which("rustc", path=environment.get("PATH"))
+            for tool in BUILD_TOOLS:
+                path = directory / tool
+                script = "#!/bin/sh\n"
+                if tool == "rustc" and rustc:
+                    # Do not resolve away the rustup shim's rustc filename.
+                    script += ('if [ "$#" -eq 2 ] && [ "$1" = "--print" ] '
+                               '&& [ "$2" = "target-libdir" ]; then\n'
+                               f'  exec {shlex.quote(os.path.abspath(rustc))} "$@"\nfi\n')
+                script += (f"printf '%s\\n' {shlex.quote(tool)} > "
+                           f"{shlex.quote(str(self.build_tool_log))}\nexit 97\n")
+                path.write_text(script, encoding="utf-8")
+                path.chmod(0o500)
+        environment["PATH"] = str(self.build_tool_log.parent) + os.pathsep + environment.get("PATH", "")
+        environment.update(RUSTUP_AUTO_INSTALL="0", CARGO_NET_OFFLINE="true")
+        for key in tuple(environment):
+            if key.startswith("RUST_TEST_"):
+                environment.pop(key)
+        return environment
 
     def remaining(self, limit: float | None = None) -> float:
         end = self.deadline if self.stage == "teardown" else self.work_deadline
@@ -226,7 +306,7 @@ class TestRun:
         observed = self.command(["git", "-c", "gc.auto=0", "rev-parse", "--verify", "HEAD"], maximum=256)
         revision = observed.output.decode("ascii").strip()
         require(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", revision), "invalid-fixture", "source-revision-invalid")
-        status = self.command(["git", "status", "--porcelain", "--untracked-files=no"], maximum=65536)
+        status = self.command(["git", "status", "--porcelain", "--untracked-files=normal"], maximum=65536)
         self.source = {"revision": revision, "dirty": bool(status.output.strip()), "observed": True}
         claimed = os.environ.get("GITHUB_SHA")
         require(claimed is None or claimed == revision, "invalid-fixture", "source-checkout-mismatch")
@@ -333,6 +413,8 @@ class TestRun:
             del self.operation_deadline
 
     def __exit__(self, kind: type | None, error: BaseException | None, traceback: object) -> bool:
+        if error is None and self.build_tool_log is not None and self.build_tool_log.exists():
+            error = ProcessFailure("assertion-failure", "execution-invoked-build-or-install-tool")
         failed_stage = self.stage
         failed_result = error.result if isinstance(error, ProcessFailure) and error.result else self.last
         failed_tail = self.log_tail
@@ -354,6 +436,8 @@ class TestRun:
                 signal.setitimer(signal.ITIMER_REAL, 0)
             for sig, handler in self.old_signals.items():
                 signal.signal(sig, handler)
+        if error is None and self.track_case_completions and set(self.completed_cases) != set(self.required_cases):
+            error = ProcessFailure("assertion-failure", "required-case-completion-mismatch")
         if error is None and self.cleanup_failures:
             error = ProcessFailure("infrastructure-timeout", "fixture-cleanup-unconfirmed")
             failed_stage = "teardown"
@@ -372,6 +456,9 @@ class TestRun:
             "category": category if error else None, "reason": reason, "stage": failed_stage,
             "evidenceKind": "synthetic-process-contract" if self.synthetic else "runner-diagnostic-not-qualification",
             "source": self.source, "fixtures": self.fixture_ids,
+            "requiredCaseCount": len(self.required_cases),
+            "completedCaseCount": len(self.completed_cases),
+            "completedCaseDigest": case_digest(self.completed_cases),
             "child": {"exit": result.returncode if result and result.returncode is not None and result.returncode >= 0 else None,
                       "signal": -result.returncode if result and result.returncode is not None and result.returncode < 0 else None,
                       "cleanupAcknowledged": result.cleaned if result else None},

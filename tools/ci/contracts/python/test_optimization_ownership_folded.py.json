@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "FoldedBoundsTests.test_default_and_explicit_legacy_compression_bytes_match",
+    "FoldedBoundsTests.test_larger_stream_is_lossless_and_rejected_by_legacy_default",
+    "FoldedBoundsTests.test_only_explicit_finite_caps_are_accepted_before_io",
+    "FoldedBoundsTests.test_profile_extraction_passes_the_same_bound_to_both_streams",
+    "FoldedBoundsTests.test_rehashed_compressed_stream_cannot_exceed_declared_cap",
+    "FoldedBoundsTests.test_suite_cap_erasure_or_change_rejects_before_build_access",
+    "FoldedBoundsTests.test_whole_and_selected_replay_receive_the_declared_limit"
+  ],
+  "guards": {
+    "FoldedBoundsTests.test_default_and_explicit_legacy_compression_bytes_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889d3d3b62af12336590a1eaac32e52fb92d1a07ca98a38ab2624b0f1c05f8c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FoldedBoundsTests.test_larger_stream_is_lossless_and_rejected_by_legacy_default": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889d3d3b62af12336590a1eaac32e52fb92d1a07ca98a38ab2624b0f1c05f8c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FoldedBoundsTests.test_only_explicit_finite_caps_are_accepted_before_io": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889d3d3b62af12336590a1eaac32e52fb92d1a07ca98a38ab2624b0f1c05f8c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FoldedBoundsTests.test_profile_extraction_passes_the_same_bound_to_both_streams": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889d3d3b62af12336590a1eaac32e52fb92d1a07ca98a38ab2624b0f1c05f8c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FoldedBoundsTests.test_rehashed_compressed_stream_cannot_exceed_declared_cap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889d3d3b62af12336590a1eaac32e52fb92d1a07ca98a38ab2624b0f1c05f8c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FoldedBoundsTests.test_suite_cap_erasure_or_change_rejects_before_build_access": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889d3d3b62af12336590a1eaac32e52fb92d1a07ca98a38ab2624b0f1c05f8c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FoldedBoundsTests.test_whole_and_selected_replay_receive_the_declared_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889d3d3b62af12336590a1eaac32e52fb92d1a07ca98a38ab2624b0f1c05f8c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_ownership_folded.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

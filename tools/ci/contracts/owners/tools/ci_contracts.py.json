@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/ci_contracts.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Issue #732: enforce fingerprint review for the newly explicit structural/storage/parser owner.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e35e622fa286f12aa6bdedacf3c0313cf5ca8adad4dfb8c5bb6e5d5be57a4283"
+}

@@ -1,0 +1,101 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Linux frontend and maintained tutorial execution",
+    "needs": "guest-tools",
+    "permissions": {
+      "attestations": "write",
+      "contents": "read",
+      "id-token": "write"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Install exact hashed Linux frontend build inputs",
+        "run": "python -m pip install --require-hashes -r tools/dev-frontend-linux.lock"
+      },
+      {
+        "name": "Build native Linux frontend and observe redistributed libraries",
+        "run": "python tools/build_dev_frontend.py --output target/dev-linux-frontend"
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "path": "target/dev-applications/",
+          "pattern": "developer-*-applications-${{ github.sha }}"
+        }
+      },
+      {
+        "name": "Build native production component execution host",
+        "run": "cargo build -p latent-portable-test-host --release --locked"
+      },
+      {
+        "name": "Assemble Linux frontend and portable host with the shared distribution owner",
+        "run": "python -c \"from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-linux-frontend/portable'); d.mkdir(); p=d/'latent-portable-test-host'; shutil.copyfile('target/release/latent-portable-test-host',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'linux-x86_64','profile':'release'}))\"\npython tools/build_dev_bundle.py --target linux-x86_64 --frontend target/dev-linux-frontend --portable target/dev-linux-frontend/portable/latent-portable-test-host --output target/dev-linux\n"
+      },
+      {
+        "name": "Execute all maintained tutorial applications on Linux",
+        "run": "set -euo pipefail\nfor language in rust c java dotnet go typescript; do\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host --language \"$language\" --applications \"target/dev-applications/developer-$language-applications-$GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\"\ndone\n"
+      },
+      {
+        "id": "attest",
+        "if": "github.event_name != 'pull_request'",
+        "name": "Attest Linux developer candidate without release authority",
+        "uses": "actions/attest-build-provenance",
+        "with": {
+          "subject-path": "target/dev-linux/candidate/SHA256SUMS"
+        }
+      },
+      {
+        "env": {
+          "BUNDLE_PATH": "${{ steps.attest.outputs.bundle-path }}"
+        },
+        "if": "github.event_name != 'pull_request'",
+        "name": "Retain offline Linux developer attestation",
+        "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-linux/candidate/attestation.json"
+      },
+      {
+        "name": "Retain Linux developer distribution",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "developer-linux-candidate-${{ github.sha }}",
+          "path": "target/dev-linux/candidate/",
+          "retention-days": 7
+        }
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "linux-portable-subset-${{ github.sha }}",
+          "path": "target/dev-portable-*-applications.json",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "linux-portable",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-tools.yml"
+}

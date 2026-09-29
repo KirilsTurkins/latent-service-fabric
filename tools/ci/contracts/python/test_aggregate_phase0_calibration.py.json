@@ -1,0 +1,205 @@
+{
+  "cases": [
+    "Phase0CalibrationAggregateTests.test_aggregates_seven_full_profiles_without_dropping_samples",
+    "Phase0CalibrationAggregateTests.test_current_verifier_refuses_a_legacy_calibration_schema",
+    "Phase0CalibrationAggregateTests.test_rejects_a_failed_invariant_instead_of_dropping_the_run",
+    "Phase0CalibrationAggregateTests.test_rejects_a_non_meaningful_cpu_model_identity",
+    "Phase0CalibrationAggregateTests.test_rejects_a_run_that_omits_a_hard_invariant",
+    "Phase0CalibrationAggregateTests.test_rejects_a_run_whose_host_identity_changes_after_execution",
+    "Phase0CalibrationAggregateTests.test_rejects_a_tampered_retained_native_collector",
+    "Phase0CalibrationAggregateTests.test_rejects_an_incomplete_host_comparability_identity",
+    "Phase0CalibrationAggregateTests.test_rejects_execution_status_with_a_different_durable_ref_head",
+    "Phase0CalibrationAggregateTests.test_rejects_missing_durable_ref_provenance",
+    "Phase0CalibrationAggregateTests.test_rejects_native_collector_identity_drift_between_runs",
+    "Phase0CalibrationAggregateTests.test_verifier_rejects_a_manually_altered_aggregate",
+    "Phase0CalibrationAggregateTests.test_verifier_rejects_a_missing_raw_run_artifact",
+    "Phase0CalibrationAggregateTests.test_verifier_rejects_an_aggregate_relabelled_to_another_source",
+    "Phase0CalibrationAggregateTests.test_verifies_a_fresh_aggregate_against_its_raw_runs"
+  ],
+  "guards": {
+    "Phase0CalibrationAggregateTests.test_aggregates_seven_full_profiles_without_dropping_samples": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_current_verifier_refuses_a_legacy_calibration_schema": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_rejects_a_failed_invariant_instead_of_dropping_the_run": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_rejects_a_non_meaningful_cpu_model_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_rejects_a_run_that_omits_a_hard_invariant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_rejects_a_run_whose_host_identity_changes_after_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_rejects_a_tampered_retained_native_collector": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_rejects_an_incomplete_host_comparability_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_rejects_execution_status_with_a_different_durable_ref_head": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_rejects_missing_durable_ref_provenance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_rejects_native_collector_identity_drift_between_runs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_verifier_rejects_a_manually_altered_aggregate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_verifier_rejects_a_missing_raw_run_artifact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_verifier_rejects_an_aggregate_relabelled_to_another_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    },
+    "Phase0CalibrationAggregateTests.test_verifies_a_fresh_aggregate_against_its_raw_runs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c46c3913d93d03432e30a96cc221d977366089f31154b52cde5261383098ded",
+        "class:setup-sha256:f47d26a08e138c1ff7f6094d5dbab9c52eff30f532f158d5252f65cb20faaac8"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_aggregate_phase0_calibration.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

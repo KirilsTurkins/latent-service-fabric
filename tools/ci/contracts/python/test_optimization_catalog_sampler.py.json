@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "SamplerTests.test_closed_decimal_rows_and_finite_lines",
+    "SamplerTests.test_crossed_owner_clock_and_regressing_counters_reject",
+    "SamplerTests.test_phase_requires_both_actual_sample_endpoints"
+  ],
+  "guards": {
+    "SamplerTests.test_closed_decimal_rows_and_finite_lines": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:23d1433e07e0e20c941c5eb9b449c63ae7e3d5d926d6b27c9978f7107c783c9f",
+        "class:setup-sha256:18ca2f7316a3fac5baddae3f5f5ba336523cbfa2c0acdac135b43dc9615f1afe"
+      ],
+      "skipSites": []
+    },
+    "SamplerTests.test_crossed_owner_clock_and_regressing_counters_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:23d1433e07e0e20c941c5eb9b449c63ae7e3d5d926d6b27c9978f7107c783c9f",
+        "class:setup-sha256:18ca2f7316a3fac5baddae3f5f5ba336523cbfa2c0acdac135b43dc9615f1afe"
+      ],
+      "skipSites": []
+    },
+    "SamplerTests.test_phase_requires_both_actual_sample_endpoints": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:23d1433e07e0e20c941c5eb9b449c63ae7e3d5d926d6b27c9978f7107c783c9f",
+        "class:setup-sha256:18ca2f7316a3fac5baddae3f5f5ba336523cbfa2c0acdac135b43dc9615f1afe"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_catalog_sampler.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

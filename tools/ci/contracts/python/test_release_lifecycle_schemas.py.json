@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "ReleaseLifecycleSchemaTests.test_additive_descriptor_preserves_existing_field_numbers",
+    "ReleaseLifecycleSchemaTests.test_canonical_record_and_receipt_have_explicit_optional_fields",
+    "ReleaseLifecycleSchemaTests.test_deployment_fields_keep_legacy_meaning_and_explicit_assertion_presence",
+    "ReleaseLifecycleSchemaTests.test_explicit_selector_presence_does_not_fall_back_to_component_digest",
+    "ReleaseLifecycleSchemaTests.test_protobuf_generation_presence_and_exact_uint64_strings",
+    "ReleaseLifecycleSchemaTests.test_release_queries_require_publication_and_reserve_removed_digest",
+    "ReleaseLifecycleSchemaTests.test_rollout_and_invocation_receipts_add_captured_ids_without_new_authority",
+    "ReleaseLifecycleSchemaTests.test_rpc_reasons_and_actor_authority_are_closed",
+    "ReleaseLifecycleSchemaTests.test_shared_rust_serializer_fixture_matches_both_schemas",
+    "ReleaseLifecycleSchemaTests.test_state_and_operation_outcomes_do_not_fabricate_success",
+    "ReleaseLifecycleSchemaTests.test_unknown_operation_status_is_not_a_committed_receipt"
+  ],
+  "guards": {
+    "ReleaseLifecycleSchemaTests.test_additive_descriptor_preserves_existing_field_numbers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_canonical_record_and_receipt_have_explicit_optional_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_deployment_fields_keep_legacy_meaning_and_explicit_assertion_presence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_explicit_selector_presence_does_not_fall_back_to_component_digest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_protobuf_generation_presence_and_exact_uint64_strings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_release_queries_require_publication_and_reserve_removed_digest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_rollout_and_invocation_receipts_add_captured_ids_without_new_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_rpc_reasons_and_actor_authority_are_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_shared_rust_serializer_fixture_matches_both_schemas": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_state_and_operation_outcomes_do_not_fabricate_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    },
+    "ReleaseLifecycleSchemaTests.test_unknown_operation_status_is_not_a_committed_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:122e806ba0b5520082c7f7c52836a0ec6af2f7b6ecfcf5f6dccd68b853b3de95",
+        "class:setup-sha256:0f0e88e0a0f4070afa3878f2bec07c4c6f237d6d1ee9dad7a3b11df2817afc65"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_release_lifecycle_schemas.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,202 @@
+{
+  "cases": [
+    "PackagePhase0EvidenceTests.test_calibration_raw_archive_retains_the_native_collector",
+    "PackagePhase0EvidenceTests.test_historical_calibration_is_integrity_verifiable_but_not_packaged_as_current_evidence",
+    "PackagePhase0EvidenceTests.test_historical_soak_can_be_reaggregated_for_integrity_but_not_packaged_as_current_evidence",
+    "PackagePhase0EvidenceTests.test_packaging_input_contract_names_each_retained_collector_directory",
+    "PackagePhase0EvidenceTests.test_profile_raw_archive_manifest_retains_the_native_collector",
+    "PackagePhase0EvidenceTests.test_refuses_a_dangling_symlink_destination",
+    "PackagePhase0EvidenceTests.test_refuses_profile_with_a_valid_differently_identified_calibration",
+    "PackagePhase0EvidenceTests.test_refuses_soak_with_a_valid_differently_identified_calibration",
+    "PackagePhase0EvidenceTests.test_refuses_to_overwrite_an_existing_destination",
+    "PackagePhase0EvidenceTests.test_sharded_historical_calibration_remains_integrity_verifiable",
+    "PackagePhase0EvidenceTests.test_sharded_historical_soak_remains_integrity_verifiable",
+    "PackagePhase0EvidenceTests.test_soak_raw_archive_retains_the_native_collector"
+  ],
+  "guards": {
+    "PackagePhase0EvidenceTests.test_calibration_raw_archive_retains_the_native_collector": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_historical_calibration_is_integrity_verifiable_but_not_packaged_as_current_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_historical_soak_can_be_reaggregated_for_integrity_but_not_packaged_as_current_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_packaging_input_contract_names_each_retained_collector_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_profile_raw_archive_manifest_retains_the_native_collector": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_refuses_a_dangling_symlink_destination": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_refuses_profile_with_a_valid_differently_identified_calibration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_refuses_soak_with_a_valid_differently_identified_calibration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_refuses_to_overwrite_an_existing_destination": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_sharded_historical_calibration_remains_integrity_verifiable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_sharded_historical_soak_remains_integrity_verifiable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    },
+    "PackagePhase0EvidenceTests.test_soak_raw_archive_retains_the_native_collector": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(shutil.which('zstd') and shutil.which('tar'), 'zstd and tar are required for Phase 0 packaging integration tests')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run(command: list[str]) -> subprocess.CompletedProcess[str]:\n    return subprocess.run(command, text=True, capture_output=True, check=False)",
+        "module:setup-sha256:e2f860bf98094677e25bd5bee0cd82f36451b181a3c27474ff5a10158bdcef0b",
+        "class:setup-sha256:e466345960e84febf1c59de85e0076b1bb1270ea9293a5dd3b884ca3043d6e2b"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_package_phase0_evidence.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

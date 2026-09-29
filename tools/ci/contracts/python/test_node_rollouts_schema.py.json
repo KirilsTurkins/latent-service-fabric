@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "NodeRolloutsSchema.test_canary_capacity_is_optional_and_closed",
+    "NodeRolloutsSchema.test_closed_manual_profile",
+    "NodeRolloutsSchema.test_individual_bounds",
+    "NodeRolloutsSchema.test_operator_example"
+  ],
+  "guards": {
+    "NodeRolloutsSchema.test_canary_capacity_is_optional_and_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:419378de8c49ea901380b524fef49ae10853cbf7ffd39e3e11631e4b0c80ec12",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeRolloutsSchema.test_closed_manual_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:419378de8c49ea901380b524fef49ae10853cbf7ffd39e3e11631e4b0c80ec12",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeRolloutsSchema.test_individual_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:419378de8c49ea901380b524fef49ae10853cbf7ffd39e3e11631e4b0c80ec12",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeRolloutsSchema.test_operator_example": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:419378de8c49ea901380b524fef49ae10853cbf7ffd39e3e11631e4b0c80ec12",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_node_rollouts_schema.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -55,11 +55,11 @@ jobs:
           test "$(stat --format=%s "$RUNNER_TEMP/dotnet-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest-source.sha"
       - name: Retain the exact reviewed command contract input
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dotnet-guest-command-contract-${{ github.sha }}
           path: |
-            tools/ci/commands.json
+            tools/ci/contracts/
             ${{ runner.temp }}/dotnet-guest-source.tar.gz
             ${{ runner.temp }}/dotnet-guest-source.sha
           if-no-files-found: error
@@ -160,7 +160,7 @@ jobs:
         run: python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-authoring" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
       - name: Retain output and failed attempts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |

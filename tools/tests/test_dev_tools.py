@@ -292,12 +292,12 @@ class CompilerDownloadBounds(unittest.TestCase):
         incoming = Mock()
         incoming.__enter__ = Mock(return_value=incoming)
         incoming.__exit__ = Mock(return_value=False)
-        incoming.read.side_effect = read
+        incoming.read1.side_effect = read
         with patch.object(self.builder.urllib.request, "urlopen", return_value=incoming) as opened, \
                 patch.object(self.builder.time, "monotonic", side_effect=lambda: self.clock):
             self.builder.download(self.path, self.source)
-        opened.assert_called_once_with(self.source["url"], timeout=min(30, self.source.get("timeoutSeconds", 90)))
-        self.assertTrue(all(0 < call.args[0] <= len(self.data) + 1 for call in incoming.read.call_args_list))
+        opened.assert_called_once_with(self.source["url"], timeout=min(30, self.source.get("timeoutSeconds", self.builder.DOWNLOAD_TIMEOUT_SECONDS)))
+        self.assertTrue(all(0 < call.args[0] <= len(self.data) + 1 for call in incoming.read1.call_args_list))
 
     def test_small_default_transfer_accepts_only_pinned_bytes(self):
         self.transfer(elapsed=89)
@@ -307,33 +307,33 @@ class CompilerDownloadBounds(unittest.TestCase):
         pin = self.builder.SOURCES["zig"]
         self.assertEqual((pin["maximum"], pin["sha256"]),
                          (self.builder.ZIG_BYTES, "sha256:" + self.builder.ZIG_SHA256))
-        self.assertEqual(pin["timeoutSeconds"], 300)
+        self.assertEqual(pin["timeoutSeconds"], self.builder.DOWNLOAD_TIMEOUT_SECONDS)
         self.source["timeoutSeconds"] = pin["timeoutSeconds"]
         self.transfer(elapsed=120)
         self.assertEqual(self.path.read_bytes(), self.data)
         self.assertTrue(all("timeoutSeconds" not in source for name, source in self.builder.SOURCES.items() if name != "zig"))
 
     def test_default_deadline_is_not_extended(self):
-        with self.assertRaisesRegex(common.DevError, "compiler-download-time-limit"):
-            self.transfer(elapsed=90)
-        self.assertEqual(self.path.read_bytes(), b"")
+        with self.assertRaisesRegex(common.DevError, "compiler-download-deadline"):
+            self.transfer(elapsed=self.builder.DOWNLOAD_TIMEOUT_SECONDS)
+        self.assertFalse(self.path.exists())
 
     def test_large_archive_deadline_still_rejects_at_boundary(self):
         self.source["timeoutSeconds"] = 300
-        with self.assertRaisesRegex(common.DevError, "compiler-download-time-limit"):
+        with self.assertRaisesRegex(common.DevError, "compiler-download-deadline"):
             self.transfer(elapsed=300)
-        self.assertEqual(self.path.read_bytes(), b"")
+        self.assertFalse(self.path.exists())
 
     def test_eof_cannot_hide_an_expired_deadline(self):
-        with self.assertRaisesRegex(common.DevError, "compiler-download-time-limit"):
-            self.transfer(data=b"", elapsed=90)
+        with self.assertRaisesRegex(common.DevError, "compiler-download-deadline"):
+            self.transfer(data=b"", elapsed=self.builder.DOWNLOAD_TIMEOUT_SECONDS)
 
     def test_one_extra_byte_is_rejected_before_writing_or_digesting(self):
         with patch.object(self.builder, "file_digest") as digest:
             with self.assertRaisesRegex(common.DevError, "compiler-download-byte-limit"):
                 self.transfer(data=self.data + b"!")
             digest.assert_not_called()
-        self.assertEqual(self.path.read_bytes(), b"")
+        self.assertFalse(self.path.exists())
 
     def test_truncated_changed_and_empty_archives_still_fail_digest(self):
         for data in (self.data[:-1], b"x" * len(self.data), b""):
@@ -343,7 +343,7 @@ class CompilerDownloadBounds(unittest.TestCase):
                     self.transfer(data=data)
 
     def test_invalid_limits_fail_before_network_or_output(self):
-        for field, values in (("timeoutSeconds", (0, -1, 301, True, 90.0, "90")),
+        for field, values in (("timeoutSeconds", (0, -1, 601, True, 90.0, "90")),
                               ("maximum", (0, -1, False, "100"))):
             for value in values:
                 source = dict(self.source, **{field: value})

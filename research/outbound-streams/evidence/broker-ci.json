@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "kind": "github-actions-step-observation",
+  "repository": "KirilsTurkins/latent-service-fabric",
+  "headCommit": "cc97d0a682075b5a99c43534ec95f564fdb425e3",
+  "runId": 36475260722,
+  "jobId": 109107532419,
+  "runUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36475260722",
+  "jobName": "Rust 1.97.1",
+  "observedSteps": [
+    {"number": 10, "name": "Check formatting", "conclusion": "success"},
+    {"number": 12, "name": "Check workspace", "conclusion": "success"},
+    {"number": 13, "name": "Check generated RPC and Component Model bindings", "conclusion": "success"},
+    {"number": 15, "name": "Run Clippy", "conclusion": "success"},
+    {"number": 17, "name": "Build workspace binaries and test harnesses", "conclusion": "success"},
+    {"number": 18, "name": "Verify complete registered workspace test discovery", "conclusion": "success"},
+    {"number": 20, "name": "Run tests", "conclusion": "success"}
+  ],
+  "relevantSources": [
+    "crates/latent-http/src/tests/http.rs",
+    "crates/latent-http/src/tests/gateway_boundary.rs"
+  ],
+  "registeredTest": "tests::http::lost_mutation_reply_is_uncertain_and_never_retried",
+  "observationMethod": "GitHub workflow job step API, fetched after the Run tests step completed",
+  "fullWorkflowConclusionAtObservation": null,
+  "individualCaseLogInspected": false,
+  "logRetrieval": "Job log fetch returned GitHub BlobNotFound while the larger job was still running; no per-case log or complete workflow pass is claimed",
+  "boundary": "Remote step-level evidence for the broker regression commit, separate from the native SMTP receipt. The later research/parser-only commit leaves these Rust sources unchanged. This is not evidence of Wasmtime-to-SMTP composition, candidate WIT parsing, or production stream qualification."
+}
