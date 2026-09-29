@@ -1,0 +1,27 @@
+name: Issue 732 isolated workbench
+on:
+  push:
+    branches: [fix/732-sharded-ci-contracts]
+    paths: [.github/workflows/issue-732-workbench.yml, .issue-732/**]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Export the immutable development source
+        run: |
+          set -euo pipefail
+          git cat-file -e 2c52ff1a9d260da2fbcd81aa0c420926a5820d98^{commit}
+          git archive --format=tar.gz --output="$RUNNER_TEMP/issue-732-source.tar.gz" 2c52ff1a9d260da2fbcd81aa0c420926a5820d98
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: issue-732-source
+          path: ${{ runner.temp }}/issue-732-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
