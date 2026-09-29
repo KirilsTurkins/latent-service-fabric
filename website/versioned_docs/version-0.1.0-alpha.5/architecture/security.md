@@ -1,0 +1,167 @@
+# Security architecture
+
+The standalone boundary combines authenticated management, publication-aware
+package admission, Wasmtime containment, current capability policy, protected
+configuration, bounded provider I/O, HTTP/browser controls and durable audit.
+The runtime uses fixed in-process guest cells. Separate guest execution processes
+and multi-node security are not implemented.
+
+## Untrusted inputs and authority
+
+Capsule code, invocation payloads, tenant metadata, registry responses, detached
+evidence, replaceable cache files and native output are untrusted inputs.
+Validation, authentication and permission are separate checks. A content digest,
+successful OCI transfer, public admitted flag, compatibility report or historical
+receipt cannot grant execution authority.
+
+The [management listener](../reference/standalone-node.md) authenticates explicit
+credentials and derives the principal's tenant and actor. A request body cannot
+choose another actor or tenant. Administrative release, deployment, rollout and
+audit operations remain tenant scoped; node audit additionally requires the
+trusted node-operator claim. That claim does not authorize arbitrary tenant
+queries. That listener remains bounded loopback RPC. The separate optional
+[HTTP/TLS application listener](../reference/http-ingress.md) uses invoke-role
+credentials or explicit public-origin principals and exact current tenant
+publication pins. Forwarded fields never grant authority, and finite connection
+residency applies before authentication. Workload mTLS and cross-node delegation
+belong to later work.
+
+## Supply-chain admission
+
+The [publisher verifier](../reference/publisher-trust.md) checks bounded Ed25519
+signatures against approved raw keys, validity intervals and explicit revocations.
+[Builder provenance](../reference/build-provenance.md) requires independently
+approved builder keys and source policy. Publisher-only keys or a matching
+referrer do not establish builder authority. The maintained build is nonhermetic;
+its repository label remains an operator assertion. Certificates and keyless
+signing are unsupported.
+
+[Catalog admission](../reference/package-admission.md) combines those proofs with
+exact package/component/tenant associations, supported WIT and manifest semantics,
+SBOM content policy and the actual runtime requirements. Its deterministic
+profile requires one publisher signature, one provenance envelope and zero or
+one associated SBOM as policy permits. Durable policy-generation and clock floors
+prevent rollback within the trusted storage boundary. Current authority is
+rechecked at publication and final execution, independently of cache residency.
+
+Explicit trusted-local mode remains available. It verifies immutable content
+and lifecycle without fabricating package identity or signing proof. Enforced
+configuration cannot downgrade to local permission because evidence expires or
+is unavailable. A structurally valid expired policy can retain denied history
+for management; invalid configuration, corrupt floors and tampered associations
+remain fatal. An administrator replacing the entire node or approved trust
+configuration is outside this local protection boundary.
+
+## Lifecycle and execution cutover
+
+[Lifecycle capabilities](../reference/release-lifecycle.md) bind the exact catalog
+owner, scope, release and captured generation. In enforced mode they compose with
+current admission proof. Raw preparation cannot bypass a configured owner.
+Revocation and retirement preserve content but deny later use, including held
+route, readiness and cache tokens. Only a call accepted at the shared final
+start fence may finish after the cutover.
+
+Renewed evidence applies to the same retained package and component. It commits
+a new selected evidence revision and lifecycle generation without rewriting the
+original completion record. Old in-process tokens do not upgrade. A fresh
+control compilation, including startup recovery, may issue current capabilities
+only for still-admitted content satisfying current policy and host requirements.
+Rollback validates its target separately; it cannot restore revoked permission.
+
+## Native compilation and loading
+
+The default runtime compiles verified portable components locally. The opt-in
+[isolated AOT path](../runtime/trusted-aot.md) supports Linux x86_64 with full
+Landlock ABI 3 and seccomp enforcement. Before reading untrusted Wasm, the
+approved one-job child has one thread, three directional pipes, finite hard
+resource limits, parent-death protection and a default-deny syscall/filesystem
+policy. It cannot create descendants, access the network or filesystem, or
+create new executable mappings. Unsupported or partial enforcement fails closed.
+
+The parent verifies the actual running executable, readiness profile, engine
+fingerprint, exact bounded output framing, successful exit and fresh original
+input eligibility. Reservations remain owned through cancellation, kill and
+actual reap. There is no distributed compiler trust protocol or arbitrary native
+fallback.
+
+A protected host-local key authenticates receipts binding exact native bytes,
+source metadata, compiler, engine, host and security configuration. Persistent
+reuse authenticates the receipt before reading its claimed blob, then checks the
+immutable byte lease before one private copying `Component::deserialize` call.
+Replaceable files are never mapped through an unauthenticated file loader. Image
+permits precede loading and outlive the associated compiled runtime. This local
+MAC is not publisher provenance and does not replace current catalog authority.
+
+## Guest capabilities
+
+Context, logging, clocks and installed HTTP, blob, secret, event, local-call,
+randomness and metric capabilities are available through checked host bindings.
+The [standalone provider reference](../reference/standalone-providers.md)
+distinguishes its accepted configuration from providers requiring a trusted
+Rust embedding. There is no unrestricted guest filesystem, socket, environment,
+process or thread access.
+
+The [capability broker](../runtime/capability-broker.md) combines exact import
+requests, deployment and policy grants, caller identity and provider epochs.
+Opaque handles are activation scoped, operation scoped, charged and revocable.
+Local descendants conserve budgets and cancellation ownership. Secret values
+stay out of logs, audit fields, cache keys and derived artifacts. Shared provider
+pools and streaming I/O retain finite ownership through cancellation and shutdown.
+
+## Audit, recovery and storage trust
+
+[Durable audit](../phase-2-audit.md) records closed typed observations, attempts
+and conclusions without guest payloads, raw evidence, credentials, keys or private
+paths. Its hash chain detects inconsistency within private current-UID storage;
+it is not a MAC, external witness or protection against the owner rewriting the
+whole journal. Diagnostic loss and prior-session uncertainty remain explicit.
+
+Mutation response capacity is checked before critical audit acceptance and
+catalog persistence. Exact committed receipts establish known outcomes; a
+prospective receipt does not. A postcommit audit failure remains `OutcomeUnknown`,
+not rollback. Revoke alone may proceed when audit capacity or availability fails,
+while preserving authentication and the ordinary durable lifecycle transaction.
+
+Catalog and cache recovery recognize bounded owned layouts, validate exact
+associations and reject unsafe links or ambiguous history. An orphan complete
+upload is not automatically admitted after lifecycle initialization. Caches may
+reclaim only their replaceable unpinned bytes, never authoritative release data.
+Lowered limits cannot silently discard security history to make room.
+
+## Isolation scope
+
+[ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
+[RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) define the
+minimum profile matrix and evidence boundary. The delivered guest boundary is a
+fresh Wasmtime store in fixed in-process cells (`local-experimental-v1`). The
+standalone node, Wasmtime, host bindings and host OS remain trusted. Guest Store
+limits are not a whole-process RSS boundary.
+
+This delivered default is T0: operator-trusted local admission and preparation.
+Its Wasm execution barrier does not turn the in-process compilation path into
+the T1 external-capsule admission profile. Enforced signatures and isolated
+compilation remain separate controls; selecting `securityProfile` as
+`external-capsule-v1` requires both. Startup and `check-config` verify the actual
+approved compiler before storage or listeners are opened. See
+[execution-profile enforcement](../runtime/execution-security-profiles.md).
+
+The isolated compiler child (`isolated-aot-compiler-v1`) is a separate bounded
+compilation boundary, not a per-service execution host. Authenticated native AOT
+reuse (`authenticated-native-aot-v1`) keeps the parent parser/validator, native
+loader, Wasmtime and OS inside the trusted computing base. Arbitrary external
+native artifacts are unsupported.
+
+The implemented `external-capsule-v1` profile requires enforced admission, exact
+host compatibility, protected trust configuration, the reviewed runtime baseline
+and supported isolated compilation. Its persistent data-directory requirement
+prevents a restart with an omitted or weaker profile. It still uses the
+in-process Wasmtime guest boundary and therefore does not claim containment after
+compromise of that process.
+
+Trust-sharded guest/provider/renderer/native-compatibility work that requires
+process-compromise resistance must use a separate fixed/bounded node-owned
+execution host. That profile is currently unsupported. A requested stronger
+profile must fail closed rather than downgrade. Host/kernel compromise and strong
+same-machine side-channel isolation remain outside the current standalone model.
+Provider and browser isolation have dedicated conformance tests. Distributed
+node identity and transport security remain unimplemented.

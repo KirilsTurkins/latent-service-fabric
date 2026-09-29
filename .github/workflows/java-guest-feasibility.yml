@@ -43,7 +43,7 @@ jobs:
             apps crates sdk/java-guest sdk/rust tools wit/platform schemas examples \
             docs/component-development .cargo Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE \
             .github/workflows/java-guest-feasibility.yml
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: java-feasibility-source-${{ github.sha }}
           path: ${{ runner.temp }}/java-feasibility-source.tar.gz
@@ -99,7 +99,7 @@ jobs:
           python3 tools/qualify_java_capsules.py --output "$RUNNER_TEMP/java-capsule-authoring" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-capsule-authoring.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
