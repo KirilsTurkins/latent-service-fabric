@@ -1,0 +1,28 @@
+name: Verify local test entrypoint continuation
+on:
+  push:
+    branches: [feat/435-complete-local-test-workflows]
+    paths: [.github/workflows/verify-local-test-entrypoint.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Capture the exact tracked source and identities
+        run: |
+          mkdir -p "$RUNNER_TEMP/local-test-source"
+          git rev-parse HEAD > "$RUNNER_TEMP/local-test-source/revision.txt"
+          git ls-tree -rl HEAD > "$RUNNER_TEMP/local-test-source/tree.txt"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/local-test-source/source.tar.gz"
+          sha256sum "$RUNNER_TEMP/local-test-source/source.tar.gz"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: local-test-source-${{ github.sha }}
+          path: ${{ runner.temp }}/local-test-source/
+          if-no-files-found: error
+          retention-days: 1
