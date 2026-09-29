@@ -1,0 +1,89 @@
+name: PR 700 combined repair qualification
+on:
+  push:
+    branches: [fix/700-download-preflight-20260929]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: controls
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: source
+          ref: 5c7aaa47243fa1ebf760dce314fbfda44be7a71a
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: '11024115330'
+          run-id: 36548244432
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/security-candidate
+          merge-multiple: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - name: Apply the previously tested security candidate and the download repair
+        run: |
+          git -C source apply "$RUNNER_TEMP/security-candidate/candidate.patch"
+          python3 controls/.github/maintenance/pr700_download.py edit source
+          python3 controls/.github/maintenance/pr700_repair.py inventory source
+          python3 controls/.github/maintenance/pr700_finish.py compact source
+          python3 controls/.github/maintenance/pr700_repair.py export source "$RUNNER_TEMP/combined-candidate"
+      - name: Qualify real source inventory and download regressions
+        working-directory: source
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m unittest tools.tests.test_dev_tools tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner tools.tests.test_ci_coverage tools.tests.test_native_loader_boundary
+          python3 tools/ci_coverage.py
+          python3 tools/validate_repository.py
+          python3 tools/validate_foundation.py
+          python3 tools/validate_docs.py
+          git diff --check
+      - name: Download and authenticate the actual pinned Zig archive
+        timeout-minutes: 6
+        run: python3 controls/.github/maintenance/pr700_download.py probe source | tee "$RUNNER_TEMP/combined-candidate/zig-download.json"
+        shell: bash
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: pr700-combined-candidate
+          path: ${{ runner.temp }}/combined-candidate
+          if-no-files-found: error
+          retention-days: 7
+  publish:
+    needs: qualify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 5c7aaa47243fa1ebf760dce314fbfda44be7a71a
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: pr700-combined-candidate
+          path: ${{ runner.temp }}/combined-candidate
+      - name: Publish candidate without modifying the pull request branch
+        env:
+          CANDIDATE_BRANCH: fix/700-combined-candidate-${{ github.run_id }}
+        run: |
+          git apply --index "$RUNNER_TEMP/combined-candidate/candidate.patch"
+          git diff --cached --check
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          expected = json.loads((Path(os.environ['RUNNER_TEMP']) / 'combined-candidate/files.json').read_text())
+          assert all(hashlib.sha256(Path(name).read_bytes()).hexdigest() == digest for name, digest in expected.items())
+          PY
+          git -c core.hooksPath=/dev/null -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(ci): synchronize coverage, patch Wasmtime, and bound large compiler downloads'
+          git push origin "HEAD:refs/heads/$CANDIDATE_BRANCH"
+          git rev-parse HEAD
