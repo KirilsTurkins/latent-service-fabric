@@ -21,7 +21,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import os, pathlib, subprocess, urllib.request, zipfile, re
+          import os, pathlib, subprocess, zipfile, re
           root = pathlib.Path.cwd()
           output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr731-diagnostics'
           output.mkdir()
@@ -39,22 +39,26 @@ jobs:
                   archive.writestr(name, data)
           print('Source identity: 81cd2540a4f6e91fd559728a791ec31a903a2ae9; text bytes:', total)
           for job in [109466233709, 109465377918]:
-              request = urllib.request.Request(f'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/jobs/{job}/logs', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
-              with urllib.request.urlopen(request, timeout=60) as response: data = response.read(32 * 1024 * 1024 + 1)
-              if len(data) > 32 * 1024 * 1024: raise RuntimeError('log exceeds bound')
-              lines = data.decode('utf-8-sig').splitlines()
+              log = output / f'job-{job}.log'
+              result = subprocess.run(['curl', '--fail', '--silent', '--show-error', '--location', '--max-time', '60', '--max-filesize', '33554432', '--header', 'Authorization: Bearer ' + os.environ['GH_TOKEN'], '--output', str(log), f'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/jobs/{job}/logs'], timeout=65)
+              if result.returncode: raise RuntimeError(f'log fetch failed for job {job}')
+              lines = log.read_text(encoding='utf-8-sig').splitlines()
               selected = set()
               for i, line in enumerate(lines):
-                  if re.search(r'panicked at|^.*FAIL: |^.*ERROR: |##\[error\]|test result: FAILED|Traceback|Error:|failed:', line):
+                  if re.search(r'panicked at|FAIL: |ERROR: |##\[error\]|test result: FAILED|Traceback|Error:|failed:', line):
                       selected.update(range(max(0, i-2), min(len(lines), i+12)))
               text = '\n'.join(lines[i] for i in sorted(selected))
               (output / f'job-{job}-failures.log').write_text(text)
+              log.unlink()
               print(f'Job {job} failure excerpt:\n{text[-16000:]}')
           PY
       - name: Retain only public tracked text and diagnostic excerpts
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: pr731-source-and-failures
-          path: ${{ runner.temp }}/pr731-diagnostics/
+          path: |
+            ${{ runner.temp }}/pr731-diagnostics/source.zip
+            ${{ runner.temp }}/pr731-diagnostics/*-failures.log
           retention-days: 1
           if-no-files-found: error
