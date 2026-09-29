@@ -1,0 +1,124 @@
+name: PR 700 repair qualification
+on:
+  push:
+    branches: [fix/700-ci-repair-preflight-20260929]
+permissions:
+  contents: read
+concurrency:
+  group: pr700-repair-preflight
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: controls
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: source
+          ref: 5c7aaa47243fa1ebf760dce314fbfda44be7a71a
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - name: Prepare the explicitly scoped candidate and Cargo-generated locks
+        run: |
+          python3 -m pip install --requirement source/tools/requirements.lock
+          python3 controls/.github/maintenance/pr700_repair.py edit source
+          python3 controls/.github/maintenance/pr700_repair.py locks source
+          python3 controls/.github/maintenance/pr700_repair.py inventory source
+          python3 controls/.github/maintenance/pr700_repair.py export source "$RUNNER_TEMP/candidate"
+      - name: Run exact source contracts and regression suites
+        working-directory: source
+        run: |
+          python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner tools.tests.test_native_loader_boundary tools.tests.test_rust_capsule_authoring tools.tests.test_ci_coverage tools.tests.test_ci_cargo tools.tests.test_ci_profile tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff tools.tests.test_native_runtime tools.tests.test_node_security_profile_schema tools.tests.test_dev_node_policies
+          python3 tools/ci_coverage.py
+          python3 tools/validate_repository.py
+          python3 tools/validate_foundation.py
+          python3 tools/validate_docs.py
+          cargo fmt --all --check
+          git diff --check
+      - name: Run unchanged fail-closed RustSec scan with fresh data
+        run: |
+          python3 controls/tools/security_install.py --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
+          python3 controls/tools/security_scan.py rustsec --repo source --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan" | tee "$RUNNER_TEMP/candidate/rustsec.json"
+        shell: bash
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: pr700-candidate
+          path: ${{ runner.temp }}/candidate/
+          if-no-files-found: warn
+          retention-days: 7
+  rust:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [current, msrv]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 5c7aaa47243fa1ebf760dce314fbfda44be7a71a
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: pr700-candidate
+          path: ${{ runner.temp }}/candidate
+      - name: Apply only the prepared source patch
+        run: git apply --index "$RUNNER_TEMP/candidate/candidate.patch"
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        if: matrix.toolchain == 'current'
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: dtolnay/rust-toolchain@46817827a5bfabe028bf34e1cce71fd40e2ff697
+        if: matrix.toolchain == 'msrv'
+      - name: Check every workspace target at minimum Rust
+        if: matrix.toolchain == 'msrv'
+        run: cargo +1.95.0 check --locked --workspace --all-targets --all-features
+      - name: Check all targets and strict Clippy on current Rust
+        if: matrix.toolchain == 'current'
+        run: |
+          cargo check --locked --workspace --all-targets --all-features
+          cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+          cargo test --locked -p latent-manifest -p latent-wasmtime --lib --all-features
+          cargo test --locked -p latent-wasmtime --all-features --test native_aot_cache --test isolated_aot --test async_application --test broker
+  publish:
+    needs: [prepare, rust]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 5c7aaa47243fa1ebf760dce314fbfda44be7a71a
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: pr700-candidate
+          path: ${{ runner.temp }}/candidate
+      - name: Publish qualified candidate without changing the pull request branch
+        env:
+          CANDIDATE_BRANCH: fix/700-runtime-security-candidate-${{ github.run_id }}
+        run: |
+          git apply --index "$RUNNER_TEMP/candidate/candidate.patch"
+          git diff --cached --check
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          expected = json.loads((Path(os.environ['RUNNER_TEMP']) / 'candidate/files.json').read_text())
+          assert all(hashlib.sha256(Path(name).read_bytes()).hexdigest() == digest for name, digest in expected.items())
+          PY
+          git -c core.hooksPath=/dev/null -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(ci): synchronize coverage and advance to patched Wasmtime 48.0.3'
+          git push origin "HEAD:refs/heads/$CANDIDATE_BRANCH"
+          git rev-parse HEAD
