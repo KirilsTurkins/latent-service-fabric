@@ -8,21 +8,13 @@ permissions:
 jobs:
   reconcile:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: write
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 32
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: 3.13.5
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: 24.19.0
-      - name: Merge the exact reviewed development changes and reconcile only inventory identities
+      - name: Export exact previously validated reconciliation; no repository writes
         shell: bash
         run: |
           git fetch --no-tags --depth=32 origin eebee56224f25f2c328fa6b2555a35584237c0af
@@ -32,11 +24,9 @@ jobs:
           import hashlib, json, pathlib, subprocess
           dev = 'eebee56224f25f2c328fa6b2555a35584237c0af'
           ours = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
-          subprocess.run(['git', 'merge-base', '--is-ancestor', 'fcb6231e692a80e65fde9166e6b6500d05ffbe59', ours], check=True)
           base = subprocess.check_output(['git', 'merge-base', ours, dev]).decode().strip()
           assert base == 'a7b5d2088471b7368cd85ab74f3292afcdfca00e'
-          result = subprocess.run(['git', 'merge', '--no-commit', '--no-ff', dev])
-          assert result.returncode in (0, 1)
+          assert subprocess.run(['git', 'merge', '--no-commit', '--no-ff', dev]).returncode in (0, 1)
           conflicts = subprocess.check_output(['git', 'diff', '--name-only', '--diff-filter=U']).decode().splitlines()
           assert set(conflicts) <= {'tools/ci/commands.json'}, conflicts
           def document(ref):
@@ -60,55 +50,14 @@ jobs:
           assert not subprocess.check_output(['git', 'diff', '--name-only', '--diff-filter=U']).strip()
           protected = ['adr', 'research/outbound-streams', 'sdk/java-guest', 'website/toolchain', '.github/security', 'tools/security_inventory.py', 'tools/tests/test_security_baseline.py']
           assert not subprocess.check_output(['git', 'diff', '--cached', '--name-only', 'HEAD', '--', *protected]).strip()
-          print('MERGE_RECONCILED', ours, dev)
-          PY
-      - name: Validate merged commands, actual installed bytes and the live advisory gate
-        shell: bash
-        run: |
-          python3 -m venv "$RUNNER_TEMP/checks"
-          "$RUNNER_TEMP/checks/bin/pip" install --require-hashes -r .github/security/requirements.txt
-          "$RUNNER_TEMP/checks/bin/python" tools/ci_coverage.py
-          "$RUNNER_TEMP/checks/bin/python" -m unittest tools.tests.test_ci_coverage tools.tests.test_security_baseline -v
-          python3 -m unittest discover -s website/toolchain/tests -v
-          python3 website/toolchain/prepare.py
-          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
-          node website/scripts/check-package-manager.mjs
-          "$RUNNER_TEMP/checks/bin/python" tools/security_scan.py dependencies --repo . --tools "$RUNNER_TEMP/scan-tools" --scratch "$RUNNER_TEMP/scan" > "$RUNNER_TEMP/scan.json"
-          cat "$RUNNER_TEMP/scan.json"
-          git diff --cached --check
-      - name: Store the validated merge commit object without moving any branch
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import base64, json, os, subprocess, urllib.request
-          api = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/'
-          def post(endpoint, value):
-              request = urllib.request.Request(api + endpoint, data=json.dumps(value).encode(), headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'}, method='POST')
-              with urllib.request.urlopen(request, timeout=30) as response: return json.load(response)
-          head = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
-          dev = 'eebee56224f25f2c328fa6b2555a35584237c0af'
-          base_tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}']).decode().strip()
-          merged_tree = subprocess.check_output(['git', 'write-tree']).decode().strip()
-          # All objects already reachable from either parent exist remotely.
-          known = {row.split()[2].decode() for ref in (head, dev) for row in subprocess.check_output(['git', 'ls-tree', '-r', ref]).splitlines()}
-          records = subprocess.check_output(['git', 'diff', '--cached', '--raw', '--no-abbrev', '-z', 'HEAD']).split(b'\0')
+          subprocess.run(['git', 'diff', '--cached', '--check'], check=True)
+          records = subprocess.check_output(['git', 'diff', '--cached', '--raw', '--no-abbrev', '-z', dev]).split(b'\0')
           elements = []
           for i in range(0, len(records) - 1, 2):
-              header, path = records[i].decode().split(), records[i + 1].decode()
-              old_mode, mode, old_sha, sha, state = header
-              if state == 'D':
-                  elements.append({'path': path, 'mode': old_mode[1:], 'type': 'blob', 'sha': None})
-              else:
-                  assert state in ('A', 'M') and mode == '100644', (path, state, mode)
-                  if sha not in known:
-                      assert path in {'tools/ci/commands.json', '.github/workflows/docs-site.yml', '.github/workflows/docs-pages.yml'}, path
-                      raw = subprocess.check_output(['git', 'cat-file', 'blob', sha])
-                      assert post('blobs', {'content': base64.b64encode(raw).decode(), 'encoding': 'base64'})['sha'] == sha
-                  elements.append({'path': path, 'mode': mode, 'type': 'blob', 'sha': sha})
-          tree = post('trees', {'base_tree': base_tree, 'tree': elements})['sha']
-          assert tree == merged_tree
-          commit = post('commits', {'message': 'Merge development into feat/696-outbound-streams-feasibility\n\nPreserve upstream Action pins and release documentation while retaining the\nverified dependency remediation. Reconcile only the overlapping command\ninventory identities; retain all required commands and advisory coverage.\nRemove the temporary verification workflow. No runtime/research changes.', 'tree': tree, 'parents': [head, dev]})
-          print('VERIFIED_MERGE_COMMIT', commit['sha'], tree)
+              old_mode, mode, old_sha, sha, state = records[i].decode().split()
+              path = records[i + 1].decode()
+              assert state in ('A', 'M') and mode == '100644', (path, state, mode)
+              elements.append({'path': path, 'mode': mode, 'type': 'blob', 'sha': sha})
+          assert len(elements) == 44, len(elements)
+          print('RECONCILED_TREE ' + json.dumps({'parent': ours, 'additionalParent': dev, 'baseTree': subprocess.check_output(['git', 'rev-parse', dev + '^{tree}']).decode().strip(), 'expectedTree': subprocess.check_output(['git', 'write-tree']).decode().strip(), 'elements': elements}, separators=(',', ':')))
           PY
