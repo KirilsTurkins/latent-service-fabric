@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/ci_coverage.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Issue #732: read ownership-local expected contracts independently; retain commit-bound, digest-only evidence even on validation failure. Regression tests cover strictness and read-only operation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e7a1ebb8fa72820ed4d1efc9a881ce136bf9dc14cbd36999b0af9ecd484d10fa"
+}

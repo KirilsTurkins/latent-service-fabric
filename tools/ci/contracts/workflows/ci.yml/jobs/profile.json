@@ -1,0 +1,54 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/ci.yml:profile:select": {
+      "job": "profile",
+      "jobIf": "success()",
+      "name": "select",
+      "run": "python3 tools/ci_profile.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/ci.yml:profile:select": {
+      "after": ".github/workflows/ci.yml:profile:select",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "name": "Select CI profile",
+    "outputs": {
+      "changed_files": "${{ steps.select.outputs.changed_files }}",
+      "expected_jobs": "${{ steps.select.outputs.expected_jobs }}",
+      "fast_packages": "${{ steps.select.outputs.fast_packages }}",
+      "profile": "${{ steps.select.outputs.profile }}",
+      "reason": "${{ steps.select.outputs.reason }}",
+      "renderer": "${{ steps.select.outputs.renderer }}"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "fetch-depth": 0,
+          "persist-credentials": false
+        }
+      },
+      {
+        "id": "select",
+        "name": "Classify the complete change",
+        "run": "python3 tools/ci_profile.py"
+      }
+    ],
+    "timeout-minutes": 5
+  },
+  "jobId": "profile",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/ci.yml"
+}

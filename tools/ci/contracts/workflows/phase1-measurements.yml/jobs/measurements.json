@@ -1,0 +1,124 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/phase1-measurements.yml:measurements:Build required guest fixtures": {
+      "job": "measurements",
+      "jobIf": "success()",
+      "name": "Build required guest fixtures",
+      "run": "unset CARGO_INCREMENTAL\nbash tools/build_phase1_measurement_fixtures.sh",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/phase1-measurements.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/phase1-measurements.yml:measurements:Install validator dependencies": {
+      "job": "measurements",
+      "jobIf": "success()",
+      "name": "Install validator dependencies",
+      "run": "python -m pip install --requirement tools/requirements.lock",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/phase1-measurements.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/phase1-measurements.yml:measurements:Run measurements with bounded owned collectors": {
+      "job": "measurements",
+      "jobIf": "success()",
+      "name": "Run measurements with bounded owned collectors",
+      "run": "unset CARGO_INCREMENTAL\npython3 tools/run_phase1_measurements.py --profile \"$MEASUREMENT_PROFILE\" --kind \"$MEASUREMENT_KIND\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/phase1-measurements.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/phase1-measurements.yml:measurements:Build required guest fixtures": {
+      "after": ".github/workflows/phase1-measurements.yml:measurements:Build required guest fixtures",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/phase1-measurements.yml:measurements:Install validator dependencies": {
+      "after": ".github/workflows/phase1-measurements.yml:measurements:Install validator dependencies",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/phase1-measurements.yml:measurements:Run measurements with bounded owned collectors": {
+      "after": ".github/workflows/phase1-measurements.yml:measurements:Run measurements with bounded owned collectors",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "name": "Phase 1 ${{ inputs.profile }} ${{ matrix.kind }}",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "fetch-depth": 0,
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "cache": "pip",
+          "cache-dependency-path": "tools/requirements.lock",
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-wasip2,wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install validator dependencies",
+        "run": "python -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "name": "Build required guest fixtures",
+        "run": "unset CARGO_INCREMENTAL\nbash tools/build_phase1_measurement_fixtures.sh\n"
+      },
+      {
+        "env": {
+          "MEASUREMENT_KIND": "${{ matrix.kind }}",
+          "MEASUREMENT_PROFILE": "${{ inputs.profile }}"
+        },
+        "name": "Run measurements with bounded owned collectors",
+        "run": "unset CARGO_INCREMENTAL\npython3 tools/run_phase1_measurements.py --profile \"$MEASUREMENT_PROFILE\" --kind \"$MEASUREMENT_KIND\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain measurements and failure diagnostics",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "phase1-${{ inputs.profile }}-${{ matrix.kind }}-${{ github.sha }}",
+          "path": "target/phase1-measurements/",
+          "retention-days": 30
+        }
+      }
+    ],
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "kind": "${{ fromJSON(inputs.kind == 'all' && '[\"scale\",\"soak\",\"benchmark\"]' || format('[\"{0}\"]', inputs.kind)) }}"
+      }
+    },
+    "timeout-minutes": 360
+  },
+  "jobId": "measurements",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/phase1-measurements.yml"
+}

@@ -1,0 +1,109 @@
+{
+  "cases": [
+    "CgroupReadTests.test_aliases_must_have_same_directory_identity",
+    "CgroupReadTests.test_nonregular_files_do_not_block_and_membership_change_discards_values",
+    "CgroupReadTests.test_reads_resolved_directory_and_distinguishes_missing_oversized_denied",
+    "CgroupReadTests.test_unavailable_membership_and_wrong_filesystem_never_fall_back",
+    "CgroupResolutionTests.test_bad_or_unresolvable_membership_never_becomes_mount_root",
+    "CgroupResolutionTests.test_native_nested_bind_subtree_and_namespace_root",
+    "CgroupResolutionTests.test_paths_use_component_prefix_and_decode_escapes_once"
+  ],
+  "guards": {
+    "CgroupReadTests.test_aliases_must_have_same_directory_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'posix', 'directory-FD Linux probe fixtures')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2107d4f9deb154213be47e23b9513fbc7104135f0bb13296218a0734658bd4ef",
+        "class:setup-sha256:c998bcd91d22845b7f1fec186e7cc0c4543b2f6999c5cb4407f61da97665325f"
+      ],
+      "skipSites": []
+    },
+    "CgroupReadTests.test_nonregular_files_do_not_block_and_membership_change_discards_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'posix', 'directory-FD Linux probe fixtures')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2107d4f9deb154213be47e23b9513fbc7104135f0bb13296218a0734658bd4ef",
+        "class:setup-sha256:c998bcd91d22845b7f1fec186e7cc0c4543b2f6999c5cb4407f61da97665325f"
+      ],
+      "skipSites": []
+    },
+    "CgroupReadTests.test_reads_resolved_directory_and_distinguishes_missing_oversized_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'posix', 'directory-FD Linux probe fixtures')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2107d4f9deb154213be47e23b9513fbc7104135f0bb13296218a0734658bd4ef",
+        "class:setup-sha256:c998bcd91d22845b7f1fec186e7cc0c4543b2f6999c5cb4407f61da97665325f"
+      ],
+      "skipSites": []
+    },
+    "CgroupReadTests.test_unavailable_membership_and_wrong_filesystem_never_fall_back": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'posix', 'directory-FD Linux probe fixtures')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2107d4f9deb154213be47e23b9513fbc7104135f0bb13296218a0734658bd4ef",
+        "class:setup-sha256:c998bcd91d22845b7f1fec186e7cc0c4543b2f6999c5cb4407f61da97665325f"
+      ],
+      "skipSites": []
+    },
+    "CgroupResolutionTests.test_bad_or_unresolvable_membership_never_becomes_mount_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2107d4f9deb154213be47e23b9513fbc7104135f0bb13296218a0734658bd4ef",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CgroupResolutionTests.test_native_nested_bind_subtree_and_namespace_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2107d4f9deb154213be47e23b9513fbc7104135f0bb13296218a0734658bd4ef",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CgroupResolutionTests.test_paths_use_component_prefix_and_decode_escapes_once": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2107d4f9deb154213be47e23b9513fbc7104135f0bb13296218a0734658bd4ef",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_cgroups.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

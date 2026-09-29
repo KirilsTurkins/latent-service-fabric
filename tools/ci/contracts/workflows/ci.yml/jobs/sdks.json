@@ -1,0 +1,119 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/ci.yml:sdks:Validate SDK surfaces": {
+      "job": "sdks",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Validate SDK surfaces",
+      "run": "tools/validate_sdks.sh\ntest \"$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)\" = \\\n  \"Version ${EXPECTED_TYPESCRIPT_VERSION}\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/ci.yml:sdks:Validate SDK surfaces": {
+      "after": ".github/workflows/ci.yml:sdks:Validate SDK surfaces",
+      "disposition": "extended",
+      "reason": "Preserve SDK surface validation and retain pinned Java 25 Gradle and TypeScript identities."
+    }
+  },
+  "definition": {
+    "if": "needs.profile.outputs.profile == 'full'",
+    "name": "Cross-language SDK surfaces",
+    "needs": "profile",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-go",
+        "with": {
+          "cache-dependency-path": "sdk/go/go.sum",
+          "go-version": "1.27.1"
+        }
+      },
+      {
+        "uses": "bufbuild/buf-setup-action",
+        "with": {
+          "github_token": "${{ github.token }}",
+          "version": "1.72.0"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "cache": "npm",
+          "cache-dependency-path": "sdk/typescript-client/package-lock.json",
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "uses": "actions/setup-java",
+        "with": {
+          "distribution": "temurin",
+          "java-version": "25.0.4+101.0.LTS"
+        }
+      },
+      {
+        "uses": "actions/setup-dotnet",
+        "with": {
+          "dotnet-version": "8.0.425"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install the checksum-pinned Java-compatible Gradle",
+        "run": "set -euo pipefail\nversion=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle\"])')\"\nchecksum=\"$(python3 -c 'import tomllib; print(tomllib.load(open(\"tools/toolchain.toml\", \"rb\"))[\"sdk\"][\"gradle_sha256\"])')\"\ndestination=\"${RUNNER_TEMP}/lsf-gradle\"\nmkdir -p \"$destination\"\ncurl --fail --location --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 180 \\\n  \"https://services.gradle.org/distributions/gradle-${version}-bin.zip\" -o \"$destination/gradle.zip\"\nprintf '%s  %s\\n' \"$checksum\" \"$destination/gradle.zip\" | sha256sum --check --strict\nunzip -q \"$destination/gradle.zip\" -d \"$destination\"\necho \"$destination/gradle-${version}/bin\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash",
+        "timeout-minutes": 5
+      },
+      {
+        "name": "Qualify the Java 25 Gradle build",
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/java-sdk\"\ngit rev-parse HEAD | tee \"$RUNNER_TEMP/java-sdk/gradle.log\"\nuname -srm | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 sdk/java-client/tools/java_toolchain.py check | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ngradle --version | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ntimeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\necho 'Gradle qualification passed' | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\n",
+        "shell": "bash",
+        "timeout-minutes": 10
+      },
+      {
+        "env": {
+          "EXPECTED_TYPESCRIPT_VERSION": "7.0.2"
+        },
+        "name": "Validate SDK surfaces",
+        "run": "set -euo pipefail\ntools/validate_sdks.sh 2>&1 | tee \"$RUNNER_TEMP/java-sdk/sdk.log\"\nsha256sum sdk/java-client/build/latent-java-client.jar | tee \"$RUNNER_TEMP/java-sdk/jar.sha256\"\npython3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar > \"$RUNNER_TEMP/java-sdk/jar-classfile.json\"\ntest \"$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)\" = \\\n  \"Version ${EXPECTED_TYPESCRIPT_VERSION}\"\n",
+        "shell": "bash"
+      },
+      {
+        "if": "always()",
+        "name": "Retain Java SDK qualification diagnostics",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-sdk-qualification-${{ github.sha }}",
+          "path": "${{ runner.temp }}/java-sdk/",
+          "retention-days": 14
+        }
+      }
+    ]
+  },
+  "jobId": "sdks",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/ci.yml"
+}

@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "AllocationAttributionTests.test_actual_named_frames_are_counted_from_allocation_events",
+    "AllocationAttributionTests.test_folded_named_count_is_independent_of_whole_total",
+    "AllocationAttributionTests.test_other_fully_resolved_function_has_no_named_allocation",
+    "AllocationAttributionTests.test_unresolved_probe_function_is_not_available_zero",
+    "AllocationAttributionTests.test_zero_instruction_trace_is_unresolved_not_available_zero",
+    "LookupReplayTests.test_crossed_task_and_regressing_actual_cpu_rejected",
+    "LookupReplayTests.test_extra_event_and_changed_identity_hash_rejected",
+    "LookupReplayTests.test_fixed_population_and_independent_known_trace",
+    "LookupReplayTests.test_positive_actual_clock_and_work_contract",
+    "LookupReplayTests.test_rehashed_altered_trace_is_not_a_new_accepted_workload",
+    "LookupReplayTests.test_rehashed_false_checksum_and_wrong_hit_population_rejected",
+    "LookupReplayTests.test_rehashed_resident_cost_or_hidden_eviction_rejected"
+  ],
+  "guards": {
+    "AllocationAttributionTests.test_actual_named_frames_are_counted_from_allocation_events": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:a0af6855f4680d3f482d79b019b22b6a26c04640241e4c032a83169827d1adff"
+      ],
+      "skipSites": []
+    },
+    "AllocationAttributionTests.test_folded_named_count_is_independent_of_whole_total": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:a0af6855f4680d3f482d79b019b22b6a26c04640241e4c032a83169827d1adff"
+      ],
+      "skipSites": []
+    },
+    "AllocationAttributionTests.test_other_fully_resolved_function_has_no_named_allocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:a0af6855f4680d3f482d79b019b22b6a26c04640241e4c032a83169827d1adff"
+      ],
+      "skipSites": []
+    },
+    "AllocationAttributionTests.test_unresolved_probe_function_is_not_available_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:a0af6855f4680d3f482d79b019b22b6a26c04640241e4c032a83169827d1adff"
+      ],
+      "skipSites": []
+    },
+    "AllocationAttributionTests.test_zero_instruction_trace_is_unresolved_not_available_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:a0af6855f4680d3f482d79b019b22b6a26c04640241e4c032a83169827d1adff"
+      ],
+      "skipSites": []
+    },
+    "LookupReplayTests.test_crossed_task_and_regressing_actual_cpu_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:3d88d4346b4f594e852d80dd32d18d2f1ac019c607d0a88200817a86aace8799"
+      ],
+      "skipSites": []
+    },
+    "LookupReplayTests.test_extra_event_and_changed_identity_hash_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:3d88d4346b4f594e852d80dd32d18d2f1ac019c607d0a88200817a86aace8799"
+      ],
+      "skipSites": []
+    },
+    "LookupReplayTests.test_fixed_population_and_independent_known_trace": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:3d88d4346b4f594e852d80dd32d18d2f1ac019c607d0a88200817a86aace8799"
+      ],
+      "skipSites": []
+    },
+    "LookupReplayTests.test_positive_actual_clock_and_work_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:3d88d4346b4f594e852d80dd32d18d2f1ac019c607d0a88200817a86aace8799"
+      ],
+      "skipSites": []
+    },
+    "LookupReplayTests.test_rehashed_altered_trace_is_not_a_new_accepted_workload": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:3d88d4346b4f594e852d80dd32d18d2f1ac019c607d0a88200817a86aace8799"
+      ],
+      "skipSites": []
+    },
+    "LookupReplayTests.test_rehashed_false_checksum_and_wrong_hit_population_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:3d88d4346b4f594e852d80dd32d18d2f1ac019c607d0a88200817a86aace8799"
+      ],
+      "skipSites": []
+    },
+    "LookupReplayTests.test_rehashed_resident_cost_or_hidden_eviction_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bc7e8751af77183d067db2e80544e100cdab04333afd7c5155fcc397e4f9a30f",
+        "class:setup-sha256:3d88d4346b4f594e852d80dd32d18d2f1ac019c607d0a88200817a86aace8799"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_cache_lookup.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

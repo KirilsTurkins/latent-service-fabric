@@ -1,0 +1,61 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/release'",
+    "outputs": {
+      "artifact_id": "${{ steps.staged.outputs.artifact-id }}"
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false,
+          "ref": "${{ github.sha }}"
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "env": {
+          "CI_ATTEMPT": "${{ inputs.ci_attempt }}",
+          "CI_RUN": "${{ inputs.ci_run }}",
+          "EXPECTED_LIVE_SOURCE": "${{ inputs.expected_live_source }}",
+          "GH_TOKEN": "${{ github.token }}",
+          "PREVIOUS_PUBLICATION_RUN": "${{ inputs.previous_publication_run }}",
+          "PUBLICATION_MODE": "${{ inputs.mode }}",
+          "SOURCE_SHA": "${{ inputs.source_sha }}"
+        },
+        "name": "Verify successful push origin, exact attempt, immutable artifact and fresh source",
+        "run": "python3 tools/docs_pages.py select --source \"$SOURCE_SHA\" --run \"$CI_RUN\" \\\n  --attempt \"$CI_ATTEMPT\" --mode \"$PUBLICATION_MODE\" \\\n  --previous-publication-run \"$PREVIOUS_PUBLICATION_RUN\" \\\n  --expected-live-source \"$EXPECTED_LIVE_SOURCE\" --output target/docs-pages-staged\n"
+      },
+      {
+        "id": "staged",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "include-hidden-files": true,
+          "name": "docs-pages-staged-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "target/docs-pages-staged/",
+          "retention-days": 14
+        }
+      }
+    ],
+    "timeout-minutes": 10
+  },
+  "jobId": "select",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/docs-pages.yml"
+}

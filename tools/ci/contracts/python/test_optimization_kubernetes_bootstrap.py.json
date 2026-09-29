@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "BootstrapBindings.test_engine_initialization_failure_retains_attempt_and_original_failure_body",
+    "BootstrapBindings.test_resume_requires_actual_original_bytes_and_exact_owner_fields",
+    "BootstrapBindings.test_wrong_kubeconfig_is_rejected_before_any_engine_call",
+    "ClusterCleanup.test_failed_stop_retains_credentials_and_original_error_receipt",
+    "ClusterCleanup.test_foreign_member_wrong_alias_or_crossed_node_prevents_all_mutation",
+    "ClusterCleanup.test_only_recorded_nodes_are_removed_then_hash_matched_credentials"
+  ],
+  "guards": {
+    "BootstrapBindings.test_engine_initialization_failure_retains_attempt_and_original_failure_body": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e243bd016e27f4785da2c45bd35b0ff6bbaf2f9be9fde370fab72fbe3fa47ff6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BootstrapBindings.test_resume_requires_actual_original_bytes_and_exact_owner_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e243bd016e27f4785da2c45bd35b0ff6bbaf2f9be9fde370fab72fbe3fa47ff6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BootstrapBindings.test_wrong_kubeconfig_is_rejected_before_any_engine_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e243bd016e27f4785da2c45bd35b0ff6bbaf2f9be9fde370fab72fbe3fa47ff6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClusterCleanup.test_failed_stop_retains_credentials_and_original_error_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e243bd016e27f4785da2c45bd35b0ff6bbaf2f9be9fde370fab72fbe3fa47ff6",
+        "class:setup-sha256:c08b990908a7612c1e399864c60e31acb5fbb605466941e47b42f9030b140c76"
+      ],
+      "skipSites": []
+    },
+    "ClusterCleanup.test_foreign_member_wrong_alias_or_crossed_node_prevents_all_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e243bd016e27f4785da2c45bd35b0ff6bbaf2f9be9fde370fab72fbe3fa47ff6",
+        "class:setup-sha256:c08b990908a7612c1e399864c60e31acb5fbb605466941e47b42f9030b140c76"
+      ],
+      "skipSites": []
+    },
+    "ClusterCleanup.test_only_recorded_nodes_are_removed_then_hash_matched_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e243bd016e27f4785da2c45bd35b0ff6bbaf2f9be9fde370fab72fbe3fa47ff6",
+        "class:setup-sha256:c08b990908a7612c1e399864c60e31acb5fbb605466941e47b42f9030b140c76"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_bootstrap.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

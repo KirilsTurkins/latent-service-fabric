@@ -2,7 +2,7 @@
 
 This document owns the execution-layout decisions for issue #431. Exact suite and
 case selection remains owned by 'tools/ci/suites.json'; exact workflow command
-review remains owned by 'tools/ci/commands.json'. The lane implementation consumes
+review remains owned by 'tools/ci/contracts/'. The lane implementation consumes
 those contracts instead of introducing a second changed-file classifier, artifact
 manifest, process supervisor, or result gate.
 
@@ -157,9 +157,10 @@ that are unavailable are unavailable, not fabricated zeros.
 
 ## Coverage and rollback
 
-'tools/ci_lane_inventory.py' now checks only lane-specific architecture. The more
-general 'tools/ci/commands.json' still reviews every required run block and hashes
-the delegated script owners. The lane workflow command explicitly names its
+`tools/ci_lane_inventory.py` checks both the lane-specific architecture and the
+complete execution-relevant workflow model. The ownership-local
+`tools/ci/contracts/` records review every required run block and retain per-script
+fingerprints until an enforced replacement approval boundary is verified. The lane workflow command explicitly names its
 Python child owners so moving them behind a coordinator does not remove them from
 command-owner review.
 

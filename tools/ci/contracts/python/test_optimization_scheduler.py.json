@@ -1,0 +1,218 @@
+{
+  "cases": [
+    "AllocationOrigins.test_empty_and_failed_population_cannot_qualify",
+    "AllocationOrigins.test_single_selected_group_retains_origin_through_later_frees",
+    "AllocationOrigins.test_verified_symbol_without_observed_origin_is_unavailable",
+    "CompleteRawDocuments.test_absent_duplicated_and_replaced_checkpoints_are_rejected",
+    "CompleteRawDocuments.test_complete_closed_document_replays_warmup_and_measured_populations",
+    "CompleteRawDocuments.test_complete_storm_document_replays_original_cancellation_and_refunds",
+    "CompleteRawDocuments.test_consistent_nonzero_final_owners_and_undropped_runtime_are_rejected",
+    "CompleteRawDocuments.test_original_cancel_settlements_must_stay_inside_the_actual_frame",
+    "CompleteRawDocuments.test_raw_pid_plan_and_identity_are_bound_to_independent_inputs",
+    "FixedPopulation.test_both_populations_and_distinct_denominators",
+    "FixedPopulation.test_closed_plan_and_no_inherited_scratch_or_population_override",
+    "FixedPopulation.test_tenant_local_cancel_set_does_not_become_global_ordinal_set",
+    "OriginalOfferRows.test_actual_boundaries_and_zero_denominator_remain_distinct",
+    "OriginalOfferRows.test_backpressure_never_acquires_an_enqueue_denominator",
+    "OriginalOfferRows.test_snapshot_numeric_booleans_and_out_of_scope_counters_rejected",
+    "OriginalOfferRows.test_tampered_ordinal_tenant_deadline_hold_and_cleanup_rejected"
+  ],
+  "guards": {
+    "AllocationOrigins.test_empty_and_failed_population_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AllocationOrigins.test_single_selected_group_retains_origin_through_later_frees": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AllocationOrigins.test_verified_symbol_without_observed_origin_is_unavailable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompleteRawDocuments.test_absent_duplicated_and_replaced_checkpoints_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompleteRawDocuments.test_complete_closed_document_replays_warmup_and_measured_populations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompleteRawDocuments.test_complete_storm_document_replays_original_cancellation_and_refunds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompleteRawDocuments.test_consistent_nonzero_final_owners_and_undropped_runtime_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompleteRawDocuments.test_original_cancel_settlements_must_stay_inside_the_actual_frame": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CompleteRawDocuments.test_raw_pid_plan_and_identity_are_bound_to_independent_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedPopulation.test_both_populations_and_distinct_denominators": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedPopulation.test_closed_plan_and_no_inherited_scratch_or_population_override": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FixedPopulation.test_tenant_local_cancel_set_does_not_become_global_ordinal_set": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OriginalOfferRows.test_actual_boundaries_and_zero_denominator_remain_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:d4248c9d06401a0d7dfbbeb1d81f68a0c1cfc2386b14c4ac217ab785f29d2a66"
+      ],
+      "skipSites": []
+    },
+    "OriginalOfferRows.test_backpressure_never_acquires_an_enqueue_denominator": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:d4248c9d06401a0d7dfbbeb1d81f68a0c1cfc2386b14c4ac217ab785f29d2a66"
+      ],
+      "skipSites": []
+    },
+    "OriginalOfferRows.test_snapshot_numeric_booleans_and_out_of_scope_counters_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:d4248c9d06401a0d7dfbbeb1d81f68a0c1cfc2386b14c4ac217ab785f29d2a66"
+      ],
+      "skipSites": []
+    },
+    "OriginalOfferRows.test_tampered_ordinal_tenant_deadline_hold_and_cleanup_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54421f83ef73e552630b88dc11d66eaa8de7ae77ebb00319df105ef14f36d89e",
+        "class:setup-sha256:d4248c9d06401a0d7dfbbeb1d81f68a0c1cfc2386b14c4ac217ab785f29d2a66"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_scheduler.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

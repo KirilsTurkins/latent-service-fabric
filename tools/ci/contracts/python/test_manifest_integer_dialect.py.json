@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "ManifestIntegerDialectTests.test_shared_cases_match_full_draft_2020_12_validation",
+    "ManifestIntegerDialectTests.test_trigger_schema_accepts_exact_arbitrary_precision_numbers"
+  ],
+  "guards": {
+    "ManifestIntegerDialectTests.test_shared_cases_match_full_draft_2020_12_validation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d8e6d7f73cd58885a00bf18aae8d7bcc2eba0a9c4abe90d222fa0acd7c1c8987",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ManifestIntegerDialectTests.test_trigger_schema_accepts_exact_arbitrary_precision_numbers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d8e6d7f73cd58885a00bf18aae8d7bcc2eba0a9c4abe90d222fa0acd7c1c8987",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_manifest_integer_dialect.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

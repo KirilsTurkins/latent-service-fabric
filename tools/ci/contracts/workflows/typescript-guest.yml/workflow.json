@@ -1,0 +1,71 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "typescript-guest-${{ github.ref }}"
+    },
+    "name": "TypeScript guest qualification",
+    "on": {
+      "pull_request": {
+        "paths": [
+          "sdk/typescript-guest/**",
+          "crates/latent-wasmtime/examples/typescript_runtime_probe.rs",
+          "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
+          "tools/typescript_guest/**",
+          "tools/typescript_capsule.py",
+          "tools/build_typescript_guest_capsules.py",
+          "tools/qualify_typescript_capsules.py",
+          "tools/*rust_capsule*.py",
+          "crates/latent-wasmtime/tests/**",
+          "crates/latent-signing/**",
+          "crates/latent-packaging/**",
+          "apps/latentd/**",
+          ".cargo/managed-guest.toml",
+          "docs/component-development/typescript-authoring.md",
+          "examples/typescript-capsules/**",
+          "wit/platform/**",
+          "tools/toolchain.toml",
+          "examples/renderer-profile/package*.json",
+          ".github/workflows/typescript-guest.yml"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          "sdk/typescript-guest/**",
+          "crates/latent-wasmtime/examples/typescript_runtime_probe.rs",
+          "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
+          "tools/typescript_guest/**",
+          "tools/typescript_capsule.py",
+          "tools/build_typescript_guest_capsules.py",
+          "tools/qualify_typescript_capsules.py",
+          "tools/*rust_capsule*.py",
+          "crates/latent-wasmtime/tests/**",
+          "crates/latent-signing/**",
+          "crates/latent-packaging/**",
+          "apps/latentd/**",
+          ".cargo/managed-guest.toml",
+          "docs/component-development/typescript-authoring.md",
+          "examples/typescript-capsules/**",
+          "wit/platform/**",
+          "tools/toolchain.toml",
+          "examples/renderer-profile/package*.json",
+          ".github/workflows/typescript-guest.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "boundary"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/typescript-guest.yml"
+}

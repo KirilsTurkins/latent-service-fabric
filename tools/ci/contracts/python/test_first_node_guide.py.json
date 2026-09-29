@@ -1,0 +1,232 @@
+{
+  "cases": [
+    "ArtifactPaths.test_linked_artifacts_are_rejected_before_run",
+    "ArtifactPaths.test_only_absolute_regular_files_are_accepted",
+    "Inputs.test_changed_component_is_not_a_placeholder_publication",
+    "Inputs.test_changed_deployment_digest_or_tenant_is_rejected",
+    "Inputs.test_config_explicit_profile_and_independent_random_credentials",
+    "Inputs.test_exact_five_public_inputs_not_extra_credential_files",
+    "Inputs.test_existing_outputs_never_overwritten",
+    "Inputs.test_missing_empty_oversized_and_nonregular_inputs_rejected",
+    "Inputs.test_symlinked_root_and_file_rejected",
+    "Payloads.test_exact_source_required",
+    "Payloads.test_exact_success",
+    "Payloads.test_failed_run_redacts_exception_and_never_emits_pass",
+    "Payloads.test_invalid_payload_formats_sizes_and_values",
+    "Payloads.test_uncertain_and_wrong_activation_never_pass",
+    "Sequencing.test_complete_synthetic_sequence_reuses_owners_and_does_not_republish",
+    "Sequencing.test_failure_is_not_retried_or_reported_as_success"
+  ],
+  "guards": {
+    "ArtifactPaths.test_linked_artifacts_are_rejected_before_run": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'POSIX symlink fixture')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:5783cddb5d4f41d0d6bdd804899b3ea7a630d86c7c9a2f8e9457812e3d42b2d7",
+        "unittest.skipUnless(os.name == 'posix', 'POSIX symlink fixture')"
+      ]
+    },
+    "ArtifactPaths.test_only_absolute_regular_files_are_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "Inputs.test_changed_component_is_not_a_placeholder_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:eef17a7e139cdb2d0a8b9d94b6863707ca84776fe2a45fa32ceefd24baab5b53"
+      ],
+      "skipSites": []
+    },
+    "Inputs.test_changed_deployment_digest_or_tenant_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:eef17a7e139cdb2d0a8b9d94b6863707ca84776fe2a45fa32ceefd24baab5b53"
+      ],
+      "skipSites": []
+    },
+    "Inputs.test_config_explicit_profile_and_independent_random_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:eef17a7e139cdb2d0a8b9d94b6863707ca84776fe2a45fa32ceefd24baab5b53"
+      ],
+      "skipSites": []
+    },
+    "Inputs.test_exact_five_public_inputs_not_extra_credential_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:eef17a7e139cdb2d0a8b9d94b6863707ca84776fe2a45fa32ceefd24baab5b53"
+      ],
+      "skipSites": []
+    },
+    "Inputs.test_existing_outputs_never_overwritten": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:eef17a7e139cdb2d0a8b9d94b6863707ca84776fe2a45fa32ceefd24baab5b53"
+      ],
+      "skipSites": []
+    },
+    "Inputs.test_missing_empty_oversized_and_nonregular_inputs_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:eef17a7e139cdb2d0a8b9d94b6863707ca84776fe2a45fa32ceefd24baab5b53"
+      ],
+      "skipSites": []
+    },
+    "Inputs.test_symlinked_root_and_file_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'POSIX symlink fixture')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:eef17a7e139cdb2d0a8b9d94b6863707ca84776fe2a45fa32ceefd24baab5b53"
+      ],
+      "skipSites": [
+        "skip-control-sha256:6a628acd45005f454a01ce90d85e07a8cf7125df0df5768c502c798e7131c3b7",
+        "unittest.skipUnless(os.name == 'posix', 'POSIX symlink fixture')"
+      ]
+    },
+    "Payloads.test_exact_source_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:e38e02b6188b3e41baede9676578e371bb311e12876eae71dbb7e5433b1bcec1"
+      ],
+      "skipSites": []
+    },
+    "Payloads.test_exact_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:e38e02b6188b3e41baede9676578e371bb311e12876eae71dbb7e5433b1bcec1"
+      ],
+      "skipSites": []
+    },
+    "Payloads.test_failed_run_redacts_exception_and_never_emits_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:e38e02b6188b3e41baede9676578e371bb311e12876eae71dbb7e5433b1bcec1"
+      ],
+      "skipSites": []
+    },
+    "Payloads.test_invalid_payload_formats_sizes_and_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:e38e02b6188b3e41baede9676578e371bb311e12876eae71dbb7e5433b1bcec1"
+      ],
+      "skipSites": []
+    },
+    "Payloads.test_uncertain_and_wrong_activation_never_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:e38e02b6188b3e41baede9676578e371bb311e12876eae71dbb7e5433b1bcec1"
+      ],
+      "skipSites": []
+    },
+    "Sequencing.test_complete_synthetic_sequence_reuses_owners_and_does_not_republish": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'uses the existing Linux process owner')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:2899a74cf53f7a8c26a4fd70db058e7d1d061b80c42a4bf0878d15dac4790653"
+      ],
+      "skipSites": []
+    },
+    "Sequencing.test_failure_is_not_retried_or_reported_as_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'uses the existing Linux process owner')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7f5cfb6551f5b5831119b720972363a1f32b6b081e8569e16d82bda0f98beaf4",
+        "class:setup-sha256:2899a74cf53f7a8c26a4fd70db058e7d1d061b80c42a4bf0878d15dac4790653"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_first_node_guide.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

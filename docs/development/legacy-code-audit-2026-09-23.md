@@ -22,7 +22,7 @@ remaining consumers were tests of the unused helpers themselves.
 | `security_scope.validate_results` and tests of the duplicate model | The security workflow executes its own inline aggregate. The failure/cancellation matrix now executes that exact script, including missing jobs/selection outputs and unexpected success or skip states. |
 
 The reviewed Python case/module inventory and changed delegated-owner hashes in
-`tools/ci/commands.json` are updated alongside these removals. Workflow commands,
+`tools/ci/history/commands-v1.json` are updated alongside these removals. Workflow commands,
 job requirements, and the Rust suite inventory retain their existing contracts.
 
 ## Retained after review

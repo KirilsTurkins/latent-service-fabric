@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "InlineFailureTests.test_connect_failure_cannot_be_relabelled_success_with_rehashed_event_receipts",
+    "InlineFailureTests.test_extra_native_offer_or_missing_terminal_ack_cannot_disappear",
+    "InlineFailureTests.test_failure_summary_and_replaced_target_owner_reject",
+    "InlineFailureTests.test_original_failed_session_replays_all_thirty_offers_and_stays_failed",
+    "InlineFailureTests.test_payload_corruption_rejects_even_after_all_attempt_prefix_hashes_are_rebound",
+    "InlineFailureTests.test_publication_metadata_projects_its_release_digest_into_real_client_prefix"
+  ],
+  "guards": {
+    "InlineFailureTests.test_connect_failure_cannot_be_relabelled_success_with_rehashed_event_receipts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:468e12064b84ad1b71412a912ba51b0191b62248e70c250e8e1c3d4140167029",
+        "class:setup-sha256:04a663bbfb78534edb30757ab9e5f0a206ff5178b0b4067292bb3197a647779f"
+      ],
+      "skipSites": []
+    },
+    "InlineFailureTests.test_extra_native_offer_or_missing_terminal_ack_cannot_disappear": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:468e12064b84ad1b71412a912ba51b0191b62248e70c250e8e1c3d4140167029",
+        "class:setup-sha256:04a663bbfb78534edb30757ab9e5f0a206ff5178b0b4067292bb3197a647779f"
+      ],
+      "skipSites": []
+    },
+    "InlineFailureTests.test_failure_summary_and_replaced_target_owner_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:468e12064b84ad1b71412a912ba51b0191b62248e70c250e8e1c3d4140167029",
+        "class:setup-sha256:04a663bbfb78534edb30757ab9e5f0a206ff5178b0b4067292bb3197a647779f"
+      ],
+      "skipSites": []
+    },
+    "InlineFailureTests.test_original_failed_session_replays_all_thirty_offers_and_stays_failed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:468e12064b84ad1b71412a912ba51b0191b62248e70c250e8e1c3d4140167029",
+        "class:setup-sha256:04a663bbfb78534edb30757ab9e5f0a206ff5178b0b4067292bb3197a647779f"
+      ],
+      "skipSites": []
+    },
+    "InlineFailureTests.test_payload_corruption_rejects_even_after_all_attempt_prefix_hashes_are_rebound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:468e12064b84ad1b71412a912ba51b0191b62248e70c250e8e1c3d4140167029",
+        "class:setup-sha256:04a663bbfb78534edb30757ab9e5f0a206ff5178b0b4067292bb3197a647779f"
+      ],
+      "skipSites": []
+    },
+    "InlineFailureTests.test_publication_metadata_projects_its_release_digest_into_real_client_prefix": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:468e12064b84ad1b71412a912ba51b0191b62248e70c250e8e1c3d4140167029",
+        "class:setup-sha256:04a663bbfb78534edb30757ab9e5f0a206ff5178b0b4067292bb3197a647779f"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_failure_inline.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

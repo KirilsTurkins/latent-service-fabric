@@ -204,8 +204,16 @@ binding. A builder signature cannot replace that local native-output authority.
 | Component / observed build duration | 64 MiB / 3600 seconds |
 | Keys / source requirements | 64 / 256 each |
 | Revoked keys / revoked builders | 256 / 256; 64 / 256 |
-| Captured files / explicit archive directories | 4096 / 4096 |
+| Committed echo snapshot files / explicit archive directories | 8192 / 4096 |
 | Per-file / total source / archive | 4 MiB / 32 MiB / 40 MiB |
+
+The committed echo source capture and its Cargo attribution reader share the
+same fixed 8,192-file ceiling, including ownership-local CI contracts and their
+historical migration evidence. The 4 MiB per-file, 32 MiB total-source and
+40 MiB archive limits are unchanged. The explicit worktree guest profiles
+described above retain their separate 4,096-file limit. A repository regression
+checks the actual committed selection through capture and attribution before
+compiler work; exceeding a ceiling fails rather than dropping source inputs.
 
 Configured Rust limits must be positive and within hard ceilings. JSON rejects
 unknown fields, duplicate keys, floats, negative integers and `null`, and bounds

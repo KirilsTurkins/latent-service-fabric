@@ -1,0 +1,100 @@
+{
+  "cases": [
+    "KubernetesAttach.test_consumed_protocol_lines_and_eof_produce_actual_reaped_receipt",
+    "KubernetesAttach.test_failed_spawn_restores_original_subreaper_state",
+    "KubernetesAttach.test_forced_cleanup_kills_descendant_holding_output_pipe",
+    "KubernetesAttach.test_pipe_eof_before_waitable_exit_uses_remaining_grace",
+    "KubernetesAttach.test_read_deadline_then_explicit_force_reaps_original_helper",
+    "KubernetesAttach.test_unconsumed_partial_or_complete_tail_cannot_claim_clean_close"
+  ],
+  "guards": {
+    "KubernetesAttach.test_consumed_protocol_lines_and_eof_produce_actual_reaped_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'the owned kubectl pipe helper is Linux-only')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbed1e7faa06847235baddfd4a8909b3e80927654fe699c03e4eeb57cdf7b8eb",
+        "class:setup-sha256:bd34784369cb87e07c4ab13c4a83adb6d3210a07ff24745e0bb8ad3e20ae2fd7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAttach.test_failed_spawn_restores_original_subreaper_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'the owned kubectl pipe helper is Linux-only')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbed1e7faa06847235baddfd4a8909b3e80927654fe699c03e4eeb57cdf7b8eb",
+        "class:setup-sha256:bd34784369cb87e07c4ab13c4a83adb6d3210a07ff24745e0bb8ad3e20ae2fd7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAttach.test_forced_cleanup_kills_descendant_holding_output_pipe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'the owned kubectl pipe helper is Linux-only')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbed1e7faa06847235baddfd4a8909b3e80927654fe699c03e4eeb57cdf7b8eb",
+        "class:setup-sha256:bd34784369cb87e07c4ab13c4a83adb6d3210a07ff24745e0bb8ad3e20ae2fd7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAttach.test_pipe_eof_before_waitable_exit_uses_remaining_grace": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'the owned kubectl pipe helper is Linux-only')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbed1e7faa06847235baddfd4a8909b3e80927654fe699c03e4eeb57cdf7b8eb",
+        "class:setup-sha256:bd34784369cb87e07c4ab13c4a83adb6d3210a07ff24745e0bb8ad3e20ae2fd7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAttach.test_read_deadline_then_explicit_force_reaps_original_helper": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'the owned kubectl pipe helper is Linux-only')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbed1e7faa06847235baddfd4a8909b3e80927654fe699c03e4eeb57cdf7b8eb",
+        "class:setup-sha256:bd34784369cb87e07c4ab13c4a83adb6d3210a07ff24745e0bb8ad3e20ae2fd7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAttach.test_unconsumed_partial_or_complete_tail_cannot_claim_clean_close": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'the owned kubectl pipe helper is Linux-only')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbed1e7faa06847235baddfd4a8909b3e80927654fe699c03e4eeb57cdf7b8eb",
+        "class:setup-sha256:bd34784369cb87e07c4ab13c4a83adb6d3210a07ff24745e0bb8ad3e20ae2fd7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_attach.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

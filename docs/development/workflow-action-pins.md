@@ -6,6 +6,19 @@ Executable workflows under `.github/workflows/` use immutable external action id
 
 The checker parses YAML executable job/step fields, including quoted keys, flow mappings and aliases. It does not interpret `run:` script examples as actions. Local reusable workflows and composite actions are followed inside the repository; missing actions and symlinked or escaping paths are rejected. Duplicate/merge mapping keys are rejected rather than depending on ambiguous YAML interpretation. Inspection is capped at 256 executable files, 128 KiB per file, 16,384 YAML events per file and 64 nesting levels. Install the exact validator dependencies from `tools/requirements.lock` before running it.
 
+The [ownership-local CI contracts](../testing/ci-command-contracts.md) compare all
+workflow execution/security fields but do not duplicate immutable action
+revisions. A same-action pin/comment-only change requires no command-contract
+refresh. Action repository/path, inputs, permissions and execution position stay
+reviewed. A new immutable revision is new executable code: structural equality
+is not an assertion of equivalent upstream behavior. Workflow changes still
+select full CI, and this pin validator still runs independently.
+
+The action-reference parser can inspect aliases; the comprehensive workflow
+contract parser deliberately rejects aliases and explicit YAML tags rather than
+permit ambiguous structural comparison. The historical hash-refresh notes below
+refer to the archived pre-sharding snapshot, not to an active update procedure.
+
 ## Reviewed identities
 
 The pins introduced for Phase 3 issue #281 were resolved against the named upstream repositories on **2026-09-13**. The action version is intentionally separate from tool versions supplied through `with:`.
@@ -33,14 +46,14 @@ The `actions/setup-java` v6.0.1 identity was resolved and its action definition
 reviewed on **2026-09-27**. The action uses Node 24 on the hosted runners and
 retains the `distribution: temurin` and exact `java-version: '25.0.4+101.0.LTS'`
 inputs selected by LSF. The JDK baseline remains Temurin 25.0.4.1+1. The workflow
-hashes in `tools/ci/commands.json` reflect the new action pin; required commands
+hashes in `tools/ci/history/commands-v1.json` reflect the new action pin; required commands
 and job conditions are unchanged.
 
 The `actions/attest-build-provenance` v4.2.2 identity was resolved and its action
 definition reviewed on **2026-09-27**. It delegates to the pinned `actions/attest`
 v4.2.1 action and preserves the `subject-path` input and `bundle-path` output used
 by the developer and native runtime workflows. Registry publication remains
-disabled by default. The workflow hashes in `tools/ci/commands.json` reflect the
+disabled by default. The workflow hashes in `tools/ci/history/commands-v1.json` reflect the
 new action pin; required commands and job conditions are unchanged.
 
 The `actions/upload-pages-artifact` v5.0.0 identity was resolved and its action
@@ -48,7 +61,7 @@ definition reviewed on **2026-09-27**. It delegates artifact upload to the pinne
 `actions/upload-artifact` v7.0.0 action and preserves the existing Pages archive,
 `name`, `path` and retention inputs. Its new `include-hidden-files` input defaults
 to false, preserving the site's current file selection. The Pages workflow hash
-in `tools/ci/commands.json` reflects the new pin; publication guards and required
+in `tools/ci/history/commands-v1.json` reflects the new pin; publication guards and required
 commands are unchanged.
 
 The `actions/checkout` v7.0.1 identity, release notes and action-definition diff
@@ -62,13 +75,13 @@ The `actions/setup-python` v7.0.0 identity, release notes and action-definition
 diff were reviewed on **2026-09-27**. It uses Node 24 and retains the explicitly
 selected Python versions and cache inputs. These workflows do not use the
 removed `pip-install` input; dependency installation still uses the existing
-locked commands. The workflow hashes in `tools/ci/commands.json` reflect the new
+locked commands. The workflow hashes in `tools/ci/history/commands-v1.json` reflect the new
 pin; required commands and job conditions are unchanged.
 
 The `actions/setup-dotnet` v6.0.0 identity, release notes and action-definition
 diff were reviewed on **2026-09-27**. It uses Node 24 and keeps the explicit
 .NET SDK and cache inputs selected by the workflows. No new installer options
-or package sources are enabled. The workflow hashes in `tools/ci/commands.json`
+or package sources are enabled. The workflow hashes in `tools/ci/history/commands-v1.json`
 reflect the new pin; required commands and job conditions are unchanged.
 
 The `actions/upload-artifact` v7.0.1 identity, release notes and action-definition
@@ -76,7 +89,7 @@ diff were reviewed on **2026-09-28**. It uses Node 24 and retains the existing
 artifact names, paths, retention, compression and hidden-file inputs. The new
 `archive` input defaults to true, preserving zipped artifacts for the existing
 download steps; these workflows do not enable direct single-file uploads.
-The workflow identities in `tools/ci/commands.json` reflect all updated pins.
+The workflow identities in `tools/ci/history/commands-v1.json` reflect all updated pins.
 
 ## Updating a pin
 
@@ -85,7 +98,7 @@ Action-pin updates are supply-chain changes owned by repository maintainers and 
 1. Identify the intended upstream release/tag in the action's official repository. Resolve that ref to its full commit identity using GitHub's repository data, and confirm the commit belongs to the intended upstream repository. A 40-character string alone is not provenance evidence.
 2. Review the upstream release notes and the diff from the currently pinned commit. For toolchain actions, keep LSF's explicit tool version inputs unchanged unless the same change intentionally updates and validates those tools.
 3. Replace every affected `uses:` reference with the reviewed commit and update the adjacent readable version comment. Update the reviewed-identity table when the repository's chosen identity changes.
-4. Run `python3 -m unittest tools.tests.test_validate_workflow_actions` and `python3 tools/validate_workflow_actions.py`, then run the repository validation selected for the workflow change. Workflow edits remain full-CI changes; historical 100k or measurement campaigns are not required merely to change an immutable action identity.
+4. Run `python3 -m unittest tools.tests.test_validate_workflow_actions tools.tests.test_ci_contracts`, `python3 tools/validate_workflow_actions.py`, and `python3 tools/ci_coverage.py`, then run the repository validation selected for the workflow change. Do not edit command contracts for a pin/comment-only change. Workflow edits remain full-CI changes; historical 100k or measurement campaigns are not required merely to change an immutable action identity.
 5. If the update regresses validation, roll back to the previously reviewed commit SHA rather than changing the version comment or policy check to hide the failure.
 
 The workflow policy is also called from `tools/validate_contracts.sh`, so executable workflow changes cannot pass the normal full repository-contract gate with a mutable external action ref.

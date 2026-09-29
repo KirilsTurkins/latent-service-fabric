@@ -1,0 +1,231 @@
+{
+  "cases": [
+    "KubernetesResources.test_actual_cri_lifetime_strings_remain_original_and_one_ns_reverse_rejects",
+    "KubernetesResources.test_actual_crictl_rfc3339_nanos_preserve_precision_and_offset",
+    "KubernetesResources.test_actual_kind_kubelet_pod_path_keeps_exact_ancestry_and_effective_pid_limit",
+    "KubernetesResources.test_actual_provider_facts_bind_namespace_and_ancestor_limits",
+    "KubernetesResources.test_bounded_observation_population_and_controller_clock_are_independent",
+    "KubernetesResources.test_d32_systemd_cap_is_reported_as_actual_four_percent_difference",
+    "KubernetesResources.test_docker_validation_does_not_accept_kubernetes_rounding",
+    "KubernetesResources.test_effective_limits_require_complete_matching_ancestry",
+    "KubernetesResources.test_equivalent_api_quantities_keep_exact_resource_totals",
+    "KubernetesResources.test_exact_d32_still_reports_requested_effective_equality",
+    "KubernetesResources.test_node_process_cannot_borrow_mounted_pid_or_namespace",
+    "KubernetesResources.test_optional_process_fields_remain_unavailable_not_docker_defaults",
+    "KubernetesResources.test_pod_cri_runtime_identity_and_cleanup_mutations_reject",
+    "KubernetesResources.test_root_missing_limit_files_are_not_synthetic_zero",
+    "KubernetesResources.test_rounded_cap_requires_stable_six_snapshots_exact_pod_and_mounted_agreement",
+    "KubernetesResources.test_rounding_policy_has_no_tolerance_for_other_cpu_values_or_densities",
+    "KubernetesResources.test_unfinished_cri_sentinel_is_unavailable_not_a_zero_measurement"
+  ],
+  "guards": {
+    "KubernetesResources.test_actual_cri_lifetime_strings_remain_original_and_one_ns_reverse_rejects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_actual_crictl_rfc3339_nanos_preserve_precision_and_offset": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_actual_kind_kubelet_pod_path_keeps_exact_ancestry_and_effective_pid_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_actual_provider_facts_bind_namespace_and_ancestor_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_bounded_observation_population_and_controller_clock_are_independent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_d32_systemd_cap_is_reported_as_actual_four_percent_difference": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_docker_validation_does_not_accept_kubernetes_rounding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_effective_limits_require_complete_matching_ancestry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_equivalent_api_quantities_keep_exact_resource_totals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_exact_d32_still_reports_requested_effective_equality": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_node_process_cannot_borrow_mounted_pid_or_namespace": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_optional_process_fields_remain_unavailable_not_docker_defaults": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_pod_cri_runtime_identity_and_cleanup_mutations_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_root_missing_limit_files_are_not_synthetic_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_rounded_cap_requires_stable_six_snapshots_exact_pod_and_mounted_agreement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_rounding_policy_has_no_tolerance_for_other_cpu_values_or_densities": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    },
+    "KubernetesResources.test_unfinished_cri_sentinel_is_unavailable_not_a_zero_measurement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bf19a106fef071257e4024b822d160276438bd0e077bba4e12c610b8049c6716",
+        "class:setup-sha256:ad27dda1c56ec652ba59f78850418ef4010cfbf41508a261cd9fc19e893825ef"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_resources.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

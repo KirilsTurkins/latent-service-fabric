@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "SecurityWorkflowTests.test_actual_aggregate_checks_selected_results_and_rejects_failures",
+    "SecurityWorkflowTests.test_docs_and_svg_only_keep_existing_ci_profile_and_only_secret_job",
+    "SecurityWorkflowTests.test_fork_pull_requests_have_no_privileged_token_cache_or_input_execution",
+    "SecurityWorkflowTests.test_one_coordinator_reuses_rustsec_and_covers_both_maintained_branches",
+    "SecurityWorkflowTests.test_policy_checks_immutable_actions_including_reused_workflow",
+    "SecurityWorkflowTests.test_pr_uses_complete_git_diff_not_api_first_page",
+    "SecurityWorkflowTests.test_sensitive_paths_select_their_analyses"
+  ],
+  "guards": {
+    "SecurityWorkflowTests.test_actual_aggregate_checks_selected_results_and_rejects_failures": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae7e15609da86df7e2825e211df53dd7bbaaf72ad4fe2366bf328eb1c1db686a",
+        "class:setup-sha256:776278b22b6baa524c1a077cb3ac2154013bb1a85db9f17cad06b90532a9b4b2"
+      ],
+      "skipSites": []
+    },
+    "SecurityWorkflowTests.test_docs_and_svg_only_keep_existing_ci_profile_and_only_secret_job": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae7e15609da86df7e2825e211df53dd7bbaaf72ad4fe2366bf328eb1c1db686a",
+        "class:setup-sha256:776278b22b6baa524c1a077cb3ac2154013bb1a85db9f17cad06b90532a9b4b2"
+      ],
+      "skipSites": []
+    },
+    "SecurityWorkflowTests.test_fork_pull_requests_have_no_privileged_token_cache_or_input_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae7e15609da86df7e2825e211df53dd7bbaaf72ad4fe2366bf328eb1c1db686a",
+        "class:setup-sha256:776278b22b6baa524c1a077cb3ac2154013bb1a85db9f17cad06b90532a9b4b2"
+      ],
+      "skipSites": []
+    },
+    "SecurityWorkflowTests.test_one_coordinator_reuses_rustsec_and_covers_both_maintained_branches": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae7e15609da86df7e2825e211df53dd7bbaaf72ad4fe2366bf328eb1c1db686a",
+        "class:setup-sha256:776278b22b6baa524c1a077cb3ac2154013bb1a85db9f17cad06b90532a9b4b2"
+      ],
+      "skipSites": []
+    },
+    "SecurityWorkflowTests.test_policy_checks_immutable_actions_including_reused_workflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae7e15609da86df7e2825e211df53dd7bbaaf72ad4fe2366bf328eb1c1db686a",
+        "class:setup-sha256:776278b22b6baa524c1a077cb3ac2154013bb1a85db9f17cad06b90532a9b4b2"
+      ],
+      "skipSites": []
+    },
+    "SecurityWorkflowTests.test_pr_uses_complete_git_diff_not_api_first_page": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae7e15609da86df7e2825e211df53dd7bbaaf72ad4fe2366bf328eb1c1db686a",
+        "class:setup-sha256:776278b22b6baa524c1a077cb3ac2154013bb1a85db9f17cad06b90532a9b4b2"
+      ],
+      "skipSites": []
+    },
+    "SecurityWorkflowTests.test_sensitive_paths_select_their_analyses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae7e15609da86df7e2825e211df53dd7bbaaf72ad4fe2366bf328eb1c1db686a",
+        "class:setup-sha256:776278b22b6baa524c1a077cb3ac2154013bb1a85db9f17cad06b90532a9b4b2"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_security_rustsec_workflow.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

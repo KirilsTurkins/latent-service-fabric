@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "SvgDiagnosticPathTests.test_duplicate_id_path_uses_forward_slashes",
+    "SvgDiagnosticPathTests.test_invalid_root_path_uses_forward_slashes",
+    "SvgDiagnosticPathTests.test_parse_and_io_error_paths_use_forward_slashes",
+    "SvgDiagnosticPathTests.test_safety_and_accessibility_paths_use_forward_slashes",
+    "SvgDiagnosticPathTests.test_valid_document_has_no_diagnostics"
+  ],
+  "guards": {
+    "SvgDiagnosticPathTests.test_duplicate_id_path_uses_forward_slashes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:245d97d0be9b46eae9afe17c3ba92345a6cde5893c9f34fdbfb71234e2f9189f",
+        "class:setup-sha256:b0bb63f25f54bd92ee75e48907859cf56d193c24076d83383f72cce6e3ecf0fd"
+      ],
+      "skipSites": []
+    },
+    "SvgDiagnosticPathTests.test_invalid_root_path_uses_forward_slashes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:245d97d0be9b46eae9afe17c3ba92345a6cde5893c9f34fdbfb71234e2f9189f",
+        "class:setup-sha256:b0bb63f25f54bd92ee75e48907859cf56d193c24076d83383f72cce6e3ecf0fd"
+      ],
+      "skipSites": []
+    },
+    "SvgDiagnosticPathTests.test_parse_and_io_error_paths_use_forward_slashes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:245d97d0be9b46eae9afe17c3ba92345a6cde5893c9f34fdbfb71234e2f9189f",
+        "class:setup-sha256:b0bb63f25f54bd92ee75e48907859cf56d193c24076d83383f72cce6e3ecf0fd"
+      ],
+      "skipSites": []
+    },
+    "SvgDiagnosticPathTests.test_safety_and_accessibility_paths_use_forward_slashes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:245d97d0be9b46eae9afe17c3ba92345a6cde5893c9f34fdbfb71234e2f9189f",
+        "class:setup-sha256:b0bb63f25f54bd92ee75e48907859cf56d193c24076d83383f72cce6e3ecf0fd"
+      ],
+      "skipSites": []
+    },
+    "SvgDiagnosticPathTests.test_valid_document_has_no_diagnostics": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:245d97d0be9b46eae9afe17c3ba92345a6cde5893c9f34fdbfb71234e2f9189f",
+        "class:setup-sha256:b0bb63f25f54bd92ee75e48907859cf56d193c24076d83383f72cce6e3ecf0fd"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_validate_svg_paths.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

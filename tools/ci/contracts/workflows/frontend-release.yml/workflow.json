@@ -1,0 +1,48 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "frontend-release-${{ github.event.pull_request.number || github.ref }}"
+    },
+    "name": "Released frontend publication workflow",
+    "on": {
+      "pull_request": {
+        "paths": [
+          ".github/workflows/frontend-release.yml",
+          "tools/static-release/**",
+          "tools/static_site.py",
+          "tools/phase2_operator_process.py",
+          "tools/phase2_operator_scenario.py",
+          "tools/phase3_web_scenario.py",
+          "tools/run_static_site_workflow.py",
+          "tools/run_oci_registry_tests.py",
+          "tools/run_phase2_operator_workflow.py",
+          "examples/static-release/**",
+          "docs/operations/static-release-workflow.md"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/frontend-release.yml",
+          "tools/static-release/**",
+          "tools/static_site.py",
+          "examples/static-release/**"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "frontend"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/frontend-release.yml"
+}

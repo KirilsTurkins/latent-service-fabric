@@ -1,0 +1,51 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "c-guest-authoring-${{ github.ref }}"
+    },
+    "name": "C guest authoring",
+    "on": {
+      "pull_request": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          "sdk/c-guest/**",
+          "tools/**",
+          "crates/**",
+          "wit/**",
+          "schemas/**",
+          "Cargo.*",
+          "docs/component-development/c-authoring.md",
+          ".github/workflows/c-guest-authoring.yml"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          "sdk/c-guest/**",
+          "tools/**",
+          "crates/**",
+          "wit/**",
+          "schemas/**",
+          "Cargo.*",
+          "docs/component-development/c-authoring.md",
+          ".github/workflows/c-guest-authoring.yml"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "runtime"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/c-guest-authoring.yml"
+}

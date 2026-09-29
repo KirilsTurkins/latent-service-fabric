@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "DockerImageContexts.test_context_total_bound_is_checked_before_creating_context",
+    "DockerImageContexts.test_contexts_share_wrapper_and_recipe_and_client_contains_only_client",
+    "DockerImageContexts.test_recipe_tampering_cannot_supply_an_unbound_image_context",
+    "DockerImageIdentity.test_actual_id_config_descriptor_and_empty_repo_digests_stay_distinct",
+    "DockerImageIdentity.test_wrong_platform_entrypoint_digest_and_multiple_inspects_reject"
+  ],
+  "guards": {
+    "DockerImageContexts.test_context_total_bound_is_checked_before_creating_context": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4f2a4a784dc22f53e164dcb1e456a529c345fcd4dea7c5146167bc4ccb16f5a5",
+        "class:setup-sha256:db2af32bd3259405e759ef459526fe2f020c6f853c9f44a878c7198a156ad0f9"
+      ],
+      "skipSites": []
+    },
+    "DockerImageContexts.test_contexts_share_wrapper_and_recipe_and_client_contains_only_client": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4f2a4a784dc22f53e164dcb1e456a529c345fcd4dea7c5146167bc4ccb16f5a5",
+        "class:setup-sha256:db2af32bd3259405e759ef459526fe2f020c6f853c9f44a878c7198a156ad0f9"
+      ],
+      "skipSites": []
+    },
+    "DockerImageContexts.test_recipe_tampering_cannot_supply_an_unbound_image_context": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4f2a4a784dc22f53e164dcb1e456a529c345fcd4dea7c5146167bc4ccb16f5a5",
+        "class:setup-sha256:db2af32bd3259405e759ef459526fe2f020c6f853c9f44a878c7198a156ad0f9"
+      ],
+      "skipSites": []
+    },
+    "DockerImageIdentity.test_actual_id_config_descriptor_and_empty_repo_digests_stay_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4f2a4a784dc22f53e164dcb1e456a529c345fcd4dea7c5146167bc4ccb16f5a5",
+        "class:setup-sha256:3aee507a18b89e1c3145bd2ea8c3cb17583efba0fc4b5aad66203d7f55fb67ac"
+      ],
+      "skipSites": []
+    },
+    "DockerImageIdentity.test_wrong_platform_entrypoint_digest_and_multiple_inspects_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4f2a4a784dc22f53e164dcb1e456a529c345fcd4dea7c5146167bc4ccb16f5a5",
+        "class:setup-sha256:3aee507a18b89e1c3145bd2ea8c3cb17583efba0fc4b5aad66203d7f55fb67ac"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_docker_images.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

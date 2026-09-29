@@ -1,0 +1,47 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "container-runtime-${{ github.event.pull_request.number || github.ref }}"
+    },
+    "name": "Native container runtime",
+    "on": {
+      "pull_request": {
+        "paths": [
+          ".github/workflows/container-runtime.yml",
+          "tools/container_runtime/**",
+          "tools/trusted_edge/**",
+          "tools/prepare_container_runtime.py",
+          "tools/native_runtime/**",
+          "tools/static-release/**",
+          "examples/static-release/**",
+          "docs/operations/container-runtime.md"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/container-runtime.yml",
+          "tools/container_runtime/**",
+          "tools/trusted_edge/**",
+          "tools/prepare_container_runtime.py",
+          "tools/native_runtime/**",
+          "tools/static-release/**"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "container"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/container-runtime.yml"
+}

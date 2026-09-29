@@ -1,0 +1,234 @@
+{
+  "cases": [
+    "DocsPagesPolicyTests.test_archive_digest_is_verified_before_parsing",
+    "DocsPagesPolicyTests.test_artifact_origin_and_immutable_selection",
+    "DocsPagesPolicyTests.test_exact_successful_push_run",
+    "DocsPagesPolicyTests.test_guard_rechecks_freshness_after_environment_approval",
+    "DocsPagesPolicyTests.test_incomplete_dirty_wrong_source_and_synthetic_site_are_refused",
+    "DocsPagesPolicyTests.test_large_search_index_survives_selection_and_protected_recheck",
+    "DocsPagesPolicyTests.test_only_exact_clean_complete_site_is_staged_as_data",
+    "DocsPagesPolicyTests.test_prior_publication_requires_successful_default_branch_dispatch",
+    "DocsPagesPolicyTests.test_rechecks_every_staged_byte_before_deploy",
+    "DocsPagesPolicyTests.test_rejects_case_collisions_and_finite_size_overflow",
+    "DocsPagesPolicyTests.test_rejects_fork_pr_wrong_branch_workflow_attempt_or_result",
+    "DocsPagesPolicyTests.test_rejects_symlink_and_special_file_modes",
+    "DocsPagesPolicyTests.test_rejects_traversal_absolute_ambiguous_and_control_paths",
+    "DocsPagesPolicyTests.test_rollback_binds_prior_published_receipt_to_exact_artifact",
+    "DocsPagesPolicyTests.test_search_exception_keeps_exact_path_and_aggregate_archive_limits",
+    "DocsPagesPolicyTests.test_unexpected_output_and_candidate_publisher_record_are_refused"
+  ],
+  "guards": {
+    "DocsPagesPolicyTests.test_archive_digest_is_verified_before_parsing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_artifact_origin_and_immutable_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_exact_successful_push_run": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_guard_rechecks_freshness_after_environment_approval": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_incomplete_dirty_wrong_source_and_synthetic_site_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_large_search_index_survives_selection_and_protected_recheck": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_only_exact_clean_complete_site_is_staged_as_data": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_prior_publication_requires_successful_default_branch_dispatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_rechecks_every_staged_byte_before_deploy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_rejects_case_collisions_and_finite_size_overflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_rejects_fork_pr_wrong_branch_workflow_attempt_or_result": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_rejects_symlink_and_special_file_modes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_rejects_traversal_absolute_ambiguous_and_control_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_rollback_binds_prior_published_receipt_to_exact_artifact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_search_exception_keeps_exact_path_and_aggregate_archive_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DocsPagesPolicyTests.test_unexpected_output_and_candidate_publisher_record_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:execution:def run():\n    return {'id': 11, 'repository': {'id': 7}, 'head_repository': {'id': 7}, 'head_sha': SOURCE, 'head_branch': 'development', 'event': 'push', 'workflow_id': 9, 'run_attempt': 2, 'status': 'completed', 'conclusion': 'success'}",
+        "module:setup-sha256:0217d9fdd62aa64cd140f686d629887ca1ce07413836dc6acf68a4404b67faa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_docs_pages.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

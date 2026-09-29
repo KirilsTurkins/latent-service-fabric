@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "SecurityProfileSchema.test_external_report_requires_every_observed_control",
+    "SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings",
+    "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement"
+  ],
+  "guards": {
+    "SecurityProfileSchema.test_external_report_requires_every_observed_control": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d67b6b09d8904ef3e5ca70b8e6f76ab202558f33d7a3120e73e35af2229edf1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d67b6b09d8904ef3e5ca70b8e6f76ab202558f33d7a3120e73e35af2229edf1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7d67b6b09d8904ef3e5ca70b8e6f76ab202558f33d7a3120e73e35af2229edf1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_node_security_profile_schema.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,61 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/security-baseline.yml:dependencies:Inventory all manifests and query current OSV data without builds or installs": {
+      "job": "dependencies",
+      "jobIf": "needs.scope.outputs.dependencies == 'true'",
+      "name": "Inventory all manifests and query current OSV data without builds or installs",
+      "run": "python3 controls/tools/security_scan.py dependencies --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/security-baseline.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/security-baseline.yml:dependencies:Inventory all manifests and query current OSV data without builds or installs": {
+      "after": ".github/workflows/security-baseline.yml:dependencies:Inventory all manifests and query current OSV data without builds or installs",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "if": "needs.scope.outputs.dependencies == 'true'",
+    "name": "SDK advisories ${{ matrix.ref }}",
+    "needs": "scope",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "name": "Check out scanner controls",
+        "uses": "actions/checkout",
+        "with": {
+          "path": "controls",
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Check out scan input",
+        "uses": "actions/checkout",
+        "with": {
+          "path": "source",
+          "persist-credentials": false,
+          "ref": "${{ matrix.ref }}"
+        }
+      },
+      {
+        "name": "Inventory all manifests and query current OSV data without builds or installs",
+        "run": "python3 controls/tools/security_scan.py dependencies --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
+      }
+    ],
+    "strategy": {
+      "fail-fast": false,
+      "matrix": "${{ fromJSON(needs.scope.outputs.matrix) }}"
+    },
+    "timeout-minutes": 7
+  },
+  "jobId": "dependencies",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/security-baseline.yml"
+}

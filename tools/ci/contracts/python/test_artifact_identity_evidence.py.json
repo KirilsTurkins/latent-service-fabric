@@ -1,0 +1,270 @@
+{
+  "cases": [
+    "EvidenceTests.test_allocation_command_and_decoder_identity_are_bound",
+    "EvidenceTests.test_allocation_events_must_agree_with_exact_folded_totals",
+    "EvidenceTests.test_build_source_change_and_crossed_requested_ref_are_rejected",
+    "EvidenceTests.test_clean_distinct_sources_with_identical_harness_are_accepted",
+    "EvidenceTests.test_fixed_population_has_all_operations_modes_and_alternates_pairs",
+    "EvidenceTests.test_fixture_generation_inputs_and_fixed_configuration_are_bound",
+    "EvidenceTests.test_folded_weights_are_exact_integers_not_rounded_report_text",
+    "EvidenceTests.test_normal_and_profiled_probe_ownership_are_distinct",
+    "EvidenceTests.test_omitting_same_retained_probe_module_from_both_arms_is_rejected",
+    "EvidenceTests.test_population_gate_rejects_missing_duplicate_or_reordered_attempts",
+    "EvidenceTests.test_raw_log_does_not_allow_duplicate_events",
+    "EvidenceTests.test_rehashed_crossed_event_identity_is_rejected",
+    "EvidenceTests.test_rehashed_harness_or_build_control_changes_are_rejected",
+    "EvidenceTests.test_rehashed_semantic_result_cannot_claim_foreign_revision_or_counts",
+    "EvidenceTests.test_resources_reject_pid_reuse_crossed_binary_and_process_group",
+    "EvidenceTests.test_resources_reject_zero_rss_peaks_below_samples_and_backwards_time",
+    "EvidenceTests.test_result_json_must_match_original_raw_log",
+    "EvidenceTests.test_same_process_monotonic_resource_counters_cannot_regress",
+    "EvidenceTests.test_source_paths_recipe_and_retained_helper_receipt_must_match",
+    "EvidenceTests.test_success_events_roundtrip_for_all_three_boundaries"
+  ],
+  "guards": {
+    "EvidenceTests.test_allocation_command_and_decoder_identity_are_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_allocation_events_must_agree_with_exact_folded_totals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_build_source_change_and_crossed_requested_ref_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_clean_distinct_sources_with_identical_harness_are_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_fixed_population_has_all_operations_modes_and_alternates_pairs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_fixture_generation_inputs_and_fixed_configuration_are_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_folded_weights_are_exact_integers_not_rounded_report_text": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_normal_and_profiled_probe_ownership_are_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_omitting_same_retained_probe_module_from_both_arms_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_population_gate_rejects_missing_duplicate_or_reordered_attempts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_raw_log_does_not_allow_duplicate_events": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_rehashed_crossed_event_identity_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_rehashed_harness_or_build_control_changes_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_rehashed_semantic_result_cannot_claim_foreign_revision_or_counts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_resources_reject_pid_reuse_crossed_binary_and_process_group": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_resources_reject_zero_rss_peaks_below_samples_and_backwards_time": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_result_json_must_match_original_raw_log": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_same_process_monotonic_resource_counters_cannot_regress": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_source_paths_recipe_and_retained_helper_receipt_must_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    },
+    "EvidenceTests.test_success_events_roundtrip_for_all_three_boundaries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b08a3c240628df8a8bd5e3e51962b07e3e363fdad398924ecff90411a5b7c406",
+        "class:setup-sha256:d3304c8b6d8eff83c832a2a9a043ea860edbad8caed06d6c5675aeb110e56941"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_artifact_identity_evidence.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,53 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Released binaries without a Rust toolchain",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Authenticate the exact released native archive",
+        "run": "mkdir \"$RUNNER_TEMP/frontend-release\"\ngh release download 0.1.0-alpha.5 --repo KirilsTurkins/latent-service-fabric --dir \"$RUNNER_TEMP/frontend-release\" --pattern lsf-0.1.0-alpha.5-x86_64-unknown-linux-gnu.tar.gz --pattern release.json --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json\ngh attestation verify \"$RUNNER_TEMP/frontend-release/SHA256SUMS\" --bundle \"$RUNNER_TEMP/frontend-release/SHA256SUMS.sigstore.json\" --repo KirilsTurkins/latent-service-fabric --cert-identity https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/native-runtime-release.yml@refs/tags/0.1.0-alpha.5 --cert-oidc-issuer https://token.actions.githubusercontent.com --source-ref refs/tags/0.1.0-alpha.5 --source-digest f6d8f32177208b60a68f14070f549f927052dd48 --signer-digest f6d8f32177208b60a68f14070f549f927052dd48 --deny-self-hosted-runners --predicate-type https://slsa.dev/provenance/v1 --digest-alg sha256 --format json > \"$RUNNER_TEMP/frontend-release/authentication.json\"\npython3 tools/static-release/unpack.py \"$RUNNER_TEMP/frontend-release\" > \"$RUNNER_TEMP/frontend-release/archive-verification.json\"\n"
+      },
+      {
+        "name": "Build the bounded frontend qualification environment",
+        "run": "docker build --tag lsf-frontend-qualification --file tools/static-release/qualification.Dockerfile tools/static-release"
+      },
+      {
+        "name": "Check signing identities and hostile approvals",
+        "run": "docker run --rm --cpus 1 --memory 256m --pids-limit 32 --network none --read-only --cap-drop ALL --security-opt no-new-privileges --mount \"type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly\" lsf-frontend-qualification --test /source/tools/static-release/evidence.test.mjs"
+      },
+      {
+        "name": "Exercise actual signing, OCI and native publication",
+        "run": "set -euo pipefail\ncontainer=$(docker create --label io.latent.frontend-qualification=\"$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT\" --cpus 2 --memory 2g --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=536870912,mode=1777 --mount \"type=bind,source=$GITHUB_WORKSPACE,target=/source,readonly\" --mount \"type=bind,source=$RUNNER_TEMP/frontend-release/extracted,target=/release,readonly\" lsf-frontend-qualification /source/tools/static-release/qualification.mjs /release/bin/latent /tmp/result.json /release/bin/latentd)\n[[ \"$container\" =~ ^[0-9a-f]{64}$ ]]\ncleanup() { docker rm --force \"$container\" >/dev/null; }\ntrap cleanup EXIT\ntimeout --signal=TERM --kill-after=10s 180s docker start --attach \"$container\" > \"$RUNNER_TEMP/frontend-release/qualification.json\"\ntest \"$(docker inspect --format '{{.State.ExitCode}}' \"$container\")\" = 0\ncat \"$RUNNER_TEMP/frontend-release/qualification.json\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain public qualification receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "frontend-release-qualification",
+          "path": "${{ runner.temp }}/frontend-release/authentication.json\n${{ runner.temp }}/frontend-release/archive-verification.json\n${{ runner.temp }}/frontend-release/qualification.json\n",
+          "retention-days": 14
+        }
+      }
+    ],
+    "timeout-minutes": 15
+  },
+  "jobId": "frontend",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/frontend-release.yml"
+}

@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "S3RunnerTests.test_cleanup_verifies_label_and_immutable_id",
+    "S3RunnerTests.test_daemon_failure_cannot_report_successful_cleanup",
+    "S3RunnerTests.test_missing_or_ambiguous_cargo_artifacts_are_rejected",
+    "S3RunnerTests.test_reuses_only_the_named_harness_inside_the_cargo_target",
+    "SourceBuiltImageRunnerTests.test_cli_requires_image_receipt_before_creating_temporary_state",
+    "SourceBuiltImageRunnerTests.test_harness_exception_is_forwarded_once_after_owned_server_cleanup",
+    "SourceBuiltImageRunnerTests.test_invalid_supplied_receipt_never_rebuilds_pulls_or_starts_server",
+    "SourceBuiltImageRunnerTests.test_missing_receipt_rejects_before_commands_certificates_or_harness",
+    "SourceBuiltImageRunnerTests.test_server_image_or_ownership_mismatch_stops_before_fixture_effects",
+    "SourceBuiltImageRunnerTests.test_supplied_receipt_runs_exact_image_without_pull_or_changed_server_limits"
+  ],
+  "guards": {
+    "S3RunnerTests.test_cleanup_verifies_label_and_immutable_id": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "S3RunnerTests.test_daemon_failure_cannot_report_successful_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "S3RunnerTests.test_missing_or_ambiguous_cargo_artifacts_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "S3RunnerTests.test_reuses_only_the_named_harness_inside_the_cargo_target": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceBuiltImageRunnerTests.test_cli_requires_image_receipt_before_creating_temporary_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:92291cdabb81394cf5c44ec0861e2c432404e038d146738bd1776052f6a844f3"
+      ],
+      "skipSites": []
+    },
+    "SourceBuiltImageRunnerTests.test_harness_exception_is_forwarded_once_after_owned_server_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:92291cdabb81394cf5c44ec0861e2c432404e038d146738bd1776052f6a844f3"
+      ],
+      "skipSites": []
+    },
+    "SourceBuiltImageRunnerTests.test_invalid_supplied_receipt_never_rebuilds_pulls_or_starts_server": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:92291cdabb81394cf5c44ec0861e2c432404e038d146738bd1776052f6a844f3"
+      ],
+      "skipSites": []
+    },
+    "SourceBuiltImageRunnerTests.test_missing_receipt_rejects_before_commands_certificates_or_harness": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:92291cdabb81394cf5c44ec0861e2c432404e038d146738bd1776052f6a844f3"
+      ],
+      "skipSites": []
+    },
+    "SourceBuiltImageRunnerTests.test_server_image_or_ownership_mismatch_stops_before_fixture_effects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:92291cdabb81394cf5c44ec0861e2c432404e038d146738bd1776052f6a844f3"
+      ],
+      "skipSites": []
+    },
+    "SourceBuiltImageRunnerTests.test_supplied_receipt_runs_exact_image_without_pull_or_changed_server_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c389d5ec32e6c7182bfd65f4e184ab8c893d415d49ff23c90c4986ed67b1415d",
+        "class:setup-sha256:92291cdabb81394cf5c44ec0861e2c432404e038d146738bd1776052f6a844f3"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_s3_blob_runner.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

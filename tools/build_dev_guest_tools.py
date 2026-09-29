@@ -39,14 +39,38 @@ SOURCES = {
 }
 
 
+# Large pinned archives (notably Zig) can legitimately take over 90 seconds.
+# Keep one finite acceptance deadline, with no retries or source substitution.
+DOWNLOAD_TIMEOUT_SECONDS = 600
+DOWNLOAD_CHUNK_BYTES = 64 * 1024
+
+
 def download(destination: Path, source: dict) -> None:
-    deadline, used = time.monotonic() + 90, 0
-    with urllib.request.urlopen(source["url"], timeout=30) as incoming, destination.open("xb") as output:
-        while raw := incoming.read(1024 * 1024):
-            used += len(raw)
-            require(used <= source["maximum"] and time.monotonic() < deadline, "compiler-download-limit")
-            output.write(raw)
-    require(file_digest(destination)[0] == source["sha256"], "compiler-upstream-archive-digest")
+    deadline, used = time.monotonic() + DOWNLOAD_TIMEOUT_SECONDS, 0
+    created = False
+    try:
+        # Never truncate or remove a pre-existing candidate. On any later error,
+        # discard only this call's incomplete/unverified file.
+        with destination.open("xb") as output:
+            created = True
+            with urllib.request.urlopen(source["url"], timeout=30) as incoming:
+                while True:
+                    require(time.monotonic() < deadline, "compiler-download-deadline")
+                    # read1 returns after at most one underlying read, rather
+                    # than filling a large buffer across many slow reads.
+                    raw = incoming.read1(min(DOWNLOAD_CHUNK_BYTES, source["maximum"] - used + 1))
+                    require(time.monotonic() < deadline, "compiler-download-deadline")
+                    if not raw:
+                        break
+                    used += len(raw)
+                    require(used <= source["maximum"], "compiler-download-byte-limit")
+                    output.write(raw)
+        require(file_digest(destination)[0] == source["sha256"], "compiler-upstream-archive-digest")
+        require(time.monotonic() < deadline, "compiler-download-deadline")
+    except BaseException:
+        if created:
+            destination.unlink(missing_ok=True)
+        raise
 
 
 def main() -> int:

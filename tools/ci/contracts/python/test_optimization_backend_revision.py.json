@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "BackendRevisionTests.test_current_repository_preparation_cannot_be_labelled_as_old_direct_prepare",
+    "BackendRevisionTests.test_dropped_or_reordered_warmup_is_rejected",
+    "BackendRevisionTests.test_failed_terminal_or_unclean_owner_never_contributes_latency",
+    "BackendRevisionTests.test_first_real_rpc_is_distinct_from_backend_preparation_and_warm_population",
+    "BackendRevisionTests.test_hidden_initial_preparation_or_extra_refill_rejected",
+    "BackendRevisionTests.test_last_cache_snapshot_cannot_hide_late_invalidation",
+    "BackendRevisionTests.test_old_method_cannot_accept_revision_rows"
+  ],
+  "guards": {
+    "BackendRevisionTests.test_current_repository_preparation_cannot_be_labelled_as_old_direct_prepare": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef2d1aa2013c6a319a26aa735480fbc2db6d4e0fbeae7db017e587e5564135c2",
+        "class:setup-sha256:848dfde8d7f05ecc3afd3669697850c5ecfe9202cdaca5920580e9a60df6f9fd"
+      ],
+      "skipSites": []
+    },
+    "BackendRevisionTests.test_dropped_or_reordered_warmup_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef2d1aa2013c6a319a26aa735480fbc2db6d4e0fbeae7db017e587e5564135c2",
+        "class:setup-sha256:848dfde8d7f05ecc3afd3669697850c5ecfe9202cdaca5920580e9a60df6f9fd"
+      ],
+      "skipSites": []
+    },
+    "BackendRevisionTests.test_failed_terminal_or_unclean_owner_never_contributes_latency": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef2d1aa2013c6a319a26aa735480fbc2db6d4e0fbeae7db017e587e5564135c2",
+        "class:setup-sha256:848dfde8d7f05ecc3afd3669697850c5ecfe9202cdaca5920580e9a60df6f9fd"
+      ],
+      "skipSites": []
+    },
+    "BackendRevisionTests.test_first_real_rpc_is_distinct_from_backend_preparation_and_warm_population": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef2d1aa2013c6a319a26aa735480fbc2db6d4e0fbeae7db017e587e5564135c2",
+        "class:setup-sha256:848dfde8d7f05ecc3afd3669697850c5ecfe9202cdaca5920580e9a60df6f9fd"
+      ],
+      "skipSites": []
+    },
+    "BackendRevisionTests.test_hidden_initial_preparation_or_extra_refill_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef2d1aa2013c6a319a26aa735480fbc2db6d4e0fbeae7db017e587e5564135c2",
+        "class:setup-sha256:848dfde8d7f05ecc3afd3669697850c5ecfe9202cdaca5920580e9a60df6f9fd"
+      ],
+      "skipSites": []
+    },
+    "BackendRevisionTests.test_last_cache_snapshot_cannot_hide_late_invalidation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef2d1aa2013c6a319a26aa735480fbc2db6d4e0fbeae7db017e587e5564135c2",
+        "class:setup-sha256:848dfde8d7f05ecc3afd3669697850c5ecfe9202cdaca5920580e9a60df6f9fd"
+      ],
+      "skipSites": []
+    },
+    "BackendRevisionTests.test_old_method_cannot_accept_revision_rows": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef2d1aa2013c6a319a26aa735480fbc2db6d4e0fbeae7db017e587e5564135c2",
+        "class:setup-sha256:848dfde8d7f05ecc3afd3669697850c5ecfe9202cdaca5920580e9a60df6f9fd"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_backend_revision.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

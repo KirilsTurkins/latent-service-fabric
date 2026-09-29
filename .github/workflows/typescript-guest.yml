@@ -81,7 +81,7 @@ jobs:
         with:
           name: typescript-guest-command-contract-${{ github.sha }}
           path: |
-            tools/ci/commands.json
+            tools/ci/contracts/
             ${{ runner.temp }}/typescript-guest-source.tar.gz
             ${{ runner.temp }}/typescript-guest-source.sha
           if-no-files-found: error

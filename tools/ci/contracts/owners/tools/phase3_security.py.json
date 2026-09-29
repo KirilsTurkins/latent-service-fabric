@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/phase3_security.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
+}

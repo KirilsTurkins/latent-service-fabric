@@ -1,0 +1,26 @@
+{
+  "cases": [
+    "AngularBackendBridgeTests.test_production_bridge_permits_one_prepare_and_render_or_one_pure_render"
+  ],
+  "guards": {
+    "AngularBackendBridgeTests.test_production_bridge_permits_one_prepare_and_render_or_one_pure_render": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3a1ea35e3d508d0371bfbdad90ad82143e3cd10cbf0ab507ef13ee19babd45df",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "self.skipTest('the renderer gate provisions Node for executable bridge checks')",
+        "skip-control-sha256:9c9f2c798dacc6024c6b9ddfdc9010dc794cd8cb025d9fbb2dd53f9d9c6bebef"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_angular_backend_bridge.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
