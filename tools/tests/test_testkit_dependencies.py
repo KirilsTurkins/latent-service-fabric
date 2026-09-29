@@ -78,7 +78,7 @@ class TestkitDependencyTests(unittest.TestCase):
             subject.check_workspace(self.root)
 
     def test_selected_graph_rejects_empty_or_heavy_results(self):
-        for output in ("", "latent-core v0.0.0\nwasmtime v47.0.4\n", "latent-core v0.0.0\nlatent-node v0.0.0\n"):
+        for output in ("", "latent-core v0.0.0\nwasmtime v48.0.3\n", "latent-core v0.0.0\nlatent-node v0.0.0\n"):
             with self.subTest(output=output), self.assertRaises(RuntimeError):
                 subject.check_selected("latent-core", output)
         subject.check_selected("latent-core", "latent-core v0.0.0\ntokio v1.53.1\n")

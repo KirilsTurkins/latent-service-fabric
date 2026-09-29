@@ -135,7 +135,7 @@ These are logical ownership bounds, not total process RSS or allocator overhead.
 
 ## Executed profile and advisory boundary
 
-The conformance harness uses the reviewed Wasmtime 47.0.4 dependency, fuel,
+The conformance harness uses the reviewed Wasmtime 48.0.3 dependency, fuel,
 hostcall-fuel and a bounded Store memory limiter. Its tiny test-only component
 uses an async-typed import, canonical async lowering, a real subtask and
 waitable-set suspension through `func_wrap_concurrent`. It deliberately delays

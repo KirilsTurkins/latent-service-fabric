@@ -347,7 +347,7 @@ fn catalog(root: &TempRoot, repo: &Arc<DirectoryArtifactRepository>) -> Store {
         repo.clone(),
         Limits::default(),
         repo.lifecycle_authority(),
-        super::lifecycle::profile("47.0.4"),
+        super::lifecycle::profile("48.0.3"),
     ))
     .unwrap()
 }

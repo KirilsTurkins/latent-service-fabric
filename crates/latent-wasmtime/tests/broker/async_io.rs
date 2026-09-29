@@ -195,7 +195,7 @@ impl Harness {
     }
 }
 fn engine() -> (Engine, Component) {
-    assert_eq!(latent_wasmtime::WASMTIME_VERSION, "47.0.4");
+    assert_eq!(latent_wasmtime::WASMTIME_VERSION, "48.0.3");
     let mut config = Config::new();
     config
         .wasm_component_model(true)

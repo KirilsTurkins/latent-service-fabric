@@ -61,7 +61,7 @@ pub fn renderer_profile_digest(profile: RendererProfile) -> ArtifactBlobDigest {
     );
     part(
         &mut hash,
-        b"wasmtime-47.0.4;fresh-store;on-demand;cranelift-speed;buffered-v1",
+        b"wasmtime-48.0.3;fresh-store;on-demand;cranelift-speed;buffered-v1",
     );
     match profile {
         RendererProfile::WasmWebBufferedV1 => part(&mut hash, b"wasm-web-buffered-v1"),

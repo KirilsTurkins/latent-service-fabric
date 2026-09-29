@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PYTHON_IMAGE = "python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419"
 SOURCES = {
     "zig": {"url": f"https://ziglang.org/download/{ZIG_VERSION}/zig-x86_64-linux-{ZIG_VERSION}.tar.xz",
-            "sha256": "sha256:" + ZIG_SHA256, "maximum": ZIG_BYTES, "version": ZIG_VERSION},
+            "sha256": "sha256:" + ZIG_SHA256, "maximum": ZIG_BYTES, "version": ZIG_VERSION, "timeoutSeconds": 300},
     "wasm-tools": {"url": f"https://github.com/bytecodealliance/wasm-tools/releases/download/v{distribution.WASM_VERSION}/"
                           f"wasm-tools-{distribution.WASM_VERSION}-x86_64-linux.tar.gz",
                    "sha256": "sha256:" + distribution.WASM_SHA256, "maximum": 5862464, "version": distribution.WASM_VERSION},
@@ -40,14 +40,26 @@ SOURCES = {
 
 
 def download(destination: Path, source: dict) -> None:
-    deadline, used = time.monotonic() + 90, 0
-    with urllib.request.urlopen(source["url"], timeout=30) as incoming, destination.open("xb") as output:
-        while raw := incoming.read(1024 * 1024):
-            used += len(raw)
-            require(used <= source["maximum"] and time.monotonic() < deadline, "compiler-download-limit")
-            output.write(raw)
+    # Large pinned archives need a reviewed transfer budget, not a relaxed byte
+    # cap or a retry of compilation. Other source recipes retain the 90s budget.
+    timeout = source.get("timeoutSeconds", 90)
+    require(type(timeout) is int and 0 < timeout <= 300, "compiler-download-timeout-invalid")
+    maximum = source["maximum"]
+    require(type(maximum) is int and maximum > 0, "compiler-download-maximum-invalid")
+    deadline, used = time.monotonic() + timeout, 0
+    # Create exclusively before networking: never replace a prior input or link.
+    with destination.open("xb") as output:
+        with urllib.request.urlopen(source["url"], timeout=min(30, timeout)) as incoming:
+            while True:
+                require(time.monotonic() < deadline, "compiler-download-time-limit")
+                raw = incoming.read(min(1024 * 1024, maximum + 1 - used))
+                require(time.monotonic() < deadline, "compiler-download-time-limit")
+                if not raw:
+                    break
+                used += len(raw)
+                require(used <= maximum, "compiler-download-byte-limit")
+                output.write(raw)
     require(file_digest(destination)[0] == source["sha256"], "compiler-upstream-archive-digest")
-
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)

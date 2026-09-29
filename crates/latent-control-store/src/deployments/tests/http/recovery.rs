@@ -34,7 +34,7 @@ fn http_corrupt_history_and_mismatched_prepared_owner_are_rejected() {
         repo.clone(),
         Limits::default(),
         repo.lifecycle_authority(),
-        super::super::lifecycle::profile("47.0.4")
+        super::super::lifecycle::profile("48.0.3")
     ))
     .is_err());
 }
@@ -222,7 +222,7 @@ fn obsolete_http_table_and_receipt_formats_are_rejected_without_rewriting_state(
                 repo.clone(),
                 Limits::default(),
                 repo.lifecycle_authority(),
-                super::super::lifecycle::profile("47.0.4")
+                super::super::lifecycle::profile("48.0.3")
             ))
             .is_err());
             assert_eq!(std::fs::read(&file).unwrap(), obsolete);

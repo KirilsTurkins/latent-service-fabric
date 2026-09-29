@@ -3437,7 +3437,7 @@
       "sha256": "b86e895abc7baf6f191c6ce2cf059f14d754c933c5d2f59bb6a75693a9ebf0b8"
     },
     "tools/build_dev_guest_tools.py": {
-      "sha256": "dc9a22a4e7316a6967e8584a1e601939478b41cca5fb82fc933d2acbd679dbd7"
+      "sha256": "8fcdf1d52013c9636f94482630d6d3ae31593aeecd3c053b4048d89bd84cb541"
     },
     "tools/build_dev_rootfs.py": {
       "sha256": "b118f20a188b1a737fb3b335c399b566ca2c5c4f741767738e8cbceb5d1a8a37"
@@ -3467,7 +3467,7 @@
       "sha256": "03c1c677cb530fc6b762440dd3a7f762f945892909ad9034af7a115a17fbdb97"
     },
     "tools/build_s3_fixture.py": {
-      "sha256": "b0b05d6c1b48c6f1f405db526e7883900e98137dd8a8436de9c0720d6b40dd86"
+      "sha256": "ad9b77ac21213fd2ac6cae28128ec756bc0818b2f3da23ff047c354ecc2a0a22"
     },
     "tools/build_static_sites.py": {
       "sha256": "bf5d76c43245cfe687c2e390e60dc2f2626ccc9f902bcd0d6a31d734543cff9a"
@@ -3491,7 +3491,7 @@
       "sha256": "67df58fbde773857194e74f52810f8a5e1458efbfe3d7dfe4166ec19aa1461f1"
     },
     "tools/ci_fast.py": {
-      "sha256": "62bbebe6115eb6932a4aaf92d68ab1794457a4c069c1d32a51eba82b7c829a44"
+      "sha256": "1390b3da76421fbdfd8941359b495e4b6441364724fe70aebc9d952dadb91eaf"
     },
     "tools/ci_lane_worker.py": {
       "sha256": "6212cd840e2bddfcd3feccfd01b7c07538362d821188085997934efe9c8b7261"
@@ -3563,7 +3563,7 @@
       "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
-      "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
+      "sha256": "261070388f3aefc3604aa07b58d28f79b3dd2cb26bd2e58217619caf0bca232e"
     },
     "tools/prepare_dev_packaged_probe.py": {
       "sha256": "da346e6f90223ba2edd3b18a3f0ba6bb0df3d21c268e5f3f6ffa9641649ac449"
@@ -3686,7 +3686,7 @@
       "sha256": "99bd586c5df8f3ad03bd811fa86c10fde9034cd3c1a0de76731585b0d51ae7bf"
     },
     "tools/run_security_profile_workflow.py": {
-      "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
+      "sha256": "0f8787c5b61f9a27e943cafcc3ec32f1fd27633d9f4012e8b2f227f3ee2a8f8d"
     },
     "tools/run_static_site_workflow.py": {
       "sha256": "cb06179e97b1b7122579e7137fab5508ca5566131ba4e0ee2e860cc77cd0d788"
@@ -4519,6 +4519,16 @@
       "CompanionInputs.test_unrecorded_importable_file_is_rejected",
       "CompanionInputs.test_verification_observes_cancellation",
       "CompanionInputs.test_wrong_owner_host_and_template_revision_fail_before_execution",
+      "CompilerDownloadBounds.test_default_deadline_is_not_extended",
+      "CompilerDownloadBounds.test_eof_cannot_hide_an_expired_deadline",
+      "CompilerDownloadBounds.test_existing_file_and_symlink_are_not_replaced",
+      "CompilerDownloadBounds.test_invalid_limits_fail_before_network_or_output",
+      "CompilerDownloadBounds.test_large_archive_deadline_still_rejects_at_boundary",
+      "CompilerDownloadBounds.test_network_failure_is_not_retried",
+      "CompilerDownloadBounds.test_one_extra_byte_is_rejected_before_writing_or_digesting",
+      "CompilerDownloadBounds.test_pinned_zig_transfer_can_exceed_small_archive_deadline",
+      "CompilerDownloadBounds.test_small_default_transfer_accepts_only_pinned_bytes",
+      "CompilerDownloadBounds.test_truncated_changed_and_empty_archives_still_fail_digest",
       "FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly",
       "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound",
       "ManagedCompilerInputs.test_changed_member_and_path_escape_are_rejected",
@@ -4747,12 +4757,15 @@
     "tools/tests/test_native_loader_boundary.py": [
       "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators",
       "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function",
+      "NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned",
       "NativeLoaderBoundaryTests.test_engine_update_requires_review",
       "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof",
       "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe",
       "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled",
       "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact",
       "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints",
+      "NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure",
+      "NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family",
       "NativeLoaderBoundaryTests.test_reviewed_boundary_passes",
       "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail"
     ],
@@ -6536,6 +6549,21 @@
       "SourceBuiltImageRunnerTests.test_supplied_receipt_runs_exact_image_without_pull_or_changed_server_limits"
     ],
     "tools/tests/test_s3_fixture_builder.py": [
+      "FixtureCompilerPullTests.test_a_permanent_failure_after_a_transient_reply_stops_immediately",
+      "FixtureCompilerPullTests.test_cancellation_before_pull_starts_no_child",
+      "FixtureCompilerPullTests.test_cancellation_interrupts_backoff_without_another_pull",
+      "FixtureCompilerPullTests.test_deadline_expiring_during_backoff_prevents_another_child",
+      "FixtureCompilerPullTests.test_elapsed_pull_budget_prevents_backoff_or_another_child",
+      "FixtureCompilerPullTests.test_failed_pull_does_not_create_compiler_or_publish_success",
+      "FixtureCompilerPullTests.test_observed_502_can_recover_without_changing_digest_or_resetting_budget",
+      "FixtureCompilerPullTests.test_only_explicit_transient_http_statuses_are_retried",
+      "FixtureCompilerPullTests.test_owned_process_failures_are_forwarded_without_retry",
+      "FixtureCompilerPullTests.test_owner_deadline_is_never_extended_by_retry_budget",
+      "FixtureCompilerPullTests.test_permanent_or_unknown_errors_are_not_retried",
+      "FixtureCompilerPullTests.test_recovery_retries_only_pull_not_source_download_or_compiler_creation",
+      "FixtureCompilerPullTests.test_signals_and_other_exit_codes_are_not_retried_even_with_502_text",
+      "FixtureCompilerPullTests.test_success_pulls_the_exact_digest_and_platform_once_without_waiting",
+      "FixtureCompilerPullTests.test_three_failed_attempts_preserve_the_final_failure",
       "FixtureFilesTests.test_archive_accepts_only_the_authenticated_small_source_tree",
       "FixtureFilesTests.test_archive_bounds_member_count_names_member_size_and_expansion",
       "FixtureFilesTests.test_archive_rejects_links_special_files_and_duplicate_destinations",
@@ -7202,7 +7230,7 @@
   "workflowIdentities": {
     ".github/workflows/registry-cli.yml": "a713a8b94a6165e048cbb65688f6c767010393b619c8c9cc9e080830786be854",
     ".github/workflows/c-guest-authoring.yml": "9517e1d2a98749f05121d389421f649c3b8aff8323e97046d5f456f1d489bc42",
-    ".github/workflows/ci.yml": "757a1841908f6f25de27a981bf85f7c197060d8fd7895664c8ad382dc3001dc4",
+    ".github/workflows/ci.yml": "de96fb23dc62d831a4c67ed9468478326e6bc7eca81848a5b5795421f8e79a24",
     ".github/workflows/developer-packaged-qualification.yml": "e9ec2f74bb293bd7694830746f8d23bc00eb439413ce8aa2312f6e223acea758",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "ba8a97d024e2735da86ff0e82c4ec20866195ad00b9cd7b77526d670aa94b27f",

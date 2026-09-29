@@ -58,7 +58,7 @@ class CargoRecipeTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        (self.root / "Cargo.toml").write_text('[workspace.package]\nrust-version = "1.94.1"\n')
+        (self.root / "Cargo.toml").write_text('[workspace.package]\nrust-version = "1.95.0"\n')
         (self.root / "rust-toolchain.toml").write_text('[toolchain]\nchannel = "1.97.1"\n')
         self.root_patch = mock.patch.object(cargo, "ROOT", self.root)
         self.root_patch.start()
@@ -107,7 +107,7 @@ class CargoRecipeTests(unittest.TestCase):
         ])
 
     def test_msrv_is_independent_and_comes_from_workspace_declaration(self):
-        self.assertEqual(self.commands("msrv"), [["cargo", "+1.94.1", "check", "--workspace", "--all-targets", "--all-features", "--locked"]])
+        self.assertEqual(self.commands("msrv"), [["cargo", "+1.95.0", "check", "--workspace", "--all-targets", "--all-features", "--locked"]])
         (self.root / "Cargo.toml").write_text('[workspace.package]\nrust-version = "1.95.0"\n')
         self.assertEqual(self.commands("msrv")[0][1], "+1.95.0")
         with self.assertRaises(ValueError):
