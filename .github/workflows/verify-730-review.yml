@@ -6,23 +6,77 @@ on:
 permissions:
   contents: read
 jobs:
-  source:
+  verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          fetch-depth: 2
-      - name: Capture reviewed file bytes
-        run: |
-          mkdir -p "$RUNNER_TEMP/pr730-source"
-          git rev-parse HEAD^ > "$RUNNER_TEMP/pr730-source/revision.txt"
-          git ls-tree -r HEAD^ > "$RUNNER_TEMP/pr730-source/tree.txt"
-          git archive --format=tar.gz HEAD^ tools .github/workflows/ci.yml docs/development/local-tests.md > "$RUNNER_TEMP/pr730-source/source.tar.gz"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          name: pr730-reviewed-source
-          path: ${{ runner.temp }}/pr730-source/
+          python-version: 3.13.5
+      - name: Apply only the reviewed patch and verify its complete tree
+        run: |
+          mkdir -p "$RUNNER_TEMP/pr730-review"
+          python3 - <<'PY'
+          import base64, hashlib, os, subprocess, zlib
+          from pathlib import Path
+          encoded = Path('.github/730-review.patch.b64')
+          raw = zlib.decompress(base64.b64decode(encoded.read_text().strip(), validate=True))
+          assert hashlib.sha256(raw).hexdigest() == '51eb2788dfd52a44732d8f1eadfbb652b0c61f6bb7528a4f36a662e01e24ff4a'
+          subprocess.run(['git', 'apply', '--check', '-'], input=raw, check=True)
+          subprocess.run(['git', 'apply', '-'], input=raw, check=True)
+          encoded.unlink()
+          Path('.github/workflows/verify-730-review.yml').unlink()
+          subprocess.run(['git', 'add', '--update'], check=True)
+          tree = subprocess.check_output(['git', 'write-tree']).decode().strip()
+          assert tree == '81fd5f56e6592fde3f616a41fc0b8cbd8c4f450e', tree
+          Path(os.environ['RUNNER_TEMP'], 'pr730-review', 'tree.txt').write_text(tree + '\n')
+          print('Verified complete candidate tree:', tree)
+          PY
+      - name: Install pinned validator dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Execute focused native regressions and repository guards
+        env:
+          LSF_REQUIRE_NATIVE_PROCESS_TESTS: '1'
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 -m unittest tools.tests.test_local_tests tools.tests.test_owned_runners tools.tests.test_owned_test_process tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_rust_artifacts tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lane_inventory tools.tests.test_ci_lanes tools.tests.test_ci_cargo tools.tests.test_oci_registry_runner tools.tests.test_run_aot_tests tools.tests.test_angular_build_runner -v 2>&1 | tee "$RUNNER_TEMP/pr730-review/tests.log"
+          python3 tools/ci_coverage.py
+          python3 tools/validate_docs.py
+          python3 tools/validate_repository.py
+          bash -n tools/validate_contracts.sh
+          git diff --cached --check
+      - name: Store verified file objects without updating any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, json, os, subprocess, urllib.request
+          from pathlib import Path
+          paths = ['tools/ci/commands.json', 'tools/local_tests.py', 'tools/tests/test_local_tests.py', 'tools/validate_contracts.sh']
+          result = {}
+          for path in paths:
+              raw = Path(path).read_bytes()
+              request = urllib.request.Request('https://api.github.com/repos/' + os.environ['GITHUB_REPOSITORY'] + '/git/blobs',
+                  data=json.dumps({'encoding': 'base64', 'content': base64.b64encode(raw).decode()}).encode(), method='POST',
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  value = json.load(response)
+              expected = subprocess.check_output(['git', 'hash-object', path]).decode().strip()
+              assert value['sha'] == expected, path
+              result[path] = expected
+          Path(os.environ['RUNNER_TEMP'], 'pr730-review', 'blobs.json').write_text(json.dumps(result, indent=2) + '\n')
+          print(json.dumps(result, indent=2))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr730-review-validation-${{ github.sha }}
+          path: ${{ runner.temp }}/pr730-review/
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 3
