@@ -1,0 +1,156 @@
+name: Temporary Dependabot 1 repair
+
+on:
+  push:
+    branches: [security/dependabot-1]
+    paths: [.github/workflows/security-dependabot-1-build.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  repair:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/security/dependabot-1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.19.0
+      - name: Update only the reviewed bundle and its installation entry points
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          def load(name):
+              return json.loads(Path(name).read_text())
+          def save(name, value):
+              Path(name).write_text(json.dumps(value, indent=2) + '\n')
+          manifest_path = 'website/toolchain/package.json'
+          manifest = load(manifest_path)
+          assert manifest['dependencies']['npm'] == '11.19.1'
+          manifest['dependencies']['ip-address'] = '10.5.1'
+          manifest['dependencies'] = dict(sorted(manifest['dependencies'].items()))
+          save(manifest_path, manifest)
+          lock_path = 'website/toolchain/package-lock.json'
+          lock = load(lock_path)
+          target = 'node_modules/npm/node_modules/ip-address'
+          assert lock['packages'][target]['version'] == '10.5.0'
+          entry = {
+              'version': '10.5.1',
+              'resolved': 'https://registry.npmjs.org/ip-address/-/ip-address-10.5.1.tgz',
+              'integrity': 'sha512-EXujUp9jyOI/chPgtqk6uy7fDq8AeCB/WlfEuPg9LN0fN9lzKAKfuDYi60SMhHwgUiEhZvVYsbGZN+RUU1INiA==',
+              'license': 'MIT',
+              'engines': {'node': '>= 12'},
+          }
+          lock['packages']['']['dependencies'] = manifest['dependencies']
+          lock['packages']['node_modules/ip-address'] = dict(entry)
+          lock['packages'][target] = dict(entry)
+          lock['packages'] = dict(sorted(lock['packages'].items()))
+          save(lock_path, lock)
+          metadata_path = 'website/content/toolchain.json'
+          metadata = load(metadata_path)
+          metadata['reviewedAt'] = '2026-09-29'
+          metadata['npmSource']['reason'] = 'npm 11.19.1 remains the reviewed base with undici 6.28.0, brace-expansion 5.0.9 and tar 7.5.22. Its bundled ip-address 10.5.0 is replaced before use by the separately integrity-pinned 10.5.1 for GHSA-2vr4-cq9g-pvrc. npm 11.20.0 still bundles 10.5.0; a plain override does not replace bundled files. Lifecycle scripts remain disabled; both installed graphs are scanned.'
+          save(metadata_path, metadata)
+          checker = Path('website/scripts/check-package-manager.mjs')
+          text = checker.read_text()
+          text = "import {verifyBundledIpAddress} from '../lib/package-manager-security.mjs';\n" + text
+          old = 'verifiedInstalledPackages: packages}'
+          assert text.count(old) == 1
+          checker.write_text(text.replace(old, 'verifiedInstalledPackages: packages, ...verifyBundledIpAddress(root)}'))
+          old = '          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\n'
+          for name in ['.github/workflows/docs-site.yml', '.github/workflows/docs-pages.yml']:
+              file = Path(name)
+              text = file.read_text()
+              assert text.count(old) == 1, name
+              file.write_text(text.replace(old, old + '          node website/scripts/patch-package-manager.mjs\n'))
+          guide = Path('docs/development/website-versions.md')
+          text = guide.read_text()
+          old = 'manager with `npm ci --prefix website/toolchain --ignore-scripts`. Build both'
+          assert old in text
+          guide.write_text(text.replace(old, 'manager with `npm ci --prefix website/toolchain --ignore-scripts`, then run\n`node website/scripts/patch-package-manager.mjs` before using that npm. Build both'))
+          readme = Path('website/README.md')
+          with readme.open('a') as output:
+              output.write('''
+          ## Package-manager security bootstrap
+
+          From the repository root, install and verify the toolchain before invoking it:
+
+          ```sh
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node website/scripts/patch-package-manager.mjs
+          node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+          ```
+
+          The reviewed npm 11.19.1 tarball still bundles `ip-address` 10.5.0. Even npm
+          11.20.0 retains that version. A normal npm override or a lockfile-only edit
+          does not replace bundled files. The explicit bootstrap therefore copies the
+          complete, separately installed and SHA-512-pinned upstream 10.5.1 package
+          over npm's bundled copy, removes stale hidden lock inventories, and verifies
+          every locked dependency before the selected npm performs any work. It never
+          enables dependency lifecycle scripts or downloads code itself.
+
+          The toolchain lock describes the final patched installation, including both
+          copies of 10.5.1. A bare `npm ci` is only the first bootstrap step: always run
+          the patch command after a clean reinstall. The read-only identity checker
+          rejects an unpatched installation. When refreshing this lock, retain the
+          separately pinned replacement entries and run the clean-install regression;
+          do not accept npm's regenerated 10.5.0 bundle record. Remove this replacement
+          only after reviewing an npm distribution whose actual bundle is patched.
+
+          The regression exercises the package resolved from npm's SOCKS dependency,
+          including local-use NAT64 boundaries, several prefix layouts, loopback,
+          metadata, private IPv4 destinations and public-address controls. It confirms
+          that the entire `64:ff9b:1::/48` range is private without guessing an embedded
+          IPv4 address. This addresses [GHSA-2vr4-cq9g-pvrc](https://github.com/advisories/GHSA-2vr4-cq9g-pvrc)
+          in build tooling; it is not evidence of a reachable LSF runtime SSRF exploit
+          or a replacement for DNS, connected-peer and redirect validation.
+          '''.replace('\n          ', '\n'))
+          PY
+          git rm -- .github/workflows/security-dependabot-1-build.yml
+          git diff --stat
+      - name: Prove the original fails and the actual replacement passes
+        run: |
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node --input-type=module - <<'JS'
+          import assert from 'node:assert/strict';
+          import {createRequire} from 'node:module';
+          import {assertNat64Classification} from './website/lib/package-manager-security.mjs';
+          const require = createRequire(import.meta.url);
+          const {Address6} = require('./website/toolchain/node_modules/npm/node_modules/ip-address');
+          assert.equal(new Address6('64:ff9b:1::7f00:1').isPrivate(), false);
+          assert.throws(() => assertNat64Classification(Address6), /GHSA-2vr4-cq9g-pvrc/);
+          console.log('Confirmed the actual original npm bundle fails the NAT64 regression');
+          JS
+          node website/scripts/patch-package-manager.mjs
+          node --test website/tests/package-manager-security.test.mjs
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node website/scripts/patch-package-manager.mjs
+          node website/scripts/patch-package-manager.mjs
+          node --test website/tests/package-manager-security.test.mjs
+          test "$(node website/toolchain/node_modules/npm/bin/npm-cli.js --version)" = '11.19.1'
+      - name: Publish only the security fix to its dedicated branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add website/toolchain/package.json website/toolchain/package-lock.json website/content/toolchain.json website/scripts/check-package-manager.mjs .github/workflows/docs-site.yml .github/workflows/docs-pages.yml docs/development/website-versions.md website/README.md
+          git diff --cached --check
+          git commit -m 'fix(security): pin patched ip-address and verify every website bootstrap'
+          git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' push origin HEAD:refs/heads/security/dependabot-1
+      - name: Validate website consumers and show applicable CI inventory tooling
+        run: |
+          find tools -maxdepth 1 -name '*ci*' -print
+          node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+          node website/toolchain/node_modules/npm/bin/npm-cli.js --prefix website run check
+          node website/toolchain/node_modules/npm/bin/npm-cli.js --prefix website test
+      - name: Query current dependency advisories without exceptions
+        if: always()
+        run: python3 tools/security_scan.py dependencies --repo . --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-dependabot-1"
