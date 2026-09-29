@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "EngineProfileFieldsTests.test_all_five_profiles_accept_complete_metadata_without_mutating_it",
+    "EngineProfileFieldsTests.test_digest_is_syntactic_only_and_bad_or_oversized_values_are_rejected",
+    "EngineProfileFieldsTests.test_every_policy_field_is_required_and_has_its_exact_value",
+    "EngineProfileFieldsTests.test_old_control_requires_its_existing_residency_key_and_rejects_new_fields",
+    "EngineProfileFieldsTests.test_pooling_and_optimization_profiles_cannot_cross",
+    "EngineProfileFieldsTests.test_selector_target_cpu_extra_fields_and_nonstring_values_are_rejected"
+  ],
+  "guards": {
+    "EngineProfileFieldsTests.test_all_five_profiles_accept_complete_metadata_without_mutating_it": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8379b691e2e37d27a179038b75ad9807ed6ee461e185a4d98b993f2447201462",
+        "class:setup-sha256:2336a0a071d6a9a00ff54003673d8cc28f41f9142e1d9d791a810943448a3563"
+      ],
+      "skipSites": []
+    },
+    "EngineProfileFieldsTests.test_digest_is_syntactic_only_and_bad_or_oversized_values_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8379b691e2e37d27a179038b75ad9807ed6ee461e185a4d98b993f2447201462",
+        "class:setup-sha256:2336a0a071d6a9a00ff54003673d8cc28f41f9142e1d9d791a810943448a3563"
+      ],
+      "skipSites": []
+    },
+    "EngineProfileFieldsTests.test_every_policy_field_is_required_and_has_its_exact_value": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8379b691e2e37d27a179038b75ad9807ed6ee461e185a4d98b993f2447201462",
+        "class:setup-sha256:2336a0a071d6a9a00ff54003673d8cc28f41f9142e1d9d791a810943448a3563"
+      ],
+      "skipSites": []
+    },
+    "EngineProfileFieldsTests.test_old_control_requires_its_existing_residency_key_and_rejects_new_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8379b691e2e37d27a179038b75ad9807ed6ee461e185a4d98b993f2447201462",
+        "class:setup-sha256:2336a0a071d6a9a00ff54003673d8cc28f41f9142e1d9d791a810943448a3563"
+      ],
+      "skipSites": []
+    },
+    "EngineProfileFieldsTests.test_pooling_and_optimization_profiles_cannot_cross": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8379b691e2e37d27a179038b75ad9807ed6ee461e185a4d98b993f2447201462",
+        "class:setup-sha256:2336a0a071d6a9a00ff54003673d8cc28f41f9142e1d9d791a810943448a3563"
+      ],
+      "skipSites": []
+    },
+    "EngineProfileFieldsTests.test_selector_target_cpu_extra_fields_and_nonstring_values_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8379b691e2e37d27a179038b75ad9807ed6ee461e185a4d98b993f2447201462",
+        "class:setup-sha256:2336a0a071d6a9a00ff54003673d8cc28f41f9142e1d9d791a810943448a3563"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_engine_profile_fields.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

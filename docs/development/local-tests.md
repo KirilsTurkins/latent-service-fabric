@@ -1,180 +1,174 @@
 # Local test entry point
 
-`python3 tools/test.py` is the local front end for the same suite, recipe, selection,
-and prepared-Cargo-artifact contracts used by CI. It does not maintain a second
-suite list. Stable suite IDs come from `tools/ci/suites.json`; focused CI selections
-are exposed as `selection.<name>`.
+`python3 tools/test.py` is the developer interface to the shared
+`tools/ci/suites.json` catalogue, Cargo artifact readers, and maintained process
+owners. It neither dispatches GitHub Actions nor requires GitHub credentials.
+Use a supported Linux x86-64 checkout and the [pinned tools](toolchain.md).
+The commands do not install tools automatically.
 
-The boundary is deliberate:
-
-- `list`, `explain`, and `plan` only read checked-in contracts. They do not run a
-  compiler, contact a network service, discover tests dynamically, or dispatch CI.
-- `check` validates prerequisites and a supplied prepared Cargo inventory. It never
-  builds or installs anything.
-- `prepare` is the only verb allowed to compile. If the inventory path does not
-  exist, it runs the exact registered build recipe and writes Cargo's JSON artifact
-  inventory there. If the inventory already exists, it only validates and reuses it.
-- `run` is execution-only. It rejects a missing or incompatible inventory rather
-  than building, downloading, installing, broadening the selection, or retrying.
-- `reproduce` accepts only the bounded `latent.test-run.v1` diagnostic emitted by
-  the shared owned-process runner. Commands and environments are never replayed
-  from the record. Source, recipe, exact cases, and prepared-inventory identity are
-  checked before execution.
-- Custom harnesses and provider-owned selections keep their registered owner. The
-  local front end does not pretend they are libtest suites or bypass service/fixture
-  setup. Physical/qualification selections remain explicit.
-
-Start by inspecting the shared catalog:
+## Select before doing work
 
 ```bash
-python3 tools/test.py list
+python3 tools/test.py list --output json
 python3 tools/test.py explain --suite latent-core.lib.latent-core
-python3 tools/test.py plan --suite selection.metadata-working-set
+python3 tools/test.py plan --suite selection.echo-runtime
+python3 tools/test.py plan --suite process.angular-renderer
 ```
 
-`plan` reports the boundary, supported platforms, prerequisites, resource class,
-registered recipe, exact selected cases, preparation state, and whether the
-selection is an explicit physical qualification. Cost descriptions remain
-qualitative; this interface does not promise stable wall-clock timings.
+`list`, `explain` and `plan` read repository definitions and file presence only.
+They never compile, invoke test discovery, query a service or contact the network.
+The plan includes purpose, platforms, prerequisites, recipe and fixture commands,
+exact cases, resource class, preparation state and execution support. “Present”
+means files exist, not that they passed validation. Cost classes are qualitative,
+not timing guarantees. Local and CI contexts resolve to identical recipes, cases,
+fixtures and runner ownership.
+
+`check` validates successful Cargo stream completion, selected owner/source paths,
+features/profile, generated fixture identities and required tool presence without
+executing a test binary. Full registered discovery happens inside `run`, before
+the selected cases execute. Scoped version diagnostics remain the responsibility
+of `doctor`, not an implicit all-SDK probe.
 
 ## Small Rust logic
 
-This path uses the ordinary host suite and an exact registered case. The first
-`check` intentionally returns `needs-preparation` when no inventory is supplied;
-that is not a skipped success.
+Start with one exact case; a substring is not a case selection.
 
 ```bash
 python3 tools/test.py check --suite latent-core.lib.latent-core
 python3 tools/test.py prepare --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory target/local-tests/core.jsonl
 python3 tools/test.py check --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory target/local-tests/core.jsonl
 python3 tools/test.py run --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory target/local-tests/core.jsonl
+rm -- target/local-tests/core.jsonl
 ```
 
-Preparation may compile because it is explicit. The later `run` uses only the
-source-matched artifact recorded in `target/local-tests/core.jsonl`, validates the
-complete registered test listing first, and then executes exactly the requested
-case. Remove the local inventory when it is no longer useful; ordinary Cargo
-outputs remain normal checkout-local build outputs.
+The first check intentionally reports `needs-preparation` (exit 3). The registered
+`core-host` recipe builds only `latent-core --lib --all-features --locked`, not the
+workspace or Angular. The CI Rust lane runs this same case from its compatible
+all-features workspace inventory. A local pass covers this selected case, not the
+entire workspace, runtime or release qualification.
+
+`prepare` is explicit and may build. An existing inventory is validated and
+reused, not silently overwritten. After changing source, locks or build
+configuration, remove the inventory you created and explicitly prepare again.
+Cargo inventories describe successful artifacts and exact owner paths; they are
+**not retrospective proof of the source bytes used by someone else's build**.
+Do not copy an inventory from another checkout or relabel stale binaries.
 
 ## Runtime/component integration
 
-Runtime suites use the same artifact contract but can contain opt-in ignored cases.
-A suite whose active set is empty will not silently turn `run` into a skipped
-success: select one exact ignored case.
+The echo recipe prepares the existing echo capsule builder and supplies
+`LSF_ECHO_COMPONENT` and `LSF_ECHO_CAPSULE` itself. Contributors need not reconstruct
+hidden environment variables or fixture order.
 
 ```bash
-python3 tools/test.py plan --suite latent-wasmtime.test.echo-backend --case invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary
+python3 tools/test.py check --suite latent-wasmtime.test.echo-backend --case invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary
 python3 tools/test.py prepare --suite latent-wasmtime.test.echo-backend --case invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary --inventory target/local-tests/echo-backend.jsonl
 python3 tools/test.py check --suite latent-wasmtime.test.echo-backend --case invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary --inventory target/local-tests/echo-backend.jsonl
 python3 tools/test.py run --suite latent-wasmtime.test.echo-backend --case invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary --inventory target/local-tests/echo-backend.jsonl
+rm -- target/local-tests/echo-backend.jsonl
 ```
 
-The preparation recipe is still the registered CI recipe; `run` does not invoke
-Cargo. The shared artifact reader verifies the manifest/target/source identity,
-the shared discovery contract checks the full suite and ignore state, and the
-owned-process runner retains bounded diagnostics and cleanup status.
+This is a real component/Wasmtime contract, not a mocked host-only check.
+`selection.echo-runtime` selects all four registered ignored cases and additionally
+prepares the oversized-log fixture. `tools/validate_contracts.sh` uses that exact
+selection and the same preparation/validation/execution interfaces. Existing
+compatible generated fixtures are reused. Runtime compilation of a guest under
+test is still allowed; invoking Cargo or installing a tool during execution is not.
+
+Generated fixtures under `target/capsules/echo` and `target/capsules/oversized-log`
+can be removed after other users of those outputs finish. Test-private state and
+children are retired by the maintained owner. `CARGO_TARGET_DIR` is respected for
+both preparation and execution; use the same target directory for both.
 
 ## Angular/provider failure reproduction
 
-The maintained Angular renderer process is exposed as
-`process.angular-renderer`. It composes the registered
-`processContracts["angular-renderer"]` suite set and delegates execution to
-`run_angular_renderer_tests.py`; the local front end does not reproduce its
-fixture or child-process logic.
+The maintained Angular process is an atomic integration. It owns its complete
+registered renderer/node case selection, not the broader browser lane or every
+provider. Preparation runs the existing npm/build/renderer builders explicitly.
 
 ```bash
 python3 tools/test.py check --suite process.angular-renderer
 python3 tools/test.py prepare --suite process.angular-renderer --inventory target/local-tests/angular-renderer.jsonl
 python3 tools/test.py check --suite process.angular-renderer --inventory target/local-tests/angular-renderer.jsonl
+python3 tools/test.py run --suite process.angular-renderer --inventory target/local-tests/angular-renderer.jsonl
 python3 tools/test.py run --suite process.angular-renderer --inventory target/local-tests/angular-renderer.jsonl --fault after-discovery
 ```
 
-The first `check` reports every missing prepared input before execution.
-`prepare` is the only command in this workflow that may build: it produces the
-registered Cargo inventory, runs the existing renderer-profile `npm ci` /
-`npm run build` preparation, and calls the maintained
-`build_angular_renderer.py` preparer. This explicit step can use the network
-through npm when the local cache is insufficient. The later `run` is
-execution-only and consumes those exact files.
-
-The `--fault after-discovery` command is an intentional negative control and is
-expected to exit nonzero after real prepared-harness discovery. Its maintained
-`TestRun` owner writes
-`target/test-diagnostics/angular-renderer-RECORD.json`. Re-run only that
-sanitized source/recipe/case/fixture selection:
+The last command deliberately fails after real discovery and before case execution;
+it must not pass or retry. Its JSON result supplies a `runId`. Replace `RECORD`
+below with that value. The diagnostic retains the **entire intended case set** and
+all executable/fixture identities, even though no case completed.
 
 ```bash
-python3 tools/test.py reproduce target/test-diagnostics/angular-renderer-RECORD.json --inventory target/local-tests/angular-renderer.jsonl
+python3 tools/test.py reproduce target/test-diagnostics/process.angular-renderer-RECORD.json --inventory target/local-tests/angular-renderer.jsonl
+python3 tools/test.py reproduce target/test-diagnostics/process.angular-renderer-RECORD.json --inventory target/local-tests/angular-renderer.jsonl --allow-changed-checkout
+rm -- target/local-tests/angular-renderer.jsonl
 ```
 
-A changed checkout is rejected by default. For investigation only, it can be
-labelled explicitly; recipe, case list, Cargo inventory, public/private renderer
-WASM, and inventoried harness identities are still checked:
+The first replay requires the same clean observed Git revision. Tracked and
+untracked source changes prevent an exact-reproduction claim. The second command
+is an explicitly labelled `changed-input-rerun`; it does not waive the recipe,
+case set or prepared byte identities. It retains the recorded fault selector,
+so replaying the deliberate failure fails again rather than silently running the
+normal path.
 
-```bash
-python3 tools/test.py reproduce target/test-diagnostics/angular-renderer-RECORD.json --inventory target/local-tests/angular-renderer.jsonl --allow-changed-checkout
-```
+Only bounded `latent.test-run.v1` selection data is read. Commands, captured
+credentials, arbitrary environments and unsupported owner options are never
+replayed. Older records without a bound recipe identity and complete case count
+are rejected with an instruction to repeat the run using current tooling.
+Large whole-suite selections use a bounded registered-selection digest and count,
+not a truncated list.
 
-For a successful renderer integration after the failure/reproduction exercise:
+The wrapper keeps its own redacted diagnostic under `target/test-diagnostics`;
+the child owner's private diagnostic is checked before cleanup. Delete only
+diagnostics and generated `examples/renderer-profile/dist` assets you own, once
+other users are finished. No blanket process/container kill is issued.
 
-```bash
-python3 tools/test.py run --suite process.angular-renderer --inventory target/local-tests/angular-renderer.jsonl
-```
+Provider selections (`selection.s3-blobs`, Vault and NATS), custom harnesses,
+browser-boundary and runtime suites without a migrated fixture owner are still
+listed. `check` reports their blocker and `run` refuses a bare libtest fallback.
+Selecting their underlying Cargo owner does not bypass service ownership.
+Use the maintained owner reported by the plan for those broader integrations.
 
-Provider-owned selections such as `selection.s3-blobs`,
-`selection.vault-secrets`, and the NATS selections remain with
-`run_ci_lanes.py` / their provider owners. The local front end lists and
-explains them but will not turn a provider selection into an unprepared generic
-libtest. This preserves Docker image, service readiness, credential, cleanup,
-and negative-control ownership.
-
-The maintained Angular runner owns its test children and writes bounded cleanup
-diagnostics on normal and fault teardown. When finished, remove only the local
-inventory and generated renderer-profile preparation you created, for example
-`target/local-tests/angular-renderer.jsonl` and, if no longer useful,
-`examples/renderer-profile/node_modules` / `examples/renderer-profile/dist`.
-No blanket process or container cleanup is performed.
-
-## Explicit qualification
-
-Physical suites are not pulled into ordinary local runs. They are available only
-through an exact selection. The metadata working-set probe, for example, is the
-same prepared selection exercised by full CI:
+## Explicit qualification and execution boundary
 
 ```bash
 python3 tools/test.py plan --suite selection.metadata-working-set
-python3 tools/test.py check --suite selection.metadata-working-set --inventory target/local-tests/metadata.jsonl
 python3 tools/test.py prepare --suite selection.metadata-working-set --inventory target/local-tests/metadata.jsonl
+python3 tools/test.py check --suite selection.metadata-working-set --inventory target/local-tests/metadata.jsonl
 python3 tools/test.py run --suite selection.metadata-working-set --inventory target/local-tests/metadata.jsonl
+rm -- target/local-tests/metadata.jsonl
 ```
 
-A local pass is evidence for that one run and host. It is not a release or phase
-qualification receipt unless the owning gate says so.
+This is explicit physical qualification, not a fast ordinary check. Selecting its
+exact case by Cargo owner still delegates to the same physical observation owner
+and retains its classification. Original resource thresholds and phase gates are
+unchanged. No local diagnostic authorizes a release or becomes cached gate evidence.
+
+`run` consumes the selected prepared inputs, performs exact owned discovery,
+validates case results/counts, and does not retry. Failure, cancellation,
+unavailable prerequisites, watchdog timeout and output overflow remain distinct.
+Child nonzero statuses are preserved; cancellation returns 130, timeout 124,
+overflow 125 and unavailable prerequisites 3. Zero or partial execution cannot pass.
+`--output json` keeps stdout machine-readable; bounded redacted diagnostics go to
+stderr and the owned diagnostic file.
+
+Execution environments include failing build/install/download tool sentinels.
+The only allowed `rustc` invocation is the artifact reader's existing read-only
+`--print target-libdir` probe, with toolchain auto-install disabled. A swallowed
+sentinel failure still fails the run. These checks cover maintained command/PATH
+boundaries: they are **not an OS security sandbox or proof against arbitrary
+absolute-path subprocesses**.
 
 ## Optional preview and version diagnostics
-
-Changed-file preview remains owned by issue #339, and scoped tool-version
-diagnostics remain owned by issue #338. This wrapper delegates only when those
-interfaces exist; it never substitutes a broader check.
 
 ```bash
 python3 tools/test.py preview --base development --worktree
 python3 tools/test.py doctor --scope python
 ```
 
-Until those optional tools land, the commands return `not-run` with the missing
-prerequisite instead of dispatching GitHub Actions or probing every SDK.
-
-## Exit and failure semantics
-
-A completed selected run returns zero only after all required cases and result
-counts match the registered contract. Test failure returns nonzero; missing
-preparation or unavailable prerequisites return `not-run`; interruption is
-preserved as cancellation; watchdog/output-bound failures remain distinct.
-There is no automatic test retry.
-
-CI uses this same entry point for the existing `selection.metadata-working-set`
-prepared suite: `check`, `prepare` (validation/reuse of the already built
-inventory), then execution-only `run`. The regression test
-`tools/tests/test_local_tests.py` locks that handoff to the same inventory cases
-and prevents documentation/CI drift.
+Changed-file preview remains owned by #339, and scoped toolchain diagnostics by
+#338. Available interfaces are delegated to; absent interfaces return a clear
+`not-run` prerequisite. No competing classifier, silent software installation or
+all-SDK fallback is introduced. Offline planning and documentation/CI drift checks
+live in `tools/tests/test_local_tests.py`.

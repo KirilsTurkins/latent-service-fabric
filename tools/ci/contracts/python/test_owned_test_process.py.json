@@ -1,0 +1,431 @@
+{
+  "cases": [
+    "ContractTests.test_accounting_timeout_retains_infrastructure_classification",
+    "ContractTests.test_arbitrary_commands_cannot_be_reproduction_selections",
+    "ContractTests.test_artifact_symlink_missing_and_oversized_rejected",
+    "ContractTests.test_build_preflight_does_not_require_or_prepare_artifacts",
+    "ContractTests.test_cleanup_failure_cannot_pass",
+    "ContractTests.test_dead_owner_never_polls_endpoint",
+    "ContractTests.test_denied_owned_accounting_is_never_zero",
+    "ContractTests.test_digest_hashes_actual_fixture",
+    "ContractTests.test_failure_record_retains_child_signal_despite_successful_teardown",
+    "ContractTests.test_false_stale_or_wrong_endpoint_readiness_fails_without_retry",
+    "ContractTests.test_invalid_fixture_is_not_unavailable_environment",
+    "ContractTests.test_invalid_limits_and_unsupported_owner",
+    "ContractTests.test_missing_child_list_prevents_any_scenario_spawn",
+    "ContractTests.test_missing_tool_fails_before_expensive_execution",
+    "ContractTests.test_parallel_roots_and_diagnostics_do_not_delete_each_other",
+    "ContractTests.test_private_root_and_atomic_filesystem_probe_are_removed",
+    "ContractTests.test_readiness_rechecks_current_liveness",
+    "ContractTests.test_redaction_before_tail_protects_credentials_and_paths",
+    "ContractTests.test_stalled_readiness_has_finite_watchdog",
+    "ContractTests.test_successful_identity_bound_readiness",
+    "ContractTests.test_total_watchdog_interrupts_stalled_python_stage",
+    "ContractTests.test_unsupported_platform_is_not_successful_coverage",
+    "NativeOwnershipTests.test_async_waiter_cancellation_joins_cleanup",
+    "NativeOwnershipTests.test_child_crash_is_not_timeout",
+    "NativeOwnershipTests.test_closed_stdout_does_not_cancel_lifetime_watchdog",
+    "NativeOwnershipTests.test_double_forked_session_escape_is_adopted_and_reaped",
+    "NativeOwnershipTests.test_event_cancelled_waiter_retires_owned_children_only",
+    "NativeOwnershipTests.test_inherited_pipe_writers_and_session_escape_are_reaped",
+    "NativeOwnershipTests.test_missing_executable_cannot_pass",
+    "NativeOwnershipTests.test_output_overflow_is_bounded_and_reaped",
+    "NativeOwnershipTests.test_success_reaps_process"
+  ],
+  "guards": {
+    "ContractTests.test_accounting_timeout_retains_infrastructure_classification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_arbitrary_commands_cannot_be_reproduction_selections": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_artifact_symlink_missing_and_oversized_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_build_preflight_does_not_require_or_prepare_artifacts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_cleanup_failure_cannot_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_dead_owner_never_polls_endpoint": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_denied_owned_accounting_is_never_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_digest_hashes_actual_fixture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_failure_record_retains_child_signal_despite_successful_teardown": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_false_stale_or_wrong_endpoint_readiness_fails_without_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_invalid_fixture_is_not_unavailable_environment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_invalid_limits_and_unsupported_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_missing_child_list_prevents_any_scenario_spawn": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_missing_tool_fails_before_expensive_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_parallel_roots_and_diagnostics_do_not_delete_each_other": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_private_root_and_atomic_filesystem_probe_are_removed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_readiness_rechecks_current_liveness": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_redaction_before_tail_protects_credentials_and_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_stalled_readiness_has_finite_watchdog": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_successful_identity_bound_readiness": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_total_watchdog_interrupts_stalled_python_stage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "ContractTests.test_unsupported_platform_is_not_successful_coverage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:setup-sha256:a5f03b2541cab2fa395298d2c6f1c7178ac1b8c094b218a1130c5d5850cd2008"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_async_waiter_cancellation_joins_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_child_crash_is_not_timeout": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_closed_stdout_does_not_cancel_lifetime_watchdog": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_double_forked_session_escape_is_adopted_and_reaped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_event_cancelled_waiter_retires_owned_children_only": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_inherited_pipe_writers_and_session_escape_are_reaped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_missing_executable_cannot_pass": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_output_overflow_is_bounded_and_reaped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_success_reaps_process": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_owned_test_process.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

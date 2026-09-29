@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "DownloadTests.test_cancellation_removes_only_the_file_created_by_this_download",
+    "DownloadTests.test_deadline_is_checked_before_read_after_read_and_after_eof",
+    "DownloadTests.test_digest_verification_does_not_extend_acceptance_deadline",
+    "DownloadTests.test_existing_file_is_preserved_without_opening_the_network",
+    "DownloadTests.test_over_byte_ceiling_is_rejected_and_partial_file_removed",
+    "DownloadTests.test_slow_progress_over_ninety_seconds_retains_exact_pinned_bytes",
+    "DownloadTests.test_transport_failure_never_retries_or_leaves_partial_bytes",
+    "DownloadTests.test_wrong_digest_and_truncated_archive_are_not_retained"
+  ],
+  "guards": {
+    "DownloadTests.test_cancellation_removes_only_the_file_created_by_this_download": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:ba4f633757112c075a4ec713e4d78f69b469998372750c2ecc9d10dea18f797b"
+      ],
+      "skipSites": []
+    },
+    "DownloadTests.test_deadline_is_checked_before_read_after_read_and_after_eof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:ba4f633757112c075a4ec713e4d78f69b469998372750c2ecc9d10dea18f797b"
+      ],
+      "skipSites": []
+    },
+    "DownloadTests.test_digest_verification_does_not_extend_acceptance_deadline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:ba4f633757112c075a4ec713e4d78f69b469998372750c2ecc9d10dea18f797b"
+      ],
+      "skipSites": []
+    },
+    "DownloadTests.test_existing_file_is_preserved_without_opening_the_network": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:ba4f633757112c075a4ec713e4d78f69b469998372750c2ecc9d10dea18f797b"
+      ],
+      "skipSites": []
+    },
+    "DownloadTests.test_over_byte_ceiling_is_rejected_and_partial_file_removed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:ba4f633757112c075a4ec713e4d78f69b469998372750c2ecc9d10dea18f797b"
+      ],
+      "skipSites": []
+    },
+    "DownloadTests.test_slow_progress_over_ninety_seconds_retains_exact_pinned_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:ba4f633757112c075a4ec713e4d78f69b469998372750c2ecc9d10dea18f797b"
+      ],
+      "skipSites": []
+    },
+    "DownloadTests.test_transport_failure_never_retries_or_leaves_partial_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:ba4f633757112c075a4ec713e4d78f69b469998372750c2ecc9d10dea18f797b"
+      ],
+      "skipSites": []
+    },
+    "DownloadTests.test_wrong_digest_and_truncated_archive_are_not_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:ba4f633757112c075a4ec713e4d78f69b469998372750c2ecc9d10dea18f797b"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_compiler_download.py",
+  "reviewReason": "PR #733 CI repair: review finite compiler download acceptance, unchanged digest/byte pins, and failure cleanup.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

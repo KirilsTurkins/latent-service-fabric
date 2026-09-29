@@ -1,0 +1,60 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/ci.yml:result:Require every selected validation job": {
+      "job": "result",
+      "jobIf": "always()",
+      "name": "Require every selected validation job",
+      "run": "python3 - <<'PY'\nimport json\nimport os\nimport sys\nresults = json.loads(os.environ['CI_JOB_RESULTS'])\nprofile = results['profile']['outputs'].get('profile')\nfull = {'rust', 'oci-registry', 'catalog', 'msrv', 'contracts', 'sdks'}\nrequired = {'profile', 'docs'} | (full if profile == 'full' else set())\nfailures = [name for name in required if results[name]['result'] != 'success']\nif profile not in {'docs', 'full'}:\n    failures.append('unknown CI profile')\nif profile == 'docs':\n    failures.extend(name for name in full if results[name]['result'] != 'skipped')\nprint('Selected profile:', profile)\nprint('Job results:', {name: value['result'] for name, value in results.items()})\nif failures:\n    print('CI did not satisfy its selected profile:', ', '.join(failures), file=sys.stderr)\n    sys.exit(1)\nPY",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/ci.yml:result:Require every selected validation job": {
+      "after": ".github/workflows/ci.yml:result:Require every selected validation job",
+      "disposition": "extended",
+      "reason": "Full-profile validation is retained. Inventory/discovery/aggregation checks are added; host-only source contracts and MSRV receive same-change replacements. Runtime, security, release and resource gates remain required when affected."
+    }
+  },
+  "definition": {
+    "if": "always()",
+    "name": "CI result",
+    "needs": [
+      "profile",
+      "docs",
+      "website",
+      "fast",
+      "rust",
+      "oci-registry",
+      "catalog",
+      "msrv",
+      "contracts",
+      "sdks"
+    ],
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "env": {
+          "CI_JOB_RESULTS": "${{ toJSON(needs) }}"
+        },
+        "name": "Require every selected validation job",
+        "run": "python3 tools/ci_result.py"
+      }
+    ],
+    "timeout-minutes": 2
+  },
+  "jobId": "result",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/ci.yml"
+}

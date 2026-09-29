@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/select_native_vm_artifact.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e8047f0c7e350e1a92419d147affac14a3b50840a8268ff5330ec7abbc85af97"
+}

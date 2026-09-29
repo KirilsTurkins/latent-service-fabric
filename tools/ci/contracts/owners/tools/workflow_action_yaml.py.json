@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/workflow_action_yaml.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Issue #732: enforce fingerprint review for the newly explicit structural/storage/parser owner.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a115a8d74dce8cb29be11816a47cf5b4b6efd8ad6bd7ba0702905d93e41445b3"
+}

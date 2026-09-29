@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "CatalogMutationOracleTests.test_deleted_named_route_fails_while_shared_default_resolves_another_release",
+    "CatalogMutationOracleTests.test_returned_absence_is_counted_as_success_and_ordinal_gaps_reject",
+    "CatalogMutationOracleTests.test_weight_preserves_revision_but_changes_manifest_and_recreate_changes_stamp",
+    "CatalogMutationWorkTests.test_completed_receipt_requires_one_actual_operation_and_expected_generation",
+    "CatalogMutationWorkTests.test_overlap_poison_boolean_counters_and_unknown_fields_reject",
+    "CatalogMutationWorkTests.test_unavailable_partial_stage_is_retained_but_cannot_qualify_success"
+  ],
+  "guards": {
+    "CatalogMutationOracleTests.test_deleted_named_route_fails_while_shared_default_resolves_another_release": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba0f63fd2fcd14ea906c61898a1ec690eb3cf17fbcbbcd05160044902c6730cb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationOracleTests.test_returned_absence_is_counted_as_success_and_ordinal_gaps_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba0f63fd2fcd14ea906c61898a1ec690eb3cf17fbcbbcd05160044902c6730cb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationOracleTests.test_weight_preserves_revision_but_changes_manifest_and_recreate_changes_stamp": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba0f63fd2fcd14ea906c61898a1ec690eb3cf17fbcbbcd05160044902c6730cb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationWorkTests.test_completed_receipt_requires_one_actual_operation_and_expected_generation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba0f63fd2fcd14ea906c61898a1ec690eb3cf17fbcbbcd05160044902c6730cb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationWorkTests.test_overlap_poison_boolean_counters_and_unknown_fields_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba0f63fd2fcd14ea906c61898a1ec690eb3cf17fbcbbcd05160044902c6730cb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationWorkTests.test_unavailable_partial_stage_is_retained_but_cannot_qualify_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba0f63fd2fcd14ea906c61898a1ec690eb3cf17fbcbbcd05160044902c6730cb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_catalog_mutation_oracles.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

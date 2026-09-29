@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "BudgetBuildTests.test_generic_receipt_reuses_strict_build_graph_without_echo",
+    "BudgetBuildTests.test_legacy_echo_recipe_and_unreclaimed_build_cannot_qualify",
+    "BudgetBuildTests.test_rehashed_crossed_common_cpu_or_source_is_rejected"
+  ],
+  "guards": {
+    "BudgetBuildTests.test_generic_receipt_reuses_strict_build_graph_without_echo": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:377d1bb4d0b43bb56f0af63bc16d5c90dd827a998fc766a13ea182e9daf0821a",
+        "class:setup-sha256:09b52cc19da5488450f12eb2640e62984f10fe0b6852fe36fb0167b773916a2a"
+      ],
+      "skipSites": []
+    },
+    "BudgetBuildTests.test_legacy_echo_recipe_and_unreclaimed_build_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:377d1bb4d0b43bb56f0af63bc16d5c90dd827a998fc766a13ea182e9daf0821a",
+        "class:setup-sha256:09b52cc19da5488450f12eb2640e62984f10fe0b6852fe36fb0167b773916a2a"
+      ],
+      "skipSites": []
+    },
+    "BudgetBuildTests.test_rehashed_crossed_common_cpu_or_source_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:377d1bb4d0b43bb56f0af63bc16d5c90dd827a998fc766a13ea182e9daf0821a",
+        "class:setup-sha256:09b52cc19da5488450f12eb2640e62984f10fe0b6852fe36fb0167b773916a2a"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_budget_builds.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

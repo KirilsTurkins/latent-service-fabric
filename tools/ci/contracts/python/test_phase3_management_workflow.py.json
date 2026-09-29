@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "ProviderWorkflowTests.test_explicit_invocation_budgets_fit_the_http_and_blob_capsules",
+    "ProviderWorkflowTests.test_http_fixture_checks_credential_and_counts_denied_requests_without_echo",
+    "ProviderWorkflowTests.test_http_fixture_rejects_oversize_duplicate_and_incomplete_input",
+    "ProviderWorkflowTests.test_inspection_can_repeat_after_restart_without_replacing_client_inputs",
+    "ProviderWorkflowTests.test_invocation_is_one_call_with_lossless_u64_inputs_and_closed_results",
+    "ProviderWorkflowTests.test_node_configuration_keeps_credentials_out_of_public_configuration",
+    "ProviderWorkflowTests.test_only_actual_installed_profiles_and_canonical_identity_are_accepted",
+    "ProviderWorkflowTests.test_probe_does_not_echo_unrecognized_guest_results",
+    "ProviderWorkflowTests.test_probe_keeps_closed_platform_failure_with_stage",
+    "ProviderWorkflowTests.test_probe_retains_http_category_and_restart_stage_without_replaying",
+    "ProviderWorkflowTests.test_startup_failure_keeps_only_closed_node_stage_and_code"
+  ],
+  "guards": {
+    "ProviderWorkflowTests.test_explicit_invocation_budgets_fit_the_http_and_blob_capsules": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_http_fixture_checks_credential_and_counts_denied_requests_without_echo": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_http_fixture_rejects_oversize_duplicate_and_incomplete_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_inspection_can_repeat_after_restart_without_replacing_client_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_invocation_is_one_call_with_lossless_u64_inputs_and_closed_results": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_node_configuration_keeps_credentials_out_of_public_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_only_actual_installed_profiles_and_canonical_identity_are_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_probe_does_not_echo_unrecognized_guest_results": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_probe_keeps_closed_platform_failure_with_stage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_probe_retains_http_category_and_restart_stage_without_replaying": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderWorkflowTests.test_startup_failure_keeps_only_closed_node_stage_and_code": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2ff9038b8e4d80ed02d4f7d2effe5aac266ae3ce4179d35f63bf7a93720ee4aa",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase3_management_workflow.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

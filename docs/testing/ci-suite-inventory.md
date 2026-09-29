@@ -15,8 +15,10 @@ metadata owner are registered without dropping their execution contracts.
 
 Website and MDX selection now retains the required site job in every profile,
 including the host correctness profile. The aggregate independently checks the
-complete job set. The reviewed command map preserves all 97 original required
-run blocks and covers 129 current blocks plus 70 delegated script owners. The
+complete job set. The reviewed command contracts preserve historical replacement
+obligations alongside current run blocks and delegated script owners. The
+validator reports the current counts; the issue #732 migration baseline is
+recorded in the [ownership-local contract guide](ci-command-contracts.md). The
 temporary upstream-discovery workflow has been retired; the maintained CI owns
 future build, discovery and execution receipts.
 
@@ -29,9 +31,10 @@ stdout under one combined output bound. Source-file identities use explicit
 reported no leaks. The complete maintained CI remains required.
 
 The versioned contracts live in `tools/ci/suites.json` and
-`tools/ci/commands.json`. The former identifies Cargo artifacts and exact test
-names; the latter records the before/after required commands, their conditions,
-and delegated script owners. They extend `tools/ci_profile.py` and
+`tools/ci/contracts/`. The former identifies Cargo artifacts and exact test
+names; the latter shards workflow policy, per-job commands and historical
+replacements, per-script owner fingerprints, and per-Python-module exact cases.
+See the [contract update and rebase guide](ci-command-contracts.md). They extend `tools/ci_profile.py` and
 `tools/ci_rust_artifacts.py`; they do not introduce another change classifier.
 
 ## Boundaries and rollout
@@ -121,7 +124,7 @@ unexpected skips fail the gate. Only intentionally unselected jobs may report
 Run the bounded tooling regression suite without a Rust build:
 
 ```sh
-python3 -m unittest tools.tests.test_ci_profile tools.tests.test_ci_rust_artifacts tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage
+python3 -m unittest tools.tests.test_ci_profile tools.tests.test_ci_rust_artifacts tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_contracts
 python3 tools/ci_coverage.py
 ```
 
@@ -183,10 +186,14 @@ scopes; they do not substitute for those separately executed jobs.
 
 ## Before/after command review
 
-The baseline is `50f003dd006e0786494936c49e55dc683cf26fd6`. All **97 existing required
-run blocks** are represented in `commands.json`, including delegated shell/Python
-owners and all native/security/measurement workflows. No old command is deleted.
-The four changed blocks and same-change replacements are:
+The original rollout baseline was `50f003dd006e0786494936c49e55dc683cf26fd6`.
+The later reviewed snapshot at development
+`2c52ff1a9d260da2fbcd81aa0c420926a5820d98` contains **88 historical replacement
+obligations and 208 current run blocks**. Issue #732 migrates those exact records
+without resetting them to source discovery; all historical relationships remain
+active in their destination job contracts. The archived snapshot is
+`tools/ci/history/commands-v1.json`, not a validation input. The original
+four replacement categories remain:
 
 | Original block | After this change | Coverage preserved |
 | --- | --- | --- |

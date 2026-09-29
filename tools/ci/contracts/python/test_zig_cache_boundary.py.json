@@ -1,0 +1,23 @@
+{
+  "cases": [
+    "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation"
+  ],
+  "guards": {
+    "ZigCacheBoundaryTests.test_empty_zig_timestamp_is_excluded_from_source_validation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60dd7b1913202be07bc89dabded5eae0e7747d538a80e809406f08fc5f4efbce",
+        "class:setup-sha256:0b81adc71c0ec433cabb0b2ffad2880ec6307f59be33f79ac96a6ebd01d36143"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_zig_cache_boundary.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

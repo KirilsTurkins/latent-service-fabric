@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "OwnershipSchemaTests.test_all_eight_envelopes_are_valid_schemas",
+    "OwnershipSchemaTests.test_exact_plans_reject_changed_or_extended_populations",
+    "OwnershipSchemaTests.test_full_completion_requires_correct_counts_and_both_flags"
+  ],
+  "guards": {
+    "OwnershipSchemaTests.test_all_eight_envelopes_are_valid_schemas": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e531b176d77c584dd3d58a1fc309c7dacad29b9822426f9a3a1a61d78715e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OwnershipSchemaTests.test_exact_plans_reject_changed_or_extended_populations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e531b176d77c584dd3d58a1fc309c7dacad29b9822426f9a3a1a61d78715e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OwnershipSchemaTests.test_full_completion_requires_correct_counts_and_both_flags": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e531b176d77c584dd3d58a1fc309c7dacad29b9822426f9a3a1a61d78715e5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_ownership_schemas.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

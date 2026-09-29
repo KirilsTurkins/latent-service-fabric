@@ -35,9 +35,15 @@ class SnapshotError(RuntimeError):
     """Static public error without source paths or command output."""
 
 
+# The committed tools tree includes ownership-local CI contracts. Keep a
+# fixed, reviewed file budget shared with the downstream attribution reader;
+# directory, per-file, total-byte and archive-byte budgets remain independent.
+MAX_SOURCE_FILES = 8192
+
+
 @dataclass(frozen=True)
 class SnapshotLimits:
-    max_entries: int = 4096
+    max_entries: int = MAX_SOURCE_FILES
     max_directories: int = 4096
     max_file_bytes: int = 4 * 1024 * 1024
     max_total_bytes: int = 32 * 1024 * 1024

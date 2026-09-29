@@ -1,0 +1,296 @@
+{
+  "cases": [
+    "SdkGraphTests.test_actual_dotnet_projects_have_complete_registered_package_and_runtime_graphs",
+    "SdkGraphTests.test_c_bundled_runtime_cannot_disappear_or_hide_unreviewed_sources",
+    "SdkGraphTests.test_c_legacy_interface_allowance_is_bound_to_every_tree_byte",
+    "SdkGraphTests.test_c_unknown_dependency_url_or_source_commit_fails",
+    "SdkGraphTests.test_custom_resolved_graph_and_nuget_sources_select_dependency_scan",
+    "SdkGraphTests.test_data_only_readers_cover_modules_generators_transitive_and_native_sources",
+    "SdkGraphTests.test_dotnet_configuration_and_manifest_are_reviewed_byte_identities",
+    "SdkGraphTests.test_dotnet_legacy_absence_cannot_hide_partial_transport_or_orphan_configuration",
+    "SdkGraphTests.test_explicit_dotnet_frameworks_are_pinned_visible_and_never_evaluated",
+    "SdkGraphTests.test_go_exact_legacy_exception_cannot_hide_new_lock_or_sum",
+    "SdkGraphTests.test_go_generator_binding_is_checked_against_selected_graph_and_manifest",
+    "SdkGraphTests.test_go_missing_checksum_changed_manifest_and_duplicate_module_fail",
+    "SdkGraphTests.test_go_unresolved_replacement_or_missing_tool_is_not_scanned_as_safe",
+    "SdkGraphTests.test_isolated_rust_fixture_requires_reviewed_manifest_and_its_own_lock",
+    "SdkGraphTests.test_maven_changed_build_registry_path_platform_or_digest_fail",
+    "SdkGraphTests.test_nuget_entities_and_hidden_dependency_loading_fail_without_execution",
+    "SdkGraphTests.test_nuget_missing_transitive_changed_version_and_unreviewed_project_fail",
+    "SdkGraphTests.test_nuget_new_properties_cannot_hide_msbuild_imports_conditions_or_metadata",
+    "SdkGraphTests.test_nuget_runtime_pins_do_not_replace_missing_locks_or_project_edges",
+    "SdkGraphTests.test_runtime_metadata_does_not_allow_inference_floating_versions_or_frameworks",
+    "SdkGraphTests.test_rustsec_audits_every_tracked_lock_without_hiding_fixture_findings",
+    "SdkGraphTests.test_source_commits_use_osv_commit_queries_and_keep_attribution"
+  ],
+  "guards": {
+    "SdkGraphTests.test_actual_dotnet_projects_have_complete_registered_package_and_runtime_graphs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_c_bundled_runtime_cannot_disappear_or_hide_unreviewed_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_c_legacy_interface_allowance_is_bound_to_every_tree_byte": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_c_unknown_dependency_url_or_source_commit_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_custom_resolved_graph_and_nuget_sources_select_dependency_scan": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_data_only_readers_cover_modules_generators_transitive_and_native_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_dotnet_configuration_and_manifest_are_reviewed_byte_identities": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_dotnet_legacy_absence_cannot_hide_partial_transport_or_orphan_configuration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_explicit_dotnet_frameworks_are_pinned_visible_and_never_evaluated": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_go_exact_legacy_exception_cannot_hide_new_lock_or_sum": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_go_generator_binding_is_checked_against_selected_graph_and_manifest": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_go_missing_checksum_changed_manifest_and_duplicate_module_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_go_unresolved_replacement_or_missing_tool_is_not_scanned_as_safe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_isolated_rust_fixture_requires_reviewed_manifest_and_its_own_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_maven_changed_build_registry_path_platform_or_digest_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_nuget_entities_and_hidden_dependency_loading_fail_without_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_nuget_missing_transitive_changed_version_and_unreviewed_project_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_nuget_new_properties_cannot_hide_msbuild_imports_conditions_or_metadata": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_nuget_runtime_pins_do_not_replace_missing_locks_or_project_edges": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_runtime_metadata_does_not_allow_inference_floating_versions_or_frameworks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_rustsec_audits_every_tracked_lock_without_hiding_fixture_findings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    },
+    "SdkGraphTests.test_source_commits_use_osv_commit_queries_and_keep_attribution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0833c76df85ed8b86c24e7c89883e25ef6a91c6e8fa7e79548804ac85cc7edd1",
+        "class:setup-sha256:789dc60a926613176bda8b19733364cf69237e899889dee1096d9042f3debcdd"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_security_sdk_graphs.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

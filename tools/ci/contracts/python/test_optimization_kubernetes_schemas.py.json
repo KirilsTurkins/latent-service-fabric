@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "KubernetesSuiteSchemaTests.test_both_exact_source_receipts_are_required",
+    "KubernetesSuiteSchemaTests.test_every_historical_identity_guard_rejects_the_error_elsewhere",
+    "KubernetesSuiteSchemaTests.test_exact_error_and_unremoved_original_are_preserved",
+    "KubernetesSuiteSchemaTests.test_missing_guards_and_cleanup_fields_never_enable_exception",
+    "KubernetesSuiteSchemaTests.test_other_suites_require_both_clean_cleanup_fields",
+    "KubernetesSuiteSchemaTests.test_schema_and_historical_projection"
+  ],
+  "guards": {
+    "KubernetesSuiteSchemaTests.test_both_exact_source_receipts_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69dc0ebc09a1e8a283dec3d1793e34f47d9d177c1e42ec1cd4b6ebbff5440dae",
+        "class:setup-sha256:3ed2143d505db05c5d849722454602d5b58a1db88b2b6e1b486204b2ab71f187"
+      ],
+      "skipSites": []
+    },
+    "KubernetesSuiteSchemaTests.test_every_historical_identity_guard_rejects_the_error_elsewhere": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69dc0ebc09a1e8a283dec3d1793e34f47d9d177c1e42ec1cd4b6ebbff5440dae",
+        "class:setup-sha256:3ed2143d505db05c5d849722454602d5b58a1db88b2b6e1b486204b2ab71f187"
+      ],
+      "skipSites": []
+    },
+    "KubernetesSuiteSchemaTests.test_exact_error_and_unremoved_original_are_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69dc0ebc09a1e8a283dec3d1793e34f47d9d177c1e42ec1cd4b6ebbff5440dae",
+        "class:setup-sha256:3ed2143d505db05c5d849722454602d5b58a1db88b2b6e1b486204b2ab71f187"
+      ],
+      "skipSites": []
+    },
+    "KubernetesSuiteSchemaTests.test_missing_guards_and_cleanup_fields_never_enable_exception": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69dc0ebc09a1e8a283dec3d1793e34f47d9d177c1e42ec1cd4b6ebbff5440dae",
+        "class:setup-sha256:3ed2143d505db05c5d849722454602d5b58a1db88b2b6e1b486204b2ab71f187"
+      ],
+      "skipSites": []
+    },
+    "KubernetesSuiteSchemaTests.test_other_suites_require_both_clean_cleanup_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69dc0ebc09a1e8a283dec3d1793e34f47d9d177c1e42ec1cd4b6ebbff5440dae",
+        "class:setup-sha256:3ed2143d505db05c5d849722454602d5b58a1db88b2b6e1b486204b2ab71f187"
+      ],
+      "skipSites": []
+    },
+    "KubernetesSuiteSchemaTests.test_schema_and_historical_projection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69dc0ebc09a1e8a283dec3d1793e34f47d9d177c1e42ec1cd4b6ebbff5440dae",
+        "class:setup-sha256:3ed2143d505db05c5d849722454602d5b58a1db88b2b6e1b486204b2ab71f187"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_schemas.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

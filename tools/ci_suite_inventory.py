@@ -53,6 +53,102 @@ def read_json(path: Path) -> dict:
     return result
 
 
+def process_cases(data: dict, name: str) -> dict[str, list[str]]:
+    """Resolve a maintained process selection from the same exact CI catalogue."""
+    policy = data["processContracts"][name]
+    rows = {row["id"]: row for row in data["suites"]}
+    filters = policy.get("caseFilters", {})
+    require(isinstance(filters, dict) and set(filters) <= set(policy["suiteIds"]),
+            "process-case-filter-owner")
+    result = {}
+    seen = set()
+    for key in policy["suiteIds"]:
+        row = rows[key]
+        require(row["mode"] == "libtest", "process-libtest-owner")
+        substring = filters.get(key, "")
+        require(isinstance(substring, str) and len(substring) <= 256, "process-case-filter")
+        cases = [case for case in row["expectedIgnored"] if substring in case]
+        require(cases and not seen.intersection(cases), "empty-or-duplicate-process-cases")
+        result[key] = cases
+        seen.update(cases)
+    return result
+
+
+def fixture_recipes(data: dict, owner: dict, cases: list[str]) -> dict[str, dict]:
+    """Select fixture builders/roles; this function never runs a command."""
+    names = list(owner.get("fixtures", []))
+    for case in cases:
+        names.extend(owner.get("caseFixtures", {}).get(case, []))
+    definitions = data.get("fixtureRecipes", {})
+    selected = {name: definitions[name] for name in dict.fromkeys(names)}
+    roles = [role for recipe in selected.values() for role in recipe["outputs"]]
+    variables = [spec["environment"] for recipe in selected.values()
+                 for spec in recipe["outputs"].values() if "environment" in spec]
+    require(len(roles) == len(set(roles)) and len(variables) == len(set(variables)),
+            "ambiguous-fixture-role-or-environment")
+    return selected
+
+
+def validate_fixture_recipes(data: dict) -> None:
+    """Keep preparation commands in #427's catalogue, never in failure reports."""
+    definitions = data.get("fixtureRecipes", {})
+    for selection in data["selections"].values():
+        require("executionOnly" not in selection or type(selection["executionOnly"]) is bool,
+                "execution-only-contract-type")
+    require(isinstance(definitions, dict) and len(definitions) <= 64, "fixture-recipe-limit")
+    for name, recipe in definitions.items():
+        require(isinstance(name, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,63}", name),
+                "fixture-recipe-name")
+        require(isinstance(recipe, dict) and set(recipe) == {"tools", "commands", "outputs"},
+                "fixture-recipe-fields")
+        require(isinstance(recipe["tools"], list) and all(isinstance(tool, str)
+                and re.fullmatch(r"[a-z0-9-]{1,64}", tool) for tool in recipe["tools"]), "fixture-tools")
+        commands = recipe["commands"]
+        require(isinstance(commands, list) and 0 < len(commands) <= 16, "fixture-command-limit")
+        for command in commands:
+            require(isinstance(command, dict) and set(command) == {"argv", "cwd", "timeoutSeconds"},
+                    "fixture-command-fields")
+            argv = command["argv"]
+            require(isinstance(argv, list) and 0 < len(argv) <= 64
+                    and all(isinstance(arg, str) and 0 < len(arg) <= 4096
+                            and not any(ord(c) < 32 for c in arg) for arg in argv),
+                    "fixture-command-argv")
+            require(command["cwd"] == "." or path_name(command["cwd"]), "fixture-command-cwd")
+            require(type(command["timeoutSeconds"]) is int and 0 < command["timeoutSeconds"] <= 3600,
+                    "fixture-command-timeout")
+        outputs = recipe["outputs"]
+        require(isinstance(outputs, dict) and 0 < len(outputs) <= 32, "fixture-output-limit")
+        for role, spec in outputs.items():
+            require(isinstance(role, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,95}", role),
+                    "fixture-output-role")
+            require(isinstance(spec, dict)
+                    and {"path", "kind", "maximumBytes"} <= set(spec)
+                    and set(spec) <= {"path", "kind", "maximumBytes", "environment"},
+                    "fixture-output-fields")
+            require(path_name(spec["path"].replace("{target}/", "target/", 1))
+                    and spec["kind"] in {"wasm", "json"}, "fixture-output-path-or-kind")
+            require(type(spec["maximumBytes"]) is int and 0 < spec["maximumBytes"] <= 32 * 1024 * 1024,
+                    "fixture-output-byte-limit")
+            require("environment" not in spec or isinstance(spec["environment"], str)
+                    and re.fullmatch(r"LSF_[A-Z0-9_]{1,80}", spec["environment"]),
+                    "fixture-output-environment")
+    owners = [*data["suites"], *data.get("processContracts", {}).values()]
+    for owner in owners:
+        names = owner.get("fixtures", [])
+        mapping = owner.get("caseFixtures", {})
+        require(isinstance(names, list) and len(names) == len(set(names))
+                and set(names) <= set(definitions), "unknown-or-duplicate-fixture-recipe")
+        require(isinstance(mapping, dict) and set(mapping) <= set(owner.get("expectedCases", [])),
+                "fixture-case-owner")
+        for names in mapping.values():
+            require(isinstance(names, list) and len(names) == len(set(names))
+                    and set(names) <= set(definitions), "fixture-case-recipe")
+        fixture_recipes(data, owner, list(mapping))
+    for name, policy in data.get("processContracts", {}).items():
+        if "caseFilters" in policy:
+            process_cases(data, name)
+
+
 def load(path: Path = INVENTORY) -> dict:
     data = read_json(path)
     require(data.get("schemaVersion") == SCHEMA, "inventory-version")
@@ -98,6 +194,7 @@ def load(path: Path = INVENTORY) -> dict:
                 "selection-execution-contract")
         require(all(name == selected["filter"] if selected["exact"] else selected["filter"] in name
                     for name in selected["names"]), "selection-filter-mismatch")
+    validate_fixture_recipes(data)
     return data
 
 
@@ -219,3 +316,18 @@ def expected_jobs(profile: str, packages: tuple[str, ...] | list[str]) -> set[st
         require(profile not in {"docs", "website"}, "docs-with-rust-selection")
         required.add("fast")
     return required
+
+
+def process_recipe_identity(data: dict, name: str) -> str:
+    import hashlib
+    policy = data["processContracts"][name]
+    rows = {row["id"]: row for row in data["suites"]}
+    recipes = {rows[key]["recipe"] for key in policy["suiteIds"]}
+    require(len(recipes) == 1, "process-recipe-disagreement")
+    recipe = next(iter(recipes))
+    cases = [case for group in process_cases(data, name).values() for case in group]
+    value = {"suite": "process." + name, "recipe": recipe,
+             "recipeDefinition": data["recipes"][recipe], "processContract": policy,
+             "cases": cases, "fixtureRecipes": fixture_recipes(data, policy, cases)}
+    return "sha256:" + hashlib.sha256(json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()).hexdigest()

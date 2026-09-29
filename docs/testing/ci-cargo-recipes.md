@@ -22,7 +22,7 @@ the Rust correctness job; it does not shard compilation into additional jobs.
 Integration with the current shared suite inventory retains exact workspace
 discovery, separate execution logs for ordinary tests, doctests and signing
 compatibility, and authenticated AOT preparation before execution. All recipe
-commands and delegated owners are registered in `tools/ci/commands.json`.
+commands and delegated owners are registered in `tools/ci/contracts/`.
 
 ## Coverage map
 

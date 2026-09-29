@@ -1,0 +1,301 @@
+{
+  "cases": [
+    "RustProjectTests.test_additional_dependencies_require_exact_versions_and_no_path_escape",
+    "RustProjectTests.test_all_tutorials_and_capability_examples_create_valid_standalone_inputs",
+    "RustProjectTests.test_build_failure_retains_stage_but_cannot_publish_a_success_marker",
+    "RustProjectTests.test_build_rejects_source_output_overlap_before_tool_execution",
+    "RustProjectTests.test_build_script_must_be_captured_not_an_absolute_escape",
+    "RustProjectTests.test_captured_application_code_can_change_without_runtime_edits",
+    "RustProjectTests.test_cargo_and_manifest_identity_must_agree",
+    "RustProjectTests.test_cargo_configuration_and_toolchain_overrides_are_rejected",
+    "RustProjectTests.test_duplicate_nonfinite_and_excessively_nested_json_are_rejected",
+    "RustProjectTests.test_edited_sdk_does_not_satisfy_the_original_source_lock",
+    "RustProjectTests.test_fresh_projects_never_overwrite_existing_files",
+    "RustProjectTests.test_independent_project_preserves_canonical_source_and_exact_lock",
+    "RustProjectTests.test_manifest_fields_budgets_and_versions_are_closed",
+    "RustProjectTests.test_nonportable_and_colliding_package_names_are_rejected_before_creation",
+    "RustProjectTests.test_opt_in_diagnostics_keep_nonzero_status_without_false_success",
+    "RustProjectTests.test_overall_command_deadline_precedes_child_creation",
+    "RustProjectTests.test_reviewed_dependency_lock_rejects_changed_authoritative_checksums",
+    "RustProjectTests.test_sdk_inheritance_cannot_introduce_uncaptured_dependency_overrides",
+    "RustProjectTests.test_sdk_lock_shape_and_version_fail_closed",
+    "RustProjectTests.test_snapshot_enforces_file_byte_count_and_total_budgets",
+    "RustProjectTests.test_snapshot_excludes_only_root_build_and_git_data",
+    "RustProjectTests.test_snapshot_rejects_linked_files_directories_and_ancestors"
+  ],
+  "guards": {
+    "RustProjectTests.test_additional_dependencies_require_exact_versions_and_no_path_escape": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_all_tutorials_and_capability_examples_create_valid_standalone_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_build_failure_retains_stage_but_cannot_publish_a_success_marker": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_build_rejects_source_output_overlap_before_tool_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_build_script_must_be_captured_not_an_absolute_escape": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_captured_application_code_can_change_without_runtime_edits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_cargo_and_manifest_identity_must_agree": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_cargo_configuration_and_toolchain_overrides_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_duplicate_nonfinite_and_excessively_nested_json_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_edited_sdk_does_not_satisfy_the_original_source_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_fresh_projects_never_overwrite_existing_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_independent_project_preserves_canonical_source_and_exact_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_manifest_fields_budgets_and_versions_are_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_nonportable_and_colliding_package_names_are_rejected_before_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_opt_in_diagnostics_keep_nonzero_status_without_false_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_overall_command_deadline_precedes_child_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_reviewed_dependency_lock_rejects_changed_authoritative_checksums": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_sdk_inheritance_cannot_introduce_uncaptured_dependency_overrides": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_sdk_lock_shape_and_version_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_snapshot_enforces_file_byte_count_and_total_budgets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_snapshot_excludes_only_root_build_and_git_data": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": []
+    },
+    "RustProjectTests.test_snapshot_rejects_linked_files_directories_and_ancestors": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(hasattr(os, 'symlink'), 'symlinks unavailable')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:877ada163d204981ea160f19e729d501c5c0ef1054b10149bdbca42898445f9e",
+        "class:setup-sha256:19721660107df0430c0d1ff19566dd7bdaf928dd06e7d7d310d7b5a58ef8232f"
+      ],
+      "skipSites": [
+        "skip-control-sha256:a1d0c12328aaf10905d2f8a1ec135e61d3e4e5b997e22131674926bd3fafb92d",
+        "unittest.skipUnless(hasattr(os, 'symlink'), 'symlinks unavailable')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_capsule_authoring.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

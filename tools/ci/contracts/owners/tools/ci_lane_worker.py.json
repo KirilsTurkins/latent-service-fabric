@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/ci_lane_worker.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "94074afb9b2549ad9c04b8c36c9dee9e0411b866b0874c5bda5b9f8e4e1d723e"
+}

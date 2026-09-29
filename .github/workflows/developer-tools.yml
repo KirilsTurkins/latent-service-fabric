@@ -13,7 +13,7 @@ on:
       - tools/tests/test_dev_packaged_probe.py
       - packaging/dev/qualification-trusted-root.jsonl
       - packaging/dev/qualification.Dockerfile
-      - tools/ci/commands.json
+      - tools/ci/contracts/**
       - docs/**
   pull_request:
     paths:
@@ -206,7 +206,7 @@ jobs:
           sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dev_recovery_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-recovery-fixtures"
       - name: Retain actual watch failure, revision and revocation observations
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-watch-fixtures-${{ github.sha }}
           path: ${{ runner.temp }}/dev-watch-fixtures/
@@ -214,7 +214,7 @@ jobs:
           retention-days: 7
       - name: Retain actual workspace isolation and expired original receipt observations
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-workspace-isolation-${{ github.sha }}
           path: ${{ runner.temp }}/dev-workspace-isolation/
@@ -222,7 +222,7 @@ jobs:
           retention-days: 7
       - name: Retain authenticated immediate-event protocol and cleanup receipts
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-event-fixtures-${{ github.sha }}
           path: ${{ runner.temp }}/dev-event-fixtures/
@@ -230,7 +230,7 @@ jobs:
           retention-days: 7
       - name: Retain actual clock fixtures and node comparison receipts
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-clock-fixtures-${{ github.sha }}
           path: ${{ runner.temp }}/dev-clock-fixtures/
@@ -238,14 +238,14 @@ jobs:
           retention-days: 7
       - name: Retain authored failures and actual running cancellation
         if: always() && matrix.language == 'rust'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-failure-fixtures-${{ github.sha }}
           path: ${{ runner.temp }}/dev-failure-fixtures/
           if-no-files-found: warn
           retention-days: 7
       - name: Retain original-operation recovery and authority receipts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && matrix.language == 'rust'
         with:
           name: developer-recovery-fixtures-${{ github.sha }}
@@ -253,7 +253,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain authenticated HTTP fixture and comparison receipts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && matrix.language == 'rust'
         with:
           name: developer-http-fixtures-${{ github.sha }}
@@ -261,7 +261,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain actual immutable-blob ownership and restart receipts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && matrix.language == 'rust'
         with:
           name: developer-blob-fixtures-${{ github.sha }}
@@ -269,7 +269,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain actual scoped secret disclosure and cleanup receipts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && matrix.language == 'rust'
         with:
           name: developer-secret-fixtures-${{ github.sha }}
@@ -277,7 +277,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain actual metric exports and joined-owner cleanup receipts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && matrix.language == 'rust'
         with:
           name: developer-metric-fixtures-${{ github.sha }}
@@ -285,7 +285,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain actual local caller and callee receipts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && matrix.language == 'rust'
         with:
           name: developer-local-service-fixtures-${{ github.sha }}
@@ -293,7 +293,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Retain identical applications for both native execution hosts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-${{ matrix.language }}-applications-${{ github.sha }}
           path: ${{ runner.temp }}/dev-projects/
@@ -306,7 +306,7 @@ jobs:
           python -c "from pathlib import Path; import os,shutil; shutil.copytree(Path(os.environ['RUNNER_TEMP'])/'dev-projects', 'target/dev-c-portable/applications')"
       - name: Retain exact C components and shared scenarios
         if: matrix.language == 'c'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-c-portable-inputs-${{ github.sha }}
           path: target/dev-c-portable/
@@ -323,7 +323,7 @@ jobs:
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: install -m 0644 "$BUNDLE_PATH" target/dev-tools/candidate/attestation.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-${{ matrix.language }}-tools-candidate-${{ github.sha }}
           path: target/dev-tools/candidate/
@@ -331,7 +331,7 @@ jobs:
           retention-days: 7
       - name: Retain compiler and application evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-${{ matrix.language }}-builds-${{ github.sha }}
           path: |
@@ -431,7 +431,7 @@ jobs:
         run: |
           python -c "from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-candidate/portable'); d.mkdir(); p=d/'latent-portable-test-host.exe'; shutil.copyfile('target/release/latent-portable-test-host.exe',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'windows-x86_64','profile':'release'}))"
       - name: Retain exact Windows distribution inputs
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-windows-inputs-${{ github.sha }}
           path: |
@@ -445,7 +445,7 @@ jobs:
           retention-days: 7
       - name: Retain actual native subset receipt
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-portable-subset-${{ github.sha }}
           path: |
@@ -508,13 +508,13 @@ jobs:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: install -m 0644 "$BUNDLE_PATH" target/dev-linux/candidate/attestation.json
       - name: Retain Linux developer distribution
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-linux-candidate-${{ github.sha }}
           path: target/dev-linux/candidate/
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: linux-portable-subset-${{ github.sha }}
           path: target/dev-portable-*-applications.json
@@ -547,7 +547,7 @@ jobs:
           for language in rust c java dotnet go typescript; do
             python tools/compare_portable_guest_tests.py --windows "target/windows/dev-portable-$language-applications.json" --linux "target/linux/dev-portable-$language-applications.json" --output "target/$language-differential.json"
           done
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: portable-differential-${{ github.sha }}
           path: target/*-differential.json
@@ -583,7 +583,7 @@ jobs:
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: install -m 0644 "$BUNDLE_PATH" target/dev-wsl/candidate/attestation.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-wsl-candidate-${{ github.sha }}
           path: target/dev-wsl/candidate/
@@ -624,7 +624,7 @@ jobs:
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: install -m 0644 "$BUNDLE_PATH" target/dev-windows/candidate/attestation.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: developer-windows-candidate-${{ github.sha }}
           path: target/dev-windows/candidate/

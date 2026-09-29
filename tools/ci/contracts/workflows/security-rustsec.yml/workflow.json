@@ -1,0 +1,30 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "name": "RustSec advisory baseline",
+    "on": {
+      "workflow_call": {
+        "inputs": {
+          "controls-ref": {
+            "description": "Reviewed scanner revision, independent of the scan input",
+            "required": true,
+            "type": "string"
+          },
+          "source-ref": {
+            "required": true,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "audit"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/security-rustsec.yml"
+}

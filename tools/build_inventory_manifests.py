@@ -8,7 +8,7 @@ import tomllib
 
 from tools.build_inventory_units import InventoryLimits, _text
 from tools.build_observation import public_repository
-from tools.build_snapshot import SnapshotError, digest, is_reparse, owned_child, portable_path
+from tools.build_snapshot import MAX_SOURCE_FILES, SnapshotError, digest, is_reparse, owned_child, portable_path
 
 
 CRATES_IO = "registry+https://github.com/rust-lang/crates.io-index"
@@ -42,7 +42,7 @@ class ManifestReader:
         if len(source_inventory) > 4 * 1024 * 1024:
             raise SnapshotError("captured source inventory exceeds its byte limit")
         rows = json.loads(source_inventory)
-        if not isinstance(rows, list) or not 1 <= len(rows) <= 4096:
+        if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_SOURCE_FILES:
             raise SnapshotError("invalid captured source inventory")
         self.source_files = {}
         for row in rows:

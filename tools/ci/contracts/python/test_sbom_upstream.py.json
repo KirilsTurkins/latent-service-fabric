@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "SbomUpstreamSchemaTests.test_component_version_has_a_real_upstream_ceiling",
+    "SbomUpstreamSchemaTests.test_declared_expression_and_named_license_are_upstream_valid",
+    "SbomUpstreamSchemaTests.test_local_transitive_id_schema_and_rejected_unknown_resources",
+    "SbomUpstreamSchemaTests.test_producer_identifier_subset_has_pinned_license_only_identity",
+    "SbomUpstreamSchemaTests.test_upstream_does_not_replace_license_or_digest_semantics"
+  ],
+  "guards": {
+    "SbomUpstreamSchemaTests.test_component_version_has_a_real_upstream_ceiling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dfcbe5a49c070e6f13e96675ee3b7c513ec6fd0cf26a7240830cd4c61969b25f",
+        "class:setup-sha256:0c2266570ccb5ff558e849cd8c190b48566925c4bd24fa353b785cc5dda1d3c1"
+      ],
+      "skipSites": []
+    },
+    "SbomUpstreamSchemaTests.test_declared_expression_and_named_license_are_upstream_valid": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dfcbe5a49c070e6f13e96675ee3b7c513ec6fd0cf26a7240830cd4c61969b25f",
+        "class:setup-sha256:0c2266570ccb5ff558e849cd8c190b48566925c4bd24fa353b785cc5dda1d3c1"
+      ],
+      "skipSites": []
+    },
+    "SbomUpstreamSchemaTests.test_local_transitive_id_schema_and_rejected_unknown_resources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dfcbe5a49c070e6f13e96675ee3b7c513ec6fd0cf26a7240830cd4c61969b25f",
+        "class:setup-sha256:0c2266570ccb5ff558e849cd8c190b48566925c4bd24fa353b785cc5dda1d3c1"
+      ],
+      "skipSites": []
+    },
+    "SbomUpstreamSchemaTests.test_producer_identifier_subset_has_pinned_license_only_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dfcbe5a49c070e6f13e96675ee3b7c513ec6fd0cf26a7240830cd4c61969b25f",
+        "class:setup-sha256:0c2266570ccb5ff558e849cd8c190b48566925c4bd24fa353b785cc5dda1d3c1"
+      ],
+      "skipSites": []
+    },
+    "SbomUpstreamSchemaTests.test_upstream_does_not_replace_license_or_digest_semantics": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:dfcbe5a49c070e6f13e96675ee3b7c513ec6fd0cf26a7240830cd4c61969b25f",
+        "class:setup-sha256:0c2266570ccb5ff558e849cd8c190b48566925c4bd24fa353b785cc5dda1d3c1"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sbom_upstream.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

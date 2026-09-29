@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_sdk_provider_matrix.sh",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "aba338b2f1b12e27ba14fa8b3ee0f9ee30c1f5f47b25cd7ab68de92239b3d6ae"
+}

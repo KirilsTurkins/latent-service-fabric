@@ -75,7 +75,7 @@ jobs:
           LSF_RUNTIME_RUN: ${{ inputs.runtime_run }}
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/prepare_dev_packaged_probe.py
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: packaged-qualification-support
           path: ${{ runner.temp }}/packaged-support/
@@ -151,7 +151,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Packaged recovery failed; retain the original operation intent.' }
       - name: Retain bounded public success or failure receipts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: packaged-windows-observation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -220,7 +220,7 @@ jobs:
             --linux-output "$RUNNER_TEMP/packaged-linux" --output "$RUNNER_TEMP/packaged-devcontainer"
       - name: Retain bounded public Linux success or failure receipts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: packaged-linux-observation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |

@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "SbomSchemaTests.test_cyclonedx_closed_fields_and_unique_properties",
+    "SbomSchemaTests.test_cyclonedx_decimal_strings_are_canonical_and_bounded",
+    "SbomSchemaTests.test_cyclonedx_role_attribution_and_hash_combinations",
+    "SbomSchemaTests.test_normalized_role_digest_path_and_size_rules",
+    "SbomSchemaTests.test_normalized_unknown_missing_and_null_fields_fail",
+    "SbomSchemaTests.test_portable_sources_and_bounded_printable_strings",
+    "SbomSchemaTests.test_real_rust_generated_browser_fixture_passes_offline_upstream",
+    "SbomSchemaTests.test_supported_roles_and_attribution_pass_both_schema_levels"
+  ],
+  "guards": {
+    "SbomSchemaTests.test_cyclonedx_closed_fields_and_unique_properties": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8874ad63e80a39fe31cb7b50dfb95ff2d106f6078cc17d06b15198f1148a1752",
+        "class:setup-sha256:9200c59391ed87bff7671e3b6dbaa1518a4b7e88a8f4a7ec99f735d294211feb"
+      ],
+      "skipSites": []
+    },
+    "SbomSchemaTests.test_cyclonedx_decimal_strings_are_canonical_and_bounded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8874ad63e80a39fe31cb7b50dfb95ff2d106f6078cc17d06b15198f1148a1752",
+        "class:setup-sha256:9200c59391ed87bff7671e3b6dbaa1518a4b7e88a8f4a7ec99f735d294211feb"
+      ],
+      "skipSites": []
+    },
+    "SbomSchemaTests.test_cyclonedx_role_attribution_and_hash_combinations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8874ad63e80a39fe31cb7b50dfb95ff2d106f6078cc17d06b15198f1148a1752",
+        "class:setup-sha256:9200c59391ed87bff7671e3b6dbaa1518a4b7e88a8f4a7ec99f735d294211feb"
+      ],
+      "skipSites": []
+    },
+    "SbomSchemaTests.test_normalized_role_digest_path_and_size_rules": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8874ad63e80a39fe31cb7b50dfb95ff2d106f6078cc17d06b15198f1148a1752",
+        "class:setup-sha256:9200c59391ed87bff7671e3b6dbaa1518a4b7e88a8f4a7ec99f735d294211feb"
+      ],
+      "skipSites": []
+    },
+    "SbomSchemaTests.test_normalized_unknown_missing_and_null_fields_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8874ad63e80a39fe31cb7b50dfb95ff2d106f6078cc17d06b15198f1148a1752",
+        "class:setup-sha256:9200c59391ed87bff7671e3b6dbaa1518a4b7e88a8f4a7ec99f735d294211feb"
+      ],
+      "skipSites": []
+    },
+    "SbomSchemaTests.test_portable_sources_and_bounded_printable_strings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8874ad63e80a39fe31cb7b50dfb95ff2d106f6078cc17d06b15198f1148a1752",
+        "class:setup-sha256:9200c59391ed87bff7671e3b6dbaa1518a4b7e88a8f4a7ec99f735d294211feb"
+      ],
+      "skipSites": []
+    },
+    "SbomSchemaTests.test_real_rust_generated_browser_fixture_passes_offline_upstream": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8874ad63e80a39fe31cb7b50dfb95ff2d106f6078cc17d06b15198f1148a1752",
+        "class:setup-sha256:9200c59391ed87bff7671e3b6dbaa1518a4b7e88a8f4a7ec99f735d294211feb"
+      ],
+      "skipSites": []
+    },
+    "SbomSchemaTests.test_supported_roles_and_attribution_pass_both_schema_levels": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8874ad63e80a39fe31cb7b50dfb95ff2d106f6078cc17d06b15198f1148a1752",
+        "class:setup-sha256:9200c59391ed87bff7671e3b6dbaa1518a4b7e88a8f4a7ec99f735d294211feb"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sbom_schemas.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

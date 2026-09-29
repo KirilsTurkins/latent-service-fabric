@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "CleanupShutdownTests.test_conservative_disposal_is_retained_but_never_clean_acknowledgement",
+    "CleanupShutdownTests.test_each_adapter_rejects_a_present_incomplete_or_false_join",
+    "CleanupShutdownTests.test_live_slot_remains_charged_even_after_a_claimed_join",
+    "CleanupShutdownTests.test_native_types_and_u64_bounds_cannot_be_faked",
+    "CleanupShutdownTests.test_original_receipts_and_independent_compiler_extension_remain_valid",
+    "CleanupShutdownTests.test_transient_snapshot_conserves_slots_and_distinct_outcomes"
+  ],
+  "guards": {
+    "CleanupShutdownTests.test_conservative_disposal_is_retained_but_never_clean_acknowledgement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee60a4277a5428869227d66e1eb9f26a85a18e272a85145b596b4e6932034c9b",
+        "class:setup-sha256:c68d31a593e048f3544303306f4e059db5072d0a7691c5c850d6632a8371a011"
+      ],
+      "skipSites": []
+    },
+    "CleanupShutdownTests.test_each_adapter_rejects_a_present_incomplete_or_false_join": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee60a4277a5428869227d66e1eb9f26a85a18e272a85145b596b4e6932034c9b",
+        "class:setup-sha256:c68d31a593e048f3544303306f4e059db5072d0a7691c5c850d6632a8371a011"
+      ],
+      "skipSites": []
+    },
+    "CleanupShutdownTests.test_live_slot_remains_charged_even_after_a_claimed_join": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee60a4277a5428869227d66e1eb9f26a85a18e272a85145b596b4e6932034c9b",
+        "class:setup-sha256:c68d31a593e048f3544303306f4e059db5072d0a7691c5c850d6632a8371a011"
+      ],
+      "skipSites": []
+    },
+    "CleanupShutdownTests.test_native_types_and_u64_bounds_cannot_be_faked": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee60a4277a5428869227d66e1eb9f26a85a18e272a85145b596b4e6932034c9b",
+        "class:setup-sha256:c68d31a593e048f3544303306f4e059db5072d0a7691c5c850d6632a8371a011"
+      ],
+      "skipSites": []
+    },
+    "CleanupShutdownTests.test_original_receipts_and_independent_compiler_extension_remain_valid": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee60a4277a5428869227d66e1eb9f26a85a18e272a85145b596b4e6932034c9b",
+        "class:setup-sha256:c68d31a593e048f3544303306f4e059db5072d0a7691c5c850d6632a8371a011"
+      ],
+      "skipSites": []
+    },
+    "CleanupShutdownTests.test_transient_snapshot_conserves_slots_and_distinct_outcomes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ee60a4277a5428869227d66e1eb9f26a85a18e272a85145b596b4e6932034c9b",
+        "class:setup-sha256:c68d31a593e048f3544303306f4e059db5072d0a7691c5c850d6632a8371a011"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_cleanup_shutdown.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

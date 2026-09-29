@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "SupplyChainSchemaTests.test_historical_receipt_has_closed_identities_and_explicit_nullable_sbom",
+    "SupplyChainSchemaTests.test_node_modes_do_not_allow_an_implicit_enforced_fallback",
+    "SupplyChainSchemaTests.test_policy_requires_every_snapshot_and_bounds_tenant_authorization",
+    "SupplyChainSchemaTests.test_required_inputs_and_closed_authority_boundary",
+    "SupplyChainSchemaTests.test_upload_evidence_and_binary_projection_are_closed_and_bounded"
+  ],
+  "guards": {
+    "SupplyChainSchemaTests.test_historical_receipt_has_closed_identities_and_explicit_nullable_sbom": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4c78f8392ec426f01813b01fa497f4f5e588fe7eae81387d04188b5ef31a666",
+        "class:setup-sha256:4237e84d9ff05665f5a63edcf76762dbd5c3e63af5a9837ddd5481c43b93e112"
+      ],
+      "skipSites": []
+    },
+    "SupplyChainSchemaTests.test_node_modes_do_not_allow_an_implicit_enforced_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4c78f8392ec426f01813b01fa497f4f5e588fe7eae81387d04188b5ef31a666",
+        "class:setup-sha256:4237e84d9ff05665f5a63edcf76762dbd5c3e63af5a9837ddd5481c43b93e112"
+      ],
+      "skipSites": []
+    },
+    "SupplyChainSchemaTests.test_policy_requires_every_snapshot_and_bounds_tenant_authorization": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4c78f8392ec426f01813b01fa497f4f5e588fe7eae81387d04188b5ef31a666",
+        "class:setup-sha256:4237e84d9ff05665f5a63edcf76762dbd5c3e63af5a9837ddd5481c43b93e112"
+      ],
+      "skipSites": []
+    },
+    "SupplyChainSchemaTests.test_required_inputs_and_closed_authority_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4c78f8392ec426f01813b01fa497f4f5e588fe7eae81387d04188b5ef31a666",
+        "class:setup-sha256:4237e84d9ff05665f5a63edcf76762dbd5c3e63af5a9837ddd5481c43b93e112"
+      ],
+      "skipSites": []
+    },
+    "SupplyChainSchemaTests.test_upload_evidence_and_binary_projection_are_closed_and_bounded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d4c78f8392ec426f01813b01fa497f4f5e588fe7eae81387d04188b5ef31a666",
+        "class:setup-sha256:4237e84d9ff05665f5a63edcf76762dbd5c3e63af5a9837ddd5481c43b93e112"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_supply_chain_schemas.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

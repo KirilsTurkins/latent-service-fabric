@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "IllustrationPaletteTests.test_current_inventory_covers_every_svg_and_preserves_exact_originals",
+    "IllustrationPaletteTests.test_generation_is_deterministic_and_changes_only_new_presentations",
+    "IllustrationPaletteTests.test_paths_duplicates_and_limits_fail_closed",
+    "IllustrationPaletteTests.test_unknown_colors_missing_inventory_and_historical_drift_fail"
+  ],
+  "guards": {
+    "IllustrationPaletteTests.test_current_inventory_covers_every_svg_and_preserves_exact_originals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a3709f0c6f7b975c2b47a2d71f7aa60740de05e7e0794436817f78445395b6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "IllustrationPaletteTests.test_generation_is_deterministic_and_changes_only_new_presentations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a3709f0c6f7b975c2b47a2d71f7aa60740de05e7e0794436817f78445395b6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "IllustrationPaletteTests.test_paths_duplicates_and_limits_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a3709f0c6f7b975c2b47a2d71f7aa60740de05e7e0794436817f78445395b6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "IllustrationPaletteTests.test_unknown_colors_missing_inventory_and_historical_drift_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a3709f0c6f7b975c2b47a2d71f7aa60740de05e7e0794436817f78445395b6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_illustration_palette.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

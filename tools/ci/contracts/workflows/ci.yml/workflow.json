@@ -1,0 +1,69 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "${{ github.workflow }}-${{ github.ref }}"
+    },
+    "name": "CI",
+    "on": {
+      "pull_request": null,
+      "push": {
+        "branches": [
+          "development"
+        ]
+      },
+      "workflow_dispatch": {
+        "inputs": {
+          "cargo_dependency_cache": {
+            "default": "baseline",
+            "description": "Dependency-cache experiment (baseline remains the default)",
+            "options": [
+              "baseline",
+              "recipe"
+            ],
+            "type": "choice"
+          },
+          "ci_lane_workers": {
+            "default": "2",
+            "description": "Run co-located provider/renderer integrations with one or two bounded workers",
+            "options": [
+              "1",
+              "2"
+            ],
+            "type": "choice"
+          },
+          "run_catalog_scale": {
+            "default": false,
+            "description": "Run the heavyweight 100,000-release catalog acceptance probe",
+            "type": "boolean"
+          },
+          "run_phase3_resources": {
+            "default": false,
+            "description": "Run the declared bounded provider and actual Angular resource matrix",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "catalog",
+    "contracts",
+    "docs",
+    "fast",
+    "msrv",
+    "oci-registry",
+    "profile",
+    "result",
+    "rust",
+    "sdks",
+    "website"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/ci.yml"
+}

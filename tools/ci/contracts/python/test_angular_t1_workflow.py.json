@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "AngularT1WorkflowTests.test_asset_checks_pin_publication_bytes_and_never_use_rendered_html",
+    "AngularT1WorkflowTests.test_configuration_keeps_external_profile_protected_key_and_independent_compile_budget",
+    "AngularT1WorkflowTests.test_failure_diagnostic_adds_only_a_fixed_operation_name",
+    "AngularT1WorkflowTests.test_fixture_requires_actual_observation_and_independent_package_identity",
+    "AngularT1WorkflowTests.test_inventory_hashes_large_artifacts_incrementally_with_finite_total",
+    "AngularT1WorkflowTests.test_prepare_is_one_explicit_call_and_never_claims_execution_authority",
+    "AngularT1WorkflowTests.test_public_web_invocation_has_no_guest_supplied_actor_or_tenant",
+    "AngularT1WorkflowTests.test_publication_busy_retries_only_identical_uncommitted_operation",
+    "AngularT1WorkflowTests.test_publication_refusal_does_not_replay_denial_or_committed_uncertainty",
+    "AngularT1WorkflowTests.test_render_checks_the_actual_cli_publication_pin",
+    "AngularT1WorkflowTests.test_rendered_script_must_use_the_exact_selected_publication",
+    "AngularT1WorkflowTests.test_selected_deployment_never_fabricates_a_capsule_or_capability_grant",
+    "AngularT1WorkflowTests.test_trigger_deletion_checks_one_explicit_mutation_and_its_retained_generation"
+  ],
+  "guards": {
+    "AngularT1WorkflowTests.test_asset_checks_pin_publication_bytes_and_never_use_rendered_html": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_configuration_keeps_external_profile_protected_key_and_independent_compile_budget": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_failure_diagnostic_adds_only_a_fixed_operation_name": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_fixture_requires_actual_observation_and_independent_package_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_inventory_hashes_large_artifacts_incrementally_with_finite_total": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_prepare_is_one_explicit_call_and_never_claims_execution_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_public_web_invocation_has_no_guest_supplied_actor_or_tenant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_publication_busy_retries_only_identical_uncommitted_operation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_publication_refusal_does_not_replay_denial_or_committed_uncertainty": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_render_checks_the_actual_cli_publication_pin": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_rendered_script_must_use_the_exact_selected_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_selected_deployment_never_fabricates_a_capsule_or_capability_grant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "AngularT1WorkflowTests.test_trigger_deletion_checks_one_explicit_mutation_and_its_retained_generation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4de1f1cc7a6c367d79838fa4281f3773971e0def45490f35363c6f043836041d",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_angular_t1_workflow.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

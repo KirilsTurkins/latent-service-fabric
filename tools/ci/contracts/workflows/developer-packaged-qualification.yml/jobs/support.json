@@ -1,0 +1,44 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "github.event_name == 'workflow_dispatch' && inputs.policy_approved && github.repository == 'KirilsTurkins/latent-service-fabric'",
+    "name": "Prepare independently selected qualification inputs",
+    "needs": "conductor-contracts",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}",
+          "LSF_APPROVED_POLICIES": "${{ inputs.policies }}",
+          "LSF_DEVELOPER_RUN": "${{ inputs.developer_run }}",
+          "LSF_RUNTIME_RUN": "${{ inputs.runtime_run }}"
+        },
+        "name": "Stage only conductor, pinned verifier and independent trust files",
+        "run": "python3 -B tools/prepare_dev_packaged_probe.py"
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "packaged-qualification-support",
+          "path": "${{ runner.temp }}/packaged-support/",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 10
+  },
+  "jobId": "support",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-packaged-qualification.yml"
+}
