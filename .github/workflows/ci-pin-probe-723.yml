@@ -13,30 +13,34 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Read bounded upstream patch metadata without running package code
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Retain bounded tracked inputs and integrity-verified upstream archives
         shell: bash
         run: |
+          mkdir -p "$RUNNER_TEMP/pin-inputs"
+          git archive --format=tar HEAD tools .github sdk/java-guest website/toolchain website/scripts website/tests website/package.json website/package-lock.json website/content/toolchain.json website/README.md docs/development/website.md > "$RUNNER_TEMP/pin-inputs/source.tar"
           python3 - <<'PY'
-          import hashlib, json, urllib.request, urllib.error
-          import xml.etree.ElementTree as ET
-          def read(url, limit=4*1024*1024):
+          import base64, hashlib, os, pathlib, urllib.request
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pin-inputs'
+          assets = {
+              'npm-11.19.1.tgz': ('npm', 'sha512-ztsxKxt/kkIaAs+2i0GU6I+DRmUdrNasxTZKJe9TCdSjKxlhah/4r/hl5ygMD6XAg1qZ9c2TNomR4qgOydp10g=='),
+              'ip-address-10.5.1.tgz': ('ip-address', 'sha512-EXujUp9jyOI/chPgtqk6uy7fDq8AeCB/WlfEuPg9LN0fN9lzKAKfuDYi60SMhHwgUiEhZvVYsbGZN+RUU1INiA=='),
+              'undici-6.28.1.tgz': ('undici', 'sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA=='),
+          }
+          for filename, (name, expected) in assets.items():
+              url = f'https://registry.npmjs.org/{name}/-/{filename}'
               with urllib.request.urlopen(url, timeout=30) as response:
-                  value = response.read(limit + 1)
-              if len(value) > limit:
-                  raise ValueError('download bound')
-              return value
-          for name in ('jackson-annotations', 'jackson-core', 'jackson-databind'):
-              path = f'com/fasterxml/jackson/core/{name}/2.18.10/{name}-2.18.10'
-              base = 'https://repo.maven.apache.org/maven2/' + path
-              try:
-                  jar = read(base + '.jar')
-                  pom = read(base + '.pom')
-                  print('PATCH_ARTIFACT ' + json.dumps({'path': path + '.jar', 'sha256': hashlib.sha256(jar).hexdigest(), 'size': len(jar), 'platform': 'any'}))
-                  doc = ET.fromstring(pom)
-                  print('PATCH_POM ' + json.dumps({'name': name, 'dependencies': [''.join(e.itertext()).strip() for e in doc.findall('.//{*}dependencies/{*}dependency')]}))
-              except urllib.error.HTTPError as error:
-                  print('PATCH_UNAVAILABLE ' + json.dumps({'path': path, 'status': error.code}))
-          for package, version in (('npm', 'latest'), ('ip-address', '10.5.1'), ('undici', '6.28.1')):
-              doc = json.loads(read(f'https://registry.npmjs.org/{package}/{version}'))
-              print('NPM_PATCH ' + json.dumps({key: doc.get(key) for key in ('name', 'version', 'dist', 'dependencies', 'engines')}))
+                  raw = response.read(16 * 1024 * 1024 + 1)
+              assert len(raw) <= 16 * 1024 * 1024
+              assert 'sha512-' + base64.b64encode(hashlib.sha512(raw).digest()).decode() == expected
+              (output / filename).write_bytes(raw)
+              print(filename, len(raw), hashlib.sha256(raw).hexdigest())
           PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dependency-pin-inputs
+          path: ${{ runner.temp }}/pin-inputs/
+          if-no-files-found: error
+          retention-days: 1
