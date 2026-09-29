@@ -1,0 +1,90 @@
+name: Temporary Dependabot 1 validation
+
+on:
+  push:
+    branches: [security/dependabot-1]
+    paths: [.github/workflows/security-dependabot-1-validate.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/security/dependabot-1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.19.0
+      - name: Install the pinned validator dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Register only the two reviewed workflow extensions and validate contracts
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from tools import ci_coverage
+          helper = Path('.github/workflows/security-dependabot-1-validate.yml')
+          helper.unlink()
+          path = Path('tools/ci/commands.json')
+          data = json.loads(path.read_text())
+          workflows = {'.github/workflows/docs-site.yml', '.github/workflows/docs-pages.yml'}
+          identities = ci_coverage.workflow_identities(Path('.'))
+          assert identities.keys() == data['workflowIdentities'].keys()
+          changed = {name for name in identities if identities[name] != data['workflowIdentities'][name]}
+          assert changed == workflows, changed
+          for name in changed:
+              data['workflowIdentities'][name] = identities[name]
+          actual = ci_coverage.commands(Path('.'))
+          assert actual.keys() == data['after'].keys()
+          changed_commands = {key for key in actual if actual[key] != data['after'][key]}
+          assert len(changed_commands) == 2, changed_commands
+          for key in changed_commands:
+              old = data['after'][key]
+              new = actual[key]
+              assert old['workflow'] in workflows
+              assert {k: v for k, v in old.items() if k != 'run'} == {k: v for k, v in new.items() if k != 'run'}
+              install = 'npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\n'
+              assert old['run'].count(install) == 1
+              assert new['run'] == old['run'].replace(install, install + 'node website/scripts/patch-package-manager.mjs\n')
+              data['after'][key] = new
+              for coverage in data['coverage'].values():
+                  if coverage['after'] == key and coverage['disposition'] == 'unchanged':
+                      coverage['disposition'] = 'extended'
+                      coverage['reason'] = 'Replace and verify the separately pinned ip-address 10.5.1 bundle before invoking website npm; preserve all existing installation commands and disabled lifecycle scripts.'
+          path.write_text(json.dumps(data, indent=2) + '\n')
+          print('Registered precisely two reviewed bootstrap commands and workflow identities')
+          PY
+          python3 tools/ci_coverage.py
+          python3 -m unittest tools.tests.test_ci_coverage tools.tests.test_ci_suite_inventory tools.tests.test_ci_profile tools.tests.test_validate_docs
+          python3 tools/validate_docs.py
+      - name: Publish only the reviewed CI inventory update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git restore -- .github/workflows/security-dependabot-1-validate.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tools/ci/commands.json
+          test "$(git diff --cached --name-only)" = 'tools/ci/commands.json'
+          git diff --cached --check
+          git diff --cached --stat
+          git commit -m 'test(security): register reviewed package-manager bootstrap commands'
+          git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' push origin HEAD:refs/heads/security/dependabot-1
+      - name: Verify a clean package-manager installation
+        run: |
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node website/scripts/patch-package-manager.mjs
+          node --test website/tests/package-manager-security.test.mjs
+      - name: Validate website metadata, source extraction and types
+        run: |
+          node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+          node website/toolchain/node_modules/npm/bin/npm-cli.js --prefix website run check
+      - name: Run the complete website unit suite
+        run: node website/toolchain/node_modules/npm/bin/npm-cli.js --prefix website test
