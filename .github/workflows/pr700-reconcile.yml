@@ -1,0 +1,73 @@
+name: PR 700 current-base reconciliation
+on:
+  push:
+    branches: [fix/700-ci-base-reconcile-20260929]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    env:
+      RUSTUP_TOOLCHAIN: 1.97.1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: controls
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: source
+          ref: 1a994134e870071f7bdf10f647bd9b46f29b58b8
+          fetch-depth: 32
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: '11023762779'
+          run-id: 36549210553
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/tested-candidate
+          merge-multiple: true
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: dtolnay/rust-toolchain@46817827a5bfabe028bf34e1cce71fd40e2ff697
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - name: Reconcile the two explicit heads without dropping development changes
+        run: |
+          python3 -m pip install --requirement source/tools/requirements.lock
+          git -C source fetch --depth=32 origin a991d11acb98ebc17cc47d879f5237ac4618bcc9
+          python3 controls/.github/maintenance/pr700_reconcile.py merge source
+          python3 controls/.github/maintenance/pr700_repair.py locks source
+          python3 controls/.github/maintenance/pr700_reconcile.py inventory source "$RUNNER_TEMP/tested-candidate"
+          git -C source diff --check
+      - name: Validate current source coverage and repository contracts
+        working-directory: source
+        run: |
+          python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner tools.tests.test_dev_tools tools.tests.test_native_loader_boundary tools.tests.test_rust_capsule_authoring tools.tests.test_ci_coverage tools.tests.test_ci_profile tools.tests.test_ci_cargo tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff tools.tests.test_native_runtime tools.tests.test_node_security_profile_schema tools.tests.test_dev_node_policies tools.tests.test_security_baseline tools.tests.test_static_site tools.tests.test_testkit_dependencies
+          python3 tools/ci_coverage.py
+          python3 tools/validate_repository.py
+          python3 tools/validate_foundation.py
+          python3 tools/validate_docs.py
+      - name: Check the merged workspace at minimum Rust
+        working-directory: source
+        run: cargo +1.95.0 check --workspace --all-targets --all-features --locked
+      - name: Scan the actual reconciled locks with current unchanged security policy
+        run: |
+          python3 source/tools/security_install.py --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
+          python3 source/tools/security_scan.py rustsec --repo source --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan"
+      - name: Export verified Git objects for the authorized connector write
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 controls/.github/maintenance/pr700_reconcile.py export source "$RUNNER_TEMP/reconciled-candidate"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: pr700-reconciled-objects
+          path: ${{ runner.temp }}/reconciled-candidate
+          if-no-files-found: warn
+          retention-days: 7
