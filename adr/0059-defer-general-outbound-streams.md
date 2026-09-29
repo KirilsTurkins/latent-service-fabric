@@ -1,7 +1,7 @@
 # ADR-0059: Defer general outbound streams; evaluate typed protocol boundaries first
 
 - Date: 2026-09-28
-- Status: Proposed for review; decision is **defer production enablement**.
+- Status: Proposed for review; decision is **defer production outbound enablement**.
 - Investigation: [#696](https://github.com/KirilsTurkins/latent-service-fabric/issues/696)
 - Baseline: development `a7b5d2088471b7368cd85ab74f3292afcdfca00e`
 - Continuation: [second-pass ownership and parser investigation](../research/outbound-streams/deepening.md)
@@ -23,8 +23,8 @@ ADR-0009, ADR-0014, ADR-0025, ADR-0028 and ADR-0032 retain their force.
 
 ## Decision
 
-**Defer** a production raw TCP/TLS capability and any new protocol provider in
-this change. **Reject** automatic protocol inference, ambient/unrestricted WASI
+**Defer** a production outbound raw TCP/TLS capability and new outbound protocol
+providers in this change. **Reject** automatic protocol inference, ambient/unrestricted WASI
 sockets, invisible reconnect/replay and cross-activation authenticated connection
 reuse. **Prefer an explicit typed protocol operation** for the next narrow
 application need, using an existing capability to an explicitly operated gateway
@@ -34,6 +34,85 @@ conclusion, not approval or delivery of a mail/database product.
 A merge accepts this research decision and its evidence boundary; it does not
 promote the candidate WIT/schema, enable sockets, approve a new host plugin,
 certify six libraries, or change any supported HTTP/dependency workflow.
+
+## Scope clarification: compile inbound server APIs, not guest listeners
+
+The 29 September 2026 requirement distinguishes **source-level server APIs**
+from **application-owned execution resources**. A supported server registration
+can compile into an endpoint declaration and an invocation handler without
+creating a real guest socket. This is not deferred by the outbound decision above,
+and rejecting arbitrary protocol inference does not reject explicit API lowering.
+
+For example, a selected Java profile can target ordinary `HttpServer.create`,
+`createContext("/hey", handler)` and `start()` source calls. The intended translation
+is registration to bounded build metadata, deployment to authorized host routes,
+and each admitted request to a fresh handler invocation. `start()` finalizes the
+profile's definition rather than starting a Java server thread; its lifecycle is
+explicitly different from a general JDK server. The shared node listener owns the
+real connection. No Java server object, accept loop, continuation, thread or heap
+waits between invocations. This is a delivery target, not an implemented API claim.
+
+Reuse the existing [HTTP application contract](../docs/protocol/http-applications.md),
+`latent:web/application@0.1.0` / `handle`, and
+[scoped HTTP triggers](../docs/reference/http-triggers.md). This HTTP use case
+requires neither a new outbound socket capability nor an external gateway.
+The gateway alternatives in this ADR concern non-HTTP outbound dependencies,
+not a mandatory extra server in front of a Java HTTP capsule.
+
+The implementation must preserve these boundaries:
+
+- **Source and lifecycle:** select exact API/compiler profiles and generate the
+  handler entry point from supported registration patterns. Separate bounded
+  extraction from invocation-local initialization. Do not execute arbitrary
+  application startup or static initializers on the build host to discover routes,
+  silently skip code after `start()`, or turn an unsupported operation into a
+  successful no-op. Effectful or unresolved patterns need concrete diagnostics.
+- **Authority and routing:** generated declarations are inputs, not grants. Bind
+  logical endpoints to explicit operator-selected hosts, ports, methods and mounts
+  through current tenant/publication/generation checks. Where source routing is
+  dynamic or cannot map exactly to host triggers, use bounded capsule-side routing
+  only within an explicitly authorized mount; never silently broaden the mount.
+  Requests cannot modify the route catalog or inherit management authority.
+- **Semantics and ownership:** handler objects and statics are fresh per activation.
+  Request/response facades obey current body/header limits, trusted identity,
+  deadlines, cancellation and physical cleanup. No persistent framework session,
+  thread pool or guest listener is implied. Buffered response sealing is not a
+  physical flush or delivery acknowledgement; unsupported streaming, connection
+  inspection, live registration changes and executor semantics must be explicit.
+
+Java's [HttpServer source contract](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.httpserver/com/sun/net/httpserver/HttpServer.html)
+uses literal longest-prefix paths, so `/hey` can also match `/heyday`; LSF's host
+prefix routes are segment-bounded. That mismatch and canonical path handling
+must be tested rather than translating a context string into a non-equivalent
+trigger. The [HttpExchange contract](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.httpserver/com/sun/net/httpserver/HttpExchange.html)
+also distinguishes exact-length, chunked and no-body responses. Familiar method
+names alone do not establish equivalent transport or response-lifetime semantics.
+
+A literal [ServerSocket](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/ServerSocket.html)
+accepts connections rather than HTTP paths. A restricted accept-loop translation
+needs an explicit protocol and identifiable request-handler/control-flow boundary;
+a socket constructor alone is insufficient. Record supported patterns or concrete
+blockers without promising arbitrary loop rewriting, saving a continuation, or
+faking a bound descriptor. Successful HTTP-handler translation does not qualify
+raw socket compatibility, and that separate question must not block the handler
+profile.
+
+Shared contract/tooling and the six-language applicability matrix are tracked by
+[#727](https://github.com/KirilsTurkins/latent-service-fabric/issues/727); the first
+concrete Java implementation and real-ingress qualification are
+[#728](https://github.com/KirilsTurkins/latent-service-fabric/issues/728).
+[#680](https://github.com/KirilsTurkins/latent-service-fabric/issues/680) and
+[#688](https://github.com/KirilsTurkins/latent-service-fabric/issues/688) retain their
+outbound client ownership. The new inbound work does not wait for this ADR's
+outbound capability promotion, and ordinary dependency/client delivery does not
+wait for inbound implementation. This clarification authorizes no production
+release, new ambient import or per-library approval requirement.
+
+This section updates scope and backlog only. Existing SMTP and broker receipts
+remain immutable evidence for their recorded sources; they do not validate Java
+server-API compilation. The v1 receipt requires its original ADR/runner revision;
+the v2 native profile excludes ADR prose from its selected source set. No retained
+receipt is rewritten to make this documentation edit appear to be a new test run.
 
 ## Alternatives and tradeoffs
 
@@ -136,7 +215,7 @@ checks are excluded from this native-only profile, not silently counted again.
 Receipt format 2 checks complete selected inputs and top-level test identities;
 old v1 evidence remains verifiable only against its original source/runner.
 
-**The decision remains defer.** A typed gateway needs independent authenticated
+**The outbound decision remains defer.** A typed gateway needs independent authenticated
 admission, bounded downstream ownership and explicit reconciliation; host cleanup
 is not proof of downstream cleanup or rollback. Callback compatibility also needs
 parser-level resource controls. Neither result approves a new production provider,
@@ -150,9 +229,11 @@ same captured-dependency rules; no selected-package catalogue or maintainer libr
 approval gate is introduced. APIs whose compiler/runtime semantics cannot be
 represented fail honestly rather than receiving fake successful socket handles.
 
-No production direction is approved by this PR, so **no implementation,
-conformance or operator tickets are created merely to presume such approval**.
-If maintainers later approve a specific protocol boundary or raw profile, create
+No new outbound production direction is approved by this PR, so **no outbound
+implementation, conformance or operator tickets are created to presume approval**.
+The separate inbound SDK tickets above track implementation of the clarified
+server-API goal; they are not approval of the deferred outbound capability.
+If maintainers later approve a specific outbound protocol boundary or raw profile, create
 three separately scoped issues: production authority/ownership integration,
 real-component/library and adversarial conformance, and protected operator
 configuration/audit/credential lifecycle. Each must identify its approved ADR
