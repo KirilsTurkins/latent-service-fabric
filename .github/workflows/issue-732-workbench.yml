@@ -1,4 +1,4 @@
-name: Issue 732 isolated workbench
+name: Issue 732 exact candidate validation
 on:
   push:
     branches: [fix/732-sharded-ci-contracts]
@@ -6,22 +6,90 @@ on:
 permissions:
   contents: read
 jobs:
-  source:
+  validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 2
-      - name: Export the immutable development source
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Prepare pinned validator dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Reconstruct only the pre-reviewed exact candidate tree
         run: |
           set -euo pipefail
-          git cat-file -e 2c52ff1a9d260da2fbcd81aa0c420926a5820d98^{commit}
-          git archive --format=tar.gz --output="$RUNNER_TEMP/issue-732-source.tar.gz" 2c52ff1a9d260da2fbcd81aa0c420926a5820d98
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+          python3 - <<'PY'
+          import base64, lzma, os
+          from pathlib import Path
+          parts = sorted(Path('.issue-732').glob('overlay-*.b64'))
+          assert len(parts) == 5
+          encoded = ''.join(path.read_text().strip() for path in parts)
+          Path(os.environ['RUNNER_TEMP'], 'issue732-overlay.json').write_bytes(lzma.decompress(base64.b64decode(encoded, validate=True)))
+          PY
+          git worktree add --detach "$RUNNER_TEMP/candidate" 2c52ff1a9d260da2fbcd81aa0c420926a5820d98
+          python3 .issue-732/build.py "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/issue732-overlay.json" "$RUNNER_TEMP/candidate-evidence"
+      - name: Native documentation and inventory qualification
+        working-directory: ${{ runner.temp }}/candidate
+        env:
+          LSF_REQUIRE_NATIVE_PROCESS_TESTS: "1"
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_contracts tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff 2>&1 | tee "$RUNNER_TEMP/candidate-evidence/docs-tests.log"
+          python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner tools.tests.test_validate_workflow_actions tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies 2>&1 | tee "$RUNNER_TEMP/candidate-evidence/owner-tests.log"
+      - name: Validate unchanged policy and read-only repository contracts
+        working-directory: ${{ runner.temp }}/candidate
+        run: |
+          set -euo pipefail
+          python3 tools/ci_coverage.py 2>&1 | tee "$RUNNER_TEMP/candidate-evidence/coverage.log"
+          python3 tools/validate_workflow_actions.py 2>&1 | tee "$RUNNER_TEMP/candidate-evidence/action-pins.log"
+          python3 tools/validate_docs.py 2>&1 | tee "$RUNNER_TEMP/candidate-evidence/docs.log"
+          python3 tools/validate_repository.py 2>&1 | tee "$RUNNER_TEMP/candidate-evidence/repository.log"
+          python3 tools/validate_foundation.py 2>&1 | tee "$RUNNER_TEMP/candidate-evidence/foundation.log"
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git status --porcelain)"
+          cp target/ci/observed-inventory.json "$RUNNER_TEMP/candidate-evidence/"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
         with:
-          name: issue-732-source
-          path: ${{ runner.temp }}/issue-732-source.tar.gz
+          name: issue-732-exact-candidate
+          path: ${{ runner.temp }}/candidate-evidence/
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
+  publish-objects:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      # This isolated publisher never checks out, imports, or executes candidate
+      # code. It accepts only a hardcoded digest of reviewed Git tree data and
+      # creates unattached Git objects. The connector separately updates the PR.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: issue-732-exact-candidate
+          path: candidate-data
+      - name: Store the exactly validated tree without updating any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, urllib.request
+          from pathlib import Path
+          payload = Path('candidate-data/candidate-tree.json').read_bytes()
+          assert hashlib.sha256(payload).hexdigest() == '4b8eea6d7dbc24acd7803e847dd096851a25be8e6ff8e7c55d35f7d221e35c82'
+          document = json.loads(payload)
+          assert document['base_tree'] == 'da458ba6dec0efd929bd5a8daa0dd4067b72eb08'
+          assert len(document['tree']) == 480
+          request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/trees', data=payload, method='POST', headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'})
+          with urllib.request.urlopen(request, timeout=120) as response:
+              result = json.load(response)
+          assert result['sha'] == '65a3bfa45523532437f7953d820392a3b22052a6', result['sha']
+          print('VALIDATED_CANDIDATE_TREE=' + result['sha'])
+          PY
