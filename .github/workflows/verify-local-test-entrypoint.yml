@@ -81,6 +81,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          export GITHUB_SHA="$(git rev-parse HEAD)"
           out="$RUNNER_TEMP/local-test-validation"
           suite=latent-core.lib.latent-core
           case=digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain
