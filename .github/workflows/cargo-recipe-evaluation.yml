@@ -1,0 +1,48 @@
+name: Cargo recipe evaluation
+
+on:
+  push:
+    branches: [feat/432-cargo-cache-evidence]
+    paths:
+      - .github/workflows/cargo-recipe-evaluation.yml
+      - tools/ci_cargo*.py
+      - tools/tests/test_ci_cargo*.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cargo-recipe-evaluation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evaluate:
+    name: Isolated Cargo evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Retain exact source inputs for regression validation
+        run: |
+          mkdir -p "$RUNNER_TEMP/cargo-recipe-evaluation"
+          git rev-parse HEAD > "$RUNNER_TEMP/cargo-recipe-evaluation/revision.txt"
+          git archive --format=tar.gz --output="$RUNNER_TEMP/cargo-recipe-evaluation/tooling-source.tar.gz" HEAD tools .github .cargo Cargo.toml Cargo.lock rust-toolchain.toml docs/testing
+          rustc -vV > "$RUNNER_TEMP/cargo-recipe-evaluation/rustc.txt"
+          cargo -vV > "$RUNNER_TEMP/cargo-recipe-evaluation/cargo.txt"
+      - name: Validate existing recipe and cache contracts
+        run: python3 -m unittest tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache
+      - name: Retain evaluation diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cargo-recipe-evaluation-${{ github.sha }}
+          path: ${{ runner.temp }}/cargo-recipe-evaluation/
+          if-no-files-found: error
+          retention-days: 7
