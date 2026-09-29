@@ -681,7 +681,7 @@ class AngularReviewRegressionTests(unittest.TestCase):
 
         owner = local.TestRun("angular-renderer", policy(), repo=self.repo,
                               reproduction={"suite": "angular-renderer", "preflight": False, "fault": "none"},
-                              synthetic=True, secrets=("PRIVATE_MARKER_730",),
+                              synthetic=True, secrets=("dummy-redact",),
                               diagnostic_root=self.repo / "child-staging")
         caught = None
         with redirect_stdout(io.StringIO()):
@@ -701,7 +701,7 @@ class AngularReviewRegressionTests(unittest.TestCase):
                     owner.complete_cases(self.plan["cases"] if passed else self.plan["cases"][:1])
                     result = Result(0 if passed else 101,
                                     b"DISTINCTIVE_ANGULAR_ASSERTION: expected 2, got 1\n"
-                                    b"token=PRIVATE_MARKER_730\n", cleaned=True)
+                                    b"token=dummy-redact\n", cleaned=True)
                     owner.observe(result)
                     if not passed:
                         raise local.ProcessFailure("assertion-failure", "child-exit-failure", result)
@@ -750,7 +750,7 @@ class AngularReviewRegressionTests(unittest.TestCase):
         self.assertEqual(record["outcome"], "failed")
         self.assertEqual(record["reason"], "child-exit-failure")
         self.assertIn("DISTINCTIVE_ANGULAR_ASSERTION", record["logTail"])
-        self.assertNotIn("PRIVATE_MARKER_730", json.dumps(record))
+        self.assertNotIn("dummy-redact", json.dumps(record))
         self.assertEqual(record["requiredCaseCount"], len(self.plan["cases"]))
         self.assertEqual(record["completedCaseCount"], 1)
         self.assertEqual(record["completedCaseDigest"], local.case_digest(self.plan["cases"][:1]))
@@ -783,10 +783,10 @@ class AngularReviewRegressionTests(unittest.TestCase):
     def test_child_failure_details_are_bounded_and_redacted_again(self):
         from tools.test_run import MAX_TAIL
         base = self.child_record()
-        base["logTail"] = "token=UNSAFE_CHILD_TOKEN\nDISTINCTIVE_ANGULAR_ASSERTION\n"
+        base["logTail"] = "token=dummy-input\nDISTINCTIVE_ANGULAR_ASSERTION\n"
         code, record = self.run_child_record(base)
         self.assertEqual(code, 101)
-        self.assertNotIn("UNSAFE_CHILD_TOKEN", json.dumps(record))
+        self.assertNotIn("dummy-input", json.dumps(record))
         self.assertIn("DISTINCTIVE_ANGULAR_ASSERTION", record["logTail"])
         self.assertLessEqual(len(record["logTail"]), MAX_TAIL)
         for field, value in (("logTail", "x" * (MAX_TAIL + 1)), ("logTail", []),
