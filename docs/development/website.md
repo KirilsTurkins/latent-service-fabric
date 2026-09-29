@@ -26,25 +26,38 @@ unchanged; obsolete Wiki URLs have no compatibility requirement.
 
 ## Toolchain and installation
 
-Use Node **24.19.0** and npm **11.19.1**. These website pins do not change the SDK or
+Use Node **24.19.0** and the locally patched npm **11.19.1**. These website pins do not change the SDK or
 Angular qualification profiles. [The private package](../../website/package.json),
 [lock](../../website/package-lock.json) and
 [reviewed identities](../../website/content/toolchain.json) are isolated from
 root Cargo and SDK manifests. Docusaurus 3.10.2, React 19.3.0 and TypeScript 5.9.3
 are exact pins, not floating recommendations. There is no root npm workspace.
 
-From the repository checkout:
+From the repository checkout, use the system npm only to bootstrap the separately
+locked toolchain. Replace its vulnerable bundled `ip-address` before invoking it:
 
 ```text
-cd website
 node --version
-npm --version
-npm ci --ignore-scripts --no-audit --no-fund
-npm run check
-npm test
-npm run build
-npm run build:root
+npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+node website/scripts/patch-package-manager.mjs
+node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+cd website
+node toolchain/node_modules/npm/bin/npm-cli.js run check
+node toolchain/node_modules/npm/bin/npm-cli.js test
+node toolchain/node_modules/npm/bin/npm-cli.js run build
+node toolchain/node_modules/npm/bin/npm-cli.js run build:root
 ```
+
+Run the patch command after every clean toolchain install. npm bundles its own
+copy of `ip-address`; an override or a lockfile-only edit does not replace those
+files. The bootstrap installs the separately integrity-pinned upstream 10.5.1,
+replaces the complete bundled copy, and verifies the installed graph and NAT64
+classification before the selected npm runs. See the
+[security bootstrap details](../../website/README.md#package-manager-security-bootstrap).
+For every later `npm run` command in this guide, use
+`node toolchain/node_modules/npm/bin/npm-cli.js run` from `website/`, or explicitly
+place `website/toolchain/node_modules/.bin` first on your shell's `PATH`.
+A global npm 11.19.1 installation does not include this local security fix.
 
 The checked-in `.npmrc` also disables dependency lifecycle scripts, requires the
 engine versions, and bounds npm fetches to one retry and 60 seconds per request.
