@@ -131,10 +131,14 @@ wasm-tools validate "${ENGINE_MEMORY_COMPONENT}"
 wasm-tools component wit "${ENGINE_MEMORY_COMPONENT}" --json \
     > "${OUTPUT}/wit/engine-memory-component.json"
 
-LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
-LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
-LSF_OVERSIZED_LOG_COMPONENT="${OVERSIZED_LOG_COMPONENT}" \
-    cargo test -p latent-wasmtime --test echo_backend --locked -- --ignored --nocapture
+# The registered local/CI selection supplies the same four exact cases and
+# fixture paths. Earlier explicit builders are reused; run never invokes Cargo.
+# This invocation owns a fresh inventory under the already-cleared OUTPUT.
+# Reusing a developer inventory here would bypass Cargo's source freshness check.
+ECHO_INVENTORY="${OUTPUT}/echo-runtime.jsonl"
+python3 tools/test.py prepare --suite selection.echo-runtime --inventory "${ECHO_INVENTORY}" --context ci
+python3 tools/test.py check --suite selection.echo-runtime --inventory "${ECHO_INVENTORY}" --context ci
+python3 tools/test.py run --suite selection.echo-runtime --inventory "${ECHO_INVENTORY}" --context ci
 
 LSF_CONTAINMENT_COMPONENT="${CONTAINMENT_COMPONENT}" \
     cargo test -p latent-wasmtime --test containment_backend --locked -- \
