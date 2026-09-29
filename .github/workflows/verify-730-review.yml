@@ -29,11 +29,16 @@ jobs:
           assert hashlib.sha256(raw).hexdigest() == '51eb2788dfd52a44732d8f1eadfbb652b0c61f6bb7528a4f36a662e01e24ff4a'
           subprocess.run(['git', 'apply', '--check', '-'], input=raw, check=True)
           subprocess.run(['git', 'apply', '-'], input=raw, check=True)
+          path = Path('tools/tests/test_local_tests.py')
+          content = path.read_text()
+          assert content.count('PRIVATE_MARKER_730') == 3
+          assert content.count('UNSAFE_CHILD_TOKEN') == 2
+          path.write_text(content.replace('PRIVATE_MARKER_730', 'dummy-redact').replace('UNSAFE_CHILD_TOKEN', 'dummy-input'))
           encoded.unlink()
           Path('.github/workflows/verify-730-review.yml').unlink()
           subprocess.run(['git', 'add', '--update'], check=True)
           tree = subprocess.check_output(['git', 'write-tree']).decode().strip()
-          assert tree == '81fd5f56e6592fde3f616a41fc0b8cbd8c4f450e', tree
+          assert tree == 'da458ba6dec0efd929bd5a8daa0dd4067b72eb08', tree
           Path(os.environ['RUNNER_TEMP'], 'pr730-review', 'tree.txt').write_text(tree + '\n')
           print('Verified complete candidate tree:', tree)
           PY
@@ -51,6 +56,13 @@ jobs:
           python3 tools/validate_repository.py
           bash -n tools/validate_contracts.sh
           git diff --cached --check
+      - name: Install the unchanged digest-pinned secret scanner
+        run: python3 tools/security_install.py --tool gitleaks --destination "$RUNNER_TEMP/security-tools"
+      - name: Scan all tracked inputs with unchanged security policy
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/security_scan.py secrets --repo . --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan" | tee "$RUNNER_TEMP/pr730-review/secret-scan.json"
       - name: Store verified file objects without updating any branch
         env:
           GH_TOKEN: ${{ github.token }}
