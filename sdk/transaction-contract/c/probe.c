@@ -1,5 +1,6 @@
 /* Actual maintained async C compiler input, never an implementation of the host. */
 #include "probe.h"
+#include "lsf/guest.h"
 #include "lsf/async.h"
 
 enum phase { GET, PUT, DELETE, SCAN, NEXT, STAGE };
