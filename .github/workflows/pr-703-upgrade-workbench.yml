@@ -6,40 +6,77 @@ on:
 permissions:
   contents: read
 jobs:
-  inputs:
+  assemble:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 711c5773eab56487270b95d395bb6e4879394ea7
+          path: controls
           persist-credentials: false
-      - name: Acquire only authenticated npm input archives without executing them
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 711c5773eab56487270b95d395bb6e4879394ea7
+          path: source
+          persist-credentials: false
+      - name: Reconstruct only the locally reviewed candidate, without executing repository code
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd source
+          for sha in aaa4191436ef07e5a8739f411f63a1a85f99701f 7aa1ae07c7ceed1c6ab32b6cdeb5b46ba31f750e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61; do
+            git fetch --no-tags --depth=1 origin "$sha"
+          done
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, os, pathlib, subprocess
+          raw = lzma.decompress(base64.b64decode(pathlib.Path('../controls/.github/pr703-replay.b64').read_text().strip(), validate=True))
+          assert len(raw) == 38736
+          assert hashlib.sha256(raw).hexdigest() == '6afcbaca36c23604eeddcef540a8ebe1ec12a6ae885c11ebdea639964492f064'
+          data = json.loads(raw)
+          assert data['b'] == '711c5773eab56487270b95d395bb6e4879394ea7'
+          assert data['p'] == 'aaa4191436ef07e5a8739f411f63a1a85f99701f'
+          assert data['t'] == '3b8a117aa71094f07202b3313900d947ce2c6f32'
+          assert len(data['f']) == 85
+          assert subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip() == data['b']
+          elements, paths = [], set()
+          for name, mode, source, edits in data['f']:
+              path = pathlib.Path(name)
+              assert not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts and name not in paths
+              assert mode in {'100644','100755'}
+              assert not any(parent.is_symlink() for parent in [path, *path.parents])
+              paths.add(name)
+              content = subprocess.check_output(['git','cat-file','blob',source]).decode('utf-8') if source else ''
+              lines = content.splitlines(keepends=True)
+              for start, end, replacement in reversed(edits):
+                  assert 0 <= start <= end <= len(lines)
+                  lines[start:end] = replacement.splitlines(keepends=True)
+              content = ''.join(lines)
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(content.encode('utf-8'))
+              path.chmod(0o755 if mode == '100755' else 0o644)
+              elements.append({'path':name,'mode':mode,'type':'blob','content':content})
+          subprocess.run(['git','add','--',*sorted(paths)], check=True)
+          subprocess.run(['git','diff','--cached','--check'], check=True)
+          tree = subprocess.check_output(['git','write-tree'], text=True).strip()
+          assert tree == data['t'], (tree, data['t'])
+          base_tree = subprocess.check_output(['git','rev-parse','HEAD^{tree}'], text=True).strip()
+          pathlib.Path(os.environ['RUNNER_TEMP'],'candidate-tree-request.json').write_text(json.dumps({'base_tree':base_tree,'tree':elements}))
+          print('Verified complete candidate tree:', tree)
+          subprocess.run(['git','diff','--cached','--stat'], check=True)
+          PY
+      - name: Store verified Git tree objects only; do not update any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import importlib.util, json, os, pathlib, tarfile
-          spec = importlib.util.spec_from_file_location('npm_prepare', 'website/toolchain/prepare.py')
-          module = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(module)
-          pins = json.loads(pathlib.Path('website/toolchain/source.json').read_text())
-          pins['patches'][0]['version'] = '10.7.2'
-          pins['patches'][0]['integrity'] = 'sha512-7H/2gFSIitxc0hG3nOI1glS8QLo/EHBFFLk8vEUjXY/xu0AdL8jZ9U1IzO2PUm0d2D/ofQcAifb0g6OBkt8U7w=='
-          pins['patches'].append({'name':'brace-expansion', 'from':'5.0.9', 'version':'5.0.12', 'integrity':'sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ=='})
-          root = pathlib.Path(os.environ['RUNNER_TEMP'])
-          cache = root / 'npm-inputs'
-          for pin in [pins['base'], *pins['patches']]:
-              raw = module.acquire(pin, cache, False)
-              manifest = module.package(module.unpack(raw))
-              assert manifest['name'] == pin['name'] and manifest['version'] == pin['version']
-              print(pin['name'], pin['version'], module.integrity(raw), manifest.get('dependencies', {}))
-          with tarfile.open(root / 'pr703-npm-inputs.tar.gz', 'w:gz') as archive:
-              for path in sorted(cache.iterdir()):
-                  archive.add(path, arcname=path.name)
+          import json, os, pathlib, urllib.request
+          raw = pathlib.Path(os.environ['RUNNER_TEMP'],'candidate-tree-request.json').read_bytes()
+          assert len(raw) < 2 * 1024 * 1024
+          req = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/trees', data=raw, method='POST', headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'})
+          with urllib.request.urlopen(req, timeout=90) as response:
+              result = json.load(response)
+          assert result['sha'] == '3b8a117aa71094f07202b3313900d947ce2c6f32'
+          print('Stored exact source tree:', result['sha'])
           PY
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: pr703-npm-inputs
-          path: ${{ runner.temp }}/pr703-npm-inputs.tar.gz
-          retention-days: 1
-          compression-level: 0
-          if-no-files-found: error
