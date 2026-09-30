@@ -30,6 +30,8 @@ pub(crate) struct Surface {
     functions: Vec<((String, String), Function)>,
     pub imports: BTreeSet<String>,
     pub retained_bytes: usize,
+    pub value_codec_limits: crate::values::ValueCodecLimits,
+    pub hostcall_fuel: usize,
 }
 
 impl Surface {
@@ -87,6 +89,16 @@ pub(crate) fn validate_with_providers(
     providers: Providers,
 ) -> Result<Surface, PlatformError> {
     let component_type = component.component_type();
+    // The actual component surface, subsequently reconciled with the signed
+    // manifest below, selects the transfer owner. Merely installing ingress
+    // must not amplify every domain signature's allocation requirement.
+    let selected_config = selected_value_config(
+        config,
+        component_type
+            .exports(engine)
+            .any(|(name, _)| name == "latent:web/application@0.1.0"),
+    );
+    let config = &selected_config;
     let mut remaining = config.value_codec_limits.max_type_nodes;
     let mut retained_bytes = 0;
     retain(1024, &mut retained_bytes, config)?;
@@ -186,10 +198,30 @@ pub(crate) fn validate_with_providers(
         functions: functions.into_iter().collect(),
         imports,
         retained_bytes,
+        value_codec_limits: config.value_codec_limits,
+        hostcall_fuel: config.hostcall_fuel,
     })
 }
 
 type ActualFunctions = BTreeMap<String, (ComponentFunc, Function)>;
+
+pub(crate) fn selected_value_config(
+    config: &WasmtimeConfig,
+    actual_web_export: bool,
+) -> WasmtimeConfig {
+    let mut selected = config.clone();
+    if actual_web_export {
+        if let Some(web) = config.buffered_web_value_profile {
+            selected.hostcall_fuel = web.hostcall_fuel;
+            selected.value_codec_limits = web.limits;
+        }
+    } else {
+        // This local validation copy also provides an unambiguous diagnostic
+        // selection; the original engine identity still binds both policies.
+        selected.buffered_web_value_profile = None;
+    }
+    selected
+}
 
 #[cfg(test)]
 mod tests;
@@ -381,7 +413,8 @@ fn check_types(
     config: &WasmtimeConfig,
     remaining: &mut usize,
 ) -> Result<(), PlatformError> {
-    let plan = validate_signature(types, config.value_codec_limits, config.hostcall_fuel)?;
+    let plan = validate_signature(types, config.value_codec_limits, config.hostcall_fuel)
+        .map_err(|error| diagnostic_profile(error, config))?;
     *remaining = remaining
         .checked_sub(plan.examined_type_nodes)
         .ok_or_else(exhausted)?;
@@ -399,7 +432,8 @@ fn check_host_types(
         config.value_codec_limits,
         config.hostcall_fuel,
         resources,
-    )?;
+    )
+    .map_err(|error| diagnostic_profile(error, config))?;
     *remaining = remaining
         .checked_sub(plan.examined_type_nodes)
         .ok_or_else(exhausted)?;
@@ -417,6 +451,21 @@ fn retain(
     }
     *retained = next;
     Ok(())
+}
+
+fn diagnostic_profile(mut error: PlatformError, config: &WasmtimeConfig) -> PlatformError {
+    use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticProfile};
+    for detail in &mut error.details {
+        if let Some(mut observation) = ActivationDiagnostic::from_detail(detail) {
+            observation.profile = Some(if config.buffered_web_value_profile.is_some() {
+                DiagnosticProfile::WasmtimeBufferedWebValuesV1
+            } else {
+                DiagnosticProfile::WasmtimeServiceValuesV1
+            });
+            *detail = observation.detail();
+        }
+    }
+    error
 }
 
 fn validate_descriptor(
