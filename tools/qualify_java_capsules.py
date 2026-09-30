@@ -76,6 +76,7 @@ def qualify(output: Path, wasi_sdk: Path):
         result["tools"] = materials
         stage = "host-build"
         commands.run(stage, paths["cargo"], "--config", ROOT / ".cargo/managed-guest.toml", "build", "--locked", "-p", "latent", "-p", "latentd", "--bins",
+            "--features", "latentd/development-test-node",
             "-p", "latent-packaging", "--example", "package", "--example", "capsule_contracts",
             "-p", "latent-policy", "--example", "capsule_authoring")
         if inputs() != before: raise ValueError("host sources changed during compilation")

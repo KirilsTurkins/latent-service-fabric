@@ -126,9 +126,10 @@ def canary(client, targets, publications, releases, host):
             "staleTriggerStatus": stale_status, "rolledBack": rolled, "idle": idle(client)}
 
 
-def run_node(binaries, releases, output, *, http):
+def run_node(binaries, releases, output, *, http, former_profile=False):
     evidence = fresh(output)
-    result = {"schemaVersion": "latent.java-http.node.v1", "status": "in-progress", "httpEnabled": http}
+    result = {"schemaVersion": "latent.java-http.node.v1", "status": "in-progress", "httpEnabled": http,
+              "formerProfileReproduction": former_profile}
     with owned_cancellation() as cancellation_owner:
         with tempfile.TemporaryDirectory(prefix="lsf-java-http-node-") as temporary:
             work = Path(temporary)
@@ -136,7 +137,7 @@ def run_node(binaries, releases, output, *, http):
             (work / "client").mkdir(mode=0o700)
             client = RecordingClient(binaries["latent"], work / "client", cancellation_owner, time.monotonic() + 900,
                 evidence=evidence / "controls", invocation_timeout_millis=120000)
-            config, host = configure(work / "node", releases, http=http)
+            config, host = configure(work / "node", releases, http=http, former_profile=former_profile)
             # This disposable config contains only the public workflow token.
             # Preserve the exact finite bounds when startup fails before RPC.
             write_json(evidence / "node-config.json", read_json(config))
@@ -147,9 +148,31 @@ def run_node(binaries, releases, output, *, http):
                 publications = publish(client, releases)
                 result["publications"] = publications
                 targets = grant(client, node, releases, publications)
-                result["standaloneStatus"] = invoke(client, targets, "domain", "status", [], "java-standalone-status")
-                require(decoded(result["standaloneStatus"])[0][0]["sequence"] == "18446744073709551615",
-                        "java-domain-full-width-result")
+                if former_profile:
+                    activation = "java-former-http-profile"
+                    failure = invoke(client, targets, "domain", "status", [], activation, codes=(4,))
+                    require(failure["error"]["code"] == "resource-exhausted", "java-former-profile-failure-category")
+                    tree = client.call("activation", "tree", activation, "--page-size", 4)["data"]
+                    require(tree["historyAvailable"] and len(tree["nodes"]) == 1 and not tree["nextPageToken"],
+                            "java-former-profile-retained-diagnosis")
+                    node_record = tree["nodes"][0]
+                    diagnostic = node_record["diagnostic"]
+                    require(node_record["diagnosticIsTerminal"] and diagnostic["stage"] == 3
+                        and diagnostic["reason"] == 1 and diagnostic["profileDigest"],
+                        "java-former-profile-producer-owned-signature-diagnosis")
+                    bound, required, fixed, fuel, multiplier = (int(diagnostic[name]) for name in (
+                        "configuredBound", "calculatedRequirement", "fixedBytes", "liftingFuel", "liftMultiplier"))
+                    require(bound == 64 * 1024 * 1024 and fuel == 2 * 1024 * 1024
+                        and required == fixed + fuel * multiplier and required > bound,
+                        "java-former-profile-calculated-allocation-proof")
+                    require("activation.diagnostic.v1" not in json.dumps(failure),
+                        "java-former-profile-diagnosis-exposed-in-public-invoke")
+                    result["formerProfileFailure"] = failure
+                    result["formerProfileAuthorizedTree"] = tree
+                else:
+                    result["standaloneStatus"] = invoke(client, targets, "domain", "status", [], "java-standalone-status")
+                    require(decoded(result["standaloneStatus"])[0][0]["sequence"] == "18446744073709551615",
+                            "java-domain-full-width-result")
                 if http:
                     route(client, host, publications["adapter"])
                     require(request(host)[0] == 403, "java-http-missing-child-grant-was-accepted")
@@ -207,6 +230,7 @@ def run_node(binaries, releases, output, *, http):
                 if node is not None:
                     client.node = None
                     node.close()
+                    (evidence / "node.stderr.log").write_bytes(bytes(node.buffers[1]))
                 write_workflow_receipt(evidence / "workflow.json", result)
     return result
 
@@ -244,12 +268,19 @@ def qualify(output, wasi_sdk, target):
         commands = Commands(ROOT, output / "signing", build_environment(output / "signing"))
         commands.run("demo-sign", binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built.values())
         result["releaseSet"] = read_json(output / "releases/release-set.json")
+        signed_inputs = inventory(output / "releases", maximum_bytes=128 * 1024 * 1024)
+        result["signedInputs"] = signed_inputs
+        stage = "former-http-global-profile"
+        result["formerProfile"] = run_node(binaries, output / "releases", output / "former-profile", http=False,
+                                            former_profile=True)
         stage = "standalone-profile"
         result["standalone"] = run_node(binaries, output / "releases", output / "standalone", http=False)
         stage = "http-profile"
         result["http"] = run_node(binaries, output / "releases", output / "http", http=True)
         require(before == inputs()
-            and identities == {name: file_identity(path) for name, path in binaries.items()}, "java-http-qualified-inputs-changed")
+            and identities == {name: file_identity(path) for name, path in binaries.items()}
+            and signed_inputs == inventory(output / "releases", maximum_bytes=128 * 1024 * 1024),
+            "java-http-qualified-inputs-changed")
         result["status"] = "passed"
         write_workflow_receipt(output / "qualification.json", result)
         return result

@@ -26,7 +26,8 @@ CHILD_SUBJECT = f"service:{len(TENANT)}:{TENANT}:{len(ADAPTER)}:{ADAPTER}"
 MEDIA = "application/vnd.latent.wit-values.v1+json"
 
 
-def configure(directory: Path, releases: Path, *, http=True):
+def configure(directory: Path, releases: Path, *, http=True, former_profile=False):
+    require(not former_profile or not http, "java-former-profile-no-http")
     config = configure_node(directory, releases, TENANT)
     value = read_json(config)
     value["engine"] = {"javaGuest": True}
@@ -57,6 +58,9 @@ def configure(directory: Path, releases: Path, *, http=True):
     value["providers"]["bindings"].append({"name": "java-domain", "tenant": TENANT,
         "consumerService": ADAPTER, "providerService": DOMAIN,
         "contract": SERVICE_CAPABILITY, "providerBinding": "java-domain-installed"})
+    if former_profile:
+        value["developmentPreparation"] = {"formatVersion": 1, "consent": True,
+            "purpose": "disposable-development-tests", "profile": "former-http-global-values-v1"}
     host = None
     if http:
         with socket.socket() as reservation:
