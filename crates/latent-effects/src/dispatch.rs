@@ -191,6 +191,19 @@ impl EffectRecord {
         self.latest.as_ref()
     }
 
+    pub(crate) fn active_attempt(&self) -> Result<AttemptIdentity, AuthorityError> {
+        if self.disposition != Disposition::Dispatching {
+            return Err(AuthorityError::Stale);
+        }
+        Ok(AttemptIdentity {
+            effect: self.authority()?.link().effect.clone(),
+            owner_epoch: self.owner_epoch,
+            claim_generation: self.claim_generation,
+            attempt: self.attempt,
+            retry_horizon_millis: self.retry_horizon_millis,
+        })
+    }
+
     /// Only `Pending` or explicitly qualified `RetryScheduled` work is claimable.
     /// The node calls this inside durable CAS; two clones are not two owners.
     pub fn claim(
@@ -462,7 +475,7 @@ impl EffectRecord {
         Ok(())
     }
 
-    fn check_claim(&self, claim: &AttemptIdentity) -> Result<(), AuthorityError> {
+    pub(crate) fn check_claim(&self, claim: &AttemptIdentity) -> Result<(), AuthorityError> {
         if self.disposition != Disposition::Dispatching
             || claim.effect != self.authority()?.link().effect
             || claim.owner_epoch != self.owner_epoch

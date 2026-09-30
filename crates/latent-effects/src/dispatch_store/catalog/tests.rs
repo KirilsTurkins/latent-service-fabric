@@ -167,6 +167,15 @@ fn reopened_send_boundary_is_uncertain_and_old_worker_receipt_cannot_overwrite_i
     );
     let recovered = record(fixture.store(), &due.effect);
     assert_eq!(recovered.disposition(), Disposition::Uncertain);
+    let history = DispatchCatalog::history_page(
+        &fixture.store().snapshot().unwrap(),
+        &due.effect,
+        None,
+        16,
+        4096,
+    )
+    .unwrap();
+    assert_eq!(history.rows[0].attempt.as_ref(), Some(&claim.attempt));
     assert_eq!(recovered.authority().unwrap().link().command, "command-a");
     assert_eq!(
         DispatchCatalog::complete(
@@ -394,4 +403,120 @@ fn policy_block_and_expiry_persist_without_send_and_clock_restore_rollback_never
     let counts = DispatchCatalog::counts(&fixture.store().snapshot().unwrap()).unwrap();
     assert_eq!(counts.blocked, 1);
     assert_eq!(counts.expired, 1);
+}
+
+#[test]
+fn accepted_attempt_reserves_disposition_bytes_and_actual_history_row_under_full_store_pressure() {
+    use latent_state::embedded::{RowKey, StoreLimits};
+
+    let directory = tempfile::tempdir().unwrap();
+    let limits = StoreLimits {
+        maximum_rows: 6,
+        maximum_logical_bytes: 96 * 1024,
+        ..StoreLimits::default()
+    };
+    let store = EmbeddedStore::open_file(
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(directory.path().join("full.redb"))
+            .unwrap(),
+        limits,
+    )
+    .unwrap();
+    let due = seed(&store, 'f');
+    let epoch = DispatchCatalog::begin_exclusive_epoch(&store, time(100), None).unwrap();
+    let claim = DispatchCatalog::claim(&store, epoch, &due, time(101)).unwrap();
+    let view = store.snapshot().unwrap();
+    let (rows, logical_bytes) = charged_usage(&view);
+    assert_eq!(rows, 5);
+    let history = DispatchCatalog::history_page(&view, &due.effect, None, 16, 4096).unwrap();
+    assert!(history.rows.is_empty());
+    assert_eq!(history.pending_slots, 1);
+    let filler_key = RowKey {
+        family: Family::State,
+        key: b"noisy-writer".to_vec(),
+    };
+    let filler = limits.maximum_logical_bytes - logical_bytes - filler_key.key.len() - 1;
+    drop(view);
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: filler_key.clone(),
+                value: Some(vec![7; filler]),
+            }],
+        })
+        .unwrap();
+    assert_eq!(
+        store.apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: RowKey {
+                    family: Family::State,
+                    key: b"over-quota".to_vec()
+                },
+                value: Some(vec![9; 1])
+            }]
+        }),
+        Err(StoreError::Capacity)
+    );
+    // No send occurred: the trusted concrete adapter may prove known
+    // nonexecution and schedule a finite retry. The new due row uses the
+    // actual row slot freed by the disposition reservation.
+    assert_eq!(
+        DispatchCatalog::complete(
+            &store,
+            epoch,
+            &claim.attempt,
+            receipt(Disposition::KnownFailed, 102),
+            Some((RetryProof::KnownNonexecution, 5)),
+            time(102)
+        ),
+        Ok(Disposition::RetryScheduled)
+    );
+    let after = store.snapshot().unwrap();
+    assert_eq!(after.get(&filler_key).unwrap().unwrap(), vec![7; filler]);
+    let history = DispatchCatalog::history_page(&after, &due.effect, None, 16, 4096).unwrap();
+    assert_eq!(history.rows.len(), 1);
+    assert_eq!(history.pending_slots, 0);
+    assert_eq!(
+        history.rows[0].receipt.disposition,
+        Disposition::KnownFailed
+    );
+    assert_eq!(
+        DispatchCatalog::due_page(&after, 107, None, 16, 4096)
+            .unwrap()
+            .rows
+            .len(),
+        1
+    );
+}
+
+fn charged_usage(view: &ReadView) -> (usize, usize) {
+    use latent_state::reservation::{LogicalReservation, KEY_PREFIX};
+    let mut logical_bytes = 0;
+    let mut rows = 0;
+    for family in [
+        Family::Outbox,
+        Family::PayloadReference,
+        Family::Maintenance,
+        Family::Attempt,
+    ] {
+        for (key, value) in view
+            .scan_after(family, b"", None, 16, 1024 * 1024)
+            .unwrap()
+            .rows
+        {
+            rows += 1;
+            logical_bytes += key.key.len() + 1 + value.len();
+            if key.family == Family::Maintenance && key.key.starts_with(KEY_PREFIX) {
+                logical_bytes +=
+                    usize::try_from(LogicalReservation::decode(&value).unwrap().bytes).unwrap();
+            }
+        }
+    }
+    (rows, logical_bytes)
 }

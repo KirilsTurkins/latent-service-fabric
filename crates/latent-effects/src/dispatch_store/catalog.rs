@@ -6,7 +6,9 @@ use crate::authority::{AuthorityError, DurableEffectAuthority, EffectTime};
 use crate::dispatch::{AttemptIdentity, AttemptReceipt, Disposition, EffectRecord, RetryProof};
 use crate::payload::PayloadRecord;
 
-use super::codec::{DispatchStoreError, HistoryRecord, OwnerRecord, HISTORY_PREFIX};
+use super::codec::{
+    DispatchStoreError, HistoryRecord, HistoryReservation, OwnerRecord, HISTORY_PREFIX,
+};
 use super::{
     effect_payload_key, effect_row_key, storage_error, DueRecord, DUE_PREFIX, EFFECT_PREFIX,
 };
@@ -43,6 +45,7 @@ pub struct DuePage {
 #[derive(Debug)]
 pub struct HistoryPage {
     pub rows: Vec<HistoryRecord>,
+    pub pending_slots: usize,
     pub resume: Option<Vec<u8>>,
 }
 
@@ -175,6 +178,7 @@ impl DispatchCatalog {
             }
         };
         writer.expect(payload_key, Some(payload_bytes));
+        writer.reserve_attempt(&loaded.record)?;
         writer.replace(loaded)?;
         drop(view);
         writer.apply(store)?;
@@ -194,6 +198,8 @@ impl DispatchCatalog {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, claim.effect())?;
+        loaded.record.check_claim(claim)?;
+        writer.verify_attempt(&view, &loaded.record)?;
         loaded.record.begin_send(claim)?;
         writer.replace(loaded)?;
         drop(view);
@@ -214,8 +220,10 @@ impl DispatchCatalog {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, claim.effect())?;
+        loaded.record.check_claim(claim)?;
+        let slot = writer.release_attempt(&view, &loaded.record)?;
         loaded.record.complete(claim, receipt)?;
-        writer.history(&loaded.record, Some(claim.clone()))?;
+        writer.history(&loaded.record, Some(claim.clone()), slot)?;
         if let Some((proof, delay)) = retry {
             // Failure of a claimed retry proof preserves the actual receipt.
             // It never converts uncertain provider acceptance to known failure.
@@ -293,13 +301,19 @@ impl DispatchCatalog {
             maximum_rows,
             maximum_bytes,
         )?;
-        let rows = page
-            .rows
-            .into_iter()
-            .map(|(key, bytes)| HistoryRecord::decode(&key, &bytes))
-            .collect::<Result<_, _>>()?;
+        let mut rows = Vec::with_capacity(page.rows.len());
+        let mut pending_slots = 0;
+        for (key, bytes) in page.rows {
+            if HistoryReservation::present(&bytes) {
+                super::validate_row(&key, &bytes)?;
+                pending_slots += 1;
+            } else {
+                rows.push(HistoryRecord::decode(&key, &bytes)?);
+            }
+        }
         Ok(HistoryPage {
             rows,
+            pending_slots,
             resume: page.resume,
         })
     }
