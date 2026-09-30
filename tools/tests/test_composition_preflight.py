@@ -119,6 +119,21 @@ class CompositionPreflight(unittest.TestCase):
             change(value)
             with self.subTest(change=change), self.assertRaises(DevError):
                 preflight.run(value)
+        for field in ("triggers", "providers", "policies"):
+            value = composition(imported=True)
+            value[field].append(copy.deepcopy(value[field][0]))
+            with self.subTest(field=field), self.assertRaises(DevError):
+                preflight.run(value)
+        value = composition(imported=True)
+        extra = copy.deepcopy(value["providers"][0])
+        extra["bindingId"] = "other-binding"
+        value["providers"].append(extra)
+        with self.assertRaisesRegex(DevError, "preflight-ambiguous-provider-contract"):
+            preflight.run(value)
+        value = composition(imported=True)
+        value["providers"][0]["policyIds"] = ["missing-policy"]
+        with self.assertRaisesRegex(DevError, "preflight-provider-policy-selection"):
+            preflight.run(value)
 
     def test_payload_trigger_export_and_context_rejections_are_distinct(self):
         value = composition()

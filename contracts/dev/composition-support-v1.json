@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.composition.support.v1",
   "inputVersion": "latent.composition.v1",
-  "sourceRevision": "015560c556f3867238bd47fd236646d55f2c92e3",
+  "sourceRevision": "da6e50d182f6ae302ec305c71165cb89f31b564c",
   "selectionRule": "first-matching-row-after-closed-input-and-Java-interface-ambiguity-checks",
   "unlistedCombination": "selected-combination-needs-source-matched-owner-evidence",
   "unlistedState": "untested",
@@ -21,8 +21,8 @@
     },
     "native-surface": {
       "path": "crates/latent-wasmtime/src/surface.rs",
-      "digest": "sha256:4d8db592492345283a4c1c5fa12e5b1c393133bfe80bc405733ca015168191be",
-      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+      "digest": "sha256:7a1dd863cbef78dbf13bfb8b5c48e6050e606f15d577a6b73d04a702e0082fc8",
+      "commit": "768a3573c0671c09c58b602546971b1997eb4f78"
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",

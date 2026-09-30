@@ -2,6 +2,7 @@
 from .common import require
 from . import paths
 from .preflight import BUDGETS, CONTEXT_CONTRACT, WEB_CONTRACT, uint
+from .composition_contract import selection_support, support_matrix
 
 
 def exports(component, contract, function):
@@ -48,6 +49,11 @@ def _capture(component, checks, add):
 
 
 def _component(component, profile, checks, add):
+    supported = selection_support(component, profile)
+    add(checks, "structural", "passed" if supported["state"] == "supported" else supported["state"],
+        supported["code"], component=component["id"],
+        diagnostic={"schemaVersion": 1, "stage": 4, "reason": 6}
+        if supported["code"] == "ordinary-context-provider-not-installed" else None)
     selected = component["target"]
     if component["publicationKind"] != "static-site":
         valid = exports(component, selected["contract"], selected["function"])
@@ -129,9 +135,11 @@ def inspect(value, directory, add):
         _headers(component, checks, add)
         _capture(component, checks, add)
         declared = {item["contract"] for item in value["providers"]}
-        missing = any(imported.startswith("latent:") and imported not in declared
-                      and imported != CONTEXT_CONTRACT for imported in component["imports"])
+        configured = set(support_matrix()["recognizedImports"]["configuredBindingContracts"])
+        missing = any(imported in configured and imported not in declared for imported in component["imports"])
         add(checks, "structural", "failed" if missing else "passed", "declared-provider-installations", component=component["id"])
+        if any(imported not in configured and imported != CONTEXT_CONTRACT for imported in component["imports"]):
+            add(checks, "structural", "not-checked", "unclassified-import-requires-actual-surface-inspection", component=component["id"])
         add(checks, "authenticated-live-state", "not-checked", "caller-dependent-current-grants-require-dispatch", component=component["id"])
     for trigger in value["triggers"]:
         _trigger(trigger, components, value["nodeProfile"], checks, add)

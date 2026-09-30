@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .common import MAX_DOCUMENT, decode, digest, encode, members, require, sha
 from . import paths
+from .composition_contract import matrix_identity, validate_semantics
 
 FORMAT = "latent.composition.v1"
 RESULT = "latent.composition.preflight.v1"
@@ -185,7 +186,7 @@ def validate(value):
         atom(policy["id"])
         sha(policy["digest"])
     require(len(encode(value)) <= MAX_DOCUMENT, "preflight-input-byte-limit")
-    return value
+    return validate_semantics(value)
 
 
 def _check(checks, level, state, code, *, component=None, diagnostic=None):
@@ -221,6 +222,7 @@ def run(value, *, directory: Path | None = None, observe=None):
         _check(checks, "authenticated-live-state", "not-checked", "current-authority-not-observed")
     _check(checks, "executed-qualification", "not-checked", "separate-controlled-qualification-required")
     result = {"schemaVersion": RESULT, "compositionDigest": digest(encode(value)), "supportMatrix": MATRIX,
+              "supportMatrixDigest": matrix_identity(),
               "checks": checks, "serviceHops": hops, "observation": observation,
               "passed": not any(row["state"] in {"failed", "unsupported"} for row in checks),
               "fullyChecked": False, "executionAuthorized": False, "grantCreated": False,

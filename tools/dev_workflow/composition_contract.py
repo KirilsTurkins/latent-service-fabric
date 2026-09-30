@@ -110,6 +110,7 @@ def validate_semantics(value):
     for field in ("maximumWirePayloadBytes", "maximumRequestBodyBytes", "maximumResponseBodyBytes"):
         _uint(value["nodeProfile"][field])
     _unique((row["bindingId"] for row in value["providers"]), "preflight-ambiguous-provider-binding")
+    _unique((row["contract"] for row in value["providers"]), "preflight-ambiguous-provider-contract")
     _unique((row["id"] for row in value["policies"]), "preflight-ambiguous-policy")
     policies = {row["id"] for row in value["policies"]}
     for provider in value["providers"]:
