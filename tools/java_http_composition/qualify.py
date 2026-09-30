@@ -205,8 +205,9 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     result["ordinaryContextImport"] = context.ordinary_import(client, targets, releases, publications, host)
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
-                    impersonation = invoke(client, targets, "adapter", "handle", web_request(host), "java-trigger-impersonation")
-                    require(decoded(impersonation)[0]["status"] == 403, "java-operator-impersonated-original-http-trigger")
+                    impersonation = invoke(client, targets, "adapter", "handle", web_request(host), "java-trigger-impersonation", codes=(4,))
+                    require(impersonation["category"] == "platform-failure" and impersonation["error"]["code"] == "permission-denied"
+                        and impersonation["outcomeKnown"], "java-operator-impersonated-original-http-trigger")
                     result["triggerImpersonationDenied"] = impersonation
                     result["triggerImpersonationTree"] = context.tree(client, "java-trigger-impersonation")
                     impersonation_nodes = result["triggerImpersonationTree"]["nodes"]
