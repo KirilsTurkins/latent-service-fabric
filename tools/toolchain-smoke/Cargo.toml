@@ -187,3 +187,19 @@ crate-type = ["cdylib"]
 test = true
 bench = false
 doc = false
+
+# Isolated #695 experiments, not SDK or production runtime entry points.
+[[example]]
+name = "research-concurrency-guest"
+path = "../../research/invocation-concurrency/guest.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "research-concurrency-host"
+path = "../../research/invocation-concurrency/host.rs"
+test = false
+bench = false
+doc = false

@@ -1,0 +1,16 @@
+package research:concurrency@0.1.0;
+
+// Research-only imports. These are not added to any production linker/profile.
+interface host {
+    wait: async func(task: u32) -> result<u32, u32>;
+    event: func(kind: u32, task: u32);
+}
+
+interface api {
+    run: async func(mode: u32, tasks: u32) -> u64;
+}
+
+world probe {
+    import host;
+    export api;
+}

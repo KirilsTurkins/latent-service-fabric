@@ -1,0 +1,68 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Bounded invocation concurrency experiment",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt",
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "id": "evidence_tests",
+        "name": "Reject incomplete research evidence",
+        "run": "python3 -m unittest discover -s research/invocation-concurrency -p 'test_*.py'"
+      },
+      {
+        "id": "component_experiment",
+        "name": "Build and run bounded actual components",
+        "run": "python3 tools/run_invocation_concurrency.py --output \"$RUNNER_TEMP/invocation-concurrency\""
+      },
+      {
+        "id": "formatting",
+        "name": "Check research Rust formatting",
+        "run": "rustfmt --edition 2021 --check research/invocation-concurrency/guest.rs research/invocation-concurrency/host.rs research/invocation-concurrency/scope.rs research/invocation-concurrency/memory.rs"
+      },
+      {
+        "if": "always()",
+        "name": "Retain source-bound successes and failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "invocation-concurrency-${{ github.sha }}",
+          "path": "${{ runner.temp }}/invocation-concurrency/receipt.json\n${{ runner.temp }}/invocation-concurrency/runtime.json\n${{ runner.temp }}/invocation-concurrency/actual.wit\n${{ runner.temp }}/invocation-concurrency/probe.wasm\n${{ runner.temp }}/invocation-concurrency/logs/**\n${{ runner.temp }}/invocation-concurrency/formatted/**\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "experiment",
+  "kind": "job",
+  "reviewReason": "Add the isolated #695 actual-component experiment and failure evidence; preserve all existing CI jobs and historical obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/invocation-concurrency.yml"
+}
