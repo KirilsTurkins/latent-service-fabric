@@ -37,7 +37,11 @@ HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py"
 
 def inputs(language="rust"):
     helpers = HELPERS
-    if language == "c":
+    if language == "rust":
+        helpers += ("application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
+                    "application_dependency_approval.py", "rust_application_dependencies.py", "captured_compiler_isolation.py",
+                    "rust_dependency_fixture.py")
+    elif language == "c":
         helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
@@ -167,6 +171,29 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         (output / "builds").mkdir(mode=0o700)
         for template in TEMPLATES:
             project = creator(output / "projects" / template, template)
+            executable_approval = None
+            if language == "rust" and application_dependencies and template == "greeting":
+                from tools.rust_dependency_fixture import install
+                stage = "application-dependency-capture"
+                result["applicationDependencies"] = install(project, output / "outside-project-dependencies", paths["cargo"])
+                write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
+                stage = "unapproved-executable-input-denial"
+                denied = output / "builds/greeting-approval-required"
+                try:
+                    builder(project, denied, binaries["examples/capsule_contracts"], binaries["examples/package"],
+                            "https://github.com/KirilsTurkins/latent-service-fabric", offline=True)
+                except ValueError:
+                    request = read_json(denied / "executable-input-approval-request.json")
+                    failure = read_json(denied / "BUILD-FAILED.json")
+                    if failure["stage"] != "executable-input-approval" or (denied / "BUILD-COMPLETE.json").exists():
+                        raise ValueError("unapproved executable input failed outside the retained approval boundary")
+                    # Only this SDK-owned fixture policy reviews a freshly retained
+                    # request. Normal application builds never self-approve it.
+                    executable_approval = request["identity"]
+                    result["applicationDependencies"]["executableApproval"] = executable_approval
+                else:
+                    raise ValueError("application build tools executed without exact approval")
+                stage = "standalone-builds"
             if language == "c" and application_dependencies and template == "greeting":
                 from tools.c_dependency_fixture import install
                 stage = "application-dependency-capture"
@@ -175,7 +202,7 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 stage = "standalone-builds"
             artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],
                 binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric",
-                **({"offline": offline} if language == "rust" else
+                **({"offline": offline or executable_approval is not None, "executable_approval": executable_approval} if language == "rust" else
                    {"tools": typescript_tools} if language == "typescript" else
                    {"tools": dotnet_tools} if language == "dotnet" else {}))
             built.append(artifact)
@@ -270,8 +297,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--offline", action="store_true")
+    parser.add_argument("--application-dependencies", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(qualify(args.output, offline=args.offline)))
+    print(json.dumps(qualify(args.output, offline=args.offline, application_dependencies=args.application_dependencies)))
 
 
 if __name__ == "__main__":

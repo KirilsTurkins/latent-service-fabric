@@ -45,15 +45,18 @@
       },
       {
         "name": "Install pinned validation and guest tools",
-        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\ncargo fetch --locked\n"
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\ncargo fetch --locked\n"
       },
       {
+        "env": {
+          "LSF_REQUIRE_COMPILER_ISOLATION": "1"
+        },
         "name": "Test standalone validation and process ownership",
-        "run": "python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process"
+        "run": "python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process tools.tests.test_rust_application_dependencies tools.tests.test_application_dependency_approval tools.tests.test_captured_compiler_isolation"
       },
       {
         "name": "Execute complete outside-checkout authoring qualification",
-        "run": "python3 tools/qualify_rust_capsules.py --output \"$RUNNER_TEMP/rust-capsule-authoring\""
+        "run": "python3 tools/qualify_rust_capsules.py --application-dependencies --output \"$RUNNER_TEMP/rust-capsule-authoring\""
       },
       {
         "name": "Exercise developer cache with the actual operator and compiled Rust package inputs",
@@ -80,7 +83,7 @@
   },
   "jobId": "authoring",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Qualify real captured third-party and external transitive Rust libraries with explicit macro and root-build-script approval and namespace denial controls",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

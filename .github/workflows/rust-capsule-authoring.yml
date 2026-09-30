@@ -64,14 +64,19 @@ jobs:
           version: '0.16.0'
       - name: Install pinned validation and guest tools
         run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           python3 -m pip install --requirement tools/requirements.lock
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
           echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
           cargo fetch --locked
       - name: Test standalone validation and process ownership
-        run: python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process
+        env:
+          LSF_REQUIRE_COMPILER_ISOLATION: '1'
+        run: python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process tools.tests.test_rust_application_dependencies tools.tests.test_application_dependency_approval tools.tests.test_captured_compiler_isolation
       - name: Execute complete outside-checkout authoring qualification
-        run: python3 tools/qualify_rust_capsules.py --output "$RUNNER_TEMP/rust-capsule-authoring"
+        run: python3 tools/qualify_rust_capsules.py --application-dependencies --output "$RUNNER_TEMP/rust-capsule-authoring"
       - name: Exercise developer cache with the actual operator and compiled Rust package inputs
         run: >-
           python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent
