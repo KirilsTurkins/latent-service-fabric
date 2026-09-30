@@ -42,7 +42,11 @@ async fn outbound_proposal_and_wasi_sockets_are_not_ambient_authority() {
         }];
         let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
         let error = backend.prepare(&artifact, &key).await.unwrap_err();
-        assert_eq!(error.code, PlatformErrorCode::IncompatibleContract, "{name}");
+        assert_eq!(
+            error.code,
+            PlatformErrorCode::IncompatibleContract,
+            "{name}"
+        );
         assert_eq!(backend.resource_snapshot().stores_created, 0);
         assert_eq!(backend.cache_snapshot().entries, 0);
         idle(&backend);
