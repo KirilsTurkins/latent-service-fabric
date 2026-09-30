@@ -16,6 +16,7 @@ use std::{
 const FORMAT: &[u8] = b"latent.transaction-store.v1";
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
+static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StoreError {
@@ -229,6 +230,11 @@ impl EmbeddedStore {
         if self.quarantined.load(Ordering::Acquire) {
             return Err(StoreError::Unavailable);
         }
+        let identity = NEXT_VIEW_ID
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+                value.checked_add(1)
+            })
+            .map_err(|_| StoreError::Capacity)?;
         self.views
             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |v| {
                 (v < self.limits.maximum_read_views).then_some(v + 1)
@@ -240,6 +246,7 @@ impl EmbeddedStore {
                 limits: self.limits,
                 views: Arc::clone(&self.views),
                 opened: Instant::now(),
+                identity,
             })
         } else {
             self.views.fetch_sub(1, Ordering::AcqRel);
@@ -381,6 +388,7 @@ pub struct ReadView {
     limits: StoreLimits,
     views: Arc<AtomicUsize>,
     opened: Instant,
+    identity: usize,
 }
 
 /// Continuation is descriptive engine position. Higher layers bind it to an
@@ -394,6 +402,13 @@ pub struct ReadPage {
 }
 
 impl ReadView {
+    /// Process-local descriptive identity, never caller or namespace authority.
+    /// Allocation does not wrap; external cursors also need activation/boot scope.
+    #[must_use]
+    pub fn identity(&self) -> usize {
+        self.identity
+    }
+
     pub fn get(&self, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
         if self.opened.elapsed() > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);
