@@ -4508,10 +4508,13 @@
       "boundary": "host",
       "expectedCases": [
         "embedded::tests::closed_store_backup_compaction_and_independent_writer_rows_preserve_receipts",
+        "embedded::tests::coherent_prefix_pages_resume_exactly_and_refuse_unrepresentable_first_row",
         "embedded::tests::conflicting_and_over_budget_batches_abort_all_families",
         "embedded::tests::corrupt_bytes_and_concurrent_process_ownership_never_reset_the_store",
+        "embedded::tests::final_acceptance_rejection_aborts_every_staged_family_before_flush",
         "embedded::tests::measurement::finite_engine_qualification_records_actual_commit_conflict_snapshot_and_recovery_costs",
         "embedded::tests::owned_commit_child",
+        "embedded::tests::occ_and_capacity_failures_do_not_consume_final_commit_acceptance",
         "embedded::tests::owned_process_termination_before_and_after_commit_recovers_all_or_none",
         "embedded::tests::read_views_duplicates_and_prefix_scan_are_bounded",
         "embedded::tests::state_command_and_outbox_have_one_atomic_snapshot_and_reopen_identity",
