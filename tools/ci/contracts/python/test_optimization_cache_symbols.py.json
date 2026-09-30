@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "SymbolIdentityTests.test_actual_v0_and_source_suffix_replay_agree",
+    "SymbolIdentityTests.test_ambiguous_raw_alias_does_not_prove_zero",
+    "SymbolIdentityTests.test_false_source_suffix_cannot_hide_measured_allocations",
+    "SymbolIdentityTests.test_mangled_name_in_a_foreign_module_cannot_be_attributed",
+    "SymbolIdentityTests.test_missing_demangled_symbol_is_unavailable_not_zero",
+    "SymbolIdentityTests.test_raw_nm_must_inspect_the_same_executable_with_same_tool",
+    "SymbolIdentityTests.test_rehashed_raw_address_or_type_cannot_cross_function",
+    "SymbolIdentityTests.test_valid_demangled_rendering_still_matches_same_verified_function",
+    "SymbolIdentityTests.test_verified_symbol_and_resolved_other_allocations_can_prove_zero",
+    "SymbolIdentityTests.test_verified_symbol_with_unresolved_ip_is_unavailable_not_zero"
+  ],
+  "guards": {
+    "SymbolIdentityTests.test_actual_v0_and_source_suffix_replay_agree": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    },
+    "SymbolIdentityTests.test_ambiguous_raw_alias_does_not_prove_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    },
+    "SymbolIdentityTests.test_false_source_suffix_cannot_hide_measured_allocations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    },
+    "SymbolIdentityTests.test_mangled_name_in_a_foreign_module_cannot_be_attributed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    },
+    "SymbolIdentityTests.test_missing_demangled_symbol_is_unavailable_not_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    },
+    "SymbolIdentityTests.test_raw_nm_must_inspect_the_same_executable_with_same_tool": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    },
+    "SymbolIdentityTests.test_rehashed_raw_address_or_type_cannot_cross_function": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    },
+    "SymbolIdentityTests.test_valid_demangled_rendering_still_matches_same_verified_function": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    },
+    "SymbolIdentityTests.test_verified_symbol_and_resolved_other_allocations_can_prove_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    },
+    "SymbolIdentityTests.test_verified_symbol_with_unresolved_ip_is_unavailable_not_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eba079ba578f97b23c2809ab4b8312ac5a16ba1c2ee255b6fad56a83bd6d48b8",
+        "class:setup-sha256:fde6521304fac78c16e33067b584f2cfa7f1e62ce89bdefbd05eba69ced43da6"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_cache_symbols.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

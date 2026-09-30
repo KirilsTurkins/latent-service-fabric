@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "LifecycleArchiveTests.test_both_transports_invoke_strict_lifecycle_replay",
+    "LifecycleArchiveTests.test_smoke_failed_or_changed_aggregate_cannot_publish_full",
+    "LifecycleArchiveTests.test_structural_schemas_reject_unknown_fields_and_false_completion"
+  ],
+  "guards": {
+    "LifecycleArchiveTests.test_both_transports_invoke_strict_lifecycle_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de625cbb428a9d60bf2a0b4065fd63af64eeffd164f86d9066d7d34439da1a82",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LifecycleArchiveTests.test_smoke_failed_or_changed_aggregate_cannot_publish_full": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de625cbb428a9d60bf2a0b4065fd63af64eeffd164f86d9066d7d34439da1a82",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "LifecycleArchiveTests.test_structural_schemas_reject_unknown_fields_and_false_completion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:de625cbb428a9d60bf2a0b4065fd63af64eeffd164f86d9066d7d34439da1a82",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_budget_lifecycle_archive.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

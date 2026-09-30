@@ -1,0 +1,144 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/native-runtime-release.yml:publish:Prepare private exact-source host workspace": {
+      "job": "publish",
+      "jobIf": "inputs.publish",
+      "name": "Prepare private exact-source host workspace",
+      "run": "python3 tools/prepare_native_workspace.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime-release.yml:publish:Publish selected existing tag only, without moving tags or overwriting releases": {
+      "job": "publish",
+      "jobIf": "inputs.publish",
+      "name": "Publish selected existing tag only, without moving tags or overwriting releases",
+      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/native_release_gate.py --publish-assets --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" \\\n  --release-directory \"$PWD/target/native-release\" --receipts \"$PWD/target/native-vm\" \\\n  --acceptance-bundle \"$ACCEPTANCE_BUNDLE\" --output \"$PWD/target/native-publication-result.json\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime-release.yml:publish:Revalidate live exact-head CI, both native VM receipts and offline publisher identity": {
+      "job": "publish",
+      "jobIf": "inputs.publish",
+      "name": "Revalidate live exact-head CI, both native VM receipts and offline publisher identity",
+      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/native_release_gate.py --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" --publish \\\n  --receipts \"$PWD/target/native-vm\" --release-directory \"$PWD/target/native-release\" \\\n  --output \"$PWD/target/native-release-acceptance.json\"\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"\npython3 - <<'PY'\nimport json\nimport os\nimport shutil\nfrom pathlib import Path\nfrom tools.native_runtime import verify\ndecision = json.loads(Path(\"target/native-release-acceptance.json\").read_text())\ntrust = Path(os.environ[\"NATIVE_TRUST\"])\npolicy = trust / \"publisher-policy.json\"\npolicy.write_text(json.dumps(decision[\"publisherPolicy\"]))\nwith verify.release(Path(\"target/native-release\").resolve(), decision[\"version\"],\n                    verify.PublisherTrust(policy, trust / \"trusted_root.jsonl\", Path(shutil.which(\"gh\")).resolve())):\n    pass\nPY",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/native-runtime-release.yml:publish:Prepare private exact-source host workspace": {
+      "after": ".github/workflows/native-runtime-release.yml:publish:Prepare private exact-source host workspace",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime-release.yml:publish:Publish selected existing tag only, without moving tags or overwriting releases": {
+      "after": ".github/workflows/native-runtime-release.yml:publish:Publish selected existing tag only, without moving tags or overwriting releases",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime-release.yml:publish:Revalidate live exact-head CI, both native VM receipts and offline publisher identity": {
+      "after": ".github/workflows/native-runtime-release.yml:publish:Revalidate live exact-head CI, both native VM receipts and offline publisher identity",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "environment": "native-runtime-publish",
+    "if": "inputs.publish",
+    "name": "Reviewed native prerelease publication",
+    "needs": [
+      "gate",
+      "build",
+      "native-vm"
+    ],
+    "permissions": {
+      "actions": "read",
+      "attestations": "write",
+      "contents": "write",
+      "id-token": "write"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Prepare private exact-source host workspace",
+        "run": "python3 tools/prepare_native_workspace.py"
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "native-runtime-release-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-release"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "merge-multiple": true,
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-vm",
+          "pattern": "native-runtime-release-vm-*-${{ github.sha }}"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}",
+          "NATIVE_VERSION": "${{ needs.gate.outputs.version }}",
+          "PREDECESSOR_RUN": "${{ inputs.predecessor_run }}",
+          "REVIEWED_CI_RUN": "${{ inputs.ci_run }}",
+          "REVIEWED_COMMIT": "${{ inputs.commit }}"
+        },
+        "name": "Revalidate live exact-head CI, both native VM receipts and offline publisher identity",
+        "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/native_release_gate.py --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" --publish \\\n  --receipts \"$PWD/target/native-vm\" --release-directory \"$PWD/target/native-release\" \\\n  --output \"$PWD/target/native-release-acceptance.json\"\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"\npython3 - <<'PY'\nimport json\nimport os\nimport shutil\nfrom pathlib import Path\nfrom tools.native_runtime import verify\ndecision = json.loads(Path(\"target/native-release-acceptance.json\").read_text())\ntrust = Path(os.environ[\"NATIVE_TRUST\"])\npolicy = trust / \"publisher-policy.json\"\npolicy.write_text(json.dumps(decision[\"publisherPolicy\"]))\nwith verify.release(Path(\"target/native-release\").resolve(), decision[\"version\"],\n                    verify.PublisherTrust(policy, trust / \"trusted_root.jsonl\", Path(shutil.which(\"gh\")).resolve())):\n    pass\nPY\n"
+      },
+      {
+        "id": "acceptance",
+        "name": "Authenticate complete exact-artifact VM acceptance receipts",
+        "uses": "actions/attest-build-provenance",
+        "with": {
+          "subject-path": "${{ env.NATIVE_WORKSPACE }}/target/native-release-acceptance.json\n${{ env.NATIVE_WORKSPACE }}/target/native-vm/*.json\n"
+        }
+      },
+      {
+        "env": {
+          "ACCEPTANCE_BUNDLE": "${{ steps.acceptance.outputs.bundle-path }}",
+          "GH_TOKEN": "${{ github.token }}",
+          "NATIVE_VERSION": "${{ needs.gate.outputs.version }}",
+          "PREDECESSOR_RUN": "${{ inputs.predecessor_run }}",
+          "REVIEWED_CI_RUN": "${{ inputs.ci_run }}",
+          "REVIEWED_COMMIT": "${{ inputs.commit }}"
+        },
+        "name": "Publish selected existing tag only, without moving tags or overwriting releases",
+        "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/native_release_gate.py --publish-assets --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" \\\n  --release-directory \"$PWD/target/native-release\" --receipts \"$PWD/target/native-vm\" \\\n  --acceptance-bundle \"$ACCEPTANCE_BUNDLE\" --output \"$PWD/target/native-publication-result.json\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain publication result",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "native-runtime-publication-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-release-acceptance.json\n${{ env.NATIVE_WORKSPACE }}/target/native-publication-result.json\n",
+          "retention-days": 90
+        }
+      }
+    ],
+    "timeout-minutes": 10
+  },
+  "jobId": "publish",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/native-runtime-release.yml"
+}

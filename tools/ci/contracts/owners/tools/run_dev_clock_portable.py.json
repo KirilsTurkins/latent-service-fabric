@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_dev_clock_portable.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "0d54e0da68594e187c3ff866e512ae57785524796c88237f1ffffcce67df185d"
+}

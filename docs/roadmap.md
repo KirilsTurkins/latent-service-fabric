@@ -173,6 +173,12 @@ an application-owned listener or idle renderer.
 
 ## First integration feedback: delivered scope
 
+The [alpha.5 release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.5) publishes this work with
+fresh SDK distributions and matching versioned guides. The
+[native release gate](development/native-release-gate.md#published-alpha5-evidence)
+records exact-source CI, authenticated downloads, both real VM profiles and
+the tested alpha.4 upgrade.
+
 The original #626–#643 tickets deliver the static-schema correction, larger
 bounded site inventory, XML sitemaps, public-document navigation, framework CSP
 recipes, static/API composition, released-binary publication and recoverable

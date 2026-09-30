@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "OwnershipArchiveTests.test_both_formats_replay_extracted_files_before_either_transport_publishes",
+    "OwnershipArchiveTests.test_full_complete_and_both_exact_boolean_flags_are_mandatory",
+    "OwnershipArchiveTests.test_invalid_or_ambiguous_dispatch_rejects_before_any_replay",
+    "OwnershipArchiveTests.test_rehashed_aggregate_mismatch_cannot_publish",
+    "OwnershipArchiveTests.test_semantic_failure_propagates_and_shape_only_remains_explicit",
+    "OwnershipArchiveTests.test_suite_is_required_even_for_shape_only_verification",
+    "OwnershipArchiveTests.test_unknown_schema_version_cannot_dispatch_as_supported_ownership"
+  ],
+  "guards": {
+    "OwnershipArchiveTests.test_both_formats_replay_extracted_files_before_either_transport_publishes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ea54c0b414fbdf540078986220c2f430699f1625871107d0c66f2416bbd98589",
+        "class:setup-sha256:d925800f58ea834e263e5405e8b3acadbaa09f0918c7e0ce78bc4e6dc99601de"
+      ],
+      "skipSites": []
+    },
+    "OwnershipArchiveTests.test_full_complete_and_both_exact_boolean_flags_are_mandatory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ea54c0b414fbdf540078986220c2f430699f1625871107d0c66f2416bbd98589",
+        "class:setup-sha256:d925800f58ea834e263e5405e8b3acadbaa09f0918c7e0ce78bc4e6dc99601de"
+      ],
+      "skipSites": []
+    },
+    "OwnershipArchiveTests.test_invalid_or_ambiguous_dispatch_rejects_before_any_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ea54c0b414fbdf540078986220c2f430699f1625871107d0c66f2416bbd98589",
+        "class:setup-sha256:d925800f58ea834e263e5405e8b3acadbaa09f0918c7e0ce78bc4e6dc99601de"
+      ],
+      "skipSites": []
+    },
+    "OwnershipArchiveTests.test_rehashed_aggregate_mismatch_cannot_publish": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ea54c0b414fbdf540078986220c2f430699f1625871107d0c66f2416bbd98589",
+        "class:setup-sha256:d925800f58ea834e263e5405e8b3acadbaa09f0918c7e0ce78bc4e6dc99601de"
+      ],
+      "skipSites": []
+    },
+    "OwnershipArchiveTests.test_semantic_failure_propagates_and_shape_only_remains_explicit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ea54c0b414fbdf540078986220c2f430699f1625871107d0c66f2416bbd98589",
+        "class:setup-sha256:d925800f58ea834e263e5405e8b3acadbaa09f0918c7e0ce78bc4e6dc99601de"
+      ],
+      "skipSites": []
+    },
+    "OwnershipArchiveTests.test_suite_is_required_even_for_shape_only_verification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ea54c0b414fbdf540078986220c2f430699f1625871107d0c66f2416bbd98589",
+        "class:setup-sha256:d925800f58ea834e263e5405e8b3acadbaa09f0918c7e0ce78bc4e6dc99601de"
+      ],
+      "skipSites": []
+    },
+    "OwnershipArchiveTests.test_unknown_schema_version_cannot_dispatch_as_supported_ownership": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ea54c0b414fbdf540078986220c2f430699f1625871107d0c66f2416bbd98589",
+        "class:setup-sha256:d925800f58ea834e263e5405e8b3acadbaa09f0918c7e0ce78bc4e6dc99601de"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_ownership_archive.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -69,7 +69,7 @@ fn current_requirements_are_checked_before_reusing_unchanged_deployment_metadata
     let desired = deployment("blue", "alice", &digest);
     run(store.apply(desired.clone())).unwrap();
     let before = std::fs::read(root.0.join("catalog.json")).unwrap();
-    require(&releases, &digest, "47.0.4");
+    require(&releases, &digest, "48.0.3");
     assert_code(
         run(store.apply_versioned(&TenantId("alice".into()), desired, Some(1))),
         Code::IncompatibleContract,
@@ -117,7 +117,7 @@ fn reopen_requires_the_current_host_to_satisfy_retained_release_requirements() {
         root.0.clone(),
         releases,
         Limits::default(),
-        profile("47.0.4"),
+        profile("48.0.3"),
     ))
     .unwrap();
     assert_eq!(restored.generation().0, 1);

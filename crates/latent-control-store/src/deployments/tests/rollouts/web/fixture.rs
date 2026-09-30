@@ -141,7 +141,7 @@ pub(super) fn open_artifacts(root: &TempRoot) -> Arc<DirectoryArtifactRepository
 pub(super) fn open_store(root: &TempRoot, artifacts: &Arc<DirectoryArtifactRepository>) -> Store {
     let profile = RuntimeCompatibilityProfile::new(
         "wasmtime",
-        "47.0.4",
+        "48.0.3",
         "x86_64-unknown-linux-gnu",
         &["x86_64.sse2"],
         256 * 1024 * 1024,

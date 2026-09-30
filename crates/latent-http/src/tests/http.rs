@@ -1,4 +1,6 @@
 use super::*;
+#[path = "gateway_boundary.rs"]
+mod gateway_boundary;
 #[tokio::test]
 async fn every_method_preserves_status_and_buffer_ownership() {
     for method in [
@@ -105,6 +107,7 @@ async fn lost_mutation_reply_is_uncertain_and_never_retried() {
     drop(session);
     server.await.unwrap();
     f.clean().await;
+    gateway_boundary::assert_external_gateway_ownership_boundary().await;
 }
 #[tokio::test]
 async fn dropping_live_request_closes_socket_before_refund() {

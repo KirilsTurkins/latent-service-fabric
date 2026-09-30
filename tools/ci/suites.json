@@ -126,6 +126,39 @@
       "features": "all (including default)",
       "profile": "debug",
       "target": "host"
+    },
+    "echo-runtime": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-wasmtime",
+        "--test",
+        "echo_backend",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
+    },
+    "core-host": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-core",
+        "--lib",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
     }
   },
   "rendererPackages": [
@@ -194,7 +227,8 @@
       "runner": "ci_rust_artifacts",
       "suite": "latent-control-store.lib.latent-control-store",
       "testThreads": 1,
-      "timeoutSeconds": 930
+      "timeoutSeconds": 930,
+      "executionOnly": true
     },
     "nats-events": {
       "exact": false,
@@ -347,6 +381,23 @@
       "suite": "latent-wasmtime.test.vault-secrets",
       "testThreads": 1,
       "timeoutSeconds": 300
+    },
+    "echo-runtime": {
+      "exact": false,
+      "filter": "",
+      "ignored": true,
+      "names": [
+        "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
+        "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
+        "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latent-wasmtime.test.echo-backend",
+      "testThreads": 1,
+      "timeoutSeconds": 900,
+      "executionOnly": true
     }
   },
   "sourceRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -1625,7 +1676,7 @@
         "pinned Rust toolchain",
         "successful source-matched Cargo artifact inventory"
       ],
-      "recipe": "workspace-all-features",
+      "recipe": "core-host",
       "resourceClass": "host-bounded",
       "source": "src/lib.rs",
       "target": "latent_core",
@@ -5409,7 +5460,21 @@
         "backend::input::tests::completion_abandonment_and_poll_unwind_retire_after_actual_future_destruction",
         "backend::input::tests::error_before_guest_dispatch_releases_input_without_inventing_guest_start",
         "backend::readiness::tests::expiry_during_real_fence_wait_is_not_retried_or_renewed",
+        "backend::readiness::tests::invocation::activation_start_busy_window_expires_without_renewing_or_reexecuting",
+        "backend::readiness::tests::invocation::activation_start_wait_keeps_original_grant_after_reverification_and_expiry",
+        "backend::readiness::tests::invocation::activation_start_wait_observes_original_cancellation_and_deadline_before_guest_execution",
+        "backend::readiness::tests::invocation::busy_activation_start_retains_original_owner_and_executes_guest_once",
+        "backend::readiness::tests::invocation::foreign_or_mismatched_invocation_owner_is_rejected_before_waiting",
+        "backend::readiness::tests::invocation::timerless_activation_start_remains_immediate_and_fail_closed",
+        "backend::readiness::tests::invocation::unpolled_and_busy_invocation_drop_reclaims_the_materialized_owner_without_guest_work",
         "backend::readiness::tests::later_source_read_wait_cannot_upgrade_original_grant_after_catalog_reverification",
+        "backend::readiness::tests::materialization::busy_materialization_retains_exact_readiness_and_materializes_once_after_release",
+        "backend::readiness::tests::materialization::dropping_unpolled_or_busy_materialization_reclaims_original_ready_pin",
+        "backend::readiness::tests::materialization::foreign_readiness_is_rejected_before_any_currentness_wait",
+        "backend::readiness::tests::materialization::materialization_busy_window_expires_without_instances_or_renewal",
+        "backend::readiness::tests::materialization::materialization_clock_expiry_is_terminal_without_renewing_or_waiting_again",
+        "backend::readiness::tests::materialization::materialization_does_not_upgrade_original_grant_after_policy_reverification",
+        "backend::readiness::tests::materialization::synchronous_materialization_remains_immediate_and_fail_closed_on_busy",
         "backend::readiness::tests::owners::dropping_final_currentness_wait_releases_exact_warm_ready_pin",
         "backend::readiness::tests::owners::dropping_post_acquire_source_wait_releases_unstarted_job_and_document_capacity",
         "backend::readiness::tests::real_fence_pending_readiness_drops_cleanly_and_original_entry_still_fails_closed",
@@ -5501,6 +5566,10 @@
         "config::tests::generic_and_legacy_payload_adapters_have_distinct_compatibility",
         "config::tests::invalid_and_overflowing_policy_is_rejected_before_engine_construction",
         "config::tests::legacy_alias_preserves_the_existing_default_policy",
+        "config::tests::security_advisories::call_ref_retains_callee_fuel_in_the_ordinary_engine",
+        "config::tests::security_advisories::dynamic_record_lifting_charges_host_allocations_before_acceptance",
+        "config::tests::security_advisories::exception_return_retains_callee_fuel_in_the_java_engine",
+        "config::tests::security_advisories::fixed_length_lists_remain_outside_the_closed_engine_profile",
         "containment::currentness_tests::currentness_diagnostics_never_override_memory_deadline_or_untyped_errors",
         "containment::currentness_tests::validated_currentness_keeps_the_existing_runtime_trap_and_consumption",
         "containment::tests::bounded_text_preserves_utf8_boundaries",
@@ -5637,21 +5706,7 @@
         "values::tests::scalars::floats_accept_explicit_special_values_and_reject_accidental_overflow",
         "values::tests::scalars::scalar_widths_unicode_and_lossless_decimal64",
         "values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan",
-        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults",
-        "backend::readiness::tests::materialization::busy_materialization_retains_exact_readiness_and_materializes_once_after_release",
-        "backend::readiness::tests::materialization::dropping_unpolled_or_busy_materialization_reclaims_original_ready_pin",
-        "backend::readiness::tests::materialization::foreign_readiness_is_rejected_before_any_currentness_wait",
-        "backend::readiness::tests::materialization::materialization_busy_window_expires_without_instances_or_renewal",
-        "backend::readiness::tests::materialization::materialization_clock_expiry_is_terminal_without_renewing_or_waiting_again",
-        "backend::readiness::tests::materialization::materialization_does_not_upgrade_original_grant_after_policy_reverification",
-        "backend::readiness::tests::materialization::synchronous_materialization_remains_immediate_and_fail_closed_on_busy",
-        "backend::readiness::tests::invocation::activation_start_busy_window_expires_without_renewing_or_reexecuting",
-        "backend::readiness::tests::invocation::activation_start_wait_keeps_original_grant_after_reverification_and_expiry",
-        "backend::readiness::tests::invocation::activation_start_wait_observes_original_cancellation_and_deadline_before_guest_execution",
-        "backend::readiness::tests::invocation::busy_activation_start_retains_original_owner_and_executes_guest_once",
-        "backend::readiness::tests::invocation::foreign_or_mismatched_invocation_owner_is_rejected_before_waiting",
-        "backend::readiness::tests::invocation::timerless_activation_start_remains_immediate_and_fail_closed",
-        "backend::readiness::tests::invocation::unpolled_and_busy_invocation_drop_reclaims_the_materialized_owner_without_guest_work"
+        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -5664,7 +5719,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 332,
+      "minimumCases": 336,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -6283,11 +6338,19 @@
         "pinned Rust toolchain",
         "successful source-matched Cargo artifact inventory"
       ],
-      "recipe": "workspace-all-features",
+      "recipe": "echo-runtime",
       "resourceClass": "runtime-bounded",
       "source": "tests/echo_backend.rs",
       "target": "echo_backend",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "fixtures": [
+        "echo-capsule"
+      ],
+      "caseFixtures": {
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel": [
+          "oversized-log"
+        ]
+      }
     },
     {
       "boundary": "runtime",
@@ -6915,6 +6978,8 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "observation::tests::executable_identity_hashes_all_bytes_with_a_fixed_buffer",
+        "observation::tests::executable_identity_rejects_overflow_without_unbounded_reading",
         "phase3_resource_small_provider_ownership_checkpoint"
       ],
       "expectedIgnored": [],
@@ -6922,7 +6987,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 1,
+      "minimumCases": 3,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -8424,7 +8489,13 @@
         "latent-wasmtime.test.angular-renderer",
         "latentd.lib.latentd"
       ],
-      "timeoutSeconds": 840
+      "timeoutSeconds": 840,
+      "caseFilters": {
+        "latentd.lib.latentd": "actual_angular_http_"
+      },
+      "fixtures": [
+        "angular-renderer"
+      ]
     },
     "oci-registry": {
       "platforms": [
@@ -8502,6 +8573,151 @@
         "latent-policy.lib.latent-policy"
       ],
       "timeoutSeconds": 240
+    }
+  },
+  "fixtureRecipes": {
+    "echo-capsule": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "python3",
+            "tools/build_echo_capsule.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1800
+        }
+      ],
+      "outputs": {
+        "echo-component": {
+          "path": "{target}/capsules/echo/echo-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ECHO_COMPONENT"
+        },
+        "echo-capsule": {
+          "path": "{target}/capsules/echo/capsule.json",
+          "kind": "json",
+          "maximumBytes": 1048576,
+          "environment": "LSF_ECHO_CAPSULE"
+        },
+        "echo-build": {
+          "path": "{target}/capsules/echo/build.json",
+          "kind": "json",
+          "maximumBytes": 1048576
+        }
+      }
+    },
+    "oversized-log": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "build",
+            "-p",
+            "latent-toolchain-smoke",
+            "--example",
+            "oversized-log-capsule",
+            "--target",
+            "wasm32-unknown-unknown",
+            "--release",
+            "--locked"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 900
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "component",
+            "new",
+            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
+            "-o",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "validate",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        }
+      ],
+      "outputs": {
+        "oversized-log-component": {
+          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_OVERSIZED_LOG_COMPONENT"
+        }
+      }
+    },
+    "angular-renderer": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "node",
+        "npm",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "npm",
+            "ci",
+            "--ignore-scripts",
+            "--no-audit",
+            "--no-fund"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "python3",
+            "tools/build_angular_renderer.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1200
+        }
+      ],
+      "outputs": {
+        "component": {
+          "path": "examples/renderer-profile/dist/runtime/application.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_COMPONENT"
+        },
+        "private-renderer": {
+          "path": "examples/renderer-profile/dist/runtime/renderer.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT"
+        }
+      }
     }
   }
 }

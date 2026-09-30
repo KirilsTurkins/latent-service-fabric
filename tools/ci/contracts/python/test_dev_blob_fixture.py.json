@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "BlobFixture.test_blob_configuration_does_not_collide_with_http_or_grant_authority",
+    "BlobFixture.test_fixture_requires_actual_matching_provider_and_reports_real_kind",
+    "BlobFixture.test_only_explicit_disposable_namespace_is_accepted",
+    "BlobFixture.test_required_blob_case_cannot_run_in_portable_host",
+    "ProviderShutdown.test_nonzero_counters_are_preserved_and_absent_report_is_not_zero",
+    "ProviderShutdown.test_preserves_only_closed_public_resource_counters_and_rejects_malformed_numbers"
+  ],
+  "guards": {
+    "BlobFixture.test_blob_configuration_does_not_collide_with_http_or_grant_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed2b9bd4afd95040422a48c8d6fedc7ffec12bf4e272b0b98c6f5180d3aea012",
+        "class:setup-sha256:7f65d20f2ae4e8a13825b54c4a5346d855950fa29d6e686cafeb75dc3c98f9f7"
+      ],
+      "skipSites": []
+    },
+    "BlobFixture.test_fixture_requires_actual_matching_provider_and_reports_real_kind": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed2b9bd4afd95040422a48c8d6fedc7ffec12bf4e272b0b98c6f5180d3aea012",
+        "class:setup-sha256:7f65d20f2ae4e8a13825b54c4a5346d855950fa29d6e686cafeb75dc3c98f9f7"
+      ],
+      "skipSites": []
+    },
+    "BlobFixture.test_only_explicit_disposable_namespace_is_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed2b9bd4afd95040422a48c8d6fedc7ffec12bf4e272b0b98c6f5180d3aea012",
+        "class:setup-sha256:7f65d20f2ae4e8a13825b54c4a5346d855950fa29d6e686cafeb75dc3c98f9f7"
+      ],
+      "skipSites": []
+    },
+    "BlobFixture.test_required_blob_case_cannot_run_in_portable_host": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed2b9bd4afd95040422a48c8d6fedc7ffec12bf4e272b0b98c6f5180d3aea012",
+        "class:setup-sha256:7f65d20f2ae4e8a13825b54c4a5346d855950fa29d6e686cafeb75dc3c98f9f7"
+      ],
+      "skipSites": []
+    },
+    "ProviderShutdown.test_nonzero_counters_are_preserved_and_absent_report_is_not_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed2b9bd4afd95040422a48c8d6fedc7ffec12bf4e272b0b98c6f5180d3aea012",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderShutdown.test_preserves_only_closed_public_resource_counters_and_rejects_malformed_numbers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ed2b9bd4afd95040422a48c8d6fedc7ffec12bf4e272b0b98c6f5180d3aea012",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_blob_fixture.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -77,16 +77,16 @@ jobs:
           test "$(stat --format=%s "$RUNNER_TEMP/typescript-guest-source.tar.gz")" -le 134217728
           git rev-parse HEAD > "$RUNNER_TEMP/typescript-guest-source.sha"
       - name: Retain the exact reviewed command contract input
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: typescript-guest-command-contract-${{ github.sha }}
           path: |
-            tools/ci/commands.json
+            tools/ci/contracts/
             ${{ runner.temp }}/typescript-guest-source.tar.gz
             ${{ runner.temp }}/typescript-guest-source.sha
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -128,7 +128,7 @@ jobs:
         run: python3 tools/qualify_typescript_capsules.py --output "$RUNNER_TEMP/typescript-capsule-authoring" --tools "$RUNNER_TEMP/typescript-guest-tools"
       - name: Preserve attempted runtime test evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: typescript-guest-runtime-${{ github.sha }}
           path: |

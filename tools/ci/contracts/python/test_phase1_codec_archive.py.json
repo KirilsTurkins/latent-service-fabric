@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "CodecArchiveBounds.test_codec_member_and_total_caps_stay_finite",
+    "CodecArchiveBounds.test_only_codec_accepts_the_bounded_above_one_gib_envelope",
+    "CodecArchiveBounds.test_real_small_packages_use_codec_override_and_preserve_rpc_default",
+    "CodecArchiveBounds.test_rehashed_codec_aggregate_still_requires_exact_full_semantic_replay",
+    "CodecArchiveBounds.test_relabelled_outer_kind_cannot_grant_an_unbound_extraction_cap",
+    "CodecArchiveBounds.test_shared_extractor_applies_declared_bound_before_large_body_read",
+    "CodecArchiveBounds.test_shared_extractor_rejects_unbounded_overrides_before_creating_output"
+  ],
+  "guards": {
+    "CodecArchiveBounds.test_codec_member_and_total_caps_stay_finite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:11f3ad3cec77a3c49465e712adc22a53719062e193cebe0c4c639f31b67fbf71",
+        "class:setup-sha256:f89a86e7d33ca743f9e45e57a35046d865fa97c4a8968a21c3ac1576105f2ab8"
+      ],
+      "skipSites": []
+    },
+    "CodecArchiveBounds.test_only_codec_accepts_the_bounded_above_one_gib_envelope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:11f3ad3cec77a3c49465e712adc22a53719062e193cebe0c4c639f31b67fbf71",
+        "class:setup-sha256:f89a86e7d33ca743f9e45e57a35046d865fa97c4a8968a21c3ac1576105f2ab8"
+      ],
+      "skipSites": []
+    },
+    "CodecArchiveBounds.test_real_small_packages_use_codec_override_and_preserve_rpc_default": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:11f3ad3cec77a3c49465e712adc22a53719062e193cebe0c4c639f31b67fbf71",
+        "class:setup-sha256:f89a86e7d33ca743f9e45e57a35046d865fa97c4a8968a21c3ac1576105f2ab8"
+      ],
+      "skipSites": []
+    },
+    "CodecArchiveBounds.test_rehashed_codec_aggregate_still_requires_exact_full_semantic_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:11f3ad3cec77a3c49465e712adc22a53719062e193cebe0c4c639f31b67fbf71",
+        "class:setup-sha256:f89a86e7d33ca743f9e45e57a35046d865fa97c4a8968a21c3ac1576105f2ab8"
+      ],
+      "skipSites": []
+    },
+    "CodecArchiveBounds.test_relabelled_outer_kind_cannot_grant_an_unbound_extraction_cap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:11f3ad3cec77a3c49465e712adc22a53719062e193cebe0c4c639f31b67fbf71",
+        "class:setup-sha256:f89a86e7d33ca743f9e45e57a35046d865fa97c4a8968a21c3ac1576105f2ab8"
+      ],
+      "skipSites": []
+    },
+    "CodecArchiveBounds.test_shared_extractor_applies_declared_bound_before_large_body_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:11f3ad3cec77a3c49465e712adc22a53719062e193cebe0c4c639f31b67fbf71",
+        "class:setup-sha256:f89a86e7d33ca743f9e45e57a35046d865fa97c4a8968a21c3ac1576105f2ab8"
+      ],
+      "skipSites": []
+    },
+    "CodecArchiveBounds.test_shared_extractor_rejects_unbounded_overrides_before_creating_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:11f3ad3cec77a3c49465e712adc22a53719062e193cebe0c4c639f31b67fbf71",
+        "class:setup-sha256:f89a86e7d33ca743f9e45e57a35046d865fa97c4a8968a21c3ac1576105f2ab8"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_codec_archive.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

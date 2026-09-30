@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "profile": "npm-11.19.1-lsf-bundle-v1",
+  "base": {
+    "name": "npm",
+    "version": "11.19.1",
+    "integrity": "sha512-ztsxKxt/kkIaAs+2i0GU6I+DRmUdrNasxTZKJe9TCdSjKxlhah/4r/hl5ygMD6XAg1qZ9c2TNomR4qgOydp10g=="
+  },
+  "patches": [
+    {
+      "name": "ip-address",
+      "from": "10.5.0",
+      "version": "10.7.2",
+      "integrity": "sha512-7H/2gFSIitxc0hG3nOI1glS8QLo/EHBFFLk8vEUjXY/xu0AdL8jZ9U1IzO2PUm0d2D/ofQcAifb0g6OBkt8U7w=="
+    },
+    {
+      "name": "undici",
+      "from": "6.28.0",
+      "version": "6.28.1",
+      "integrity": "sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA=="
+    },
+    {
+      "name": "brace-expansion",
+      "from": "5.0.9",
+      "version": "5.0.12",
+      "integrity": "sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ=="
+    }
+  ]
+}

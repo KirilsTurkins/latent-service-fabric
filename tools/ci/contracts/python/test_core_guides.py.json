@@ -1,0 +1,80 @@
+{
+  "cases": [
+    "CoreGuides.test_learning_sequence_links_are_present_and_bounded",
+    "CoreGuides.test_published_receipt_reader_accepts_only_complete_success",
+    "CoreGuides.test_published_shell_blocks_parse_without_executing_commands",
+    "CoreGuides.test_real_guest_region_is_referenced_without_copying_implementation",
+    "CoreGuides.test_six_existing_outcomes_reference_guides_and_validation_owner"
+  ],
+  "guards": {
+    "CoreGuides.test_learning_sequence_links_are_present_and_bounded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaa42137d6fdaac8b252d7d92c69f390ba68546a48cf4dedac912e2d901d2891",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CoreGuides.test_published_receipt_reader_accepts_only_complete_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaa42137d6fdaac8b252d7d92c69f390ba68546a48cf4dedac912e2d901d2891",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CoreGuides.test_published_shell_blocks_parse_without_executing_commands": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('bash'), 'Bash command syntax requires Bash')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:aaa42137d6fdaac8b252d7d92c69f390ba68546a48cf4dedac912e2d901d2891",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:dcb680413b3ef4933590f06896607a9dca4ac9680097b3af784c36a8a22485fe",
+        "unittest.skipUnless(shutil.which('bash'), 'Bash command syntax requires Bash')"
+      ]
+    },
+    "CoreGuides.test_real_guest_region_is_referenced_without_copying_implementation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaa42137d6fdaac8b252d7d92c69f390ba68546a48cf4dedac912e2d901d2891",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CoreGuides.test_six_existing_outcomes_reference_guides_and_validation_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:aaa42137d6fdaac8b252d7d92c69f390ba68546a48cf4dedac912e2d901d2891",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_core_guides.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

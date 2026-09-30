@@ -1,0 +1,192 @@
+{
+  "cases": [
+    "CompressionGuardTests.test_compression_loop_deadline_preserves_partial_output",
+    "CompressionGuardTests.test_directory_minimum_is_not_a_replacement_for_larger_actual_sizes_or_caps",
+    "CompressionGuardTests.test_exact_coexistence_budget_checks_only_the_bounded_profile_directory",
+    "CompressionGuardTests.test_expired_deadline_rejects_before_hash_or_output_creation",
+    "CompressionGuardTests.test_final_reference_hash_cannot_expire_then_delete_original",
+    "CompressionGuardTests.test_guard_arguments_reject_bool_unbounded_and_wrong_types_before_io",
+    "CompressionGuardTests.test_initial_hash_cannot_spend_the_deadline_and_then_start_compression",
+    "CompressionGuardTests.test_new_gzip_does_not_relax_the_sixteen_file_watch",
+    "CompressionGuardTests.test_one_byte_short_coexistence_budget_keeps_input_and_partial_gzip",
+    "CompressionGuardTests.test_retained_compressed_limit_is_checked_before_each_write",
+    "CompressionGuardTests.test_roundtrip_loop_checks_coexisting_files_without_discarding_input",
+    "CompressionGuardTests.test_roundtrip_loop_checks_deadline_after_actual_decompression",
+    "CompressionGuardTests.test_source_change_still_fails_the_original_hash_roundtrip_check",
+    "CompressionGuardTests.test_stale_open_output_size_still_rejects_before_the_over_budget_write"
+  ],
+  "guards": {
+    "CompressionGuardTests.test_compression_loop_deadline_preserves_partial_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_directory_minimum_is_not_a_replacement_for_larger_actual_sizes_or_caps": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_exact_coexistence_budget_checks_only_the_bounded_profile_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_expired_deadline_rejects_before_hash_or_output_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_final_reference_hash_cannot_expire_then_delete_original": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_guard_arguments_reject_bool_unbounded_and_wrong_types_before_io": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_initial_hash_cannot_spend_the_deadline_and_then_start_compression": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_new_gzip_does_not_relax_the_sixteen_file_watch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_one_byte_short_coexistence_budget_keeps_input_and_partial_gzip": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_retained_compressed_limit_is_checked_before_each_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_roundtrip_loop_checks_coexisting_files_without_discarding_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_roundtrip_loop_checks_deadline_after_actual_decompression": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_source_change_still_fails_the_original_hash_roundtrip_check": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    },
+    "CompressionGuardTests.test_stale_open_output_size_still_rejects_before_the_over_budget_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a15ee8ef82291c2c6b51d71dd2b7f5e9ec7c7abfa556052d2c8ce67c080a8b09",
+        "class:setup-sha256:da0d3d1086db7bb56ade5b3dac88d65e6e5a933cc91adf626a54491d9ebc9ffe"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_artifact_identity_compression_guard.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

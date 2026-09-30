@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "ProviderRendezvousTests.test_marker_is_invisible_until_buffered_writer_is_closed",
+    "ProviderRendezvousTests.test_repeated_event_fails_without_replacing_existing_acknowledgement"
+  ],
+  "guards": {
+    "ProviderRendezvousTests.test_marker_is_invisible_until_buffered_writer_is_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4a7fafc5facd9a3d228a1107164624385a133ea09ed641c080b0800842b945e6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProviderRendezvousTests.test_repeated_event_fails_without_replacing_existing_acknowledgement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4a7fafc5facd9a3d228a1107164624385a133ea09ed641c080b0800842b945e6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sdk_provider_rendezvous.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

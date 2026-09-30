@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "sdk/go/dependencies.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "60dbbe3d3f04bc699efd92a2c200ee4356654ec2611243d11498ab39ec624883"
+}

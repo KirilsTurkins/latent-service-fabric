@@ -1,0 +1,60 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Native Windows and Linux tutorial equivalence",
+    "needs": [
+      "windows",
+      "linux-portable"
+    ],
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "windows-portable-subset-${{ github.sha }}",
+          "path": "target/windows/"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "linux-portable-subset-${{ github.sha }}",
+          "path": "target/linux/"
+        }
+      },
+      {
+        "name": "Compare component identities and actual typed success and error bytes",
+        "run": "set -euo pipefail\nfor language in rust c java dotnet go typescript; do\n  python tools/compare_portable_guest_tests.py --windows \"target/windows/dev-portable-$language-applications.json\" --linux \"target/linux/dev-portable-$language-applications.json\" --output \"target/$language-differential.json\"\ndone\n"
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "portable-differential-${{ github.sha }}",
+          "path": "target/*-differential.json",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 5
+  },
+  "jobId": "portable-differential",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-tools.yml"
+}

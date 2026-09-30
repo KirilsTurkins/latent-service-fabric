@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "BudgetEvidenceTests.test_exact_new_smoke_population_and_unavailable_timers",
+    "BudgetEvidenceTests.test_fast_failures_do_not_become_successful_latency_gain",
+    "BudgetEvidenceTests.test_later_arm_failure_keeps_completed_attempts_and_never_qualifies",
+    "BudgetEvidenceTests.test_missing_prewarm_rejected",
+    "BudgetEvidenceTests.test_plan_arithmetic_and_old_profiles_unchanged",
+    "BudgetEvidenceTests.test_population_change_cannot_relabel_old_profile",
+    "BudgetEvidenceTests.test_rehashed_build_recipe_crossing_rejected",
+    "BudgetEvidenceTests.test_rehashed_changed_cpu_resolution_rejected",
+    "BudgetEvidenceTests.test_rehashed_measured_miss_cannot_claim_warm_work",
+    "BudgetEvidenceTests.test_target_keeps_all_offers_and_rejects_smoke_qualification"
+  ],
+  "guards": {
+    "BudgetEvidenceTests.test_exact_new_smoke_population_and_unavailable_timers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    },
+    "BudgetEvidenceTests.test_fast_failures_do_not_become_successful_latency_gain": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    },
+    "BudgetEvidenceTests.test_later_arm_failure_keeps_completed_attempts_and_never_qualifies": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    },
+    "BudgetEvidenceTests.test_missing_prewarm_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    },
+    "BudgetEvidenceTests.test_plan_arithmetic_and_old_profiles_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    },
+    "BudgetEvidenceTests.test_population_change_cannot_relabel_old_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    },
+    "BudgetEvidenceTests.test_rehashed_build_recipe_crossing_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    },
+    "BudgetEvidenceTests.test_rehashed_changed_cpu_resolution_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    },
+    "BudgetEvidenceTests.test_rehashed_measured_miss_cannot_claim_warm_work": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    },
+    "BudgetEvidenceTests.test_target_keeps_all_offers_and_rejects_smoke_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:066200799052ce4b29cfc3759610576a311e7c1c02e28cad2ef4aa64a3832e92",
+        "class:setup-sha256:771d2636b93f436f782b47db39b17d370764d23b8ca0ebb89249939922038eb8"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_budget_evidence.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

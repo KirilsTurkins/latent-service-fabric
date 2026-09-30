@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "PackageReceiptSchemaTests.test_closed_receipt_and_input_objects_require_every_member",
+    "PackageReceiptSchemaTests.test_header_and_role_constraints_match_the_receipt_codec",
+    "PackageReceiptSchemaTests.test_input_and_output_digests_require_complete_lowercase_sha256",
+    "PackageReceiptSchemaTests.test_input_count_reserves_one_layer_for_the_receipt",
+    "PackageReceiptSchemaTests.test_input_identity_remains_a_separate_unverified_claim",
+    "PackageReceiptSchemaTests.test_known_hashes_and_real_recipe_inputs_have_valid_receipt_shapes",
+    "PackageReceiptSchemaTests.test_paths_reject_traversal_reserved_receipt_and_nonportable_names",
+    "PackageReceiptSchemaTests.test_zero_bytes_are_allowed_only_for_asset_inputs_and_outputs"
+  ],
+  "guards": {
+    "PackageReceiptSchemaTests.test_closed_receipt_and_input_objects_require_every_member": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4ee760fc397690702e50fbd62c796d7dd6b5e2539b6c5e9c2053b15d4113b95",
+        "class:setup-sha256:b57e65136190cadad65e0fcadbfa1f0e41b7ffe8a93e7e3b7f5b9964ac3faaad"
+      ],
+      "skipSites": []
+    },
+    "PackageReceiptSchemaTests.test_header_and_role_constraints_match_the_receipt_codec": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4ee760fc397690702e50fbd62c796d7dd6b5e2539b6c5e9c2053b15d4113b95",
+        "class:setup-sha256:b57e65136190cadad65e0fcadbfa1f0e41b7ffe8a93e7e3b7f5b9964ac3faaad"
+      ],
+      "skipSites": []
+    },
+    "PackageReceiptSchemaTests.test_input_and_output_digests_require_complete_lowercase_sha256": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4ee760fc397690702e50fbd62c796d7dd6b5e2539b6c5e9c2053b15d4113b95",
+        "class:setup-sha256:b57e65136190cadad65e0fcadbfa1f0e41b7ffe8a93e7e3b7f5b9964ac3faaad"
+      ],
+      "skipSites": []
+    },
+    "PackageReceiptSchemaTests.test_input_count_reserves_one_layer_for_the_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4ee760fc397690702e50fbd62c796d7dd6b5e2539b6c5e9c2053b15d4113b95",
+        "class:setup-sha256:b57e65136190cadad65e0fcadbfa1f0e41b7ffe8a93e7e3b7f5b9964ac3faaad"
+      ],
+      "skipSites": []
+    },
+    "PackageReceiptSchemaTests.test_input_identity_remains_a_separate_unverified_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4ee760fc397690702e50fbd62c796d7dd6b5e2539b6c5e9c2053b15d4113b95",
+        "class:setup-sha256:b57e65136190cadad65e0fcadbfa1f0e41b7ffe8a93e7e3b7f5b9964ac3faaad"
+      ],
+      "skipSites": []
+    },
+    "PackageReceiptSchemaTests.test_known_hashes_and_real_recipe_inputs_have_valid_receipt_shapes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4ee760fc397690702e50fbd62c796d7dd6b5e2539b6c5e9c2053b15d4113b95",
+        "class:setup-sha256:b57e65136190cadad65e0fcadbfa1f0e41b7ffe8a93e7e3b7f5b9964ac3faaad"
+      ],
+      "skipSites": []
+    },
+    "PackageReceiptSchemaTests.test_paths_reject_traversal_reserved_receipt_and_nonportable_names": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4ee760fc397690702e50fbd62c796d7dd6b5e2539b6c5e9c2053b15d4113b95",
+        "class:setup-sha256:b57e65136190cadad65e0fcadbfa1f0e41b7ffe8a93e7e3b7f5b9964ac3faaad"
+      ],
+      "skipSites": []
+    },
+    "PackageReceiptSchemaTests.test_zero_bytes_are_allowed_only_for_asset_inputs_and_outputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e4ee760fc397690702e50fbd62c796d7dd6b5e2539b6c5e9c2053b15d4113b95",
+        "class:setup-sha256:b57e65136190cadad65e0fcadbfa1f0e41b7ffe8a93e7e3b7f5b9964ac3faaad"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_package_receipt_schema.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

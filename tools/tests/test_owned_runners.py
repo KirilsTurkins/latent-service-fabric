@@ -252,6 +252,9 @@ class NativeRunnerDemonstrations(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
             policy_data, rows=contract('angular-renderer')
+            inventory = root/'tools/ci/suites.json'
+            inventory.parent.mkdir(parents=True)
+            inventory.write_bytes((Path(__file__).resolve().parents[2]/'tools/ci/suites.json').read_bytes())
             manifest=root/'build.jsonl'
             records=[]
             children=root/'children'
@@ -306,6 +309,12 @@ class NativeRunnerDemonstrations(unittest.TestCase):
                 self.assertTrue(data['child']['cleanupAcknowledged'])
                 self.assertFalse(data['cleanupFailures'])
                 self.assertGreaterEqual(data['elapsedMs'],0)
+                expected = [case for key in policy_data['suiteIds'] for case in rows[key]['expectedIgnored']
+                            if key != 'latentd.lib.latentd' or 'actual_angular_http_' in case]
+                self.assertEqual(data['reproduction']['cases'], expected)
+                self.assertEqual(data['requiredCaseCount'], len(expected))
+                self.assertTrue(set(policy_data['suiteIds']) <= set(data['fixtures']))
+                self.assertEqual(data['completedCaseCount'], len(expected) if data['outcome'] == 'passed' else 0)
 
     @unittest.skipUnless(os.environ.get('LSF_LIVE_OCI_DEMO') == '1', 'explicit prepared Docker fixture only')
     def test_live_provider_normal_and_injected_failure_leave_no_owned_container(self):

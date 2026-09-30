@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "ActualCatalogMutationRawTests.test_all_four_actual_owners_replay_with_real_events_and_same_root_handoffs",
+    "ActualCatalogMutationRawTests.test_command_ordinal_cannot_skip_a_public_call",
+    "ActualCatalogMutationRawTests.test_cpu_capture_must_bracket_the_actual_public_future",
+    "ActualCatalogMutationRawTests.test_current_pin_must_advance_for_each_actual_mutation",
+    "ActualCatalogMutationRawTests.test_deleted_get_is_absent_even_while_the_old_pin_remains_live",
+    "ActualCatalogMutationRawTests.test_observer_sequence_cannot_hide_an_extra_completed_operation",
+    "ActualCatalogMutationRawTests.test_old_pin_policy_and_generation_cannot_change_with_current_state",
+    "ActualCatalogMutationRawTests.test_reopen_cannot_claim_the_other_actual_root_handoff",
+    "ActualCatalogMutationRawTests.test_unplanned_operation_after_final_checkpoint_cannot_be_dropped",
+    "ActualCatalogMutationRawTests.test_versioned_receipts_keep_delete_stamp_and_create_only_precondition"
+  ],
+  "guards": {
+    "ActualCatalogMutationRawTests.test_all_four_actual_owners_replay_with_real_events_and_same_root_handoffs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogMutationRawTests.test_command_ordinal_cannot_skip_a_public_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogMutationRawTests.test_cpu_capture_must_bracket_the_actual_public_future": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogMutationRawTests.test_current_pin_must_advance_for_each_actual_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogMutationRawTests.test_deleted_get_is_absent_even_while_the_old_pin_remains_live": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogMutationRawTests.test_observer_sequence_cannot_hide_an_extra_completed_operation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogMutationRawTests.test_old_pin_policy_and_generation_cannot_change_with_current_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogMutationRawTests.test_reopen_cannot_claim_the_other_actual_root_handoff": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogMutationRawTests.test_unplanned_operation_after_final_checkpoint_cannot_be_dropped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogMutationRawTests.test_versioned_receipts_keep_delete_stamp_and_create_only_precondition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a75106287e5b13899bf3e74e34b94a16f7b8a981944e34e62c4d04beec4e4a17",
+        "class:setup-sha256:31493d3b05ae0876ed79fb370e0420e2ddfbedc2723acfdd04043bccf71e4b4d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_catalog_mutation_raw.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

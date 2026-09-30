@@ -1,0 +1,266 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/native-runtime.yml:candidate:Build exact-source unsigned candidate": {
+      "job": "candidate",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "name": "Build exact-source unsigned candidate",
+      "run": "cd \"$NATIVE_WORKSPACE\"\nversion=\"$NATIVE_VERSION\"\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$version\" --output \"$PWD/target/native-release\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Build separately authenticated public-only VM fixture helper": {
+      "job": "candidate",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "name": "Build separately authenticated public-only VM fixture helper",
+      "run": "cd \"$NATIVE_WORKSPACE\"\ncargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check\ncargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \\\n  --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2\ninstall -D -m 0755 target/native-fixture-build/x86_64-unknown-linux-gnu/release/latent-native-vm-fixture target/native-test-tools/fixture-helper",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Fast native artifact and installer safety checks": {
+      "job": "candidate",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "name": "Fast native artifact and installer safety checks",
+      "run": "python3 -m unittest tools.tests.test_native_runtime tools.tests.test_native_release_gate\npython3 tools/validate_workflow_actions.py\npython3 tools/validate_docs.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Install pinned validation requirements": {
+      "job": "candidate",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "name": "Install pinned validation requirements",
+      "run": "python3 -m pip install --requirement tools/requirements.lock",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Prepare private exact-source host workspace without changing runner ACLs": {
+      "job": "candidate",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "name": "Prepare private exact-source host workspace without changing runner ACLs",
+      "run": "python3 tools/prepare_native_workspace.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Retain offline attestation material": {
+      "job": "candidate",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "name": "Retain offline attestation material",
+      "run": "install -m 0644 \"$ATTESTATION_BUNDLE\" \"$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Select maintained CI profile": {
+      "job": "candidate",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "name": "Select maintained CI profile",
+      "run": "python3 tools/ci_profile.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:candidate:identity": {
+      "job": "candidate",
+      "jobIf": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+      "name": "identity",
+      "run": "version=$(python3 -c 'import tomllib; print(tomllib.load(open(\"Cargo.toml\", \"rb\"))[\"workspace\"][\"package\"][\"version\"])')\necho \"version=$version\" >> \"$GITHUB_OUTPUT\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/native-runtime.yml:candidate:Build exact-source unsigned candidate": {
+      "after": ".github/workflows/native-runtime.yml:candidate:Build exact-source unsigned candidate",
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Build separately authenticated public-only VM fixture helper": {
+      "after": ".github/workflows/native-runtime.yml:candidate:Build separately authenticated public-only VM fixture helper",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Fast native artifact and installer safety checks": {
+      "after": ".github/workflows/native-runtime.yml:candidate:Fast native artifact and installer safety checks",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Install pinned validation requirements": {
+      "after": ".github/workflows/native-runtime.yml:candidate:Install pinned validation requirements",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Prepare private exact-source host workspace without changing runner ACLs": {
+      "after": ".github/workflows/native-runtime.yml:candidate:Prepare private exact-source host workspace without changing runner ACLs",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Retain offline attestation material": {
+      "after": ".github/workflows/native-runtime.yml:candidate:Retain offline attestation material",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime.yml:candidate:Select maintained CI profile": {
+      "after": ".github/workflows/native-runtime.yml:candidate:Select maintained CI profile",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime.yml:candidate:identity": {
+      "after": ".github/workflows/native-runtime.yml:candidate:identity",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "if": "github.event_name != 'workflow_dispatch' || inputs.artifact_run == ''",
+    "name": "Exact-source native Linux candidate",
+    "outputs": {
+      "version": "${{ steps.identity.outputs.version }}"
+    },
+    "permissions": {
+      "attestations": "write",
+      "contents": "read",
+      "id-token": "write"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Prepare private exact-source host workspace without changing runner ACLs",
+        "run": "python3 tools/prepare_native_workspace.py"
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "cache": "pip",
+          "cache-dependency-path": "tools/requirements.lock",
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Select maintained CI profile",
+        "run": "python3 tools/ci_profile.py"
+      },
+      {
+        "name": "Install pinned validation requirements",
+        "run": "python3 -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "name": "Fast native artifact and installer safety checks",
+        "run": "python3 -m unittest tools.tests.test_native_runtime tools.tests.test_native_release_gate\npython3 tools/validate_workflow_actions.py\npython3 tools/validate_docs.py\n"
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-wasip2,wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/native-build/x86_64-unknown-linux-gnu/release/.fingerprint\ntarget/native-build/x86_64-unknown-linux-gnu/release/build\ntarget/native-build/x86_64-unknown-linux-gnu/release/deps\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "prefix-key": "lsf-native-dependencies-v1",
+          "save-if": "${{ github.ref == 'refs/heads/development' }}"
+        }
+      },
+      {
+        "id": "identity",
+        "name": "Select exact source version",
+        "run": "version=$(python3 -c 'import tomllib; print(tomllib.load(open(\"Cargo.toml\", \"rb\"))[\"workspace\"][\"package\"][\"version\"])')\necho \"version=$version\" >> \"$GITHUB_OUTPUT\"\n"
+      },
+      {
+        "env": {
+          "DEVELOPMENT_TEST_NODE": "${{ inputs.development_test_node || false }}",
+          "NATIVE_VERSION": "${{ steps.identity.outputs.version }}"
+        },
+        "name": "Build exact-source unsigned candidate",
+        "run": "cd \"$NATIVE_WORKSPACE\"\nversion=\"$NATIVE_VERSION\"\nfixture_args=()\nif [ \"$DEVELOPMENT_TEST_NODE\" = true ]; then fixture_args=(--development-test-node); fi\npython3 tools/build_native_runtime.py --commit \"$GITHUB_SHA\" --version \"$version\" --output \"$PWD/target/native-release\" \"${fixture_args[@]}\"\n"
+      },
+      {
+        "name": "Build separately authenticated public-only VM fixture helper",
+        "run": "cd \"$NATIVE_WORKSPACE\"\ncargo +1.97.1 fmt --manifest-path tools/native-fixture/Cargo.toml -- --check\ncargo +1.97.1 build --locked --release --manifest-path tools/native-fixture/Cargo.toml \\\n  --target x86_64-unknown-linux-gnu --target-dir target/native-fixture-build --jobs 2\ninstall -D -m 0755 target/native-fixture-build/x86_64-unknown-linux-gnu/release/latent-native-vm-fixture target/native-test-tools/fixture-helper\n"
+      },
+      {
+        "id": "attest",
+        "name": "Attest candidate checksum inventory, not release authority",
+        "uses": "actions/attest-build-provenance",
+        "with": {
+          "subject-path": "${{ env.NATIVE_WORKSPACE }}/target/native-release/SHA256SUMS\n${{ env.NATIVE_WORKSPACE }}/target/native-test-tools/fixture-helper\n"
+        }
+      },
+      {
+        "env": {
+          "ATTESTATION_BUNDLE": "${{ steps.attest.outputs.bundle-path }}"
+        },
+        "name": "Retain offline attestation material",
+        "run": "install -m 0644 \"$ATTESTATION_BUNDLE\" \"$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json\""
+      },
+      {
+        "name": "Retain authenticated candidate, not a published release",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "native-runtime-candidate${{ inputs.development_test_node && '-development-test' || '' }}-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-release/",
+          "retention-days": 14
+        }
+      },
+      {
+        "name": "Retain test tooling separately from the runtime bundle",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "native-runtime-test-tools-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-test-tools/",
+          "retention-days": 14
+        }
+      },
+      {
+        "if": "failure()",
+        "name": "Retain bounded build failure",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "ignore",
+          "name": "native-runtime-build-failure-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-build-failure.*",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 90
+  },
+  "jobId": "candidate",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/native-runtime.yml"
+}

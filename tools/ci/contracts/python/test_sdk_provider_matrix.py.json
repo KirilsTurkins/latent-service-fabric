@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "ProviderMatrixTests.test_exact_six_language_contract",
+    "ProviderMatrixTests.test_false_checks_leaks_and_invented_profiles_are_not_passes",
+    "ProviderMatrixTests.test_missing_or_empty_receipt_cannot_reuse_other_languages",
+    "ProviderMatrixTests.test_mixed_inputs_and_participant_labels_fail_closed"
+  ],
+  "guards": {
+    "ProviderMatrixTests.test_exact_six_language_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fd23f6d81ed6218336f56114c8b5a6f55361420a342fc22eb605da1e13d6d29",
+        "class:setup-sha256:dbe2fd4f8cd74a632e538f88174f1f454b936588fbd20d4cf509b018ce42d1a7"
+      ],
+      "skipSites": []
+    },
+    "ProviderMatrixTests.test_false_checks_leaks_and_invented_profiles_are_not_passes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fd23f6d81ed6218336f56114c8b5a6f55361420a342fc22eb605da1e13d6d29",
+        "class:setup-sha256:dbe2fd4f8cd74a632e538f88174f1f454b936588fbd20d4cf509b018ce42d1a7"
+      ],
+      "skipSites": []
+    },
+    "ProviderMatrixTests.test_missing_or_empty_receipt_cannot_reuse_other_languages": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fd23f6d81ed6218336f56114c8b5a6f55361420a342fc22eb605da1e13d6d29",
+        "class:setup-sha256:dbe2fd4f8cd74a632e538f88174f1f454b936588fbd20d4cf509b018ce42d1a7"
+      ],
+      "skipSites": []
+    },
+    "ProviderMatrixTests.test_mixed_inputs_and_participant_labels_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1fd23f6d81ed6218336f56114c8b5a6f55361420a342fc22eb605da1e13d6d29",
+        "class:setup-sha256:dbe2fd4f8cd74a632e538f88174f1f454b936588fbd20d4cf509b018ce42d1a7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sdk_provider_matrix.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

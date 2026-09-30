@@ -70,7 +70,7 @@ def main() -> int:
             return output
 
         if args.msrv:
-            command(["cargo", "+1.94.1", "check", *recipe], "msrv")
+            command(["cargo", "+1.95.0", "check", *recipe], "msrv")
         else:
             command(["cargo", "fmt", "--all", "--check"], "format")
             command(["cargo", "check", *recipe], "check")

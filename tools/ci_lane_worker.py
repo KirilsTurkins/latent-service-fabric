@@ -64,13 +64,9 @@ def _renderer_cases(data: dict) -> list[str]:
     require(selected["runner"] == "ci_rust_artifacts", "invalid-fixture", "browser-selection-contract")
     values = list(selected["names"])
     process = data["processContracts"]["angular-renderer"]
-    for key in process["suiteIds"]:
-        row = rows[key]
-        require(row["recipe"] == "workspace-all-features" and row["expectedIgnored"],
+    for key, selected_cases in registry.process_cases(data, "angular-renderer").items():
+        require(rows[key]["recipe"] == "workspace-all-features",
                 "invalid-fixture", "renderer-suite-contract")
-        selected_cases = row["expectedIgnored"]
-        if row["target"] == "latentd":
-            selected_cases = [name for name in selected_cases if "actual_angular_http_" in name]
         values.extend(selected_cases)
     for key in ("latent-packaging.test.angular-build", "latent-wasmtime.test.angular-build"):
         build = rows[key]

@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "CatalogMutationHandoffTests.test_adjacent_reopen_accepts_both_normal_and_profiled_initial_owners",
+    "CatalogMutationHandoffTests.test_cleanup_cannot_claim_another_root_or_adjacent_owner_pair",
+    "CatalogMutationHandoffTests.test_initial_handoff_binds_raw_root_and_catalog_path_and_bounds",
+    "CatalogMutationHandoffTests.test_initial_handoff_uses_source_child_for_profile_and_wrapper_for_normal",
+    "CatalogMutationHandoffTests.test_normal_handoff_cannot_substitute_an_unrelated_profile_source",
+    "CatalogMutationHandoffTests.test_profile_handoff_rejects_wrapper_pid_or_crossed_source_start_time",
+    "CatalogMutationHandoffTests.test_profiled_reopen_rejects_size_mode_arm_shape_repetition_and_nonadjacency",
+    "CatalogMutationHandoffTests.test_reopen_marker_rejects_crossed_source_commit",
+    "CatalogMutationHandoffTests.test_reopen_rejects_crossed_root_owner_receipt_or_unexpected_post_exit",
+    "CatalogMutationMarkerTests.test_marker_rejects_boolean_populations_foreign_source_and_unknown_fields",
+    "CatalogMutationMarkerTests.test_strict_identity_binds_canonical_marker_bytes_and_exact_selection"
+  ],
+  "guards": {
+    "CatalogMutationHandoffTests.test_adjacent_reopen_accepts_both_normal_and_profiled_initial_owners": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationHandoffTests.test_cleanup_cannot_claim_another_root_or_adjacent_owner_pair": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationHandoffTests.test_initial_handoff_binds_raw_root_and_catalog_path_and_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationHandoffTests.test_initial_handoff_uses_source_child_for_profile_and_wrapper_for_normal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationHandoffTests.test_normal_handoff_cannot_substitute_an_unrelated_profile_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationHandoffTests.test_profile_handoff_rejects_wrapper_pid_or_crossed_source_start_time": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationHandoffTests.test_profiled_reopen_rejects_size_mode_arm_shape_repetition_and_nonadjacency": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationHandoffTests.test_reopen_marker_rejects_crossed_source_commit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationHandoffTests.test_reopen_rejects_crossed_root_owner_receipt_or_unexpected_post_exit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationMarkerTests.test_marker_rejects_boolean_populations_foreign_source_and_unknown_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationMarkerTests.test_strict_identity_binds_canonical_marker_bytes_and_exact_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef7f3f32d5c9bdf06a456df8baba640e9ca92ccb44329a5f621f0b20109750f5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_catalog_mutation_handoff.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

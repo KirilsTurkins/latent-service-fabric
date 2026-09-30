@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_security_profile_workflow.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review only runtime/MSRV identity changes for Wasmtime 48.0.3 and Rust 1.95.0; package selections, guards, execution and cleanup obligations remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "0f8787c5b61f9a27e943cafcc3ec32f1fd27633d9f4012e8b2f227f3ee2a8f8d"
+}

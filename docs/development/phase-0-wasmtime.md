@@ -1,5 +1,10 @@
 # Phase 0 Wasmtime echo backend
 
+The current security baseline selects **Wasmtime 48.0.3**. References below to
+47.0.4 describe the earlier qualification, not the current supported dependency.
+See the [September security update](wasmtime-security-update.md)
+for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+
 Issue #21 introduced the first executable `ExecutionBackend` for the narrow `examples:echo/service@0.1.0` contract. The maintained `Phase0WasmtimeEngineFactory` and `Phase0WasmtimeBackend` now preserve that contract as a compatibility facade over the shared Phase 1 backend. This page describes the retained echo path; see [the generic Wasmtime runtime](../runtime/wasmtime.md) and [activation capabilities](../runtime/capabilities.md) for the current runtime surface. These updates do not revise the archived Phase 0 measurements or authorization.
 
 ## Engine profile

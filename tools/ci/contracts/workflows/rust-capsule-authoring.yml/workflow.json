@@ -1,0 +1,55 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "rust-capsule-authoring-${{ github.ref }}"
+    },
+    "name": "Rust capsule authoring",
+    "on": {
+      "pull_request": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/rust-capsule-authoring.yml",
+          "sdk/rust-guest/**",
+          "crates/**",
+          "apps/**",
+          "examples/**",
+          "schemas/**",
+          "tools/**",
+          "wit/**",
+          "Cargo.*",
+          "docs/component-development/rust-authoring.md"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/rust-capsule-authoring.yml",
+          "sdk/rust-guest/**",
+          "crates/**",
+          "apps/**",
+          "examples/**",
+          "schemas/**",
+          "tools/**",
+          "wit/**",
+          "Cargo.*",
+          "docs/component-development/rust-authoring.md"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "authoring"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
+}

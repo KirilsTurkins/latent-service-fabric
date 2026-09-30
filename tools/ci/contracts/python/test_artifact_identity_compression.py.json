@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "ProfileCompressionTests.test_compressed_byte_bomb_and_truncated_trailer_are_rejected",
+    "ProfileCompressionTests.test_compression_is_deterministic_and_cannot_replace_existing_output",
+    "ProfileCompressionTests.test_large_valid_profile_preserves_every_row_and_exact_weight"
+  ],
+  "guards": {
+    "ProfileCompressionTests.test_compressed_byte_bomb_and_truncated_trailer_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33b160799bbe6c147f090c72147140012571151ff9d21c4515e82beed9a114b4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProfileCompressionTests.test_compression_is_deterministic_and_cannot_replace_existing_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33b160799bbe6c147f090c72147140012571151ff9d21c4515e82beed9a114b4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProfileCompressionTests.test_large_valid_profile_preserves_every_row_and_exact_weight": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:33b160799bbe6c147f090c72147140012571151ff9d21c4515e82beed9a114b4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_artifact_identity_compression.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/build_phase1_measurement_fixtures.sh",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "7931eda35e8c31a35bddf111dda1be447455129895d61324530fd85469475de3"
+}

@@ -1,0 +1,270 @@
+{
+  "cases": [
+    "DockerArchiveTests.test_crossed_build_or_image_identity_rejects_even_matching_aggregates",
+    "DockerArchiveTests.test_discriminator_uses_only_the_declared_docker_archive_policy",
+    "DockerArchiveTests.test_each_retained_aggregate_must_exactly_equal_replay",
+    "DockerArchiveTests.test_flags_and_fixed_population_require_exact_types_and_values",
+    "DockerArchiveTests.test_incomplete_offers_successes_seeds_or_owners_cannot_publish",
+    "DockerArchiveTests.test_missing_smoke_cannot_publish_and_does_not_edit_source",
+    "DockerArchiveTests.test_package_replays_both_extracted_campaigns_and_preserves_original_bytes",
+    "DockerArchiveTests.test_profile_swap_and_unvalidated_campaign_fail_before_aggregation",
+    "DockerArchiveTests.test_replay_failure_never_publishes_or_discards_originals",
+    "DockerArchiveTests.test_separately_bound_collector_commits_need_not_relabel_the_build",
+    "DockerArchiveTests.test_split_transport_uses_the_same_semantic_replay",
+    "DockerFailedAppendixTests.test_cleanup_ids_names_absence_calls_and_pending_owners_are_bound",
+    "DockerFailedAppendixTests.test_client_create_unknown_start_and_exec_api_prevent_zero_offers",
+    "DockerFailedAppendixTests.test_duplicate_qualified_path_and_nonzero_offer_entries_reject",
+    "DockerFailedAppendixTests.test_existing_client_ledger_or_client_files_prevent_zero_offers",
+    "DockerFailedAppendixTests.test_failure_and_file_references_bind_original_sidecars",
+    "DockerFailedAppendixTests.test_http_start_error_and_nonzero_prestart_exit_remain_nonqualifying",
+    "DockerFailedAppendixTests.test_missing_container_or_network_404_cannot_claim_clean_removal",
+    "DockerFailedAppendixTests.test_optional_appendix_and_complete_directory_coverage",
+    "DockerFailedAppendixTests.test_raw_http_bytes_and_failed_status_are_not_forged_as_success"
+  ],
+  "guards": {
+    "DockerArchiveTests.test_crossed_build_or_image_identity_rejects_even_matching_aggregates": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_discriminator_uses_only_the_declared_docker_archive_policy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_each_retained_aggregate_must_exactly_equal_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_flags_and_fixed_population_require_exact_types_and_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_incomplete_offers_successes_seeds_or_owners_cannot_publish": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_missing_smoke_cannot_publish_and_does_not_edit_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_package_replays_both_extracted_campaigns_and_preserves_original_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_profile_swap_and_unvalidated_campaign_fail_before_aggregation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_replay_failure_never_publishes_or_discards_originals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_separately_bound_collector_commits_need_not_relabel_the_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerArchiveTests.test_split_transport_uses_the_same_semantic_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:5b695d3afa70fd246e5b3ac30ac4c98f42f8e0a6f727b0f8355722b3e0228479"
+      ],
+      "skipSites": []
+    },
+    "DockerFailedAppendixTests.test_cleanup_ids_names_absence_calls_and_pending_owners_are_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:19ea23e40ebca408ce663dd807c07f54d2a45f0f227bc5a1c8a910fcca581a0e"
+      ],
+      "skipSites": []
+    },
+    "DockerFailedAppendixTests.test_client_create_unknown_start_and_exec_api_prevent_zero_offers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:19ea23e40ebca408ce663dd807c07f54d2a45f0f227bc5a1c8a910fcca581a0e"
+      ],
+      "skipSites": []
+    },
+    "DockerFailedAppendixTests.test_duplicate_qualified_path_and_nonzero_offer_entries_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:19ea23e40ebca408ce663dd807c07f54d2a45f0f227bc5a1c8a910fcca581a0e"
+      ],
+      "skipSites": []
+    },
+    "DockerFailedAppendixTests.test_existing_client_ledger_or_client_files_prevent_zero_offers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:19ea23e40ebca408ce663dd807c07f54d2a45f0f227bc5a1c8a910fcca581a0e"
+      ],
+      "skipSites": []
+    },
+    "DockerFailedAppendixTests.test_failure_and_file_references_bind_original_sidecars": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:19ea23e40ebca408ce663dd807c07f54d2a45f0f227bc5a1c8a910fcca581a0e"
+      ],
+      "skipSites": []
+    },
+    "DockerFailedAppendixTests.test_http_start_error_and_nonzero_prestart_exit_remain_nonqualifying": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:19ea23e40ebca408ce663dd807c07f54d2a45f0f227bc5a1c8a910fcca581a0e"
+      ],
+      "skipSites": []
+    },
+    "DockerFailedAppendixTests.test_missing_container_or_network_404_cannot_claim_clean_removal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:19ea23e40ebca408ce663dd807c07f54d2a45f0f227bc5a1c8a910fcca581a0e"
+      ],
+      "skipSites": []
+    },
+    "DockerFailedAppendixTests.test_optional_appendix_and_complete_directory_coverage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:19ea23e40ebca408ce663dd807c07f54d2a45f0f227bc5a1c8a910fcca581a0e"
+      ],
+      "skipSites": []
+    },
+    "DockerFailedAppendixTests.test_raw_http_bytes_and_failed_status_are_not_forged_as_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:92888bca1105ffa22f32b505c1c5d7b866736433c4657597f8ed47e36571c188",
+        "class:setup-sha256:19ea23e40ebca408ce663dd807c07f54d2a45f0f227bc5a1c8a910fcca581a0e"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_docker_archive.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,54 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "native-runtime-release-${{ inputs.version }}"
+    },
+    "name": "Native runtime release gate",
+    "on": {
+      "workflow_dispatch": {
+        "inputs": {
+          "ci_run": {
+            "description": "Successful maintained CI run for that exact commit",
+            "required": true,
+            "type": "string"
+          },
+          "commit": {
+            "description": "Exact reviewed 40-character release commit",
+            "required": true,
+            "type": "string"
+          },
+          "predecessor_run": {
+            "default": "",
+            "description": "Release-workflow run for the committed compatible predecessor",
+            "required": false,
+            "type": "string"
+          },
+          "publish": {
+            "default": false,
+            "description": "Publish only after complete native VM evidence and environment review",
+            "type": "boolean"
+          },
+          "version": {
+            "description": "Exact parent-approved new version and existing tag",
+            "required": true,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "build",
+    "gate",
+    "native-vm",
+    "publish"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/native-runtime-release.yml"
+}

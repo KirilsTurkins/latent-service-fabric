@@ -26,18 +26,34 @@ unchanged; obsolete Wiki URLs have no compatibility requirement.
 
 ## Toolchain and installation
 
-Use Node **24.19.0** and npm **11.19.1**. These website pins do not change the SDK or
+Use Node **24.19.0**, Python **3.11 or newer**, and the repository-prepared
+npm **11.19.1** bundle. These website pins do not change the SDK or
 Angular qualification profiles. [The private package](../../website/package.json),
 [lock](../../website/package-lock.json) and
 [reviewed identities](../../website/content/toolchain.json) are isolated from
 root Cargo and SDK manifests. Docusaurus 3.10.2, React 19.3.0 and TypeScript 5.9.3
 are exact pins, not floating recommendations. There is no root npm workspace.
 
-From the repository checkout:
+The explicit `npm-11.19.1-lsf-bundle-v1` derivation replaces npm's bundled
+`ip-address`/`undici`/`brace-expansion` with 10.7.2/6.28.1/5.0.12 before executing the package manager.
+Preparation authenticates four registry archives, executes no package code and
+writes a deterministic TAR under ignored `target/`; the toolchain lock checks
+that TAR's exact integrity. All bundled packages remain in advisory scanning.
+The brace-expansion replacement retains only its reviewed `balanced-match` requirement
+and the exact 4.0.4 package already present in the authenticated npm archive;
+new dependencies or nested shadow copies are rejected.
+This is not an upstream npm release. The [toolchain instructions](../../website/README.md)
+describe offline inputs and the explicit maintainer-only refresh path.
+
+From the repository checkout in a POSIX shell:
 
 ```text
 cd website
 node --version
+python3 toolchain/prepare.py
+npm ci --prefix toolchain --ignore-scripts --no-audit --no-fund
+node scripts/check-package-manager.mjs
+export PATH="$PWD/toolchain/node_modules/.bin:$PATH"
 npm --version
 npm ci --ignore-scripts --no-audit --no-fund
 npm run check

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/static-release/unpack.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "1ae084a12a972b16be293e0a020c750074a57d856bc8264e47b9a1ace269b579"
+}

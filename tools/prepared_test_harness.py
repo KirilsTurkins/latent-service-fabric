@@ -70,7 +70,8 @@ def execute(run: TestRun, row: dict, manifest: Path, environment: dict[str, str]
         artifacts.validate_listing(listed.output, suite)
     except (artifacts.ArtifactError, UnicodeError):
         raise ProcessFailure('invalid-fixture', 'prepared-ignored-case-set-changed') from None
-    run.reproduction.setdefault('cases', []).extend(selected)
+    if not set(selected) <= set(run.required_cases):
+        run.declare_cases([*run.required_cases, *selected])
     run.reproduction['recipe'] = row['recipe']
     if fault == 'after-discovery':
         raise ProcessFailure('assertion-failure', 'injected-after-discovery')
@@ -86,3 +87,4 @@ def execute(run: TestRun, row: dict, manifest: Path, environment: dict[str, str]
         summaries = re.findall(rb'^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;',
                                result.output, re.MULTILINE)
         require(summaries == [(b'1', b'0', b'0')], 'assertion-failure', 'selected-test-result-mismatch')
+        run.complete_cases([name])

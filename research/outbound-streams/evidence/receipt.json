@@ -1,0 +1,228 @@
+{
+  "baselineCommit": "a7b5d2088471b7368cd85ab74f3292afcdfca00e",
+  "boundary": "Native local protocol proof and ownership model only; no production enablement",
+  "commands": [
+    {
+      "argv": [
+        "/usr/local/go/bin/go",
+        "version"
+      ],
+      "elapsedSeconds": 0.030626,
+      "exitCode": 0,
+      "output": "go version go1.23.2 linux/amd64\n",
+      "outputSha256": "97eb37827429914457db075130bd6d2b981b3772c909a8ad0017a19d4e48e513"
+    },
+    {
+      "argv": [
+        "/usr/local/go/bin/go",
+        "env",
+        "GOROOT"
+      ],
+      "elapsedSeconds": 0.044465,
+      "exitCode": 0,
+      "output": "/usr/local/go\n",
+      "outputSha256": "c3375394642de5ec7b553ec4431dc19f4f2f3f2d292cd6ece79db76db5403752"
+    },
+    {
+      "argv": [
+        "/usr/local/go/bin/gofmt",
+        "-l",
+        "gateway.go",
+        "gateway_test.go"
+      ],
+      "elapsedSeconds": 0.031549,
+      "exitCode": 0,
+      "output": "",
+      "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "/usr/local/go/bin/go",
+        "vet",
+        "."
+      ],
+      "elapsedSeconds": 0.612046,
+      "exitCode": 0,
+      "output": "",
+      "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "/usr/local/go/bin/go",
+        "test",
+        "-race",
+        "-count=1",
+        "-timeout=30s",
+        "-json",
+        "."
+      ],
+      "elapsedSeconds": 2.796519,
+      "exitCode": 0,
+      "output": "treams\",\"Test\":\"TestShortWriteContractStickyFailureAndAbsoluteDeadline\",\"Elapsed\":0}\n{\"Time\":\"2026-09-28T18:38:56.177689681Z\",\"Action\":\"output\",\"Package\":\"_<checkout>/research/outbound-streams\",\"Output\":\"PASS\\n\"}\n{\"Time\":\"2026-09-28T18:38:57.183395794Z\",\"Action\":\"output\",\"Package\":\"_<checkout>/research/outbound-streams\",\"Output\":\"ok  \\t_<checkout>/research/outbound-streams\\t1.326s\\n\"}\n{\"Time\":\"2026-09-28T18:38:57.183473058Z\",\"Action\":\"pass\",\"Package\":\"_<checkout>/research/outbound-streams\",\"Elapsed\":1.328}\n",
+      "outputSha256": "3b966b45900a509e34334ecc3594e098456848aaa985e4fee681b7b706f5af87"
+    },
+    {
+      "argv": [
+        "/opt/pyvenv/bin/python3",
+        "-m",
+        "unittest",
+        "-v",
+        "test_contract"
+      ],
+      "elapsedSeconds": 3.533901,
+      "exitCode": 0,
+      "output": ") ... ok\ntest_no_enablement_or_http_authority_substitution (test_contract.ContractTests.test_no_enablement_or_http_authority_substitution) ... ok\ntest_tls_requires_explicit_trust_no_insecure_fallback (test_contract.ContractTests.test_tls_requires_explicit_trust_no_insecure_fallback) ... ok\ntest_unknown_and_unbounded_inputs_rejected (test_contract.ContractTests.test_unknown_and_unbounded_inputs_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.031s\n\nOK\n",
+      "outputSha256": "c0593e899e4120adfa848a77f84f59b4f1a18e08d95f64b81b6e4ba277e21093"
+    }
+  ],
+  "elapsedSeconds": 7.236109,
+  "formatVersion": 1,
+  "goBinarySha256": "caa1b3c015e819aaa1408efe37b2499088bbf986bf30a2883bceab4e07b55b52",
+  "goCasesIncludingSubtests": 19,
+  "goVersion": "go version go1.23.2 linux/amd64",
+  "jsonschemaVersion": "4.26.0",
+  "librarySources": {
+    "crypto/tls": {
+      "fileCount": 23,
+      "manifestSha256": "f5385b5b250486dc7675f330cb6facbb217e6983da391d44d8b6d7482f0d79bf"
+    },
+    "net/smtp": {
+      "fileCount": 2,
+      "manifestSha256": "defbf6a5649661e9f2d21f66e0976c7379a459ea26ab7bd209c172c7bb6a24a4"
+    },
+    "net/textproto": {
+      "fileCount": 5,
+      "manifestSha256": "0eb77e0d4af7bc20cc71300bdff90b62d259d95f7f82fc0a6596ce91751d927c"
+    }
+  },
+  "machine": "x86_64",
+  "measurements": [
+    "cancelled-before-retirement handles=1 active=1 logicalBytes=114971"
+  ],
+  "notRun": [
+    "Rust production broker/admission/IoRuntime/descendant budget integration",
+    "Real Wasmtime guest/component execution in any of the six languages",
+    "Candidate WIT parser, binding generation and WASI composition",
+    "Production DNS rebinding, credential rotation and durable audit conformance",
+    "Allocator/kernel/TLS hostile-peer qualification and complete repository CI"
+  ],
+  "observedAt": "2026-09-28T18:38:53.498381+00:00",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "pythonContractTests": 5,
+  "pythonVersion": "3.13.5",
+  "smtpSourceSha256": "8de47acc7a67ee53a28b0d3c505fa5b69edcc11fcdf253d47b2608bb2e51ae46",
+  "sources": {
+    "adr/0059-defer-general-outbound-streams.md": "9ea96baa4b2cb6f87cee0c5f13daea78cfe1056bde82bac4659d2580ef03c17a",
+    "research/outbound-streams/README.md": "f18a658decece2c56a5d81b125794937c2a64d43dc5df34ffb04cf56649d1484",
+    "research/outbound-streams/compatibility.md": "bf9920148e9c1a8ecfa633dabe2e9866dd3f88b8c5e212a096f5eed3aad929ed",
+    "research/outbound-streams/evidence/development-negative.json": "c974e5177f0d937094172dce079a49a66008c88b5e500cc876ae1e9f893e659f",
+    "research/outbound-streams/gateway.go": "86d198465f42c99850a46a2c3dbbce95d222e8a016ee119b3f9239b8644e89b3",
+    "research/outbound-streams/gateway_test.go": "cfc7ee175a72101399bafa4a2f2dee3b9efba1705a96fea0caaa0be09aec85f9",
+    "research/outbound-streams/grant.example.json": "5823c1ec5ba080f4ad5a4844c38975c8fdf71fffbf9c4d27d836a195c3a3eb0c",
+    "research/outbound-streams/grant.schema.json": "cef9123bd92be3a49c5d81b97d5a74f2c18cf5f3961f44de8c926de20aed535e",
+    "research/outbound-streams/requirements.json": "e56f3bc7ce2839ccbcfe20794e7ebcf60b4c1e57ab9e177fbe02ae051b4f8d7e",
+    "research/outbound-streams/run.py": "f7a1a6ae91641dbc5eca9e1bdd95b6f023a28cb3c8fc365b9ec8ea892c9edfdb",
+    "research/outbound-streams/stream-profile.md": "4989d1b94039b3dda948ed77f2fe0442bd4dae6896128c708a3f59973a0d2cee",
+    "research/outbound-streams/streams.wit": "a33048b993f931f9e4e0cf65af24164585b371593de381dad602d7a5ca46ce6c",
+    "research/outbound-streams/test_contract.py": "54557eb9b15a3e6486c8a9f292b6fceb94d8e0a74aab3b10330e51c469f5f718"
+  },
+  "status": "passed",
+  "testResults": [
+    {
+      "elapsedSeconds": 0.02,
+      "name": "TestRealSMTPPartialIOAndFreshInvocation",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestDeniedAuthorityNeverConnects",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestLiteralAndSpecialAddressPolicy",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestForgedForeignAndClosedHandles",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestHandleAndTenantLimits",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestByteAndAuditExhaustionBeforeConnect",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestInvalidInputAndCancelledBeforeDispatch",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestRevocationBeforeStart",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestLostResponseDoesNotUndoPeerEffect",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.08,
+      "name": "TestPeerStallIsBounded",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestCancelActiveHandleRetainsPhysicalOwnerUntilReturn",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.01,
+      "name": "TestContextCancellationAndFreshNextInvocation",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.01,
+      "name": "TestPartialWriteFailureAndSuccessfulFreshInvocation",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.01,
+      "name": "TestBoundedPeerBytesAndRedaction",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.03,
+      "name": "TestTLSExplicitTrustAndHostname/trusted",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.02,
+      "name": "TestTLSExplicitTrustAndHostname/untrusted",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.02,
+      "name": "TestTLSExplicitTrustAndHostname/wrong-name",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.08,
+      "name": "TestTLSExplicitTrustAndHostname",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestShortWriteContractStickyFailureAndAbsoluteDeadline",
+      "result": "pass"
+    }
+  ],
+  "topLevelGoTests": 16
+}

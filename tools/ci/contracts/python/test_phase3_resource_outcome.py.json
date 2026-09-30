@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "ResourceProbeOutcomeTests.test_recovery_requires_the_original_success_value",
+    "ResourceProbeOutcomeTests.test_resource_pressure_is_retained_as_provider_failure",
+    "ResourceProbeOutcomeTests.test_success_and_unknown_values_are_not_interpreted_as_typed_errors",
+    "ResourceProbeOutcomeTests.test_typed_error_is_not_counted_as_successful_provider_work"
+  ],
+  "guards": {
+    "ResourceProbeOutcomeTests.test_recovery_requires_the_original_success_value": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45c591803eeb33f51f570838c6f1c696f1ad06c370648a29155fbccb6e2c95fc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceProbeOutcomeTests.test_resource_pressure_is_retained_as_provider_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45c591803eeb33f51f570838c6f1c696f1ad06c370648a29155fbccb6e2c95fc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceProbeOutcomeTests.test_success_and_unknown_values_are_not_interpreted_as_typed_errors": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45c591803eeb33f51f570838c6f1c696f1ad06c370648a29155fbccb6e2c95fc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ResourceProbeOutcomeTests.test_typed_error_is_not_counted_as_successful_provider_work": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:45c591803eeb33f51f570838c6f1c696f1ad06c370648a29155fbccb6e2c95fc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase3_resource_outcome.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
