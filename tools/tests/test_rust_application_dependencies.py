@@ -83,12 +83,26 @@ class CargoDependencies(unittest.TestCase):
             (project / MANIFEST).write_bytes(canonical(manifest))
             (project / LOCK).write_bytes(canonical(capture(project)))
             closure = prepare(project, work, output, 'rust')
+            (work / 'Cargo.toml').write_bytes(source.read_bytes())
             adapted, receipt = configure(closure, work, root / 'private-home')
             self.assertEqual(adapted, source.read_bytes())
             self.assertEqual(receipt['inputIdentity'], closure.identity)
             config = tomllib.loads((root / 'private-home/config.toml').read_text())
             self.assertTrue(config['net']['offline'])
             self.assertEqual(config['source']['captured']['directory'], str(work / 'dependencies/cargo-vendor'))
+
+    def test_native_root_manifest_cannot_silently_ignore_edits(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            work = root / 'work'
+            work.mkdir()
+            (work / 'Cargo.toml').write_bytes(b'[package]\nname="changed"\n')
+            class Closure:
+                project = root
+                lock = {'artifacts': [{'metadata': {'rootManifest': True}, 'original': {'digest': digest(b'old')}}]}
+            (root / 'cargo-resolved.lock.json').write_bytes(canonical({'sourceReplacement': {}}))
+            with self.assertRaisesRegex(DependencyError, 'root-manifest-drift'):
+                configure(Closure(), work, root / 'home')
 
 
 if __name__ == '__main__':
