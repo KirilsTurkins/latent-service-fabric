@@ -135,7 +135,7 @@ fn preparation(value: proto::TargetPreparation) -> Value {
         "sealedMetadataFingerprint":value.sealed_metadata_fingerprint,"importCount":value.import_count.map(|value| value.to_string()),
         "functionCount":value.function_count.map(|value| value.to_string()),"hostcallFuel":value.hostcall_fuel.map(|value| value.to_string()),
         "maximumLiftedBytes":value.maximum_lifted_bytes.map(|value| value.to_string()),"maximumTypeNodes":value.maximum_type_nodes.map(|value| value.to_string()),
-        "declaredBudget":value.declared_budget.map(budget),"imports":value.imports,"exports":exports})
+        "declaredBudget":value.declared_budget.map(budget),"imports":value.imports,"typeImports":value.type_imports,"exports":exports})
 }
 fn budget(value: proto::ResourceBudget) -> Value {
     json!({"cpuFuel":value.cpu_fuel.to_string(),"memoryBytes":value.memory_bytes.to_string(),
@@ -215,6 +215,9 @@ mod tests {
                 reasons: vec![777],
                 preparation: Some(proto::TargetPreparation {
                     state: 2,
+                    imports: vec!["latent:runtime/clocks@0.1.0".into()],
+                    type_imports: vec!["examples:java-http-domain/types@1.0.0".into()],
+                    import_count: Some(2),
                     diagnostic: Some(proto::ActivationDiagnostic {
                         schema_version: 1,
                         stage: 778,
@@ -253,6 +256,15 @@ mod tests {
             "0"
         );
         assert!(candidate["preparation"]["diagnostic"]["fixedBytes"].is_null());
+        assert_eq!(candidate["preparation"]["importCount"], "2");
+        assert_eq!(
+            candidate["preparation"]["imports"][0],
+            "latent:runtime/clocks@0.1.0"
+        );
+        assert_eq!(
+            candidate["preparation"]["typeImports"][0],
+            "examples:java-http-domain/types@1.0.0"
+        );
     }
     #[test]
     fn target_reply_rejects_foreign_scope_selector_drift_and_unmeasured_ready_claims() {
