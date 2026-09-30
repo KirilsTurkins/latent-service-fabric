@@ -130,7 +130,8 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]]) -> bytes:
             # The authenticated npm archive already contains this exact dependency.
             # Do not resolve or install a new graph during source preparation.
             dependency = package(files, "package/node_modules/balanced-match/")
-            if (dependency.get("name") != "balanced-match" or dependency.get("version") != "4.0.4"
+            if (old.get("dependencies") != expected
+                    or dependency.get("name") != "balanced-match" or dependency.get("version") != "4.0.4"
                     or dependency.get("dependencies") or dependency.get("optionalDependencies")
                     or dependency.get("peerDependencies")):
                 raise ValueError("replacement dependency graph requires review")

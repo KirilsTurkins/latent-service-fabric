@@ -81,7 +81,7 @@
   },
   "jobId": "msrv",
   "kind": "job",
-  "reviewReason": "Port reviewed Wasmtime 48.0.3 security remediation; require Rust 1.95.0 while retaining the shared pinned 1.97.1 action, complete locked checks, and every baseline coverage obligation.",
+  "reviewReason": "Preserve historical command coverage and incoming explicit MSRV installation; check the updated dependency graph with declared Rust 1.95.0.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

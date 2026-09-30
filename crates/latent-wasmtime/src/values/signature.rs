@@ -43,8 +43,8 @@ pub(crate) fn validate_host_signature(
         fixed = fixed.checked_add(state.inline(ty, 1)?).ok_or_else(limit)?;
     }
     // UTF-16/Latin-1 lifting and String growth need at most a conservative 4x
-    // source-byte allowance. Retain an independent conservative allowance for
-    // nested inline values even though Wasmtime 48.0.3 now meters those allocations.
+    // source-byte allowance. Lists charge only size_of::<Val>() per element:
+    // their uncharged inline records, tuples, boxes and names need amplification.
     let multiplier = state.largest_element.div_ceil(size_of::<Val>()).max(4);
     let maximum = hostcall_fuel
         .checked_mul(multiplier)
@@ -176,8 +176,8 @@ impl SchemaBudget<'_> {
                 bytes = bytes.checked_add(largest).ok_or_else(limit)?;
             }
             Type::Own(resource) | Type::Borrow(resource) if self.resources.contains(resource) => {}
-            Type::Map(_)
-            | Type::FixedLengthList(_)
+            Type::FixedLengthList(_)
+            | Type::Map(_)
             | Type::Own(_)
             | Type::Borrow(_)
             | Type::Future(_)

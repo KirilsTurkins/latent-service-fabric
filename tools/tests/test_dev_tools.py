@@ -269,5 +269,116 @@ class NativeDifferential(unittest.TestCase):
                 compare(common.encode(windows), common.encode(changed))
 
 
+class CompilerDownloadBounds(unittest.TestCase):
+    def setUp(self):
+        import hashlib
+        from tools import build_dev_guest_tools
+        self.builder = build_dev_guest_tools
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.path = Path(self.temporary.name) / "archive"
+        self.data = b"verified compiler bytes"
+        self.source = {"url": "https://example.invalid/compiler", "maximum": len(self.data),
+                       "sha256": "sha256:" + hashlib.sha256(self.data).hexdigest()}
+
+    def transfer(self, *, data=None, elapsed=0):
+        import io
+        from unittest.mock import Mock
+        stream = io.BytesIO(self.data if data is None else data)
+        self.clock = 0
+        def read(size):
+            self.clock = elapsed
+            return stream.read(size)
+        incoming = Mock()
+        incoming.__enter__ = Mock(return_value=incoming)
+        incoming.__exit__ = Mock(return_value=False)
+        incoming.read1.side_effect = read
+        with patch.object(self.builder.urllib.request, "urlopen", return_value=incoming) as opened, \
+                patch.object(self.builder.time, "monotonic", side_effect=lambda: self.clock):
+            self.builder.download(self.path, self.source)
+        opened.assert_called_once_with(self.source["url"], timeout=min(30, self.source.get("timeoutSeconds", self.builder.DOWNLOAD_TIMEOUT_SECONDS)))
+        self.assertTrue(all(0 < call.args[0] <= len(self.data) + 1 for call in incoming.read1.call_args_list))
+
+    def test_small_default_transfer_accepts_only_pinned_bytes(self):
+        self.transfer(elapsed=89)
+        self.assertEqual(self.path.read_bytes(), self.data)
+
+    def test_pinned_zig_transfer_can_exceed_small_archive_deadline(self):
+        pin = self.builder.SOURCES["zig"]
+        self.assertEqual((pin["maximum"], pin["sha256"]),
+                         (self.builder.ZIG_BYTES, "sha256:" + self.builder.ZIG_SHA256))
+        self.assertEqual(pin["timeoutSeconds"], self.builder.DOWNLOAD_TIMEOUT_SECONDS)
+        self.source["timeoutSeconds"] = pin["timeoutSeconds"]
+        self.transfer(elapsed=120)
+        self.assertEqual(self.path.read_bytes(), self.data)
+        self.assertTrue(all("timeoutSeconds" not in source for name, source in self.builder.SOURCES.items() if name != "zig"))
+
+    def test_default_deadline_is_not_extended(self):
+        with self.assertRaisesRegex(common.DevError, "compiler-download-deadline"):
+            self.transfer(elapsed=self.builder.DOWNLOAD_TIMEOUT_SECONDS)
+        self.assertFalse(self.path.exists())
+
+    def test_large_archive_deadline_still_rejects_at_boundary(self):
+        self.source["timeoutSeconds"] = 300
+        with self.assertRaisesRegex(common.DevError, "compiler-download-deadline"):
+            self.transfer(elapsed=300)
+        self.assertFalse(self.path.exists())
+
+    def test_eof_cannot_hide_an_expired_deadline(self):
+        with self.assertRaisesRegex(common.DevError, "compiler-download-deadline"):
+            self.transfer(data=b"", elapsed=self.builder.DOWNLOAD_TIMEOUT_SECONDS)
+
+    def test_one_extra_byte_is_rejected_before_writing_or_digesting(self):
+        with patch.object(self.builder, "file_digest") as digest:
+            with self.assertRaisesRegex(common.DevError, "compiler-download-byte-limit"):
+                self.transfer(data=self.data + b"!")
+            digest.assert_not_called()
+        self.assertFalse(self.path.exists())
+
+    def test_truncated_changed_and_empty_archives_still_fail_digest(self):
+        for data in (self.data[:-1], b"x" * len(self.data), b""):
+            with self.subTest(data=data):
+                self.path.unlink(missing_ok=True)
+                with self.assertRaises(common.DevError):
+                    self.transfer(data=data)
+
+    def test_invalid_limits_fail_before_network_or_output(self):
+        for field, values in (("timeoutSeconds", (0, -1, 601, True, 90.0, "90")),
+                              ("maximum", (0, -1, False, "100"))):
+            for value in values:
+                source = dict(self.source, **{field: value})
+                with self.subTest(field=field, value=value), \
+                        patch.object(self.builder.urllib.request, "urlopen") as opened:
+                    with self.assertRaises(common.DevError):
+                        self.builder.download(self.path, source)
+                    opened.assert_not_called()
+                    self.assertFalse(self.path.exists())
+
+    def test_existing_file_and_symlink_are_not_replaced(self):
+        target = self.path.with_name("target")
+        target.write_bytes(b"unrelated")
+        for linked in (False, True):
+            with self.subTest(linked=linked):
+                self.path.unlink(missing_ok=True)
+                if linked:
+                    self.path.symlink_to(target)
+                else:
+                    self.path.write_bytes(b"prior")
+                with patch.object(self.builder.urllib.request, "urlopen") as opened:
+                    with self.assertRaises(FileExistsError):
+                        self.builder.download(self.path, self.source)
+                    opened.assert_not_called()
+                self.assertEqual(target.read_bytes(), b"unrelated")
+                self.assertEqual(self.path.read_bytes(), b"unrelated" if linked else b"prior")
+
+    def test_network_failure_is_not_retried(self):
+        failure = TimeoutError("synthetic socket timeout")
+        with patch.object(self.builder.urllib.request, "urlopen", side_effect=failure) as opened:
+            with self.assertRaises(TimeoutError) as caught:
+                self.builder.download(self.path, self.source)
+            self.assertIs(caught.exception, failure)
+            self.assertEqual(opened.call_count, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

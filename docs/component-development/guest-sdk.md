@@ -34,7 +34,7 @@ support or a Node.js/WASI environment inside an LSF activation.
 Use the pins in [tools/toolchain.toml](../../tools/toolchain.toml): Rust 1.97.1,
 `wit-bindgen` 0.62.0, `wasm-tools` 1.254.0, Python 3.13.5 and Zig 0.16.0 for C.
 Rust guests target `wasm32-unknown-unknown`. The C reactor uses Zig's libc and
-64 KiB stack without importing WASI. Node and compiler use Wasmtime 47.0.4.
+64 KiB stack without importing WASI. Node and compiler use Wasmtime 48.0.3.
 The generated aggregate is `latent:platform/capsule@0.4.0` (host profile V4).
 Each example imports only the capability it needs; the service callee has none.
 

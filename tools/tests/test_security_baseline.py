@@ -239,6 +239,7 @@ class SecurityFixtureTests(unittest.TestCase):
         self.assertIn(("npm", "11.19.1"), values)
         self.assertIn(("ip-address", "10.7.2"), values)
         self.assertIn(("brace-expansion", "5.0.12"), values)
+        self.assertIn(("balanced-match", "4.0.4"), values)
         self.assertIn(("undici", "6.28.1"), values)
         self.assertNotIn(("ip-address", "10.5.0"), values)
         self.assertNotIn(("ip-address", "10.5.1"), values)

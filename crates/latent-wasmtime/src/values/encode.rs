@@ -171,7 +171,8 @@ impl Encoder {
                 self.close(b'}')
             }
             (
-                Type::Map(_)
+                Type::FixedLengthList(_)
+                | Type::Map(_)
                 | Type::Own(_)
                 | Type::Borrow(_)
                 | Type::Future(_)

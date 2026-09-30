@@ -1892,7 +1892,7 @@ dependencies = [
  "tempfile",
  "wasm-encoder 0.259.0",
  "wasmparser 0.259.0",
- "wit-parser 0.252.0",
+ "wit-parser 0.259.0",
 ]
 
 [[package]]
@@ -2193,7 +2193,7 @@ dependencies = [
  "tokio-rustls",
  "wasm-encoder 0.259.0",
  "wasmtime",
- "wit-parser 0.252.0",
+ "wit-parser 0.259.0",
  "zeroize",
 ]
 
@@ -3939,17 +3939,6 @@ dependencies = [
 
 [[package]]
 name = "wasmparser"
-version = "0.252.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3eb099dcadcde5be9eef55e3a337128efd4e44b4c93122487e4d2e4e1c6627c"
-dependencies = [
- "bitflags",
- "indexmap",
- "semver",
-]
-
-[[package]]
-name = "wasmparser"
 version = "0.254.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5769a29f799fbab136aaf65b4fe5384cd7d93fe6fc9ba0dcb6c8382a1f16e27"
@@ -4501,22 +4490,6 @@ dependencies = [
  "wasm-metadata 0.259.0",
  "wasmparser 0.259.0",
  "wit-parser 0.259.0",
-]
-
-[[package]]
-name = "wit-parser"
-version = "0.252.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4266bea110371c620ccf3201c5023676046bc4556e5c7cfb5d500bda5ebc162d"
-dependencies = [
- "anyhow",
- "hashbrown 0.17.1",
- "id-arena",
- "indexmap",
- "log",
- "semver",
- "unicode-ident",
- "wasmparser 0.252.0",
 ]
 
 [[package]]

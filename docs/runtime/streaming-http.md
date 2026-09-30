@@ -146,7 +146,7 @@ implicit future/stream, changed own/borrow, wrong version and wrong async shapes
 are rejected. The V3 digest enters prepared/native identity; rebuild the node and
 AOT compiler together and regenerate incompatible cached artifacts.
 
-The baseline remains Wasmtime 47.0.4. On 2026-09-14 the upstream patched ranges for
+The baseline is Wasmtime 48.0.3. On 2026-09-14 the upstream patched ranges for
 [RUSTSEC-2026-0268](https://rustsec.org/advisories/RUSTSEC-2026-0268.html) and
 [RUSTSEC-2026-0269](https://rustsec.org/advisories/RUSTSEC-2026-0269.html) include
 47.0.4. The actual installed extension uses explicit resources and bounded byte

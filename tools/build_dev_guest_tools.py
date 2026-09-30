@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PYTHON_IMAGE = "python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419"
 SOURCES = {
     "zig": {"url": f"https://ziglang.org/download/{ZIG_VERSION}/zig-x86_64-linux-{ZIG_VERSION}.tar.xz",
-            "sha256": "sha256:" + ZIG_SHA256, "maximum": ZIG_BYTES, "version": ZIG_VERSION},
+            "sha256": "sha256:" + ZIG_SHA256, "maximum": ZIG_BYTES, "version": ZIG_VERSION, "timeoutSeconds": 600},
     "wasm-tools": {"url": f"https://github.com/bytecodealliance/wasm-tools/releases/download/v{distribution.WASM_VERSION}/"
                           f"wasm-tools-{distribution.WASM_VERSION}-x86_64-linux.tar.gz",
                    "sha256": "sha256:" + distribution.WASM_SHA256, "maximum": 5862464, "version": distribution.WASM_VERSION},
@@ -46,24 +46,30 @@ DOWNLOAD_CHUNK_BYTES = 64 * 1024
 
 
 def download(destination: Path, source: dict) -> None:
-    deadline, used = time.monotonic() + DOWNLOAD_TIMEOUT_SECONDS, 0
+    # A source may narrow the reviewed global budget, never exceed it.
+    timeout = source.get("timeoutSeconds", DOWNLOAD_TIMEOUT_SECONDS)
+    require(type(timeout) is int and 0 < timeout <= DOWNLOAD_TIMEOUT_SECONDS,
+            "compiler-download-timeout-invalid")
+    maximum = source["maximum"]
+    require(type(maximum) is int and maximum > 0, "compiler-download-maximum-invalid")
+    deadline, used = time.monotonic() + timeout, 0
     created = False
     try:
         # Never truncate or remove a pre-existing candidate. On any later error,
         # discard only this call's incomplete/unverified file.
         with destination.open("xb") as output:
             created = True
-            with urllib.request.urlopen(source["url"], timeout=30) as incoming:
+            with urllib.request.urlopen(source["url"], timeout=min(30, timeout)) as incoming:
                 while True:
                     require(time.monotonic() < deadline, "compiler-download-deadline")
                     # read1 returns after at most one underlying read, rather
                     # than filling a large buffer across many slow reads.
-                    raw = incoming.read1(min(DOWNLOAD_CHUNK_BYTES, source["maximum"] - used + 1))
+                    raw = incoming.read1(min(DOWNLOAD_CHUNK_BYTES, maximum - used + 1))
                     require(time.monotonic() < deadline, "compiler-download-deadline")
                     if not raw:
                         break
                     used += len(raw)
-                    require(used <= source["maximum"], "compiler-download-byte-limit")
+                    require(used <= maximum, "compiler-download-byte-limit")
                     output.write(raw)
         require(file_digest(destination)[0] == source["sha256"], "compiler-upstream-archive-digest")
         require(time.monotonic() < deadline, "compiler-download-deadline")

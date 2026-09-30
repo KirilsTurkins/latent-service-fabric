@@ -183,10 +183,14 @@ pub fn process() -> Value {
 const MAX_EXECUTABLE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
 pub fn file_digest(path: &Path) -> String {
+    file_digest_with_limit(path, MAX_EXECUTABLE_BYTES)
+}
+
+fn file_digest_with_limit(path: &Path, maximum: u64) -> String {
     let mut file = fs::File::open(path).unwrap();
     let metadata = file.metadata().unwrap();
     assert!(metadata.is_file());
-    assert!(metadata.len() <= MAX_EXECUTABLE_BYTES);
+    assert!(metadata.len() <= maximum);
     let (digest, observed) = read_digest(&mut file, metadata.len());
     assert_eq!(observed, metadata.len(), "identity input was truncated");
     assert_eq!(file.metadata().unwrap().len(), observed);
@@ -220,6 +224,34 @@ fn read_digest(reader: impl Read, maximum: u64) -> (String, u64) {
         ),
         observed_bytes,
     )
+}
+
+// Run within the existing registered checkpoint so every ordinary invocation
+// checks exact-boundary hashing and both independent overflow guards.
+pub fn check_file_digest_bounds() {
+    use std::{io::Cursor, panic::catch_unwind};
+
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("digest-boundary");
+    let payload = b"artifact";
+    fs::write(&path, payload).unwrap();
+    let expected = format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(payload))
+    );
+    assert_eq!(file_digest_with_limit(&path, 8), expected);
+    assert_eq!(read_digest(Cursor::new(payload), 8).0, expected);
+    assert_eq!(
+        read_digest(Cursor::new([]), 0).0,
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest([]))
+        )
+    );
+    // Reject a known oversized file before reading and reject a reader
+    // that grows beyond the allowed length independently of metadata.
+    assert!(catch_unwind(|| file_digest_with_limit(&path, 7)).is_err());
+    assert!(catch_unwind(|| read_digest(Cursor::new(payload), 7)).is_err());
 }
 
 pub fn publish(observations: &[Value]) {

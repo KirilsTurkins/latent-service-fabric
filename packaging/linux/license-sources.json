@@ -6,7 +6,11 @@
       "sourceCommit": "ebf20ab7cbf35fa3fbd8202562017fda6a541021",
       "license": "Apache-2.0 WITH LLVM-exception",
       "sourceUrl": "https://github.com/bytecodealliance/wasmtime/blob/ebf20ab7cbf35fa3fbd8202562017fda6a541021/LICENSE",
-      "donor": {"name": "wasmtime", "version": "48.0.3", "file": "LICENSE"},
+      "donor": {
+        "name": "wasmtime",
+        "version": "48.0.3",
+        "file": "LICENSE"
+      },
       "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
       "packages": {
         "cranelift-assembler-x64": "0.135.3",
@@ -30,9 +34,15 @@
       "sourceCommit": "6cb6056b5a748bc5a29bd48f4602dbc4e552bb7d",
       "license": "MIT",
       "sourceUrl": "https://github.com/hyperium/tonic/blob/6cb6056b5a748bc5a29bd48f4602dbc4e552bb7d/LICENSE",
-      "donor": {"name": "tonic", "version": "0.14.6", "file": "LICENSE"},
+      "donor": {
+        "name": "tonic",
+        "version": "0.14.6",
+        "file": "LICENSE"
+      },
       "sha256": "e24a56698aa6feaf3a02272b3624f9dc255d982970c5ed97ac4525a95056a5b3",
-      "packages": {"tonic-prost": "0.14.6"}
+      "packages": {
+        "tonic-prost": "0.14.6"
+      }
     }
   ]
 }

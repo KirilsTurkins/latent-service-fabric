@@ -93,7 +93,7 @@ checked at invocation. The [sealed broker](capability-broker.md) and
 [exact binding compiler](capability-bindings.md) implement live policy, provider
 epoch and publication checks independently of ABI recognition.
 
-The baseline is Wasmtime 47.0.4 with guest generator wit-bindgen 0.60.0. No WASI
+The baseline is Wasmtime 48.0.3 with guest generator wit-bindgen 0.60.0. No WASI
 filesystem, HTTP or WASIp3 streams are installed. Expanding that surface requires
 an advisory reachability review. ABI compatibility does not establish a stronger
 [execution isolation profile](../../rfcs/0001-minimum-execution-isolation-profiles.md).

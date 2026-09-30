@@ -27,6 +27,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Wasmtime |                               48.0.3 | Generic Component Model runtime and retained Phase 0 compatibility facade |
 | `wasmparser` |                               0.259.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
 | `wasm-encoder` |                               0.259.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
+| `wit-parser` |                               0.259.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
 | `wit-bindgen` |                               0.62.0 | Guest bindings and canonical ABI exports generated from WIT |
 | Serde / `serde_json` |                    1.0.229 / 1.0.151 | Rust contract serialization |
 | TOML |                                1.1.6 | Configuration parsing and serialization |

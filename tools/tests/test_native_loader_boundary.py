@@ -110,5 +110,38 @@ all = "warn"
         self.assertTrue(boundary.validate_guest(self.root))
 
 
+    def test_current_engine_minimum_rust_and_host_descriptors_are_aligned(self) -> None:
+        import json
+        root = Path(__file__).resolve().parents[2]
+        workspace = boundary.tomllib.loads((root / "Cargo.toml").read_text())["workspace"]
+        pins = boundary.tomllib.loads((root / "tools/toolchain.toml").read_text())
+        self.assertEqual(workspace["dependencies"]["wasmtime"]["version"], "=48.0.3")
+        self.assertEqual(workspace["package"]["rust-version"], "1.95.0")
+        self.assertEqual(pins["rust"]["msrv"], "1.95.0")
+        self.assertEqual(pins["rust"]["dependencies"]["wasmtime"], "48.0.3")
+        # Only v4 is active. Superseded matrices retain their tested runtime,
+        # independently fingerprinted by test_host_abi_profile.
+        for name, version in (("v2", "47.0.4"), ("v3", "47.0.4"), ("v4", "48.0.3")):
+            with self.subTest(descriptor=name):
+                descriptor = json.loads((root / f"wit/host-abi-phase3-{name}.json").read_text())
+                self.assertEqual(descriptor["wasmtimeVersion"], version)
+        self.assertEqual(boundary.validate(root), [])
+
+    def test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        for name in ("Cargo.lock", "tools/rust_capsule.lock"):
+            with self.subTest(lock=name):
+                packages = boundary.tomllib.loads((root / name).read_text())["package"]
+                family = [p for p in packages if p["name"].startswith(("wasmtime", "pulley-"))]
+                self.assertTrue(any(p["name"] == "wasmtime" for p in family))
+                self.assertTrue(all(p["version"] == "48.0.3" for p in family))
+
+    def test_real_standalone_authoring_lock_remains_in_the_workspace_closure(self) -> None:
+        from tools.rust_capsule_project import locked_dependencies
+        raw = locked_dependencies("security-regression-template")
+        packages = boundary.tomllib.loads(raw.decode())["package"]
+        self.assertEqual([p["version"] for p in packages if p["name"] == "wasmtime"], ["48.0.3"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -11,9 +11,8 @@ from . import paths, snapshot, state
 from .common import HOST_ABI, digest, encode, members, require, sha
 
 MAX_ATTEMPTS = 4
-# Count the entire private compiler tree, including extracted registry sources
-# and the offline linker SDK. The reviewed Rust closure outgrew 32,768 entries;
-# retain a finite 65,536-entry ceiling rather than excluding those inputs.
+# Private SDKs and compiler scratch can exceed 32,768 filesystem entries.
+# Keep a finite entry bound; byte, depth and retained-attempt limits still apply.
 MAX_ENTRIES = 65536
 # A private managed SDK plus compiler scratch must fit without sharing mutable
 # tool installations. The four-attempt retention bound remains independent.
