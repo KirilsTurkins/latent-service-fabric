@@ -29,7 +29,9 @@ from tools.install_guest_bindgen import URL as BINDGEN_URL
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON_IMAGE = "python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419"
 SOURCES = {
-    "zig": {"url": f"https://ziglang.org/download/{ZIG_VERSION}/zig-x86_64-linux-{ZIG_VERSION}.tar.xz",
+    # One explicit mirror listed by Zig for automation. The reviewed archive
+    # bytes remain pinned below; there is no retry or alternate source fallback.
+    "zig": {"url": f"https://pkg.hexops.org/zig/zig-x86_64-linux-{ZIG_VERSION}.tar.xz?source=latent-sdk-ci",
             "sha256": "sha256:" + ZIG_SHA256, "maximum": ZIG_BYTES, "version": ZIG_VERSION, "timeoutSeconds": 600},
     "wasm-tools": {"url": f"https://github.com/bytecodealliance/wasm-tools/releases/download/v{distribution.WASM_VERSION}/"
                           f"wasm-tools-{distribution.WASM_VERSION}-x86_64-linux.tar.gz",
@@ -45,21 +47,41 @@ DOWNLOAD_TIMEOUT_SECONDS = 600
 DOWNLOAD_CHUNK_BYTES = 64 * 1024
 
 
-def download(destination: Path, source: dict) -> None:
+def download(destination: Path, source: dict, *, cache: Path | None = None) -> None:
     # A source may narrow the reviewed global budget, never exceed it.
     timeout = source.get("timeoutSeconds", DOWNLOAD_TIMEOUT_SECONDS)
     require(type(timeout) is int and 0 < timeout <= DOWNLOAD_TIMEOUT_SECONDS,
             "compiler-download-timeout-invalid")
     maximum = source["maximum"]
     require(type(maximum) is int and maximum > 0, "compiler-download-maximum-invalid")
-    deadline, used = time.monotonic() + timeout, 0
+    started, used = time.monotonic(), 0
+    deadline = started + timeout
     created = False
+    cache_created = False
+    cached = None
+    if cache is not None:
+        digest = source["sha256"]
+        require(isinstance(digest, str) and len(digest) == 71 and digest.startswith("sha256:")
+                and all(c in "0123456789abcdef" for c in digest[7:]), "compiler-cache-digest-invalid")
+        require(not cache.is_symlink(), "compiler-cache-directory-invalid")
+        cache.mkdir(mode=0o700, parents=True, exist_ok=True)
+        require(cache.is_dir(), "compiler-cache-directory-invalid")
+        cached = cache / (digest[7:] + ".archive")
+        if cached.exists() or cached.is_symlink():
+            require(not cached.is_symlink() and cached.is_file(), "compiler-cache-file-invalid")
+            require(cached.stat().st_size <= maximum, "compiler-download-byte-limit")
+            require(file_digest(cached)[0] == digest, "compiler-upstream-archive-digest")
+            require(time.monotonic() < deadline, "compiler-download-deadline")
     try:
         # Never truncate or remove a pre-existing candidate. On any later error,
         # discard only this call's incomplete/unverified file.
         with destination.open("xb") as output:
             created = True
-            with urllib.request.urlopen(source["url"], timeout=min(30, timeout)) as incoming:
+            hit = cached is not None and cached.exists()
+            print(json.dumps({"compilerArchive": source["sha256"], "phase": "cache" if hit else "download"}),
+                  file=sys.stderr, flush=True)
+            incoming = cached.open("rb") if hit else urllib.request.urlopen(source["url"], timeout=min(30, timeout))
+            with incoming:
                 while True:
                     require(time.monotonic() < deadline, "compiler-download-deadline")
                     # read1 returns after at most one underlying read, rather
@@ -73,9 +95,26 @@ def download(destination: Path, source: dict) -> None:
                     output.write(raw)
         require(file_digest(destination)[0] == source["sha256"], "compiler-upstream-archive-digest")
         require(time.monotonic() < deadline, "compiler-download-deadline")
+        if cached is not None and not cached.exists():
+            # Publish only completely verified bytes. Cache restore is never a
+            # trust decision: every later use rechecks the size and exact digest.
+            with cached.open("xb") as output:
+                cache_created = True
+                with destination.open("rb") as incoming:
+                    while raw := incoming.read(DOWNLOAD_CHUNK_BYTES):
+                        require(time.monotonic() < deadline, "compiler-download-deadline")
+                        output.write(raw)
+            require(file_digest(cached)[0] == source["sha256"], "compiler-upstream-archive-digest")
+            require(time.monotonic() < deadline, "compiler-download-deadline")
+        print(json.dumps({"compilerArchive": source["sha256"], "phase": "verified", "bytes": used,
+                          "elapsedSeconds": round(time.monotonic() - started, 3)}), file=sys.stderr, flush=True)
     except BaseException:
+        print(json.dumps({"compilerArchive": source["sha256"], "phase": "failed", "bytes": used,
+                          "elapsedSeconds": round(time.monotonic() - started, 3)}), file=sys.stderr, flush=True)
         if created:
             destination.unlink(missing_ok=True)
+        if cache_created:
+            cached.unlink(missing_ok=True)
         raise
 
 
@@ -86,7 +125,11 @@ def main() -> int:
     parser.add_argument("--allow-dirty", action="store_true", help="Unsigned local assembly testing only")
     parser.add_argument("--language", choices=sorted(LANGUAGES), required=True)
     parser.add_argument("--node-tests", action="store_true", help="Also stage source-built node executables for focused contributor tests")
+    parser.add_argument("--compiler-cache", type=Path, default=os.environ.get("LSF_DEV_COMPILER_CACHE"),
+                        help="Untrusted digest-addressed archives, reverified before use; defaults to LSF_DEV_COMPILER_CACHE")
     args = parser.parse_args()
+    def fetch_archive(destination: Path, source: dict) -> None:
+        download(destination, source, cache=args.compiler_cache)
     require(sys.platform == "linux", "guest-candidate-linux-builder-required")
     output = args.output.absolute()
     require(output.is_relative_to(ROOT / "target") and not output.exists(), "new-owned-build-directory-required")
@@ -153,7 +196,7 @@ def main() -> int:
     upstream = {name: source for name, source in SOURCES.items() if name != "zig" or args.language in {"rust", "c"}}
     for name, source in upstream.items():
         archive = output / (name + ".archive")
-        download(archive, source)
+        fetch_archive(archive, source)
         if name == "zig":
             distribution.copy(archive, payload / "sdk/zig.tar.xz")
             with tarfile.open(archive, "r:xz") as source:
@@ -176,13 +219,13 @@ def main() -> int:
         distribution.registry(payload, Path(environment["CARGO_HOME"]))
     compiler_sbom = None
     if args.language in {"java", "dotnet"}:
-        managed.prepare(payload, output, args.language, download)
+        managed.prepare(payload, output, args.language, fetch_archive)
         upstream.update(managed.sources(args.language))
     elif args.language == "go":
-        compiler_sbom = dev_go_distribution.prepare(payload, output, download, epoch)
+        compiler_sbom = dev_go_distribution.prepare(payload, output, fetch_archive, epoch)
         upstream.update(dev_go_distribution.SOURCES)
     elif args.language == "typescript":
-        dev_typescript_distribution.prepare(payload, output, download)
+        dev_typescript_distribution.prepare(payload, output, fetch_archive)
         upstream.update(dev_typescript_distribution.SOURCES)
     distribution.recipe(payload, args.language)
     for name in executables:
