@@ -4524,14 +4524,21 @@
         "embedded::tests::owned_process_termination_before_and_after_commit_recovers_all_or_none",
         "embedded::tests::read_views_duplicates_and_prefix_scan_are_bounded",
         "embedded::tests::state_command_and_outbox_have_one_atomic_snapshot_and_reopen_identity",
-        "embedded::tests::writers::bounded_concurrent_writers_serialize_conflicts_and_preserve_independent_rows"
+        "embedded::tests::writers::bounded_concurrent_writers_serialize_conflicts_and_preserve_independent_rows",
+        "namespace::tests::active_commit_blocks_retirement_and_lifecycle_preconditions_reject_races",
+        "namespace::tests::create_quiesce_retire_destroy_recreate_never_reuses_aba_version",
+        "namespace::tests::destruction_cannot_drop_required_results_effects_payloads_or_inbox",
+        "namespace::tests::generation_and_incarnation_exhaustion_refuse_without_mutation",
+        "namespace::tests::namespace_record_round_trip_is_bounded_and_independent_of_revision",
+        "namespace::tests::tenant_actor_and_operation_key_framing_cannot_alias_or_leak_cross_scope",
+        "namespace::tests::wrong_format_truncation_unknown_status_and_trailing_bytes_fail_closed"
       ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 9,
+      "minimumCases": 16,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
