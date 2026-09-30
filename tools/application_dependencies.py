@@ -375,7 +375,10 @@ def verify_inputs(project: Path, language: str, *, cache: Path | None = None,
         return None
     manifest_bytes = read_bytes(project / MANIFEST, MAX_LOCK)
     manifest = validate_manifest(decode_json(manifest_bytes), language)
-    lock_bytes = read_bytes(project / LOCK, MAX_LOCK)
+    try:
+        lock_bytes = read_bytes(project / LOCK, MAX_LOCK)
+    except FileNotFoundError:
+        raise DependencyError("dependency-lock-missing-resolve-and-review") from None
     lock = decode_json(lock_bytes)
     if (not isinstance(lock, dict) or set(lock) != {"formatVersion", "language", "manifestDigest", "selection", "nativeLocks", "artifacts", "transformations", "completeness", "executableInputs"}
             or lock["formatVersion"] != 1 or lock["language"] != language
@@ -388,7 +391,7 @@ def verify_inputs(project: Path, language: str, *, cache: Path | None = None,
         raise DependencyError("dependency-executable-input-drift")
     if profile_identity is not None and lock["selection"] != profile_identity:
         raise DependencyError("dependency-selected-profile-drift")
-    store = Store(cache or project / "dependency-inputs/objects")
+    store = Store(cache or project / "dependency-inputs/objects", create=False)
     if (not isinstance(lock["nativeLocks"], list) or len(lock["nativeLocks"]) > MAX_ARTIFACTS
             or any(not isinstance(row, dict) or set(row) != {"path", "digest", "size"} for row in lock["nativeLocks"])
             or not isinstance(lock["transformations"], list)
@@ -403,7 +406,11 @@ def verify_inputs(project: Path, language: str, *, cache: Path | None = None,
             or [row["path"] for row in lock["nativeLocks"]] != manifest["nativeLocks"]):
         raise DependencyError("dependency-graph-not-closed")
     for row in lock["nativeLocks"]:
-        if read_bytes(project / row["path"]) != store.get(row["digest"], row["size"]):
+        try:
+            native_bytes = read_bytes(project / row["path"])
+        except FileNotFoundError:
+            raise DependencyError("dependency-native-lock-missing") from None
+        if native_bytes != store.get(row["digest"], row["size"]):
             raise DependencyError("dependency-native-lock-drift")
     total_files = total_bytes = 0
     for item in lock["artifacts"]:
@@ -421,6 +428,9 @@ def verify_inputs(project: Path, language: str, *, cache: Path | None = None,
             store.get(row["digest"], row["size"])
         if item["format"] == "file" and (len(item["files"]) != 1 or item["files"][0]["path"] != Path(item["mount"]).name):
             raise DependencyError("dependency-file-inventory-invalid")
+    if (read_bytes(project / MANIFEST, MAX_LOCK) != manifest_bytes
+            or read_bytes(project / LOCK, MAX_LOCK) != lock_bytes):
+        raise DependencyError("dependency-input-mutated")
     return VerifiedInputs(project, store, manifest_bytes, lock_bytes, manifest, lock)
 
 

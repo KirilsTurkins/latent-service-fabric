@@ -60,9 +60,10 @@ def read_bytes(path: Path, maximum: int = MAX_OBJECT) -> bytes:
 
 
 class Store:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, *, create: bool = True):
         self.root = regular_path(root)
-        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if create:
+            self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
 
     def path(self, identity: str) -> Path:
         if not isinstance(identity, str) or not SHA.fullmatch(identity):
