@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "BrowserResponseOwnershipTests.test_case_collisions_wire_grammar_and_maximum_header_budget",
+    "BrowserResponseOwnershipTests.test_declared_conflicts_are_bounded_nonreflective_and_dynamic_requires_execution",
+    "BrowserResponseOwnershipTests.test_java_authoring_vectors_cover_every_field_prefix_and_authoritative_limit",
+    "BrowserResponseOwnershipTests.test_versioned_complete_table_and_guide_are_exactly_synchronized"
+  ],
+  "guards": {
+    "BrowserResponseOwnershipTests.test_case_collisions_wire_grammar_and_maximum_header_budget": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e060dadd0c417da3585e2deb6d15b74d0fe72e0ff87e116935f45b336233a999",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BrowserResponseOwnershipTests.test_declared_conflicts_are_bounded_nonreflective_and_dynamic_requires_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e060dadd0c417da3585e2deb6d15b74d0fe72e0ff87e116935f45b336233a999",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BrowserResponseOwnershipTests.test_java_authoring_vectors_cover_every_field_prefix_and_authoritative_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e060dadd0c417da3585e2deb6d15b74d0fe72e0ff87e116935f45b336233a999",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BrowserResponseOwnershipTests.test_versioned_complete_table_and_guide_are_exactly_synchronized": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e060dadd0c417da3585e2deb6d15b74d0fe72e0ff87e116935f45b336233a999",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_browser_response_ownership.py",
+  "reviewReason": "Add finite versioned response ownership/table/doc synchronization, static conflict discovery and Java-vector limit cases; no existing cases removed or skipped.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
