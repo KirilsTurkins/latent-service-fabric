@@ -4600,6 +4600,8 @@
         "protected_store::tests::recovery::protected_root_permissions_and_substituted_paths_gate_initialization_and_live_jobs",
         "protected_store::tests::recovery::unsupported_filesystem_and_unsafe_configuration_never_create_a_store",
         "protected_store::tests::validation::bounded_startup_codec_validation_visits_every_row_across_page_continuations",
+        "protected_store::tests::validation::coherent_cross_family_validation_holds_readiness_and_exclusive_physical_owner",
+        "protected_store::tests::validation::incoherent_logical_links_fail_before_ready_and_preserve_every_existing_row",
         "protected_store::tests::validation::unsupported_nonempty_logical_families_fail_readiness_without_data_reset",
         "store_io::tests::initialization::closed_startup_never_delivers_readiness_and_keeps_initializer_physically_owned",
         "store_io::tests::initialization::dropped_startup_waiter_retains_initializer_until_actual_engine_close",
@@ -4627,7 +4629,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 69,
+      "minimumCases": 71,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

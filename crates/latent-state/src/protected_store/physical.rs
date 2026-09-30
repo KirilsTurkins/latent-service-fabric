@@ -1,10 +1,9 @@
 use std::sync::{Arc, Mutex, OnceLock};
 
 use super::{ProtectedFencedStoreError, ProtectedStoreConfig, ProtectedStoreError};
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-use crate::embedded::Family;
 use crate::embedded::{
-    AtomicBatch, EmbeddedStore, FencedStoreError, RowKey, StoreError, StoreFileStatus,
+    AtomicBatch, EmbeddedStore, Family, FencedStoreError, ReadView, RowKey, StoreError,
+    StoreFileStatus,
 };
 use crate::store_io::{StoreIoError, StoreIoKind};
 
@@ -59,7 +58,7 @@ impl PhysicalStore {
     pub fn initialize(
         config: &ProtectedStoreConfig,
         failure: Arc<FailureLatch>,
-        validator: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+        validator: impl FnOnce(&ReadView) -> Result<(), StoreError>,
     ) -> Result<Self, ProtectedStoreError> {
         use latent_protected_files::ProtectedRoot;
         let root =
@@ -89,7 +88,12 @@ impl PhysicalStore {
         let (engine, status) =
             EmbeddedStore::open_bounded_file(file, config.engine, config.maximum_file_bytes)
                 .map_err(ProtectedStoreError::Store)?;
-        validate_records(&engine, validator).map_err(ProtectedStoreError::Store)?;
+        {
+            let view = engine.snapshot().map_err(ProtectedStoreError::Store)?;
+            validator(&view).map_err(ProtectedStoreError::Store)?;
+        }
+        root.check_mutable_file(&lock_fence)
+            .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
         root.check_mutable_file(&fence)
             .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
         Ok(Self {
@@ -107,7 +111,7 @@ impl PhysicalStore {
     pub fn initialize(
         _: &ProtectedStoreConfig,
         _: Arc<FailureLatch>,
-        _: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+        _: impl FnOnce(&ReadView) -> Result<(), StoreError>,
     ) -> Result<Self, ProtectedStoreError> {
         Err(ProtectedStoreError::UnsupportedPlatform)
     }
@@ -227,12 +231,10 @@ impl PhysicalStore {
     }
 }
 
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn validate_records(
-    engine: &EmbeddedStore,
+pub(super) fn validate_records(
+    view: &ReadView,
     validator: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
 ) -> Result<(), StoreError> {
-    let view = engine.snapshot()?;
     for family in [
         Family::Namespace,
         Family::State,
