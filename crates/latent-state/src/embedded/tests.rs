@@ -550,7 +550,7 @@ fn owned_commit_child() {
 
 #[tokio::test]
 async fn owned_process_termination_before_and_after_commit_recovers_all_or_none() {
-    use latent_testkit::process::{OwnedProcess, ProcessLimits};
+    use latent_test_process::process::{OwnedProcess, ProcessLimits};
     use std::process::Command;
     for after in [false, true] {
         let dir = tempfile::tempdir().unwrap();
