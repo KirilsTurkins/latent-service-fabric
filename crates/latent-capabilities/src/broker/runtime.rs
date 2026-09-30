@@ -12,6 +12,7 @@ pub struct ActivationCapabilityRuntime {
     plans: RwLock<Option<Arc<dyn CapabilityPlanSource>>>,
     local_services: OnceLock<Arc<dyn super::LocalServiceInvoker>>,
     streaming_http: OnceLock<Arc<dyn super::streaming_http::StreamingHttpInvoker>>,
+    outbound_streams: OnceLock<Arc<dyn super::network::OutboundStreamInvoker>>,
     http: OnceLock<Arc<dyn super::http::OutboundHttpInvoker>>,
     blobs: OnceLock<Arc<dyn super::blob::BlobInvoker>>,
     events: OnceLock<Arc<dyn super::events::EventPublisher>>,
@@ -31,6 +32,7 @@ impl ActivationCapabilityRuntime {
             local_services: OnceLock::new(),
             http: OnceLock::new(),
             streaming_http: OnceLock::new(),
+            outbound_streams: OnceLock::new(),
             blobs: OnceLock::new(),
             events: OnceLock::new(),
             secrets: OnceLock::new(),
@@ -90,6 +92,17 @@ impl ActivationCapabilityRuntime {
         &self,
     ) -> Result<Arc<dyn super::streaming_http::StreamingHttpInvoker>, PlatformError> {
         self.streaming_http.get().cloned().ok_or_else(denied)
+    }
+    pub fn install_outbound_streams(
+        &self,
+        invoker: Arc<dyn super::network::OutboundStreamInvoker>,
+    ) -> Result<(), PlatformError> {
+        self.outbound_streams.set(invoker).map_err(|_| denied())
+    }
+    pub fn outbound_streams(
+        &self,
+    ) -> Result<Arc<dyn super::network::OutboundStreamInvoker>, PlatformError> {
+        self.outbound_streams.get().cloned().ok_or_else(denied)
     }
     pub fn check_catalog(&self, owner: &LifecycleAuthorityHandle) -> Result<(), PlatformError> {
         if !self.broker.catalog_owner_matches(owner) {

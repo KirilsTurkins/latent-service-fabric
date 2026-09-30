@@ -14,6 +14,7 @@ use crate::values::validate_signature;
 
 pub(crate) mod blob;
 pub(crate) mod streaming;
+pub(crate) mod networking;
 
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
 pub const LOG_IMPORT: &str = "latent:log/log@0.1.0";
@@ -59,6 +60,7 @@ pub(crate) struct Providers {
     pub local_services: bool,
     pub http: bool,
     pub streaming_http: bool,
+    pub outbound_streams: bool,
     pub blobs: bool,
     pub secrets: bool,
     pub events: bool,
@@ -77,6 +79,8 @@ impl Providers {
             || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
             || (self.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
+            || (self.outbound_streams
+                && name == latent_capabilities::broker::network::STREAM_CAPABILITY)
     }
 }
 pub(crate) fn validate_with_providers(
@@ -250,6 +254,7 @@ fn validate_imports(
                         match specification.interface {
                             latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            latent_capabilities::broker::network::STREAM_CAPABILITY => networking::validate(name, &function, &interface, engine)?,
                             _ => return Err(incompatible("unsupported host resource interface")),
                         }
                     }

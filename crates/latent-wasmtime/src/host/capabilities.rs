@@ -12,6 +12,7 @@ pub(crate) struct HostCapabilities {
     // They remain charged through canonical lowering and component post-return.
     pub(super) blobs: super::blob::table::Table,
     pub(super) streams: super::streaming_http::table::Table,
+    pub(super) network: super::networking::table::Table,
     lowering: Vec<ProviderCall>,
     secret_lowering: Vec<latent_capabilities::broker::secrets::SecretLowering>,
     pooled_lowering: Vec<latent_capabilities::broker::pools::PoolCall>,
@@ -41,6 +42,7 @@ impl HostCapabilities {
     pub(crate) fn new(session: Option<CapabilitySession>) -> Self {
         Self {
             streams: super::streaming_http::table::Table::default(),
+            network: super::networking::table::Table::default(),
             blobs: super::blob::table::Table::default(),
             lowering: Vec::new(),
             secret_lowering: Vec::new(),
