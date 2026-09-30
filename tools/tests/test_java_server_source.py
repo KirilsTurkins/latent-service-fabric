@@ -23,7 +23,9 @@ class JavaServerSource(unittest.TestCase):
             self.assertNotIn("src/dev/latent/app/Capsule.java", files)
             self.assertIn(b"import com.sun.net.httpserver.HttpServer;", files["src/dev/latent/app/Server.java"])
             self.assertIn("sdk/java-guest/server/analysis/ServerAnalyzer.java", lock["sdk"])
-            self.assertEqual(selected["world"], "latent:web/application-service@0.1.0")
+            self.assertEqual(selected["world"], "examples:independent-server/service@1.0.0")
+            self.assertIn(b"export latent:web/application@0.1.0", files["wit/world.wit"])
+            self.assertNotIn(b"package latent:", files["wit/world.wit"])
 
     def test_selection_rejects_code_expressions_reserved_owners_and_unknown_profiles(self):
         valid = {"profile": java.PROFILE_ID, "entryPoint": "independent.RouterServer"}

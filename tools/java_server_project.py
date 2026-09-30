@@ -14,11 +14,16 @@ def create_server(directory: Path, name: str | None = None) -> Path:
     # This file belongs to the just-created template, before any developer edits.
     (directory / "src/dev/latent/app/Capsule.java").unlink()
     source = read_file(ROOT / "sdk/java-guest/server/templates/Server.java")
-    wit = runtime_wit(read_file(ROOT / "wit/platform/web/package.wit"), "application-service")
+    project = json.loads((directory / "capsule-project.json").read_bytes())
+    # The application owns its world. Importing/exporting the platform's typed
+    # interfaces does not authorize a tenant to claim the platform namespace.
+    own_world = (f"package examples:{project['name']}@1.0.0;\n\nworld service {{\n"
+        "    import latent:context/context@0.1.0;\n"
+        "    export latent:web/application@0.1.0;\n}\n").encode()
+    wit = runtime_wit(own_world, "service")
     (directory / "src/dev/latent/app/Server.java").write_bytes(source)
     (directory / "wit/world.wit").write_bytes(wit)
-    project = json.loads((directory / "capsule-project.json").read_bytes())
-    project.update(world="latent:web/application-service@0.1.0", server={"profile": PROFILE_ID, "entryPoint": "dev.latent.app.Server"})
+    project.update(world=f"examples:{project['name']}/service@1.0.0", server={"profile": PROFILE_ID, "entryPoint": "dev.latent.app.Server"})
     (directory / "capsule-project.json").write_bytes(canonical(project) + b"\n")
     lock = json.loads((directory / "sdk-lock.json").read_bytes())
     lock["template"] = {"name": "httpserver", "sourceDigest": digest(source), "witDigest": digest(wit)}

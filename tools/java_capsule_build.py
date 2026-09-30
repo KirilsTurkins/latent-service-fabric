@@ -125,7 +125,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
                 additional_assets = []
                 if server_plan is not None:
-                    actual_web = server_source.inspect(commands, compiler.paths["wasm-tools"], component_path, temporary / "compiled/wit")
+                    actual_web = server_source.inspect(commands, compiler.paths["wasm-tools"], component_path,
+                                                       temporary / "compiled/wit", world=project["world"])
                     declaration = server_source.emit(files, component, read_file(output / "server-profile.json"), server_plan,
                                                      actual_web, source_inputs=source_inputs)
                     additional_assets = [server_source.package(output, declaration),

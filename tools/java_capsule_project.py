@@ -70,7 +70,7 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if "server" in project:
         from tools.java_server_source import selection
         selected = selection(project["server"])
-        if (project["world"] != "latent:web/application-service@0.1.0"
+        if (project["world"] != f"examples:{project['name']}/service@1.0.0"
                 or "src/" + selected["entryPoint"].replace(".", "/") + ".java" not in files
                 or "src/dev/latent/app/Capsule.java" in files):
             raise ValueError("server source requires its original main and authoritative web world")

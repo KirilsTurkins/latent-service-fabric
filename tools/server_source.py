@@ -135,7 +135,7 @@ def endpoints(rows: list, files: dict[str, bytes] | None = None) -> None:
             require(count <= MAX_CONTEXTS, "server-source-context-limit")
 
 
-def inspect(commands, wasm: Path, component: Path, reference: Path) -> dict:
+def inspect(commands, wasm: Path, component: Path, reference: Path, *, world="application-service") -> dict:
     """Compare the actual linked signature with the staged authoritative WIT.
 
     reference is a compiler-owned staged copy of wit/platform/web plus its
@@ -146,7 +146,7 @@ def inspect(commands, wasm: Path, component: Path, reference: Path) -> dict:
     actual = surface(decode(commands.run("server-final-wit", wasm, "component", "wit", component, "--json"),
                             4 * 1024 * 1024))
     expected = surface(decode(commands.run("server-reference-wit", wasm, "component", "wit", reference, "--json"),
-                              4 * 1024 * 1024), "application-service")
+                              4 * 1024 * 1024), world)
     require(WEB in actual["exports"] and actual["exports"][WEB] == expected["exports"][WEB],
             "server-source-final-web-signature")
     return actual["exports"][WEB]
