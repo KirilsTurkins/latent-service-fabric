@@ -35,6 +35,12 @@ pub(crate) struct Surface {
 }
 
 impl Surface {
+    pub(crate) fn inspection_exports(&self) -> Result<Vec<(latent_core::ContractId, latent_core::FunctionId)>, PlatformError> {
+        if self.functions.len() > 128 || self.functions.iter().any(|((contract, function), _)| contract.len() > 512 || function.len() > 512) {
+            return Err(platform_error(PlatformErrorCode::ResourceExhausted, "preparation-inspection-export-limit", false));
+        }
+        Ok(self.functions.iter().map(|((contract, function), _)| (latent_core::ContractId(contract.clone()), latent_core::FunctionId(function.clone()))).collect())
+    }
     pub(crate) fn function_count(&self) -> usize {
         self.functions.len()
     }
