@@ -14,6 +14,7 @@ from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
                                         read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
+from tools import guest_compatibility_build
 
 BUILD_TYPE = "https://latent.dev/build/c-guest/v1"
 RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_build.py",
@@ -22,6 +23,7 @@ RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_b
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
           "examples/echo-contract/deployment.json")
+RECIPE += guest_compatibility_build.RECIPE
 
 
 def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -> str:
@@ -90,7 +92,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
-            package_inputs(output, project, read_json(derived / "surface.json"), files, component)
+            surface = read_json(derived / "surface.json")
+            stage = "compatibility"
+            guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+            package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
@@ -131,4 +136,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": commands.records if commands else []})
+        guest_compatibility_build.failure_report(output, "c", stage)
         raise
