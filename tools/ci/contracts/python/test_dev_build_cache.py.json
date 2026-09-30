@@ -8,7 +8,15 @@
     "BuildAttempts.test_reaped_deadline_can_be_cleaned_without_claiming_remote_outcome",
     "BuildAttempts.test_slow_usage_scan_leaves_time_for_build_progress",
     "BuildAttempts.test_uncertain_attempts_are_retained_at_capacity",
-    "BuildAttempts.test_usage_scan_failure_is_not_hidden_by_polling"
+    "BuildAttempts.test_usage_scan_failure_is_not_hidden_by_polling",
+    "BuildCacheUsageLimits.test_byte_limit_is_independent_of_entry_capacity",
+    "BuildCacheUsageLimits.test_compiler_created_special_file_is_still_rejected",
+    "BuildCacheUsageLimits.test_compiler_created_symlink_is_still_rejected",
+    "BuildCacheUsageLimits.test_default_entry_overflow_is_rejected",
+    "BuildCacheUsageLimits.test_depth_limit_is_still_enforced",
+    "BuildCacheUsageLimits.test_exact_default_entry_limit_is_accepted",
+    "BuildCacheUsageLimits.test_managed_build_tree_exceeding_previous_limit_is_accepted",
+    "BuildCacheUsageLimits.test_real_tree_counts_directories_and_files"
   ],
   "guards": {
     "BuildAttempts.test_actual_packager_cache_hit_tampering_and_separate_source_tree": {
@@ -128,10 +136,116 @@
         "class:setup-sha256:3165812bfeb04e328067cf73c2e7bf737c9d7a664ce4333fb87f4f77d62815b6"
       ],
       "skipSites": []
+    },
+    "BuildCacheUsageLimits.test_byte_limit_is_independent_of_entry_capacity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:598780078324720304e0b7e4ed5cb1efbce3f1524697872a3ecaad81704cf634",
+        "class:setup-sha256:9e42a13c745b6f3a3b09703be16b9f9e65843ab5aa5eeb3dbebd28250a433d46"
+      ],
+      "skipSites": []
+    },
+    "BuildCacheUsageLimits.test_compiler_created_special_file_is_still_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'requires POSIX FIFO creation')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:598780078324720304e0b7e4ed5cb1efbce3f1524697872a3ecaad81704cf634",
+        "class:setup-sha256:9e42a13c745b6f3a3b09703be16b9f9e65843ab5aa5eeb3dbebd28250a433d46"
+      ],
+      "skipSites": [
+        "skip-control-sha256:c6448470c8072e187311658d9be65d296a8191a2607f59d48e452613f6b3d252",
+        "unittest.skipUnless(os.name == 'posix', 'requires POSIX FIFO creation')"
+      ]
+    },
+    "BuildCacheUsageLimits.test_compiler_created_symlink_is_still_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'requires POSIX symlink creation')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:598780078324720304e0b7e4ed5cb1efbce3f1524697872a3ecaad81704cf634",
+        "class:setup-sha256:9e42a13c745b6f3a3b09703be16b9f9e65843ab5aa5eeb3dbebd28250a433d46"
+      ],
+      "skipSites": [
+        "skip-control-sha256:25cd2dc103c885409130a84f78081f19fe612122094686f7d6fdc2ff95f86c65",
+        "unittest.skipUnless(os.name == 'posix', 'requires POSIX symlink creation')"
+      ]
+    },
+    "BuildCacheUsageLimits.test_default_entry_overflow_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:598780078324720304e0b7e4ed5cb1efbce3f1524697872a3ecaad81704cf634",
+        "class:setup-sha256:9e42a13c745b6f3a3b09703be16b9f9e65843ab5aa5eeb3dbebd28250a433d46"
+      ],
+      "skipSites": []
+    },
+    "BuildCacheUsageLimits.test_depth_limit_is_still_enforced": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:598780078324720304e0b7e4ed5cb1efbce3f1524697872a3ecaad81704cf634",
+        "class:setup-sha256:9e42a13c745b6f3a3b09703be16b9f9e65843ab5aa5eeb3dbebd28250a433d46"
+      ],
+      "skipSites": []
+    },
+    "BuildCacheUsageLimits.test_exact_default_entry_limit_is_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:598780078324720304e0b7e4ed5cb1efbce3f1524697872a3ecaad81704cf634",
+        "class:setup-sha256:9e42a13c745b6f3a3b09703be16b9f9e65843ab5aa5eeb3dbebd28250a433d46"
+      ],
+      "skipSites": []
+    },
+    "BuildCacheUsageLimits.test_managed_build_tree_exceeding_previous_limit_is_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:598780078324720304e0b7e4ed5cb1efbce3f1524697872a3ecaad81704cf634",
+        "class:setup-sha256:9e42a13c745b6f3a3b09703be16b9f9e65843ab5aa5eeb3dbebd28250a433d46"
+      ],
+      "skipSites": []
+    },
+    "BuildCacheUsageLimits.test_real_tree_counts_directories_and_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:598780078324720304e0b7e4ed5cb1efbce3f1524697872a3ecaad81704cf634",
+        "class:setup-sha256:9e42a13c745b6f3a3b09703be16b9f9e65843ab5aa5eeb3dbebd28250a433d46"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dev_build_cache.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain all existing build-attempt obligations and skip guards; add eight managed SDK entry-boundary and independent byte/depth/link/special-file regressions.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

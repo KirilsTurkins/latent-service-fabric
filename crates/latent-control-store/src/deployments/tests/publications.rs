@@ -82,7 +82,7 @@ fn store(root: &TempRoot, repository: &Arc<DirectoryArtifactRepository>) -> Stor
         repository.clone(),
         Limits::default(),
         repository.lifecycle_authority(),
-        super::lifecycle::profile("47.0.4"),
+        super::lifecycle::profile("48.0.3"),
     ))
     .unwrap()
 }
@@ -237,7 +237,7 @@ fn obsolete_catalog_rejection_never_infers_unique_or_ambiguous_publications() {
             repository.clone(),
             Limits::default(),
             repository.lifecycle_authority(),
-            super::lifecycle::profile("47.0.4")
+            super::lifecycle::profile("48.0.3")
         ))
         .is_err());
         assert_eq!(

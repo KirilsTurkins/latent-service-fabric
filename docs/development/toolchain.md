@@ -15,7 +15,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | Area |                              Version | Purpose |
 | --- |-------------------------------------:| --- |
 | Rust toolchain |                               1.97.1 | Default formatter, compiler, Clippy, tests, code generation, and component build |
-| Rust MSRV |                               1.94.1 | Oldest compiler checked for all native workspace targets |
+| Rust MSRV |                               1.95.0 | Oldest compiler checked for all native workspace targets |
 | Rust binding-check target |                      `wasm32-wasip2` | Compile generated Rust guest bindings against Preview 2 |
 | Rust component-core target |             `wasm32-unknown-unknown` | Build self-contained cores before explicit componentization |
 | Tokio |                               1.53.1 | Fixed node runtimes, async adapters, and explicit test runtimes |
@@ -24,9 +24,10 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `tonic-prost-build` |                               0.14.6 | Build-time Rust generation from every authoritative `.proto` |
 | `protoc-bin-vendored` |                                3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
-| Wasmtime |                               47.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
+| Wasmtime |                               48.0.3 | Generic Component Model runtime and retained Phase 0 compatibility facade |
 | `wasmparser` |                               0.259.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
 | `wasm-encoder` |                               0.259.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
+| `wit-parser` |                               0.259.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
 | `wit-bindgen` |                               0.62.0 | Guest bindings and canonical ABI exports generated from WIT |
 | Serde / `serde_json` |                    1.0.229 / 1.0.150 | Rust contract serialization |
 | TOML |                                1.1.6 | Configuration parsing and serialization |
@@ -146,8 +147,8 @@ Fresh Phase 2 evidence uses the bounded commands in
 The MSRV check is reproducible with:
 
 ```bash
-rustup toolchain install 1.94.1 --profile minimal
-cargo +1.94.1 check --workspace --all-targets --all-features --locked
+rustup toolchain install 1.95.0 --profile minimal
+cargo +1.95.0 check --workspace --all-targets --all-features --locked
 ```
 
 Install the remaining contract tools at their selected versions, for example `cargo install wasm-tools --version 1.254.0 --locked` and Buf 1.72.0. The Rust toolchain file installs `rustfmt`, Clippy, `wasm32-wasip2`, and `wasm32-unknown-unknown`.
@@ -174,7 +175,7 @@ The retained August 30 Phase 0 receipt records an authorized pass for its canoni
 
 ## Generated-output policy
 
-The [Wasmtime security baseline](wasmtime-security-update.md) records the 47.0.4
+The [Wasmtime security baseline](wasmtime-security-update.md) records the 48.0.3
 advisory scan, native-loader review and runtime/compiler upgrade requirements.
 
 Handwritten Rust, WIT, Protobuf, JSON Schema, examples, and SDK sources remain authoritative. Generated build products normally live in Cargo `OUT_DIR`, `target/contracts/`, `target/capsules/`, and SDK compiler directories. The type-only codec fixture described below is an explicit checked-in exception:

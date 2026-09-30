@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "PR #733 CI repair: allow a finite 600-second pinned compiler transfer; retain exact digest and byte ceilings, reject deadline/overflow distinctly, and remove failed partial files. Covered by test_dev_compiler_download.",
+  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6618ea7ddd2946501800a001c89b1237c8ec4985f63b2610309eb64dc2a5c8c7"
+  "sha256": "1cf80a693fae5d97b71f9c4cbd68e84cc8aa30b3b8bb133e1008c76764b5576f"
 }

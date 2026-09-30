@@ -100,10 +100,10 @@ nor the archived pre-sharding snapshot requires a hash refresh.
 
 The shared `dtolnay/rust-toolchain` 1.97.1 identity and upstream action-definition
 diff were reviewed on **2026-09-28**. That revision hardcodes Rust 1.97.1 and has
-no `toolchain` input. The MSRV job therefore installs Rust 1.94.1 explicitly with
-`rustup toolchain install 1.94.1 --profile minimal --no-self-update` after the
+no `toolchain` input. The MSRV job therefore installs Rust 1.95.0 explicitly with
+`rustup toolchain install 1.95.0 --profile minimal --no-self-update` after the
 action runs. Its full and selected-package checks continue to invoke
-`cargo +1.94.1`; the declared MSRV remains 1.94.1.
+`cargo +1.95.0`; the declared MSRV remains 1.95.0.
 Reconciled with the ownership-local CI contracts on **2026-09-30**: the explicit
 installation is retained in `tools/ci/contracts/workflows/ci.yml/jobs/msrv.json`,
 with all existing steps and historical coverage obligations unchanged. The

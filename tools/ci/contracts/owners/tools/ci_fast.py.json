@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_fast.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "62bbebe6115eb6932a4aaf92d68ab1794457a4c069c1d32a51eba82b7c829a44"
+  "sha256": "1390b3da76421fbdfd8941359b495e4b6441364724fe70aebc9d952dadb91eaf"
 }

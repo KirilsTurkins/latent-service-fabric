@@ -79,7 +79,7 @@ latent-admission = { path = "../latent-admission" }
 latent-control-store = { path = "../latent-control-store" }
 tempfile.workspace = true
 wasm-encoder.workspace = true
-wit-parser = { version = "=0.252.0", default-features = false, features = ["std"] }
+wit-parser = { version = "=0.259.0", default-features = false, features = ["std"] }
 latent-node = { path = "../latent-node" }
 latent-scheduler = { path = "../latent-scheduler" }
 tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }

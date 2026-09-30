@@ -57,7 +57,7 @@ fn explicit_requirements_need_profile_and_check_each_independent_dimension() {
         .runtime
         .as_mut()
         .unwrap()
-        .minimum_version = "47.0.4".into();
+        .minimum_version = "48.0.3".into();
     assert!(profile.check_capsule(&manifest).is_err());
     manifest
         .runtime_requirements
@@ -136,7 +136,7 @@ fn renderer_requirements_are_explicit_immutable_and_separate_from_host_capacity(
     );
     let installed = RuntimeCompatibilityProfile::new(
         "wasmtime",
-        "47.0.4",
+        "48.0.3",
         "x86_64-unknown-linux-gnu",
         &["x86_64.sse2"],
         u64::MAX,

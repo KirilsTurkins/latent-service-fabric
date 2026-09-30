@@ -13,6 +13,76 @@ from tools.dev_workflow import build, build_cache, common, paths, project, snaps
 from tools.tests.test_dev_contracts import descriptor
 
 
+class BuildCacheUsageLimits(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name) / "attempt"
+        paths.new_directory(self.root)
+
+    def observe_repeated_entries(self, count):
+        # Exercise the real traversal/bounds without creating 65,536 files in CI.
+        # Keep a real DirEntry so POSIX and Windows metadata paths are covered.
+        sample = self.root / "sample"
+        sample.write_bytes(b"x")
+        with os.scandir(self.root) as entries:
+            entry = next(entries)
+            entry.stat(follow_symlinks=False)
+        with patch.object(build_cache.os, "scandir") as scan:
+            scan.return_value.__enter__.return_value = iter([entry] * count)
+            return build_cache.usage(self.root)
+
+    def test_managed_build_tree_exceeding_previous_limit_is_accepted(self):
+        self.assertEqual(self.observe_repeated_entries(32769), (32769, 32769))
+
+    def test_exact_default_entry_limit_is_accepted(self):
+        self.assertEqual(self.observe_repeated_entries(build_cache.MAX_ENTRIES),
+                         (build_cache.MAX_ENTRIES, build_cache.MAX_ENTRIES))
+
+    def test_default_entry_overflow_is_rejected(self):
+        with self.assertRaisesRegex(common.DevError, "build-cache-file-limit"):
+            self.observe_repeated_entries(build_cache.MAX_ENTRIES + 1)
+
+    def test_real_tree_counts_directories_and_files(self):
+        child = self.root / "nested"
+        paths.new_directory(child)
+        (child / "source.rs").write_bytes(b"x")
+        with patch.object(build_cache, "MAX_ENTRIES", 2):
+            self.assertEqual(build_cache.usage(self.root), (2, 1))
+            (child / "extra.rs").write_bytes(b"x")
+            with self.assertRaisesRegex(common.DevError, "build-cache-file-limit"):
+                build_cache.usage(self.root)
+
+    def test_byte_limit_is_independent_of_entry_capacity(self):
+        payload = self.root / "payload"
+        payload.write_bytes(b"x")
+        with patch.object(build_cache, "MAX_BYTES", 1):
+            self.assertEqual(build_cache.usage(self.root), (1, 1))
+            payload.write_bytes(b"xx")
+            with self.assertRaisesRegex(common.DevError, "build-cache-byte-limit"):
+                build_cache.usage(self.root)
+
+    @unittest.skipUnless(os.name == "posix", "requires POSIX symlink creation")
+    def test_compiler_created_symlink_is_still_rejected(self):
+        (self.root / "link").symlink_to(self.root.parent, target_is_directory=True)
+        with self.assertRaisesRegex(common.DevError, "build-cache-link-or-mount-rejected"):
+            build_cache.usage(self.root)
+
+    @unittest.skipUnless(os.name == "posix", "requires POSIX FIFO creation")
+    def test_compiler_created_special_file_is_still_rejected(self):
+        os.mkfifo(self.root / "pipe", 0o600)
+        with self.assertRaisesRegex(common.DevError, "build-cache-special-file-rejected"):
+            build_cache.usage(self.root)
+
+    def test_depth_limit_is_still_enforced(self):
+        current = self.root
+        for _ in range(65):
+            current = current / "d"
+            paths.new_directory(current)
+        with self.assertRaisesRegex(common.DevError, "build-cache-depth-limit"):
+            build_cache.usage(self.root)
+
+
 class BuildAttempts(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()

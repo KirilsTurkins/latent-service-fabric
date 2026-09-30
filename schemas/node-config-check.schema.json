@@ -51,7 +51,7 @@
       "enum": ["lsf-host-abi-phase3-v2", "lsf-host-abi-phase3-v3", "lsf-host-abi-phase3-v4"]
     },
     "wasmtimeVersion": {
-      "const": "47.0.4"
+      "const": "48.0.3"
     },
     "target": {
       "type": "string",

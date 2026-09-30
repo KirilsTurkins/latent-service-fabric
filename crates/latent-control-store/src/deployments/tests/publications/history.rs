@@ -71,7 +71,7 @@ fn obsolete_envelopes_and_rollout_plans_are_rejected_without_rewriting_history()
             repository.clone(),
             Limits::default(),
             repository.lifecycle_authority(),
-            super::super::lifecycle::profile("47.0.4")
+            super::super::lifecycle::profile("48.0.3")
         ))
         .is_err());
         assert_eq!(std::fs::read(&path).unwrap(), bytes);

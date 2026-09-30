@@ -176,7 +176,8 @@ impl SchemaBudget<'_> {
                 bytes = bytes.checked_add(largest).ok_or_else(limit)?;
             }
             Type::Own(resource) | Type::Borrow(resource) if self.resources.contains(resource) => {}
-            Type::Map(_)
+            Type::FixedLengthList(_)
+            | Type::Map(_)
             | Type::Own(_)
             | Type::Borrow(_)
             | Type::Future(_)

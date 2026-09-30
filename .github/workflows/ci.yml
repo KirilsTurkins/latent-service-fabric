@@ -684,7 +684,7 @@ jobs:
           retention-days: 14
 
   msrv:
-    name: Rust MSRV 1.94.1
+    name: Rust MSRV 1.95.0
     needs: profile
     if: needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'
     runs-on: ubuntu-24.04
@@ -694,7 +694,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - name: Install the declared minimum supported Rust toolchain
-        run: rustup toolchain install 1.94.1 --profile minimal --no-self-update
+        run: rustup toolchain install 1.95.0 --profile minimal --no-self-update
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:

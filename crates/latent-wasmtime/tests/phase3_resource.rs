@@ -22,6 +22,7 @@ mod support;
 
 #[test]
 fn phase3_resource_small_provider_ownership_checkpoint() {
+    observation::check_file_digest_bounds();
     let mut observations = Vec::new();
     let provider_runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()

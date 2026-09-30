@@ -21,7 +21,7 @@
   },
   "definition": {
     "if": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
-    "name": "Rust MSRV 1.94.1",
+    "name": "Rust MSRV 1.95.0",
     "needs": "profile",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -36,7 +36,7 @@
       },
       {
         "name": "Install the declared minimum supported Rust toolchain",
-        "run": "rustup toolchain install 1.94.1 --profile minimal --no-self-update"
+        "run": "rustup toolchain install 1.95.0 --profile minimal --no-self-update"
       },
       {
         "name": "Restore compiled Rust dependencies",
@@ -81,7 +81,7 @@
   },
   "jobId": "msrv",
   "kind": "job",
-  "reviewReason": "Retain the reviewed MSRV coverage and require explicit Rust 1.94.1 installation after the shared action moves to Rust 1.97.1.",
+  "reviewReason": "Preserve historical command coverage and incoming explicit MSRV installation; check the updated dependency graph with declared Rust 1.95.0.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
