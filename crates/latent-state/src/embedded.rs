@@ -217,8 +217,10 @@ impl EmbeddedStore {
                 return Err(StoreError::Corrupt);
             }
             count = count.checked_add(1).ok_or(StoreError::Capacity)?;
+            let reserved = crate::reservation::reserved_bytes(k, v)?;
             bytes = bytes
                 .checked_add(k.len() + v.len())
+                .and_then(|bytes| bytes.checked_add(reserved))
                 .ok_or(StoreError::Capacity)?;
             if count > self.limits.maximum_rows || bytes > self.limits.maximum_logical_bytes {
                 return Err(StoreError::Capacity);

@@ -5,6 +5,8 @@
 pub mod embedded;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
+/// Logical disposition capacity charged in the same physical atomic store.
+pub mod reservation;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.
 pub mod session;
 
