@@ -23,6 +23,35 @@ struct Materialization {
 }
 
 impl WasmtimeBackend {
+    pub(in crate::backend) fn inspect_readiness(
+        &self,
+        ready: PreparedReadiness,
+    ) -> Result<latent_executor::PreparationInspection, PlatformError> {
+        let pending = self.checked_readiness(ready)?;
+        let runtime = &pending.owner.runtime;
+        self.shared.preparation_context.check_runtime(runtime)?;
+        let surface = &runtime.surface;
+        let profile =
+            if surface.has_web_application() && self.config.buffered_web_value_profile.is_some() {
+                latent_core::diagnostic::DiagnosticProfile::WasmtimeBufferedWebValuesV1
+            } else {
+                latent_core::diagnostic::DiagnosticProfile::WasmtimeServiceValuesV1
+            };
+        Ok(latent_executor::PreparationInspection {
+            key: pending.descriptor.key.clone(),
+            component_digest: latent_core::ReleaseDigest(
+                runtime.descriptor.metadata["component-digest"].clone(),
+            ),
+            profile,
+            import_count: surface.imports.len() as u64,
+            function_count: surface.function_count() as u64,
+            hostcall_fuel: surface.hostcall_fuel as u64,
+            maximum_lifted_bytes: surface.value_codec_limits.max_lifted_bytes as u64,
+            maximum_type_nodes: surface.value_codec_limits.max_type_nodes as u64,
+            declared_budget: runtime.declared_budget.clone(),
+        })
+    }
+
     pub(in crate::backend) fn ready_owner(
         &self,
         pin: ReadyPin<PreparedRuntime>,
