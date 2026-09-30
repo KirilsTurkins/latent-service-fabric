@@ -1,0 +1,39 @@
+package latent:intents@0.1.0;
+
+interface staging {
+    use latent:state/key-value@0.2.0.{transaction, value};
+
+    record intent {
+        // Logical admitted binding, not a provider address or credential.
+        binding: string,
+        operation: string,
+        payload: value,
+        // Requested payload lifetime, constrained by independent host policy.
+        // An invocation deadline never extends or erases a durable intent.
+        expires-at-unix-millis: option<u64>,
+    }
+
+    record staged-intent {
+        // Allocates deterministic effect identity within this command attempt.
+        // It does not promise dispatch or completion ordering.
+        sequence: u32,
+    }
+
+    enum intent-error {
+        permission-denied,
+        invalid-binding,
+        invalid-operation,
+        invalid-payload,
+        invalid-expiry,
+        count-limit,
+        byte-limit,
+        handle-closed,
+        wrong-activation,
+        wrong-mode,
+        unsupported-profile,
+        cancelled,
+        unavailable,
+    }
+
+    stage: async func(transaction: borrow<transaction>, intent: intent) -> result<staged-intent, intent-error>;
+}
