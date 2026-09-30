@@ -1,5 +1,10 @@
 # Bounded streaming HTTP
 
+The current security baseline selects **Wasmtime 48.0.3**. References below to
+47.0.4 describe the earlier qualification, not the current supported dependency.
+See the [September security update](../development/wasmtime-security-update.md)
+for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+
 `latent-http::StreamingHttpProvider` implements the canonical async
 `latent:http/streaming@0.3.0` interface. Its installed profile is
 `bounded-streaming-http-identity-v1`. It reuses the [buffered HTTP](outbound-http.md)

@@ -178,36 +178,51 @@ pub fn process() -> Value {
         "elapsedNanos": began.elapsed().as_nanos().to_string()})
 }
 
-// Provenance includes unstripped test executables, not only small guest files.
-// Keep both the metadata and streamed-byte limits, with a 64 KiB buffer.
-const MAX_FILE_DIGEST_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+// Native all-features debug harnesses include the runtime/compiler and can
+// exceed 512 MiB. This bounds identity input, not guest memory or provider use.
+const MAX_EXECUTABLE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
 pub fn file_digest(path: &Path) -> String {
-    file_digest_with_limit(path, MAX_FILE_DIGEST_BYTES)
+    file_digest_with_limit(path, MAX_EXECUTABLE_BYTES)
 }
 
 fn file_digest_with_limit(path: &Path, maximum: u64) -> String {
-    let file = fs::File::open(path).unwrap();
-    assert!(file.metadata().unwrap().len() <= maximum);
-    digest_reader(file, maximum)
+    let mut file = fs::File::open(path).unwrap();
+    let metadata = file.metadata().unwrap();
+    assert!(metadata.is_file());
+    assert!(metadata.len() <= maximum);
+    let (digest, observed) = read_digest(&mut file, metadata.len());
+    assert_eq!(observed, metadata.len(), "identity input was truncated");
+    assert_eq!(file.metadata().unwrap().len(), observed);
+    digest
 }
 
-fn digest_reader(mut file: impl Read, maximum: u64) -> String {
+fn read_digest(reader: impl Read, maximum: u64) -> (String, u64) {
+    let began = Instant::now();
+    // Read at most one byte past the bound so growing inputs cannot extend work.
+    let mut reader = reader.take(maximum.checked_add(1).unwrap());
     let mut hasher = Sha256::new();
-    let mut bytes = vec![0; 65536];
+    let mut bytes = [0; 65536];
     let mut observed_bytes = 0_u64;
     loop {
-        let length = file.read(&mut bytes).unwrap();
+        let length = reader.read(&mut bytes).unwrap();
+        assert!(began.elapsed() < Duration::from_secs(30));
         if length == 0 {
             break;
         }
         observed_bytes += length as u64;
-        assert!(observed_bytes <= maximum);
+        assert!(
+            observed_bytes <= maximum,
+            "identity input exceeds byte limit"
+        );
         hasher.update(&bytes[..length]);
     }
-    format!(
-        "sha256:{:x}",
-        latent_core::digest::HexDigest(hasher.finalize())
+    (
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(hasher.finalize())
+        ),
+        observed_bytes,
     )
 }
 
@@ -225,9 +240,9 @@ pub fn check_file_digest_bounds() {
         latent_core::digest::HexDigest(Sha256::digest(payload))
     );
     assert_eq!(file_digest_with_limit(&path, 8), expected);
-    assert_eq!(digest_reader(Cursor::new(payload), 8), expected);
+    assert_eq!(read_digest(Cursor::new(payload), 8).0, expected);
     assert_eq!(
-        digest_reader(Cursor::new([]), 0),
+        read_digest(Cursor::new([]), 0).0,
         format!(
             "sha256:{:x}",
             latent_core::digest::HexDigest(Sha256::digest([]))
@@ -236,7 +251,7 @@ pub fn check_file_digest_bounds() {
     // Reject a known oversized file before reading and reject a reader
     // that grows beyond the allowed length independently of metadata.
     assert!(catch_unwind(|| file_digest_with_limit(&path, 7)).is_err());
-    assert!(catch_unwind(|| digest_reader(Cursor::new(payload), 7)).is_err());
+    assert!(catch_unwind(|| read_digest(Cursor::new(payload), 7)).is_err());
 }
 
 pub fn publish(observations: &[Value]) {
@@ -274,4 +289,47 @@ pub fn publish(observations: &[Value]) {
         "resource checkpoint: {} observed ownership snapshots; full ticket pending",
         observations.len()
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn executable_identity_hashes_all_bytes_with_a_fixed_buffer() {
+        let input = vec![42; 2 * 65536 + 7];
+        let expected = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(&input))
+        );
+        assert_eq!(
+            read_digest(Cursor::new(&input), input.len() as u64),
+            (expected.clone(), input.len() as u64)
+        );
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("harness");
+        fs::write(&path, &input).unwrap();
+        assert_eq!(file_digest(&path), expected);
+        assert_eq!(
+            read_digest(Cursor::new([]), 0),
+            (
+                "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".into(),
+                0
+            )
+        );
+    }
+
+    #[test]
+    fn executable_identity_rejects_overflow_without_unbounded_reading() {
+        let mut input = Cursor::new([42; 64]);
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| read_digest(&mut input, 7)));
+        assert!(result.is_err());
+        assert_eq!(input.position(), 8);
+        // A sparse oversized file must be rejected before any payload is read.
+        let file = tempfile::NamedTempFile::new().unwrap();
+        file.as_file().set_len(MAX_EXECUTABLE_BYTES + 1).unwrap();
+        assert!(std::panic::catch_unwind(|| file_digest(file.path())).is_err());
+    }
 }

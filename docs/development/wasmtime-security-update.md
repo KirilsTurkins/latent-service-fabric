@@ -39,6 +39,40 @@ any Store is created. Native shared-license policy follows the exact published
 Wasmtime/Cranelift revision and verifies its unchanged root license digest.
 
 
+### Runtime containment and regression coverage
+
+The maintained runtime and isolated compiler select Wasmtime **48.0.3**, with
+matching Cranelift **0.135.3** internals. The default compiler remains Rust
+**1.97.1**; the minimum supported Rust version becomes **1.95.0**, as required
+by Wasmtime 48. Both the manifest and minimum-version CI lane change together.
+
+This addresses [RUSTSEC-2026-0315](https://rustsec.org/advisories/RUSTSEC-2026-0315.html)
+([GHSA-m63x-6p34-q65x](https://github.com/bytecodealliance/wasmtime/security/advisories/GHSA-m63x-6p34-q65x))
+and [RUSTSEC-2026-0316](https://rustsec.org/advisories/RUSTSEC-2026-0316.html)
+([GHSA-jqpg-j7w6-42pr](https://github.com/bytecodealliance/wasmtime/security/advisories/GHSA-jqpg-j7w6-42pr)).
+The first fixes lost callee fuel across `call_ref` and exception returns. The
+second accounts for dynamically lifted record/tuple, box and type-name
+allocations. LSF retains its independent pre-lift schema and allocation envelope,
+existing fuel and memory limits, and closed host interface surface. Newly exposed
+fixed-length lists are explicitly disabled and rejected, not implicitly enabled.
+
+The runtime version participates in the compiler, runtime compatibility and
+prepared/native artifact identities. Rebuild the node and isolated AOT compiler
+from the same lock. Re-prepare components and rebuild or republish artifacts
+bound to the old runtime; do not reuse an old native image as compatible. No
+unauthenticated loading fallback or cross-version cache exception is introduced.
+The v4 host ABI interface set and WIT bytes are unchanged; its current runtime
+metadata is updated. Earlier v2/v3 matrices and dated execution evidence retain
+their historical identities rather than being rewritten as new qualification.
+
+Bounded source regressions cover ordinary typed-reference calls, Java exception
+returns, dynamic record-list lifting under small and sufficient host-call budgets,
+and rejection of fixed-length lists. They use finite local fixtures, not unbounded
+memory allocation or network exploitation. Passing dependency scans are current
+observations, not a certification of sandbox safety. New validation belongs to
+the security PR's workflow runs; the earlier recorded observations below remain
+historical.
+
 ## Historical September 13 baseline
 
 ### Wasmtime 47.0.4 security baseline

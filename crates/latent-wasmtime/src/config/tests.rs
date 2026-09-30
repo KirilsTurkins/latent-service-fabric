@@ -1,6 +1,7 @@
 use super::*;
 
 mod engine_policy;
+mod security_advisories;
 
 #[test]
 fn legacy_alias_preserves_the_existing_default_policy() {

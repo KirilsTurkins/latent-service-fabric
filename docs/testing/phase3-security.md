@@ -1,5 +1,10 @@
 # Phase 3 integrated runtime security conformance
 
+The current security baseline selects **Wasmtime 48.0.3**. References below to
+47.0.4 describe the earlier qualification, not the current supported dependency.
+See the [September security update](../development/wasmtime-security-update.md)
+for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+
 Issue [#238](https://github.com/KirilsTurkins/latent-service-fabric/issues/238)
 joins existing **executed guests, real scoped providers, shared ingress,
 durable catalogs and supervised children** into an exact, bounded selection.

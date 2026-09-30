@@ -109,7 +109,9 @@ missing regions, altered copies and interrupted publication. Synthetic examples
 remain labelled as rendering fixtures and provide no SDK qualification.
 
 After committing the reviewed sources, install the separately locked package
-manager with `npm ci --prefix website/toolchain --ignore-scripts`. Build both
+manager by running `python3 website/toolchain/prepare.py`, then
+`npm ci --prefix website/toolchain --ignore-scripts` and
+`node website/scripts/check-package-manager.mjs` before using that npm. Build both
 base paths, install the pinned browser and run `npm run test:versions` from
 `website/`. This checks the actual released/development switch, then creates an
 isolated local Git checkout containing two synthetic snapshots with different

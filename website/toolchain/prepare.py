@@ -119,19 +119,24 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]]) -> bytes:
         new = package(replacement)
         if old["name"] != name or old["version"] != pin["from"]:
             raise ValueError("unexpected original bundled package")
-        # Only brace-expansion has a reviewed dependency, already in npm.
-        dependencies = {"balanced-match": "^4.0.2"} if name == "brace-expansion" else {}
+        expected = {"balanced-match": "^4.0.2"} if name == "brace-expansion" else {}
         if (new["name"] != name or new["version"] != pin["version"]
-                or (new.get("dependencies") or {}) != dependencies
+                or new.get("dependencies", {}) != expected
                 or new.get("optionalDependencies") or new.get("peerDependencies")
-                or new.get("bundleDependencies") or new.get("bundledDependencies")):
+                or new.get("bundleDependencies") or new.get("bundledDependencies")
+                or any(key.startswith("package/node_modules/") for key in replacement)):
             raise ValueError("replacement package graph requires review")
         if name == "brace-expansion":
-            balanced = package(files, "package/node_modules/balanced-match/")
-            if (old.get("dependencies") != dependencies
-                    or balanced.get("name") != "balanced-match"
-                    or balanced.get("version") != "4.0.4"):
+            # The authenticated npm archive already contains this exact dependency.
+            # Do not resolve or install a new graph during source preparation.
+            dependency = package(files, "package/node_modules/balanced-match/")
+            if (old.get("dependencies") != expected
+                    or dependency.get("name") != "balanced-match" or dependency.get("version") != "4.0.4"
+                    or dependency.get("dependencies") or dependency.get("optionalDependencies")
+                    or dependency.get("peerDependencies")):
                 raise ValueError("replacement dependency graph requires review")
+            if any(key.startswith(prefix + "node_modules/") for key in files):
+                raise ValueError("shadowed replacement dependency requires review")
         files = {key: value for key, value in files.items() if not key.startswith(prefix)}
         for key, value in replacement.items():
             files[prefix + key.removeprefix("package/")] = value

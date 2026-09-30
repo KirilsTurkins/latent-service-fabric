@@ -1,8 +1,21 @@
 {
   "cases": [
+    "HostAbiProfileTests.test_active_and_historical_generator_mismatches_are_rejected",
     "HostAbiProfileTests.test_frozen_matrix_matches_exact_sources_world_and_pinned_generators"
   ],
   "guards": {
+    "HostAbiProfileTests.test_active_and_historical_generator_mismatches_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:59a390a5427cbe400fa3ca4c719ef49ecb6f0a91dedd0677bbd81986a71bda16",
+        "class:setup-sha256:a36c55b12adb2d7a72f7d8de4ac81f51eda4c3a0bf1fba0685a00b5dfb57006f"
+      ],
+      "skipSites": []
+    },
     "HostAbiProfileTests.test_frozen_matrix_matches_exact_sources_world_and_pinned_generators": {
       "bases": [
         "unittest.TestCase"
@@ -10,14 +23,14 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:213cba61d4c6668789ad213e258963728de3d20e549142d8621487ac02309be4",
-        "class:setup-sha256:44b0d6e203df0cc7306c82d00007e5c6ffbfd165d84379acde54dab1a2c44e9c"
+        "module:setup-sha256:59a390a5427cbe400fa3ca4c719ef49ecb6f0a91dedd0677bbd81986a71bda16",
+        "class:setup-sha256:a36c55b12adb2d7a72f7d8de4ac81f51eda4c3a0bf1fba0685a00b5dfb57006f"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_host_abi_profile.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Reviewed Wasmtime 48.0.3 fixture identities and unchanged skip/execution controls; preserve every existing case. Add exact frozen ABI generator rejection and bounded compiler-cache regression coverage where applicable.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

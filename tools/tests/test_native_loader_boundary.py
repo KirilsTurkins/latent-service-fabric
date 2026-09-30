@@ -119,10 +119,12 @@ all = "warn"
         self.assertEqual(workspace["package"]["rust-version"], "1.95.0")
         self.assertEqual(pins["rust"]["msrv"], "1.95.0")
         self.assertEqual(pins["rust"]["dependencies"]["wasmtime"], "48.0.3")
-        for name in ("v2", "v3", "v4"):
+        # Only v4 is active. Superseded matrices retain their tested runtime,
+        # independently fingerprinted by test_host_abi_profile.
+        for name, version in (("v2", "47.0.4"), ("v3", "47.0.4"), ("v4", "48.0.3")):
             with self.subTest(descriptor=name):
                 descriptor = json.loads((root / f"wit/host-abi-phase3-{name}.json").read_text())
-                self.assertEqual(descriptor["wasmtimeVersion"], "48.0.3")
+                self.assertEqual(descriptor["wasmtimeVersion"], version)
         self.assertEqual(boundary.validate(root), [])
 
     def test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family(self) -> None:
