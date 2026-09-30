@@ -1684,14 +1684,24 @@
     },
     {
       "boundary": "host",
-      "expectedCases": [],
+      "expectedCases": [
+        "authority::tests::bounded_retained_record_roundtrip_never_restores_current_authority",
+        "authority::tests::bounded_rule_publication_rejects_rollback_and_same_revision_mutation",
+        "authority::tests::credential_rotation_preserves_destination_and_envelope_provenance",
+        "authority::tests::current_ceiling_can_narrow_but_never_widen_a_committed_intent",
+        "authority::tests::dropped_context_quarantines_capacity_instead_of_refunding_live_io",
+        "authority::tests::expiry_and_uncertain_restart_clock_never_renew_durable_lifetime",
+        "authority::tests::guest_selected_alias_does_not_grant_cross_tenant_or_publication_authority",
+        "authority::tests::provider_replacement_and_old_decoder_removal_block_instead_of_redirecting",
+        "authority::tests::revocation_after_acceptance_does_not_refund_live_physical_work"
+      ],
       "expectedIgnored": [],
       "id": "latent-effects.lib.latent-effects",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
+      "minimumCases": 9,
+      "mode": "libtest",
       "package": "latent-effects",
       "platforms": [
         "linux-x86_64"
