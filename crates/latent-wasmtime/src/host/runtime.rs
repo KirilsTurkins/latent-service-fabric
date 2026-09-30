@@ -36,7 +36,7 @@ impl Table {
         limits: RuntimeLimits,
     ) -> Result<Self, PlatformError> {
         let bytes = limits.total() as u64 * std::mem::size_of::<RuntimeOwner>() as u64
-            + limits.timers as u64 * std::mem::size_of::<RuntimeTimer>() as u64
+            + u64::from(limits.timers) * std::mem::size_of::<RuntimeTimer>() as u64
             + std::mem::size_of::<Self>() as u64
             + 64;
         let mut allocation = budget
@@ -132,6 +132,10 @@ fn synchronous<T>(
     result.map_err(convert)
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "register the eleven authoritative operations together, with explicit sync and async ABI shapes"
+)]
 pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
     macro_rules! sync {
         ($name:literal, $args:pat, $ty:ty, $execute:expr) => {
@@ -438,12 +442,44 @@ impl WaitingTimer {
                     "runtime-timer-stopped",
                 ));
             }
-            if self.call.is_cancelled() {
-                self.runtime.cancel();
+            let now = self.clock.monotonic_now();
+            if now >= self.call.deadline() {
                 return Err(failure(
-                    PlatformErrorCode::Cancelled,
-                    "runtime-timer-revoked",
+                    PlatformErrorCode::DeadlineExceeded,
+                    "runtime-timer-deadline",
                 ));
+            }
+            if let Err(error) = self.call.recheck_authority() {
+                let currentness = super::capabilities::HostCapabilityFailure::from_error(&error);
+                let bookkeeping_busy = (error.code == PlatformErrorCode::ResourceExhausted
+                    && error.message == "capability-busy"
+                    && error.details.is_empty())
+                    || currentness.currentness_reason() == Some("admission-authority-busy");
+                if bookkeeping_busy {
+                    // Only an authority bookkeeping fence may be observed
+                    // again. Keep the accepted call and original deadline;
+                    // requested elapsed success still needs current authority.
+                    self.wait
+                        .wait_until(self.call.deadline().min(now + STOP_OBSERVATION))
+                        .await;
+                    continue;
+                }
+                if matches!(
+                    error.code,
+                    PlatformErrorCode::PermissionDenied
+                        | PlatformErrorCode::AdmissionRejected
+                        | PlatformErrorCode::Cancelled
+                ) {
+                    self.runtime.cancel();
+                    self.stop.cancel_for_revocation();
+                    return Err(failure(
+                        PlatformErrorCode::Cancelled,
+                        "runtime-timer-revoked",
+                    ));
+                }
+                // A narrower broker deadline or unavailable authority is not
+                // root cancellation. Preserve its structured failure.
+                return Err(error);
             }
             if self.timer_wait.as_ref().is_some_and(TimerWait::is_closed) {
                 return Err(failure(
@@ -503,7 +539,10 @@ fn phase(value: RuntimePhase) -> wit::Phase {
     }
 }
 fn convert(value: PlatformError) -> wit::Error {
-    match value.code {
+    let code = value.code;
+    // Own and discard private diagnostics before exposing the frozen WIT enum.
+    drop(value);
+    match code {
         PlatformErrorCode::Unavailable => wit::Error::Unavailable,
         PlatformErrorCode::PermissionDenied | PlatformErrorCode::AdmissionRejected => {
             wit::Error::PermissionDenied
