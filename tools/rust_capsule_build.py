@@ -14,7 +14,7 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, fresh,
                                         inventory, decode_json, read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
-from tools import guest_compatibility_build
+from tools import guest_compatibility_build, guest_resources
 
 BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
@@ -22,6 +22,7 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
           "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
           "tools/stage_runtime_wit.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_resources.RECIPE
 
 
 class Commands:
@@ -147,7 +148,8 @@ def binding_check(work: Path, pins: dict, command: Commands, bindgen: Path) -> s
     return actual
 
 
-def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, bytes], component: bytes) -> None:
+def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, bytes], component: bytes,
+                   *, additional_resources=()) -> None:
     manifest = read_json(ROOT / "examples/echo-contract/capsule.json")
     manifest["metadata"] = {"name": project["service"], "tenant": project["tenant"]}
     if project["tenant"] is None:
@@ -166,6 +168,7 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
               ("wit-lock.json", "wit-lock", "application/vnd.latent.wit-lock.v1+json")]
     guest_compatibility_build.package_report(output, files, component)
     layers.append(("compatibility-report.json", "asset", "application/vnd.latent.guest.compatibility.v1+json"))
+    layers.extend(guest_resources.assemble(output, files, component, additional_resources=additional_resources))
     for name, data in files.items():
         if name.startswith("wit/") and name.endswith(".wit"):
             path = output / name

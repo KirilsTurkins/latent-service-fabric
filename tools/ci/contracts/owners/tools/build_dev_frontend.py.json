@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Package captured dependency verifier and its import closure in the Linux developer helper",
+  "reviewReason": "Package immutable resource verification inside developer helper",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "55da00ed813a1c2e905541a6b0b26e4280ffa13992279cfb3c24cbc9709af2fd"
+  "sha256": "e55a28df1fdcd5211cc6b874502425ec0e8c6ead55a39181d887312a0ece86ad"
 }

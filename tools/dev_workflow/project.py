@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
-from . import dependencies, paths, snapshot
+from . import dependencies, paths, resource_inputs, snapshot
 from .common import HOST_ABI, MAX_DOCUMENT, decode, digest, encode, identifier, integer, members, require, sha
 
 LANGUAGES = {"rust": 544, "c": 545, "typescript": 546, "go": 547, "java": 548, "dotnet": 549}
@@ -12,9 +12,11 @@ LANGUAGES = {"rust": 544, "c": 545, "typescript": 546, "go": 547, "java": 548, "
 
 def validate(value: dict) -> dict:
     members(value, {"schemaVersion", "name", "tenant", "service", "language", "template", "hostAbi",
-                    "inputRoots", "exclude", "build", "artifacts", "scenarios"}, {"dependencyInputs"})
+                    "inputRoots", "exclude", "build", "artifacts", "scenarios"}, {"dependencyInputs", "resourceInputs"})
     if "dependencyInputs" in value:
         dependencies.validate(value["dependencyInputs"])
+    if "resourceInputs" in value:
+        resource_inputs.validate(value["resourceInputs"])
     require(value["schemaVersion"] == "latent.dev.project.v1", "project-version")
     for key in ("name", "tenant"):
         identifier(value[key])
@@ -90,7 +92,7 @@ def validate(value: dict) -> dict:
 def load(root: Path) -> tuple[dict, str]:
     raw = paths.read(root, "latent.project.json", MAX_DOCUMENT)
     descriptor = validate(decode(raw))
-    return validate(dependencies.bind(root, descriptor)), digest(raw)
+    return validate(resource_inputs.bind(root, dependencies.bind(root, descriptor))), digest(raw)
 
 
 def trust_identity(project: dict) -> str:
