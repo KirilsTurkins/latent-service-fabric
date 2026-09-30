@@ -4516,6 +4516,9 @@
         "embedded::tests::read_views_duplicates_and_prefix_scan_are_bounded",
         "embedded::tests::state_command_and_outbox_have_one_atomic_snapshot_and_reopen_identity",
         "embedded::tests::writers::bounded_concurrent_writers_serialize_conflicts_and_preserve_independent_rows",
+        "namespace::catalog::tests::actual_engine_namespace_and_receipt_commit_atomically_and_recover_after_reopen",
+        "namespace::catalog::tests::concurrent_lifecycle_candidates_have_one_cas_winner_and_changed_operation_is_rejected",
+        "namespace::catalog::tests::scoped_enumeration_is_bounded_and_does_not_include_operation_receipts",
         "namespace::tests::active_commit_blocks_retirement_and_lifecycle_preconditions_reject_races",
         "namespace::tests::create_quiesce_retire_destroy_recreate_never_reuses_aba_version",
         "namespace::tests::destruction_cannot_drop_required_results_effects_payloads_or_inbox",
@@ -4529,7 +4532,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 16,
+      "minimumCases": 19,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

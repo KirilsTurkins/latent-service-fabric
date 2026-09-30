@@ -2,9 +2,9 @@
 
 #![forbid(unsafe_code)]
 
+pub mod embedded;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
-pub mod embedded;
 
 use latent_core::{
     ActivationId, BoxFuture, EntityKey, LeaseId, Metadata, PlatformError, StateNamespaceId,
