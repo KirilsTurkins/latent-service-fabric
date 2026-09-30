@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod authority;
+pub mod dispatch;
 
 use latent_core::{
     ActivationId, BoxFuture, CapabilityId, EffectId, IdempotencyKey, Metadata, Payload,
