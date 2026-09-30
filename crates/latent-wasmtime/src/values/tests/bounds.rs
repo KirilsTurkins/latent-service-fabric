@@ -211,6 +211,30 @@ fn signature_plan_accounts_for_nested_inline_list_amplification() {
     )
     .expect_err("lift allowance");
     assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+    let diagnosis = latent_core::diagnostic::ActivationDiagnostic::from_error(&error)
+        .expect("signature producer's exact preparation proof");
+    assert_eq!(
+        diagnosis.stage,
+        latent_core::diagnostic::DiagnosticStage::Preparation
+    );
+    assert_eq!(
+        diagnosis.reason,
+        latent_core::diagnostic::DiagnosticReason::SignatureAllocationLimit
+    );
+    assert_eq!(
+        diagnosis.configured_bound,
+        Some((wide.maximum_lift_bytes - 1) as u64)
+    );
+    assert_eq!(
+        diagnosis.calculated_requirement,
+        Some(wide.maximum_lift_bytes as u64)
+    );
+    assert_eq!(diagnosis.fixed_bytes, Some(wide.static_lift_bytes as u64));
+    assert_eq!(diagnosis.lifting_fuel, Some(128 * 1024));
+    assert_eq!(
+        diagnosis.lift_multiplier,
+        Some(wide.per_fuel_lift_multiplier as u64)
+    );
     assert!(validate_signature(
         &[types()["wide-list"].clone()],
         ValueCodecLimits {
