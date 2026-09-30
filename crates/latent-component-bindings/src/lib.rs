@@ -65,6 +65,12 @@ pub mod blob_guest {
 }
 
 #[cfg(target_arch = "wasm32")]
+pub mod transaction_guest {
+    //! Exact opt-in transaction/query/intent imports; commitment is host-owned.
+    include!(concat!(env!("OUT_DIR"), "/transaction_guest.rs"));
+}
+
+#[cfg(target_arch = "wasm32")]
 pub mod web_guest {
     //! Exact inbound application records and the existing trusted context API.
     include!(concat!(env!("OUT_DIR"), "/web_guest.rs"));
