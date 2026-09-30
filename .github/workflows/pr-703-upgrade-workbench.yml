@@ -15,24 +15,45 @@ jobs:
           ref: 711c5773eab56487270b95d395bb6e4879394ea7
           fetch-depth: 1
           persist-credentials: false
-      - name: Retain exact shallow snapshots, not unrelated repository history
+      - name: Export source-sized snapshot objects, without historical evidence archives
         shell: bash
         run: |
           set -euo pipefail
           for sha in aaa4191436ef07e5a8739f411f63a1a85f99701f 10dc4c35fea30a4b67afc1e111054f75167b6166 f92fd1d7d204e7f0a8d6a2974a6042d025ec4f38 7aa1ae07c7ceed1c6ab32b6cdeb5b46ba31f750e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61; do
             git fetch --no-tags --depth=1 origin "$sha"
-            git update-ref "refs/snapshots/$sha" "$sha"
           done
-          git config user.name 'Kirils Turkins'
-          git config user.email '236028511+KirilsTurkins@users.noreply.github.com'
-          tar -czf "$RUNNER_TEMP/pr703-git.tar.gz" .git
-          stat -c %s "$RUNNER_TEMP/pr703-git.tar.gz"
-          test "$(stat -c %s "$RUNNER_TEMP/pr703-git.tar.gz")" -le 536870912
-          sha256sum "$RUNNER_TEMP/pr703-git.tar.gz"
+          python3 - <<'PY'
+          import os, pathlib, subprocess
+          refs = '711c5773eab56487270b95d395bb6e4879394ea7 aaa4191436ef07e5a8739f411f63a1a85f99701f 10dc4c35fea30a4b67afc1e111054f75167b6166 f92fd1d7d204e7f0a8d6a2974a6042d025ec4f38 7aa1ae07c7ceed1c6ab32b6cdeb5b46ba31f750e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61'.split()
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'compact'
+          subprocess.run(['git', 'init', str(root)], check=True)
+          objects = set(refs)
+          excluded = []
+          for ref in refs:
+              objects.add(subprocess.check_output(['git', 'rev-parse', ref + '^{tree}'], text=True).strip())
+              for row in subprocess.check_output(['git', 'ls-tree', '-r', '-t', '-l', ref], text=True).splitlines():
+                  meta, path = row.split('\t', 1)
+                  mode, kind, sha, size = meta.split()
+                  if kind == 'blob' and int(size) > 2 * 1024 * 1024:
+                      excluded.append((ref, path, size))
+                  else:
+                      objects.add(sha)
+          subprocess.run(['git', 'pack-objects', str(root / '.git/objects/pack/snapshot')], input='\n'.join(sorted(objects))+'\n', text=True, check=True)
+          (root / '.git/HEAD').write_text(refs[0]+'\n')
+          (root / '.git/shallow').write_text('\n'.join(refs)+'\n')
+          for ref in refs:
+              subprocess.run(['git', '-C', str(root), 'update-ref', 'refs/snapshots/'+ref, ref], check=True)
+          (root / 'excluded.tsv').write_text('\n'.join('\t'.join(row) for row in excluded)+'\n')
+          print('Retained objects:', len(objects), 'Excluded archive entries:', len(excluded))
+          PY
+          tar -czf "$RUNNER_TEMP/pr703-source.tar.gz" -C "$RUNNER_TEMP/compact" .git excluded.tsv
+          stat -c %s "$RUNNER_TEMP/pr703-source.tar.gz"
+          test "$(stat -c %s "$RUNNER_TEMP/pr703-source.tar.gz")" -le 134217728
+          sha256sum "$RUNNER_TEMP/pr703-source.tar.gz"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: pr703-source-objects
-          path: ${{ runner.temp }}/pr703-git.tar.gz
+          path: ${{ runner.temp }}/pr703-source.tar.gz
           retention-days: 1
           compression-level: 0
           if-no-files-found: error
