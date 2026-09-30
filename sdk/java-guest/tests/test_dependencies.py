@@ -109,5 +109,23 @@ class DependencyTests(unittest.TestCase):
                 deps.cache_inventory(cache)
 
 
+    def test_reviewed_jackson_security_patch_matches_both_compilers_and_checksums(self):
+        # GHSA-gx83-3vf8-gh7j, GHSA-q4xh-88c3-wmh7, GHSA-wjgm-6hv5-3cvf.
+        lock = json.loads((SDK / 'feasibility/dependencies.lock.json').read_text())
+        deps.verify_inventory(lock, lock, SDK / 'feasibility/gradle/verification-metadata.xml')
+        jackson = [item for item in lock['artifacts']
+                   if item['path'].startswith('com/fasterxml/jackson/core/')]
+        self.assertEqual({item['path'].split('/')[4] for item in jackson},
+                         {'jackson-annotations', 'jackson-core', 'jackson-databind'})
+        self.assertEqual(len(jackson), 3)
+        for item in jackson:
+            self.assertEqual(item['path'].split('/')[5], '2.18.11')
+        for name in ('compiler.gradle', 'feasibility/build.gradle'):
+            source = (SDK / name).read_text()
+            self.assertEqual(source.count("useVersion '2.18.11'"), 2)
+            self.assertNotIn("useVersion '2.18.9'", source)
+            self.assertNotIn("useVersion '2.18.10'", source)
+
+
 if __name__ == '__main__':
     unittest.main()

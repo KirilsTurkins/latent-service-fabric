@@ -155,6 +155,47 @@ class BuildAttempts(unittest.TestCase):
         self.assertEqual(build_cache.owner(attempt)["state"], "failed")
         self.assertFalse((self.root / "last-build.json").exists())
 
+    def test_usage_counts_directories_and_files_at_the_exact_entry_limit(self):
+        child = self.root / "compiler-inputs"
+        paths.new_directory(child)
+        (child / "source.rs").write_bytes(b"fn main() {}")
+        with patch.object(build_cache, "MAX_ENTRIES", 2):
+            self.assertEqual(build_cache.usage(self.root), (2, 12))
+            (child / "extra.rs").write_bytes(b"x")
+            with self.assertRaisesRegex(common.DevError, "build-cache-file-limit"):
+                build_cache.usage(self.root)
+        self.assertEqual(build_cache.MAX_ENTRIES, 65536)
+        self.assertEqual(build_cache.MAX_BYTES, 4 * 1024 * 1024 * 1024)
+        self.assertEqual(build_cache.MAX_ATTEMPTS, 4)
+
+    def test_observed_entry_overflow_reaps_compiler_and_preserves_previous_build(self):
+        self.inputs(b"from pathlib import Path\nimport time\n"
+                    b"for i in range(64): Path('../entry-' + str(i)).touch()\n"
+                    b"time.sleep(60)\n")
+        previous = {"sourceDirectory": "earlier", "receipt": {"source": "earlier"}}
+        state.atomic(self.root, "last-build.json", previous)
+        with patch.object(build_cache, "MAX_ENTRIES", 32), \
+                self.assertRaisesRegex(common.DevError, "build-cache-file-limit") as error:
+            self.execute()
+        self.assertFalse(error.exception.uncertain)
+        attempt, = (self.root / "builds").iterdir()
+        self.assertEqual(build_cache.owner(attempt)["state"], "failed")
+        self.assertTrue(list((attempt / "source").glob("entry-*")), "the compiler must actually have run")
+        self.assertEqual(state.load(self.root, "last-build.json"), previous)
+
+    @unittest.skipUnless(os.name == "posix", "anchored Linux cache removal")
+    def test_failed_attempt_cleanup_uses_the_same_entry_ceiling(self):
+        self.inputs(b"import sys\nsys.exit(1)\n")
+        for _ in range(build_cache.MAX_ATTEMPTS):
+            with self.assertRaisesRegex(common.DevError, "guest-build-failed"):
+                self.execute()
+        from tools.native_runtime import files
+        with patch.object(files, "remove_tree", wraps=files.remove_tree) as remove:
+            with self.assertRaisesRegex(common.DevError, "guest-build-failed"):
+                self.execute()
+            self.assertEqual(remove.call_count, 1)
+            self.assertEqual(remove.call_args.kwargs["maximum"], build_cache.MAX_ENTRIES + 8)
+
     def test_slow_usage_scan_leaves_time_for_build_progress(self):
         clock = [10.0]
         scans = []

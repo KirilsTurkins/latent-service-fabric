@@ -35,10 +35,13 @@ root Cargo and SDK manifests. Docusaurus 3.10.2, React 19.3.0 and TypeScript 5.9
 are exact pins, not floating recommendations. There is no root npm workspace.
 
 The explicit `npm-11.19.1-lsf-bundle-v1` derivation replaces npm's bundled
-`ip-address`/`undici` with 10.5.1/6.28.1 before executing the package manager.
-Preparation authenticates three registry archives, executes no package code and
+`ip-address`/`undici`/`brace-expansion` with 10.7.2/6.28.1/5.0.12 before executing the package manager.
+Preparation authenticates four registry archives, executes no package code and
 writes a deterministic TAR under ignored `target/`; the toolchain lock checks
 that TAR's exact integrity. All bundled packages remain in advisory scanning.
+The brace-expansion replacement retains only its reviewed `balanced-match` requirement
+and the exact 4.0.4 package already present in the authenticated npm archive;
+new dependencies or nested shadow copies are rejected.
 This is not an upstream npm release. The [toolchain instructions](../../website/README.md)
 describe offline inputs and the explicit maintainer-only refresh path.
 

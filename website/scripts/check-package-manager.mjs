@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -16,7 +17,9 @@ assert.equal(npmVersion, website.engines.npm);
 assert.equal(website.packageManager, `npm@${npmVersion}`);
 assert.equal(read('content/toolchain.json').npm, npmVersion);
 for (const patch of source.patches) {
-  assert.equal(read(`toolchain/node_modules/npm/node_modules/${patch.name}/package.json`).version, patch.version);
+  const installed = read(`toolchain/node_modules/npm/node_modules/${patch.name}/package.json`);
+  assert.equal(installed.name, patch.name);
+  assert.equal(installed.version, patch.version);
 }
 assert.ok(Object.keys(lock.packages).length > 1 && Object.keys(lock.packages).length <= 300);
 let packages = 0;
@@ -28,4 +31,11 @@ for (const [location, expected] of Object.entries(lock.packages)) {
   assert.equal(actual.version, expected.version, `Installed package manager dependency differs: ${location}`);
   packages++;
 }
+const npmRequire = createRequire(path.join(root, 'toolchain/node_modules/npm/package.json'));
+for (const [consumer, dependency] of [['socks', 'ip-address'], ['minimatch', 'brace-expansion'], ['brace-expansion', 'balanced-match']]) {
+  const consumerRequire = createRequire(npmRequire.resolve(consumer));
+  assert.equal(fs.realpathSync(consumerRequire.resolve(dependency)), fs.realpathSync(npmRequire.resolve(dependency)),
+    `Unexpected bundled dependency resolution: ${consumer} -> ${dependency}`);
+}
+assert.equal(read('toolchain/node_modules/npm/node_modules/balanced-match/package.json').version, '4.0.4');
 console.log(JSON.stringify({npm: npmVersion, distribution: source.profile, verifiedInstalledPackages: packages}));

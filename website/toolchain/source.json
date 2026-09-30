@@ -10,8 +10,8 @@
     {
       "name": "ip-address",
       "from": "10.5.0",
-      "version": "10.7.1",
-      "integrity": "sha512-4OUAqU9Z1i3vCnS05hzGiFnEMDpQ+62pAD/MVQOp83fYyNC8GleCqaS0QikQBmcWCrKFiUs/B8ztRRiYOAXuCA=="
+      "version": "10.7.2",
+      "integrity": "sha512-7H/2gFSIitxc0hG3nOI1glS8QLo/EHBFFLk8vEUjXY/xu0AdL8jZ9U1IzO2PUm0d2D/ofQcAifb0g6OBkt8U7w=="
     },
     {
       "name": "undici",

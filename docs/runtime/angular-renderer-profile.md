@@ -1,5 +1,10 @@
 # Angular renderer execution profile
 
+The current security baseline selects **Wasmtime 48.0.3**. References below to
+47.0.4 describe the earlier qualification, not the current supported dependency.
+See the [September security update](../development/wasmtime-security-update.md)
+for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+
 [ADR-0037](../../adr/0037-qualify-a-closed-angular-component-renderer-profile.md)
 selects `angular-ssr-component-v1` for the supported renderer adapter.
 The [executable fixture](../../examples/renderer-profile/README.md) qualifies
