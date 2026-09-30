@@ -38,6 +38,7 @@ edition = "2021"
 license = "Apache-2.0"
 [dependencies]
 unicode-normalization = "=0.1.24"
+tinyvec = "=1.10.0"
 outside-qualification-macro = {path = "../developer-owned-macro"}
 ''', encoding='utf-8')
     resource = b'Hello, '
