@@ -106,7 +106,7 @@ def run(output: Path) -> dict:
         receipt["tools"] = {name: command(name + "-version", [name, "--version"]).decode().strip()
                             for name in ("cargo", "rustc", "wasm-tools")}
         if (not receipt["tools"]["rustc"].startswith("rustc 1.97.1 ")
-                or receipt["tools"]["wasm-tools"] != "wasm-tools 1.254.0"):
+                or receipt["tools"]["wasm-tools"].split()[:2] != ["wasm-tools", "1.254.0"]):
             raise ValueError("unreviewed-toolchain")
         # Format diagnostic copies, never tracked sources. Retain these even if a
         # later compile fails so reviewers can apply a real rustfmt diff.
