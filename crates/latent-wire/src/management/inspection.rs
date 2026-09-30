@@ -7,6 +7,12 @@ use super::{
 
 #[tonic::async_trait]
 impl proto::node_service_server::NodeService for ManagementServiceAdapter {
+    async fn inspect_activation_tree(
+        &self,
+        request: Request<proto::InspectActivationTreeRequest>,
+    ) -> Result<Response<proto::InspectActivationTreeResponse>, Status> {
+        super::activations::inspect(self, request)
+    }
     async fn get_node(
         &self,
         mut request: Request<proto::GetNodeRequest>,

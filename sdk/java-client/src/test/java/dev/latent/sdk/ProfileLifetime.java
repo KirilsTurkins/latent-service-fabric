@@ -30,6 +30,9 @@ final class ProfileLifetime {
     }
 
     private static final class FixtureClient implements Management.ClientProfile {
+        @Override public CompletableFuture<Management.ClientResponse<Management.InspectActivationTreeResponse>> inspectActivationTree(Management.InspectActivationTreeRequest request, Management.CallOptions options) {
+            return ready(new Management.InspectActivationTreeResponse(1, List.of(), Optional.of(new Management.PageResponse(Optional.empty())), false, false, true));
+        }
         private int writes;
         private int waiters;
         private int cancels;

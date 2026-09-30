@@ -116,7 +116,13 @@ async fn remote(cli: &Cli) -> Outcome {
 }
 async fn remote_inner(cli: &Cli) -> Result<Outcome, Failure> {
     let config = config::resolve(cli)?;
-    let operation = if matches!(&cli.command, Command::Invoke(_) | Command::Activation(_)) {
+    let operation = if matches!(
+        &cli.command,
+        Command::Invoke(_)
+            | Command::Activation(
+                args::ActivationCommand::Get(_) | args::ActivationCommand::Cancel(_)
+            )
+    ) {
         invocation::prepare(&cli.command, &config)?
     } else {
         management::prepare(&cli.command, &config)?
@@ -257,6 +263,7 @@ fn name(command: &Command) -> &'static str {
         Command::Invoke(_) => "invoke",
         Command::Activation(A::Get(_)) => "activation get",
         Command::Activation(A::Cancel(_)) => "activation cancel",
+        Command::Activation(A::Tree(_)) => "activation tree",
         Command::Node(N::Get(_)) => "node get",
         Command::Node(N::List(_)) => "node list",
     }

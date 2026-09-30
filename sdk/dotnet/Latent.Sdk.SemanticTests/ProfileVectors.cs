@@ -20,6 +20,93 @@ internal static class ProfileVectors
     internal static void Run()
     {
         {
+            var value = new Profile.ActivationDiagnostic(1U, new Profile.DiagnosticStage(3), new Profile.DiagnosticReason(1), null, null, null, null, null, null, null);
+            Check(value.SchemaVersion == 1U, "diagnostic-absent-profile-and-bound.schema_version");
+            Check(value.Stage.Value == 3, "diagnostic-absent-profile-and-bound.stage");
+            Check(value.Reason.Value == 1, "diagnostic-absent-profile-and-bound.reason");
+            Check(!(value.Profile is not null), "diagnostic-absent-profile-and-bound.profile.presence");
+            Check(!(value.ProfileDigest is not null), "diagnostic-absent-profile-and-bound.profile_digest.presence");
+            Check(!(value.ConfiguredBound is not null), "diagnostic-absent-profile-and-bound.configured_bound.presence");
+            Check(!(value.CalculatedRequirement is not null), "diagnostic-absent-profile-and-bound.calculated_requirement.presence");
+            Check(!(value.FixedBytes is not null), "diagnostic-absent-profile-and-bound.fixed_bytes.presence");
+            Check(!(value.LiftingFuel is not null), "diagnostic-absent-profile-and-bound.lifting_fuel.presence");
+            Check(!(value.LiftMultiplier is not null), "diagnostic-absent-profile-and-bound.lift_multiplier.presence");
+        }
+        {
+            var value = new Profile.ActivationDiagnostic(1U, new Profile.DiagnosticStage(2147483647), new Profile.DiagnosticReason(-1), new Profile.DiagnosticProfile(999), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0UL, 18446744073709551615UL, 9223372036854775808UL, 0UL, 18446744073709551615UL);
+            Check(value.SchemaVersion == 1U, "diagnostic-unknown-enums-and-present-zero.schema_version");
+            Check(value.Stage.Value == 2147483647, "diagnostic-unknown-enums-and-present-zero.stage");
+            Check(value.Reason.Value == -1, "diagnostic-unknown-enums-and-present-zero.reason");
+            Check(value.Profile is not null, "diagnostic-unknown-enums-and-present-zero.profile.presence");
+            Check(value.Profile!.Value.Value == 999, "diagnostic-unknown-enums-and-present-zero.profile");
+            Check(value.ProfileDigest is not null, "diagnostic-unknown-enums-and-present-zero.profile_digest.presence");
+            Check(value.ProfileDigest! == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "diagnostic-unknown-enums-and-present-zero.profile_digest");
+            Check(value.ConfiguredBound is not null, "diagnostic-unknown-enums-and-present-zero.configured_bound.presence");
+            Check(value.ConfiguredBound!.Value == 0UL, "diagnostic-unknown-enums-and-present-zero.configured_bound");
+            Check(value.CalculatedRequirement is not null, "diagnostic-unknown-enums-and-present-zero.calculated_requirement.presence");
+            Check(value.CalculatedRequirement!.Value == 18446744073709551615UL, "diagnostic-unknown-enums-and-present-zero.calculated_requirement");
+            Check(value.FixedBytes is not null, "diagnostic-unknown-enums-and-present-zero.fixed_bytes.presence");
+            Check(value.FixedBytes!.Value == 9223372036854775808UL, "diagnostic-unknown-enums-and-present-zero.fixed_bytes");
+            Check(value.LiftingFuel is not null, "diagnostic-unknown-enums-and-present-zero.lifting_fuel.presence");
+            Check(value.LiftingFuel!.Value == 0UL, "diagnostic-unknown-enums-and-present-zero.lifting_fuel");
+            Check(value.LiftMultiplier is not null, "diagnostic-unknown-enums-and-present-zero.lift_multiplier.presence");
+            Check(value.LiftMultiplier!.Value == 18446744073709551615UL, "diagnostic-unknown-enums-and-present-zero.lift_multiplier");
+        }
+        {
+            var value = new Profile.InspectActivationTreeRequest("activation-a", null);
+            Check(value.ActivationId == "activation-a", "activation-tree-default-page.activation_id");
+            Check(!(value.Page is not null), "activation-tree-default-page.page.presence");
+        }
+        {
+            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {}, new Profile.PageResponse(null), false, true, true);
+            Check(value.SchemaVersion == 1U, "activation-tree-expired-is-not-absence-proof.schema_version");
+            Check(value.Nodes.Count == 0, "activation-tree-expired-is-not-absence-proof.nodes.count");
+            Check(value.Page is not null, "activation-tree-expired-is-not-absence-proof.page.presence");
+            Check(!(value.Page!.NextPageToken is not null), "activation-tree-expired-is-not-absence-proof.page.next_page_token.presence");
+            Check(value.HistoryAvailable == false, "activation-tree-expired-is-not-absence-proof.history_available");
+            Check(value.CursorExpired == true, "activation-tree-expired-is-not-absence-proof.cursor_expired");
+            Check(value.RetainedHistoryOnly == true, "activation-tree-expired-is-not-absence-proof.retained_history_only");
+        }
+        {
+            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {new Profile.ActivationTreeNode("child-a", "root-a", "root-a", "received", "resource_exhausted", 18446744073709551615UL, new Profile.ActivationDiagnostic(1U, new Profile.DiagnosticStage(3), new Profile.DiagnosticReason(1), new Profile.DiagnosticProfile(1), null, 16777216UL, 67108864UL, null, null, null), "service", "adapter", null, null, true)}, new Profile.PageResponse("opaque-scoped-cursor"), true, false, true);
+            Check(value.SchemaVersion == 1U, "activation-tree-failed-preparation-before-guest.schema_version");
+            Check(value.Nodes.Count == 1, "activation-tree-failed-preparation-before-guest.nodes.count");
+            Check(value.Nodes[0].ActivationId == "child-a", "activation-tree-failed-preparation-before-guest.nodes.0.activation_id");
+            Check(value.Nodes[0].ParentActivationId is not null, "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id.presence");
+            Check(value.Nodes[0].ParentActivationId! == "root-a", "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id");
+            Check(value.Nodes[0].RootActivationId == "root-a", "activation-tree-failed-preparation-before-guest.nodes.0.root_activation_id");
+            Check(value.Nodes[0].Phase == "received", "activation-tree-failed-preparation-before-guest.nodes.0.phase");
+            Check(value.Nodes[0].TerminalState is not null, "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state.presence");
+            Check(value.Nodes[0].TerminalState! == "resource_exhausted", "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state");
+            Check(value.Nodes[0].LastUpdatedUnixMillis == 18446744073709551615UL, "activation-tree-failed-preparation-before-guest.nodes.0.last_updated_unix_millis");
+            Check(value.Nodes[0].Diagnostic is not null, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.presence");
+            Check(value.Nodes[0].Diagnostic!.SchemaVersion == 1U, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.schema_version");
+            Check(value.Nodes[0].Diagnostic!.Stage.Value == 3, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.stage");
+            Check(value.Nodes[0].Diagnostic!.Reason.Value == 1, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.reason");
+            Check(value.Nodes[0].Diagnostic!.Profile is not null, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile.presence");
+            Check(value.Nodes[0].Diagnostic!.Profile!.Value.Value == 1, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile");
+            Check(!(value.Nodes[0].Diagnostic!.ProfileDigest is not null), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile_digest.presence");
+            Check(value.Nodes[0].Diagnostic!.ConfiguredBound is not null, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound.presence");
+            Check(value.Nodes[0].Diagnostic!.ConfiguredBound!.Value == 16777216UL, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound");
+            Check(value.Nodes[0].Diagnostic!.CalculatedRequirement is not null, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement.presence");
+            Check(value.Nodes[0].Diagnostic!.CalculatedRequirement!.Value == 67108864UL, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement");
+            Check(!(value.Nodes[0].Diagnostic!.FixedBytes is not null), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.fixed_bytes.presence");
+            Check(!(value.Nodes[0].Diagnostic!.LiftingFuel is not null), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lifting_fuel.presence");
+            Check(!(value.Nodes[0].Diagnostic!.LiftMultiplier is not null), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lift_multiplier.presence");
+            Check(value.Nodes[0].PrincipalKind == "service", "activation-tree-failed-preparation-before-guest.nodes.0.principal_kind");
+            Check(value.Nodes[0].CallerService is not null, "activation-tree-failed-preparation-before-guest.nodes.0.caller_service.presence");
+            Check(value.Nodes[0].CallerService! == "adapter", "activation-tree-failed-preparation-before-guest.nodes.0.caller_service");
+            Check(!(value.Nodes[0].GrantedBudget is not null), "activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence");
+            Check(!(value.Nodes[0].EffectiveDeadlineUnixMillis is not null), "activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence");
+            Check(value.Nodes[0].DiagnosticIsTerminal == true, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
+            Check(value.Page is not null, "activation-tree-failed-preparation-before-guest.page.presence");
+            Check(value.Page!.NextPageToken is not null, "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
+            Check(value.Page!.NextPageToken! == "opaque-scoped-cursor", "activation-tree-failed-preparation-before-guest.page.next_page_token");
+            Check(value.HistoryAvailable == true, "activation-tree-failed-preparation-before-guest.history_available");
+            Check(value.CursorExpired == false, "activation-tree-failed-preparation-before-guest.cursor_expired");
+            Check(value.RetainedHistoryOnly == true, "activation-tree-failed-preparation-before-guest.retained_history_only");
+        }
+        {
             var value = new Profile.InvokeRequest(null, null, null, new Profile.InvocationTarget("tenant-a", "echo", "example:echo/api@1.0.0", "echo", null), new byte[]{0, 1, 2, 255}, "application/octet-stream", null, 0U, null, new Profile.ResourceBudget(18446744073709551615UL, 9223372036854775808UL, 0U, 0U, 0UL, 0UL, 0UL, 0UL, 0UL, 0U, null), new Dictionary<string, string> {{"trace", "redacted"}});
             Check(!(value.ActivationId is not null), "invoke-absent-identity-and-deadlines.activation_id.presence");
             Check(!(value.ParentActivationId is not null), "invoke-absent-identity-and-deadlines.parent_activation_id.presence");
@@ -930,6 +1017,6 @@ internal static class ProfileVectors
         Rejects(() => Profile.UnsignedDecimal.Parse("1\u0000"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\n"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\r\n"));
-        Console.WriteLine("shared profile vectors: 67");
+        Console.WriteLine("shared profile vectors: 72");
     }
 }

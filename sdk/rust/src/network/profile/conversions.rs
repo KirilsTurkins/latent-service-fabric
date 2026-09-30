@@ -897,6 +897,122 @@ impl From<model::PublicationRef> for control::PublicationRef {
     }
 }
 
+impl From<control::ActivationDiagnostic> for model::ActivationDiagnostic {
+    fn from(value: control::ActivationDiagnostic) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            stage: model::DiagnosticStage(value.stage),
+            reason: model::DiagnosticReason(value.reason),
+            profile: value.profile.map(model::DiagnosticProfile),
+            profile_digest: value.profile_digest,
+            configured_bound: value.configured_bound,
+            calculated_requirement: value.calculated_requirement,
+            fixed_bytes: value.fixed_bytes,
+            lifting_fuel: value.lifting_fuel,
+            lift_multiplier: value.lift_multiplier,
+        }
+    }
+}
+
+impl From<model::ActivationDiagnostic> for control::ActivationDiagnostic {
+    fn from(value: model::ActivationDiagnostic) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            stage: value.stage.0,
+            reason: value.reason.0,
+            profile: value.profile.map(|value| value.0),
+            profile_digest: value.profile_digest,
+            configured_bound: value.configured_bound,
+            calculated_requirement: value.calculated_requirement,
+            fixed_bytes: value.fixed_bytes,
+            lifting_fuel: value.lifting_fuel,
+            lift_multiplier: value.lift_multiplier,
+        }
+    }
+}
+
+impl From<control::ActivationTreeNode> for model::ActivationTreeNode {
+    fn from(value: control::ActivationTreeNode) -> Self {
+        Self {
+            activation_id: value.activation_id,
+            parent_activation_id: value.parent_activation_id,
+            root_activation_id: value.root_activation_id,
+            phase: value.phase,
+            terminal_state: value.terminal_state,
+            last_updated_unix_millis: value.last_updated_unix_millis,
+            diagnostic: value.diagnostic.map(Into::into),
+            principal_kind: value.principal_kind,
+            caller_service: value.caller_service,
+            granted_budget: value.granted_budget.map(Into::into),
+            effective_deadline_unix_millis: value.effective_deadline_unix_millis,
+            diagnostic_is_terminal: value.diagnostic_is_terminal,
+        }
+    }
+}
+
+impl From<model::ActivationTreeNode> for control::ActivationTreeNode {
+    fn from(value: model::ActivationTreeNode) -> Self {
+        Self {
+            activation_id: value.activation_id,
+            parent_activation_id: value.parent_activation_id,
+            root_activation_id: value.root_activation_id,
+            phase: value.phase,
+            terminal_state: value.terminal_state,
+            last_updated_unix_millis: value.last_updated_unix_millis,
+            diagnostic: value.diagnostic.map(Into::into),
+            principal_kind: value.principal_kind,
+            caller_service: value.caller_service,
+            granted_budget: value.granted_budget.map(Into::into),
+            effective_deadline_unix_millis: value.effective_deadline_unix_millis,
+            diagnostic_is_terminal: value.diagnostic_is_terminal,
+        }
+    }
+}
+
+impl From<control::InspectActivationTreeRequest> for model::InspectActivationTreeRequest {
+    fn from(value: control::InspectActivationTreeRequest) -> Self {
+        Self {
+            activation_id: value.activation_id,
+            page: value.page.map(Into::into),
+        }
+    }
+}
+
+impl From<model::InspectActivationTreeRequest> for control::InspectActivationTreeRequest {
+    fn from(value: model::InspectActivationTreeRequest) -> Self {
+        Self {
+            activation_id: value.activation_id,
+            page: value.page.map(Into::into),
+        }
+    }
+}
+
+impl From<control::InspectActivationTreeResponse> for model::InspectActivationTreeResponse {
+    fn from(value: control::InspectActivationTreeResponse) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            nodes: value.nodes.into_iter().map(Into::into).collect(),
+            page: value.page.map(Into::into),
+            history_available: value.history_available,
+            cursor_expired: value.cursor_expired,
+            retained_history_only: value.retained_history_only,
+        }
+    }
+}
+
+impl From<model::InspectActivationTreeResponse> for control::InspectActivationTreeResponse {
+    fn from(value: model::InspectActivationTreeResponse) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            nodes: value.nodes.into_iter().map(Into::into).collect(),
+            page: value.page.map(Into::into),
+            history_available: value.history_available,
+            cursor_expired: value.cursor_expired,
+            retained_history_only: value.retained_history_only,
+        }
+    }
+}
+
 impl From<invocation::ResourceBudget> for model::ResourceBudget {
     fn from(value: invocation::ResourceBudget) -> Self {
         Self {

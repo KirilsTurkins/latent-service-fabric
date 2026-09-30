@@ -6,6 +6,384 @@ use std::collections::BTreeMap;
 #[test]
 fn shared_profile_vectors() {
     {
+        let value = ActivationDiagnostic {
+            schema_version: 1_u32,
+            stage: DiagnosticStage(3),
+            reason: DiagnosticReason(1),
+            ..Default::default()
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "diagnostic-absent-profile-and-bound.schema_version"
+        );
+        assert_eq!(
+            value.stage.0, 3,
+            "diagnostic-absent-profile-and-bound.stage"
+        );
+        assert_eq!(
+            value.reason.0, 1,
+            "diagnostic-absent-profile-and-bound.reason"
+        );
+        assert!(
+            value.profile.is_none(),
+            "diagnostic-absent-profile-and-bound.profile.presence"
+        );
+        assert!(
+            value.profile_digest.is_none(),
+            "diagnostic-absent-profile-and-bound.profile_digest.presence"
+        );
+        assert!(
+            value.configured_bound.is_none(),
+            "diagnostic-absent-profile-and-bound.configured_bound.presence"
+        );
+        assert!(
+            value.calculated_requirement.is_none(),
+            "diagnostic-absent-profile-and-bound.calculated_requirement.presence"
+        );
+        assert!(
+            value.fixed_bytes.is_none(),
+            "diagnostic-absent-profile-and-bound.fixed_bytes.presence"
+        );
+        assert!(
+            value.lifting_fuel.is_none(),
+            "diagnostic-absent-profile-and-bound.lifting_fuel.presence"
+        );
+        assert!(
+            value.lift_multiplier.is_none(),
+            "diagnostic-absent-profile-and-bound.lift_multiplier.presence"
+        );
+    }
+    {
+        let value = ActivationDiagnostic {
+            schema_version: 1_u32,
+            stage: DiagnosticStage(2_147_483_647),
+            reason: DiagnosticReason(-1),
+            profile: Some(DiagnosticProfile(999)),
+            profile_digest: Some(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            ),
+            configured_bound: Some(0_u64),
+            calculated_requirement: Some(18_446_744_073_709_551_615_u64),
+            fixed_bytes: Some(9_223_372_036_854_775_808_u64),
+            lifting_fuel: Some(0_u64),
+            lift_multiplier: Some(18_446_744_073_709_551_615_u64),
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "diagnostic-unknown-enums-and-present-zero.schema_version"
+        );
+        assert_eq!(
+            value.stage.0, 2_147_483_647,
+            "diagnostic-unknown-enums-and-present-zero.stage"
+        );
+        assert_eq!(
+            value.reason.0, -1,
+            "diagnostic-unknown-enums-and-present-zero.reason"
+        );
+        assert!(
+            value.profile.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.profile.presence"
+        );
+        assert_eq!(
+            value.profile.unwrap().0,
+            999,
+            "diagnostic-unknown-enums-and-present-zero.profile"
+        );
+        assert!(
+            value.profile_digest.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.profile_digest.presence"
+        );
+        assert_eq!(
+            value.profile_digest.as_deref().unwrap(),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "diagnostic-unknown-enums-and-present-zero.profile_digest"
+        );
+        assert!(
+            value.configured_bound.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.configured_bound.presence"
+        );
+        assert_eq!(
+            value.configured_bound.unwrap(),
+            0_u64,
+            "diagnostic-unknown-enums-and-present-zero.configured_bound"
+        );
+        assert!(
+            value.calculated_requirement.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.calculated_requirement.presence"
+        );
+        assert_eq!(
+            value.calculated_requirement.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "diagnostic-unknown-enums-and-present-zero.calculated_requirement"
+        );
+        assert!(
+            value.fixed_bytes.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.fixed_bytes.presence"
+        );
+        assert_eq!(
+            value.fixed_bytes.unwrap(),
+            9_223_372_036_854_775_808_u64,
+            "diagnostic-unknown-enums-and-present-zero.fixed_bytes"
+        );
+        assert!(
+            value.lifting_fuel.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.lifting_fuel.presence"
+        );
+        assert_eq!(
+            value.lifting_fuel.unwrap(),
+            0_u64,
+            "diagnostic-unknown-enums-and-present-zero.lifting_fuel"
+        );
+        assert!(
+            value.lift_multiplier.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.lift_multiplier.presence"
+        );
+        assert_eq!(
+            value.lift_multiplier.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "diagnostic-unknown-enums-and-present-zero.lift_multiplier"
+        );
+    }
+    {
+        let value = InspectActivationTreeRequest {
+            activation_id: "activation-a".into(),
+            ..Default::default()
+        };
+        assert_eq!(
+            value.activation_id, "activation-a",
+            "activation-tree-default-page.activation_id"
+        );
+        assert!(
+            value.page.is_none(),
+            "activation-tree-default-page.page.presence"
+        );
+    }
+    {
+        let value = InspectActivationTreeResponse {
+            schema_version: 1_u32,
+            nodes: vec![],
+            page: Some(PageResponse {
+                ..Default::default()
+            }),
+            history_available: false,
+            cursor_expired: true,
+            retained_history_only: true,
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "activation-tree-expired-is-not-absence-proof.schema_version"
+        );
+        assert_eq!(
+            value.nodes.len(),
+            0,
+            "activation-tree-expired-is-not-absence-proof.nodes.count"
+        );
+        assert!(
+            value.page.is_some(),
+            "activation-tree-expired-is-not-absence-proof.page.presence"
+        );
+        assert!(
+            value.page.as_ref().unwrap().next_page_token.is_none(),
+            "activation-tree-expired-is-not-absence-proof.page.next_page_token.presence"
+        );
+        assert!(
+            !value.history_available,
+            "activation-tree-expired-is-not-absence-proof.history_available"
+        );
+        assert!(
+            value.cursor_expired,
+            "activation-tree-expired-is-not-absence-proof.cursor_expired"
+        );
+        assert!(
+            value.retained_history_only,
+            "activation-tree-expired-is-not-absence-proof.retained_history_only"
+        );
+    }
+    {
+        let value = InspectActivationTreeResponse {
+            schema_version: 1_u32,
+            nodes: vec![ActivationTreeNode {
+                activation_id: "child-a".into(),
+                parent_activation_id: Some("root-a".into()),
+                root_activation_id: "root-a".into(),
+                phase: "received".into(),
+                terminal_state: Some("resource_exhausted".into()),
+                last_updated_unix_millis: 18_446_744_073_709_551_615_u64,
+                diagnostic: Some(ActivationDiagnostic {
+                    schema_version: 1_u32,
+                    stage: DiagnosticStage(3),
+                    reason: DiagnosticReason(1),
+                    profile: Some(DiagnosticProfile(1)),
+                    configured_bound: Some(16_777_216_u64),
+                    calculated_requirement: Some(67_108_864_u64),
+                    ..Default::default()
+                }),
+                principal_kind: "service".into(),
+                caller_service: Some("adapter".into()),
+                diagnostic_is_terminal: true,
+                ..Default::default()
+            }],
+            page: Some(PageResponse {
+                next_page_token: Some("opaque-scoped-cursor".into()),
+            }),
+            history_available: true,
+            cursor_expired: false,
+            retained_history_only: true,
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "activation-tree-failed-preparation-before-guest.schema_version"
+        );
+        assert_eq!(
+            value.nodes.len(),
+            1,
+            "activation-tree-failed-preparation-before-guest.nodes.count"
+        );
+        assert_eq!(
+            value.nodes[0].activation_id, "child-a",
+            "activation-tree-failed-preparation-before-guest.nodes.0.activation_id"
+        );
+        assert!(
+            value.nodes[0].parent_activation_id.is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id.presence"
+        );
+        assert_eq!(
+            value.nodes[0].parent_activation_id.as_deref().unwrap(),
+            "root-a",
+            "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id"
+        );
+        assert_eq!(
+            value.nodes[0].root_activation_id, "root-a",
+            "activation-tree-failed-preparation-before-guest.nodes.0.root_activation_id"
+        );
+        assert_eq!(
+            value.nodes[0].phase, "received",
+            "activation-tree-failed-preparation-before-guest.nodes.0.phase"
+        );
+        assert!(
+            value.nodes[0].terminal_state.is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state.presence"
+        );
+        assert_eq!(
+            value.nodes[0].terminal_state.as_deref().unwrap(),
+            "resource_exhausted",
+            "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state"
+        );
+        assert_eq!(
+            value.nodes[0].last_updated_unix_millis, 18_446_744_073_709_551_615_u64,
+            "activation-tree-failed-preparation-before-guest.nodes.0.last_updated_unix_millis"
+        );
+        assert!(
+            value.nodes[0].diagnostic.is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.presence"
+        );
+        assert_eq!(
+            value.nodes[0].diagnostic.as_ref().unwrap().schema_version,
+            1_u32,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.schema_version"
+        );
+        assert_eq!(
+            value.nodes[0].diagnostic.as_ref().unwrap().stage.0,
+            3,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.stage"
+        );
+        assert_eq!(
+            value.nodes[0].diagnostic.as_ref().unwrap().reason.0,
+            1,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.reason"
+        );
+        assert!(
+            value.nodes[0]
+                .diagnostic
+                .as_ref()
+                .unwrap()
+                .profile
+                .is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile.presence"
+        );
+        assert_eq!(
+            value.nodes[0]
+                .diagnostic
+                .as_ref()
+                .unwrap()
+                .profile
+                .unwrap()
+                .0,
+            1,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile"
+        );
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().profile_digest.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile_digest.presence");
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().configured_bound.is_some(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound.presence");
+        assert_eq!(
+            value.nodes[0]
+                .diagnostic
+                .as_ref()
+                .unwrap()
+                .configured_bound
+                .unwrap(),
+            16_777_216_u64,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound"
+        );
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().calculated_requirement.is_some(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement.presence");
+        assert_eq!(value.nodes[0].diagnostic.as_ref().unwrap().calculated_requirement.unwrap(), 67_108_864_u64, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement");
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().fixed_bytes.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.fixed_bytes.presence");
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().lifting_fuel.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lifting_fuel.presence");
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().lift_multiplier.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lift_multiplier.presence");
+        assert_eq!(
+            value.nodes[0].principal_kind, "service",
+            "activation-tree-failed-preparation-before-guest.nodes.0.principal_kind"
+        );
+        assert!(
+            value.nodes[0].caller_service.is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.caller_service.presence"
+        );
+        assert_eq!(
+            value.nodes[0].caller_service.as_deref().unwrap(),
+            "adapter",
+            "activation-tree-failed-preparation-before-guest.nodes.0.caller_service"
+        );
+        assert!(
+            value.nodes[0].granted_budget.is_none(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence"
+        );
+        assert!(value.nodes[0].effective_deadline_unix_millis.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence");
+        assert!(
+            value.nodes[0].diagnostic_is_terminal,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal"
+        );
+        assert!(
+            value.page.is_some(),
+            "activation-tree-failed-preparation-before-guest.page.presence"
+        );
+        assert!(
+            value.page.as_ref().unwrap().next_page_token.is_some(),
+            "activation-tree-failed-preparation-before-guest.page.next_page_token.presence"
+        );
+        assert_eq!(
+            value
+                .page
+                .as_ref()
+                .unwrap()
+                .next_page_token
+                .as_deref()
+                .unwrap(),
+            "opaque-scoped-cursor",
+            "activation-tree-failed-preparation-before-guest.page.next_page_token"
+        );
+        assert!(
+            value.history_available,
+            "activation-tree-failed-preparation-before-guest.history_available"
+        );
+        assert!(
+            !value.cursor_expired,
+            "activation-tree-failed-preparation-before-guest.cursor_expired"
+        );
+        assert!(
+            value.retained_history_only,
+            "activation-tree-failed-preparation-before-guest.retained_history_only"
+        );
+    }
+    {
         let value = InvokeRequest {
             target: Some(InvocationTarget {
                 tenant: "tenant-a".into(),

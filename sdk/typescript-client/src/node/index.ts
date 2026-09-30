@@ -46,6 +46,7 @@ export class RpcClient implements profile.ClientProfile {
   invoke(request: profile.InvokeRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.InvokeResponse>> { return this.call("invoke", request, options); }
   cancel(request: profile.CancelRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.CancelResponse>> { return this.call("cancel", request, options); }
   getActivation(request: profile.GetActivationRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.ActivationStatus>> { return this.call("getActivation", request, options); }
+  inspectActivationTree(request: profile.InspectActivationTreeRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.InspectActivationTreeResponse>> { return this.call("inspectActivationTree", request, options); }
   getPolicy(request: profile.GetPolicyRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.GetPolicyResponse>> { return this.call("getPolicy", request, options); }
   listPolicies(request: profile.ListPoliciesRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.ListPoliciesResponse>> { return this.call("listPolicies", request, options); }
   listCapabilities(request: profile.ListCapabilitiesRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.ListCapabilitiesResponse>> { return this.call("listCapabilities", request, options); }
@@ -109,7 +110,7 @@ export class RpcClient implements profile.ClientProfile {
     let context: unknown;
     try {
       validateRequest(operation, request, this.#tenant);
-      encoded = encode(method(operation).input, request, this.#limits.maximumRequestBytes);
+      encoded = encode(method(operation).input, request, operation === "inspectActivationTree" ? Math.min(8192, this.#limits.maximumRequestBytes) : this.#limits.maximumRequestBytes);
       const value = request as Record<string, unknown>;
       context = {
         ...recovery,
@@ -140,7 +141,7 @@ export class RpcClient implements profile.ClientProfile {
       });
       return exchange(stream, frame, {
         operation, request: context, tenant: this.#tenant, identity: recovery, deadline,
-        maximum: this.#limits.maximumResponseBytes, signal: options.signal,
+        maximum: operation === "inspectActivationTree" ? Math.min(65536, this.#limits.maximumResponseBytes) : this.#limits.maximumResponseBytes, signal: options.signal,
         closed: () => this.#channel.closed, retired: retire,
       });
     } catch {
