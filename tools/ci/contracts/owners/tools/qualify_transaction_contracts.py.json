@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_transaction_contracts.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Measure compiled shapes using all six existing maintained language compiler owners",
+  "reviewReason": "Use exact maintained Rust binary selection and captured managed SDK context; preserve all pinned versions and compiler qualification gates",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3ef8990a629f05dd4686b30cf475d824accf772bb269a32e6ecae4d5b1063179"
+  "sha256": "3521315ab0f94e3ee9db24c6669c690847854dd4e5f2c8329a0a4239e2867b01"
 }
