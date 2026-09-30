@@ -21,6 +21,18 @@ HEADER = "void exports_examples_sample_api_run(uint64_t value, sample_result_t *
 
 
 class Bindings(unittest.TestCase):
+    def test_documented_interface_reference_preserves_semantics_and_validates_identity(self):
+        original = document()
+        expected = java.generate(Graph(original, "service", HEADER))
+        annotated = deepcopy(original)
+        reference = annotated["worlds"][0]["exports"]["interface-0"]["interface"]
+        reference["docs"] = {"contents": "Authoritative principal, trace and deadline are host context."}
+        self.assertEqual(java.generate(Graph(annotated, "service", HEADER)), expected)
+        for field, value in (("id", True), ("id", 999), ("docs", {"contents": 7}), ("authority", "public")):
+            changed = deepcopy(annotated)
+            changed["worlds"][0]["exports"]["interface-0"]["interface"][field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError): Graph(changed, "service", HEADER)
+
     def test_surface_preserves_async_width_identity_and_ignores_parser_ids(self):
         original = document()
         expected = surface(original, "service")

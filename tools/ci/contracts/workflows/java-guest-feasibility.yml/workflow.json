@@ -19,6 +19,7 @@
           "schemas/**",
           "Cargo.*",
           "docs/component-development/java-authoring.md",
+          "docs/component-development/java-httpserver.md",
           ".github/workflows/java-guest-feasibility.yml",
           "wit/platform/**"
         ]
@@ -32,7 +33,7 @@
   "requiredJobs": [
     "compiler-component"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add the exact Java server guide path while preserving required Java compiler job, branches, permissions and concurrency.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

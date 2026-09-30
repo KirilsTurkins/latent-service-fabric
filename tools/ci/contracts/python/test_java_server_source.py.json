@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "JavaServerSource.test_bridge_calls_original_main_and_checks_captured_registration",
+    "JavaServerSource.test_forged_original_main_world_or_application_bridge_is_rejected",
+    "JavaServerSource.test_invalid_or_conflicting_captured_routes_cannot_be_generated",
+    "JavaServerSource.test_new_project_uses_ordinary_source_and_no_application_adapter",
+    "JavaServerSource.test_selected_profile_cannot_advertise_fewer_owners_than_its_plan",
+    "JavaServerSource.test_selection_rejects_code_expressions_reserved_owners_and_unknown_profiles"
+  ],
+  "guards": {
+    "JavaServerSource.test_bridge_calls_original_main_and_checks_captured_registration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2e6c170b1a85fbe029c536e912e63e39742632ad5a1dea4977e51aaffd47199b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaServerSource.test_forged_original_main_world_or_application_bridge_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2e6c170b1a85fbe029c536e912e63e39742632ad5a1dea4977e51aaffd47199b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaServerSource.test_invalid_or_conflicting_captured_routes_cannot_be_generated": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2e6c170b1a85fbe029c536e912e63e39742632ad5a1dea4977e51aaffd47199b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaServerSource.test_new_project_uses_ordinary_source_and_no_application_adapter": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2e6c170b1a85fbe029c536e912e63e39742632ad5a1dea4977e51aaffd47199b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaServerSource.test_selected_profile_cannot_advertise_fewer_owners_than_its_plan": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2e6c170b1a85fbe029c536e912e63e39742632ad5a1dea4977e51aaffd47199b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaServerSource.test_selection_rejects_code_expressions_reserved_owners_and_unknown_profiles": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2e6c170b1a85fbe029c536e912e63e39742632ad5a1dea4977e51aaffd47199b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_server_source.py",
+  "reviewReason": "Six captured-profile/bridge/selection cases with no skips; actual compiler and listener evidence stays separate.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

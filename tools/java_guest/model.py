@@ -47,9 +47,18 @@ class Graph:
         self.export_ids = set()
         for direction in ("imports", "exports"):
             for key, item in self.world[direction].items():
-                if set(item) != {"interface"} or set(item["interface"]) != {"id"}:
+                if set(item) != {"interface"} or not isinstance(item["interface"], dict):
                     raise ValueError("Java profile requires named interface imports and exports")
-                interface_id = item["interface"]["id"]
+                reference = item["interface"]
+                if not {"id"} <= reference.keys() <= {"id", "docs"}:
+                    raise ValueError("Java profile requires named interface imports and exports")
+                documentation = reference.get("docs")
+                if documentation is not None and (not isinstance(documentation, dict)
+                        or set(documentation) != {"contents"} or not isinstance(documentation["contents"], str)):
+                    raise ValueError("invalid WIT interface documentation")
+                interface_id = reference["id"]
+                if type(interface_id) is not int or not 0 <= interface_id < len(data["interfaces"]):
+                    raise ValueError("invalid WIT interface reference")
                 interface = data["interfaces"][interface_id]
                 if interface.get("package") is None or not interface.get("name"):
                     raise ValueError("Java profile rejects anonymous inline WIT interfaces")

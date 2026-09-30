@@ -149,7 +149,7 @@ def binding_check(work: Path, pins: dict, command: Commands, bindgen: Path) -> s
 
 
 def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, bytes], component: bytes,
-                   *, additional_resources=()) -> None:
+                   *, additional_resources=(), additional_assets=()) -> None:
     manifest = read_json(ROOT / "examples/echo-contract/capsule.json")
     manifest["metadata"] = {"name": project["service"], "tenant": project["tenant"]}
     if project["tenant"] is None:
@@ -169,6 +169,14 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
     guest_compatibility_build.package_report(output, files, component)
     layers.append(("compatibility-report.json", "asset", "application/vnd.latent.guest.compatibility.v1+json"))
     layers.extend(guest_resources.assemble(output, files, component, additional_resources=additional_resources))
+    if len(additional_assets) > 8: raise ValueError("additional compiler asset limit")
+    for name, role, media in additional_assets:
+        if (not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", name)
+                or name in {layer[0] for layer in layers} or role != "asset"
+                or not isinstance(media, str) or not re.fullmatch(r"application/[A-Za-z0-9.+-]{1,128}", media)):
+            raise ValueError("invalid or conflicting compiler asset")
+        read_file(output / name, 1024 * 1024)
+        layers.append((name, role, media))
     for name, data in files.items():
         if name.startswith("wit/") and name.endswith(".wit"):
             path = output / name

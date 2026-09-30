@@ -60,12 +60,22 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
 
 
 def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
-    if not {"capsule-project.json", "sdk-lock.json", "src/dev/latent/app/Capsule.java", "wit/world.wit"} <= files.keys():
+    if not {"capsule-project.json", "sdk-lock.json", "wit/world.wit"} <= files.keys():
         raise ValueError("incomplete Java capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
-    if (not isinstance(project, dict) or set(project) != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    required = {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    if (not isinstance(project, dict) or not required <= project.keys() <= required | {"server"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported Java capsule project format")
+    if "server" in project:
+        from tools.java_server_source import selection
+        selected = selection(project["server"])
+        if (project["world"] != "latent:web/application-service@0.1.0"
+                or "src/" + selected["entryPoint"].replace(".", "/") + ".java" not in files
+                or "src/dev/latent/app/Capsule.java" in files):
+            raise ValueError("server source requires its original main and authoritative web world")
+    elif "src/dev/latent/app/Capsule.java" not in files:
+        raise ValueError("incomplete Java capsule project")
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid Java capsule name")
     if (not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "service", "world"))

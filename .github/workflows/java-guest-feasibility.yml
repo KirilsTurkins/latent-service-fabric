@@ -11,6 +11,7 @@ on:
       - 'schemas/**'
       - 'Cargo.*'
       - 'docs/component-development/java-authoring.md'
+      - 'docs/component-development/java-httpserver.md'
       - '.github/workflows/java-guest-feasibility.yml'
       - 'wit/platform/**'
   workflow_dispatch:
@@ -60,6 +61,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '25.0.4+101.0.LTS'
+      - name: Compare server AST and exchange semantics with the pinned JDK
+        run: python3 tools/qualify_java_server_analysis.py --output "$RUNNER_TEMP/java-server-native"
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
@@ -118,6 +121,7 @@ jobs:
             ${{ runner.temp }}/java-guest-bindings/compiler/*.command.json
             ${{ runner.temp }}/java-guest-bindings/compiler-inputs.json
             ${{ runner.temp }}/java-guest-bindings/runtime-probe.log
+            ${{ runner.temp }}/java-server-native/**
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
             ${{ runner.temp }}/java-capsule-authoring.log
