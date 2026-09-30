@@ -1598,6 +1598,7 @@ dependencies = [
  "latent-manifest",
  "latent-policy",
  "latent-routing",
+ "latent-state",
  "latent-telemetry",
  "rustix",
  "serde",
