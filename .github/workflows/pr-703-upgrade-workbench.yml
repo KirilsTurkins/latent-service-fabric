@@ -6,59 +6,40 @@ on:
 permissions:
   contents: read
 jobs:
-  reconcile:
+  inputs:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: 711c5773eab56487270b95d395bb6e4879394ea7
-          fetch-depth: 1
           persist-credentials: false
-      - name: Export source-sized snapshot objects, without historical evidence archives
-        shell: bash
+      - name: Acquire only authenticated npm input archives without executing them
         run: |
-          set -euo pipefail
-          for sha in aaa4191436ef07e5a8739f411f63a1a85f99701f 10dc4c35fea30a4b67afc1e111054f75167b6166 f92fd1d7d204e7f0a8d6a2974a6042d025ec4f38 7aa1ae07c7ceed1c6ab32b6cdeb5b46ba31f750e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61; do
-            git fetch --no-tags --depth=1 origin "$sha"
-          done
           python3 - <<'PY'
-          import os, pathlib, subprocess
-          refs = '711c5773eab56487270b95d395bb6e4879394ea7 aaa4191436ef07e5a8739f411f63a1a85f99701f 10dc4c35fea30a4b67afc1e111054f75167b6166 f92fd1d7d204e7f0a8d6a2974a6042d025ec4f38 7aa1ae07c7ceed1c6ab32b6cdeb5b46ba31f750e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61'.split()
-          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'compact'
-          subprocess.run(['git', 'init', str(root)], check=True)
-          objects = set(refs)
-          excluded = []
-          for ref in refs:
-              objects.add(subprocess.check_output(['git', 'rev-parse', ref + '^{tree}'], text=True).strip())
-              for row in subprocess.check_output(['git', 'ls-tree', '-r', '-t', '-l', ref], text=True).splitlines():
-                  meta, path = row.split('\t', 1)
-                  mode, kind, sha, size = meta.split()
-                  if kind == 'blob' and int(size) > 2 * 1024 * 1024:
-                      excluded.append((ref, path, size))
-                  else:
-                      objects.add(sha)
-          subprocess.run(['git', 'pack-objects', str(root / '.git/objects/pack/snapshot')], input='\n'.join(sorted(objects))+'\n', text=True, check=True)
-          (root / '.git/HEAD').write_text(refs[0]+'\n')
-          (root / '.git/shallow').write_text('\n'.join(refs)+'\n')
-          for ref in refs:
-              subprocess.run(['git', '-C', str(root), 'update-ref', 'refs/snapshots/'+ref, ref], check=True)
-          (root / 'excluded.tsv').write_text('\n'.join('\t'.join(row) for row in excluded)+'\n')
-          print('Retained objects:', len(objects), 'Excluded archive entries:', len(excluded))
+          import importlib.util, json, os, pathlib, tarfile
+          spec = importlib.util.spec_from_file_location('npm_prepare', 'website/toolchain/prepare.py')
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          pins = json.loads(pathlib.Path('website/toolchain/source.json').read_text())
+          pins['patches'][0]['version'] = '10.7.2'
+          pins['patches'][0]['integrity'] = 'sha512-7H/2gFSIitxc0hG3nOI1glS8QLo/EHBFFLk8vEUjXY/xu0AdL8jZ9U1IzO2PUm0d2D/ofQcAifb0g6OBkt8U7w=='
+          pins['patches'].append({'name':'brace-expansion', 'from':'5.0.9', 'version':'5.0.12', 'integrity':'sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ=='})
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])
+          cache = root / 'npm-inputs'
+          for pin in [pins['base'], *pins['patches']]:
+              raw = module.acquire(pin, cache, False)
+              manifest = module.package(module.unpack(raw))
+              assert manifest['name'] == pin['name'] and manifest['version'] == pin['version']
+              print(pin['name'], pin['version'], module.integrity(raw), manifest.get('dependencies', {}))
+          with tarfile.open(root / 'pr703-npm-inputs.tar.gz', 'w:gz') as archive:
+              for path in sorted(cache.iterdir()):
+                  archive.add(path, arcname=path.name)
           PY
-          tar -czf "$RUNNER_TEMP/pr703-source.tar.gz" -C "$RUNNER_TEMP/compact" .git excluded.tsv
-          stat -c %s "$RUNNER_TEMP/pr703-source.tar.gz"
-          test "$(stat -c %s "$RUNNER_TEMP/pr703-source.tar.gz")" -le 134217728
-          sha256sum "$RUNNER_TEMP/pr703-source.tar.gz"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: pr703-source-objects
-          path: ${{ runner.temp }}/pr703-source.tar.gz
+          name: pr703-npm-inputs
+          path: ${{ runner.temp }}/pr703-npm-inputs.tar.gz
           retention-days: 1
           compression-level: 0
           if-no-files-found: error
-      - name: Diagnose the development merge without changing remote branches
-        shell: bash
-        run: |
-          set -euo pipefail
-          git merge-tree --write-tree --merge-base=10dc4c35fea30a4b67afc1e111054f75167b6166 aaa4191436ef07e5a8739f411f63a1a85f99701f 711c5773eab56487270b95d395bb6e4879394ea7 || test "$?" = 1
