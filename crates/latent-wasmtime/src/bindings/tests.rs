@@ -163,6 +163,27 @@ fn frozen_schema_matrix_matches_host_shapes_identity_and_generated_sdk_baseline(
             )
         );
         assert_eq!(entry["asynchronous"], spec.asynchronous);
+        // The ABI-wide flag identifies an interface containing async work,
+        // not the kind of every individual WIT function in a mixed interface.
+        let mut resolve = wit_parser::Resolve::default();
+        let package = resolve.push_str("host.wit", spec.wit).unwrap();
+        let name = spec
+            .interface
+            .split('@')
+            .next()
+            .unwrap()
+            .rsplit('/')
+            .next()
+            .unwrap();
+        let interface = resolve.packages[package].interfaces[name];
+        for (operation, function) in &resolve.interfaces[interface].functions {
+            assert_eq!(
+                spec.operation_is_asynchronous(operation),
+                function.kind.is_async(),
+                "{}::{operation}",
+                spec.interface,
+            );
+        }
         assert_eq!(
             entry["binding"],
             if spec.binding == HostInterfaceBinding::BuiltIn {
