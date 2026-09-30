@@ -10,6 +10,54 @@ use latent_policy::supply_chain::SupplyChainPolicy;
 use super::fixture::{Fence, Fixture, Timer};
 
 #[tokio::test(flavor = "current_thread", start_paused = true)]
+async fn readiness_inspection_refuses_expired_original_admission_without_refresh() {
+    let f = Fixture::new().await;
+    let ready = f.ready().await;
+    f.clock.0.fetch_add(5, Ordering::SeqCst);
+    let error = f.backend.inspect_ready(ready).unwrap_err();
+    assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
+    assert_eq!(f.backend.resource_snapshot().stores_created, 0);
+    assert_eq!(f.backend.active_instance_reservations(), 0);
+    f.idle();
+}
+
+#[tokio::test(flavor = "current_thread", start_paused = true)]
+async fn readiness_inspection_uses_actual_profile_and_retires_without_a_guest_store() {
+    let f = Fixture::new().await;
+    let ready = f.ready().await;
+    let key = ready.descriptor().key.clone();
+    let jobs = f.backend.compiler_snapshot().jobs_started;
+    let report = f.backend.inspect_ready(ready).unwrap();
+    assert_eq!(report.key, key);
+    assert_eq!(
+        report.profile,
+        latent_core::diagnostic::DiagnosticProfile::WasmtimeServiceValuesV1
+    );
+    assert!(report.function_count > 0);
+    assert!(report.hostcall_fuel > 0);
+    assert!(report.maximum_lifted_bytes > 0);
+    assert_eq!(f.backend.resource_snapshot().stores_created, 0);
+    assert_eq!(f.backend.active_instance_reservations(), 0);
+    assert_eq!(f.backend.compiler_snapshot().jobs_started, jobs);
+    f.idle();
+}
+
+#[tokio::test(flavor = "current_thread", start_paused = true)]
+async fn readiness_inspection_refuses_another_factory_and_releases_original_pin() {
+    let first = Fixture::new().await;
+    let other = Fixture::new().await;
+    let ready = first.ready().await;
+    assert_eq!(
+        other.backend.inspect_ready(ready).unwrap_err().code,
+        PlatformErrorCode::InvalidArgument
+    );
+    assert_eq!(first.backend.resource_snapshot().stores_created, 0);
+    assert_eq!(other.backend.resource_snapshot().stores_created, 0);
+    first.idle();
+    other.idle();
+}
+
+#[tokio::test(flavor = "current_thread", start_paused = true)]
 async fn busy_materialization_retains_exact_readiness_and_materializes_once_after_release() {
     let f = Fixture::new().await;
     let ready = f.ready().await;
