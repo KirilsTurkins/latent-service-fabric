@@ -41,8 +41,15 @@ Both complete codec profiles, the profile-selection revision and all revised
 limits participate in compiler/prepared/authenticated native-cache identity.
 The native-cache restart regression changes a buffered-web bound while retaining
 the source, signing key and catalog; the old image cannot reach the loader.
-The former globally widened HTTP policy's rejection is retained as a signature
-regression, without rewriting any historical receipt.
+The former globally widened HTTP policy's rejection is retained through the
+ordinary managed preparation owner using the identical signed Java bytes. A
+separate disposable node selects the closed `developmentPreparation` profile,
+which requires explicit consent, loopback and local experimental isolation and
+rejects HTTP ingress, renderers and isolated AOT. The authorized activation tree
+records the actual configured bound, required allocation, fixed bytes, lifting
+fuel, multiplier and profile identity; public Invoke stays redacted. This
+development fixture preserves the historical receipt and does not recreate the
+unavailable reporting application.
 
 ## Executable qualification
 
@@ -52,6 +59,7 @@ executables used by the Java authoring owner:
 
 ```bash
 cargo --config .cargo/managed-guest.toml build --locked -p latent -p latentd --bins \
+  --features latentd/development-test-node \
   -p latent-packaging --example package --example capsule_contracts \
   -p latent-policy --example capsule_authoring
 python3 tools/qualify_java_http_composition.py \
@@ -63,7 +71,9 @@ Choose a new absolute output each time. The owner captures the actual checkout,
 compiler inputs, independent component/package/source identities and generated
 bindings. It signs only after both builds finish, using disposable short-lived
 demo trust, admits through the real enforced supply-chain verifier, and executes
-the identical components under standalone and HTTP-enabled node profiles.
+the identical components under former-global, current standalone and current
+HTTP-enabled node profiles. The optional development feature is compiled into
+these qualification executables solely for the consented reproduction.
 Compilation receives no signing keys. Failed attempts keep their original
 `BUILD-FAILED.json`, `QUALIFICATION-FAILED.json`, node receipts and bounded logs.
 

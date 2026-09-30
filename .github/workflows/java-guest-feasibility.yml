@@ -130,6 +130,7 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring.log
             ${{ runner.temp }}/java-http-composition.log
             ${{ runner.temp }}/java-http-composition/**/*.json
+            ${{ runner.temp }}/java-http-composition/**/*.log
             ${{ runner.temp }}/java-http-composition/**/component.wasm
             ${{ runner.temp }}/java-http-composition/**/compiler-logs/**
             ${{ runner.temp }}/java-http-composition/**/generated-bindings/**
