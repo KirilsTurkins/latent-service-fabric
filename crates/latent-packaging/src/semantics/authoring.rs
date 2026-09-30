@@ -120,7 +120,11 @@ pub fn derive_capsule_contracts(
     Ok(CapsuleContractInputs {
         contracts,
         lock,
-        imports: surface.imports.into_keys().collect(),
+        imports: surface
+            .imports
+            .into_keys()
+            .filter(|name| host::recognizes(name))
+            .collect(),
         exports: surface.exports.into_keys().collect(),
     })
 }
