@@ -83,6 +83,10 @@ pub(super) fn wasmtime(
             limits,
         });
     }
+    #[cfg(feature = "development-test-node")]
+    if let Some(profile) = &config.development_preparation {
+        profile.apply(config, &mut runtime)?;
+    }
     runtime.validate().map_err(|_| invalid("wasmtime"))?;
     Ok(runtime)
 }
