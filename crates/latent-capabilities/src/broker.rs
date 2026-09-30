@@ -14,6 +14,8 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 mod audit;
 mod clock;
 pub use clock::HostClock;
+mod currentness;
+pub use currentness::is_authority_bookkeeping_busy;
 pub mod blob;
 pub mod diagnostics;
 pub mod events;

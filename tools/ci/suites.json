@@ -1164,14 +1164,15 @@
         "broker::tests::unpolled_calls_reserve_nothing_and_revocation_denies_before_dispatch",
         "broker::tests::unused_multi_dimension_reservations_refund_together_without_refunding_other_work",
         "broker::tests::web_imports::ordinary_capsule_context_still_requires_its_provider_binding",
-        "broker::tests::web_imports::web_context_is_distinct_from_exact_provider_imports"
+        "broker::tests::web_imports::web_context_is_distinct_from_exact_provider_imports",
+        "broker::currentness::tests::only_exact_authority_bookkeeping_contention_is_waitable"
       ],
       "expectedIgnored": [],
       "id": "latent-capabilities.lib.latent-capabilities",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 124,
+      "minimumCases": 125,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [

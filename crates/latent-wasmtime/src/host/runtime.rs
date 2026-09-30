@@ -450,12 +450,7 @@ impl WaitingTimer {
                 ));
             }
             if let Err(error) = self.call.recheck_authority() {
-                let currentness = super::capabilities::HostCapabilityFailure::from_error(&error);
-                let bookkeeping_busy = (error.code == PlatformErrorCode::ResourceExhausted
-                    && error.message == "capability-busy"
-                    && error.details.is_empty())
-                    || currentness.currentness_reason() == Some("admission-authority-busy");
-                if bookkeeping_busy {
+                if latent_capabilities::broker::is_authority_bookkeeping_busy(&error) {
                     // Only an authority bookkeeping fence may be observed
                     // again. Keep the accepted call and original deadline;
                     // requested elapsed success still needs current authority.
