@@ -35,6 +35,10 @@
         "uses": "dtolnay/rust-toolchain"
       },
       {
+        "name": "Install the declared minimum supported Rust toolchain",
+        "run": "rustup toolchain install 1.94.1 --profile minimal --no-self-update"
+      },
+      {
         "name": "Restore compiled Rust dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
@@ -77,7 +81,7 @@
   },
   "jobId": "msrv",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain the reviewed MSRV coverage and require explicit Rust 1.94.1 installation after the shared action moves to Rust 1.97.1.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
