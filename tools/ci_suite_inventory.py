@@ -15,6 +15,8 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / "tools/ci/suites.json"
 SCHEMA = "latent.ci.suites.v1"
+FRAGMENT_SCHEMA = "latent.ci.suite-fragment.v1"
+MAX_FRAGMENTS = 64
 MAX_BYTES = 2 * 1024 * 1024
 BOUNDARIES = {"host", "runtime", "product", "qualification"}
 FULL_JOBS = {"rust", "oci-registry", "catalog", "msrv", "contracts", "sdks"}
@@ -51,6 +53,56 @@ def read_json(path: Path) -> dict:
     result = json.loads(raw, object_pairs_hook=unique_object)
     require(isinstance(result, dict), "inventory-object")
     return result
+
+
+def suite_source_name(manifest: str, name: str) -> bool:
+    """Allow Cargo sources above a package, but never above the checkout root.
+
+    Only leading parent segments are allowed. The artifact reader still checks
+    the exact resolved source file, target kind, executable owner and build.
+    """
+    if not path_name(manifest) or not isinstance(name, str) or len(name.encode("utf-8")) > 4096:
+        return False
+    parents = 0
+    while name.startswith("../"):
+        parents += 1
+        name = name[3:]
+    return parents < len(PurePosixPath(manifest).parts) and path_name(name)
+
+
+def suite_fragments(path: Path) -> list[dict]:
+    """Read additive, reviewed target contracts beside the primary catalogue.
+
+    `<catalogue-stem>.d/*.json` can add suites only, never override shared recipes,
+    selections or prior contracts. All rows pass load()'s ordinary validation.
+    Both fragment count and aggregate input bytes are bounded independently.
+    """
+    directory = path.with_suffix(".d")
+    require(not directory.is_symlink(), "linked-suite-fragments")
+    if not directory.exists():
+        return []
+    require(directory.is_dir(), "suite-fragment-directory")
+    paths = []
+    for child in directory.iterdir():
+        require(len(paths) < MAX_FRAGMENTS, "suite-fragment-count")
+        require(not child.is_symlink() and child.is_file()
+                and re.fullmatch(r"[a-z0-9][a-z0-9_.-]*\.json", child.name), "suite-fragment-file")
+        paths.append(child)
+    suites = []
+    consumed = 0
+    for child in sorted(paths):
+        with child.open("rb") as source:
+            raw = source.read(MAX_BYTES - consumed + 1)
+        consumed += len(raw)
+        require(consumed <= MAX_BYTES, "suite-fragment-byte-limit")
+        fragment = json.loads(raw, object_pairs_hook=unique_object)
+        require(isinstance(fragment, dict) and set(fragment) == {"schemaVersion", "suites"}
+                and fragment["schemaVersion"] == FRAGMENT_SCHEMA, "suite-fragment-contract")
+        rows = fragment["suites"]
+        require(isinstance(rows, list) and 0 < len(rows) <= 256
+                and all(isinstance(row, dict) for row in rows), "suite-fragment-suites")
+        suites.extend(rows)
+    return suites
 
 
 def process_cases(data: dict, name: str) -> dict[str, list[str]]:
@@ -152,6 +204,8 @@ def validate_fixture_recipes(data: dict) -> None:
 def load(path: Path = INVENTORY) -> dict:
     data = read_json(path)
     require(data.get("schemaVersion") == SCHEMA, "inventory-version")
+    require(isinstance(data["suites"], list), "inventory-suites")
+    data["suites"].extend(suite_fragments(path))
     require(set(data["boundaries"]) == BOUNDARIES, "inventory-boundaries")
     require(set(data["narrowPackages"]) <= set(data["fastPackages"]), "narrow-package-not-fast")
     require(len(data["fastPackages"]) == len(set(data["fastPackages"])), "duplicate-fast-package")
@@ -166,7 +220,7 @@ def load(path: Path = INVENTORY) -> dict:
         require(type(suite["timeoutSeconds"]) is int and 0 < suite["timeoutSeconds"] <= 7200,
                 "suite-timeout")
         require(suite["platforms"] and suite["prerequisites"] and suite["recipe"], "suite-recipe")
-        require(path_name(suite["manifest"]) and path_name(suite["source"]), "suite-source")
+        require(suite_source_name(suite["manifest"], suite["source"]), "suite-source")
         require(suite["kind"] in {"lib", "test", "bin", "example", "cdylib"}, "suite-target-kind")
         require(suite["mode"] in {"libtest", "custom", "compile-only"}, "suite-mode")
         if suite["mode"] == "custom":
