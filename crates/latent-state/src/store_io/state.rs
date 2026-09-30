@@ -20,6 +20,10 @@ pub(super) trait Work<S>: Send {
     fn reject(self: Box<Self>);
 }
 
+pub(super) trait Retirement: Send {
+    fn retire(self: Box<Self>);
+}
+
 pub(super) type Finalizer<S> = Box<dyn FnOnce(&S) -> Result<(), StoreIoError> + Send>;
 
 pub(super) struct QueuedWork<S> {
@@ -30,6 +34,8 @@ pub(super) struct QueuedWork<S> {
 pub(super) struct State<S> {
     pub limits: StoreIoLimits,
     pub queue: VecDeque<QueuedWork<S>>,
+    pub retirements: VecDeque<Box<dyn Retirement>>,
+    pub physical_owners: usize,
     pub accepted: usize,
     pub retained_bytes: u64,
     pub active_reads: usize,
@@ -44,17 +50,23 @@ pub(super) struct State<S> {
     pub failure: Option<StoreIoError>,
     pub engine_phase: StoreIoEnginePhase,
     pub retired_at: Option<Instant>,
+    pub shutdown_deadline: Option<Instant>,
     pub finalizer: Option<Finalizer<S>>,
     pub bootstrap: Bootstrap,
 }
 
 impl<S> State<S> {
     pub fn new(limits: StoreIoLimits, finalizer: Finalizer<S>) -> Self {
+        let queue = VecDeque::with_capacity(limits.queued_jobs);
+        let retirements = VecDeque::with_capacity(limits.accepted_jobs);
+        let retained_bytes = limits.resident_bytes;
         Self {
             limits,
-            queue: VecDeque::new(),
+            queue,
+            retirements,
+            physical_owners: 0,
             accepted: 0,
-            retained_bytes: 0,
+            retained_bytes,
             active_reads: 0,
             active_writes: 0,
             live_workers: 0,
@@ -67,6 +79,7 @@ impl<S> State<S> {
             failure: None,
             engine_phase: StoreIoEnginePhase::Owned,
             retired_at: None,
+            shutdown_deadline: None,
             finalizer: Some(finalizer),
             bootstrap: Bootstrap::Spawning,
         }
@@ -121,6 +134,8 @@ impl<S> State<S> {
             active_writes: self.active_writes,
             accepted: self.accepted,
             retained_bytes: self.retained_bytes,
+            physical_owners: self.physical_owners,
+            queued_retirements: self.retirements.len(),
             live_workers: self.live_workers,
             admission_closed: self.closed,
             engine_phase: self.engine_phase,
@@ -130,6 +145,9 @@ impl<S> State<S> {
     }
 
     pub fn shutdown_report(&mut self, deadline: Instant) -> StoreIoShutdown {
+        let deadline = self
+            .shutdown_deadline
+            .map_or(deadline, |original| original.min(deadline));
         if self.retired_at.is_some_and(|retired| retired > deadline) {
             self.quarantined = true;
         }
@@ -139,6 +157,16 @@ impl<S> State<S> {
                 && !snapshot.quarantined
                 && snapshot.failure.is_none(),
             snapshot,
+        }
+    }
+
+    pub fn check_shutdown_deadline(&mut self, now: Instant) {
+        if self
+            .shutdown_deadline
+            .is_some_and(|deadline| now >= deadline)
+            && !self.snapshot().physically_retired()
+        {
+            self.quarantined = true;
         }
     }
 }

@@ -4,6 +4,7 @@
 
 pub mod embedded;
 pub mod entity_lanes;
+pub mod protected_store;
 pub mod store_io;
 
 use latent_core::{

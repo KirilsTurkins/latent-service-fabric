@@ -12,6 +12,7 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-protected-files = { path = "../latent-protected-files" }
 redb.workspace = true
 
 [dev-dependencies]

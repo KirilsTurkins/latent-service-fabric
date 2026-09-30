@@ -35,6 +35,11 @@ impl<S, F: Future<Output = ()>> StoreIoDrain<S, F> {
             state.next_drain = generation;
             state.drain_waiter = Some((generation, None));
             state.closed = true;
+            state.shutdown_deadline = Some(
+                state
+                    .shutdown_deadline
+                    .map_or(deadline, |original| original.min(deadline)),
+            );
             generation
         };
         control.notify();
@@ -53,7 +58,7 @@ impl<S, F: Future<Output = ()>> StoreIoDrain<S, F> {
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if timeout && state.live_workers != 0 {
+        if timeout && !state.snapshot().physically_retired() {
             state.quarantined = true;
         }
         let report = state.shutdown_report(self.deadline);
@@ -83,7 +88,7 @@ impl<S, F: Future<Output = ()>> Future for StoreIoDrain<S, F> {
                 .state
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
-            if state.live_workers == 0 {
+            if state.snapshot().physically_retired() {
                 drop(state);
                 return Poll::Ready(this.finish(false));
             }

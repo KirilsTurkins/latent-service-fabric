@@ -12,6 +12,7 @@ use super::*;
 
 mod initialization;
 mod ownership;
+mod retirement;
 mod shutdown;
 
 struct Store {
@@ -38,6 +39,7 @@ fn limits() -> StoreIoLimits {
         active_writes: 1,
         retained_bytes: 50_000,
         job_bytes: 10_000,
+        resident_bytes: 0,
     }
 }
 

@@ -1,6 +1,42 @@
 use super::*;
 
 #[test]
+fn closed_startup_never_delivers_readiness_and_keeps_initializer_physically_owned() {
+    let (store, _, closed) = store();
+    let rendezvous = Rendezvous::new(1);
+    let worker = rendezvous.clone();
+    let (notice, receiver) = mpsc::channel();
+    let mut startup = Box::pin(
+        StoreIoOwner::initialize(
+            move || {
+                pause(&worker, &notice, vec![0_u8; 64]);
+                Ok(store)
+            },
+            64,
+            limits(),
+            |_| Ok(()),
+        )
+        .unwrap(),
+    );
+    let (_, ticket) = ready(&receiver);
+    startup.close();
+    assert!(startup.snapshot().unwrap().admission_closed);
+    assert!(!closed.load(Ordering::SeqCst));
+    rendezvous.release(ticket).unwrap();
+    assert!(matches!(
+        wait(startup.as_mut()),
+        Err(StoreIoError::AdmissionClosed)
+    ));
+    let report = wait(
+        startup
+            .drain_async(Instant::now() + WATCHDOG, std::future::pending())
+            .unwrap(),
+    );
+    assert!(report.clean);
+    assert!(closed.load(Ordering::SeqCst));
+}
+
+#[test]
 fn initialization_and_ordinary_io_use_same_fixed_worker_owner() {
     let (store, writes, closed) = store();
     let initialization_thread = Arc::new(std::sync::Mutex::new(None));

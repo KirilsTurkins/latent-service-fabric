@@ -16,6 +16,10 @@ use std::{
 const FORMAT: &[u8] = b"latent.transaction-store.v1";
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
+static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
+
+mod bounded_file;
+pub use bounded_file::StoreFileStatus;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StoreError {
@@ -69,7 +73,7 @@ impl Default for StoreLimits {
     }
 }
 impl StoreLimits {
-    fn validate(self) -> Result<Self, StoreError> {
+    pub(crate) fn validate(self) -> Result<Self, StoreError> {
         if self.cache_bytes < 1024 * 1024
             || self.cache_bytes > 64 * 1024 * 1024
             || self.maximum_rows == 0
@@ -157,6 +161,32 @@ impl EmbeddedStore {
         let mut builder = Database::builder();
         builder.set_cache_size(limits.cache_bytes);
         let db = builder.create_file(file).map_err(|_| StoreError::Corrupt)?;
+        Self::open_database(db, limits, was_empty)
+    }
+
+    /// The production owner additionally caps every physical growth/write.
+    /// Upstream `FileBackend` still owns descriptor locking and native I/O.
+    pub fn open_bounded_file(
+        file: File,
+        limits: StoreLimits,
+        maximum_file_bytes: u64,
+    ) -> Result<(Self, StoreFileStatus), StoreError> {
+        let limits = limits.validate()?;
+        let was_empty = file.metadata().map_err(|_| StoreError::Unavailable)?.len() == 0;
+        let (backend, status) = bounded_file::BoundedFile::new(file, maximum_file_bytes)?;
+        let mut builder = Database::builder();
+        builder.set_cache_size(limits.cache_bytes);
+        let db = builder
+            .create_with_backend(backend)
+            .map_err(|_| StoreError::Corrupt)?;
+        Ok((Self::open_database(db, limits, was_empty)?, status))
+    }
+
+    fn open_database(
+        db: Database,
+        limits: StoreLimits,
+        was_empty: bool,
+    ) -> Result<Self, StoreError> {
         if was_empty {
             let mut tx = db.begin_write().map_err(|_| StoreError::Unavailable)?;
             tx.set_durability(Durability::Immediate)
@@ -229,6 +259,11 @@ impl EmbeddedStore {
         if self.quarantined.load(Ordering::Acquire) {
             return Err(StoreError::Unavailable);
         }
+        let identity = NEXT_VIEW_ID
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+                value.checked_add(1)
+            })
+            .map_err(|_| StoreError::Capacity)?;
         self.views
             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |v| {
                 (v < self.limits.maximum_read_views).then_some(v + 1)
@@ -240,6 +275,7 @@ impl EmbeddedStore {
                 limits: self.limits,
                 views: Arc::clone(&self.views),
                 opened: Instant::now(),
+                identity,
             })
         } else {
             self.views.fetch_sub(1, Ordering::AcqRel);
@@ -381,6 +417,7 @@ pub struct ReadView {
     limits: StoreLimits,
     views: Arc<AtomicUsize>,
     opened: Instant,
+    identity: usize,
 }
 
 /// Continuation is descriptive engine position. Higher layers bind it to an
@@ -394,6 +431,13 @@ pub struct ReadPage {
 }
 
 impl ReadView {
+    /// Process-local descriptive identity, never caller or namespace authority.
+    /// Allocation does not wrap; external cursors also need activation/boot scope.
+    #[must_use]
+    pub fn identity(&self) -> usize {
+        self.identity
+    }
+
     pub fn get(&self, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
         if self.opened.elapsed() > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);

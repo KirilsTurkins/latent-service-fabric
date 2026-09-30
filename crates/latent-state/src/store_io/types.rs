@@ -15,10 +15,12 @@ pub struct StoreIoLimits {
     pub active_writes: usize,
     pub retained_bytes: u64,
     pub job_bytes: u64,
+    /// Engine cache and fixed native metadata retained until actual destruction.
+    pub resident_bytes: u64,
 }
 
 impl StoreIoLimits {
-    pub(super) fn validate(&self) -> Result<(), StoreIoError> {
+    pub(crate) fn validate(&self) -> Result<(), StoreIoError> {
         if [
             self.workers,
             self.queued_jobs,
@@ -35,6 +37,7 @@ impl StoreIoLimits {
             || self.queued_jobs > self.accepted_jobs
             || self.retained_bytes > 1024 * 1024 * 1024
             || self.job_bytes > self.retained_bytes
+            || self.resident_bytes >= self.retained_bytes
             || self.active_reads > self.workers
             || self.active_writes > self.workers
         {
@@ -109,6 +112,8 @@ pub struct StoreIoSnapshot {
     pub accepted: usize,
     pub retained_bytes: u64,
     pub live_workers: usize,
+    pub physical_owners: usize,
+    pub queued_retirements: usize,
     pub admission_closed: bool,
     pub engine_phase: StoreIoEnginePhase,
     pub quarantined: bool,
@@ -118,7 +123,10 @@ pub struct StoreIoSnapshot {
 impl StoreIoSnapshot {
     #[must_use]
     pub fn physically_retired(self) -> bool {
-        self.live_workers == 0 && self.engine_closed()
+        self.live_workers == 0
+            && self.engine_closed()
+            && self.accepted == 0
+            && self.retained_bytes == 0
     }
 
     #[must_use]

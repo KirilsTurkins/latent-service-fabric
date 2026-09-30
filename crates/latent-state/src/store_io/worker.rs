@@ -1,12 +1,13 @@
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Arc;
 
-use super::state::{Bootstrap, Control, Finalizer, QueuedWork};
+use super::state::{Bootstrap, Control, Finalizer, QueuedWork, Retirement};
 use super::{StoreIoEnginePhase, StoreIoError, StoreIoKind};
 
 enum Action<S> {
     Run(QueuedWork<S>),
     Reject(QueuedWork<S>),
+    Retire(Box<dyn Retirement>),
     Finalize(Finalizer<S>),
     Exit,
 }
@@ -24,6 +25,10 @@ fn next<S>(control: &Control<S>) -> Action<S> {
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             continue;
         }
+        state.check_shutdown_deadline(control.clock.monotonic_now());
+        if let Some(retirement) = state.retirements.pop_front() {
+            return Action::Retire(retirement);
+        }
         if state.quarantined {
             if let Some(queued) = state.queue.pop_front() {
                 return Action::Reject(queued);
@@ -40,7 +45,7 @@ fn next<S>(control: &Control<S>) -> Action<S> {
             state.running(queued.kind, true);
             return Action::Run(queued);
         }
-        if state.closed && state.queue.is_empty() {
+        if state.closed && state.queue.is_empty() && state.physical_owners == 0 {
             // Reserve exit under the same lock. Concurrent idle workers cannot
             // all believe another worker will perform the finalization.
             let last = state.live_workers - state.exiting_workers == 1;
@@ -81,6 +86,11 @@ pub(super) fn run<S: Send + Sync + 'static>(control: Arc<Control<S>>, store: Arc
                 queued.work.reject();
                 control.notify();
             }
+            Action::Retire(retirement) => {
+                if catch_unwind(AssertUnwindSafe(|| retirement.retire())).is_err() {
+                    control.fail(StoreIoError::RecoveryRequired);
+                }
+            }
             Action::Finalize(finalizer) => {
                 control.notify();
                 let finalization = catch_unwind(AssertUnwindSafe(|| finalizer(&store)));
@@ -112,7 +122,10 @@ pub(super) fn run<S: Send + Sync + 'static>(control: Arc<Control<S>>, store: Arc
         state.exiting_workers -= 1;
         if state.live_workers == 0 {
             state.engine_phase = StoreIoEnginePhase::Closed;
-            state.retired_at = Some(retired_at);
+            state.retained_bytes -= state.limits.resident_bytes;
+            if state.accepted == 0 {
+                state.retired_at = Some(retired_at);
+            }
             state.queue = std::collections::VecDeque::new();
         }
     }

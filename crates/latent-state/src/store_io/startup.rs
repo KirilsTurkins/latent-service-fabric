@@ -88,6 +88,11 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
 }
 
 impl<S: Send + Sync + 'static> StoreIoStartup<S> {
+    pub(crate) fn failure_gate(&self) -> Option<impl Fn(StoreIoError) + Send + Sync + 'static> {
+        let control = Arc::clone(&self.owner.as_ref()?.inner.control);
+        Some(move |error| control.fail(error))
+    }
+
     pub fn snapshot(&self) -> Result<StoreIoSnapshot, StoreIoError> {
         self.owner
             .as_ref()
@@ -126,6 +131,19 @@ impl<S> Future for StoreIoStartup<S> {
         let this = self.get_mut();
         match Pin::new(&mut this.job).poll(cx) {
             Poll::Ready(Ok(Ok(()))) => {
+                if let Some(owner) = &this.owner {
+                    let state = owner
+                        .inner
+                        .control
+                        .state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    if state.closed || state.quarantined || state.failure.is_some() {
+                        return Poll::Ready(Err(state
+                            .failure
+                            .unwrap_or(StoreIoError::AdmissionClosed)));
+                    }
+                }
                 let Some(owner) = this.owner.take() else {
                     return Poll::Ready(Err(StoreIoError::AlreadyDelivered));
                 };
@@ -143,6 +161,25 @@ impl<S> Future for StoreIoStartup<S> {
 }
 
 impl<S: Send + Sync + 'static> StoreIoReady<S> {
+    pub(crate) fn failure_gate(&self) -> impl Fn(StoreIoError) + Send + Sync + 'static {
+        let control = Arc::clone(&self.owner.inner.control);
+        move |error| control.fail(error)
+    }
+
+    pub fn reserve_retained<T: Send + 'static>(
+        &self,
+        bytes: u64,
+    ) -> Result<super::StoreIoRetained<OnceLock<S>, T>, StoreIoError> {
+        self.owner.reserve_retained(bytes)
+    }
+
+    pub(crate) fn owns_retained<T: Send + 'static>(
+        &self,
+        retained: &super::StoreIoRetained<OnceLock<S>, T>,
+    ) -> bool {
+        retained.belongs_to(&self.owner)
+    }
+
     pub fn submit<T: Send + 'static>(
         &self,
         kind: StoreIoKind,
