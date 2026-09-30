@@ -22,6 +22,15 @@ use super::invalid_manifest;
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
+        Command::Activation(crate::args::ActivationCommand::Tree(args)) => {
+            identifier(&args.id)?;
+            Ok(Operation::InspectActivationTree(
+                proto::InspectActivationTreeRequest {
+                    activation_id: args.id.clone(),
+                    page: Some(page(args.page_size, args.page_token.as_deref())?),
+                },
+            ))
+        }
         Command::Web(command) => super::web::prepare(command, config),
         Command::Trigger(command) => super::triggers::prepare(command, config),
         Command::Capability(command) => super::capabilities::prepare(command),

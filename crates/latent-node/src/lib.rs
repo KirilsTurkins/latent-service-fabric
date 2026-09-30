@@ -33,7 +33,8 @@ pub use cancellation::{
 };
 pub use currentness_read_timer::CurrentnessReadTimer;
 pub use journal::{
-    ActivationJournalSnapshot, LocalActivationJournal, LocalActivationJournalConfig,
+    ActivationJournalSnapshot, ActivationTreeNode, ActivationTreePage, LocalActivationJournal,
+    LocalActivationJournalConfig,
 };
 
 pub use inventory::{

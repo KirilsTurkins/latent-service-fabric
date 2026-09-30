@@ -114,6 +114,10 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
             association::node(value.inventory.as_ref(), &id)?;
             response::got_node(value)
         }
+        Operation::InspectActivationTree(request) => {
+            let value = call!(session, NodeServiceClient, inspect_activation_tree, request);
+            response::activation_tree(value)
+        }
         Operation::ListNodes(request) => list_nodes(request, session).await,
         _ => Err(Failure::local(
             "invalid-operation",

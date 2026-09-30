@@ -669,6 +669,102 @@ public final class Wire {
                 value.getTenant());
     }
 
+    public static latent.control.v1.Node.ActivationDiagnostic toWire(Management.ActivationDiagnostic value) {
+        var result = latent.control.v1.Node.ActivationDiagnostic.newBuilder();
+        result.setSchemaVersion(value.schemaVersion());
+        result.setStageValue(value.stage().value());
+        result.setReasonValue(value.reason().value());
+        if (value.profile().isPresent()) result.setProfileValue(value.profile().get().value());
+        if (value.profileDigest().isPresent()) result.setProfileDigest(value.profileDigest().get());
+        if (value.configuredBound().isPresent()) result.setConfiguredBound(value.configuredBound().get());
+        if (value.calculatedRequirement().isPresent()) result.setCalculatedRequirement(value.calculatedRequirement().get());
+        if (value.fixedBytes().isPresent()) result.setFixedBytes(value.fixedBytes().get());
+        if (value.liftingFuel().isPresent()) result.setLiftingFuel(value.liftingFuel().get());
+        if (value.liftMultiplier().isPresent()) result.setLiftMultiplier(value.liftMultiplier().get());
+        return result.build();
+    }
+
+    public static Management.ActivationDiagnostic fromWire(latent.control.v1.Node.ActivationDiagnostic value) {
+        return new Management.ActivationDiagnostic(
+                value.getSchemaVersion(),
+                new Management.DiagnosticStage(value.getStageValue()),
+                new Management.DiagnosticReason(value.getReasonValue()),
+                value.hasProfile() ? Optional.of(new Management.DiagnosticProfile(value.getProfileValue())) : Optional.empty(),
+                value.hasProfileDigest() ? Optional.of(value.getProfileDigest()) : Optional.empty(),
+                value.hasConfiguredBound() ? Optional.of(value.getConfiguredBound()) : Optional.empty(),
+                value.hasCalculatedRequirement() ? Optional.of(value.getCalculatedRequirement()) : Optional.empty(),
+                value.hasFixedBytes() ? Optional.of(value.getFixedBytes()) : Optional.empty(),
+                value.hasLiftingFuel() ? Optional.of(value.getLiftingFuel()) : Optional.empty(),
+                value.hasLiftMultiplier() ? Optional.of(value.getLiftMultiplier()) : Optional.empty());
+    }
+
+    public static latent.control.v1.Node.ActivationTreeNode toWire(Management.ActivationTreeNode value) {
+        var result = latent.control.v1.Node.ActivationTreeNode.newBuilder();
+        result.setActivationId(value.activationId());
+        if (value.parentActivationId().isPresent()) result.setParentActivationId(value.parentActivationId().get());
+        result.setRootActivationId(value.rootActivationId());
+        result.setPhase(value.phase());
+        if (value.terminalState().isPresent()) result.setTerminalState(value.terminalState().get());
+        result.setLastUpdatedUnixMillis(value.lastUpdatedUnixMillis());
+        if (value.diagnostic().isPresent()) result.setDiagnostic(toWire(value.diagnostic().get()));
+        result.setPrincipalKind(value.principalKind());
+        if (value.callerService().isPresent()) result.setCallerService(value.callerService().get());
+        if (value.grantedBudget().isPresent()) result.setGrantedBudget(toWire(value.grantedBudget().get()));
+        if (value.effectiveDeadlineUnixMillis().isPresent()) result.setEffectiveDeadlineUnixMillis(value.effectiveDeadlineUnixMillis().get());
+        result.setDiagnosticIsTerminal(value.diagnosticIsTerminal());
+        return result.build();
+    }
+
+    public static Management.ActivationTreeNode fromWire(latent.control.v1.Node.ActivationTreeNode value) {
+        return new Management.ActivationTreeNode(
+                value.getActivationId(),
+                value.hasParentActivationId() ? Optional.of(value.getParentActivationId()) : Optional.empty(),
+                value.getRootActivationId(),
+                value.getPhase(),
+                value.hasTerminalState() ? Optional.of(value.getTerminalState()) : Optional.empty(),
+                value.getLastUpdatedUnixMillis(),
+                value.hasDiagnostic() ? Optional.of(fromWire(value.getDiagnostic())) : Optional.empty(),
+                value.getPrincipalKind(),
+                value.hasCallerService() ? Optional.of(value.getCallerService()) : Optional.empty(),
+                value.hasGrantedBudget() ? Optional.of(fromWire(value.getGrantedBudget())) : Optional.empty(),
+                value.hasEffectiveDeadlineUnixMillis() ? Optional.of(value.getEffectiveDeadlineUnixMillis()) : Optional.empty(),
+                value.getDiagnosticIsTerminal());
+    }
+
+    public static latent.control.v1.Node.InspectActivationTreeRequest toWire(Management.InspectActivationTreeRequest value) {
+        var result = latent.control.v1.Node.InspectActivationTreeRequest.newBuilder();
+        result.setActivationId(value.activationId());
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
+        return result.build();
+    }
+
+    public static Management.InspectActivationTreeRequest fromWire(latent.control.v1.Node.InspectActivationTreeRequest value) {
+        return new Management.InspectActivationTreeRequest(
+                value.getActivationId(),
+                value.hasPage() ? Optional.of(fromWire(value.getPage())) : Optional.empty());
+    }
+
+    public static latent.control.v1.Node.InspectActivationTreeResponse toWire(Management.InspectActivationTreeResponse value) {
+        var result = latent.control.v1.Node.InspectActivationTreeResponse.newBuilder();
+        result.setSchemaVersion(value.schemaVersion());
+        for (var item : value.nodes()) result.addNodes(toWire(item));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
+        result.setHistoryAvailable(value.historyAvailable());
+        result.setCursorExpired(value.cursorExpired());
+        result.setRetainedHistoryOnly(value.retainedHistoryOnly());
+        return result.build();
+    }
+
+    public static Management.InspectActivationTreeResponse fromWire(latent.control.v1.Node.InspectActivationTreeResponse value) {
+        return new Management.InspectActivationTreeResponse(
+                value.getSchemaVersion(),
+                value.getNodesList().stream().map(item -> fromWire(item)).toList(),
+                value.hasPage() ? Optional.of(fromWire(value.getPage())) : Optional.empty(),
+                value.getHistoryAvailable(),
+                value.getCursorExpired(),
+                value.getRetainedHistoryOnly());
+    }
+
     public static latent.invocation.v1.Invocation.ResourceBudget toInvocationResourceBudget(Management.ResourceBudget value) {
         var result = latent.invocation.v1.Invocation.ResourceBudget.newBuilder();
         result.setCpuFuel(value.cpuFuel());

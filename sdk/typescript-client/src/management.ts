@@ -22,6 +22,47 @@ export const CapabilityPolicyRecordKind = {
   ProviderBinding: 2,
 } as const;
 
+export type DiagnosticStage = number;
+export const DiagnosticStage = {
+  Unspecified: 0,
+  Admission: 1,
+  Queue: 2,
+  Preparation: 3,
+  Binding: 4,
+  Execution: 5,
+  Provider: 6,
+  Cleanup: 7,
+  OutputValidation: 8,
+} as const;
+
+export type DiagnosticReason = number;
+export const DiagnosticReason = {
+  Unspecified: 0,
+  SignatureAllocationLimit: 1,
+  ValueAllocationLimit: 2,
+  UnsupportedComponentSurface: 3,
+  UnsupportedEngineProfile: 4,
+  ProviderAbsent: 5,
+  BindingAbsent: 6,
+  AdmissionDenied: 7,
+  GrantDenied: 8,
+  QueuePressure: 9,
+  GuestMemoryExhausted: 10,
+  GuestFuelExhausted: 11,
+  GuestResourceExhausted: 12,
+  ProviderTimeout: 13,
+  DeadlineExceeded: 14,
+  Cancelled: 15,
+  HttpResponseRejected: 16,
+} as const;
+
+export type DiagnosticProfile = number;
+export const DiagnosticProfile = {
+  Unspecified: 0,
+  WasmtimeServiceValuesV1: 1,
+  WasmtimeBufferedWebValuesV1: 2,
+} as const;
+
 export type FailureCategory = number;
 export const FailureCategory = {
   Unspecified: 0,
@@ -316,6 +357,48 @@ export interface PublicationRef {
   readonly tenant: string;
 }
 
+export interface ActivationDiagnostic {
+  readonly schemaVersion: number;
+  readonly stage: DiagnosticStage;
+  readonly reason: DiagnosticReason;
+  readonly profile?: DiagnosticProfile;
+  readonly profileDigest?: string;
+  readonly configuredBound?: bigint;
+  readonly calculatedRequirement?: bigint;
+  readonly fixedBytes?: bigint;
+  readonly liftingFuel?: bigint;
+  readonly liftMultiplier?: bigint;
+}
+
+export interface ActivationTreeNode {
+  readonly activationId: string;
+  readonly parentActivationId?: string;
+  readonly rootActivationId: string;
+  readonly phase: string;
+  readonly terminalState?: string;
+  readonly lastUpdatedUnixMillis: bigint;
+  readonly diagnostic?: ActivationDiagnostic;
+  readonly principalKind: string;
+  readonly callerService?: string;
+  readonly grantedBudget?: ResourceBudget;
+  readonly effectiveDeadlineUnixMillis?: bigint;
+  readonly diagnosticIsTerminal: boolean;
+}
+
+export interface InspectActivationTreeRequest {
+  readonly activationId: string;
+  readonly page?: PageRequest;
+}
+
+export interface InspectActivationTreeResponse {
+  readonly schemaVersion: number;
+  readonly nodes: readonly ActivationTreeNode[];
+  readonly page?: PageResponse;
+  readonly historyAvailable: boolean;
+  readonly cursorExpired: boolean;
+  readonly retainedHistoryOnly: boolean;
+}
+
 export interface PublicationIdentity {
   readonly publication: PublicationRef;
   readonly componentDigest: string;
@@ -368,6 +451,7 @@ export interface ClientProfile {
   invoke(request: InvokeRequest, options?: CallOptions): Promise<ClientResponse<InvokeResponse>>;
   cancel(request: CancelRequest, options?: CallOptions): Promise<ClientResponse<CancelResponse>>;
   getActivation(request: GetActivationRequest, options?: CallOptions): Promise<ClientResponse<ActivationStatus>>;
+  inspectActivationTree(request: InspectActivationTreeRequest, options?: CallOptions): Promise<ClientResponse<InspectActivationTreeResponse>>;
   getPolicy(request: GetPolicyRequest, options?: CallOptions): Promise<ClientResponse<GetPolicyResponse>>;
   listPolicies(request: ListPoliciesRequest, options?: CallOptions): Promise<ClientResponse<ListPoliciesResponse>>;
   listCapabilities(request: ListCapabilitiesRequest, options?: CallOptions): Promise<ClientResponse<ListCapabilitiesResponse>>;

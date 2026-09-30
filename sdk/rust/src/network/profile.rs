@@ -72,6 +72,14 @@ impl model::ClientProfile for RpcClient {
         InvocationServiceClient
     );
     operation!(
+        inspect_activation_tree,
+        InspectActivationTreeRequest,
+        InspectActivationTreeResponse,
+        control,
+        node_service_client,
+        NodeServiceClient
+    );
+    operation!(
         get_policy,
         GetPolicyRequest,
         GetPolicyResponse,

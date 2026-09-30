@@ -10,7 +10,7 @@ use super::model::request;
 use super::support::{finish, pending, tenant, Harness};
 
 #[tokio::test]
-async fn assigns_absent_identity_and_preserves_explicit_correlation_without_local_ancestry() {
+async fn assigns_absent_identity_and_rejects_untrusted_ancestry() {
     let harness = Harness::standard();
     let mut input = request("unused");
     input.activation_id = None;
@@ -33,21 +33,17 @@ async fn assigns_absent_identity_and_preserves_explicit_correlation_without_loca
         let mut input = request(id);
         input.root_activation_id = Some(ActivationId("unknown-root".to_owned()));
         input.parent_activation_id = parent.map(|value| ActivationId(value.to_owned()));
-        let expected = input.clone();
-        let receipt = finish(harness.manager.start(input).expect("opaque lineage")).await;
-        assert_eq!(receipt.activation_id.0, id);
-        let requests = harness.backend.requests.lock().expect("requests");
-        let observed = &requests.last().expect("invocation").activation;
         assert_eq!(
-            observed.root_activation_id,
-            expected.root_activation_id.unwrap()
+            harness
+                .manager
+                .start(input)
+                .err()
+                .expect("untrusted ancestry")
+                .code,
+            PlatformErrorCode::PermissionDenied
         );
-        assert_eq!(observed.parent_activation_id, expected.parent_activation_id);
-        assert_eq!(observed.principal, expected.principal);
-        assert_eq!(observed.trace, expected.trace);
-        assert_eq!(observed.idempotency_key, expected.idempotency_key);
-        assert_eq!(observed.metadata, expected.metadata);
     }
+    assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 1);
     assert_eq!(harness.ids.0.load(Ordering::Relaxed), 1);
     harness.assert_idle();
 }

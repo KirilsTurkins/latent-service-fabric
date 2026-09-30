@@ -39,6 +39,17 @@ pub enum RouteCommand {
 pub enum ActivationCommand {
     Get(IdArgs),
     Cancel(CancelArgs),
+    /// Inspect retained authorized lineage and safe operator diagnostics.
+    Tree(ActivationTreeArgs),
+}
+
+#[derive(Args)]
+pub struct ActivationTreeArgs {
+    pub id: String,
+    #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u32).range(..=128))]
+    pub page_size: u32,
+    #[arg(long)]
+    pub page_token: Option<String>,
 }
 
 #[derive(Subcommand)]

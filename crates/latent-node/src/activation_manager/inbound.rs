@@ -81,6 +81,14 @@ impl LocalActivationManager {
                 "inbound request builder panicked",
             )
         })??;
+        if envelope.parent_activation_id.is_some()
+            || envelope.root_activation_id != envelope.activation_id
+        {
+            return Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "activation lineage requires a trusted broker",
+            ));
+        }
         let (journal, cancellation) = self.inner.journal.begin_with(&envelope, || {
             self.inner
                 .cancellations

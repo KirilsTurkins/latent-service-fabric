@@ -141,6 +141,23 @@ static void status(const latent_profile_get_activation_result *result, const lat
     if (record->terminal) assert(result->value.terminal_at_unix_millis == UINT64_MAX);
 }
 
+static void tree(const latent_profile_inspect_activation_tree_result *result, const latent_profile_client_failure *error, void *data) {
+    observed *record = data;
+    assert((result == NULL) != (error == NULL));
+    if (failure(record, error)) return;
+    assert(result->value.schema_version == 1 && result->value.retained_history_only);
+    assert(result->value.has_page && result->value.nodes_count == 1);
+    const latent_profile_activation_tree_node *node = &result->value.nodes[0];
+    assert(node->has_parent_activation_id && node->has_diagnostic);
+    assert(!node->diagnostic_is_terminal && !node->has_granted_budget);
+    assert(node->diagnostic.stage == 777 && node->diagnostic.reason == 778);
+    assert(node->diagnostic.has_profile && node->diagnostic.profile == 779);
+    assert(node->diagnostic.has_configured_bound && node->diagnostic.configured_bound == 0);
+    assert(node->diagnostic.has_calculated_requirement && node->diagnostic.calculated_requirement == UINT64_MAX);
+    assert(!node->diagnostic.has_fixed_bytes);
+    record->count = result->value.nodes_count;
+}
+
 static void policy(const latent_profile_get_policy_result *result, const latent_profile_client_failure *error, void *data) {
     observed *record = data;
     assert((result == NULL) != (error == NULL));
@@ -376,6 +393,18 @@ static latent_profile_apply_policy_request mutation(latent_string identity) {
 static void management(void) {
     latent_transport *owner = create(configuration());
     latent_profile_client *client = latent_transport_profile(owner);
+    latent_profile_inspect_activation_tree_request tree_request = {.activation_id = TEXT("operator-root")};
+    observed tree_record = {0};
+    latent_profile_call *tree_call = api->inspect_activation_tree(client, &tree_request, NULL, tree, &tree_record);
+    assert(tree_call != NULL);
+    wait_for(owner, &tree_record);
+    assert(!tree_record.failed && tree_record.count == 1);
+    api->release_call(tree_call);
+    tree_request.has_page = true;
+    tree_request.page.page_size = 129;
+    tree_record = (observed){0};
+    assert(api->inspect_activation_tree(client, &tree_request, NULL, tree, &tree_record) == NULL);
+    assert(tree_record.failed && !tree_record.dispatched);
     latent_profile_list_policies_request page = {.record_kind = 1, .has_page = true, .page = {.page_size = 1}};
     observed record = {0};
     latent_profile_call *call = api->list_policies(client, &page, NULL, policies, &record);
@@ -679,6 +708,6 @@ int main(int argc, char **argv) {
     completion_and_allocation_bounds();
     allocation_failures();
     assert(file_descriptors() == descriptors);
-    puts("C HTTP/2/protobuf: eight RPCs, ownership, exact u64, audit absence/future, recovery, limits, deadlines, no retry, shutdown races passed");
+    puts("C HTTP/2/protobuf: nine RPCs, bounded inspection, future diagnostic enums, ownership, exact u64, audit absence/future, recovery, limits, deadlines, no retry, shutdown races passed");
     return 0;
 }
