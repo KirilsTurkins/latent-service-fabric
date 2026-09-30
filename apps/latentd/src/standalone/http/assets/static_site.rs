@@ -134,7 +134,11 @@ fn error_navigation_path(path: &str) -> bool {
         return false;
     }
     let leaf = path.trim_end_matches('/').rsplit('/').next().unwrap_or("");
-    !leaf.contains('.') || leaf.ends_with(".html")
+    !leaf.contains('.')
+        || std::path::Path::new(leaf)
+            .extension()
+            .and_then(std::ffi::OsStr::to_str)
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("html"))
 }
 
 fn location(target: &CanonicalTarget) -> Result<String, u16> {
