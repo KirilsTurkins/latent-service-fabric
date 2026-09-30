@@ -3542,6 +3542,7 @@
         "capability::tests::matching_allow_rules_intersect_every_ceiling_instead_of_building_a_union",
         "capability::tests::normalized_http_scope_has_exact_origins_and_segment_prefixes",
         "capability::tests::required_audit_is_monotonic_and_old_canonical_documents_are_unchanged",
+        "capability::tests::runtime_timer_policy_requires_its_exact_contract_and_clock_scope",
         "supply_chain::tests::authority::corruption_and_exclusive_ledger_ownership_fail_closed",
         "supply_chain::tests::authority::every_policy_durability_cut_halts_current_authority_and_preserves_restart_floors",
         "supply_chain::tests::authority::existing_builder_identifier_profile_round_trips_historical_receipt",
@@ -3641,7 +3642,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 104,
+      "minimumCases": 105,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
