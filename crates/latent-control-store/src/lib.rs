@@ -15,6 +15,7 @@ pub use deployments::{
     deployment_revision_id, DeploymentPage, DeploymentPageRequest, DirectoryDeploymentRepository,
     DirectoryDeploymentRepositoryConfig, PinnedRouteResolver,
 };
+pub use deployments::target_inspection;
 
 #[cfg(feature = "catalog-observation")]
 pub use deployments::{
