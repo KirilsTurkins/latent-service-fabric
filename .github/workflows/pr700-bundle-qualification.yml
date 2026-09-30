@@ -12,159 +12,26 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          fetch-depth: 2
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: 3.13.5
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24.19.0
-      - name: Prepare and qualify exact replacement archives without lifecycle scripts
+      - name: Run the pinned qualification recipe with the fully patched brace release
         shell: bash
         run: |
-          set -euo pipefail
           python3 - <<'PY'
-          import hashlib, importlib.util, json, pathlib, re, subprocess, urllib.request
-          root = pathlib.Path.cwd()
-          here = root / 'website/toolchain'
-          def replace(text, old, new):
-              assert text.count(old) == 1, ('unexpected source', old, text.count(old))
-              return text.replace(old, new)
-          builder = here / 'prepare.py'
-          text = builder.read_text()
-          text = replace(text, 'Replace the complete two', 'Replace the complete three')
-          text = text.replace('{"ip-address", "undici"}', '{"ip-address", "undici", "brace-expansion"}')
-          text = replace(text,
-              '        if new["name"] != name or new["version"] != pin["version"] or new.get("dependencies"):\n            raise ValueError("replacement package graph requires review")',
-              '        # Only brace-expansion has a reviewed dependency, already in npm.\n'
-              '        dependencies = {"balanced-match": "^4.0.2"} if name == "brace-expansion" else {}\n'
-              '        if (new["name"] != name or new["version"] != pin["version"]\n'
-              '                or (new.get("dependencies") or {}) != dependencies\n'
-              '                or new.get("optionalDependencies") or new.get("peerDependencies")\n'
-              '                or new.get("bundleDependencies") or new.get("bundledDependencies")):\n'
-              '            raise ValueError("replacement package graph requires review")\n'
-              '        if name == "brace-expansion":\n'
-              '            balanced = package(files, "package/node_modules/balanced-match/")\n'
-              '            if (old.get("dependencies") != dependencies\n'
-              '                    or balanced.get("name") != "balanced-match"\n'
-              '                    or balanced.get("version") != "4.0.2"):\n'
-              '                raise ValueError("replacement dependency graph requires review")')
-          builder.write_text(text)
-          tests = here / 'tests/test_prepare.py'
-          text = tests.read_text()
-          text = replace(text,
-              "('package/node_modules/undici/package.json', {'name': 'undici', 'version': '6.28.0'})]",
-              "('package/node_modules/undici/package.json', {'name': 'undici', 'version': '6.28.0'}),\n"
-              "                     ('package/node_modules/brace-expansion/package.json', {'name': 'brace-expansion', 'version': '5.0.9',\n"
-              "                         'dependencies': {'balanced-match': '^4.0.2'}}),\n"
-              "                     ('package/node_modules/brace-expansion/obsolete.js', b'old removed bytes'),\n"
-              "                     ('package/node_modules/balanced-match/package.json', {'name': 'balanced-match', 'version': '4.0.2'})]")
-          text = replace(text,
-              "[('ip-address', '10.5.0', '10.5.1'), ('undici', '6.28.0', '6.28.1')]",
-              "[('ip-address', '10.5.0', '10.7.1'), ('undici', '6.28.0', '6.28.1'),\n"
-              "                               ('brace-expansion', '5.0.9', '5.0.11')]")
-          text = replace(text, "{'name': name, 'version': new}",
-              "{'name': name, 'version': new,\n"
-              "                           'dependencies': {'balanced-match': '^4.0.2'} if name == 'brace-expansion' else {}}")
-          text = replace(text, "[[], self.patches[:1], [self.patches[0], self.patches[0]]]",
-              "[[], self.patches[:1], self.patches[:-1], [self.patches[0], self.patches[0]]]")
-          text = replace(text,
-              "            self.assertNotIn('package/node_modules/ip-address/obsolete.js', reader.getnames())",
-              "            self.assertNotIn('package/node_modules/ip-address/obsolete.js', reader.getnames())\n"
-              "            self.assertNotIn('package/node_modules/brace-expansion/obsolete.js', reader.getnames())\n"
-              "            balanced = json.loads(reader.extractfile('package/node_modules/balanced-match/package.json').read())\n"
-              "            self.assertEqual(balanced['version'], '4.0.2')")
-          old = "            prepare.compose(archive(self.base), [(pin, raw), self.patches[1]])"
-          new = "            prepare.compose(archive(self.base), [(pin, raw), *self.patches[1:]])\n"
-          new += "        brace_pin, _ = self.patches[-1]\n"
-          new += "        for graph in ({}, {'balanced-match': '^5.0.0'}, {'unexpected': '1.0.0'}):\n"
-          new += "            raw = archive([('package/package.json', {'name': 'brace-expansion', 'version': '5.0.11', 'dependencies': graph})])\n"
-          new += "            with self.subTest(graph=graph), self.assertRaisesRegex(ValueError, 'graph requires review'):\n"
-          new += "                prepare.compose(archive(self.base), [*self.patches[:-1], (brace_pin, raw)])\n"
-          new += "        for version in ('4.0.1', '5.0.0'):\n"
-          new += "            changed = [(path, {'name': 'balanced-match', 'version': version} if path == 'package/node_modules/balanced-match/package.json' else value)\n"
-          new += "                       for path, value in self.base]\n"
-          new += "            with self.subTest(version=version), self.assertRaisesRegex(ValueError, 'graph requires review'):\n"
-          new += "                prepare.compose(archive(changed), self.patches)"
-          text = replace(text, old, new)
-          tests.write_text(text)
-          pins_path = here / 'source.json'
-          pins = json.loads(pins_path.read_text())
-          def reviewed_pin(name, version, previous):
-              opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-              with opener.open(f'https://registry.npmjs.org/{name}/{version}', timeout=30) as response:
-                  metadata = json.load(response)
-              assert (metadata['name'], metadata['version']) == (name, version)
-              expected = {'balanced-match': '^4.0.2'} if name == 'brace-expansion' else {}
-              assert (metadata.get('dependencies') or {}) == expected
-              integrity = metadata['dist']['integrity']
-              assert re.fullmatch(r'sha512-[A-Za-z0-9+/]{86}==', integrity)
-              assert metadata['dist']['tarball'] == f'https://registry.npmjs.org/{name}/-/{name}-{version}.tgz'
-              print('REGISTRY_PIN', name, version, integrity)
-              return {'name': name, 'from': previous, 'version': version, 'integrity': integrity}
-          pins['patches'][0] = reviewed_pin('ip-address', '10.7.1', '10.5.0')
-          pins['patches'].append(reviewed_pin('brace-expansion', '5.0.11', '5.0.9'))
-          pins_path.write_text(json.dumps(pins, indent=2) + '\n')
-          spec = importlib.util.spec_from_file_location('npm_prepare', builder)
-          module = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(module)
-          actual = module.prepare(refresh=True)
-          assert module.prepare(offline=True, refresh=True) == actual
-          print('DERIVED_INTEGRITY', actual)
-          subprocess.run(['npm', 'install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund', '--offline'], cwd=here, check=True)
-          lock_path = here / 'package-lock.json'
-          lock = json.loads(lock_path.read_text())
-          assert lock['packages']['node_modules/npm']['integrity'] == actual
-          for name, version in [('ip-address', '10.7.1'), ('brace-expansion', '5.0.11'), ('undici', '6.28.1'), ('balanced-match', '4.0.2')]:
-              assert lock['packages']['node_modules/npm/node_modules/' + name]['version'] == version
-          policy_path = root / '.github/security/inventory.json'
-          policy_text = policy_path.read_text()
-          policy = json.loads(policy_text)
-          entry = next(item for item in policy['manifests'] if item['path'] == 'website/toolchain/package.json')
-          for field, path in [('source_sha256', pins_path), ('builder_sha256', builder), ('lock_sha256', lock_path)]:
-              value = hashlib.sha256(path.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
-              policy_text = replace(policy_text, entry['derived_bundle'][field], value)
-          policy_text = replace(policy_text, entry['derived_bundle']['integrity'], actual)
-          policy_path.write_text(policy_text)
-          assert module.prepare(offline=True) == actual
-          PY
-          python3 -m unittest discover -s website/toolchain/tests -v
-          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund --offline
-          node website/toolchain/node_modules/npm/bin/npm-cli.js --version
-          node <<'JS'
-          const assert = require('node:assert/strict');
-          const path = require('node:path');
-          const root = path.resolve('website/toolchain/node_modules/npm/node_modules');
-          const { Address4, Address6 } = require(path.join(root, 'ip-address'));
-          assert.equal(new Address6('a00::1').isInSubnet(new Address4('10.0.0.0/8')), false);
-          assert.equal(new Address4('32.0.0.1').isInSubnet(new Address6('2000::/3')), false);
-          assert.equal(new Address4('10.0.0.1').isInSubnet(new Address4('10.0.0.0/8')), true);
-          const expansion = require(path.join(root, 'brace-expansion'));
-          const expand = expansion.expand || expansion.default || expansion;
-          assert.deepEqual(expand('a{b,c}d'), ['abd', 'acd']);
-          for (const value of ['{' + '{a},'.repeat(7000) + 'b}', '{'.repeat(4000) + 'a,b' + '}'.repeat(4000), '{a,'.repeat(4500) + 'z' + '}'.repeat(4500)]) {
-            assert.doesNotThrow(() => expand(value, { max: 16, maxLength: 65536 }));
-          }
-          console.log('Installed bundle subnet and bounded brace regressions: PASS');
-          JS
-          git config user.name 'PR 700 qualification'
-          git config user.email 'qualification@localhost'
-          git rm .github/workflows/pr700-bundle-qualification.yml
-          git add website/toolchain/source.json website/toolchain/prepare.py website/toolchain/tests/test_prepare.py website/toolchain/package-lock.json .github/security/inventory.json
-          git -c core.hooksPath=/dev/null commit -m 'Qualify generated PR 700 security candidate locally; do not publish'
-          python3 tools/ci_coverage.py
-          python3 tools/security_scan.py dependencies --repo . --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan"
-          mkdir -p "$RUNNER_TEMP/pr700-candidate"
-          git diff 35ca8628f011264d47bae957a7286fffb020cda9 --binary > "$RUNNER_TEMP/pr700-candidate/changes.patch"
-          git diff --check 35ca8628f011264d47bae957a7286fffb020cda9
-          python3 - "$RUNNER_TEMP/pr700-candidate" <<'PY'
-          import json, pathlib, shutil, sys
-          output = pathlib.Path(sys.argv[1])
-          files = ['website/toolchain/source.json', 'website/toolchain/prepare.py', 'website/toolchain/tests/test_prepare.py', 'website/toolchain/package-lock.json', '.github/security/inventory.json']
-          for name in files:
-              destination = output / name
-              destination.parent.mkdir(parents=True, exist_ok=True)
-              shutil.copyfile(name, destination)
-          (output / 'manifest.json').write_text(json.dumps(files))
+          import subprocess, textwrap
+          source = subprocess.check_output(['git', 'show', 'e5ab04674c363802550f683aa2678f209c635b15:.github/workflows/pr700-bundle-qualification.yml'], text=True)
+          begin = source.index('          set -euo pipefail\n')
+          end = source.index('      - uses: actions/upload-artifact@', begin)
+          script = textwrap.dedent(source[begin:end])
+          assert script.count('5.0.11') == 4
+          script = script.replace('5.0.11', '5.0.12')
+          script = script.replace("['{' + '{a},'.repeat(7000)", "['{a}' + '}'.repeat(128000) + ',z}', '{' + '{a},'.repeat(7000)")
+          subprocess.run(['bash', '-euo', 'pipefail'], input=script, text=True, check=True)
           PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
