@@ -1,0 +1,109 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/security-baseline.yml:self-test:Install only the reviewed parser wheel": {
+      "job": "self-test",
+      "jobIf": "needs.scope.outputs.selftest == 'true'",
+      "name": "Install only the reviewed parser wheel",
+      "run": "python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/security-baseline.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/security-baseline.yml:self-test:Install reviewed canary scanners": {
+      "job": "self-test",
+      "jobIf": "needs.scope.outputs.selftest == 'true'",
+      "name": "Install reviewed canary scanners",
+      "run": "python3 tools/security_install.py --tool cargo-audit --destination \"$RUNNER_TEMP/security-tools\"\npython3 tools/security_install.py --tool gitleaks --destination \"$RUNNER_TEMP/security-tools\"\npython3 tools/security_install.py --tool zizmor --destination \"$RUNNER_TEMP/security-tools\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/security-baseline.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/security-baseline.yml:self-test:Prove harmless real-scanner pass and fail behavior": {
+      "job": "self-test",
+      "jobIf": "needs.scope.outputs.selftest == 'true'",
+      "name": "Prove harmless real-scanner pass and fail behavior",
+      "run": "python3 tools/security_selftest.py --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-canaries\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/security-baseline.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/security-baseline.yml:self-test:Test expiry, unknown data, fork permissions, docs profiles and the aggregate": {
+      "job": "self-test",
+      "jobIf": "needs.scope.outputs.selftest == 'true'",
+      "name": "Test expiry, unknown data, fork permissions, docs profiles and the aggregate",
+      "run": "python3 -m unittest discover -s tools/tests -p 'test_security*.py'",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/security-baseline.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/security-baseline.yml:self-test:Install only the reviewed parser wheel": {
+      "after": ".github/workflows/security-baseline.yml:self-test:Install only the reviewed parser wheel",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/security-baseline.yml:self-test:Install reviewed canary scanners": {
+      "after": ".github/workflows/security-baseline.yml:self-test:Install reviewed canary scanners",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/security-baseline.yml:self-test:Prove harmless real-scanner pass and fail behavior": {
+      "after": ".github/workflows/security-baseline.yml:self-test:Prove harmless real-scanner pass and fail behavior",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/security-baseline.yml:self-test:Test expiry, unknown data, fork permissions, docs profiles and the aggregate": {
+      "after": ".github/workflows/security-baseline.yml:self-test:Test expiry, unknown data, fork permissions, docs profiles and the aggregate",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "if": "needs.scope.outputs.selftest == 'true'",
+    "name": "Security fail-closed canaries",
+    "needs": "scope",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install only the reviewed parser wheel",
+        "run": "python3 -m pip install --only-binary=:all: --no-deps --require-hashes --requirement .github/security/requirements.txt\n"
+      },
+      {
+        "name": "Test expiry, unknown data, fork permissions, docs profiles and the aggregate",
+        "run": "python3 -m unittest discover -s tools/tests -p 'test_security*.py'"
+      },
+      {
+        "name": "Install reviewed canary scanners",
+        "run": "python3 tools/security_install.py --tool cargo-audit --destination \"$RUNNER_TEMP/security-tools\"\npython3 tools/security_install.py --tool gitleaks --destination \"$RUNNER_TEMP/security-tools\"\npython3 tools/security_install.py --tool zizmor --destination \"$RUNNER_TEMP/security-tools\"\n"
+      },
+      {
+        "name": "Prove harmless real-scanner pass and fail behavior",
+        "run": "python3 tools/security_selftest.py --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-canaries\""
+      }
+    ],
+    "timeout-minutes": 8
+  },
+  "jobId": "self-test",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/security-baseline.yml"
+}

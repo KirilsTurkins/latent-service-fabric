@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/aot_test_inputs.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a8b40e498a3eb77b00fd8531e9c31a0a7c74200e25865703633d4304dcda98e7"
+}

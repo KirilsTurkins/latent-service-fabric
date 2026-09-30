@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "ReleaseGateTests.test_developer_selection_requires_reviewed_bytes_version_and_release_attestation",
+    "ReleaseGateTests.test_native_predecessor_must_be_committed_and_release_workflow_bound",
+    "ReleaseGateTests.test_only_successful_maintained_exact_head_ci_is_accepted",
+    "ReleaseGateTests.test_receipt_gate_rejects_partial_wrong_artifact_or_diagnostic_only_runs",
+    "ReleaseGateTests.test_remote_tag_must_resolve_boundedly_to_exact_commit",
+    "ReleaseGateTests.test_vm_only_diagnostics_select_only_exact_own_candidate_workflows"
+  ],
+  "guards": {
+    "ReleaseGateTests.test_developer_selection_requires_reviewed_bytes_version_and_release_attestation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:202a66c1697a5f2706b079c7837cc055ae801e6572f269381b7cf38283050ad5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReleaseGateTests.test_native_predecessor_must_be_committed_and_release_workflow_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:202a66c1697a5f2706b079c7837cc055ae801e6572f269381b7cf38283050ad5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReleaseGateTests.test_only_successful_maintained_exact_head_ci_is_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:202a66c1697a5f2706b079c7837cc055ae801e6572f269381b7cf38283050ad5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReleaseGateTests.test_receipt_gate_rejects_partial_wrong_artifact_or_diagnostic_only_runs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:202a66c1697a5f2706b079c7837cc055ae801e6572f269381b7cf38283050ad5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReleaseGateTests.test_remote_tag_must_resolve_boundedly_to_exact_commit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:202a66c1697a5f2706b079c7837cc055ae801e6572f269381b7cf38283050ad5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ReleaseGateTests.test_vm_only_diagnostics_select_only_exact_own_candidate_workflows": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:202a66c1697a5f2706b079c7837cc055ae801e6572f269381b7cf38283050ad5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_native_release_gate.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

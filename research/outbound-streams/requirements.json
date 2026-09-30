@@ -1,0 +1,110 @@
+[
+  {
+    "criterion": 1,
+    "sources": [
+      "compatibility.md"
+    ],
+    "tests": [],
+    "evidenceBoundary": "API/source review across all six languages; Go native only, guest builds unexecuted"
+  },
+  {
+    "criterion": 2,
+    "sources": [
+      "../../adr/0059-defer-general-outbound-streams.md",
+      "compatibility.md"
+    ],
+    "tests": [],
+    "evidenceBoundary": "Typed provider, explicit gateway, capsule composition and raw stream compared"
+  },
+  {
+    "criterion": 3,
+    "sources": [
+      "streams.wit",
+      "stream-profile.md"
+    ],
+    "tests": [],
+    "evidenceBoundary": "Exact candidate resource/state contract; WIT parser/component conformance not run"
+  },
+  {
+    "criterion": 4,
+    "sources": [
+      "stream-profile.md",
+      "grant.schema.json",
+      "grant.example.json",
+      "gateway.go"
+    ],
+    "tests": [
+      "TestDeniedAuthorityNeverConnects",
+      "TestLiteralAndSpecialAddressPolicy",
+      "TestRevocationBeforeStart",
+      "TestTLSExplicitTrustAndHostname"
+    ],
+    "evidenceBoundary": "Local-only authority/TLS tests; full DNS, sealed broker and credential lifecycle design-only"
+  },
+  {
+    "criterion": 5,
+    "sources": [
+      "stream-profile.md",
+      "gateway.go"
+    ],
+    "tests": [
+      "TestHandleAndTenantLimits",
+      "TestByteAndAuditExhaustionBeforeConnect",
+      "TestCancelActiveHandleRetainsPhysicalOwnerUntilReturn",
+      "TestShortWriteContractStickyFailureAndAbsoluteDeadline"
+    ],
+    "evidenceBoundary": "Bounded native owner model; candidate production limits unqualified"
+  },
+  {
+    "criterion": 6,
+    "sources": [
+      "gateway.go",
+      "stream-profile.md"
+    ],
+    "tests": [
+      "TestLostResponseDoesNotUndoPeerEffect",
+      "TestPartialWriteFailureAndSuccessfulFreshInvocation",
+      "TestRealSMTPPartialIOAndFreshInvocation"
+    ],
+    "evidenceBoundary": "Actual peer acceptance, uncertainty and fresh sockets; no remote rollback claim"
+  },
+  {
+    "criterion": 7,
+    "sources": [
+      "compatibility.md",
+      "streams.wit"
+    ],
+    "tests": [],
+    "evidenceBoundary": "Exact WASI 0.2.0 and library callback semantic comparison; no composition implementation"
+  },
+  {
+    "criterion": 8,
+    "sources": [
+      "gateway.go",
+      "gateway_test.go",
+      "run.py",
+      "evidence/receipt.json",
+      "evidence/development-negative.json",
+      "README.md"
+    ],
+    "tests": [
+      "TestRealSMTPPartialIOAndFreshInvocation",
+      "TestPeerStallIsBounded",
+      "TestContextCancellationAndFreshNextInvocation",
+      "TestForgedForeignAndClosedHandles",
+      "TestBoundedPeerBytesAndRedaction",
+      "TestTLSExplicitTrustAndHostname"
+    ],
+    "evidenceBoundary": "Real native library and TCP/TLS protocol peer; production owner-order model, not Rust broker execution"
+  },
+  {
+    "criterion": 9,
+    "sources": [
+      "../../adr/0059-defer-general-outbound-streams.md",
+      "stream-profile.md",
+      "evidence/receipt.json"
+    ],
+    "tests": [],
+    "evidenceBoundary": "Defer production, reject unrestricted/automatic semantics; no presumed approval or production follow-up tickets"
+  }
+]

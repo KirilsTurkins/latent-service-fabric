@@ -1,0 +1,70 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "name": "Packaged developer qualification",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/559-packaged-qualification"
+        ],
+        "paths": [
+          ".github/workflows/developer-packaged-qualification.yml",
+          "tools/dev_packaged_*.py",
+          "tools/prepare_dev_packaged_probe.py",
+          "tools/tests/test_dev_packaged_probe.py",
+          "packaging/dev/qualification.Dockerfile"
+        ]
+      },
+      "workflow_dispatch": {
+        "inputs": {
+          "developer_run": {
+            "description": "Successful exact-source Developer tools run ID",
+            "required": true,
+            "type": "string"
+          },
+          "platform": {
+            "default": "all",
+            "description": "Fresh platform schedule to execute with the approved candidates",
+            "options": [
+              "all",
+              "windows",
+              "windows-recovery",
+              "linux"
+            ],
+            "required": true,
+            "type": "choice"
+          },
+          "policies": {
+            "description": "Independently approved developer and runtime candidate policy JSON",
+            "required": true,
+            "type": "string"
+          },
+          "policy_approved": {
+            "default": false,
+            "description": "The maintainer independently approved these exact candidate policies and owned provisioning",
+            "required": true,
+            "type": "boolean"
+          },
+          "runtime_run": {
+            "description": "Successful exact-source development-test native candidate run ID",
+            "required": true,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "conductor-contracts",
+    "linux",
+    "support",
+    "windows"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-packaged-qualification.yml"
+}

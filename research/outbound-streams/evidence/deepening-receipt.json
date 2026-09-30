@@ -1,0 +1,452 @@
+{
+  "baselineCommit": "a7b5d2088471b7368cd85ab74f3292afcdfca00e",
+  "boundary": "Native local SMTP proof and ownership model only; no production enablement",
+  "commands": [
+    {
+      "argv": [
+        "/usr/local/go/bin/go",
+        "version"
+      ],
+      "elapsedSeconds": 0.017352,
+      "exitCode": 0,
+      "id": "go-version",
+      "output": "go version go1.23.2 linux/amd64\n",
+      "outputSha256": "97eb37827429914457db075130bd6d2b981b3772c909a8ad0017a19d4e48e513"
+    },
+    {
+      "argv": [
+        "/usr/local/go/bin/go",
+        "env",
+        "GOROOT"
+      ],
+      "elapsedSeconds": 0.012747,
+      "exitCode": 0,
+      "id": "go-root",
+      "output": "/usr/local/go\n",
+      "outputSha256": "c3375394642de5ec7b553ec4431dc19f4f2f3f2d292cd6ece79db76db5403752"
+    },
+    {
+      "argv": [
+        "/usr/local/go/bin/gofmt",
+        "-l",
+        "gateway.go",
+        "gateway_test.go",
+        "reply_bounds.go",
+        "reply_bounds_test.go"
+      ],
+      "elapsedSeconds": 0.031091,
+      "exitCode": 0,
+      "id": "format",
+      "output": "",
+      "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "/usr/local/go/bin/go",
+        "vet",
+        "."
+      ],
+      "elapsedSeconds": 11.862417,
+      "exitCode": 0,
+      "id": "vet",
+      "output": "",
+      "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "/usr/local/go/bin/go",
+        "test",
+        "-race",
+        "-count=1",
+        "-timeout=30s",
+        "-json",
+        "."
+      ],
+      "elapsedSeconds": 1.646753,
+      "exitCode": 0,
+      "id": "go-tests",
+      "output": "tbound-streams\",\"Test\":\"TestReplyParserReservationRejectsBeforeConnect\",\"Elapsed\":0}\n{\"Time\":\"2026-09-28T20:03:51.726764341Z\",\"Action\":\"output\",\"Package\":\"_<checkout>/research/outbound-streams\",\"Output\":\"PASS\\n\"}\n{\"Time\":\"2026-09-28T20:03:52.729821725Z\",\"Action\":\"output\",\"Package\":\"_<checkout>/research/outbound-streams\",\"Output\":\"ok  \\t_<checkout>/research/outbound-streams\\t1.177s\\n\"}\n{\"Time\":\"2026-09-28T20:03:52.729944775Z\",\"Action\":\"pass\",\"Package\":\"_<checkout>/research/outbound-streams\",\"Elapsed\":1.178}\n",
+      "outputSha256": "1a611a0bc6955aa3a6c764eff168499f7dfca434352a14014a4ef00933671e19"
+    },
+    {
+      "argv": [
+        "/opt/pyvenv/bin/python3",
+        "-m",
+        "unittest",
+        "-v",
+        "test_evidence"
+      ],
+      "elapsedSeconds": 1.764075,
+      "exitCode": 0,
+      "id": "python-tests",
+      "output": "missing_commands_false_exit_status_and_weakened_race_profile_are_rejected) ... ok\ntest_missing_duplicate_skipped_and_forged_test_cases_are_rejected (test_evidence.EvidenceTests.test_missing_duplicate_skipped_and_forged_test_cases_are_rejected) ... ok\ntest_source_subset_added_source_and_changed_bytes_are_rejected (test_evidence.EvidenceTests.test_source_subset_added_source_and_changed_bytes_are_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.046s\n\nOK\n",
+      "outputSha256": "02ed35a3c95ddef43b89302887f2982cc3301ec523e5e10f1765626e63466906"
+    }
+  ],
+  "elapsedSeconds": 15.411936,
+  "formatVersion": 2,
+  "goBinarySha256": "caa1b3c015e819aaa1408efe37b2499088bbf986bf30a2883bceab4e07b55b52",
+  "goCasesIncludingSubtests": 63,
+  "goVersion": "go version go1.23.2 linux/amd64",
+  "jsonschemaVersion": "4.26.0",
+  "librarySources": {
+    "crypto/tls": {
+      "fileCount": 23,
+      "manifestSha256": "f5385b5b250486dc7675f330cb6facbb217e6983da391d44d8b6d7482f0d79bf"
+    },
+    "net/smtp": {
+      "fileCount": 2,
+      "manifestSha256": "defbf6a5649661e9f2d21f66e0976c7379a459ea26ab7bd209c172c7bb6a24a4"
+    },
+    "net/textproto": {
+      "fileCount": 5,
+      "manifestSha256": "0eb77e0d4af7bc20cc71300bdff90b62d259d95f7f82fc0a6596ce91751d927c"
+    }
+  },
+  "machine": "x86_64",
+  "measurements": [
+    "cancelled-before-retirement handles=1 active=1 logicalBytes=131355"
+  ],
+  "notRun": [
+    "Rust broker gateway regression (run through the registered latent-http CI suite separately)",
+    "Real Wasmtime guest/component execution in any of the six languages",
+    "Candidate WIT parser, binding generation and WASI composition",
+    "Production DNS rebinding, credentials, durable audit and descendant budget conformance",
+    "Allocator/kernel/TLS hostile-peer qualification and complete repository CI",
+    "Five research JSON-schema/acceptance-map contract tests (native-only profile)"
+  ],
+  "observedAt": "2026-09-28T20:03:39.092652+00:00",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "profile": "native",
+  "pythonContractTests": 6,
+  "pythonVersion": "3.13.5",
+  "sources": {
+    "research/outbound-streams/evidence/deepening-negative.json": "32d8eb2922148fa6216446b8bd240caf69085df6c8a67738279733080cc7a4f2",
+    "research/outbound-streams/gateway.go": "4f3cb2b0fc3c6c56ca70ce363b1a58633a45b0612fc877a0b714af4c91ab02f2",
+    "research/outbound-streams/gateway_test.go": "cfc7ee175a72101399bafa4a2f2dee3b9efba1705a96fea0caaa0be09aec85f9",
+    "research/outbound-streams/reply_bounds.go": "f045db77c3c41a7d33bccb58980e05e3c1c7fd4766b6df7cdf0250c8003f02a6",
+    "research/outbound-streams/reply_bounds_test.go": "3fe621dc23544df2b477e362f5908594a3235f9a89b159b409cd5c05ee513aea",
+    "research/outbound-streams/run.py": "be31cee44f5078a0f9888de527448f26b954994232ae2ced00da7597a9540398",
+    "research/outbound-streams/test_contract.py": "54557eb9b15a3e6486c8a9f292b6fceb94d8e0a74aab3b10330e51c469f5f718",
+    "research/outbound-streams/test_evidence.py": "74e5a9d4e1d7b96e07e2984a94a679754e41b59b577eb5476cfc4d5330020ac0"
+  },
+  "status": "passed",
+  "testResults": [
+    {
+      "elapsedSeconds": 0,
+      "name": "TestRealSMTPPartialIOAndFreshInvocation",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestDeniedAuthorityNeverConnects",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestLiteralAndSpecialAddressPolicy",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestForgedForeignAndClosedHandles",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestHandleAndTenantLimits",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestByteAndAuditExhaustionBeforeConnect",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestInvalidInputAndCancelledBeforeDispatch",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestRevocationBeforeStart",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestLostResponseDoesNotUndoPeerEffect",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.08,
+      "name": "TestPeerStallIsBounded",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestCancelActiveHandleRetainsPhysicalOwnerUntilReturn",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestContextCancellationAndFreshNextInvocation",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestPartialWriteFailureAndSuccessfulFreshInvocation",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.01,
+      "name": "TestBoundedPeerBytesAndRedaction",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.02,
+      "name": "TestTLSExplicitTrustAndHostname/trusted",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.01,
+      "name": "TestTLSExplicitTrustAndHostname/untrusted",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.01,
+      "name": "TestTLSExplicitTrustAndHostname/wrong-name",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.04,
+      "name": "TestTLSExplicitTrustAndHostname",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestShortWriteContractStickyFailureAndAbsoluteDeadline",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/successive/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/successive/2",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/successive/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/successive/512",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/successive/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/bare/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/bare/2",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/bare/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/bare/512",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/bare/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/line/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/line/2",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/line/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/line/512",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/line/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/multiline/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/multiline/2",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/multiline/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/multiline/512",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation/multiline/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.01,
+      "name": "TestReplyEnvelopeExactBoundsAndFragmentation",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/ftp-continuation/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/ftp-continuation/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/ftp-continuation/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/bare-lf/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/bare-lf/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/bare-lf/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/bad-code/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/bad-code/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/bad-code/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/long-line/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/long-line/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/long-line/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/too-many-lines/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/too-many-lines/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/too-many-lines/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/mixed-code/1",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/mixed-code/7",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations/mixed-code/4096",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyEnvelopeRejectsOversizeAndNonSMTPContinuations",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestRealSMTPParserNeedsExplicitReplyEnvelope/false",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.01,
+      "name": "TestRealSMTPParserNeedsExplicitReplyEnvelope/true",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0.01,
+      "name": "TestRealSMTPParserNeedsExplicitReplyEnvelope",
+      "result": "pass"
+    },
+    {
+      "elapsedSeconds": 0,
+      "name": "TestReplyParserReservationRejectsBeforeConnect",
+      "result": "pass"
+    }
+  ],
+  "topLevelGoTests": 20
+}

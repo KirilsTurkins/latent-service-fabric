@@ -1,0 +1,195 @@
+{
+  "cases": [
+    "WorkflowActionPolicyTests.test_accepts_external_reusable_workflow_pinned_to_full_sha",
+    "WorkflowActionPolicyTests.test_accepts_full_sha_local_action_and_digest_pinned_docker_action",
+    "WorkflowActionPolicyTests.test_external_subpaths_and_local_paths_cannot_escape",
+    "WorkflowActionPolicyTests.test_local_composite_and_local_reusable_dependencies_are_inspected",
+    "WorkflowActionPolicyTests.test_missing_local_action_is_an_actionable_failure",
+    "WorkflowActionPolicyTests.test_rejects_moving_tag_short_sha_dynamic_and_missing_comment",
+    "WorkflowActionPolicyTests.test_rejects_mutable_docker_tag_and_unsafe_local_path",
+    "WorkflowActionPolicyTests.test_rejects_oversized_workflow",
+    "WorkflowActionPolicyTests.test_rejects_symlinked_workflow",
+    "WorkflowActionPolicyTests.test_repository_workflows_satisfy_policy",
+    "WorkflowActionPolicyTests.test_same_commit_repository_syntax_keeps_dependency_and_path_checks",
+    "WorkflowActionPolicyTests.test_script_text_is_not_an_executable_action_reference",
+    "WorkflowActionPolicyTests.test_yaml_duplicates_nesting_and_nonscalar_uses_fail_closed",
+    "WorkflowActionPolicyTests.test_yaml_forms_cannot_hide_mutable_executable_references"
+  ],
+  "guards": {
+    "WorkflowActionPolicyTests.test_accepts_external_reusable_workflow_pinned_to_full_sha": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_accepts_full_sha_local_action_and_digest_pinned_docker_action": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_external_subpaths_and_local_paths_cannot_escape": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_local_composite_and_local_reusable_dependencies_are_inspected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_missing_local_action_is_an_actionable_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_rejects_moving_tag_short_sha_dynamic_and_missing_comment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_rejects_mutable_docker_tag_and_unsafe_local_path": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_rejects_oversized_workflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_rejects_symlinked_workflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": [
+        "self.skipTest('Windows host does not grant symlink creation; exercised on Linux CI')",
+        "skip-control-sha256:532dc4e61a1b9d0e7f983a67dbf871075e17e8daeb0d8d72d68a1b7bb7513acd"
+      ]
+    },
+    "WorkflowActionPolicyTests.test_repository_workflows_satisfy_policy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_same_commit_repository_syntax_keeps_dependency_and_path_checks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_script_text_is_not_an_executable_action_reference": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_yaml_duplicates_nesting_and_nonscalar_uses_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    },
+    "WorkflowActionPolicyTests.test_yaml_forms_cannot_hide_mutable_executable_references": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:00d67f5926adf348582fba595391606c7612617429b5280f8329c2ea02705512",
+        "class:setup-sha256:561f28a1dc7ca811d6f284d3d4722d80fffeb41353eda2bb488a64042cd0dc5a"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_validate_workflow_actions.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

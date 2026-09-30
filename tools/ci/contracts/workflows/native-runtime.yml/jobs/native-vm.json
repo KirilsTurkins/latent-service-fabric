@@ -1,0 +1,155 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/native-runtime.yml:native-vm:Boot clean native guest, invoke, reboot, retain and purge": {
+      "job": "native-vm",
+      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "name": "Boot clean native guest, invoke, reboot, retain and purge",
+      "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-candidate\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$NATIVE_ARTIFACT_COMMIT\" --source-ref \"$NATIVE_ARTIFACT_REF\" \\\n  --purpose candidate --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:native-vm:Prepare private exact-source host workspace without changing runner ACLs": {
+      "job": "native-vm",
+      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "name": "Prepare private exact-source host workspace without changing runner ACLs",
+      "run": "python3 tools/prepare_native_workspace.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:native-vm:Provision host QEMU and independent verification trust": {
+      "job": "native-vm",
+      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "name": "Provision host QEMU and independent verification trust",
+      "run": "sudo apt-get update\nsudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client\nif test -c /dev/kvm; then sudo setfacl -m \"u:$(id -un):rw\" /dev/kvm; fi\ngh --version\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime.yml:native-vm:Select exact real candidate artifact, independent of test-harness revision": {
+      "job": "native-vm",
+      "jobIf": "${{ !cancelled() && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+      "name": "Select exact real candidate artifact, independent of test-harness revision",
+      "run": "python3 tools/select_native_vm_artifact.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/native-runtime.yml:native-vm:Boot clean native guest, invoke, reboot, retain and purge": {
+      "after": ".github/workflows/native-runtime.yml:native-vm:Boot clean native guest, invoke, reboot, retain and purge",
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
+    },
+    ".github/workflows/native-runtime.yml:native-vm:Prepare private exact-source host workspace without changing runner ACLs": {
+      "after": ".github/workflows/native-runtime.yml:native-vm:Prepare private exact-source host workspace without changing runner ACLs",
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
+    },
+    ".github/workflows/native-runtime.yml:native-vm:Provision host QEMU and independent verification trust": {
+      "after": ".github/workflows/native-runtime.yml:native-vm:Provision host QEMU and independent verification trust",
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
+    },
+    ".github/workflows/native-runtime.yml:native-vm:Select exact real candidate artifact, independent of test-harness revision": {
+      "after": ".github/workflows/native-runtime.yml:native-vm:Select exact real candidate artifact, independent of test-harness revision",
+      "disposition": "extended",
+      "reason": "Ordinary runtime candidates retain both existing VM profiles. The explicit disposable-test candidate records its feature in authenticated metadata, runs through the developer node/portable fixture owner, and cannot satisfy native release qualification."
+    }
+  },
+  "definition": {
+    "if": "${{ !cancelled() && !inputs.development_test_node && (needs.candidate.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.artifact_run != '')) }}",
+    "name": "Native VM (${{ matrix.profile }})",
+    "needs": "candidate",
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Prepare private exact-source host workspace without changing runner ACLs",
+        "run": "python3 tools/prepare_native_workspace.py"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}",
+          "VM_ARTIFACT_RUN": "${{ inputs.artifact_run }}"
+        },
+        "name": "Select exact real candidate artifact, independent of test-harness revision",
+        "run": "python3 tools/select_native_vm_artifact.py"
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "native-runtime-candidate-${{ env.NATIVE_ARTIFACT_COMMIT }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-candidate",
+          "run-id": "${{ env.NATIVE_ARTIFACT_RUN }}"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "github-token": "${{ github.token }}",
+          "name": "native-runtime-test-tools-${{ env.NATIVE_ARTIFACT_COMMIT }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-test-tools",
+          "run-id": "${{ env.NATIVE_ARTIFACT_RUN }}"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Provision host QEMU and independent verification trust",
+        "run": "sudo apt-get update\nsudo apt-get install -y --no-install-recommends qemu-system-x86 qemu-utils cloud-image-utils openssh-client\nif test -c /dev/kvm; then sudo setfacl -m \"u:$(id -un):rw\" /dev/kvm; fi\ngh --version\ngh attestation trusted-root > \"$NATIVE_TRUST/trusted_root.jsonl\"\n"
+      },
+      {
+        "env": {
+          "NATIVE_PROFILE": "${{ matrix.profile }}"
+        },
+        "name": "Boot clean native guest, invoke, reboot, retain and purge",
+        "run": "cd \"$NATIVE_WORKSPACE\"\npython3 tools/run_native_vm.py --release-directory \"$PWD/target/native-candidate\" \\\n  --trusted-root \"$NATIVE_TRUST/trusted_root.jsonl\" --verifier \"$(readlink -f \"$(command -v gh)\")\" \\\n  --version \"$NATIVE_VERSION\" --commit \"$NATIVE_ARTIFACT_COMMIT\" --source-ref \"$NATIVE_ARTIFACT_REF\" \\\n  --purpose candidate --profile \"$NATIVE_PROFILE\" --fixture-helper \"$PWD/target/native-test-tools/fixture-helper\" \\\n  --output \"$PWD/target/native-vm/$NATIVE_PROFILE.json\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain compact redacted real VM evidence and failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "native-runtime-vm-${{ matrix.profile }}-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-vm/*.json",
+          "retention-days": 14
+        }
+      }
+    ],
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "profile": [
+          "local-experimental-v1",
+          "external-capsule-v1"
+        ]
+      }
+    },
+    "timeout-minutes": 30
+  },
+  "jobId": "native-vm",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/native-runtime.yml"
+}

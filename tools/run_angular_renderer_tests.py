@@ -9,11 +9,14 @@ import sys
 try:
     from tools.test_run import ProcessFailure, TestRun, contract, require, selected_contract
     from tools.prepared_test_harness import execute, wasm
+    from tools import ci_suite_inventory as registry, ci_rust_artifacts as artifacts
 except ModuleNotFoundError as error:
     if error.name != "tools":
         raise
     from test_run import ProcessFailure, TestRun, contract, require, selected_contract
     from prepared_test_harness import execute, wasm
+    import ci_suite_inventory as registry
+    import ci_rust_artifacts as artifacts
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -41,13 +44,29 @@ def main(argv: list[str] | None = None) -> int:
                              "private-renderer": private})
         component = wasm(owner, "component", args.component)
         private = wasm(owner, "private-renderer", private)
-        environment = dict(os.environ, LSF_ANGULAR_COMPONENT=str(component),
-                           LSF_ANGULAR_PRIVATE_COMPONENT=str(private))
-        for key in policy["suiteIds"]:
+        data = registry.load(ROOT / "tools/ci/suites.json")
+        selections = registry.process_cases(data, "angular-renderer")
+        owner.declare_cases([case for cases in selections.values() for case in cases])
+        owner.reproduction.update(recipe=rows[policy["suiteIds"][0]]["recipe"],
+                                  recipeIdentity=registry.process_recipe_identity(data, "angular-renderer"),
+                                  mode="process")
+        environment = owner.execution_environment(dict(
+            os.environ, LSF_ANGULAR_COMPONENT=str(component),
+            LSF_ANGULAR_PRIVATE_COMPONENT=str(private)))
+        target = Path(environment.get("CARGO_TARGET_DIR", ROOT / "target"))
+        if not target.is_absolute():
+            target = ROOT / target
+        # Capture every intended owner before discovery/fault injection, not just
+        # the prefix reached before the first failure.
+        for key, selected in selections.items():
             row = rows[key]
-            selected = [name for name in row["expectedIgnored"]
-                        if row["target"] != "latentd" or "actual_angular_http_" in name]
-            execute(owner, row, args.test_manifest, environment, selected=selected, fault=args.inject_failure)
+            suite = artifacts.Suite(row["manifest"], row["target"], row["source"], "",
+                                    frozenset(row["expectedIgnored"]), False, row["kind"])
+            artifact = artifacts.read_inventory(args.test_manifest, ROOT, suite, target=target.resolve())
+            owner.artifact(key, artifact.executable, 1024 * 1024 * 1024)
+        for key, selected in selections.items():
+            execute(owner, rows[key], args.test_manifest, environment,
+                    selected=selected, fault=args.inject_failure)
         return 0
 
 

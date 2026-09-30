@@ -1,0 +1,24 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "needs.scope.outputs.rustsec == 'true'",
+    "name": "RustSec ${{ matrix.ref }}",
+    "needs": "scope",
+    "strategy": {
+      "fail-fast": false,
+      "matrix": "${{ fromJSON(needs.scope.outputs.matrix) }}"
+    },
+    "uses": "$/.github/workflows/security-rustsec.yml",
+    "with": {
+      "controls-ref": "${{ github.sha }}",
+      "source-ref": "${{ matrix.ref }}"
+    }
+  },
+  "jobId": "rustsec",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/security-baseline.yml"
+}

@@ -1,0 +1,119 @@
+{
+  "cases": [
+    "SharedRecordLimits.test_historical_replay_is_identical_and_other_guards_remain_independent",
+    "SharedRecordLimits.test_only_two_exact_integer_record_counts_are_accepted_before_io",
+    "SharedRecordLimits.test_whole_and_both_attribution_wrappers_forward_explicit_or_default_count",
+    "SharedRecordLimits.test_whole_and_selected_readers_enforce_same_closed_record_count",
+    "SharedStorageLimits.test_actual_small_files_keep_default_strict_and_explicit_extension_exact",
+    "SharedStorageLimits.test_explicit_historical_cap_has_identical_artifacts_and_file_limit",
+    "SharedStorageLimits.test_live_collector_uses_selected_remaining_budget_and_closes_on_overflow",
+    "SharedStorageLimits.test_only_two_exact_integer_totals_are_accepted_before_io"
+  ],
+  "guards": {
+    "SharedRecordLimits.test_historical_replay_is_identical_and_other_guards_remain_independent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ffe4f110d93787b52861835332a5cf49de83201ed24dffbed19ba213107e9fb5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedRecordLimits.test_only_two_exact_integer_record_counts_are_accepted_before_io": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ffe4f110d93787b52861835332a5cf49de83201ed24dffbed19ba213107e9fb5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedRecordLimits.test_whole_and_both_attribution_wrappers_forward_explicit_or_default_count": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ffe4f110d93787b52861835332a5cf49de83201ed24dffbed19ba213107e9fb5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedRecordLimits.test_whole_and_selected_readers_enforce_same_closed_record_count": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ffe4f110d93787b52861835332a5cf49de83201ed24dffbed19ba213107e9fb5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedStorageLimits.test_actual_small_files_keep_default_strict_and_explicit_extension_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ffe4f110d93787b52861835332a5cf49de83201ed24dffbed19ba213107e9fb5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedStorageLimits.test_explicit_historical_cap_has_identical_artifacts_and_file_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ffe4f110d93787b52861835332a5cf49de83201ed24dffbed19ba213107e9fb5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedStorageLimits.test_live_collector_uses_selected_remaining_budget_and_closes_on_overflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'owned normal collector imports Linux resource')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:ffe4f110d93787b52861835332a5cf49de83201ed24dffbed19ba213107e9fb5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:c1810ab41eb574112b3849c37e39063db49ead38da26d0ab851cf38c218f35ec",
+        "unittest.skipUnless(sys.platform == 'linux', 'owned normal collector imports Linux resource')"
+      ]
+    },
+    "SharedStorageLimits.test_only_two_exact_integer_totals_are_accepted_before_io": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ffe4f110d93787b52861835332a5cf49de83201ed24dffbed19ba213107e9fb5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_codec_shared_limits.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

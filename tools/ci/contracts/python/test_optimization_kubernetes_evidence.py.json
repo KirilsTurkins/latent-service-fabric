@@ -1,0 +1,231 @@
+{
+  "cases": [
+    "KubernetesEvidenceTests.test_attach_hashes_original_consumed_output_and_cleanup",
+    "KubernetesEvidenceTests.test_attach_missing_reap_forced_kill_or_stream_substitution_reject",
+    "KubernetesEvidenceTests.test_attach_ready_ack_must_come_from_pod_log_not_attach",
+    "KubernetesEvidenceTests.test_cleanup_embedded_pod_keeps_namespace_and_role_owner_checks",
+    "KubernetesEvidenceTests.test_client_actual_quantities_are_equivalent_without_docker_pid_defaults",
+    "KubernetesEvidenceTests.test_client_pod_replacement_controls_and_unclean_exit_reject",
+    "KubernetesEvidenceTests.test_cri_stats_crossed_owner_duplicate_rows_and_boolean_reject",
+    "KubernetesEvidenceTests.test_cri_stats_keep_two_clocks_and_explicit_missing_fields",
+    "KubernetesEvidenceTests.test_current_and_known_prior_slices_preserve_full_list_and_order",
+    "KubernetesEvidenceTests.test_embedded_slice_type_comes_only_from_validated_list",
+    "KubernetesEvidenceTests.test_image_repository_alias_is_closed",
+    "KubernetesEvidenceTests.test_prior_ready_slice_cannot_trigger_next_same_density_group",
+    "KubernetesEvidenceTests.test_recorded_shared_index_alias_requires_actual_per_arm_config_selection",
+    "KubernetesEvidenceTests.test_selected_config_or_manifest_is_required_not_shared_index",
+    "KubernetesEvidenceTests.test_slice_duplicate_and_namespace_population_bound_reject",
+    "KubernetesEvidenceTests.test_tail_partial_reads_bind_every_event_to_actual_source_call",
+    "KubernetesEvidenceTests.test_unknown_or_replaced_prior_slice_owner_is_not_ignored"
+  ],
+  "guards": {
+    "KubernetesEvidenceTests.test_attach_hashes_original_consumed_output_and_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_attach_missing_reap_forced_kill_or_stream_substitution_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_attach_ready_ack_must_come_from_pod_log_not_attach": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_cleanup_embedded_pod_keeps_namespace_and_role_owner_checks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_client_actual_quantities_are_equivalent_without_docker_pid_defaults": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_client_pod_replacement_controls_and_unclean_exit_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_cri_stats_crossed_owner_duplicate_rows_and_boolean_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_cri_stats_keep_two_clocks_and_explicit_missing_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_current_and_known_prior_slices_preserve_full_list_and_order": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_embedded_slice_type_comes_only_from_validated_list": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_image_repository_alias_is_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_prior_ready_slice_cannot_trigger_next_same_density_group": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_recorded_shared_index_alias_requires_actual_per_arm_config_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_selected_config_or_manifest_is_required_not_shared_index": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_slice_duplicate_and_namespace_population_bound_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_tail_partial_reads_bind_every_event_to_actual_source_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesEvidenceTests.test_unknown_or_replaced_prior_slice_owner_is_not_ignored": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e75644fae0b42c9162b51aa0639b8d8cf665f6005f19cd5ddf577de5059da9eb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_evidence.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

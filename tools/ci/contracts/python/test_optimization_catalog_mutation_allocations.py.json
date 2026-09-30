@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "CatalogMutationAllocationTests.test_fourth_frame_and_union_keep_origin_on_later_frees",
+    "CatalogMutationAllocationTests.test_missing_trace_stays_unresolved_and_never_becomes_selected_zero_evidence",
+    "CatalogMutationAllocationTests.test_only_profile_modes_select_bounded_actual_frame_sets"
+  ],
+  "guards": {
+    "CatalogMutationAllocationTests.test_fourth_frame_and_union_keep_origin_on_later_frees": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6358ff52501bd1cc1fa92d1fd5d0bfa7019d138e65bc9036baed67e11337e976",
+        "class:setup-sha256:feaaad5e26c2873cbb6a0591b7a80053cbb84571e56976ef64352427da13c029"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationAllocationTests.test_missing_trace_stays_unresolved_and_never_becomes_selected_zero_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6358ff52501bd1cc1fa92d1fd5d0bfa7019d138e65bc9036baed67e11337e976",
+        "class:setup-sha256:feaaad5e26c2873cbb6a0591b7a80053cbb84571e56976ef64352427da13c029"
+      ],
+      "skipSites": []
+    },
+    "CatalogMutationAllocationTests.test_only_profile_modes_select_bounded_actual_frame_sets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6358ff52501bd1cc1fa92d1fd5d0bfa7019d138e65bc9036baed67e11337e976",
+        "class:setup-sha256:feaaad5e26c2873cbb6a0591b7a80053cbb84571e56976ef64352427da13c029"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_catalog_mutation_allocations.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

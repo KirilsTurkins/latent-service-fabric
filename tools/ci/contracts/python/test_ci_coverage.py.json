@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "CoverageTests.test_changed_nested_owner_requires_explicit_inventory_review",
+    "CoverageTests.test_duplicate_required_step_identity_fails_closed",
+    "CoverageTests.test_new_removed_or_modified_workflow_command_is_rejected",
+    "CoverageTests.test_no_coverage_row_may_remove_an_existing_required_owner",
+    "CoverageTests.test_reviewed_coverage_map_matches_current_commands_and_owners"
+  ],
+  "guards": {
+    "CoverageTests.test_changed_nested_owner_requires_explicit_inventory_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fe06a0621448e6eb9c7635a24d4b387267e9de64aaff09bdc51fba7061ee0542",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CoverageTests.test_duplicate_required_step_identity_fails_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fe06a0621448e6eb9c7635a24d4b387267e9de64aaff09bdc51fba7061ee0542",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CoverageTests.test_new_removed_or_modified_workflow_command_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fe06a0621448e6eb9c7635a24d4b387267e9de64aaff09bdc51fba7061ee0542",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CoverageTests.test_no_coverage_row_may_remove_an_existing_required_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fe06a0621448e6eb9c7635a24d4b387267e9de64aaff09bdc51fba7061ee0542",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CoverageTests.test_reviewed_coverage_map_matches_current_commands_and_owners": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fe06a0621448e6eb9c7635a24d4b387267e9de64aaff09bdc51fba7061ee0542",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_ci_coverage.py",
+  "reviewReason": "Issue #732: retain prior cases and explicitly add lossless migration, strict structural/fragment, real Git merge, scoped proposal and commit-bound receipt regressions.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

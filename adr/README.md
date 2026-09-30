@@ -111,3 +111,7 @@ old implementation snapshots are not setup instructions.
 - [ADR-0056: Run headless operators through a private local transport](0056-run-headless-operators-through-a-private-local-transport.md)
 - [ADR-0057: Pin a local HTTPS edge to an exact native peer](0057-pin-a-local-https-edge-to-an-exact-native-peer.md)
 - [ADR-0058: Transform static identity bytes at a bounded trusted edge](0058-transform-static-identity-bytes-at-a-bounded-trusted-edge.md)
+
+### Library transport research
+
+- [ADR-0059: Defer general outbound streams; evaluate typed protocol boundaries first](0059-defer-general-outbound-streams.md)

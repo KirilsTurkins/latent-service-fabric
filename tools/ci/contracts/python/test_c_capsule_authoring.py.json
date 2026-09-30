@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts",
+    "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings",
+    "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project",
+    "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed",
+    "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project",
+    "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected",
+    "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs",
+    "ControlDiagnosticsTests.test_cyclic_audit_cursor_stops_without_hiding_the_original_failure",
+    "ControlDiagnosticsTests.test_paginated_evidence_never_retries_or_changes_the_failed_mutation"
+  ],
+  "guards": {
+    "CAuthoringTests.test_all_templates_capture_editable_source_and_authoritative_contracts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31e7af8c2517f48ee0510f3eb005089cee6a3d88982da613f857040cd7c362f2",
+        "class:setup-sha256:79be0eb30381afd0333c6af81b0039213beb1b59a18ce5326bab160aeb3faff5"
+      ],
+      "skipSites": []
+    },
+    "CAuthoringTests.test_c_namespace_aliases_never_invent_or_hide_ambiguous_bindings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31e7af8c2517f48ee0510f3eb005089cee6a3d88982da613f857040cd7c362f2",
+        "class:setup-sha256:79be0eb30381afd0333c6af81b0039213beb1b59a18ce5326bab160aeb3faff5"
+      ],
+      "skipSites": []
+    },
+    "CAuthoringTests.test_fresh_output_does_not_overwrite_existing_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31e7af8c2517f48ee0510f3eb005089cee6a3d88982da613f857040cd7c362f2",
+        "class:setup-sha256:79be0eb30381afd0333c6af81b0039213beb1b59a18ce5326bab160aeb3faff5"
+      ],
+      "skipSites": []
+    },
+    "CAuthoringTests.test_identity_budget_and_lock_formats_are_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31e7af8c2517f48ee0510f3eb005089cee6a3d88982da613f857040cd7c362f2",
+        "class:setup-sha256:79be0eb30381afd0333c6af81b0039213beb1b59a18ce5326bab160aeb3faff5"
+      ],
+      "skipSites": []
+    },
+    "CAuthoringTests.test_invalid_names_and_templates_leave_no_partial_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31e7af8c2517f48ee0510f3eb005089cee6a3d88982da613f857040cd7c362f2",
+        "class:setup-sha256:79be0eb30381afd0333c6af81b0039213beb1b59a18ce5326bab160aeb3faff5"
+      ],
+      "skipSites": []
+    },
+    "CAuthoringTests.test_sdk_header_and_toolchain_drift_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31e7af8c2517f48ee0510f3eb005089cee6a3d88982da613f857040cd7c362f2",
+        "class:setup-sha256:79be0eb30381afd0333c6af81b0039213beb1b59a18ce5326bab160aeb3faff5"
+      ],
+      "skipSites": []
+    },
+    "CAuthoringTests.test_source_overlap_is_rejected_before_any_compiler_runs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31e7af8c2517f48ee0510f3eb005089cee6a3d88982da613f857040cd7c362f2",
+        "class:setup-sha256:79be0eb30381afd0333c6af81b0039213beb1b59a18ce5326bab160aeb3faff5"
+      ],
+      "skipSites": []
+    },
+    "ControlDiagnosticsTests.test_cyclic_audit_cursor_stops_without_hiding_the_original_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31e7af8c2517f48ee0510f3eb005089cee6a3d88982da613f857040cd7c362f2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ControlDiagnosticsTests.test_paginated_evidence_never_retries_or_changes_the_failed_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:31e7af8c2517f48ee0510f3eb005089cee6a3d88982da613f857040cd7c362f2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_capsule_authoring.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "EngineDescriptorTests.test_crossed_owned_fields_and_nonempty_dependencies_reject",
+    "EngineDescriptorTests.test_real_optimization_metadata_retargets_only_owned_ids_and_digests",
+    "EngineDescriptorTests.test_unowned_strings_are_not_recursively_rewritten",
+    "EngineNamespaceTests.test_all_fixed_targets_match_outer_exports_and_b_marker_is_last",
+    "EngineNamespaceTests.test_export_set_and_framing_mutations_are_rejected",
+    "EngineNamespaceTests.test_only_outer_names_change_preserving_order_and_other_encodings",
+    "EngineNamespaceTests.test_selectors_and_name_expansion_are_bounded",
+    "EngineNamespaceTests.test_split_exports_keep_section_positions_and_empty_sections"
+  ],
+  "guards": {
+    "EngineDescriptorTests.test_crossed_owned_fields_and_nonempty_dependencies_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:779d68640b6048e3802b9095b25fbfbdbebc189bec4072a136521edf1fe9948b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineDescriptorTests.test_real_optimization_metadata_retargets_only_owned_ids_and_digests": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:779d68640b6048e3802b9095b25fbfbdbebc189bec4072a136521edf1fe9948b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineDescriptorTests.test_unowned_strings_are_not_recursively_rewritten": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:779d68640b6048e3802b9095b25fbfbdbebc189bec4072a136521edf1fe9948b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineNamespaceTests.test_all_fixed_targets_match_outer_exports_and_b_marker_is_last": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:779d68640b6048e3802b9095b25fbfbdbebc189bec4072a136521edf1fe9948b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineNamespaceTests.test_export_set_and_framing_mutations_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:779d68640b6048e3802b9095b25fbfbdbebc189bec4072a136521edf1fe9948b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineNamespaceTests.test_only_outer_names_change_preserving_order_and_other_encodings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:779d68640b6048e3802b9095b25fbfbdbebc189bec4072a136521edf1fe9948b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineNamespaceTests.test_selectors_and_name_expansion_are_bounded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:779d68640b6048e3802b9095b25fbfbdbebc189bec4072a136521edf1fe9948b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EngineNamespaceTests.test_split_exports_keep_section_positions_and_empty_sections": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:779d68640b6048e3802b9095b25fbfbdbebc189bec4072a136521edf1fe9948b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_engine_namespace.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

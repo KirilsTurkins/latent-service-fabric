@@ -1,0 +1,159 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Windows frontend and actual portable capsules",
+    "needs": "guest-tools",
+    "runs-on": "windows-2025",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install exact hashed frontend build inputs",
+        "run": "python -m pip install --require-hashes -r tools/dev-frontend-windows.lock"
+      },
+      {
+        "name": "Build native frontend and isolated Linux helper",
+        "run": "python tools/build_dev_frontend.py --output target/dev-candidate"
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-wasip2,wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Install pinned component manifest validator",
+        "run": "python -m pip install jsonschema==4.26.0"
+      },
+      {
+        "name": "Build native portable host and maintained compiled Rust guests",
+        "run": "cargo build -p latent-portable-test-host --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_echo_capsule.py --output-dir target/dev-echo\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build -p latent-toolchain-smoke --example generic-capsule --target wasm32-unknown-unknown --release --locked\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/generic_capsule.wasm -o target/dev-generic.wasm\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/build_portable_dev_guests.py --output target/dev-providers\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n"
+      },
+      {
+        "name": "Exercise native production Wasmtime and shared scenario assertions outside checkout",
+        "run": "python tools/run_portable_dev_tests.py --host target/release/latent-portable-test-host.exe --echo target/dev-echo --generic target/dev-generic.wasm --providers target/dev-providers --output target/dev-portable-smoke.json"
+      },
+      {
+        "name": "Retrieve identical deterministic clock capsules and real node receipts",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "developer-clock-fixtures-${{ github.sha }}",
+          "path": "target/dev-clock-fixtures/"
+        }
+      },
+      {
+        "name": "Compare actual native Windows clocks and denial with the signed Linux node",
+        "run": "python tools/run_dev_clock_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-clock-fixtures --output target/dev-portable-clock-comparison.json"
+      },
+      {
+        "name": "Retrieve identical failure capsules and real node receipts",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "developer-failure-fixtures-${{ github.sha }}",
+          "path": "target/dev-failure-fixtures/"
+        }
+      },
+      {
+        "name": "Compare native Windows failures and fresh state with the signed Linux node",
+        "run": "python tools/run_dev_failure_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-failure-fixtures --output target/dev-portable-failure-comparison.json"
+      },
+      {
+        "name": "Retrieve identical HTTP capsules and real node receipts",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "developer-http-fixtures-${{ github.sha }}",
+          "path": "target/dev-http-fixtures/"
+        }
+      },
+      {
+        "name": "Compare authenticated native Windows HTTP with the signed Linux node",
+        "run": "python tools/run_dev_http_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-http-fixtures --output target/dev-portable-http-comparison.json"
+      },
+      {
+        "name": "Retrieve identical metric capsules and real node exports",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "developer-metric-fixtures-${{ github.sha }}",
+          "path": "target/dev-metric-fixtures/"
+        }
+      },
+      {
+        "name": "Compare native Windows metric exports with the signed Linux node",
+        "run": "python tools/run_dev_metric_portable.py --host target/release/latent-portable-test-host.exe --inputs target/dev-metric-fixtures --output target/dev-portable-metric-comparison.json"
+      },
+      {
+        "name": "Retrieve exact C components compiled by the maintained guest tool recipe",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "developer-c-portable-inputs-${{ github.sha }}",
+          "path": "target/dev-c-portable/"
+        }
+      },
+      {
+        "name": "Execute actual C applications and SDK providers natively",
+        "run": "python tools/run_portable_c_tests.py --host target/release/latent-portable-test-host.exe --providers target/dev-c-portable/providers --applications target/dev-c-portable/applications --output target/dev-portable-c-smoke.json"
+      },
+      {
+        "name": "Retrieve identical maintained applications",
+        "uses": "actions/download-artifact",
+        "with": {
+          "path": "target/dev-applications/",
+          "pattern": "developer-*-applications-${{ github.sha }}"
+        }
+      },
+      {
+        "name": "Execute all maintained tutorial applications on Windows",
+        "run": "foreach ($language in @('rust', 'c', 'java', 'dotnet', 'go', 'typescript')) {\n  python tools/run_portable_guest_tests.py --host target/release/latent-portable-test-host.exe --language $language --applications \"target/dev-applications/developer-$language-applications-$env:GITHUB_SHA\" --output \"target/dev-portable-$language-applications.json\" --require-node-parity\n  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n}\n"
+      },
+      {
+        "name": "Record exact portable output for candidate assembly",
+        "run": "python -c \"from pathlib import Path; import shutil,subprocess; from tools.dev_distribution import file_digest; from tools.dev_workflow.common import encode; d=Path('target/dev-candidate/portable'); d.mkdir(); p=d/'latent-portable-test-host.exe'; shutil.copyfile('target/release/latent-portable-test-host.exe',p); p.with_suffix('.json').write_bytes(encode({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sha256':file_digest(p)[0],'target':'windows-x86_64','profile':'release'}))\"\n"
+      },
+      {
+        "name": "Retain exact Windows distribution inputs",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "developer-windows-inputs-${{ github.sha }}",
+          "path": "target/dev-candidate/dist/\ntarget/dev-candidate/portable/\ntarget/dev-candidate/licenses/\ntarget/dev-candidate/python-inventory.json\ntarget/dev-candidate/helper.pyz\ntarget/dev-candidate/build.json\n",
+          "retention-days": 7
+        }
+      },
+      {
+        "if": "always()",
+        "name": "Retain actual native subset receipt",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "windows-portable-subset-${{ github.sha }}",
+          "path": "target/dev-portable-smoke.json\ntarget/dev-portable-clock-comparison.json\ntarget/dev-portable-failure-comparison.json\ntarget/dev-portable-http-comparison.json\ntarget/dev-portable-metric-comparison.json\ntarget/dev-portable-c-smoke.json\ntarget/dev-portable-*-applications.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 45
+  },
+  "jobId": "windows",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-tools.yml"
+}

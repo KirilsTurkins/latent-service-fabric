@@ -1,0 +1,70 @@
+{
+  "cases": [
+    "RunnerTests.test_missing_fixture_fails_before_any_execution",
+    "RunnerTests.test_nonzero_exit_cannot_be_evidence",
+    "RunnerTests.test_overflow_is_failure_with_capped_file",
+    "RunnerTests.test_timeout_cannot_wait_for_an_inherited_pipe_forever"
+  ],
+  "guards": {
+    "RunnerTests.test_missing_fixture_fails_before_any_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux process-group supervisor')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b9689e5ce7e3dd5bd398a96c26eb83c4dc2b90a10722474c8f54b4a01b86dea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RunnerTests.test_nonzero_exit_cannot_be_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux process-group supervisor')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b9689e5ce7e3dd5bd398a96c26eb83c4dc2b90a10722474c8f54b4a01b86dea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RunnerTests.test_overflow_is_failure_with_capped_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux process-group supervisor')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b9689e5ce7e3dd5bd398a96c26eb83c4dc2b90a10722474c8f54b4a01b86dea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RunnerTests.test_timeout_cannot_wait_for_an_inherited_pipe_forever": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux process-group supervisor')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8b9689e5ce7e3dd5bd398a96c26eb83c4dc2b90a10722474c8f54b4a01b86dea",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_runner.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

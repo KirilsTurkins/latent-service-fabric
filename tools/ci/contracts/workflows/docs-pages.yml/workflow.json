@@ -1,0 +1,59 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": false,
+      "group": "documentation-pages-authority"
+    },
+    "name": "Protected documentation publication",
+    "on": {
+      "workflow_dispatch": {
+        "inputs": {
+          "ci_attempt": {
+            "description": "Exact successful attempt of that CI run",
+            "required": true,
+            "type": "string"
+          },
+          "ci_run": {
+            "description": "Successful CI push run that owns the tested site artifact",
+            "required": true,
+            "type": "string"
+          },
+          "expected_live_source": {
+            "description": "Rollback only - exact source currently live, checked again after approval",
+            "type": "string"
+          },
+          "mode": {
+            "default": "publish",
+            "description": "Publish current development or restore a previously published complete artifact",
+            "options": [
+              "publish",
+              "rollback"
+            ],
+            "type": "choice"
+          },
+          "previous_publication_run": {
+            "description": "Rollback only - successful publisher run proving prior publication of this artifact",
+            "type": "string"
+          },
+          "source_sha": {
+            "description": "Exact reviewed development commit built by successful push CI",
+            "required": true,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "browser",
+    "deploy",
+    "select"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/docs-pages.yml"
+}

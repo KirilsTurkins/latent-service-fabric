@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "SbomPolicySchemaTests.test_explicit_presence_and_role_choices",
+    "SbomPolicySchemaTests.test_missing_unknown_and_null_fields_are_rejected",
+    "SbomPolicySchemaTests.test_unknown_duplicate_and_unbounded_roles_are_rejected"
+  ],
+  "guards": {
+    "SbomPolicySchemaTests.test_explicit_presence_and_role_choices": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fe30c6c4c12f4147f94f101e5c38331eec86b276c8aa95062d36287359972fc",
+        "class:setup-sha256:44f730a0d7fd31e12ef86967c4ec55838211aa2fa98e1a9307f9db9c0c73d4da"
+      ],
+      "skipSites": []
+    },
+    "SbomPolicySchemaTests.test_missing_unknown_and_null_fields_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fe30c6c4c12f4147f94f101e5c38331eec86b276c8aa95062d36287359972fc",
+        "class:setup-sha256:44f730a0d7fd31e12ef86967c4ec55838211aa2fa98e1a9307f9db9c0c73d4da"
+      ],
+      "skipSites": []
+    },
+    "SbomPolicySchemaTests.test_unknown_duplicate_and_unbounded_roles_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6fe30c6c4c12f4147f94f101e5c38331eec86b276c8aa95062d36287359972fc",
+        "class:setup-sha256:44f730a0d7fd31e12ef86967c4ec55838211aa2fa98e1a9307f9db9c0c73d4da"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_sbom_policy_schema.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

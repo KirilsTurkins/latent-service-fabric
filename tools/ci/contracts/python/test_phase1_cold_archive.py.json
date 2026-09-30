@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "ColdArchiveTests.test_complete_full_dispatch_replays_extracted_bytes_before_publication",
+    "ColdArchiveTests.test_complete_smoke_is_recognized_but_cannot_be_published_as_full",
+    "ColdArchiveTests.test_rehashed_changed_statistic_and_unknown_version_are_rejected",
+    "ColdArchiveTests.test_rehashed_removed_compiler_proof_fails_real_replay_before_publication"
+  ],
+  "guards": {
+    "ColdArchiveTests.test_complete_full_dispatch_replays_extracted_bytes_before_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9a3b1797d559e72c8ef3e261da7a7c76c455037fdcd864a9d8da3f79ba8a0f6b",
+        "class:setup-sha256:3ba43ee71acc37e728907ddd1a35d7887cee00589460a07760656345acd65a24"
+      ],
+      "skipSites": []
+    },
+    "ColdArchiveTests.test_complete_smoke_is_recognized_but_cannot_be_published_as_full": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9a3b1797d559e72c8ef3e261da7a7c76c455037fdcd864a9d8da3f79ba8a0f6b",
+        "class:setup-sha256:3ba43ee71acc37e728907ddd1a35d7887cee00589460a07760656345acd65a24"
+      ],
+      "skipSites": []
+    },
+    "ColdArchiveTests.test_rehashed_changed_statistic_and_unknown_version_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9a3b1797d559e72c8ef3e261da7a7c76c455037fdcd864a9d8da3f79ba8a0f6b",
+        "class:setup-sha256:3ba43ee71acc37e728907ddd1a35d7887cee00589460a07760656345acd65a24"
+      ],
+      "skipSites": []
+    },
+    "ColdArchiveTests.test_rehashed_removed_compiler_proof_fails_real_replay_before_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9a3b1797d559e72c8ef3e261da7a7c76c455037fdcd864a9d8da3f79ba8a0f6b",
+        "class:setup-sha256:3ba43ee71acc37e728907ddd1a35d7887cee00589460a07760656345acd65a24"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_cold_archive.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

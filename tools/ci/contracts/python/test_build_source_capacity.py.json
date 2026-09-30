@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "SourceCapacityTests.test_current_committed_repository_fits_capture_and_attribution_limits",
+    "SourceCapacityTests.test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over",
+    "SourceCapacityTests.test_tree_file_limit_rejects_before_archive_and_cleans_up"
+  ],
+  "guards": {
+    "SourceCapacityTests.test_current_committed_repository_fits_capture_and_attribution_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889f7ecdf900ceeab039b1eb04e16df6149ceed7a48f6d231c6c5fb40f7f6ca2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceCapacityTests.test_source_inventory_uses_capture_file_ceiling_and_rejects_one_over": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889f7ecdf900ceeab039b1eb04e16df6149ceed7a48f6d231c6c5fb40f7f6ca2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceCapacityTests.test_tree_file_limit_rejects_before_archive_and_cleans_up": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:889f7ecdf900ceeab039b1eb04e16df6149ceed7a48f6d231c6c5fb40f7f6ca2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_build_source_capacity.py",
+  "reviewReason": "PR #733 CI repair: explicitly register shared capture/attribution capacity and fail-closed boundary regressions.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -66,7 +66,7 @@ jobs:
           python3 tools/native_release_gate.py --version "$NATIVE_VERSION" --commit "$REVIEWED_COMMIT" \
             --ci-run "$REVIEWED_CI_RUN" --predecessor-run "$PREDECESSOR_RUN" "${arguments[@]}" \
             --output "$PWD/target/native-release-decision.json" --github-output
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: native-runtime-release-decision-${{ github.sha }}
           path: ${{ env.NATIVE_WORKSPACE }}/target/native-release-decision.json
@@ -130,13 +130,13 @@ jobs:
         run: |
           install -m 0644 "$ATTESTATION_BUNDLE" "$NATIVE_WORKSPACE/target/native-release/SHA256SUMS.sigstore.json"
           install -m 0644 "$NATIVE_WORKSPACE/packaging/dev/release-selection.json" "$NATIVE_WORKSPACE/target/native-release/developer-selection.json"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: native-runtime-release-${{ github.sha }}
           path: ${{ env.NATIVE_WORKSPACE }}/target/native-release/
           if-no-files-found: error
           retention-days: 90
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: native-runtime-test-tools-${{ github.sha }}
           path: ${{ env.NATIVE_WORKSPACE }}/target/native-test-tools/
@@ -144,7 +144,7 @@ jobs:
           retention-days: 90
       - name: Retain bounded build failure
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: native-runtime-release-build-failure-${{ github.sha }}
           path: ${{ env.NATIVE_WORKSPACE }}/target/native-build-failure.*
@@ -225,7 +225,7 @@ jobs:
             --output "$PWD/target/native-vm/$NATIVE_PROFILE.json" "${arguments[@]}"
       - name: Retain compact redacted actual VM results, including failures
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: native-runtime-release-vm-${{ matrix.profile }}-${{ github.sha }}
           path: ${{ env.NATIVE_WORKSPACE }}/target/native-vm/*.json
@@ -310,7 +310,7 @@ jobs:
             --acceptance-bundle "$ACCEPTANCE_BUNDLE" --output "$PWD/target/native-publication-result.json"
       - name: Retain publication result
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: native-runtime-publication-${{ github.sha }}
           path: |

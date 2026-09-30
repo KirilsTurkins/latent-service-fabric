@@ -97,9 +97,9 @@ def checked_path(value: object) -> Path:
     return path.resolve(strict=True)
 
 
-def read_inventory(path: Path, repo: Path, groups: tuple) -> dict[str, Artifact]:
+def read_inventory(path: Path, repo: Path, groups: tuple, *, target: Path | None = None) -> dict[str, Artifact]:
     repo = repo.resolve(strict=True)
-    target_root = (repo / "target").resolve(strict=True)
+    target_root = (target or repo / "target").resolve(strict=True)
     executable_root = (target_root / "debug/deps").resolve(strict=True)
     expected = {}
     for group in groups:

@@ -1,0 +1,228 @@
+{
+  "version": "0.1.0-alpha.5",
+  "developerSource": "42e549dd86b902ce887643b3bb339bb2a9ad8f50",
+  "qualificationRun": 36440862340,
+  "selectionSha256": "6a510c216c39597c2b27f030d6a1f0d9b010682702f0b2e65942bb2bb7674fcd",
+  "downloadedFiles": 41,
+  "authenticatedBundles": [
+    "c",
+    "dotnet",
+    "go",
+    "java",
+    "rust",
+    "typescript",
+    "linux",
+    "windows",
+    "wsl",
+    "native"
+  ],
+  "downloadedBytes": 2221708744,
+  "allDownloadedBytesMatchQualifiedSelection": true,
+  "files": [
+    {
+      "name": "dev-c-attestation.json",
+      "sha256": "c4e32c7255dd78fa49adc035090def24ef6946c4b770b80fdc27acbaa02d604f",
+      "size": 11874
+    },
+    {
+      "name": "dev-c-developer-bundle.json",
+      "sha256": "d5f902cba95b46c7002c29aad42fd8aaed8a17268e2c43df1a0aea9dc15559a8",
+      "size": 181163
+    },
+    {
+      "name": "dev-c-latent-dev-linux-x86_64-c-tools.zip",
+      "sha256": "b9a096cb3ff6bedcd4f12447331dca31798135a66b9afb7f6fa20f52d52c60f6",
+      "size": 80668049
+    },
+    {
+      "name": "dev-c-SHA256SUMS",
+      "sha256": "37293d4dd001d03d1e811bff99d8ce3a31020f8fcaa1dda4b09d1114f7a49cff",
+      "size": 190
+    },
+    {
+      "name": "dev-dotnet-attestation.json",
+      "sha256": "452ff386af0009ca7b50794bb1e00a5e3d0dc67f2b7a59eef0ee6b3089a603bf",
+      "size": 12105
+    },
+    {
+      "name": "dev-dotnet-developer-bundle.json",
+      "sha256": "c496fe1b08adbff1ad9286309138eaba74c75c154cc93d0df9857e8991c54df3",
+      "size": 195104
+    },
+    {
+      "name": "dev-dotnet-latent-dev-linux-x86_64-dotnet-tools.zip",
+      "sha256": "cc613558ba716316709519a77b267c22959523c9bf019298d37bfd8a9a1d1fc2",
+      "size": 859539208
+    },
+    {
+      "name": "dev-dotnet-SHA256SUMS",
+      "sha256": "49930347788b548e3f3ea041d1826b80205b23c3a4ae9932708ccb1ea9b6651e",
+      "size": 195
+    },
+    {
+      "name": "dev-go-attestation.json",
+      "sha256": "e44bcea6ef10f8ed3e70467a89702156152a33711ac158ab8cb74f723b785595",
+      "size": 12019
+    },
+    {
+      "name": "dev-go-developer-bundle.json",
+      "sha256": "ffcb8e7742fa9f7017678f756d8929db208d57834ec891a36c52e56cf5140829",
+      "size": 256838
+    },
+    {
+      "name": "dev-go-latent-dev-linux-x86_64-go-tools.zip",
+      "sha256": "d13a709a483a6b8645a62b07320ac66f454132a5763e49b3e44ce5bb13420b02",
+      "size": 93221562
+    },
+    {
+      "name": "dev-go-SHA256SUMS",
+      "sha256": "799e262d7ee597ba986af7313fbc6c15a85c9ccdad2a7bafa33783bda043d8a7",
+      "size": 191
+    },
+    {
+      "name": "dev-java-attestation.json",
+      "sha256": "7c6ce3144b0dcac50996284c605ee21ac3ce2c57d775fb7d7abfc3116967d30e",
+      "size": 11964
+    },
+    {
+      "name": "dev-java-developer-bundle.json",
+      "sha256": "4b650a121ae379553217aedc6cc780b5f8a7f74ad6522d7dd055389fcd4d0a3c",
+      "size": 193971
+    },
+    {
+      "name": "dev-java-latent-dev-linux-x86_64-java-tools.zip",
+      "sha256": "20dbc23deca56ac364b68da7e716269a2013b4f8fc523edaf524695f7b9ceeb1",
+      "size": 516785578
+    },
+    {
+      "name": "dev-java-SHA256SUMS",
+      "sha256": "97535d3ade837d694bd650078121ebd526d4a593eb9b8773d120ef900a77b41c",
+      "size": 193
+    },
+    {
+      "name": "dev-rust-attestation.json",
+      "sha256": "6eb7aa33a3ca6b59c5916c4da674c49a454e8384dbb0cde149b266a4c3af121c",
+      "size": 12199
+    },
+    {
+      "name": "dev-rust-developer-bundle.json",
+      "sha256": "cfc8204d8b431bfa7fb4be9718077999af2ab3d3985f4a594a3c62e9f6fac626",
+      "size": 299861
+    },
+    {
+      "name": "dev-rust-latent-dev-linux-x86_64-rust-tools.zip",
+      "sha256": "9868ac239fd3518e369335c0224f21494604f2301d2bb2c01e64328d7d29dd36",
+      "size": 331264605
+    },
+    {
+      "name": "dev-rust-SHA256SUMS",
+      "sha256": "a27e4caef41a26ccc87f8c78ff3fdd78b247fe15ebdd5a63ed56daf3002c0b4f",
+      "size": 193
+    },
+    {
+      "name": "dev-typescript-attestation.json",
+      "sha256": "a2cd738f4834a8c16372ebc55fc79b98b853b41a69d520f1c69ee1eae137f80e",
+      "size": 12113
+    },
+    {
+      "name": "dev-typescript-developer-bundle.json",
+      "sha256": "41900ab44d8542af968bac8ac257e632d6a06cf4090f0fb1e38b8303e6c21c14",
+      "size": 186145
+    },
+    {
+      "name": "dev-typescript-latent-dev-linux-x86_64-typescript-tools.zip",
+      "sha256": "628e0565f3fdf2731e12defa16f7a3caa2a8d95c6a3f8f612232de3e8fa98efa",
+      "size": 185638517
+    },
+    {
+      "name": "dev-typescript-SHA256SUMS",
+      "sha256": "fa7623d57b8753f9eb241f6362726277bb6378867f2ac4b8f5c32c497ae561fe",
+      "size": 199
+    },
+    {
+      "name": "dev-linux-attestation.json",
+      "sha256": "7f2ca43e452c632c4881723b389828fb427c1e0e84637a787fd588d7b4cb9200",
+      "size": 12011
+    },
+    {
+      "name": "dev-linux-developer-bundle.json",
+      "sha256": "96ee12eea399e11a1e9d9ce6fe6c1b5fdc206e6ee649d8d67027549b9cd49410",
+      "size": 98656
+    },
+    {
+      "name": "dev-linux-latent-dev-linux-x86_64.zip",
+      "sha256": "3f15d2141804201b62eed255ae775c524cb65b9b346ed8afc436ef5ead3e02f3",
+      "size": 34767574
+    },
+    {
+      "name": "dev-linux-SHA256SUMS",
+      "sha256": "b087f63225e0baf31a1ef344787f1142fd86153844b181703637a97163e6e9bf",
+      "size": 182
+    },
+    {
+      "name": "dev-windows-attestation.json",
+      "sha256": "b18a518b2ef3b02a90d140644cc9c7831beed5b6bc3bfc9dbfaa2ec11f316a2e",
+      "size": 12062
+    },
+    {
+      "name": "dev-windows-developer-bundle.json",
+      "sha256": "cd980ce933513c5d373187a8e33291657fdd87bbf5a964cb0e82c0a1c750d756",
+      "size": 94337
+    },
+    {
+      "name": "dev-windows-latent-dev-windows-x86_64.zip",
+      "sha256": "61bb357ca1bb93feaf4cd0be5c2ea4dd50b6bdd391bbe0abd2b83df14619b7c2",
+      "size": 19010659
+    },
+    {
+      "name": "dev-windows-SHA256SUMS",
+      "sha256": "2995aca25b01ed8a7329b7af87d0257f16241b8670b03c4583430afe5465185a",
+      "size": 184
+    },
+    {
+      "name": "dev-wsl-attestation.json",
+      "sha256": "624a94b759ebac7f89f153632f48d80d5980ca2ede39d384897d4fd82891a2c5",
+      "size": 12156
+    },
+    {
+      "name": "dev-wsl-developer-bundle.json",
+      "sha256": "9d73ac0e181344405d1309cccb74dc37d204c9269fa55bee8b0ad15a929cf7f0",
+      "size": 26085
+    },
+    {
+      "name": "dev-wsl-latent-dev-linux-x86_64-wsl-rootfs.zip",
+      "sha256": "9a495614b74f9f39dcf3a9033eccd959334b5856655a39c31b4fde3dbde5ce9e",
+      "size": 68523614
+    },
+    {
+      "name": "dev-wsl-SHA256SUMS",
+      "sha256": "5e8035f8624f3d594ce3690b26a0f1e93d66963127d2f6955fb54c6ce0c10cd4",
+      "size": 193
+    },
+    {
+      "name": "dev-native-lsf-0.1.0-alpha.5-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "df7968efd6440a053ad444e03b0b9cd33bd7bf314a803fd18f617a002b7d845b",
+      "size": 30537070
+    },
+    {
+      "name": "dev-native-lsf-install.pyz",
+      "sha256": "0b8c386f9ca96f2a4945d7be7f5477b1a8abcc3504345bfa5b41ba4298c4c4c6",
+      "size": 25723
+    },
+    {
+      "name": "dev-native-release.json",
+      "sha256": "c3dae74c8120d9e7204421a53e886a9b33a8252bedd9be4c8b9d86d939f1fcef",
+      "size": 71703
+    },
+    {
+      "name": "dev-native-SHA256SUMS",
+      "sha256": "341442ab246958cdcc5a1628aa104ca64734ec92c46a0c26ccae53ea2c70cd1f",
+      "size": 277
+    },
+    {
+      "name": "dev-native-SHA256SUMS.sigstore.json",
+      "sha256": "f62e5e113da356a27039e0603ab7f67e5bb1608cf5405def29e1244d27745d00",
+      "size": 12222
+    }
+  ]
+}

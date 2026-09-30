@@ -1,0 +1,90 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/native-runtime-release.yml:gate:Prepare private exact-source host workspace": {
+      "job": "gate",
+      "jobIf": "success()",
+      "name": "Prepare private exact-source host workspace",
+      "run": "python3 tools/prepare_native_workspace.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/native-runtime-release.yml:gate:gate": {
+      "job": "gate",
+      "jobIf": "success()",
+      "name": "gate",
+      "run": "cd \"$NATIVE_WORKSPACE\"\narguments=()\nif test \"$PUBLISH\" = true; then arguments+=(--publish); fi\npython3 tools/native_release_gate.py --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" \"${arguments[@]}\" \\\n  --output \"$PWD/target/native-release-decision.json\" --github-output",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/native-runtime-release.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/native-runtime-release.yml:gate:Prepare private exact-source host workspace": {
+      "after": ".github/workflows/native-runtime-release.yml:gate:Prepare private exact-source host workspace",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/native-runtime-release.yml:gate:gate": {
+      "after": ".github/workflows/native-runtime-release.yml:gate:gate",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "name": "Exact reviewed tag and CI gate",
+    "outputs": {
+      "predecessor-commit": "${{ steps.gate.outputs.predecessor-commit }}",
+      "predecessor-version": "${{ steps.gate.outputs.predecessor-version }}",
+      "version": "${{ steps.gate.outputs.version }}"
+    },
+    "permissions": {
+      "actions": "read",
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "name": "Prepare private exact-source host workspace",
+        "run": "python3 tools/prepare_native_workspace.py"
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}",
+          "NATIVE_VERSION": "${{ inputs.version }}",
+          "PREDECESSOR_RUN": "${{ inputs.predecessor_run }}",
+          "PUBLISH": "${{ inputs.publish }}",
+          "REVIEWED_CI_RUN": "${{ inputs.ci_run }}",
+          "REVIEWED_COMMIT": "${{ inputs.commit }}"
+        },
+        "id": "gate",
+        "name": "Require selected exact identity, successful CI and declared predecessor",
+        "run": "cd \"$NATIVE_WORKSPACE\"\narguments=()\nif test \"$PUBLISH\" = true; then arguments+=(--publish); fi\npython3 tools/native_release_gate.py --version \"$NATIVE_VERSION\" --commit \"$REVIEWED_COMMIT\" \\\n  --ci-run \"$REVIEWED_CI_RUN\" --predecessor-run \"$PREDECESSOR_RUN\" \"${arguments[@]}\" \\\n  --output \"$PWD/target/native-release-decision.json\" --github-output\n"
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "native-runtime-release-decision-${{ github.sha }}",
+          "path": "${{ env.NATIVE_WORKSPACE }}/target/native-release-decision.json",
+          "retention-days": 90
+        }
+      }
+    ],
+    "timeout-minutes": 5
+  },
+  "jobId": "gate",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/native-runtime-release.yml"
+}

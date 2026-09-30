@@ -71,6 +71,39 @@ def cargo_inventory(repo: Path, entry: dict) -> tuple[set[str], dict]:
                      "lock_sha256": digest(payload), "packages": len(packages), "members": len(members)}
 
 
+def reviewed_npm_derivation(repo: Path, entry: dict, manifest: dict, owner: dict) -> bool:
+    """Recognize one byte-pinned build-tool derivation, never arbitrary file deps.
+
+    The preparer authenticates the source archives and the resulting TAR. The
+    scanner reads only data and still inventories every installed bundle member.
+    Pinning the complete lock prevents omitted members from shrinking coverage.
+    """
+    profile = entry.get("derived_bundle")
+    if profile is None:
+        return False
+    require(isinstance(profile, dict) and set(profile) == {
+        "source_sha256", "builder_sha256", "lock_sha256", "integrity"
+    }, "invalid-npm-derivation-policy")
+    require(entry["path"] == "website/toolchain/package.json"
+            and entry["lock"] == "website/toolchain/package-lock.json"
+            and entry.get("bundled_package") == "npm", "unreviewed-npm-derivation")
+    for path, field in (("website/toolchain/source.json", "source_sha256"),
+                        ("website/toolchain/prepare.py", "builder_sha256"),
+                        (entry["lock"], "lock_sha256")):
+        require(digest(read_file(repo, path).replace(b"\r\n", b"\n")) == profile[field],
+                "npm-derivation-input-drift")
+    source = decode_json(read_file(repo, "website/toolchain/source.json"))
+    require(source.get("schema") == 1 and source.get("profile") == "npm-11.19.1-lsf-bundle-v1"
+            and source["base"]["name"] == "npm" and source["base"]["version"] == owner.get("version"),
+            "npm-derivation-identity-drift")
+    archive = "file:../../target/website-package-manager/npm-11.19.1-lsf-bundle-v1.tar"
+    require(manifest.get("dependencies", {}).get("npm") == archive
+            and owner.get("resolved") == archive and owner.get("integrity") == profile["integrity"]
+            and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", profile["integrity"]),
+            "unlocked-npm-derivation")
+    return True
+
+
 def npm_packages(repo: Path, entry: dict) -> list[Package]:
     manifest = decode_json(read_file(repo, entry["path"]))
     lock = decode_json(read_file(repo, entry["lock"]))
@@ -83,13 +116,16 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
             require(f"node_modules/{name}" in resolved, "npm-direct-dependency-missing")
     bundled = entry.get("bundled_package")
     bundled_prefix = None
+    derived = False
+    require(entry.get("derived_bundle") is None or bundled is not None, "npm-derivation-without-bundle")
     if bundled is not None:
         require(isinstance(bundled, str) and re.fullmatch(r"(?:@[a-z0-9-]+/)?[a-z0-9-]+", bundled),
                 "invalid-reviewed-npm-bundle")
         owner = resolved.get(f"node_modules/{bundled}", {})
         location = urlsplit(owner.get("resolved", ""))
-        require(manifest.get("dependencies", {}).get(bundled) == owner.get("version")
-                and location.scheme == "https" and location.hostname == "registry.npmjs.org"
+        derived = reviewed_npm_derivation(repo, entry, manifest, owner)
+        require((derived or (manifest.get("dependencies", {}).get(bundled) == owner.get("version")
+                             and location.scheme == "https" and location.hostname == "registry.npmjs.org"))
                 and re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", owner.get("integrity", ""))
                 and isinstance(owner.get("bundleDependencies"), list) and owner["bundleDependencies"],
                 "unlocked-reviewed-npm-bundle")
@@ -106,7 +142,8 @@ def npm_packages(repo: Path, entry: dict) -> list[Package]:
         # ownership is explicit in the policy; every bundled version is scanned.
         bundled_source = (bundled_prefix is not None and path.startswith(bundled_prefix)
                           and dependency.get("inBundle") is True and not dependency.get("resolved"))
-        require(bundled_source or (location.scheme == "https" and location.hostname == "registry.npmjs.org"),
+        derived_owner = derived and path == f"node_modules/{bundled}"
+        require(bundled_source or derived_owner or (location.scheme == "https" and location.hostname == "registry.npmjs.org"),
                 "unreviewed-npm-registry-or-source")
         require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", version) is not None,
                 "unresolved-npm-version")

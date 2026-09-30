@@ -72,9 +72,15 @@ jobs:
           cache-dependency-path: tools/requirements.lock
       - name: Install documentation validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
+      - name: Validate reviewed CI contracts and observe the tested source
+        id: contract_coverage
+        run: |
+          # Reviewed delegated parser/storage owners, not additional runners:
+          # tools/ci_contracts.py tools/ci_lane_inventory.py tools/workflow_action_yaml.py
+          python3 tools/ci_coverage.py --receipt target/ci/observed-inventory.json
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff
+          LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_contracts tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff
           python3 tools/ci_coverage.py
           LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner
           python3 tools/validate_docs.py
@@ -86,6 +92,16 @@ jobs:
 
       - name: Validate deterministic dependency regressions
         run: python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
+
+      - name: Retain CI contract diagnostics even on validation failure
+        id: contract_evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ci-contracts-${{ github.sha }}
+          path: target/ci/observed-inventory.json
+          if-no-files-found: warn
+          retention-days: 7
 
   fast:
     name: Fast host correctness
@@ -122,7 +138,7 @@ jobs:
           python3 tools/ci_fast.py --packages-json "$packages" --output "$RUNNER_TEMP/ci-fast/narrow"
       - name: Retain exact host dependency, discovery and timing receipts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ci-host-correctness-${{ github.sha }}
           path: ${{ runner.temp }}/ci-fast/
@@ -221,6 +237,11 @@ jobs:
         run: python3 tools/ci_cargo.py run prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
       - name: Verify complete registered workspace test discovery
         run: python3 tools/ci_suite_discovery.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --receipt "$RUNNER_TEMP/ci-discovery.json"
+      - name: Exercise the local exact-case entry point with prepared workspace inputs
+        run: |
+          python3 tools/test.py prepare --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
+          python3 tools/test.py check --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
+          python3 tools/test.py run --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
       - name: Prepare authenticated AOT test inputs
         run: |
           python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests
@@ -254,7 +275,7 @@ jobs:
           python3 tools/test.py run --suite selection.metadata-working-set --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci 2>&1 | tee "$RUNNER_TEMP/metadata-working-set.log"
       - name: Retain metadata working-set inputs and publication/apply/reopen costs
         if: always() && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: metadata-working-set-observations
           path: ${{ runner.temp }}/metadata-working-set.log
@@ -268,7 +289,7 @@ jobs:
           python3 tools/phase3_security.py --profile pr --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --source-commit "$GITHUB_SHA" --output target/phase3-security/pr-receipt.json
       - name: Retain the bounded Phase 3 security receipt
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase3-security-pr-${{ github.sha }}
           path: target/phase3-security/pr-receipt.json
@@ -276,7 +297,7 @@ jobs:
           retention-days: 14
       - name: Set up the qualified Angular build runtime
         if: needs.profile.outputs.renderer == 'true'
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -305,7 +326,7 @@ jobs:
           python3 tools/build_s3_fixture.py --output "$RUNNER_TEMP/s3-fixture"
       - name: Retain source-built S3 fixture and failure evidence
         if: always() && steps.s3_fixture.outcome != '' && steps.s3_fixture.outcome != 'skipped'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: source-built-s3-fixture-${{ github.sha }}
           path: |
@@ -327,7 +348,7 @@ jobs:
           python3 tools/run_ci_lanes.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --renderer "$CI_LANE_RENDERER" --workers "$CI_LANE_WORKERS" --output "$RUNNER_TEMP/ci-lanes"
       - name: Retain bounded CI lane timing and completion receipts
         if: always() && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ci-integration-lanes-${{ github.sha }}
           path: ${{ runner.temp }}/ci-lanes/
@@ -337,7 +358,7 @@ jobs:
         if: >-
           always() && needs.profile.outputs.renderer == 'true' &&
           steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: browser-boundary-observations
           path: |
@@ -456,7 +477,7 @@ jobs:
           python3 tools/run_angular_t1_workflow.py --cli "$RUNNER_TEMP/angular-t1-bin/latent" --node "$RUNNER_TEMP/angular-t1-bin/latentd" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --fixture-root "$RUNNER_TEMP/angular-t1-fixture" > "$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-2-gate-${{ github.sha }}
           path: ${{ runner.temp }}/phase2-gate/*.json
@@ -489,7 +510,7 @@ jobs:
           python3 tools/run_phase3_resource_acceptance.py --revision "$GITHUB_SHA" --output "$RUNNER_TEMP/phase3-resource-matrix" --guest-capsules "$PWD/target/phase3-resource-guests" --angular-build "$RUNNER_TEMP/angular-build/actual" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --host-condition shared-github-runner
       - name: Retain immutable Phase 3 resource attempts
         if: always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase3-resource-${{ github.sha }}
           path: |
@@ -500,7 +521,7 @@ jobs:
 
       - name: Retain the opt-in dependency-cache identity
         if: always() && steps.cargo-cache-identity.outcome == 'success'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cargo-dependency-cache-identity-${{ github.sha }}
           path: ${{ runner.temp }}/lsf-cargo-cache-identity.json
@@ -508,7 +529,7 @@ jobs:
           retention-days: 7
       - name: Retain exact workspace test discovery and custom-harness execution
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ci-runtime-discovery-${{ github.sha }}
           path: |
@@ -521,7 +542,7 @@ jobs:
 
       - name: Retain attempted renderer ownership diagnostics
         if: always() && steps.renderer_preflight.outcome != '' && steps.renderer_preflight.outcome != 'skipped'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: owned-renderer-${{ github.sha }}
           path: |
@@ -599,7 +620,7 @@ jobs:
 
       - name: Retain attempted registry ownership diagnostics
         if: always() && steps.oci_preflight.outcome != '' && steps.oci_preflight.outcome != 'skipped'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: owned-oci-${{ github.sha }}
           path: |
@@ -653,7 +674,7 @@ jobs:
           cargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1 2>&1 | tee catalog-scale.log
       - name: Retain catalog acceptance evidence
         if: always() && github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: catalog-scale-${{ github.sha }}
           path: |
@@ -703,7 +724,7 @@ jobs:
         run: python3 tools/ci_fast.py --msrv --packages-json "$CI_FAST_PACKAGES" --output "$RUNNER_TEMP/ci-fast-msrv"
       - name: Retain narrow MSRV timing evidence
         if: always() && needs.profile.outputs.profile == 'fast'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ci-host-msrv-${{ github.sha }}
           path: ${{ runner.temp }}/ci-fast-msrv/
@@ -760,7 +781,7 @@ jobs:
       - name: Install verified guest binding generator
         run: python3 tools/install_guest_bindgen.py "${RUNNER_TEMP}/lsf-guest-tools" >> "${GITHUB_PATH}"
       - name: Set up the Node SDK provider participant
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -785,14 +806,14 @@ jobs:
           unset CARGO_INCREMENTAL
           tools/validate_contracts.sh
       - name: Pass bounded observed build inputs to registry verification
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-2-observed-echo-${{ github.sha }}
           path: target/capsules/echo-provenance/
           if-no-files-found: error
           retention-days: 1
       - name: Pass the bounded public web component to registry verification
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-3-web-contract-${{ github.sha }}
           path: target/capsules/web-contract/component.wasm
@@ -800,7 +821,7 @@ jobs:
           retention-days: 1
       - name: Retain bounded conformance and provider diagnostics
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-1-bounded-conformance-${{ github.sha }}
           path: |
@@ -811,7 +832,7 @@ jobs:
           retention-days: 14
       - name: Retain Phase 1 measurement collector smoke diagnostics
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-1-measurement-smoke-${{ github.sha }}
           path: target/phase1-measurements/
@@ -823,7 +844,7 @@ jobs:
           python3 tools/run_optimization_benchmarks.py --profile smoke
       - name: Retain optimization benchmark smoke evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-1-optimization-smoke-${{ github.sha }}
           path: target/optimization-benchmarks/
@@ -834,7 +855,7 @@ jobs:
           cat target/capsules/echo/build.json
           cat target/capsules/echo/sha256.txt
       - name: Upload echo capsule build evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-0-echo-capsule-${{ github.sha }}
           path: |
@@ -867,7 +888,7 @@ jobs:
         with:
           version: 1.72.0
           github_token: ${{ github.token }}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -923,7 +944,7 @@ jobs:
             "Version ${EXPECTED_TYPESCRIPT_VERSION}"
       - name: Retain Java SDK qualification diagnostics
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: java-sdk-qualification-${{ github.sha }}
           path: ${{ runner.temp }}/java-sdk/

@@ -1,0 +1,93 @@
+{
+  "cases": [
+    "LocalServiceFixture.test_callee_cancellation_routes_only_to_the_exact_owned_build_identity",
+    "LocalServiceFixture.test_explicit_recipe_and_same_node_target_cannot_select_remote_or_ambient_inputs",
+    "LocalServiceFixture.test_group_signing_binds_both_distinct_component_identities_and_the_entire_inventory",
+    "LocalServiceFixture.test_pending_callee_operation_is_visible_and_cannot_be_treated_as_deployed",
+    "LocalServiceFixture.test_provider_scope_and_declared_kind_are_required_for_fixture_initialization",
+    "LocalServiceFixture.test_two_cells_and_explicit_child_budget_only_follow_a_selected_local_fixture"
+  ],
+  "guards": {
+    "LocalServiceFixture.test_callee_cancellation_routes_only_to_the_exact_owned_build_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'Linux helper owns the callee compiler')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:a77f79a20b4c4b67ed3fde9f7d7289e41c23577187d9c43d64d93b95d827922a",
+        "class:setup-sha256:90eee3a8fdad5391720e9c7609a7b66e3c67fb4635247f69bb04900c0c84d468"
+      ],
+      "skipSites": [
+        "skip-control-sha256:128f6895794bd432a18e83da294a79c1798626f761fae73674946b0ad9881c95",
+        "unittest.skipUnless(os.name == 'posix', 'Linux helper owns the callee compiler')"
+      ]
+    },
+    "LocalServiceFixture.test_explicit_recipe_and_same_node_target_cannot_select_remote_or_ambient_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a77f79a20b4c4b67ed3fde9f7d7289e41c23577187d9c43d64d93b95d827922a",
+        "class:setup-sha256:90eee3a8fdad5391720e9c7609a7b66e3c67fb4635247f69bb04900c0c84d468"
+      ],
+      "skipSites": []
+    },
+    "LocalServiceFixture.test_group_signing_binds_both_distinct_component_identities_and_the_entire_inventory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a77f79a20b4c4b67ed3fde9f7d7289e41c23577187d9c43d64d93b95d827922a",
+        "class:setup-sha256:90eee3a8fdad5391720e9c7609a7b66e3c67fb4635247f69bb04900c0c84d468"
+      ],
+      "skipSites": []
+    },
+    "LocalServiceFixture.test_pending_callee_operation_is_visible_and_cannot_be_treated_as_deployed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a77f79a20b4c4b67ed3fde9f7d7289e41c23577187d9c43d64d93b95d827922a",
+        "class:setup-sha256:90eee3a8fdad5391720e9c7609a7b66e3c67fb4635247f69bb04900c0c84d468"
+      ],
+      "skipSites": []
+    },
+    "LocalServiceFixture.test_provider_scope_and_declared_kind_are_required_for_fixture_initialization": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a77f79a20b4c4b67ed3fde9f7d7289e41c23577187d9c43d64d93b95d827922a",
+        "class:setup-sha256:90eee3a8fdad5391720e9c7609a7b66e3c67fb4635247f69bb04900c0c84d468"
+      ],
+      "skipSites": []
+    },
+    "LocalServiceFixture.test_two_cells_and_explicit_child_budget_only_follow_a_selected_local_fixture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a77f79a20b4c4b67ed3fde9f7d7289e41c23577187d9c43d64d93b95d827922a",
+        "class:setup-sha256:90eee3a8fdad5391720e9c7609a7b66e3c67fb4635247f69bb04900c0c84d468"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_local_service_fixture.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -1,0 +1,58 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "inputs.platform == 'all' || inputs.platform == 'linux'",
+    "name": "Actual packaged direct Linux and explicit SSH schedule",
+    "needs": "support",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "packaged-qualification-support",
+          "path": "${{ runner.temp }}/packaged-support"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "name": "Download only selected Linux, Rust and native candidates",
+        "run": "python3 -B - <<'PY'\nfrom pathlib import Path\nimport json, os, re, subprocess\nsupport = Path(os.environ['RUNNER_TEMP']) / 'packaged-support'\nselected = json.loads((support / 'selection.json').read_bytes())\nsha = selected['sourceCommit']\nassert re.fullmatch(r'[a-f0-9]{40}', sha)\ntarget = Path(os.environ['RUNNER_TEMP']) / 'packaged-candidates'\ntarget.mkdir()\nselected['artifacts'] = {}\nfor name, kind, artifact in (\n    ('linux', 'developer', 'developer-linux-candidate-' + sha),\n    ('rust', 'developer', 'developer-rust-tools-candidate-' + sha),\n    ('native', 'runtime', 'native-runtime-candidate-development-test-' + sha)):\n    destination = target / name\n    subprocess.run(['gh', 'run', 'download', str(selected['candidateRuns'][kind]['id']),\n        '--repo', 'KirilsTurkins/latent-service-fabric', '--name', artifact, '--dir', str(destination)],\n        check=True, timeout=300)\n    selected['artifacts'][name] = str(destination)\n(support / 'gh-linux').chmod(0o700)\nselected['trust'] = {\n    'developerPolicy': str(support / 'developer-policy.json'),\n    'runtimePolicy': str(support / 'runtime-policy.json'),\n    'trustedRoot': str(support / 'trusted_root.jsonl'),\n    'trustedRootSha256': selected['verificationInputs']['trustedRootSha256'],\n    'hostVerifier': str(support / 'gh-linux'), 'guestVerifier': str(support / 'gh-linux'),\n    'hostVerifierSha256': selected['verificationInputs']['verifierSha256']['linux'],\n    'guestVerifierSha256': selected['verificationInputs']['verifierSha256']['linux']}\n(support / 'inputs.json').write_text(json.dumps(selected), encoding='utf-8')\nPY\n"
+      },
+      {
+        "name": "Run the authenticated packages in a clean compiler-free disconnected Ubuntu container",
+        "run": "cd \"$RUNNER_TEMP/packaged-support\"\npython3 -I -B dev_packaged_linux_host.py --inputs inputs.json --output \"$RUNNER_TEMP/packaged-linux\"\n"
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "name": "Execute the generated terminal devcontainer against a separate explicit SSH peer",
+        "run": "cd \"$RUNNER_TEMP/packaged-support\"\npython3 -I -B dev_packaged_container_host.py --inputs inputs.json \\\n  --linux-output \"$RUNNER_TEMP/packaged-linux\" --output \"$RUNNER_TEMP/packaged-devcontainer\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded public Linux success or failure receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "packaged-linux-observation-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/packaged-linux/host-observation.json\n${{ runner.temp }}/packaged-linux/observation.json\n${{ runner.temp }}/packaged-devcontainer/host-observation.json\n${{ runner.temp }}/packaged-devcontainer/observation.json\n${{ runner.temp }}/packaged-support/selection.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 160
+  },
+  "jobId": "linux",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-packaged-qualification.yml"
+}

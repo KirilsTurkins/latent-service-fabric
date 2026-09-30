@@ -1,0 +1,165 @@
+{
+  "cases": [
+    "ProcessOwnershipTests.test_constructor_rolls_back_started_child_when_identity_capture_fails",
+    "ProcessOwnershipTests.test_live_observation_error_is_not_hidden_and_wait_still_cleans_up",
+    "ProcessOwnershipTests.test_nonzero_child_keeps_exit_receipt_and_closes_pipes",
+    "ProcessOwnershipTests.test_output_bound_fails_with_cleanup",
+    "ProcessOwnershipTests.test_periodic_exited_probe_preserves_last_observation_but_live_probe_fails",
+    "ProcessOwnershipTests.test_timeout_closes_owned_group",
+    "ProcessSamplingTests.test_confirmation_respects_the_existing_process_deadline",
+    "ProcessSamplingTests.test_periodic_live_failure_has_bounded_confirmation",
+    "ProcessSamplingTests.test_periodic_probe_waits_for_confirmed_exit_without_changing_evidence",
+    "ProcessSamplingTests.test_required_probe_never_waits_or_reuses_previous_observation",
+    "ProcessSamplingTests.test_unrelated_io_errors_are_not_retried"
+  ],
+  "guards": {
+    "ProcessOwnershipTests.test_constructor_rolls_back_started_child_when_identity_capture_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(platform.system() == 'Linux', 'Linux process ownership protocol')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProcessOwnershipTests.test_live_observation_error_is_not_hidden_and_wait_still_cleans_up": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(platform.system() == 'Linux', 'Linux process ownership protocol')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProcessOwnershipTests.test_nonzero_child_keeps_exit_receipt_and_closes_pipes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(platform.system() == 'Linux', 'Linux process ownership protocol')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProcessOwnershipTests.test_output_bound_fails_with_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(platform.system() == 'Linux', 'Linux process ownership protocol')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProcessOwnershipTests.test_periodic_exited_probe_preserves_last_observation_but_live_probe_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(platform.system() == 'Linux', 'Linux process ownership protocol')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProcessOwnershipTests.test_timeout_closes_owned_group": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(platform.system() == 'Linux', 'Linux process ownership protocol')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ProcessSamplingTests.test_confirmation_respects_the_existing_process_deadline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:d32c5f1892b046aea2bb5bd921f37c1645aba78be9d003e1e12b129086fd01f6"
+      ],
+      "skipSites": []
+    },
+    "ProcessSamplingTests.test_periodic_live_failure_has_bounded_confirmation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:d32c5f1892b046aea2bb5bd921f37c1645aba78be9d003e1e12b129086fd01f6"
+      ],
+      "skipSites": []
+    },
+    "ProcessSamplingTests.test_periodic_probe_waits_for_confirmed_exit_without_changing_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:d32c5f1892b046aea2bb5bd921f37c1645aba78be9d003e1e12b129086fd01f6"
+      ],
+      "skipSites": []
+    },
+    "ProcessSamplingTests.test_required_probe_never_waits_or_reuses_previous_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:d32c5f1892b046aea2bb5bd921f37c1645aba78be9d003e1e12b129086fd01f6"
+      ],
+      "skipSites": []
+    },
+    "ProcessSamplingTests.test_unrelated_io_errors_are_not_retried": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cbf5daa90705d8e8bc0832d16fa47582b145e962df026c1feb8f3f6b887beee7",
+        "class:setup-sha256:d32c5f1892b046aea2bb5bd921f37c1645aba78be9d003e1e12b129086fd01f6"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_processes.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

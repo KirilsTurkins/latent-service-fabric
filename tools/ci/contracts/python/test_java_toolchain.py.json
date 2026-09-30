@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "BuildWiringTests.test_baseline_is_exact_and_ci_selectors_match_the_release",
+    "BuildWiringTests.test_compiler_receives_release25_and_result_is_verified",
+    "BuildWiringTests.test_gradle_and_shell_targets_cannot_drift_to_java21",
+    "BuildWiringTests.test_gradle_test_requires_both_main_suites_without_ignoring_failures",
+    "BuildWiringTests.test_locked_download_does_not_retry_integrity_auth_or_unbounded_backoff",
+    "BuildWiringTests.test_locked_download_recovers_reset_but_never_retries_certificate_failure",
+    "BuildWiringTests.test_locked_download_retries_bounded_throttle_then_checks_actual_bytes",
+    "BuildWiringTests.test_locked_download_stops_after_three_server_responses",
+    "BuildWiringTests.test_selected_java_home_never_falls_back_to_path",
+    "BuildWiringTests.test_wrong_jdk_fails_before_dependency_download_or_generation",
+    "BytecodeTests.test_accepts_java25_and_rejects_old_new_preview_truncated_and_bad_magic",
+    "BytecodeTests.test_directory_requires_classes_and_checks_every_file",
+    "BytecodeTests.test_jar_requires_classes_and_rejects_mixed_target_or_preview"
+  ],
+  "guards": {
+    "BuildWiringTests.test_baseline_is_exact_and_ci_selectors_match_the_release": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildWiringTests.test_compiler_receives_release25_and_result_is_verified": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildWiringTests.test_gradle_and_shell_targets_cannot_drift_to_java21": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildWiringTests.test_gradle_test_requires_both_main_suites_without_ignoring_failures": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildWiringTests.test_locked_download_does_not_retry_integrity_auth_or_unbounded_backoff": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildWiringTests.test_locked_download_recovers_reset_but_never_retries_certificate_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildWiringTests.test_locked_download_retries_bounded_throttle_then_checks_actual_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildWiringTests.test_locked_download_stops_after_three_server_responses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildWiringTests.test_selected_java_home_never_falls_back_to_path": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BuildWiringTests.test_wrong_jdk_fails_before_dependency_download_or_generation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "BytecodeTests.test_accepts_java25_and_rejects_old_new_preview_truncated_and_bad_magic": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:700c0d8de02f414a11125d8a72244d64df51dfb9897420a56666a2b66ac19298"
+      ],
+      "skipSites": []
+    },
+    "BytecodeTests.test_directory_requires_classes_and_checks_every_file": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:700c0d8de02f414a11125d8a72244d64df51dfb9897420a56666a2b66ac19298"
+      ],
+      "skipSites": []
+    },
+    "BytecodeTests.test_jar_requires_classes_and_rejects_mixed_target_or_preview": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:356a4a31153f20a60584cfd9c0ec895bb905628669acb83ccb0f3ac7c24283ba",
+        "class:setup-sha256:700c0d8de02f414a11125d8a72244d64df51dfb9897420a56666a2b66ac19298"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_toolchain.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

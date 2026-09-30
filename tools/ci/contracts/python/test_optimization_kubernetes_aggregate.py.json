@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "KubernetesAggregateTests.test_client_keeps_distinct_cri_timestamps_and_working_set",
+    "KubernetesAggregateTests.test_cross_campaign_rows_require_exact_population_order_and_unique_pair",
+    "KubernetesAggregateTests.test_first_warmup_and_measured_are_not_pooled",
+    "KubernetesAggregateTests.test_lifecycle_uses_only_parent_bounds_and_preserves_pod_boundary",
+    "KubernetesAggregateTests.test_node_cpu_is_a_uint64_counter_not_a_32_bit_duration",
+    "KubernetesAggregateTests.test_nodes_are_separate_nonadditive_observations",
+    "KubernetesAggregateTests.test_null_pairs_and_observed_zero_remain_distinct",
+    "KubernetesAggregateTests.test_platform_population_preserves_independent_clocks_and_throughput",
+    "KubernetesAggregateTests.test_platform_population_rejects_each_changed_outcome_or_numerator",
+    "KubernetesAggregateTests.test_requested_and_effective_cpu_caps_remain_distinct",
+    "KubernetesAggregateTests.test_seven_pairs_are_differenced_before_summaries",
+    "KubernetesAggregateTests.test_unvalidated_input_is_rejected_before_original_replay",
+    "KubernetesAggregateTests.test_writer_cannot_overwrite_existing_directory_or_evidence"
+  ],
+  "guards": {
+    "KubernetesAggregateTests.test_client_keeps_distinct_cri_timestamps_and_working_set": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_cross_campaign_rows_require_exact_population_order_and_unique_pair": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_first_warmup_and_measured_are_not_pooled": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_lifecycle_uses_only_parent_bounds_and_preserves_pod_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_node_cpu_is_a_uint64_counter_not_a_32_bit_duration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_nodes_are_separate_nonadditive_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_null_pairs_and_observed_zero_remain_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_platform_population_preserves_independent_clocks_and_throughput": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_platform_population_rejects_each_changed_outcome_or_numerator": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_requested_and_effective_cpu_caps_remain_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_seven_pairs_are_differenced_before_summaries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_unvalidated_input_is_rejected_before_original_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesAggregateTests.test_writer_cannot_overwrite_existing_directory_or_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:71f39c539332860cc6507ed88ca9f8a2b74593ffd55849891b69570898540bac",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_aggregate.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

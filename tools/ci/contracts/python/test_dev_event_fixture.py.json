@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "EventFixtureTests.test_closed_bounded_scope_rejects_wildcards_external_endpoints_and_private_values",
+    "EventFixtureTests.test_connect_rejects_wrong_token_before_accepting_any_publish",
+    "EventFixtureTests.test_failed_selector_registration_closes_the_owned_tls_socket",
+    "EventFixtureTests.test_peer_counts_received_publish_once_before_dropping_ack",
+    "EventFixtureTests.test_private_material_is_owned_exactly_and_never_recreated_on_tamper",
+    "EventFixtureTests.test_selected_fixture_requires_live_owned_tls_peer_evidence"
+  ],
+  "guards": {
+    "EventFixtureTests.test_closed_bounded_scope_rejects_wildcards_external_endpoints_and_private_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c4f51ca9f2d45b94978e8db8bda4a80e3025650a8780e34c11ab71d621297a5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EventFixtureTests.test_connect_rejects_wrong_token_before_accepting_any_publish": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c4f51ca9f2d45b94978e8db8bda4a80e3025650a8780e34c11ab71d621297a5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EventFixtureTests.test_failed_selector_registration_closes_the_owned_tls_socket": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c4f51ca9f2d45b94978e8db8bda4a80e3025650a8780e34c11ab71d621297a5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EventFixtureTests.test_peer_counts_received_publish_once_before_dropping_ack": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c4f51ca9f2d45b94978e8db8bda4a80e3025650a8780e34c11ab71d621297a5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EventFixtureTests.test_private_material_is_owned_exactly_and_never_recreated_on_tamper": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c4f51ca9f2d45b94978e8db8bda4a80e3025650a8780e34c11ab71d621297a5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EventFixtureTests.test_selected_fixture_requires_live_owned_tls_peer_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:3c4f51ca9f2d45b94978e8db8bda4a80e3025650a8780e34c11ab71d621297a5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_event_fixture.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

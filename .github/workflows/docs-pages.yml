@@ -66,7 +66,7 @@ jobs:
             --attempt "$CI_ATTEMPT" --mode "$PUBLICATION_MODE" \
             --previous-publication-run "$PREVIOUS_PUBLICATION_RUN" \
             --expected-live-source "$EXPECTED_LIVE_SOURCE" --output target/docs-pages-staged
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         id: staged
         with:
           name: docs-pages-staged-${{ github.run_id }}-${{ github.run_attempt }}
@@ -116,7 +116,7 @@ jobs:
           timeout: 300000
       - name: Verify live publication identity and direct static routes
         run: python3 tools/docs_pages.py verify --receipt candidate/publication.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: docs-pages-receipt-${{ github.run_id }}-${{ github.run_attempt }}
           path: candidate/publication.json
@@ -134,12 +134,14 @@ jobs:
         with:
           ref: ${{ inputs.source_sha }}
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
       - name: Install the reviewed browser tools in an unprivileged job
         run: |
+          python3 website/toolchain/prepare.py
           npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node website/scripts/check-package-manager.mjs
           node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
           node website/node_modules/playwright/cli.js install-deps chromium
           node website/scripts/site.mjs browser-install
@@ -147,7 +149,7 @@ jobs:
         env:
           EXPECTED_SITE_SOURCE: ${{ inputs.source_sha }}
         run: node website/scripts/test-live.mjs
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: docs-pages-browser-${{ github.run_id }}-${{ github.run_attempt }}
           path: website/.generated/live-review/evidence.json
