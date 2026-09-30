@@ -37,6 +37,13 @@ public final class Ownership {
         require(Unsigned64.parse("18446744073709551615").bits() == -1);
         require(new Unsigned64(-1).toString().equals("18446744073709551615"));
         require(new Unsigned64(-1).compareTo(new Unsigned64(Long.MAX_VALUE)) > 0);
+        for (String value : new String[] {"0", "1", "9223372036854775807", "9223372036854775808", "18446744073709551614", "18446744073709551615"})
+            require(Unsigned64.parse(value).toString().equals(value));
+        require(Unsigned64.parse("+0001").bits() == 1);
+        for (String invalid : new String[] {"", "+", "-1", "1x", "18446744073709551616", "184467440737095516150"}) {
+            try { Unsigned64.parse(invalid); throw new AssertionError("invalid unsigned decimal accepted"); }
+            catch (NumberFormatException expected) { }
+        }
         System.out.println("Java ownership state machines passed; component gate remains required");
     }
 }
