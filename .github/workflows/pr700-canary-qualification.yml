@@ -1,0 +1,89 @@
+name: PR 700 security canary qualification
+on:
+  push:
+    branches: [fix/pr700-npm-bundle-qualification-20260930]
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: de25b088af25eb1d9d5b3e81b2bc5af47aecf0f7
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - name: Install the reviewed test parser
+        run: |
+          python3 -m pip install --require-hashes --only-binary=:all: --no-deps -r .github/security/requirements.txt
+      - name: Preserve coverage and verify the patched versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tools/tests/test_security_baseline.py')
+          source = path.read_text()
+          old = '        self.assertIn(("ip-address", "10.5.1"), values)'
+          new = '        self.assertIn(("ip-address", "10.7.1"), values)\n'
+          new += '        self.assertIn(("brace-expansion", "5.0.12"), values)\n'
+          new += '        self.assertIn(("balanced-match", "4.0.4"), values)\n'
+          new += '        self.assertNotIn(("ip-address", "10.5.1"), values)\n'
+          new += '        self.assertNotIn(("brace-expansion", "5.0.9"), values)'
+          assert source.count(old) == 1
+          path.write_text(source.replace(old, new))
+          PY
+          git diff --check
+          git diff --stat
+          git config user.name 'PR 700 qualification'
+          git config user.email 'qualification@localhost'
+          git add tools/tests/test_security_baseline.py
+          git -c core.hooksPath=/dev/null commit -m 'Qualify patched npm inventory expectations locally'
+          python3 -m unittest discover -s tools/tests -p 'test_security*.py'
+          python3 -m unittest discover -s website/toolchain/tests -v
+          python3 tools/ci_coverage.py
+          mkdir -p "$RUNNER_TEMP/pr700-canary/tools/tests"
+          cp tools/tests/test_security_baseline.py "$RUNNER_TEMP/pr700-canary/tools/tests/test_security_baseline.py"
+          git diff de25b088af25eb1d9d5b3e81b2bc5af47aecf0f7 -- tools/tests/test_security_baseline.py > "$RUNNER_TEMP/pr700-canary/changes.patch"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr700-qualified-security-canary
+          path: ${{ runner.temp }}/pr700-canary
+          retention-days: 3
+          if-no-files-found: error
+  stage-object:
+    needs: qualify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Read this run's qualified source without executing it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: KirilsTurkins/latent-service-fabric
+        run: gh run download "$GITHUB_RUN_ID" --name pr700-qualified-security-canary --dir "$RUNNER_TEMP/candidate"
+      - name: Stage only the verified test blob without a commit or ref update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'candidate'
+          name = 'tools/tests/test_security_baseline.py'
+          assert {str(p.relative_to(root)) for p in root.rglob('*') if p.is_file()} == {name, 'changes.patch'}
+          path = root / name
+          assert path.is_file() and not path.is_symlink() and 0 < path.stat().st_size < 131072
+          data = path.read_bytes()
+          content = data.decode('utf-8')
+          payload = json.dumps({'content': content, 'encoding': 'utf-8'}).encode()
+          result = json.loads(subprocess.check_output(['gh', 'api', '--method', 'POST', 'repos/KirilsTurkins/latent-service-fabric/git/blobs', '--input', '-'], input=payload))
+          expected = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          assert result['sha'] == expected
+          print('QUALIFIED_CANARY_BLOB ' + json.dumps({'path': name, 'sha': expected, 'base_commit': 'de25b088af25eb1d9d5b3e81b2bc5af47aecf0f7', 'run': os.environ['GITHUB_RUN_ID']}))
+          PY
