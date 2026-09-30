@@ -9,6 +9,7 @@ use crate::lifecycle::ActivationTerminalState;
 use crate::Metadata;
 
 mod descendants;
+mod host_memory;
 mod incoming;
 mod profile;
 mod reservation_group;
@@ -18,6 +19,7 @@ pub use descendants::{
     BudgetCancellationProbe, ChildBudgetDelegation, ChildBudgetOwner, DelegationLimits,
     DescendantBudgetSnapshot,
 };
+pub use host_memory::HostMemoryReservation;
 pub use profile::BudgetProfile;
 pub use reservation_group::BudgetReservationGroup;
 pub use runtime_memory::RuntimeMemoryReservation;
@@ -765,6 +767,8 @@ struct AccountingState {
     finalized: Option<BudgetFinalization>,
     outstanding_reservations: u64,
     own_memory_peak: u64,
+    host_reserved_memory: u64,
+    host_observed_memory: u64,
     pending_runtime_memory: Option<u64>,
     child_reserved_memory: u64,
     child_observed_memory: u64,
@@ -930,6 +934,7 @@ impl ActivationBudget {
             snapshot.peak_memory_bytes = state
                 .own_memory_peak
                 .max(state.pending_runtime_memory.unwrap_or(0))
+                + state.host_reserved_memory
                 + state.child_reserved_memory;
         }
         snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
@@ -1054,6 +1059,7 @@ impl ActivationBudget {
                 state
                     .own_memory_peak
                     .max(state.pending_runtime_memory.unwrap_or(0))
+                    + state.host_reserved_memory
                     + state.child_reserved_memory,
             );
         }
