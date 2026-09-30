@@ -377,40 +377,39 @@ impl NamespaceCatalog {
         after: Option<&StateNamespaceId>,
         limit: usize,
     ) -> Result<NamespacePage, NamespaceError> {
+        let view = self.store.snapshot().map_err(storage)?;
+        Self::page_in(&view, tenant, after, limit)
+    }
+
+    /// An owned caller-scoped page resource retains this exact `ReadView` for
+    /// every pull. The external authority binds its cursor before invoking us.
+    pub fn page_in(
+        view: &ReadView,
+        tenant: &TenantId,
+        after: Option<&StateNamespaceId>,
+        limit: usize,
+    ) -> Result<NamespacePage, NamespaceError> {
         if limit == 0 || limit > 128 {
             return Err(NamespaceError::Capacity);
         }
-        if let Some(id) = after {
-            identity(&id.0)?;
-        }
-        let rows = self
-            .store
-            .snapshot()
-            .map_err(storage)?
-            .scan(
+        let after_key = after.map(|id| namespace_record_key(tenant, id)).transpose()?;
+        let page = view.scan_after(
                 Family::Namespace,
                 &namespace_tenant_prefix(tenant)?,
-                256,
+                after_key.as_deref(),
+                limit,
                 1024 * 1024,
             )
             .map_err(storage)?;
         let mut records = Vec::new();
-        for (key, bytes) in rows {
+        for (key, bytes) in page.rows {
             let record = NamespaceRecord::decode(&bytes)?;
             if record.tenant != *tenant || namespace_record_key(tenant, &record.id)? != key.key {
                 return Err(NamespaceError::Corrupt);
             }
-            if after.is_none_or(|after| record.id > *after) {
-                records.push(record);
-            }
+            records.push(record);
         }
-        records.sort_by(|left, right| left.id.cmp(&right.id));
-        let next_after = if records.len() > limit {
-            records.get(limit - 1).map(|record| record.id.clone())
-        } else {
-            None
-        };
-        records.truncate(limit);
+        let next_after = page.resume.and_then(|_| records.last().map(|record| record.id.clone()));
         Ok(NamespacePage {
             records,
             next_after,
@@ -564,5 +563,35 @@ mod tests {
             catalog.page(&TenantId("a".into()), None, 129),
             Err(NamespaceError::Capacity)
         ));
+    }
+
+    #[test]
+    fn coherent_pages_cross_engine_limit_and_mixed_length_keys_without_omission() {
+        let temporary = tempfile::tempdir().unwrap();
+        let store = open(&temporary.path().join("namespace.redb"));
+        let catalog = NamespaceCatalog::new(Arc::clone(&store));
+        let mut batch = AtomicBatch::default();
+        for index in 0..260 {
+            let id = format!("{}-{index}", "n".repeat(index % 5 + 1));
+            let prepared = catalog.prepare(context(&id), &create(&id), 0).unwrap();
+            batch.expectations.extend(prepared.batch.expectations);
+            batch.mutations.extend(prepared.batch.mutations);
+            if batch.mutations.len() == 128 || index == 259 {
+                store.apply(std::mem::take(&mut batch)).unwrap();
+            }
+        }
+        let view = store.snapshot().unwrap();
+        store.apply(catalog.prepare(context("new"), &create("new"), 0).unwrap().batch).unwrap();
+        let mut cursor = None;
+        let mut found = std::collections::BTreeSet::new();
+        loop {
+            let page = NamespaceCatalog::page_in(&view, &TenantId("a".into()), cursor.as_ref(), 7).unwrap();
+            assert!(page.records.len() <= 7);
+            for record in page.records { assert!(found.insert(record.id)); }
+            cursor = page.next_after;
+            if cursor.is_none() { break; }
+        }
+        assert_eq!(found.len(), 260);
+        assert!(!found.contains(&StateNamespaceId("new".into())));
     }
 }
