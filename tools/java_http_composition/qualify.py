@@ -222,7 +222,7 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     result["canary"] = canary(client, targets, publications, releases, host)
                 result["cleanup"] = idle(client)
                 deployments = client.call("deployment", "list")["data"]["deployments"]
-                delete_all(client, [row["name"] for row in deployments])
+                delete_all(client, [row["manifest"]["metadata"]["name"] for row in deployments])
                 stop(client, node)
                 result["nodeStopped"] = node.owner.finished
                 result["status"] = "passed"
