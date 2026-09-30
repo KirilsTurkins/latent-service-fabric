@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/generate_transaction_contracts.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reproduce exact transaction ABI boundary vectors and HTTP preparation profile identity",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "2dcb2b98e8e3bb74128fd7529f0f356b3c322cbaa4ce0d7b7a392e9052eb2fd9"
+}

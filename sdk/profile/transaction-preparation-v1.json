@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "latent.transaction-contract.preparation-profile.v1",
+  "profile": "lsf-transaction-http-preparation-v1",
+  "engine": "wasmtime@48.0.3",
+  "componentAsync": true,
+  "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "codec": "application/vnd.latent.wit-values.v1+json",
+  "hostcallFuel": 2097152,
+  "limits": {
+    "maxInputBytes": 2097152,
+    "maxOutputBytes": 2097152,
+    "maxDepth": 32,
+    "maxNodes": 32768,
+    "maxStringBytes": 524288,
+    "maxCollectionItems": 4096,
+    "maxTypeNodes": 4096,
+    "maxTypeNameBytes": 256,
+    "maxLiftedBytes": 67108864,
+    "maxDecodedValueBytes": 16777216
+  },
+  "runtimeInstallation": false,
+  "runtimeExecutionQualified": false,
+  "digest": "sha256:6acd7a248633dd01c9cdcbf8a1ed33fc5e6aa1d2edb09b7d89e53fda594b5507"
+}

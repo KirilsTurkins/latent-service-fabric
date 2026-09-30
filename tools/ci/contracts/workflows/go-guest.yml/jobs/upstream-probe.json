@@ -63,6 +63,10 @@
         "run": "python3 tools/go_guest/probe.py --output \"$RUNNER_TEMP/go-guest-probe\" --go \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go\""
       },
       {
+        "name": "Qualify proposed transaction shapes and explicit owners with the maintained Go compiler",
+        "run": "python3 tools/qualify_transaction_contracts.py --language go --output \"$RUNNER_TEMP/transaction-contract-go\""
+      },
+      {
         "name": "Execute the compiled runtime diagnostic without claiming admission",
         "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --example go_runtime_probe -- \"$RUNNER_TEMP/go-guest-probe/lsf-candidate.wasm\" 2>&1 | tee \"$RUNNER_TEMP/go-guest-probe/runtime-diagnostic.log\"\n"
       },
@@ -81,7 +85,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "go-guest-upstream-${{ github.sha }}",
-          "path": "${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-authoring/\n",
+          "path": "${{ runner.temp }}/transaction-contract-go/report.json\n${{ runner.temp }}/transaction-contract-go/source.tar.gz\n${{ runner.temp }}/transaction-contract-go/component.wit\n${{ runner.temp }}/transaction-contract-go/preparation.json\n${{ runner.temp }}/transaction-contract-go/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-go/logs/**\n${{ runner.temp }}/transaction-contract-go/compiler/*.log\n${{ runner.temp }}/transaction-contract-go/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-go/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-go/compiled/component.wit\n${{ runner.temp }}/transaction-contract-go/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-go/compiled/generated/**\n${{ runner.temp }}/transaction-contract-go/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/bindings/**\n${{ runner.temp }}/transaction-contract-go/component.wasm\n${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-authoring/\n",
           "retention-days": 7
         }
       }
@@ -90,7 +94,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Issue #732: retain sharded review inputs, run contract regressions, and upload commit-bound failure diagnostics without changing required result coverage.",
+  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

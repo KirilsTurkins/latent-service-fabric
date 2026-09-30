@@ -13,6 +13,7 @@
         ],
         "paths": [
           "sdk/c-guest/**",
+          "sdk/transaction-contract/**",
           "tools/**",
           "crates/**",
           "wit/**",
@@ -28,6 +29,7 @@
         ],
         "paths": [
           "sdk/c-guest/**",
+          "sdk/transaction-contract/**",
           "tools/**",
           "crates/**",
           "wit/**",
@@ -45,7 +47,7 @@
   "requiredJobs": [
     "runtime"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }
