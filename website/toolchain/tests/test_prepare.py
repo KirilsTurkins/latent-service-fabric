@@ -36,10 +36,16 @@ class PreparationTests(unittest.TestCase):
                      ('package/bin/npm-cli.js', b'never executed'),
                      ('package/node_modules/ip-address/package.json', {'name': 'ip-address', 'version': '10.5.0'}),
                      ('package/node_modules/ip-address/obsolete.js', b'old removed bytes'),
-                     ('package/node_modules/undici/package.json', {'name': 'undici', 'version': '6.28.0'})]
+                     ('package/node_modules/undici/package.json', {'name': 'undici', 'version': '6.28.0'}),
+                     ('package/node_modules/brace-expansion/package.json', {'name': 'brace-expansion', 'version': '5.0.9',
+                         'dependencies': {'balanced-match': '^4.0.2'}}),
+                     ('package/node_modules/brace-expansion/obsolete.js', b'old removed bytes'),
+                     ('package/node_modules/balanced-match/package.json', {'name': 'balanced-match', 'version': '4.0.4'})]
         self.patches = []
-        for name, old, new in [('ip-address', '10.5.0', '10.5.1'), ('undici', '6.28.0', '6.28.1')]:
-            raw = archive([('package/package.json', {'name': name, 'version': new}),
+        for name, old, new in [('ip-address', '10.5.0', '10.7.1'), ('undici', '6.28.0', '6.28.1'),
+                               ('brace-expansion', '5.0.9', '5.0.12')]:
+            raw = archive([('package/package.json', {'name': name, 'version': new,
+                           'dependencies': {'balanced-match': '^4.0.2'} if name == 'brace-expansion' else {}}),
                            ('package/index.js', b'patched bytes')])
             self.patches.append(({'name': name, 'from': old, 'version': new, 'integrity': prepare.integrity(raw)}, raw))
 
@@ -52,6 +58,9 @@ class PreparationTests(unittest.TestCase):
         raw = prepare.compose(archive(self.base), self.patches)
         with tarfile.open(fileobj=io.BytesIO(raw), mode='r:') as reader:
             self.assertNotIn('package/node_modules/ip-address/obsolete.js', reader.getnames())
+            self.assertNotIn('package/node_modules/brace-expansion/obsolete.js', reader.getnames())
+            balanced = json.loads(reader.extractfile('package/node_modules/balanced-match/package.json').read())
+            self.assertEqual(balanced['version'], '4.0.4')
             self.assertEqual(reader.extractfile('package/bin/npm-cli.js').read(), b'never executed')
             for pin, _ in self.patches:
                 data = reader.extractfile(f'package/node_modules/{pin["name"]}/package.json').read()
@@ -61,7 +70,7 @@ class PreparationTests(unittest.TestCase):
                 self.assertEqual((member.uid, member.gid, member.mtime), (0, 0, 0))
 
     def test_unexpected_original_or_missing_replacements_rejected(self):
-        for patches in [[], self.patches[:1], [self.patches[0], self.patches[0]]]:
+        for patches in [[], self.patches[:1], self.patches[:-1], [self.patches[0], self.patches[0]]]:
             with self.subTest(patches=len(patches)), self.assertRaises(ValueError):
                 prepare.compose(archive(self.base), patches)
         changed = list(self.base)
@@ -74,7 +83,17 @@ class PreparationTests(unittest.TestCase):
         raw = archive([('package/package.json', {'name': pin['name'], 'version': pin['version'],
                                                 'dependencies': {'unexpected': '1.0.0'}})])
         with self.assertRaisesRegex(ValueError, 'graph requires review'):
-            prepare.compose(archive(self.base), [(pin, raw), self.patches[1]])
+            prepare.compose(archive(self.base), [(pin, raw), *self.patches[1:]])
+        brace_pin, _ = self.patches[-1]
+        for graph in ({}, {'balanced-match': '^5.0.0'}, {'unexpected': '1.0.0'}):
+            raw = archive([('package/package.json', {'name': 'brace-expansion', 'version': '5.0.12', 'dependencies': graph})])
+            with self.subTest(graph=graph), self.assertRaisesRegex(ValueError, 'graph requires review'):
+                prepare.compose(archive(self.base), [*self.patches[:-1], (brace_pin, raw)])
+        for version in ('4.0.1', '5.0.0'):
+            changed = [(path, {'name': 'balanced-match', 'version': version} if path == 'package/node_modules/balanced-match/package.json' else value)
+                       for path, value in self.base]
+            with self.subTest(version=version), self.assertRaisesRegex(ValueError, 'graph requires review'):
+                prepare.compose(archive(changed), self.patches)
 
     def test_embedded_lock_cannot_silently_disagree(self):
         with self.assertRaisesRegex(ValueError, 'embedded npm lock'):
