@@ -22,7 +22,7 @@ compatibility is not implied.
 
 | Input | Pinned value |
 | --- | --- |
-| Angular core/common/compiler/compiler-cli/platform-browser/platform-server | 22.1.7; full AOT, zoneless, server rendering and client hydration |
+| Angular core/common/compiler/compiler-cli/platform-browser/platform-server | 22.2.0; full AOT, zoneless, server rendering and client hydration |
 | TypeScript / Babel / esbuild / RxJS | 6.0.3 / 8.0.1 / 0.28.2 / 7.8.2 |
 | Build Node / ComponentizeJS / jco | 24.19.0 / 0.22.0 / 1.34.0 |
 | JavaScript guest engine | ComponentizeJS's packaged `starlingmonkey_embedding.wasm`, identified by its observed SHA-256 and npm integrity-locked inputs |

@@ -66,7 +66,7 @@ pub fn renderer_profile_digest(profile: RendererProfile) -> ArtifactBlobDigest {
     match profile {
         RendererProfile::WasmWebBufferedV1 => part(&mut hash, b"wasm-web-buffered-v1"),
         RendererProfile::AngularSsrComponentV1 => {
-            part(&mut hash, b"angular-ssr-component-v1;angular-22.1.7;componentize-js-0.22.0;zero-delay-256;microtasks-4096;no-ambient-io;aggregate-memory-268435456;memories-2;instances-32;tables-4;table-elements-131072;stack-2097152;async-stack-4194304;binary-operators-8000000;binary-types-262144;cpu-fuel-2000000000;wall-millis-5000;input-frame-262144;result-frame-1048576;html-131072");
+            part(&mut hash, b"angular-ssr-component-v1;angular-22.2.0;componentize-js-0.22.0;zero-delay-256;microtasks-4096;no-ambient-io;aggregate-memory-268435456;memories-2;instances-32;tables-4;table-elements-131072;stack-2097152;async-stack-4194304;binary-operators-8000000;binary-types-262144;cpu-fuel-2000000000;wall-millis-5000;input-frame-262144;result-frame-1048576;html-131072");
             for source in [
                 include_bytes!("../../../tools/angular-renderer-adapter/src/lib.rs").as_slice(),
                 include_bytes!("../../../tools/angular-renderer-adapter/src/wire.rs").as_slice(),

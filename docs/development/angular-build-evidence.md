@@ -1,6 +1,6 @@
 # Angular build implementation and validation
 
-The maintained builder compiles actual Angular 22.1.7 server and browser code,
+The maintained builder compiles actual Angular 22.2.0 server and browser code,
 embeds the server in the qualified JavaScript component, composes the fixed
 public async adapter, and assembles a componentless `ssr-package`. It implements
 [#234](https://github.com/KirilsTurkins/latent-service-fabric/issues/234) for the

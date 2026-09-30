@@ -3,21 +3,21 @@
   "maven": "https://repo.maven.apache.org/maven2/",
   "artifacts": [
     {
-      "path": "com/fasterxml/jackson/core/jackson-annotations/2.18.10/jackson-annotations-2.18.10.jar",
-      "sha256": "67634a683cfb1695e55c78e351c5f38f4de0d8c64ed567419b8fe2d1dc354ada",
+      "path": "com/fasterxml/jackson/core/jackson-annotations/2.18.11/jackson-annotations-2.18.11.jar",
+      "sha256": "9eab0d36da981645392427eedcb087e13be542488e37f935723dc0be50d18a53",
       "size": 78413,
       "platform": "any"
     },
     {
-      "path": "com/fasterxml/jackson/core/jackson-core/2.18.10/jackson-core-2.18.10.jar",
-      "sha256": "e4544eec5754d2dd06c6b16cfc9d2883a523f7177c2429ab04b29ab5fab445c9",
-      "size": 592948,
+      "path": "com/fasterxml/jackson/core/jackson-core/2.18.11/jackson-core-2.18.11.jar",
+      "sha256": "825fa72dfb9e2f8a642322f1390dbac22c30d15ebd6dc6b3772158821ee124eb",
+      "size": 588755,
       "platform": "any"
     },
     {
-      "path": "com/fasterxml/jackson/core/jackson-databind/2.18.10/jackson-databind-2.18.10.jar",
-      "sha256": "ead55a0c649b11af6148a0c097323f5438afc5f563e7139681ad8277fff520bf",
-      "size": 1665063,
+      "path": "com/fasterxml/jackson/core/jackson-databind/2.18.11/jackson-databind-2.18.11.jar",
+      "sha256": "075ad94a76c3edf83e1972dc26f476361eb6b9d0e260d93fc11105509bc79cab",
+      "size": 1666375,
       "platform": "any"
     },
     {

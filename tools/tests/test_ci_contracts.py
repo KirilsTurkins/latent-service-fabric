@@ -235,9 +235,15 @@ class ContractTests(unittest.TestCase):
         self.assertNotEqual(before, lanes.structural_workflow(model))
 
     def test_required_job_removal_and_unregistered_workflows_fail(self):
+        workflow = self.root / ".github/workflows/ci.yml"
+        original = workflow.read_text()
         self.source(lambda model: model["jobs"].pop("rust"))
         with self.assertRaises(ValueError):
             coverage.validate(self.root)
+        # Restore the removed job so the next failure proves independent
+        # rejection of the unregistered workflow, not the earlier missing job.
+        workflow.write_text(original)
+        coverage.validate(self.root)
         shutil.copyfile(self.root / ".github/workflows/extra.yaml", self.root / ".github/workflows/unregistered.yml")
         with self.assertRaises(ValueError):
             coverage.validate(self.root)
@@ -670,7 +676,10 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertTrue(set(legacy["delegatedOwners"]) <= set(data["delegatedOwners"]))
         for name, cases in legacy["pythonCases"].items():
             self.assertTrue(set(cases) <= set(data["pythonCases"][name]), name)
-        self.assertEqual(set(legacy["workflowIdentities"]), set(data["workflowContracts"]))
+        # Historical obligations are a floor, not a ban on reviewed new lanes.
+        self.assertTrue(set(legacy["workflowIdentities"]) <= set(data["workflowContracts"]))
+        self.assertEqual(set(data["workflowContracts"]),
+                         {path.relative_to(ROOT).as_posix() for path in contracts.workflow_paths(ROOT)})
         self.assertFalse((ROOT / "tools/ci/commands.json").exists())
 
     def test_workflow_and_shared_contract_edits_still_select_full_ci(self):

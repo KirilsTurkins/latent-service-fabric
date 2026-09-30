@@ -17,7 +17,7 @@ uses that builder and the node's operator commands. If you want a capsule
 without a web frontend, follow [Creating a capsule](creating-a-capsule.md).
 
 Use the source checkout from [Run your first node](../start/first-node.md).
-You also need Node 24.19.0 and npm 11.19.1. These examples use Angular 22.1.7;
+You also need Node 24.19.0 and npm 11.19.1. These examples use Angular 22.2.0;
 the repository's dependency lock selects the matching Angular compiler.
 
 Run these commands from the repository root in your Linux terminal:

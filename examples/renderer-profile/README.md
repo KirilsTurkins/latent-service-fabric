@@ -2,7 +2,7 @@
 
 This executable Phase 3 #224 fixture supports
 [ADR-0037](../../adr/0037-qualify-a-closed-angular-component-renderer-profile.md).
-It builds real Angular 22.1.7 SSR and browser bundles, wraps the server in a
+It builds real Angular 22.2.0 SSR and browser bundles, wraps the server in a
 Component Model artifact, and exercises it in Wasmtime. It is an
 operator-controlled qualification tool; node integration and package delivery
 are #233/#234. See the [profile and evidence](../../docs/runtime/angular-renderer-profile.md).

@@ -13,7 +13,7 @@ const toolchain = path.resolve(toolsArgument);
 const output = path.resolve(outputArgument);
 const source = path.join(root, 'examples/browser-boundary');
 const tool = createRequire(path.join(toolchain, 'package.json'));
-assert.equal(tool('@angular/core/package.json').version, '22.1.7');
+assert.equal(tool('@angular/core/package.json').version, '22.2.0');
 await mkdir(output, {recursive: true});
 const environment = Object.fromEntries(['PATH', 'HOME', 'TMPDIR', 'TEMP', 'TMP', 'SystemRoot', 'WINDIR']
   .filter(name => process.env[name]).map(name => [name, process.env[name]]));
@@ -44,6 +44,6 @@ for (const [route, name] of [['/', 'home.html'], ['/next', 'next.html']]) {
   await writeFile(path.join(output, name), html);
   identities[name] = createHash('sha256').update(html).digest('hex');
 }
-await writeFile(path.join(output, 'build-receipt.json'), JSON.stringify({angular: '22.1.7', node: process.version,
+await writeFile(path.join(output, 'build-receipt.json'), JSON.stringify({angular: '22.2.0', node: process.version,
   execution: 'controlled-node-ssr-not-component-execution', ...identities}));
-console.log(JSON.stringify({angular: '22.1.7', built: true, transferredSecrets: false, sourceSeparated: true}));
+console.log(JSON.stringify({angular: '22.2.0', built: true, transferredSecrets: false, sourceSeparated: true}));

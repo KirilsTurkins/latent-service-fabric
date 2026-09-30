@@ -119,11 +119,12 @@ class DependencyTests(unittest.TestCase):
                          {'jackson-annotations', 'jackson-core', 'jackson-databind'})
         self.assertEqual(len(jackson), 3)
         for item in jackson:
-            self.assertEqual(item['path'].split('/')[5], '2.18.10')
+            self.assertEqual(item['path'].split('/')[5], '2.18.11')
         for name in ('compiler.gradle', 'feasibility/build.gradle'):
             source = (SDK / name).read_text()
-            self.assertEqual(source.count("useVersion '2.18.10'"), 2)
+            self.assertEqual(source.count("useVersion '2.18.11'"), 2)
             self.assertNotIn("useVersion '2.18.9'", source)
+            self.assertNotIn("useVersion '2.18.10'", source)
 
 
 if __name__ == '__main__':

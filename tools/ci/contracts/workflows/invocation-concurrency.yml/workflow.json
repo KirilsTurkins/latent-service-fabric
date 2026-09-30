@@ -1,0 +1,53 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "invocation-concurrency-${{ github.ref }}"
+    },
+    "name": "Invocation concurrency research",
+    "on": {
+      "pull_request": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/invocation-concurrency.yml",
+          "research/invocation-concurrency/**",
+          "tools/run_invocation_concurrency.py",
+          "tools/build_process*.py",
+          "tools/toolchain-smoke/Cargo.toml",
+          "tools/toolchain.toml",
+          "crates/latent-component-bindings/**",
+          "Cargo.*",
+          "rust-toolchain.toml"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          ".github/workflows/invocation-concurrency.yml",
+          "research/invocation-concurrency/**",
+          "tools/run_invocation_concurrency.py",
+          "tools/build_process*.py",
+          "tools/toolchain-smoke/Cargo.toml",
+          "tools/toolchain.toml",
+          "crates/latent-component-bindings/**",
+          "Cargo.*",
+          "rust-toolchain.toml"
+        ]
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "experiment"
+  ],
+  "reviewReason": "Add the isolated #695 actual-component experiment and failure evidence; preserve all existing CI jobs and historical obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/invocation-concurrency.yml"
+}
