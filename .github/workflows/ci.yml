@@ -297,7 +297,7 @@ jobs:
           retention-days: 14
       - name: Set up the qualified Angular build runtime
         if: needs.profile.outputs.renderer == 'true'
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -692,7 +692,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@46817827a5bfabe028bf34e1cce71fd40e2ff697 # 1.95.0
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Install the declared minimum supported Rust toolchain
+        run: rustup toolchain install 1.95.0 --profile minimal --no-self-update
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
@@ -779,7 +781,7 @@ jobs:
       - name: Install verified guest binding generator
         run: python3 tools/install_guest_bindgen.py "${RUNNER_TEMP}/lsf-guest-tools" >> "${GITHUB_PATH}"
       - name: Set up the Node SDK provider participant
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -886,7 +888,7 @@ jobs:
         with:
           version: 1.72.0
           github_token: ${{ github.token }}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm

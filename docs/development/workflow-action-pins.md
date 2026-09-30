@@ -28,7 +28,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/checkout` | `v7.0.1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
 | `actions/setup-python` | `v7.0.0` | `5fda3b95a4ea91299a34e894583c3862153e4b97` |
 | `actions/setup-go` | `v5` | `40f1582b2485089dde7abd97c1529aa768e1baff` |
-| `actions/setup-node` | `v4` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
+| `actions/setup-node` | `v7.0.0` | `820762786026740c76f36085b0efc47a31fe5020` |
 | `actions/setup-java` | `v6.0.1` | `de7274f081f381c8f8158605e0321c36c376e2e6` |
 | `actions/setup-dotnet` | `v6.0.0` | `a98b56852c35b8e3190ac28c8c2271da59106c68` |
 | `actions/upload-artifact` | `v7.0.1` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` |
@@ -36,7 +36,6 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/attest-build-provenance` | `v4.2.2` | `4d101475d8b20a2381f78447822ac1eab6504dd8` |
 | `actions/upload-pages-artifact` | `v5.0.0` | `fc324d3547104276b827a68afc52ff2a11cc49c9` |
 | `dtolnay/rust-toolchain` | `1.97.1` | `4716b85f2fac3e324e64fa2810f6b5c3905760a5` |
-| `dtolnay/rust-toolchain` | `1.95.0` | `46817827a5bfabe028bf34e1cce71fd40e2ff697` |
 | `Swatinem/rust-cache` | `v2.9.2` | `6323deb102c322ba6fcbdcafc7e3dddab59af2b6` |
 | `bytecodealliance/actions` | `v1` | `9152e710e9f7182e4c29ad218e4f335a7b203613` |
 | `bufbuild/buf-setup-action` | `v1` | `a47c93e0b1648d5651a065437926377d060baa99` |
@@ -90,6 +89,26 @@ artifact names, paths, retention, compression and hidden-file inputs. The new
 `archive` input defaults to true, preserving zipped artifacts for the existing
 download steps; these workflows do not enable direct single-file uploads.
 The workflow identities in `tools/ci/history/commands-v1.json` reflect all updated pins.
+
+The `actions/setup-node` v7.0.0 identity, release notes and action definition
+were reviewed on **2026-09-28**. The action runs on Node 24 and retains the
+workflows' explicit Node 24.19.0 version, npm cache inputs and dependency paths.
+Registry authentication inputs and required install/build commands are unchanged.
+Reconciled with the ownership-local CI contracts on **2026-09-29**: this is an
+action pin/comment-only workflow update, so neither the active command contracts
+nor the archived pre-sharding snapshot requires a hash refresh.
+
+The shared `dtolnay/rust-toolchain` 1.97.1 identity and upstream action-definition
+diff were reviewed on **2026-09-28**. That revision hardcodes Rust 1.97.1 and has
+no `toolchain` input. The MSRV job therefore installs Rust 1.95.0 explicitly with
+`rustup toolchain install 1.95.0 --profile minimal --no-self-update` after the
+action runs. Its full and selected-package checks continue to invoke
+`cargo +1.95.0`; the declared MSRV remains 1.95.0.
+Reconciled with the ownership-local CI contracts on **2026-09-30**: the explicit
+installation is retained in `tools/ci/contracts/workflows/ci.yml/jobs/msrv.json`,
+with all existing steps and historical coverage obligations unchanged. The
+archived pre-sharding snapshot is not regenerated, and the retired active
+`tools/ci/commands.json` is not restored.
 
 ## Updating a pin
 

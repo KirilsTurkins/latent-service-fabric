@@ -178,7 +178,7 @@ jobs:
         run: python tools/build_dev_guest_tools.py --language "$LSF_DEV_LANGUAGE" --output target/dev-tools --python-prefix "$LSF_DEV_PYTHON_PREFIX" --node-tests
       - name: Compile actual projects with isolated tools and separate operator packaging
         run: python tools/run_dev_guest_tools_tests.py --language "$LSF_DEV_LANGUAGE" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-projects"
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         if: matrix.language == 'typescript'
         with:
           node-version: 24.19.0

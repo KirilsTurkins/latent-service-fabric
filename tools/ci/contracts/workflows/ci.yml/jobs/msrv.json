@@ -20,9 +20,9 @@
     }
   },
   "definition": {
+    "if": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
     "name": "Rust MSRV 1.95.0",
     "needs": "profile",
-    "if": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -35,41 +35,45 @@
         "uses": "dtolnay/rust-toolchain"
       },
       {
+        "name": "Install the declared minimum supported Rust toolchain",
+        "run": "rustup toolchain install 1.95.0 --profile minimal --no-self-update"
+      },
+      {
         "name": "Restore compiled Rust dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v1",
-          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
-          "cache-targets": false,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
-          "cache-on-failure": false,
+          "cache-bin": false,
           "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
+          "prefix-key": "lsf-ci-dependencies-v1",
           "save-if": "${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||\n    (github.event_name == 'workflow_dispatch' &&\n     (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}"
         }
       },
       {
-        "name": "Check workspace at MSRV",
         "if": "needs.profile.outputs.profile == 'full'",
+        "name": "Check workspace at MSRV",
         "run": "python3 tools/ci_cargo.py run msrv"
       },
       {
-        "name": "Check all selected reverse dependents at MSRV",
-        "if": "needs.profile.outputs.profile == 'fast'",
         "env": {
           "CI_FAST_PACKAGES": "${{ needs.profile.outputs.fast_packages }}"
         },
+        "if": "needs.profile.outputs.profile == 'fast'",
+        "name": "Check all selected reverse dependents at MSRV",
         "run": "python3 tools/ci_fast.py --msrv --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast-msrv\""
       },
       {
-        "name": "Retain narrow MSRV timing evidence",
         "if": "always() && needs.profile.outputs.profile == 'fast'",
+        "name": "Retain narrow MSRV timing evidence",
         "uses": "actions/upload-artifact",
         "with": {
+          "if-no-files-found": "error",
           "name": "ci-host-msrv-${{ github.sha }}",
           "path": "${{ runner.temp }}/ci-fast-msrv/",
-          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
@@ -77,7 +81,7 @@
   },
   "jobId": "msrv",
   "kind": "job",
-  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "reviewReason": "Preserve historical command coverage and incoming explicit MSRV installation; check the updated dependency graph with declared Rust 1.95.0.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

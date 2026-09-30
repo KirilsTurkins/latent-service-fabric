@@ -178,9 +178,21 @@ pub fn process() -> Value {
         "elapsedNanos": began.elapsed().as_nanos().to_string()})
 }
 
+// Provenance includes unstripped test executables, not only small guest files.
+// Keep both the metadata and streamed-byte limits, with a 64 KiB buffer.
+const MAX_FILE_DIGEST_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+
 pub fn file_digest(path: &Path) -> String {
-    let mut file = fs::File::open(path).unwrap();
-    assert!(file.metadata().unwrap().len() <= 512 * 1024 * 1024);
+    file_digest_with_limit(path, MAX_FILE_DIGEST_BYTES)
+}
+
+fn file_digest_with_limit(path: &Path, maximum: u64) -> String {
+    let file = fs::File::open(path).unwrap();
+    assert!(file.metadata().unwrap().len() <= maximum);
+    digest_reader(file, maximum)
+}
+
+fn digest_reader(mut file: impl Read, maximum: u64) -> String {
     let mut hasher = Sha256::new();
     let mut bytes = vec![0; 65536];
     let mut observed_bytes = 0_u64;
@@ -190,13 +202,41 @@ pub fn file_digest(path: &Path) -> String {
             break;
         }
         observed_bytes += length as u64;
-        assert!(observed_bytes <= 512 * 1024 * 1024);
+        assert!(observed_bytes <= maximum);
         hasher.update(&bytes[..length]);
     }
     format!(
         "sha256:{:x}",
         latent_core::digest::HexDigest(hasher.finalize())
     )
+}
+
+// Run within the existing registered checkpoint so every ordinary invocation
+// checks exact-boundary hashing and both independent overflow guards.
+pub fn check_file_digest_bounds() {
+    use std::{io::Cursor, panic::catch_unwind};
+
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("digest-boundary");
+    let payload = b"artifact";
+    fs::write(&path, payload).unwrap();
+    let expected = format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(Sha256::digest(payload))
+    );
+    assert_eq!(file_digest_with_limit(&path, 8), expected);
+    assert_eq!(digest_reader(Cursor::new(payload), 8), expected);
+    assert_eq!(
+        digest_reader(Cursor::new([]), 0),
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest([]))
+        )
+    );
+    // Reject a known oversized file before reading and reject a reader
+    // that grows beyond the allowed length independently of metadata.
+    assert!(catch_unwind(|| file_digest_with_limit(&path, 7)).is_err());
+    assert!(catch_unwind(|| digest_reader(Cursor::new(payload), 7)).is_err());
 }
 
 pub fn publish(observations: &[Value]) {
