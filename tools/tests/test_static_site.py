@@ -223,15 +223,163 @@ class StaticSiteCaptureTests(unittest.TestCase):
             file.parent.mkdir(parents=True, exist_ok=True)
             file.write_bytes(f'<html lang="{locale}"><title>Page {number}</title></html>'.encode())
             config['assets'].append({'path': '/' + name, 'source': name})
-        output, _ = self.capture(config)
+        output, report = self.capture(config)
         raw = (output / 'metadata/web-application.json').read_bytes()
         self.assertGreater(len(raw), 64 * 1024)
         self.assertEqual(len(json.loads(raw)['assets']), 252)
         self.assertEqual(len(json.loads((output / 'package-source.json').read_bytes())['layers']), 254)
+        schema = Path(__file__).resolve().parents[2] / 'schemas/static-site-budget.schema.json'
+        Draft202012Validator(json.loads(schema.read_bytes())).validate(report['budget'])
+        self.assertEqual(report['budget']['captureLimits']['publicAssetCount'],
+                         {'actual': 252, 'maximum': 252, 'remaining': 0, 'unit': 'paths'})
+        self.assertEqual(report['budget']['captureLimits']['webManifestBytes']['actual'], len(raw))
+        self.assertEqual(report['budget']['generatedInputs']['standardPackageLayers']['remaining'], 0)
         config['assets'].append({'path': '/extra.html', 'source': 'extra.html'})
         with self.assertRaisesRegex(SnapshotError, 'asset-count: actual=253 maximum=252'):
             self.capture(config, 'too-many')
         self.assertFalse((Path(self.temp.name) / 'too-many').exists())
+
+    def test_budget_is_exact_bounded_deterministic_and_preserves_duplicate_path_charges(self):
+        config = copy.deepcopy(self.config)
+        shared = b'/* same public content */' * 10
+        for name in ['z.js', 'a.js', 'f.js', 'b.js', 'e.js', 'c.js']:
+            (self.root / name).write_bytes(shared)
+            config['assets'].append({'path': '/' + name, 'source': name})
+        long_name = 'a' * 64 + '/' + 'b' * 64 + '/' + 'c' * 32 + '.css'
+        long_file = self.root / long_name
+        long_file.parent.mkdir(parents=True)
+        long_file.write_bytes(b'')
+        config['assets'].append({'path': '/' + long_name, 'source': long_name})
+        output, captured = self.capture(config)
+        budget = captured['budget']
+        schema = Path(__file__).resolve().parents[2] / 'schemas/static-site-budget.schema.json'
+        Draft202012Validator(json.loads(schema.read_bytes())).validate(budget)
+        raw = (output / 'metadata/web-application.json').read_bytes()
+        web = json.loads(raw)
+        self.assertEqual([row['path'] for row in budget['largestAssets']], ['/a.js', '/b.js', '/c.js', '/e.js', '/f.js'])
+        self.assertEqual(len(budget['largestAssets']), site.LARGEST_ASSETS)
+        self.assertEqual(budget['selection']['webManifestDigest'], digest(raw))
+        self.assertEqual(budget['selection']['sourceObservationDigest'], config['observations'][0]['digest'])
+        logical = sum(row['size'] for row in web['assets'])
+        distinct = {row['digest']: row['size'] for row in web['assets']}
+        self.assertEqual(budget['captureLimits']['logicalPublicBytes']['actual'], logical)
+        self.assertEqual(budget['storageObservation']['deduplicatedPublicBytes'], sum(distinct.values()))
+        self.assertGreater(logical, budget['storageObservation']['deduplicatedPublicBytes'])
+        self.assertEqual(budget['captureLimits']['excludedCount']['actual'], 2)
+        self.assertEqual(budget['captureLimits']['longestRelativePathBytes']['actual'], len(long_name))
+        self.assertEqual(budget['captureLimits']['longestPathSegmentBytes']['remaining'], 0)
+        for row in budget['captureLimits'].values():
+            self.assertEqual(row['remaining'], row['maximum'] - row['actual'])
+        for key, filename in [('webManifestBytes', 'metadata/web-application.json'),
+                              ('captureObservationBytes', 'metadata/static-observation.json'),
+                              ('packageSourceBytes', 'package-source.json'), ('sbomInputsBytes', 'sbom-inputs.json')]:
+            self.assertEqual(budget['generatedInputs'][key], len((output / filename).read_bytes()))
+        self.assertFalse(any(budget['qualification'].values()))
+        self.assertEqual(budget['nodeCapacity'], 'not-observed')
+        self.assertIn('logical paths remain independently charged', site.human_budget(budget))
+        reversed_config = copy.deepcopy(config)
+        reversed_config['assets'].reverse()
+        _, reordered = self.capture(reversed_config, 'reordered')
+        self.assertEqual(reordered['budget']['largestAssets'], budget['largestAssets'])
+        self.assertEqual(reordered['budget']['captureLimits']['logicalPublicBytes'], budget['captureLimits']['logicalPublicBytes'])
+
+    def test_budget_exact_byte_limits_and_one_over_fail_before_output(self):
+        payload = b'<html>' + b'x' * (site.MAX_ASSET_BYTES - 6)
+        (self.root / 'index.html').write_bytes(payload)
+        (self.root / 'copy.html').write_bytes(payload)
+        config = copy.deepcopy(self.config)
+        config['assets'] = [{'path': '/' + name, 'source': name} for name in ['index.html', 'copy.html']]
+        _, captured = self.capture(config)
+        limits = captured['budget']['captureLimits']
+        self.assertEqual(limits['largestAssetBytes']['remaining'], 0)
+        self.assertEqual(limits['logicalPublicBytes']['remaining'], 0)
+        self.assertEqual(captured['budget']['storageObservation']['deduplicatedPublicBytes'], site.MAX_ASSET_BYTES)
+        (self.root / 'one.js').write_bytes(b'x')
+        config['assets'].append({'path': '/one.js', 'source': 'one.js'})
+        with self.assertRaisesRegex(SnapshotError, f'asset-tree-bytes: actual={site.MAX_TREE_BYTES + 1} maximum={site.MAX_TREE_BYTES}'):
+            self.capture(config, 'aggregate-over')
+        self.assertFalse((Path(self.temp.name) / 'aggregate-over').exists())
+        (self.root / 'index.html').write_bytes(payload + b'x')
+        with self.assertRaisesRegex(SnapshotError, f'source-bytes: actual={site.MAX_ASSET_BYTES + 1} maximum={site.MAX_ASSET_BYTES}'):
+            self.capture(config, 'asset-over')
+        self.assertFalse((Path(self.temp.name) / 'asset-over').exists())
+
+    def test_budget_uses_exact_input_and_encoded_manifest_with_no_partial_failure_summary(self):
+        from unittest.mock import patch
+        self.assertEqual(site.encode_input(self.config), canonical(self.config))
+        oversized = copy.deepcopy(self.config)
+        oversized['assets'] *= 4096
+        with self.assertRaisesRegex(SnapshotError, 'input-bytes: actual='):
+            self.capture(oversized, 'unbounded-descriptor')
+        self.assertFalse((Path(self.temp.name) / 'unbounded-descriptor').exists())
+        raw = json.dumps(self.config, indent=2).encode()
+        raw += b' ' * (site.MAX_INPUT_BYTES - len(raw))
+        output = Path(self.temp.name) / 'exact-input'
+        captured = site.capture(self.root, self.config, output, input_raw=raw)
+        self.assertEqual(captured['budget']['captureLimits']['inputDescriptorBytes']['remaining'], 0)
+        self.assertEqual(captured['budget']['selection']['inputDescriptorDigest'], digest(raw))
+        with self.assertRaisesRegex(SnapshotError, 'input-bytes: actual=262145 maximum=262144'):
+            site.capture(self.root, self.config, Path(self.temp.name) / 'input-over', input_raw=raw + b' ')
+        self.assertFalse((Path(self.temp.name) / 'input-over').exists())
+        manifest_bytes = len((output / 'metadata/web-application.json').read_bytes())
+        with patch.object(site, 'MAX_WEB_MANIFEST_BYTES', manifest_bytes):
+            _, exact = self.capture(name='manifest-exact')
+        self.assertEqual(exact['budget']['captureLimits']['webManifestBytes']['remaining'], 0)
+        with patch.object(site, 'MAX_WEB_MANIFEST_BYTES', manifest_bytes - 1):
+            with self.assertRaisesRegex(SnapshotError, f'web-manifest-bytes: actual={manifest_bytes} maximum={manifest_bytes - 1}'):
+                self.capture(name='manifest-over')
+        self.assertFalse((Path(self.temp.name) / 'manifest-over').exists())
+
+    def test_budget_uses_the_captured_snapshot_once_and_detects_changes_during_read(self):
+        from unittest.mock import patch
+        original_read = site.read
+        original = (self.root / 'assets/main.js').read_bytes()
+        calls = []
+        def mutate_after_capture(root, relative, maximum):
+            calls.append(relative)
+            data = original_read(root, relative, maximum)
+            if relative == 'assets/main.js':
+                (root / relative).write_bytes(b'misleading larger replacement after stable capture' * 10)
+            return data
+        with patch.object(site, 'read', side_effect=mutate_after_capture):
+            output, captured = self.capture()
+        self.assertEqual(len(calls), len(self.config['assets']) + len(self.config['observations']))
+        self.assertEqual(len(set(calls)), len(calls))
+        self.assertEqual((output / 'public/assets/main.js').read_bytes(), original)
+        web = json.loads((output / 'metadata/web-application.json').read_bytes())
+        row = next(row for row in web['assets'] if row['path'] == '/assets/main.js')
+        self.assertEqual((row['size'], row['digest']), (len(original), digest(original)))
+        self.assertEqual(captured['budget']['captureLimits']['logicalPublicBytes']['actual'], sum(row['size'] for row in web['assets']))
+        fstat = site.os.fstat
+        changed = False
+        def change_during_read(fd):
+            nonlocal changed
+            before = fstat(fd)
+            if not changed:
+                changed = True
+                (self.root / 'index.html').write_bytes(b'changed while opened')
+            return before
+        with patch.object(site.os, 'fstat', side_effect=change_during_read):
+            with self.assertRaises((SnapshotError, OSError)):
+                self.capture(name='changed-during-read')
+        self.assertFalse((Path(self.temp.name) / 'changed-during-read').exists())
+
+    def test_budget_diagnostics_do_not_change_artifact_bytes_or_provenance_claims(self):
+        from unittest.mock import patch
+        left, report = self.capture()
+        with patch.object(site, 'LARGEST_ASSETS', 1):
+            right, compact = self.capture(name='compact-report')
+        self.assertNotEqual(report['budget']['largestAssets'], compact['budget']['largestAssets'])
+        first = {p.relative_to(left).as_posix(): p.read_bytes() for p in left.rglob('*') if p.is_file()}
+        second = {p.relative_to(right).as_posix(): p.read_bytes() for p in right.rglob('*') if p.is_file()}
+        self.assertEqual(first, second)
+        observation = json.loads(first['metadata/static-observation.json'])
+        self.assertNotIn('budget', observation)
+        self.assertEqual(observation, {key: value for key, value in report.items() if key != 'budget'})
+        self.assertEqual(observation['inputObservationTrust'], 'operator-supplied')
+        self.assertEqual(observation['reproducibility'], 'not-checked')
+        self.assertFalse(observation['frameworkBuildExecuted'])
+        self.assertNotIn(b'latent.static-site.budget.v1', b''.join(first.values()))
 
     def test_missing_foreign_or_changed_observation_is_not_accepted_as_build_proof(self):
         for change in ['digest', 'missing', 'foreign', 'kind']:

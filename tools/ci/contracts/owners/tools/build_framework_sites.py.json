@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_framework_sites.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Capture the existing maintained Docusaurus 404 output as an optional signed document",
+  "reviewReason": "versioned existing Angular PrimeNG Docusaurus recipe emits bounded capture budgets without new fixtures",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b9fe318a4648571c8ae8abb312546c2f50670eef8a83433d39b06b3c1119bcc2"
+  "sha256": "df234975fac90b2b37284641afaba8ea7da565f7efe89db8357855de3db20ec1"
 }

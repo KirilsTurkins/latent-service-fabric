@@ -191,7 +191,8 @@ def build(args):
             if name == 'generator':
                 config['errorDocument'] = {'profile': 'html-not-found-v1', 'document': '/404.html'}
             (output / 'static-site.json').write_bytes(canonical(config))
-            capture(public, config, output / 'inputs')
+            captured = capture(public, config, output / 'inputs')
+            (output / 'capture-budget.json').write_bytes(canonical(captured['budget']))
             sbom_path = output / 'inputs/sbom-inputs.json'
             sbom = json.loads(sbom_path.read_bytes())
             sbom['entries'].extend(dependencies(toolchain, observed['dependencies']))
@@ -219,7 +220,8 @@ def build(args):
                         'hermetic': False, 'dependencyCompleteness': 'declared-inputs-incomplete'}
             (output / 'observation.json').write_bytes(canonical(assembly))
             summaries.append({'name': name, 'packageDigest': summary['packageDigest'],
-                              'assemblyObservation': digest(canonical(assembly)), 'outputs': outputs})
+                              'assemblyObservation': digest(canonical(assembly)), 'outputs': outputs,
+                              'captureBudget': captured['budget']})
     (args.output / 'summary.json').write_bytes(canonical(summaries))
     print(json.dumps(summaries, separators=(',', ':')))
 

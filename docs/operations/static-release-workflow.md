@@ -34,6 +34,16 @@ non-hermetic inputs, incomplete dependencies and unchecked reproducibility. It
 does not claim to have run or reproduced your framework build. Review both the
 package and the observation before sending them to your signing authority.
 
+Current development helpers also save `capture-budget.json` and return the
+versioned `captureBudget` inspection before signing. Review its selected profile,
+logical path count/bytes, exact manifest usage, largest assets and remaining
+headroom using the [static budget guide](../component-development/static-sites.md#review-budget-headroom-before-signing).
+This diagnostic never enters the signed capture observation or public inventory.
+It leaves source trust and reproducibility claims unchanged, and does not measure
+node capacity or prove signing, admission or browser readiness. The maintained
+qualification exercises it with both the released CLI and current packaged tools;
+historical alpha.5 receipts describe their original helper bytes only.
+
 ## Approve and sign the exact release
 
 Your organization provides its publisher and builder identities, approved raw

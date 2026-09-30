@@ -1,5 +1,10 @@
 {
   "cases": [
+    "StaticSiteCaptureTests.test_budget_diagnostics_do_not_change_artifact_bytes_or_provenance_claims",
+    "StaticSiteCaptureTests.test_budget_exact_byte_limits_and_one_over_fail_before_output",
+    "StaticSiteCaptureTests.test_budget_is_exact_bounded_deterministic_and_preserves_duplicate_path_charges",
+    "StaticSiteCaptureTests.test_budget_uses_exact_input_and_encoded_manifest_with_no_partial_failure_summary",
+    "StaticSiteCaptureTests.test_budget_uses_the_captured_snapshot_once_and_detects_changes_during_read",
     "StaticSiteCaptureTests.test_closed_input_rejects_duplicate_fields_unknown_authority_and_executable_hooks",
     "StaticSiteCaptureTests.test_complete_multilingual_inventory_at_the_limit_and_exact_count_diagnostics",
     "StaticSiteCaptureTests.test_csr_entry_is_explicit_and_routing_changes_manifest_identity_without_changing_public_bytes",
@@ -17,6 +22,66 @@
     "StaticSiteCaptureTests.test_xml_sitemap_bytes_and_exact_media_are_preserved_without_parsing"
   ],
   "guards": {
+    "StaticSiteCaptureTests.test_budget_diagnostics_do_not_change_artifact_bytes_or_provenance_claims": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:75f7c528e9eff7b09aec0dd78bddad08b8077c3a36d84f9276eb2a3bbc7847d4",
+        "class:setup-sha256:fc23fa9a84dfb1a5ed585fc72c34c211ef5e3fc194282d1ab9b96b4fb4980d83"
+      ],
+      "skipSites": []
+    },
+    "StaticSiteCaptureTests.test_budget_exact_byte_limits_and_one_over_fail_before_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:75f7c528e9eff7b09aec0dd78bddad08b8077c3a36d84f9276eb2a3bbc7847d4",
+        "class:setup-sha256:fc23fa9a84dfb1a5ed585fc72c34c211ef5e3fc194282d1ab9b96b4fb4980d83"
+      ],
+      "skipSites": []
+    },
+    "StaticSiteCaptureTests.test_budget_is_exact_bounded_deterministic_and_preserves_duplicate_path_charges": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:75f7c528e9eff7b09aec0dd78bddad08b8077c3a36d84f9276eb2a3bbc7847d4",
+        "class:setup-sha256:fc23fa9a84dfb1a5ed585fc72c34c211ef5e3fc194282d1ab9b96b4fb4980d83"
+      ],
+      "skipSites": []
+    },
+    "StaticSiteCaptureTests.test_budget_uses_exact_input_and_encoded_manifest_with_no_partial_failure_summary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:75f7c528e9eff7b09aec0dd78bddad08b8077c3a36d84f9276eb2a3bbc7847d4",
+        "class:setup-sha256:fc23fa9a84dfb1a5ed585fc72c34c211ef5e3fc194282d1ab9b96b4fb4980d83"
+      ],
+      "skipSites": []
+    },
+    "StaticSiteCaptureTests.test_budget_uses_the_captured_snapshot_once_and_detects_changes_during_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:75f7c528e9eff7b09aec0dd78bddad08b8077c3a36d84f9276eb2a3bbc7847d4",
+        "class:setup-sha256:fc23fa9a84dfb1a5ed585fc72c34c211ef5e3fc194282d1ab9b96b4fb4980d83"
+      ],
+      "skipSites": []
+    },
     "StaticSiteCaptureTests.test_closed_input_rejects_duplicate_fields_unknown_authority_and_executable_hooks": {
       "bases": [
         "unittest.TestCase"
@@ -203,6 +268,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_static_site.py",
-  "reviewReason": "Retain capture cases and add the signed same-publication error document and limit regression",
+  "reviewReason": "Review five bounded budget success count byte snapshot and artifact invariance cases; preserve all original fixtures and every historical guard",
   "schemaVersion": "latent.ci.contracts.v1"
 }

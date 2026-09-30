@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/static-site-budget.schema.json",
+  "title": "Bounded static capture budget diagnostic v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "complete", "selection", "captureLimits", "largestAssets", "largestAssetsMaximum", "storageObservation", "generatedInputs", "qualification", "nodeCapacity"],
+  "properties": {
+    "schemaVersion": {"const": "latent.static-site.budget.v1"},
+    "complete": {"const": true},
+    "selection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["captureProfile", "webProfile", "routingProfile", "packageName", "packageVersion", "sourceObservationDigest", "inputDescriptorDigest", "assetsDigest", "webManifestDigest", "inputObservationTrust"],
+      "properties": {
+        "captureProfile": {"const": "static-site-input-v1"},
+        "webProfile": {"const": "lsf.web-release.v1"},
+        "routingProfile": {"const": "static-site-v1"},
+        "packageName": {"type": "string", "minLength": 1, "maxLength": 128},
+        "packageVersion": {"type": "string", "minLength": 1, "maxLength": 128},
+        "sourceObservationDigest": {"$ref": "#/$defs/digest"},
+        "inputDescriptorDigest": {"$ref": "#/$defs/digest"},
+        "assetsDigest": {"$ref": "#/$defs/digest"},
+        "webManifestDigest": {"$ref": "#/$defs/digest"},
+        "inputObservationTrust": {"const": "operator-supplied"}
+      }
+    },
+    "captureLimits": {
+      "type": "object", "additionalProperties": false,
+      "required": ["publicAssetCount", "largestAssetBytes", "logicalPublicBytes", "webManifestBytes", "inputDescriptorBytes", "longestRelativePathBytes", "longestPathSegmentBytes", "excludedCount", "styleHashCount", "observationCount", "largestObservationBytes", "packageNameBytes", "packageVersionBytes"],
+      "properties": {
+        "publicAssetCount": {"$ref": "#/$defs/usage"},
+        "largestAssetBytes": {"$ref": "#/$defs/usage"},
+        "logicalPublicBytes": {"$ref": "#/$defs/usage"},
+        "webManifestBytes": {"$ref": "#/$defs/usage"},
+        "inputDescriptorBytes": {"$ref": "#/$defs/usage"},
+        "longestRelativePathBytes": {"$ref": "#/$defs/usage"},
+        "longestPathSegmentBytes": {"$ref": "#/$defs/usage"},
+        "excludedCount": {"$ref": "#/$defs/usage"},
+        "styleHashCount": {"$ref": "#/$defs/usage"},
+        "observationCount": {"$ref": "#/$defs/usage"},
+        "largestObservationBytes": {"$ref": "#/$defs/usage"},
+        "packageNameBytes": {"$ref": "#/$defs/usage"},
+        "packageVersionBytes": {"$ref": "#/$defs/usage"}
+      }
+    },
+    "largestAssets": {
+      "type": "array", "minItems": 1, "maxItems": 5,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["path", "size", "digest"],
+        "properties": {
+          "path": {"type": "string", "minLength": 2, "maxLength": 233, "pattern": "^/[A-Za-z0-9._/-]+$"},
+          "size": {"type": "integer", "minimum": 0, "maximum": 8388608},
+          "digest": {"$ref": "#/$defs/digest"}
+        }
+      }
+    },
+    "largestAssetsMaximum": {"const": 5},
+    "storageObservation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["distinctPublicDigests", "deduplicatedPublicBytes", "accounting", "catalogCapacityObserved"],
+      "properties": {
+        "distinctPublicDigests": {"type": "integer", "minimum": 1, "maximum": 252},
+        "deduplicatedPublicBytes": {"type": "integer", "minimum": 0, "maximum": 16777216},
+        "accounting": {"const": "logical-paths-charged-independently"},
+        "catalogCapacityObserved": {"const": false}
+      }
+    },
+    "generatedInputs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "webManifestBytes", "captureObservationBytes", "packageSourceBytes", "sbomInputsBytes", "capturedMetadataLayers", "capturedLayers", "reservedPackageLayers", "packageLayerCeiling", "standardPackageLayers", "finalPackageBytesObserved"],
+      "properties": {
+        "scope": {"const": "capture-inputs-before-assembly"},
+        "webManifestBytes": {"type": "integer", "minimum": 1, "maximum": 262144},
+        "captureObservationBytes": {"$ref": "#/$defs/bytes"},
+        "packageSourceBytes": {"$ref": "#/$defs/bytes"},
+        "sbomInputsBytes": {"$ref": "#/$defs/bytes"},
+        "capturedMetadataLayers": {"const": 2},
+        "capturedLayers": {"type": "integer", "minimum": 3, "maximum": 254},
+        "reservedPackageLayers": {"const": 4},
+        "packageLayerCeiling": {"const": 256},
+        "standardPackageLayers": {"$ref": "#/$defs/usage"},
+        "finalPackageBytesObserved": {"const": false}
+      }
+    },
+    "qualification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["signingVerified", "admissionVerified", "browserQualified", "servingQualified"],
+      "properties": {
+        "signingVerified": {"const": false}, "admissionVerified": {"const": false},
+        "browserQualified": {"const": false}, "servingQualified": {"const": false}
+      }
+    },
+    "nodeCapacity": {"const": "not-observed"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "bytes": {"type": "integer", "minimum": 0, "maximum": 1048576},
+    "usage": {
+      "type": "object", "additionalProperties": false, "required": ["actual", "maximum", "remaining", "unit"],
+      "properties": {
+        "actual": {"type": "integer", "minimum": 0, "maximum": 16777216},
+        "maximum": {"type": "integer", "minimum": 1, "maximum": 16777216},
+        "remaining": {"type": "integer", "minimum": 0, "maximum": 16777216},
+        "unit": {"enum": ["bytes", "paths", "files", "hashes", "layers"]}
+      }
+    }
+  }
+}
