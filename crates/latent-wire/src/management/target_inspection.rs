@@ -418,6 +418,7 @@ fn prepared_to_proto(value: PreparationInspection) -> proto::TargetPreparation {
         maximum_type_nodes: Some(value.maximum_type_nodes),
         declared_budget: Some(super::control_budget_to_proto(&value.declared_budget)),
         imports: value.imports.into_iter().map(|id| id.0).collect(),
+        type_imports: value.type_imports.into_iter().map(|id| id.0).collect(),
         exports: value
             .exports
             .into_iter()
@@ -450,7 +451,13 @@ fn charge_preparation(
         }
     }
     budget.sequence(&value.imports, 64)?;
-    for import in &value.imports {
+    budget.sequence(&value.type_imports, 64)?;
+    if value.imports.len().saturating_add(value.type_imports.len()) > 64 {
+        return Err(Status::resource_exhausted(
+            "preparation inspection import limit",
+        ));
+    }
+    for import in value.imports.iter().chain(&value.type_imports) {
         budget.string(import, domain::MAXIMUM_ID_BYTES)?;
         identifier(import, domain::MAXIMUM_ID_BYTES)?;
     }

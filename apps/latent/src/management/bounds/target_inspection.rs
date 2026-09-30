@@ -94,7 +94,13 @@ impl Check for proto::InspectHttpTargetResponse {
                 .preparation
                 .as_ref()
                 .ok_or_else(invalid_response)?;
-            if preparation.imports.len() > 64 || preparation.exports.len() > 128 {
+            if preparation
+                .imports
+                .len()
+                .saturating_add(preparation.type_imports.len())
+                > 64
+                || preparation.exports.len() > 128
+            {
                 return Err(invalid_response());
             }
             for text in [
@@ -116,7 +122,7 @@ impl Check for proto::InspectHttpTargetResponse {
                     .strip_prefix("blake3:")
                     .ok_or_else(invalid_response)?)?;
             }
-            for import in &preparation.imports {
+            for import in preparation.imports.iter().chain(&preparation.type_imports) {
                 b.id(import)?;
             }
             for export in &preparation.exports {
@@ -130,7 +136,10 @@ impl Check for proto::InspectHttpTargetResponse {
                     || preparation.target_triple.is_none()
                     || preparation.cpu_feature_set.is_none()
                     || preparation.declared_budget.is_none()
-                    || preparation.import_count != Some(preparation.imports.len() as u64)
+                    || preparation.import_count
+                        != Some(
+                            (preparation.imports.len() + preparation.type_imports.len()) as u64,
+                        )
                     || preparation.function_count != Some(preparation.exports.len() as u64)
                     || preparation.hostcall_fuel.is_none()
                     || preparation.maximum_lifted_bytes.is_none()

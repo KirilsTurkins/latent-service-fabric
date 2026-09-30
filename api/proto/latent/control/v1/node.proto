@@ -388,14 +388,19 @@ message TargetPreparation {
   // lsf-wasmtime-preparation-metadata-v2. Engine-owned metadata identity,
   // independently of signed package/capsule/contract document digests.
   optional string sealed_metadata_fingerprint = 8;
+  // Total actual interface imports: callable imports plus type_imports.
   optional uint64 import_count = 9;
   optional uint64 function_count = 10;
   optional uint64 hostcall_fuel = 11;
   optional uint64 maximum_lifted_bytes = 12;
   optional uint64 maximum_type_nodes = 13;
   optional ResourceBudget declared_budget = 14;
+  // Actual callable host/provider interface imports; not authority by themselves.
   repeated string imports = 15;
   repeated PreparedTargetExport exports = 16;
+  // Actual bounded, validated resource-free type-only interfaces. No callable
+  // provider binding or execution authority is implied by this collection.
+  repeated string type_imports = 17;
 }
 
 message TargetCandidate {
