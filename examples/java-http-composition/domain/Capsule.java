@@ -7,9 +7,13 @@ import java.util.List;
 
 public final class Capsule implements Bindings.Exports {
     public List<ExamplesJavaHttpDomainApiWide> status() {
+        var maximum = Unsigned64.parse("18446744073709551615");
+        if (!maximum.toString().equals("18446744073709551615")
+                || maximum.compareTo(Unsigned64.of(Long.MAX_VALUE)) <= 0)
+            throw new IllegalStateException("unsigned-helper-range");
         return List.of(new ExamplesJavaHttpDomainApiWide(
             "Grüße 😀", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
-            Unsigned64.parse("18446744073709551615")));
+            maximum));
     }
     public ExamplesJavaHttpDomainApiWide echo(ExamplesJavaHttpDomainApiWide value) { return value; }
     public String text(String value) { return value; }
