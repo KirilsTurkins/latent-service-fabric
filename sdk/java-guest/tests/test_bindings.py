@@ -21,6 +21,32 @@ HEADER = "void exports_examples_sample_api_run(uint64_t value, sample_result_t *
 
 
 class Bindings(unittest.TestCase):
+    def test_shared_imported_resource_alias_uses_one_owner_class(self):
+        data = document()
+        data["interfaces"].extend([
+            {"name": "state", "package": 0, "types": {"transaction": 1}, "functions": {
+                "acquire": {"name": "acquire", "kind": "freestanding", "params": [], "result": 3}}},
+            {"name": "intents", "package": 0, "types": {"transaction": 2}, "functions": {
+                "stage": {"name": "stage", "kind": "async-freestanding", "params": [{"name": "transaction", "type": 4}], "result": None}}},
+        ])
+        data["worlds"][0]["imports"] = {"interface-1": {"interface": {"id": 1}}, "interface-2": {"interface": {"id": 2}}}
+        data["types"].extend([
+            {"name": "transaction", "kind": "resource", "owner": {"interface": 1}},
+            {"name": "transaction", "kind": {"type": 1}, "owner": {"interface": 2}},
+            {"name": None, "kind": {"handle": {"own": 2}}, "owner": None},
+            {"name": None, "kind": {"handle": {"borrow": 2}}, "owner": None},
+        ])
+        header = HEADER + "sample_own_transaction_t examples_sample_state_acquire(void);\nvoid examples_sample_intents_stage(sample_borrow_transaction_t transaction);\n"
+        graph = Graph(data, "service", header)
+        output = java.generate(graph)
+        self.assertEqual(graph.resources, [1])
+        self.assertIn("stage(ExamplesSampleStateTransaction arg0)", output)
+        self.assertIn("return new ExamplesSampleStateTransaction((int) input.integer(4));", output)
+        self.assertNotIn("ExamplesSampleIntentsTransaction", output)
+        graph.types[2]["kind"] = {"type": 2}
+        with self.assertRaisesRegex(ValueError, "recursive Java resource alias"):
+            graph.resource_index(2)
+
     def test_surface_preserves_async_width_identity_and_ignores_parser_ids(self):
         original = document()
         expected = surface(original, "service")

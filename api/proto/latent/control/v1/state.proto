@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/transaction/v1/transaction.proto";
+
+message InspectNamespaceRequest {
+  latent.transaction.v1.TransactionProfile profile = 1;
+  latent.transaction.v1.NamespaceSelector namespace = 2;
+}
+
+message NamespaceInspection {
+  latent.transaction.v1.ViewIdentity view = 1;
+  uint64 encoded_state_bytes = 2;
+  uint64 command_count = 3;
+  uint64 pending_effect_count = 4;
+  repeated latent.transaction.v1.LinkedRetention retained_formats = 5;
+  string engine_profile = 6;
+  string engine_profile_digest = 7;
+}
+
+message SelectEntityRequest {
+  InspectNamespaceRequest namespace = 1;
+  optional bytes prefix = 2;
+  latent.transaction.v1.PageRequest page = 3;
+}
+
+message EntityInspection {
+  string entity = 1;
+  bytes version = 2;
+}
+
+message SelectEntityResponse {
+  repeated EntityInspection entities = 1;
+  latent.transaction.v1.PageResponse page = 2;
+}
+
+enum StateMutationKind {
+  STATE_MUTATION_KIND_UNSPECIFIED = 0;
+  STATE_MUTATION_KIND_RETRY_KNOWN_FAILED_EFFECT = 1;
+  STATE_MUTATION_KIND_TERMINATE_EFFECT = 2;
+  STATE_MUTATION_KIND_PURGE_EXPIRED_PAYLOAD = 3;
+  STATE_MUTATION_KIND_CHECKPOINT_NAMESPACE = 4;
+}
+
+message MutateStateRequest {
+  InspectNamespaceRequest namespace = 1;
+  string operation_id = 2;
+  StateMutationKind mutation = 3;
+  optional string record_id = 4;
+  bytes expected_version = 5;
+  string expected_policy_digest = 6;
+  string reason = 7;
+}
+
+message StateOperationReceipt {
+  string operation_id = 1;
+  string receipt_id = 2;
+  StateMutationKind mutation = 3;
+  latent.transaction.v1.NamespaceSelector namespace = 4;
+  string authenticated_operator = 5;
+  bytes before_version = 6;
+  bytes after_version = 7;
+  uint64 completed_at_unix_millis = 8;
+  optional string record_id = 9;
+  string policy_digest = 10;
+}
+
+message GetStateOperationReceiptRequest {
+  InspectNamespaceRequest namespace = 1;
+  string operation_id = 2;
+}
+
+// All calls require management credentials; HTTP application routes and guest
+// resources never carry this authority. Mutations require current fenced state.
+service StateService {
+  rpc InspectNamespace(InspectNamespaceRequest) returns (InspectNamespaceResponse);
+  rpc SelectEntity(SelectEntityRequest) returns (SelectEntityResponse);
+  rpc MutateState(MutateStateRequest) returns (MutateStateResponse);
+  rpc GetStateOperationReceipt(GetStateOperationReceiptRequest) returns (GetStateOperationReceiptResponse);
+}
+
+message InspectNamespaceResponse {
+  NamespaceInspection namespace = 1;
+}
+
+message MutateStateResponse {
+  StateOperationReceipt receipt = 1;
+}
+
+message GetStateOperationReceiptResponse {
+  StateOperationReceipt receipt = 1;
+}
