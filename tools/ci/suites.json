@@ -7628,7 +7628,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 126,
+      "minimumCases": 130,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
