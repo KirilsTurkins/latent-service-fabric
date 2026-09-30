@@ -15,7 +15,10 @@ async fn readiness_inspection_refuses_expired_original_admission_without_refresh
     let ready = f.ready().await;
     f.clock.0.fetch_add(5, Ordering::SeqCst);
     let error = f.backend.inspect_ready(ready).unwrap_err();
-    assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
+    // The authority's five-second conservative clock lease is now uncovered;
+    // policy currentness is unavailable, so the original ready grant is refused.
+    assert_eq!(error.code, PlatformErrorCode::Unavailable);
+    assert_eq!(error.message, "admission-clock-lease-uncovered");
     assert_eq!(f.backend.resource_snapshot().stores_created, 0);
     assert_eq!(f.backend.active_instance_reservations(), 0);
     f.idle();
