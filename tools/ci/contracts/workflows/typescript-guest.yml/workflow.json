@@ -14,6 +14,10 @@
           "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
           "tools/typescript_guest/**",
           "tools/typescript_capsule.py",
+          "tools/typescript*dependencies.py",
+          "tools/typescript_dependency_fixture.py",
+          "tools/application_dependenc*.py",
+          "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
           "tools/qualify_typescript_capsules.py",
           "tools/*rust_capsule*.py",
@@ -40,6 +44,10 @@
           "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
           "tools/typescript_guest/**",
           "tools/typescript_capsule.py",
+          "tools/typescript*dependencies.py",
+          "tools/typescript_dependency_fixture.py",
+          "tools/application_dependenc*.py",
+          "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
           "tools/qualify_typescript_capsules.py",
           "tools/*rust_capsule*.py",
@@ -65,7 +73,7 @@
   "requiredJobs": [
     "boundary"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Trigger the TypeScript component qualification for new common and native application dependency inputs",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

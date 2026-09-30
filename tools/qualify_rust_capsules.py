@@ -54,7 +54,10 @@ def inputs(language="rust"):
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
                     "typescript_guest/probe.py", "typescript_guest/componentize.mjs", "typescript_guest/bundle.mjs",
-                    "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml")
+                    "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml",
+                    "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
+                    "application_dependency_approval.py", "typescript_application_dependencies.py", "captured_compiler_isolation.py",
+                    "typescript_dependency_fixture.py")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
                     "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/sdk.py",
@@ -196,6 +199,12 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 stage = "standalone-builds"
             if language == "c" and application_dependencies and template == "greeting":
                 from tools.c_dependency_fixture import install
+                stage = "application-dependency-capture"
+                result["applicationDependencies"] = install(project, output / "outside-project-dependencies")
+                write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
+                stage = "standalone-builds"
+            if language == "typescript" and application_dependencies and template == "greeting":
+                from tools.typescript_dependency_fixture import install
                 stage = "application-dependency-capture"
                 result["applicationDependencies"] = install(project, output / "outside-project-dependencies")
                 write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])

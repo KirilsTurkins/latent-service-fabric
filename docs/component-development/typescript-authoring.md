@@ -1,5 +1,7 @@
 # TypeScript compiler and runtime profile
 
+Ordinary application npm graphs use the [captured dependency workflow](typescript-dependencies.md), separately from the pinned SDK compiler lock.
+
 For application development, use [Creating a capsule](creating-a-capsule.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,
 `deploy` and `test`. You do not need the source-build commands below for it.

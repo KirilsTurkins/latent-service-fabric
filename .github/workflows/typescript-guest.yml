@@ -8,6 +8,10 @@ on:
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe/**'
       - 'tools/typescript_guest/**'
       - 'tools/typescript_capsule.py'
+      - 'tools/typescript*dependencies.py'
+      - 'tools/typescript_dependency_fixture.py'
+      - 'tools/application_dependenc*.py'
+      - 'tools/captured_compiler_isolation.py'
       - 'tools/build_typescript_guest_capsules.py'
       - 'tools/qualify_typescript_capsules.py'
       - 'tools/*rust_capsule*.py'
@@ -30,6 +34,10 @@ on:
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe/**'
       - 'tools/typescript_guest/**'
       - 'tools/typescript_capsule.py'
+      - 'tools/typescript*dependencies.py'
+      - 'tools/typescript_dependency_fixture.py'
+      - 'tools/application_dependenc*.py'
+      - 'tools/captured_compiler_isolation.py'
       - 'tools/build_typescript_guest_capsules.py'
       - 'tools/qualify_typescript_capsules.py'
       - 'tools/*rust_capsule*.py'
@@ -99,7 +107,11 @@ jobs:
         with:
           key: typescript-guest-runtime-optimized-compiler
       - name: Install the reviewed JavaScript compiler inputs
-        run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-guest-tools"
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-guest-tools"
       - name: Install pinned component validator
         run: cargo install --locked wasm-tools --version 1.254.0
       - name: Compile the real async-boundary diagnostic
@@ -120,12 +132,12 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install -r tools/requirements.lock
-          python3 -m unittest tools.tests.test_typescript_capsule_authoring tools.tests.test_build_provenance_schemas
+          python3 -m unittest tools.tests.test_typescript_capsule_authoring tools.tests.test_typescript_application_dependencies tools.tests.test_build_provenance_schemas
           node "$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-owner-tests sdk/typescript-guest/capabilities/owner.ts sdk/typescript-guest/capabilities/result.ts
           printf '{"type":"module"}\n' > target/typescript-owner-tests/package.json
           LSF_TYPESCRIPT_OWNERS="$PWD/target/typescript-owner-tests" node --test sdk/typescript-guest/tests/owner.test.mjs sdk/typescript-guest/tests/signed64.test.mjs 2>&1 | tee target/typescript-guest-runtime/owner-tests.log
       - name: Qualify captured projects, all SDK owners, enforced node and printed guide
-        run: python3 tools/qualify_typescript_capsules.py --output "$RUNNER_TEMP/typescript-capsule-authoring" --tools "$RUNNER_TEMP/typescript-guest-tools"
+        run: python3 tools/qualify_typescript_capsules.py --application-dependencies --output "$RUNNER_TEMP/typescript-capsule-authoring" --tools "$RUNNER_TEMP/typescript-guest-tools"
       - name: Preserve attempted runtime test evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

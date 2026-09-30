@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Exercise signed TypeScript capsules with a reviewed native npm capture.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9ebcf28e77e5fa9bca9018d8e15afffac9e075427315ad334fa7fc7a8d4b4e44"
+  "sha256": "60a26e512ebee69af1decb574692ef6b017843705e003057640b79c6cc7c2533"
 }

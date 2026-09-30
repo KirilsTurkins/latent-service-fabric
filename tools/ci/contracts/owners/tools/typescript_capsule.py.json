@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add explicit native npm capture without changing pinned compiler installation commands.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9bde963d139e42fc9788f9200ed81f98276824ebd175e149deb20996806fb842"
+  "sha256": "cebbeb280cd316945fbc08d3b19bcd056fca9610380943361773e3fe0ece5c88"
 }

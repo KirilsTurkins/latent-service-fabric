@@ -57,7 +57,7 @@
       },
       {
         "name": "Install the reviewed JavaScript compiler inputs",
-        "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\""
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
         "name": "Install pinned component validator",
@@ -78,11 +78,11 @@
       },
       {
         "name": "Check captured sources and actual generated-resource owners",
-        "run": "set -euo pipefail\npython3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_typescript_capsule_authoring tools.tests.test_build_provenance_schemas\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-owner-tests sdk/typescript-guest/capabilities/owner.ts sdk/typescript-guest/capabilities/result.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-owner-tests/package.json\nLSF_TYPESCRIPT_OWNERS=\"$PWD/target/typescript-owner-tests\" node --test sdk/typescript-guest/tests/owner.test.mjs sdk/typescript-guest/tests/signed64.test.mjs 2>&1 | tee target/typescript-guest-runtime/owner-tests.log\n"
+        "run": "set -euo pipefail\npython3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_typescript_capsule_authoring tools.tests.test_typescript_application_dependencies tools.tests.test_build_provenance_schemas\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-owner-tests sdk/typescript-guest/capabilities/owner.ts sdk/typescript-guest/capabilities/result.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-owner-tests/package.json\nLSF_TYPESCRIPT_OWNERS=\"$PWD/target/typescript-owner-tests\" node --test sdk/typescript-guest/tests/owner.test.mjs sdk/typescript-guest/tests/signed64.test.mjs 2>&1 | tee target/typescript-guest-runtime/owner-tests.log\n"
       },
       {
         "name": "Qualify captured projects, all SDK owners, enforced node and printed guide",
-        "run": "python3 tools/qualify_typescript_capsules.py --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\""
+        "run": "python3 tools/qualify_typescript_capsules.py --application-dependencies --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\""
       },
       {
         "if": "always()",
@@ -100,7 +100,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Issue #732: retain sharded review inputs, run contract regressions, and upload commit-bound failure diagnostics without changing required result coverage.",
+  "reviewReason": "Qualify captured npm conditional ESM/CommonJS transitives and immutable assets through isolated compiler and signed node workflow",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

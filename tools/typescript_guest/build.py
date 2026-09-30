@@ -11,6 +11,8 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
     read_file, read_json, snapshot, write_json)
 from tools.typescript_guest.compiler import Compiler
 from tools.typescript_guest.project import validate
+from tools.application_dependencies import prepare
+from tools.typescript_application_dependencies import source_snapshot, bundle_configuration
 
 BUILD_TYPE = "https://latent.dev/build/typescript-capsule/v1"
 RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "tools/typescript_guest/build.py",
@@ -21,6 +23,8 @@ RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "t
     "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py",
     "tools/phase3_resource_identity.py", "tools/phase3_resource_profile.py", "tools/phase2_operator_process.py",
     "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json")
+RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
+           "tools/application_dependency_approval.py", "tools/typescript_application_dependencies.py", "tools/captured_compiler_isolation.py")
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path):
@@ -34,7 +38,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     commands, stage = None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
-        files = snapshot(project_path)
+        files = source_snapshot(project_path)
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe = inventory({name: read_file(ROOT / name) for name in RECIPE})
@@ -47,6 +51,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
+            stage = "application-dependencies"
+            closure = prepare(project_path, work, output, "typescript")
+            application_modules = bundle_configuration(closure) if closure is not None else None
+            if closure is not None:
+                write_json(output / "npm-inputs.json", application_modules)
             write_json(output / "diagnostic-source.json", {"capturedSource": str(work / "src"),
                        "requestedSource": str(project_path / "src")})
             paths = {"contracts-tool": checked_path(contracts_tool)}
@@ -66,30 +75,38 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 (output / name).write_bytes(read_file(derived / name))
             stage = "compiler-inputs"
             compiler = Compiler(tools, commands, {name: files["vendor/lsf/sdk/typescript-guest/tools/" + name]
-                                                 for name in ("package.json", "package-lock.json")})
+                                                 for name in ("package.json", "package-lock.json")},
+                                isolated_workspace=temporary if closure is not None else None)
             write_json(output / "compiler-inputs.json", compiler.before)
             compiler_paths = {"node": compiler.node, "wasm-tools": compiler.wasm}
             materials.extend(file_identity(path, name) for name, path in compiler_paths.items())
             paths.update(compiler_paths)
+            if compiler.isolation is not None:
+                write_json(output / "compiler-containment.json", compiler.isolation.receipt)
             stage = "compile"
-            component_path, generated = compiler.compile(work, project["world"], temporary / "compiled")
+            component_path, generated = compiler.compile(work, project["world"], temporary / "compiled", application_modules=application_modules)
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             (output / "generated-bindings.js").write_bytes(read_file(temporary / "compiled/generated-bindings.js", 8 * 1024 * 1024))
             write_json(output / "bindings.json", generated)
+            if closure is not None:
+                (output / "bundle-selected-inputs.json").write_bytes(read_file(temporary / "compiled/application.mjs.inputs.json", 8 * 1024 * 1024))
+                (output / "application.mjs.map").write_bytes(read_file(temporary / "compiled/application.mjs.map", 32 * 1024 * 1024))
             package_inputs(output, project, read_json(derived / "surface.json"), files, component)
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                 commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
-            captured_after = {name: data for name, data in snapshot(work).items()
+            captured_after = {name: data for name, data in snapshot(work, exclude=("dependencies", "application-vendor")).items()
                               if not name.startswith("generated/") and name != "tsconfig.json"}
-            if snapshot(project_path) != files or captured_after != files:
+            if source_snapshot(project_path) != files or captured_after != files:
                 raise ValueError("captured project changed during compilation")
             if inventory({name: read_file(ROOT / name) for name in RECIPE}) != recipe:
                 raise ValueError("authoring recipe changed during compilation")
             compiler.check_unchanged()
+            if closure is not None:
+                closure.check_unchanged()
             if [file_identity(path, name) for name, path in paths.items()] != materials:
                 raise ValueError("compiler or packaging binary changed")
             package_files = {"package-source.json": read_file(output / "package-source.json")}
@@ -102,6 +119,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("compiler-inputs", read_file(output / "compiler-inputs.json", 8 * 1024 * 1024)),
                 ("dependency-lock", files["vendor/lsf/sdk/typescript-guest/tools/package-lock.json"]),
                 ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"])))
+            if closure is not None:
+                for name in ("application-dependencies.json", "npm-inputs.json", "compiler-containment.json", "bundle-selected-inputs.json", "application.mjs.map"):
+                    data = read_file(output / name, 32 * 1024 * 1024)
+                    materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("compiler observation deadline or clock invalid")

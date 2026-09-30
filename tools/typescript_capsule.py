@@ -12,6 +12,7 @@ from tools.rust_capsule_build import Commands
 from tools.build_observation import build_environment
 from tools.typescript_guest.project import create
 from tools.typescript_guest.build import build
+from tools.typescript_application_dependencies import resolve
 
 
 def install(directory: Path):
@@ -44,6 +45,13 @@ def main():
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=TEMPLATES, default="greeting")
     new.add_argument("--name")
+    capture = commands.add_parser("resolve", help="Explicitly fetch a native application npm lock without package lifecycle scripts")
+    capture.add_argument("project", type=Path)
+    capture.add_argument("--candidate", type=Path, required=True)
+    capture.add_argument("--node", type=Path)
+    capture.add_argument("--npm", type=Path, help="Explicit npm-cli.js entrypoint")
+    capture.add_argument("--registry-config", type=Path)
+    capture.add_argument("--condition", action="append", default=[])
     compile_ = commands.add_parser("build", help="Typecheck, compile and package captured sources")
     compile_.add_argument("project", type=Path)
     compile_.add_argument("--tools", type=Path, required=True)
@@ -57,6 +65,10 @@ def main():
             result = install(args.directory)
         elif args.command == "new":
             result = create(args.directory, args.template, args.name)
+        elif args.command == "resolve":
+            resolve(args.project, args.candidate, node=args.node, npm=args.npm, registry_config=args.registry_config,
+                    selected={"conditions": args.condition})
+            result = args.candidate
         else:
             result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository, tools=args.tools)
         print(result)

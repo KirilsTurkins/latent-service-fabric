@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review native Rust library fixture capture, explicit executable approval denial and approved signed-component qualification entrypoint",
+  "reviewReason": "Qualify captured npm dependencies through the signed TypeScript capsule path.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "989cb80dc5acca463e7c79c043dc0d8c512310a407f19a0a0dbda74923752a57"
+  "sha256": "8791ae7e7dd72c5d310ddc2bfccec6b19f13882c6053fcf5a55788ed46b401d4"
 }

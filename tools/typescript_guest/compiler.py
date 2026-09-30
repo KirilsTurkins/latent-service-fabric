@@ -29,14 +29,34 @@ def import_identities(graph: dict, selected: str) -> list[str]:
 
 
 class Compiler:
-    def __init__(self, tools: Path, commands, expected: dict[str, bytes]):
+    def __init__(self, tools: Path, commands, expected: dict[str, bytes], *, isolated_workspace: Path | None = None):
         self.tools, self.commands = tools.resolve(), commands
+        self.isolation = None
+        self.recipe = ROOT / "tools/typescript_guest"
+        self.original_tools, self.original_before = None, None
+        self.expected = expected
         self.node = Path(shutil.which("node", path=commands.environment["PATH"]) or "missing-node")
         self.wasm = Path(shutil.which("wasm-tools", path=commands.environment["PATH"]) or "missing-wasm-tools")
         if commands.run("node-version", self.node, "--version").strip() != b"v24.19.0":
             raise ValueError("unreviewed Node compiler host")
         if commands.run("wasm-tools-version", self.wasm, "--version").split()[:2] != [b"wasm-tools", b"1.254.0"]:
             raise ValueError("unreviewed component validator")
+        if isolated_workspace is not None:
+            self.original_tools, self.original_before = self.tools, self.identity()
+            staged = isolated_workspace / "compiler"
+            staged.mkdir()
+            for name in expected:
+                (staged / name).write_bytes(read_file(self.tools / name))
+            for row in self.original_before["files"]:
+                source, destination = self.tools / row["path"], staged / row["path"]
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, destination)
+                destination.chmod(source.stat().st_mode & 0o777)
+            self.tools = staged
+            self.recipe = isolated_workspace / "compiler-recipe"
+            self.recipe.mkdir()
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs"):
+                (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
         self.tsc = modules / "typescript/bin/tsc"
@@ -50,17 +70,36 @@ class Compiler:
         for name, data in expected.items():
             if read_file(self.tools / name) != data:
                 raise ValueError("compiler lock differs from captured project")
-        commands.run("prepare-compiler-adapter", self.node, ROOT / "tools/typescript_guest/componentize.mjs", self.compiler)
+        commands.run("prepare-compiler-adapter", self.node, self.recipe / "componentize.mjs", self.compiler)
         self.before = self.identity()
+        if isolated_workspace is not None:
+            from tools.captured_compiler_isolation import Isolation
+            selected_tools = {"node": self.node, "wasm-tools": self.wasm}
+            # Native helpers are SDK compiler inputs. Application .node files
+            # are never loaded into this host Node process.
+            for path in sorted((self.tools / "node_modules").rglob("*")):
+                if path.is_file():
+                    with path.open("rb") as source:
+                        if source.read(4) == b"\x7fELF":
+                            selected_tools["sdk-native/" + path.relative_to(self.tools).as_posix()] = path
+            self.isolation = Isolation(isolated_workspace, selected_tools, {"typescript-compiler": self.tools})
+            self.isolation.protect_inputs(self.recipe)
 
-    def identity(self):
+    def run(self, stage, tool, *arguments):
+        if self.isolation is None:
+            return self.commands.run(stage, tool, *arguments)
+        return self.commands.run(stage, *self.isolation.wrap(Path(tool), [str(value) for value in arguments],
+                                                           self.commands.root, self.commands.environment))
+
+    def identity(self, tools=None):
         # npm's .bin links are launch conveniences, never compiler inputs: use
         # exact JS entrypoints above. All actual package content is hashed.
         rows = []
         from tools.build_observation import file_identity
         total = 0
-        for path in sorted((self.tools / "node_modules").rglob("*")):
-            if ".bin" in path.relative_to(self.tools).parts:
+        tools = tools or self.tools
+        for path in sorted((tools / "node_modules").rglob("*")):
+            if ".bin" in path.relative_to(tools).parts:
                 continue
             if path.is_symlink():
                 raise ValueError("compiler dependency symlink")
@@ -69,14 +108,14 @@ class Compiler:
             row = (file_identity(path, "compiler-file") if path.stat().st_size else
                    {"digest": digest(read_file(path)), "size": 0})
             total += row["size"]
-            rows.append({"path": path.relative_to(self.tools).as_posix(), "digest": row["digest"], "size": row["size"]})
+            rows.append({"path": path.relative_to(tools).as_posix(), "digest": row["digest"], "size": row["size"]})
             if len(rows) > 32768 or total > 1024 * 1024 * 1024:
                 raise ValueError("compiler dependency closure limit")
         return {"files": rows, "bytes": total}
 
-    def compile(self, work: Path, world: str, output: Path):
+    def compile(self, work: Path, world: str, output: Path, *, application_modules: dict | None = None):
         output.mkdir()
-        command, wasm = self.commands, self.wasm
+        command, wasm = self, self.wasm
         source = work / "wit"
         canonical = command.run("canonical-wit", wasm, "component", "wit", source, "--no-docs").decode()
         graph = semantic(json.loads(command.run("authoritative-types", wasm, "component", "wit", source, "--json")))
@@ -106,14 +145,22 @@ class Compiler:
         config = {"compilerOptions": {"target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
                   "strict": True, "noEmit": True, "lib": ["ES2022"], "types": [], "paths": paths},
                   "include": ["src/**/*.ts", "generated/**/*.d.ts"]}
+        if application_modules is not None:
+            config["compilerOptions"]["paths"]["*"] = ["./" + application_modules["moduleRoot"] + "/*"]
+            config["compilerOptions"]["customConditions"] = application_modules["conditions"]
         write_json(work / "tsconfig.json", config)
         command.run("typecheck", self.node, self.tsc, "--project", work / "tsconfig.json")
         allowed = output / "imports.json"
         write_json(allowed, imports)
         bundle = output / "application.mjs"
-        command.run("bundle", self.node, ROOT / "tools/typescript_guest/bundle.mjs", self.esbuild,
-                    work, work / "src/main.ts", bundle, allowed)
-        command.run("componentize", self.node, ROOT / "tools/typescript_guest/componentize.mjs", self.compiler,
+        bundle_configuration = output / "bundle-configuration.json"
+        write_json(bundle_configuration, application_modules or {})
+        if self.isolation is not None:
+            self.isolation.protect_inputs(work)
+        command.run("bundle", self.node, self.recipe / "bundle.mjs", self.esbuild,
+                    work, work / "src/main.ts", bundle, allowed, bundle_configuration,
+                    self.tools / "node_modules/acorn/dist/acorn.mjs")
+        command.run("componentize", self.node, self.recipe / "componentize.mjs", self.compiler,
                     projected, bundle, output, world)
         bare, embedded, component = (output / name for name in ("bare.wasm", "embedded.wasm", "component.wasm"))
         command.run("strip-projection", wasm, "strip", "--delete", "^component-type", output / "core.wasm", "-o", bare)
@@ -129,3 +176,9 @@ class Compiler:
     def check_unchanged(self):
         if self.identity() != self.before:
             raise ValueError("installed compiler inputs changed during build")
+        if self.original_tools is not None and self.identity(self.original_tools) != self.original_before:
+            raise ValueError("original compiler installation changed during isolated build")
+        if self.original_tools is not None and any(read_file(self.original_tools / name) != data for name, data in self.expected.items()):
+            raise ValueError("original compiler declarations changed during isolated build")
+        if self.isolation is not None:
+            self.isolation.check_unchanged()

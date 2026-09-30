@@ -72,8 +72,17 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
     if json.loads(inventory(vendor)) != lock["sdk"]:
         raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
-    if any(Path(path).name in {"package.json", "package-lock.json", "tsconfig.json"} for path in files if not path.startswith("vendor/lsf/")):
-        raise ValueError("application package/config overrides require a reviewed dependency capture extension")
+    captured = "latent.dependencies.json" in files
+    if captured:
+        from tools.application_dependencies import validate_manifest
+        validate_manifest(decode_json(files["latent.dependencies.json"]), "typescript")
+        if not {"package.json", "package-lock.json", "npm-resolved.lock.json"} <= files.keys():
+            raise ValueError("captured npm graph requires native application declarations and locks")
+    for path in files:
+        if path.startswith("vendor/lsf/"):
+            continue
+        if Path(path).name == "tsconfig.json" or not captured and Path(path).name in {"package.json", "package-lock.json"}:
+            raise ValueError("application package/config overrides require a reviewed dependency capture extension")
     limits = project["limits"]
     required = set(json.loads(read_file(ROOT / "examples/echo-contract/capsule.json"))["execution"]["limits"])
     if not isinstance(limits, dict) or set(limits) != required:
