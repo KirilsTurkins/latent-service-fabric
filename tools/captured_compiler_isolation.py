@@ -99,6 +99,8 @@ class Isolation:
             if "not found" in text:
                 raise DependencyError("compiler-runtime-library-missing")
             for name in re.findall(r"(?:=>\s*)?(/[^\s()]+)", text):
+                if any(Path(name).resolve(strict=True).is_relative_to(root) for root in self.distributions.values()):
+                    continue  # Already bound by the complete selected distribution.
                 if not name.startswith(("/lib/", "/lib64/", "/usr/lib/")):
                     raise DependencyError("compiler-runtime-library-outside-system-root")
                 path = Path(name).resolve(strict=True)
@@ -129,7 +131,10 @@ class Isolation:
             command += ["--ro-bind", str(selected), str(selected)]
         for name in self.shared:
             command += ["--ro-bind", str(Path(name).resolve(strict=True)), name]
-        for key in ("LC_ALL", "LANG", "TZ", "ZIG_GLOBAL_CACHE_DIR", "ZIG_LOCAL_CACHE_DIR"):
+        for key in ("LC_ALL", "LANG", "TZ", "ZIG_GLOBAL_CACHE_DIR", "ZIG_LOCAL_CACHE_DIR",
+                    "CARGO_HOME", "CARGO_NET_OFFLINE", "CARGO_TARGET_DIR", "CARGO_INCREMENTAL", "CARGO_BUILD_JOBS",
+                    "RUSTC", "RUSTDOC", "RUSTUP_AUTO_INSTALL", "RUSTUP_TOOLCHAIN",
+                    "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER"):
             if key in environment:
                 command += ["--setenv", key, environment[key]]
         return [*command, "--chdir", str(cwd), "--", str(tool), *arguments]
