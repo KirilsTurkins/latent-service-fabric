@@ -144,7 +144,7 @@ def request(host, path="/api/status", *, method="GET", value=None, headers=None,
     try:
         body = None if value is None else json.dumps(value, ensure_ascii=False).encode("utf-8")
         connection.request(method, path, body=body, headers={"Host": host, "Connection": "close",
-            "Content-Type": MEDIA, **(headers or {})})
+            "Content-Type": MEDIA, "Origin": "http://" + host, **(headers or {})})
         response = connection.getresponse()
         body = response.read(maximum + 1)
         require(len(body) <= maximum, "java-http-response-bound")
@@ -173,7 +173,7 @@ def decoded(result):
 
 def web_request(host, path="/api/status", *, method="get", body=""):
     return [{"profile": "buffered-v1", "method": method, "scheme": "http", "authority": host,
-        "path": path, "query": None, "headers": [], "media-type": MEDIA if body else None,
+        "path": path, "query": {"none": None}, "headers": [], "media-type": {"some": MEDIA} if body else {"none": None},
         "body-base64": base64.b64encode(body.encode()).decode()}]
 
 
