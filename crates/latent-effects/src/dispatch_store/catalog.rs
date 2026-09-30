@@ -15,6 +15,7 @@ use super::{
 
 #[cfg(test)]
 mod tests;
+mod validation;
 mod write;
 
 /// Captured process fence, distinct from business namespace incarnation.

@@ -1774,6 +1774,9 @@
         "dispatch_store::catalog::tests::qualified_retry_persists_one_due_identity_and_history_pages_remain_bounded",
         "dispatch_store::catalog::tests::reopened_send_boundary_is_uncertain_and_old_worker_receipt_cannot_overwrite_it",
         "dispatch_store::catalog::tests::uncertain_completion_never_retries_without_qualified_exact_payload_provider_proof",
+        "dispatch_store::catalog::tests::validation::coherent_dispatch_links_validate_claim_send_recovery_and_terminal_payload_retirement",
+        "dispatch_store::catalog::tests::validation::coherent_dispatch_validator_walks_multiple_pages_and_leaves_foreign_registry_prefixes",
+        "dispatch_store::catalog::tests::validation::individually_valid_but_orphaned_dispatch_rows_fail_coherent_readiness",
         "dispatch_store::tests::due_index_orders_time_and_identity_and_rejects_unknown_or_malformed_rows",
         "dispatch_store::tests::envelope_outbox_payload_and_due_index_are_atomic_and_survive_reopen",
         "payload::tests::canonical_payload_identity_sorts_metadata_and_binds_media_and_binary_bytes",
@@ -1786,7 +1789,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 35,
+      "minimumCases": 38,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [
