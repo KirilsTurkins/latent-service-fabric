@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "reviewReason": "Explicit documented Hexops mirror with identical pinned Zig bytes; opt-in untrusted digest cache via CLI or workflow env; preserve all original600s deadlines/byte/hash pins/no retries/owned-file cleanup.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1cf80a693fae5d97b71f9c4cbd68e84cc8aa30b3b8bb133e1008c76764b5576f"
+  "sha256": "58a809d1e4c814e326eef250f68cec119bb12b89750cd9133cdfcbc66241f56b"
 }
