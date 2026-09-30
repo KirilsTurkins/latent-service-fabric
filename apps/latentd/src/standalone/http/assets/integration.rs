@@ -104,7 +104,7 @@ impl Harness {
                     Arc::new(
                         latent_manifest::RuntimeCompatibilityProfile::new(
                             "wasmtime",
-                            "47.0.4",
+                            "48.0.3",
                             "x86_64-unknown-linux-gnu",
                             &["x86_64.sse2"],
                             65_536,

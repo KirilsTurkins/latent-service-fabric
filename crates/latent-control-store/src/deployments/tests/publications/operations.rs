@@ -132,7 +132,7 @@ fn obsolete_operation_table_is_rejected_without_inventing_publication_receipts()
         repository.clone(),
         Limits::default(),
         repository.lifecycle_authority(),
-        super::super::lifecycle::profile("47.0.4")
+        super::super::lifecycle::profile("48.0.3")
     ))
     .is_err());
     assert_eq!(std::fs::read(&path).unwrap(), bytes);
@@ -181,7 +181,7 @@ fn operation_recovery_rejects_dropped_or_forged_scope_with_valid_outer_checksum(
             repository.clone(),
             Limits::default(),
             repository.lifecycle_authority(),
-            super::super::lifecycle::profile("47.0.4")
+            super::super::lifecycle::profile("48.0.3")
         ))
         .is_err());
         assert_eq!(std::fs::read(&path).unwrap(), bytes);

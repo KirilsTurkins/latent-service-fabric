@@ -80,7 +80,7 @@ impl RuntimeCompatibilityProfile {
         renderer: crate::RendererRequirement,
     ) -> Result<Self, PlatformError> {
         renderer.validate()?;
-        if renderer != crate::RendererRequirement::angular() || self.version.as_ref() != "47.0.4" {
+        if renderer != crate::RendererRequirement::angular() || self.version.as_ref() != "48.0.3" {
             return Err(incompatible("renderer-profile-incompatible"));
         }
         self.renderer = Some(renderer);

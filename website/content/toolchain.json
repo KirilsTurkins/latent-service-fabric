@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "reviewedAt": "2026-09-20",
+  "reviewedAt": "2026-09-29",
   "node": {
     "version": "24.19.0",
     "repository": "nodejs/node",
@@ -11,7 +11,7 @@
   "npmSource": {
     "repository": "npm/cli",
     "commit": "d63a975ce3c1219752519b7fb68bdc03faa767c0",
-    "reason": "npm 11.19.1 is the maintained security backport with patched undici 6.28.0, ip-address 10.5.0, brace-expansion 5.0.9 and tar 7.5.22. npm 12.0.1 and 12.0.2 still bundle advisory matches. Lifecycle scripts remain disabled; both installed graphs are scanned."
+    "reason": "npm 11.19.1 remains the reviewed base. Before use, the explicit security bootstrap replaces its bundled ip-address 10.5.0 and undici 6.28.0 with the separately SHA-512-pinned upstream 10.5.1 and 6.28.1 for GHSA-2vr4-cq9g-pvrc and GHSA-3wwx-pv8p-q78v. Other bundled dependencies remain unchanged. Lifecycle scripts stay disabled; the actual installed copies and both locked graphs are verified."
   },
   "docusaurus": {
     "version": "3.10.2",

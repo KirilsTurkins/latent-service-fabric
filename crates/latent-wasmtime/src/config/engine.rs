@@ -57,6 +57,8 @@ impl CompilerEngineSettings {
         });
         engine_config.wasm_component_model(true);
         engine_config.wasm_component_model_async(true);
+        // Security upgrades must not admit new, unqualified value shapes.
+        engine_config.wasm_component_model_fixed_length_lists(false);
         // Preserve the ordinary profile's pre-Java typed function references.
         // Compiling GC support into the host must not enable Wasm GC or default
         // exceptions; the Java exception profile keeps typed references disabled.

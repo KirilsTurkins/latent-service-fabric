@@ -1031,14 +1031,14 @@
       "workingDirectory": "."
     },
     ".github/workflows/docs-pages.yml:browser:Install the reviewed browser tools in an unprivileged job": {
-      "job": "browser",
-      "jobIf": "success()",
-      "name": "Install the reviewed browser tools in an unprivileged job",
-      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund\nnode website/node_modules/playwright/cli.js install-deps chromium\nnode website/scripts/site.mjs browser-install",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/docs-pages.yml",
-      "workingDirectory": "."
+      "job": "browser",
+      "name": "Install the reviewed browser tools in an unprivileged job",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/scripts/patch-package-manager.mjs\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund\nnode website/node_modules/playwright/cli.js install-deps chromium\nnode website/scripts/site.mjs browser-install"
     },
     ".github/workflows/docs-pages.yml:browser:Verify live navigation, assets, search and selected-version examples": {
       "job": "browser",
@@ -1111,14 +1111,14 @@
       "workingDirectory": "website"
     },
     ".github/workflows/docs-site.yml:website:Install the reviewed website dependency graph without lifecycle scripts": {
-      "job": "website",
-      "jobIf": "success()",
-      "name": "Install the reviewed website dependency graph without lifecycle scripts",
-      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\necho \"$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin\" >> \"$GITHUB_PATH\"\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund",
-      "shell": "default",
-      "stepIf": "success()",
       "workflow": ".github/workflows/docs-site.yml",
-      "workingDirectory": "."
+      "job": "website",
+      "name": "Install the reviewed website dependency graph without lifecycle scripts",
+      "jobIf": "success()",
+      "stepIf": "success()",
+      "workingDirectory": ".",
+      "shell": "default",
+      "run": "npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/scripts/patch-package-manager.mjs\necho \"$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin\" >> \"$GITHUB_PATH\"\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund"
     },
     ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": {
       "job": "website",
@@ -3491,7 +3491,7 @@
       "sha256": "67df58fbde773857194e74f52810f8a5e1458efbfe3d7dfe4166ec19aa1461f1"
     },
     "tools/ci_fast.py": {
-      "sha256": "62bbebe6115eb6932a4aaf92d68ab1794457a4c069c1d32a51eba82b7c829a44"
+      "sha256": "1390b3da76421fbdfd8941359b495e4b6441364724fe70aebc9d952dadb91eaf"
     },
     "tools/ci_lane_worker.py": {
       "sha256": "6212cd840e2bddfcd3feccfd01b7c07538362d821188085997934efe9c8b7261"
@@ -3563,7 +3563,7 @@
       "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
-      "sha256": "0ca69da800ec72cd906b451b3617d841c41bfb1f8e417d221e5fb64a9d273da5"
+      "sha256": "261070388f3aefc3604aa07b58d28f79b3dd2cb26bd2e58217619caf0bca232e"
     },
     "tools/prepare_dev_packaged_probe.py": {
       "sha256": "da346e6f90223ba2edd3b18a3f0ba6bb0df3d21c268e5f3f6ffa9641649ac449"
@@ -3686,7 +3686,7 @@
       "sha256": "99bd586c5df8f3ad03bd811fa86c10fde9034cd3c1a0de76731585b0d51ae7bf"
     },
     "tools/run_security_profile_workflow.py": {
-      "sha256": "a5652152f2d52549122a413ccab5726bea2c7fd2006ee8e89be1633cb95fa3d2"
+      "sha256": "0f8787c5b61f9a27e943cafcc3ec32f1fd27633d9f4012e8b2f227f3ee2a8f8d"
     },
     "tools/run_static_site_workflow.py": {
       "sha256": "cb06179e97b1b7122579e7137fab5508ca5566131ba4e0ee2e860cc77cd0d788"
@@ -4330,11 +4330,14 @@
       "BuildAttempts.test_actual_packager_cache_hit_tampering_and_separate_source_tree",
       "BuildAttempts.test_build_key_separates_source_recipe_tools_abi_host_target_and_packager",
       "BuildAttempts.test_changed_tool_is_rejected_before_allocating_or_running",
+      "BuildAttempts.test_failed_attempt_cleanup_uses_the_same_entry_ceiling",
       "BuildAttempts.test_failed_attempts_are_fresh_and_preserve_accepted_build",
       "BuildAttempts.test_observed_cache_overflow_reaps_compiler_and_retains_no_success",
+      "BuildAttempts.test_observed_entry_overflow_reaps_compiler_and_preserves_previous_build",
       "BuildAttempts.test_reaped_deadline_can_be_cleaned_without_claiming_remote_outcome",
       "BuildAttempts.test_slow_usage_scan_leaves_time_for_build_progress",
       "BuildAttempts.test_uncertain_attempts_are_retained_at_capacity",
+      "BuildAttempts.test_usage_counts_directories_and_files_at_the_exact_entry_limit",
       "BuildAttempts.test_usage_scan_failure_is_not_hidden_by_polling"
     ],
     "tools/tests/test_dev_contracts.py": [
@@ -4671,6 +4674,7 @@
       "LiveDirectoryWatchTests.test_nested_output_total_failure_kills_and_reaps_helper"
     ],
     "tools/tests/test_host_abi_profile.py": [
+      "HostAbiProfileTests.test_active_and_historical_generator_mismatches_are_rejected",
       "HostAbiProfileTests.test_frozen_matrix_matches_exact_sources_world_and_pinned_generators"
     ],
     "tools/tests/test_illustration_palette.py": [
@@ -7202,12 +7206,12 @@
   "workflowIdentities": {
     ".github/workflows/registry-cli.yml": "a713a8b94a6165e048cbb65688f6c767010393b619c8c9cc9e080830786be854",
     ".github/workflows/c-guest-authoring.yml": "9517e1d2a98749f05121d389421f649c3b8aff8323e97046d5f456f1d489bc42",
-    ".github/workflows/ci.yml": "757a1841908f6f25de27a981bf85f7c197060d8fd7895664c8ad382dc3001dc4",
+    ".github/workflows/ci.yml": "de96fb23dc62d831a4c67ed9468478326e6bc7eca81848a5b5795421f8e79a24",
     ".github/workflows/developer-packaged-qualification.yml": "e9ec2f74bb293bd7694830746f8d23bc00eb439413ce8aa2312f6e223acea758",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "ba8a97d024e2735da86ff0e82c4ec20866195ad00b9cd7b77526d670aa94b27f",
-    ".github/workflows/docs-pages.yml": "3a820e52b1f0739b9ad0564a511ed12c4dc43963cc672525beecffad11274530",
-    ".github/workflows/docs-site.yml": "133dedafc04a5d48ffb37bced1a59789e105d299f18017fb4527292e9315120d",
+    ".github/workflows/docs-pages.yml": "47c4460b3d4012ad281749dfac2e77f0929ebd2daaca9eb32c85182e8f25bddd",
+    ".github/workflows/docs-site.yml": "2bd014d771ec16a342e33abeb01c49c2c2b63fab432ea5fdf9291739e752021c",
     ".github/workflows/dotnet-guest.yml": "ba561b0cde473d42842f6befa873cf21275ee413593e9e5824d32fbc41d7f384",
     ".github/workflows/go-guest.yml": "be03d57ac8393a82fca64d7ca007771841f8df3981f779ade51b83f721ae86cd",
     ".github/workflows/java-guest-feasibility.yml": "8eb8dd3b1e4d60809cf7866f7746fed2a5728cb3cedc7ec902d5dcd86f565856",

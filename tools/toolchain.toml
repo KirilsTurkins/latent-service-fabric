@@ -1,6 +1,6 @@
 [rust]
 toolchain = "1.97.1"
-msrv = "1.94.1"
+msrv = "1.95.0"
 target = "wasm32-wasip2"
 component-target = "wasm32-unknown-unknown"
 
@@ -22,7 +22,7 @@ tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
 wasm-encoder = "0.259.0"
 wasmparser = "0.259.0"
-wasmtime = "47.0.4"
+wasmtime = "48.0.3"
 wit-bindgen = "0.62.0"
 
 [contracts]
