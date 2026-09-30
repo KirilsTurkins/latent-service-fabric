@@ -84,6 +84,7 @@ class Isolation:
             raise DependencyError("captured-compiler-isolation-requires-linux-bubblewrap")
         self.workspace = regular_path(workspace).resolve(strict=True)
         self.read_only_inputs: list[Path] = []
+        self.child_path: Path | None = None
         self.sandbox = regular_path(Path(sandbox)).resolve(strict=True)
         self.tools = {name: regular_path(path).resolve(strict=True) for name, path in tools.items()}
         self.distributions = {name: regular_path(path).resolve(strict=True) for name, path in distributions.items()}
@@ -120,7 +121,7 @@ class Isolation:
             raise DependencyError("compiler-working-directory-outside-captured-workspace")
         command = [str(self.sandbox), "--unshare-all", "--die-with-parent", "--new-session", "--clearenv",
                    "--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp", "--dir", "/home",
-                   "--setenv", "HOME", "/home", "--setenv", "PATH", "/nonexistent",
+                   "--setenv", "HOME", "/home", "--setenv", "PATH", str(self.child_path) if self.child_path else "/nonexistent",
                    "--bind", str(self.workspace), str(self.workspace)]
         for root in self.distributions.values():
             command += ["--ro-bind", str(root), str(root)]
@@ -138,7 +139,30 @@ class Isolation:
                     "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER", "LSF_CAPTURED_ZIG"):
             if key in environment:
                 command += ["--setenv", key, environment[key]]
+        go_fixed = {"GOTOOLCHAIN": "local", "GOWORK": "off", "GOENV": "off", "CGO_ENABLED": "0",
+                    "GOPROXY": "off", "GOSUMDB": "off", "GOOS": "wasip1", "GOARCH": "wasm"}
+        for key, expected in go_fixed.items():
+            if key in environment:
+                if environment[key] != expected:
+                    raise DependencyError("captured-go-compiler-policy-invalid:" + key)
+                command += ["--setenv", key, expected]
+        for key in ("GOROOT", "GOCACHE", "GOMODCACHE", "GOFLAGS"):
+            if key in environment:
+                command += ["--setenv", key, environment[key]]
         return [*command, "--chdir", str(cwd), "--", str(tool), *arguments]
+
+    def enable_children(self, directory: Path):
+        """Expose only an explicitly captured SDK executable directory."""
+        directory = regular_path(directory).resolve(strict=True)
+        if not any(directory.is_relative_to(root) for root in self.distributions.values()):
+            raise DependencyError("compiler-child-directory-outside-captured-distribution")
+        entries = [regular_path(path).resolve(strict=True) for path in directory.iterdir()]
+        if not entries or any(not path.is_file() or path not in self.tools.values() for path in entries):
+            raise DependencyError("compiler-child-executable-not-captured")
+        self.child_path = directory
+        owner = next(name for name, root in self.distributions.items() if directory.is_relative_to(root))
+        self.receipt["childExecutables"] = {"distribution": owner, "directory": directory.relative_to(self.distributions[owner]).as_posix(), "tools": {
+            name: self.tool_before[name] for name, path in self.tools.items() if path in entries}}
 
     def protect_inputs(self, *roots: Path):
         for root in roots:
