@@ -1,5 +1,6 @@
 //! Fixed-schema response traversal before conversion or JSON allocation.
 mod release_operation;
+mod target_inspection;
 
 use std::collections::HashMap;
 

@@ -111,6 +111,9 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
                 generation: args.generation,
             },
         )),
+        Command::Route(RouteCommand::Target(args)) => {
+            super::target_inspection::prepare(args, config)
+        }
         Command::Node(NodeCommand::Get(args)) => {
             identifier(&args.id)?;
             Ok(Operation::GetNode(proto::GetNodeRequest {

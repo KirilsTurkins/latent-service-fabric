@@ -47,7 +47,24 @@ impl Cli {
             ) => path_argument(&args.file),
             Command::Release(command) => release(command),
             Command::Deployment(command) => deployment(command),
-            Command::Completions { .. } | Command::Route(_) => Ok(()),
+            Command::Route(super::RouteCommand::Target(args)) => {
+                for text in [&args.service, &args.contract, &args.function]
+                    .into_iter()
+                    .chain(
+                        [&args.route, &args.revision, &args.routing_key]
+                            .into_iter()
+                            .flatten(),
+                    )
+                {
+                    identifier(text, 512)?;
+                }
+                if let Some(id) = &args.publication {
+                    id.parse::<latent_core::PublicationId>()
+                        .map_err(|_| invalid())?;
+                }
+                Ok(())
+            }
+            Command::Completions { .. } | Command::Route(super::RouteCommand::Get(_)) => Ok(()),
             Command::Invoke(args) => invoke(args),
             Command::Activation(ActivationCommand::Get(args)) => identifier(&args.id, 512),
             Command::Activation(ActivationCommand::Tree(args)) => {
