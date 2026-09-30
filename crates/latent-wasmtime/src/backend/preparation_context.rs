@@ -137,7 +137,11 @@ impl PreparationContext {
         }
         if let Some(invoker) = self.outbound_streams() {
             crate::host::networking::install(&mut linker, invoker).map_err(|_| {
-                platform_error(PlatformErrorCode::Internal, "failed to bind outbound streams", false)
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind outbound streams",
+                    false,
+                )
             })?;
         }
         if let Some(publisher) = self.events() {
@@ -230,8 +234,14 @@ impl PreparationContext {
     ) -> Option<Arc<dyn latent_capabilities::broker::http::OutboundHttpInvoker>> {
         self.capabilities.as_ref()?.upgrade()?.http().ok()
     }
-    pub(super) fn outbound_streams(&self) -> Option<Arc<dyn latent_capabilities::broker::network::OutboundStreamInvoker>> {
-        self.capabilities.as_ref()?.upgrade()?.outbound_streams().ok()
+    pub(super) fn outbound_streams(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::network::OutboundStreamInvoker>> {
+        self.capabilities
+            .as_ref()?
+            .upgrade()?
+            .outbound_streams()
+            .ok()
     }
     pub(super) fn local_services(
         &self,

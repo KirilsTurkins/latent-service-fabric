@@ -13,8 +13,8 @@ use crate::containment::platform_error;
 use crate::values::validate_signature;
 
 pub(crate) mod blob;
-pub(crate) mod streaming;
 pub(crate) mod networking;
+pub(crate) mod streaming;
 
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
 pub const LOG_IMPORT: &str = "latent:log/log@0.1.0";
