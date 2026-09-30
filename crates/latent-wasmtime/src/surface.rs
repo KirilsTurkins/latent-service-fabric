@@ -35,6 +35,16 @@ pub(crate) struct Surface {
 }
 
 impl Surface {
+    pub(crate) fn function_count(&self) -> usize {
+        self.functions.len()
+    }
+
+    pub(crate) fn has_web_application(&self) -> bool {
+        self.functions
+            .iter()
+            .any(|((contract, _), _)| contract == "latent:web/application@0.1.0")
+    }
+
     pub(crate) fn function(&self, contract: &str, function: &str) -> Option<&Function> {
         lookup_function(&self.functions, contract, function)
     }

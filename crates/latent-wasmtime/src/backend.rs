@@ -860,6 +860,13 @@ impl ExecutionBackend for WasmtimeBackend {
         &self.profile.id
     }
 
+    fn inspect_ready(
+        &self,
+        ready: latent_executor::PreparedReadiness,
+    ) -> Result<latent_executor::PreparationInspection, PlatformError> {
+        self.inspect_readiness(ready)
+    }
+
     fn preparation_key(
         &self,
         release: &latent_core::ReleaseDigest,
