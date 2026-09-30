@@ -84,6 +84,8 @@ jobs:
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
       - name: Compile real Java sources and retain the first incompatible stage
         run: python3 sdk/java-guest/tools/feasibility.py --output "$RUNNER_TEMP/java-guest-feasibility" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Minimize supported Java WIT composition with the actual parser and C ABI
+        run: python3 tools/qualify_java_composition_shapes.py --output "$RUNNER_TEMP/java-composition-shapes"
       - name: Execute Java code, exceptions and GC without claiming node admission
         run: |
           set -o pipefail
@@ -132,6 +134,9 @@ jobs:
             ${{ runner.temp }}/java-http-composition/**/compiler-logs/**
             ${{ runner.temp }}/java-http-composition/**/generated-bindings/**
             ${{ runner.temp }}/java-http-composition/signing/logs/**
+            ${{ runner.temp }}/java-http-composition/**/generated-client.*.log
+            ${{ runner.temp }}/java-http-composition/projects/adapter/http/**
+            ${{ runner.temp }}/java-composition-shapes/**
             ${{ runner.temp }}/java-capsule-authoring/*.json
             ${{ runner.temp }}/java-capsule-authoring/logs/**
             ${{ runner.temp }}/java-capsule-authoring/builds/**

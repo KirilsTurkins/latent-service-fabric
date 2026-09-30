@@ -159,7 +159,8 @@ def run_node(binaries, releases, output, *, http):
                     route(client, host, publications["adapter"])
                     result["composed"] = fresh_status(client, targets, host, "java-domain-direct-composed")
                     generated_client = run_bounded_result(["node", "--dns-result-order=ipv4first",
-                        str(ROOT / "examples/java-http-composition/client-test.mjs"), "http://" + host],
+                        str(ROOT / "examples/java-http-composition/client-test.mjs"), "http://" + host,
+                        str(releases.parent / "projects/adapter/http/client.mjs")],
                         cwd=ROOT, env=client.environment, timeout_seconds=180, max_output_bytes=8192)
                     (evidence / "generated-client.stdout.log").write_bytes(generated_client.stdout)
                     (evidence / "generated-client.stderr.log").write_bytes(generated_client.stderr)
@@ -173,7 +174,9 @@ def run_node(binaries, releases, output, *, http):
                     service_generation = service_grant(client, node, publications, generation=service_generation)
                     route(client, host, publications["adapter"])
                     wide = decoded(result["standaloneStatus"])[0][0]
-                    for path, arguments in (("echo", [wide]), ("text", ["UTF-8 Grüße 😀\u0000"]), ("items", [["a", "b", "😀"]])):
+                    for path, arguments in (("echo", [wide]),
+                            ("nested", [{"value": wide, "optional": {"some": wide}, "labels": ["Grüße 😀"]}]),
+                            ("text", ["UTF-8 Grüße 😀\u0000"]), ("items", [["a", "b", "😀"]])):
                         status, body, _ = request(host, "/api/" + path, method="POST", value=arguments)
                         require(status == 200 and json.loads(body) == arguments, "java-http-safe-typed-" + path)
                     for path in ("private-admin", "publishing", "provider-event", "missing"):
@@ -218,7 +221,8 @@ def qualify(output, wasi_sdk, target):
         return {"checkout": checkout.stdout.decode("ascii").strip(), "runtime": source_identity(ROOT),
             "fixture": inventory(ROOT / "examples/java-http-composition"),
             "javaSdk": inventory(ROOT / "sdk/java-guest"), "wit": inventory(ROOT / "wit/platform"),
-            "helpers": inventory(ROOT / "tools/java_http_composition")}
+            "helpers": inventory(ROOT / "tools/java_http_composition"),
+            "generator": inventory(ROOT / "tools/java_http_generation")}
     before = inputs()
     binaries = {name: target / "debug" / name for name in (
         "latent", "latentd", "examples/package", "examples/capsule_contracts", "examples/capsule_authoring")}
@@ -233,6 +237,8 @@ def qualify(output, wasi_sdk, target):
     stage = "java-builds"
     try:
         built = compile_pair(output, wasi_sdk, binaries)
+        result["generation"] = read_json(output / "projects/adapter/http/generation.json")
+        result["generationCases"] = read_json(output / "generation-cases/generation-cases.json")
         result["builds"] = {name: read_json(path / "BUILD-COMPLETE.json") for name, path in built.items()}
         require(result["builds"]["domain"]["componentDigest"] != result["builds"]["adapter"]["componentDigest"],
                 "java-http-independently-compiled-components")

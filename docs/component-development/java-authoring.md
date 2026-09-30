@@ -8,6 +8,11 @@ This reference is for compiler integration, custom package signing and direct
 node admission. The complete source recipe is retained here for developers who
 need to work below the packaged workflow.
 
+To expose selected typed operations through shared HTTP ingress, use the
+[maintained Java adapter generator](java-http-composition.md). It keeps the
+typed domain contract, includes explicit private-operation exclusions and
+checks stale source-bound generation before building.
+
 
 Create an independent Java project, edit its typed contract, and run its signed
 package on a local node. Your application lives outside the LSF checkout and
