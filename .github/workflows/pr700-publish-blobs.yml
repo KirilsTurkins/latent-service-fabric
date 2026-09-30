@@ -1,0 +1,82 @@
+name: PR 700 reviewed blob publication
+
+on:
+  push:
+    branches: [fix/pr700-ci-qualification-20260930]
+    paths: [.github/workflows/pr700-publish-blobs.yml]
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download the exact validated candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: 11085211779
+          run-id: 36689259572
+          repository: KirilsTurkins/latent-service-fabric
+          github-token: ${{ github.token }}
+          path: candidate
+          merge-multiple: true
+      - name: Publish verified inert blobs only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -I - <<'PY'
+          import base64, hashlib, json, os, pathlib, stat, urllib.request
+          root = pathlib.Path('candidate')
+          raw = (root / 'manifest.json').read_bytes()
+          assert hashlib.sha256(raw).hexdigest() == 'a62523024e240eb5849c540e91276d3b76abd5b17281f009ceee57e8191ddee0'
+          manifest = json.loads(raw)
+          assert manifest['head'] == '484c46aef9b36e41b436c03dbc6be5493872a25d'
+          assert manifest['base'] == '711c5773eab56487270b95d395bb6e4879394ea7'
+          assert manifest['tree'] == '2af2e8ba26c779dc74ed57ce9063769cdb7d8975'
+          allowed = {
+              '.github/workflows/ci.yml',
+              '.github/workflows/developer-packaged-qualification.yml',
+              '.github/workflows/developer-tools.yml',
+              '.github/workflows/docs-pages.yml',
+              '.github/workflows/docs-site.yml',
+              '.github/workflows/registry-cli.yml',
+              '.github/workflows/typescript-guest.yml',
+              'crates/latent-wasmtime/tests/phase3_resource.rs',
+              'crates/latent-wasmtime/tests/phase3_resource/observation.rs',
+              'docs/development/workflow-action-pins.md',
+              'tools/ci/contracts/python/test_dev_build_cache.py.json',
+              'tools/ci/contracts/workflows/ci.yml/jobs/msrv.json',
+          }
+          assert len(manifest['files']) == len(allowed) == 12
+          assert {entry['path'] for entry in manifest['files']} == allowed
+          payloads = []
+          for entry in manifest['files']:
+              path = root / 'files'
+              for part in pathlib.PurePosixPath(entry['path']).parts:
+                  path /= part
+                  assert not path.is_symlink()
+              assert stat.S_ISREG(path.stat().st_mode)
+              assert path.stat().st_size <= 131072
+              data = path.read_bytes()
+              assert hashlib.sha256(data).hexdigest() == entry['sha256']
+              assert hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest() == entry['blob']
+              payloads.append((entry, data))
+          assert sum(len(data) for _, data in payloads) < 262144
+          # No checkout, imports from artifacts, shell execution, ref movement,
+          # workflow dispatch, or repository policy changes. Only inert blobs.
+          for entry, data in payloads:
+              request = urllib.request.Request(
+                  'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',
+                  data=json.dumps({'content': base64.b64encode(data).decode(), 'encoding': 'base64'}).encode(),
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json',
+                           'Content-Type': 'application/json'}, method='POST')
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  result = json.load(response)
+              assert result['sha'] == entry['blob']
+              print(entry['path'], result['sha'])
+          PY
