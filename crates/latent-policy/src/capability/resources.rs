@@ -99,6 +99,15 @@ impl StreamEndpoint {
     pub fn validate(&self) -> Result<(), PlatformError> {
         if self.port == 0
             || !canonical_host(&self.host)
+            || (self.host.parse::<std::net::IpAddr>().is_err()
+                && (self
+                    .host
+                    .rsplit('.')
+                    .next()
+                    .is_some_and(|label| label.bytes().all(|byte| byte.is_ascii_digit()))
+                    || self.host.strip_prefix("0x").is_some_and(|suffix| {
+                        !suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_hexdigit())
+                    })))
             || matches!(self.host.parse::<std::net::IpAddr>(), Ok(std::net::IpAddr::V6(value)) if value.to_ipv4_mapped().is_some())
         {
             return Err(invalid());
@@ -421,6 +430,10 @@ mod stream_tests {
             "user@mail.example",
             "https://mail.example",
             "127.000.0.1",
+            "127.1",
+            "2130706433",
+            "0x7f000001",
+            "0x7f.0.0.1",
             "[::1]",
             "::ffff:127.0.0.1",
             "a..example",
