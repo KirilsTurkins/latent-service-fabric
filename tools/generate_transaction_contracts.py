@@ -7,6 +7,7 @@ import base64
 import copy
 import json
 from pathlib import Path
+import re
 import struct
 import sys
 import tomllib
@@ -104,12 +105,45 @@ def preparation():
     return {**value, "digest": digest(b"lsf-transaction-preparation-profile-v1\0" + identity)}
 
 
+def requirements():
+    """Freeze separate complete guest and external-client definition owners."""
+    guest = []
+    for interface, source in (("latent:state/key-value@0.2.0", "wit/platform/state/package.wit"),
+                              ("latent:intents/staging@0.1.0", "wit/platform/intents/package.wit")):
+        text = (ROOT / source).read_text(encoding="utf-8")
+        guest.append(dict(interface=interface, source=source, sourceSha256=digest((ROOT / source).read_bytes()),
+            operations=[dict(name=name, asynchronous=bool(asynchronous))
+                for name, asynchronous in re.findall(r"^    ([a-z-]+): (async )?func\(", text, re.MULTILINE)],
+            ownedResources=re.findall(r"^    resource ([a-z-]+);", text, re.MULTILINE)))
+    client = []
+    for service, source in (("latent.transaction.v1.TransactionService", "api/proto/latent/transaction/v1/transaction.proto"),
+                            ("latent.control.v1.StateService", "api/proto/latent/control/v1/state.proto")):
+        text = (ROOT / source).read_text(encoding="utf-8")
+        client.append(dict(service=service, source=source, sourceSha256=digest((ROOT / source).read_bytes()),
+            operations=[dict(name=name, request=request, response=response)
+                for name, request, response in re.findall(r"^  rpc (\w+)\((\w+)\) returns \((\w+)\);", text, re.MULTILINE)],
+            messages=re.findall(r"^message (\w+) \{", text, re.MULTILINE),
+            enums=re.findall(r"^enum (\w+) \{", text, re.MULTILINE)))
+    return dict(schemaVersion="latent.transaction-contract.requirements.v1", evidenceKind="contract-definition",
+        wireProfile="lsf-transaction-v1", hostAbiDigest=matrix()["digest"], preparationProfileDigest=preparation()["digest"],
+        languages=["rust", "c", "typescript", "go", "java", "dotnet"], boundaryVectors="sdk/profile/transaction-vectors.json",
+        guest=dict(profile="latent.guest.transaction.v1", requiredInterfaces=guest,
+            explicitResourceDrop=True, implicitReplay=False, executionQualified=False,
+            executionOwnerIssues=[389, 718]),
+        externalClient=dict(profile="latent.client.transaction.v1", requiredServices=client,
+            requiredHttpEnvelopes=["command", "query", "recovery", "response"],
+            applicationSchema="schemas/transaction-api.schema.json", managementAuthority="current-authenticated-host-policy",
+            implicitReplay=False, transportExecutionQualified=False, executionOwnerIssues=[401]),
+        independentQualification=True, runtimeInstallation=False)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     for relative, value in (("wit/host-abi-phase4-v1.json", matrix()), ("sdk/profile/transaction-vectors.json", vectors()),
-                            ("sdk/profile/transaction-preparation-v1.json", preparation())):
+                            ("sdk/profile/transaction-preparation-v1.json", preparation()),
+                            ("sdk/profile/transaction-requirements-v1.json", requirements())):
         expected, path = encode(value), ROOT / relative
         if args.check:
             if not path.is_file() or path.read_bytes() != expected:

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/generate_transaction_contracts.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reproduce exact transaction ABI boundary vectors and HTTP preparation profile identity",
+  "reviewReason": "Reproduce independent six-language guest/client requirements with exact complete WIT and RPC declarations",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2dcb2b98e8e3bb74128fd7529f0f356b3c322cbaa4ce0d7b7a392e9052eb2fd9"
+  "sha256": "82c5f65d6c6124d0258913f10614d6b51dfd758033b87a2f677852ff01208e39"
 }
