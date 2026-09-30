@@ -1,6 +1,6 @@
 # Transaction store engine qualification
 
-The first-engine decision is [ADR-0061](../../adr/0061-select-redb-for-transactional-host-state.md).
+The first-engine decision is [ADR-0063](../../adr/0063-select-redb-for-transactional-host-state.md).
 It qualifies the bounded storage prototype, not the complete Phase 4 node.
 The [recorded result](../evidence/transaction-store-engine-381.json) preserves
 the actual source snapshot, engine/tool/configuration and host observations.
@@ -20,6 +20,12 @@ test-only barrier never enters a product build. Corrupt bytes and concurrent
 file ownership are rejected without truncation/reset. A stale expected row or
 one-over row quota changes no family. Old snapshots stay coherent; expired
 views refuse further reads while their physical pin remains owned until drop.
+
+These physical storage and owned-process tests run in the full Rust lane.
+`latent-state` and its affected `latent-commit` and `latent-workflows` consumers
+leave the fast package selection because their actual test graph includes
+`latent-testkit`. The existing fast lane still rejects that helper; the full
+lane retains the exact storage cases and their bounds.
 
 The finite workload performs 32 immediate commits, a writer while a snapshot
 is retained, a conflicting batch, compaction after view retirement, a closed

@@ -30,7 +30,6 @@
   "fastPackages": [
     "latent-activation",
     "latent-admission",
-    "latent-commit",
     "latent-core",
     "latent-effects",
     "latent-executor",
@@ -39,9 +38,7 @@
     "latent-network",
     "latent-routing",
     "latent-scheduler",
-    "latent-state",
-    "latent-telemetry",
-    "latent-workflows"
+    "latent-telemetry"
   ],
   "forbiddenFastDependencies": [
     "latent-testkit",
@@ -52,10 +49,7 @@
     "latent-angular-renderer-adapter"
   ],
   "narrowPackages": [
-    "latent-commit",
-    "latent-effects",
-    "latent-state",
-    "latent-workflows"
+    "latent-effects"
   ],
   "recipes": {
     "explicit-doctests": {

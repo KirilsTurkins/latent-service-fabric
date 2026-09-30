@@ -122,4 +122,4 @@ old implementation snapshots are not setup instructions.
 
 ### Transactional state
 
-- [ADR-0061: Select redb for transactional host state](0061-select-redb-for-transactional-host-state.md)
+- [ADR-0063: Select redb for transactional host state](0063-select-redb-for-transactional-host-state.md)
