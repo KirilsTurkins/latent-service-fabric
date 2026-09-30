@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod embedded;
 pub mod entity_lanes;
 pub mod store_io;
 
@@ -75,10 +76,10 @@ pub struct EntityLease {
 }
 
 pub trait StateBackend: Send + Sync {
-    fn begin<'a>(
-        &'a self,
+    fn begin(
+        &self,
         context: StateContext,
-    ) -> BoxFuture<'a, Result<StateTransaction, PlatformError>>;
+    ) -> BoxFuture<'_, Result<StateTransaction, PlatformError>>;
 
     fn read<'a>(
         &'a self,
@@ -99,15 +100,12 @@ pub trait StateBackend: Send + Sync {
         mutation: StateMutation,
     ) -> BoxFuture<'a, Result<(), PlatformError>>;
 
-    fn commit<'a>(
-        &'a self,
+    fn commit(
+        &self,
         transaction: StateTransaction,
-    ) -> BoxFuture<'a, Result<CommitReceipt, PlatformError>>;
+    ) -> BoxFuture<'_, Result<CommitReceipt, PlatformError>>;
 
-    fn rollback<'a>(
-        &'a self,
-        transaction: StateTransaction,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn rollback(&self, transaction: StateTransaction) -> BoxFuture<'_, Result<(), PlatformError>>;
 }
 
 pub trait EntityLeaseManager: Send + Sync {
@@ -125,5 +123,5 @@ pub trait EntityLeaseManager: Send + Sync {
         ttl_millis: u64,
     ) -> BoxFuture<'a, Result<EntityLease, PlatformError>>;
 
-    fn release<'a>(&'a self, lease: EntityLease) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn release(&self, lease: EntityLease) -> BoxFuture<'_, Result<(), PlatformError>>;
 }
