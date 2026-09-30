@@ -7,7 +7,7 @@ world capsule {
     import latent:clock/wall@0.1.0;
     import latent:random/random@0.1.0;
     import latent:blob/blob@0.1.0;
-    import latent:state/key-value@0.1.0;
+    import latent:state/key-value@0.2.0;
     import latent:events/publisher@0.1.0;
     import latent:http/client@0.1.0;
     import latent:secrets/reader@0.1.0;

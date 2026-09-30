@@ -1659,14 +1659,17 @@
         "test_support::deterministic::tests::executor_handles_a_wake_before_parking",
         "test_support::deterministic::tests::identifiers_are_repeatable",
         "test_support::deterministic::tests::workspace_rejects_path_traversal",
-        "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up"
+        "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up",
+        "transaction_contract::tests::byte_and_presence_boundaries_are_exact",
+        "transaction_contract::tests::caller_and_incarnation_prevent_foreign_replay",
+        "transaction_contract::tests::fingerprint_sorts_but_never_erases_presence_or_stale_edit_inputs"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 89,
+      "minimumCases": 92,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -1976,14 +1979,16 @@
         "runtime_compatibility::tests::omitted_requirements_preserve_canonical_json_and_empty_arrays_normalize",
         "runtime_compatibility::tests::profile_digest_binds_detected_facts_and_budgets_order_independently",
         "runtime_compatibility::tests::renderer_requirements_are_explicit_immutable_and_separate_from_host_capacity",
-        "runtime_compatibility::tests::requirement_shapes_and_typed_spare_capacities_fail_closed"
+        "runtime_compatibility::tests::requirement_shapes_and_typed_spare_capacities_fail_closed",
+        "transaction_binding::tests::companion_round_trip_is_exact_and_does_not_grant_link_authority",
+        "transaction_binding::tests::malformed_present_values_unknown_modes_and_stale_profile_reject"
       ],
       "expectedIgnored": [],
       "id": "latent-manifest.lib.latent-manifest",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-manifest/Cargo.toml",
-      "minimumCases": 9,
+      "minimumCases": 11,
       "mode": "libtest",
       "package": "latent-manifest",
       "platforms": [

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Stage the opt-in Phase 4 resource world without loading unrelated aggregate worlds",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
+  "sha256": "b3d46f2d4fa331a319915c3696f1db5db797bcdeb54c6dc146a54b4d8df571dc"
 }
