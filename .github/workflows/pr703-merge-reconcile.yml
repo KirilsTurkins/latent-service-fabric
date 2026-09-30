@@ -1,0 +1,49 @@
+name: PR 703 merge reconciliation
+on:
+  push:
+    branches: [fix/pr703-merge-reconcile-20260930]
+    paths: [.github/workflows/pr703-merge-reconcile.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          show-progress: false
+      - name: Export exact merge inputs and unresolved paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          head=260c01eb4039f6c48fa4912ffcaf53184e404769
+          base=b40a31aa7e63128698df2be86324657b4d22a590
+          out="$RUNNER_TEMP/pr703-merge"
+          mkdir -p "$out"
+          git config user.name 'LSF merge validation'
+          git config user.email 'lsf-ci@users.noreply.github.com'
+          git update-ref refs/heads/input-head "$head"
+          git update-ref refs/heads/input-base "$base"
+          git bundle create "$out/merge-inputs.bundle" refs/heads/input-head refs/heads/input-base
+          git merge-base "$head" "$base" > "$out/merge-base.txt"
+          git checkout --detach "$head"
+          status=0
+          git merge --no-commit --no-ff "$base" > "$out/merge.log" 2>&1 || status=$?
+          test "$status" -le 1
+          git diff --name-only --diff-filter=U | tee "$out/conflicts.txt"
+          git diff --cc > "$out/conflicts.diff"
+          git status --short > "$out/status.txt"
+          find . -name AGENTS.md -not -path './.git/*' -print > "$out/agent-files.txt"
+          cat "$out/merge.log"
+          sha256sum "$out/merge-inputs.bundle" > "$out/sha256.txt"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr703-merge-inputs
+          path: ${{ runner.temp }}/pr703-merge/
+          retention-days: 2
+          if-no-files-found: error
+          compression-level: 0
