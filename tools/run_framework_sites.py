@@ -58,6 +58,17 @@ def run(args):
                 require(not head and not conditional and all(fields['content-security-policy'] == headers['content-security-policy']
                         and fields['etag'] == headers['etag'] for fields in (head_headers, conditional_headers)), 'framework-csp-revalidation')
                 responses.append({'name': name, 'htmlDigest': expected['digest'], 'immutableBytes': True, 'headAnd304': True})
+                if name.startswith('docs-'):
+                    missing_path = mount.rstrip('/') + '/unknown/nested/page'
+                    missing, missing_fields = http_response(client, node, host, missing_path,
+                        headers={'Accept': 'text/html'}, expected=404)
+                    error_asset = next(row for row in records[name]['assets'] if row['path'] == '/404.html')
+                    require('sha256:' + hashlib.sha256(missing).hexdigest() == error_asset['digest']
+                        and missing_fields['cache-control'] == 'private, no-store', 'immutable-framework-404')
+                    head, head_fields = http_response(client, node, host, missing_path, method='HEAD',
+                        headers={'Accept': 'text/html', 'If-None-Match': missing_fields['etag']}, expected=404)
+                    require(not head and head_fields['content-length'] == str(len(missing))
+                        and head_fields['etag'] == missing_fields['etag'], 'framework-error-head-404')
             browser_receipt = client_root / 'browser.json'
             process = Process([shutil.which('node'), str(ROOT / 'examples/framework-compatibility/browser.mjs'), str(args.chrome),
                 'http://' + hosts['csr'], 'http://' + hosts['generator'], str(browser_receipt)], ROOT,
@@ -69,6 +80,24 @@ def run(args):
             finally: process.close()
             browser = read_json(browser_receipt)
             require(browser.get('passed') is True and len(browser['pages']) == 4, 'framework-browser-evidence')
+            revoked = client.call('web', 'revoke', '--publication', publications['docs-root'],
+                '--operation-id', 'revoke-framework-error-document', '--expected-generation', '1')
+            require(revoked['outcomeKnown'], 'framework-error-revocation-uncertain')
+            for method in ('GET', 'HEAD'):
+                denied, _ = http_response(client, node, hosts['generator'], '/unknown/nested/page', method=method,
+                    headers={'Accept': 'text/html'}, expected=403)
+                require(not denied, 'revoked-framework-error-body')
+            denied_receipt = client_root / 'revoked-error-browser.json'
+            process = Process([shutil.which('node'), str(ROOT / 'tools/static-sites/browser.mjs'),
+                str(ROOT / 'examples/renderer-profile'), str(args.chrome), 'http://' + hosts['csr'],
+                'http://' + hosts['generator'], 'A', str(denied_receipt), 'error-denied'], ROOT,
+                client.environment, cancellation, maximum=262144)
+            try:
+                result = process.complete(min(client.deadline, time.monotonic() + 75))
+                require(result.returncode == 0, 'framework-revoked-error-browser-failed')
+            finally: process.close()
+            revoked_browser = read_json(denied_receipt)
+            require(revoked_browser['errorDocument']['status'] == 403, 'framework-revoked-error-browser-evidence')
             dormant = idle(client)
             stop(client, node)
             stopped_record(node)
@@ -85,12 +114,13 @@ def run(args):
             node = connect(client, args.node, node_root, config, 'tests', 2)
             http_response(client, node, hosts['csr'], '/', expected=403)
             http_response(client, node, hosts['csr'], '/app/', expected=403)
-            http_response(client, node, hosts['generator'], '/')
+            http_response(client, node, hosts['generator'], '/', expected=403)
             http_response(client, node, hosts['generator'], '/docs/')
             stop(client, node)
             shutdown = stopped_record(node)
             node = None
             return {'schemaVersion': 'latent.framework.workflow.v1', 'passed': True, 'browser': browser,
+                    'revokedErrorDocumentBrowser': revoked_browser,
                     'responses': responses, 'hostOptInRequiredAfterRestart': True, 'dormant': dormant,
                     'shutdown': shutdown, 'publications': publications}
         finally:

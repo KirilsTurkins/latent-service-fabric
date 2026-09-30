@@ -1,8 +1,9 @@
 use super::{
     asset_tree_digest, inspect_web_layout, renderer_profile_digest, StaticDirectoryIndexMode,
-    StaticFallbackMode, StaticWebFallback, StaticWebRouting, StaticWebRoutingProfile,
-    WebApplicationManifest, WebAsset, WebRenderMode, WebRenderer, WebRendererProfile, WebRoute,
-    MAX_WEB_ASSETS, MAX_WEB_ASSET_CAPACITY, WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
+    StaticFallbackMode, StaticWebErrorDocument, StaticWebErrorDocumentProfile, StaticWebFallback,
+    StaticWebRouting, StaticWebRoutingProfile, WebApplicationManifest, WebAsset, WebRenderMode,
+    WebRenderer, WebRendererProfile, WebRoute, MAX_WEB_ASSETS, MAX_WEB_ASSET_CAPACITY,
+    WEB_MANIFEST_PATH, WEB_RELEASE_PROFILE,
 };
 use crate::package::{
     artifact_blob_digest, encode_config, encode_manifest, inspect_package, ArtifactDescriptor,
@@ -167,11 +168,43 @@ fn static_routing_is_closed_signed_browser_metadata_with_html_documents() {
             mode: StaticFallbackMode::Spa,
             document: Some("/index.html".into()),
         },
+        error_document: None,
     });
     let (layout, bytes) = package(&document);
     let checked = inspect_web_layout(&layout, &bytes).unwrap();
     assert!(checked.manifest().static_routing.is_some());
     assert_ne!(checked.package(), &baseline);
+
+    let mut custom = document.clone();
+    custom.static_routing.as_mut().unwrap().error_document = Some(StaticWebErrorDocument {
+        profile: StaticWebErrorDocumentProfile::HtmlNotFoundV1,
+        document: "/index.html".into(),
+    });
+    let (error_layout, error_bytes) = package(&custom);
+    let error_checked = inspect_web_layout(&error_layout, &error_bytes).unwrap();
+    assert_ne!(error_checked.package(), checked.package());
+    assert_eq!(error_checked.assets_digest(), checked.assets_digest());
+    assert!(error_checked.retained_bytes() > checked.retained_bytes());
+    for name in [
+        "/missing.html",
+        "/main.js",
+        "/_lsf/foreign/index.html",
+        "/private/error.html",
+        "/.hidden.html",
+        "https://foreign.test/404.html",
+    ] {
+        let mut rejected = custom.clone();
+        rejected
+            .static_routing
+            .as_mut()
+            .unwrap()
+            .error_document
+            .as_mut()
+            .unwrap()
+            .document = name.into();
+        let (layout, bytes) = package(&rejected);
+        assert!(inspect_web_layout(&layout, &bytes).is_err(), "{name}");
+    }
 
     let mut missing = document.clone();
     missing.static_routing.as_mut().unwrap().entry_document = "/missing.html".into();
@@ -474,6 +507,20 @@ fn documentation_asset_profile_admits_252_paths_and_rejects_the_next_with_a_name
         .assets
         .sort_by(|left, right| left.path.cmp(&right.path));
     document.assets_digest = asset_tree_digest(&document.assets).unwrap().to_string();
+    document.static_routing = Some(StaticWebRouting {
+        profile: StaticWebRoutingProfile::StaticSiteV1,
+        entry_document: "/index.html".into(),
+        directory_index: StaticDirectoryIndexMode::Redirect,
+        directory_index_document: "/index.html".into(),
+        fallback: StaticWebFallback {
+            mode: StaticFallbackMode::None,
+            document: None,
+        },
+        error_document: Some(StaticWebErrorDocument {
+            profile: StaticWebErrorDocumentProfile::HtmlNotFoundV1,
+            document: "/index.html".into(),
+        }),
+    });
     let (layout, bytes) = package(&document);
     assert!(bytes.len() > 64 * 1024);
     let checked = inspect_web_layout(&layout, &bytes).unwrap();

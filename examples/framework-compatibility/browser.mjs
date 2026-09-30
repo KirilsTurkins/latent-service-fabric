@@ -123,7 +123,30 @@ try {
     assert.deepEqual(violations, [], 'all previous pages and transitions satisfy CSP');
     assert.deepEqual(await page.evaluate(() => globalThis.lsfViolations), [], 'legitimate framework behavior satisfies CSP');
     const denied = await protections(page);
-    receipt.pages.push({kind, mount: mount || '/', scripts: scripts.size, denied, visibleFunctionality: true});
+    let signed404 = false;
+    if (kind === 'docs') {
+      const missing = origin + mount + '/unknown/nested/page';
+      const response = await page.goto(missing, {waitUntil: 'networkidle', timeout: 20000});
+      assert.equal(response.status(), 404);
+      assert.equal(response.headers()['cache-control'], 'private, no-store');
+      assert.match(response.headers()['content-security-policy'], /script-src 'self';/);
+      await page.getByRole('heading', {name: /page not found/i}).waitFor();
+      await page.setExtraHTTPHeaders({'If-None-Match': response.headers().etag});
+      assert.equal((await page.goto(missing, {waitUntil: 'networkidle', timeout: 20000})).status(), 404);
+      await page.getByRole('heading', {name: /page not found/i}).waitFor();
+      await page.setExtraHTTPHeaders({});
+      const rejected = await page.evaluate(async mount => {
+        const result = [];
+        for (const path of ['/missing.js', '/missing.css', '/missing.svg', '/missing.woff2', '/api/missing', '/unknown/nested/page']) {
+          const response = await fetch(mount + path, {cache: 'no-store', headers: {Accept: 'text/html'}});
+          result.push({status: response.status, bytes: (await response.arrayBuffer()).byteLength});
+        }
+        return result;
+      }, mount);
+      assert.deepEqual(rejected, Array(6).fill({status: 404, bytes: 0}));
+      signed404 = true;
+    }
+    receipt.pages.push({kind, mount: mount || '/', scripts: scripts.size, denied, visibleFunctionality: true, signed404});
     await context.close();
   }
   receipt.passed = true;

@@ -88,6 +88,12 @@ def generator(mount, source, work, toolchain):
             f'<a id="guide" href="{mount}/guide">Guide</a><i id="font-icon" class="pi pi-check" aria-hidden="true"></i>'
             f'<a id="sitemap" href="{mount}/sitemap.xml">Sitemap</a></body></html>', encoding='utf-8')
         names.append(page['path'])
+    # The designed error page is ordinary captured HTML, with the same local
+    # hashed CSS and finite asset budget as every other generated document.
+    (public / '404.html').write_text('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        f'<title>Page not found</title><link rel="stylesheet" href="{mount}/{style}"></head>'
+        f'<body><h1 id="view">Page not found</h1><a href="{mount}/">Home</a></body></html>', encoding='utf-8')
+    names.append('404.html')
     # Build a complete finite multilingual tree. Include every emitted page in
     # the captured inventory; shared files count toward the same 250-file total.
     localized = []
@@ -182,6 +188,8 @@ def build(args):
                       'directoryIndex': {'mode': 'disabled' if is_csr else 'redirect', 'document': '/index.html'},
                       'fallback': {'mode': 'spa', 'document': '/index.html'} if is_csr else {'mode': 'none'},
                       'excluded': ['server/main.mjs', '.env'], 'observations': observations}
+            if name == 'generator':
+                config['errorDocument'] = {'profile': 'html-not-found-v1', 'document': '/404.html'}
             (output / 'static-site.json').write_bytes(canonical(config))
             capture(public, config, output / 'inputs')
             sbom_path = output / 'inputs/sbom-inputs.json'

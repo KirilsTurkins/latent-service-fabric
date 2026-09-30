@@ -11,6 +11,7 @@
     "StaticSiteCaptureTests.test_explicit_mapping_still_rejects_obvious_server_private_maps_and_unsupported_media",
     "StaticSiteCaptureTests.test_font_preparation_keeps_glyphs_and_only_one_woff2_resource",
     "StaticSiteCaptureTests.test_missing_foreign_or_changed_observation_is_not_accepted_as_build_proof",
+    "StaticSiteCaptureTests.test_optional_error_document_is_signed_html_without_rewriting_assets_or_adding_layers",
     "StaticSiteCaptureTests.test_paths_cannot_alias_escape_reserved_namespace_or_collide_by_case",
     "StaticSiteCaptureTests.test_symlink_files_and_directories_are_rejected_before_reading_outside_output_root",
     "StaticSiteCaptureTests.test_xml_sitemap_bytes_and_exact_media_are_preserved_without_parsing"
@@ -148,6 +149,18 @@
       ],
       "skipSites": []
     },
+    "StaticSiteCaptureTests.test_optional_error_document_is_signed_html_without_rewriting_assets_or_adding_layers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:75f7c528e9eff7b09aec0dd78bddad08b8077c3a36d84f9276eb2a3bbc7847d4",
+        "class:setup-sha256:fc23fa9a84dfb1a5ed585fc72c34c211ef5e3fc194282d1ab9b96b4fb4980d83"
+      ],
+      "skipSites": []
+    },
     "StaticSiteCaptureTests.test_paths_cannot_alias_escape_reserved_namespace_or_collide_by_case": {
       "bases": [
         "unittest.TestCase"
@@ -190,6 +203,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_static_site.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain capture cases and add the signed same-publication error document and limit regression",
   "schemaVersion": "latent.ci.contracts.v1"
 }

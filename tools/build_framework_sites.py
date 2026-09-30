@@ -107,6 +107,9 @@ def build(args):
                       'fallback': {'mode': 'spa', 'document': '/index.html'} if angular else {'mode': 'none'},
                       'styleHashes': reviewed['styleHashes'] if angular else [],
                       'excluded': [], 'observations': observations}
+            if not angular:
+                require('404.html' in files, 'docusaurus-error-document-output')
+                config['errorDocument'] = {'profile': 'html-not-found-v1', 'document': '/404.html'}
             (output / 'static-site.json').write_bytes(canonical(config))
             capture(public, config, output / 'inputs')
             sbom_path = output / 'inputs/sbom-inputs.json'

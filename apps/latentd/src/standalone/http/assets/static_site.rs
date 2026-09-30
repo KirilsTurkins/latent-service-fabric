@@ -42,7 +42,8 @@ pub(in crate::standalone::http) fn select(
     // Validate bounded preconditions even on a genuine route miss. Assign the
     // public asset path only after resolving the captured checked manifest.
     let mut request = Request::parse_routed(raw, tenant, publication.clone(), String::new())?;
-    let (asset, directory) = resolve(selection.layout().manifest(), site_path, navigation)?;
+    let (asset, directory, not_found) =
+        resolve(selection.layout().manifest(), site_path, navigation)?;
     if head.public_document && asset.media_type != "text/html" {
         return Err(403);
     }
@@ -50,6 +51,7 @@ pub(in crate::standalone::http) fn select(
         return Err(406);
     }
     request.path.clone_from(&asset.path);
+    request.not_found = not_found;
     if directory && !head.collector.target().path().ends_with('/') {
         request.redirect = Some(location(head.collector.target())?);
     }
@@ -67,18 +69,18 @@ fn resolve<'a>(
     manifest: &'a WebApplicationManifest,
     path: &str,
     navigation: bool,
-) -> Result<(&'a WebAsset, bool), u16> {
+) -> Result<(&'a WebAsset, bool, bool), u16> {
     let routing = manifest.static_routing.as_ref().ok_or(502u16)?;
     if let Some(route) = manifest.routes.iter().find(|route| route.path == path) {
         if route.mode == WebRenderMode::Server {
             return Err(502);
         }
         return asset(manifest, route.asset.as_deref().ok_or(502u16)?)
-            .map(|a| (a, false))
+            .map(|a| (a, false, false))
             .ok_or(502);
     }
     if let Some(asset) = asset(manifest, path) {
-        return Ok((asset, false));
+        return Ok((asset, false, false));
     }
     if routing.directory_index == StaticDirectoryIndexMode::Redirect {
         // Stack-only derived lookup, at most the already checked public path bound.
@@ -95,7 +97,7 @@ fn resolve<'a>(
                 if asset.media_type != "text/html" {
                     return Err(502);
                 }
-                return Ok((asset, true));
+                return Ok((asset, true, false));
             }
         }
     }
@@ -105,10 +107,34 @@ fn resolve<'a>(
             routing.fallback.document.as_deref().ok_or(502u16)?,
         )
         .filter(|a| a.media_type == "text/html")
-        .map(|a| (a, false))
+        .map(|a| (a, false, false))
         .ok_or(502);
     }
+    if navigation && error_navigation_path(path) {
+        if let Some(error) = &routing.error_document {
+            // One exact admitted lookup: never call resolve recursively and
+            // never turn corruption or admission failure into an error body.
+            return asset(manifest, &error.document)
+                .filter(|a| a.media_type == "text/html")
+                .map(|a| (a, false, true))
+                .ok_or(502);
+        }
+    }
     Err(404)
+}
+
+fn error_navigation_path(path: &str) -> bool {
+    // Fetch Metadata is not authority: native clients can spoof it. Preserve
+    // API precedence and reject missing non-HTML representations even if a
+    // caller labels a script/image/font URL as a document navigation.
+    let mut segments = path.trim_matches('/').split('/');
+    if segments.next().is_some_and(|first| {
+        first.eq_ignore_ascii_case("api") || first.eq_ignore_ascii_case("_lsf")
+    }) {
+        return false;
+    }
+    let leaf = path.trim_end_matches('/').rsplit('/').next().unwrap_or("");
+    !leaf.contains('.') || leaf.ends_with(".html")
 }
 
 fn location(target: &CanonicalTarget) -> Result<String, u16> {
@@ -170,6 +196,7 @@ mod tests {
                     mode: StaticFallbackMode::Spa,
                     document: Some("/index.html".into()),
                 },
+                error_document: None,
             }),
         }
     }
@@ -184,8 +211,9 @@ mod tests {
             ("/", false, "/index.html", true),
             ("/orders/42", true, "/index.html", false),
         ] {
-            let (asset, actual) = resolve(&m, path, navigation).unwrap();
+            let (asset, actual, not_found) = resolve(&m, path, navigation).unwrap();
             assert_eq!((asset.path.as_str(), actual), (expected, redirect));
+            assert!(!not_found);
         }
         assert_eq!(resolve(&m, "/missing.js", false).unwrap_err(), 404);
         assert_eq!(resolve(&m, "/api/users", false).unwrap_err(), 404);

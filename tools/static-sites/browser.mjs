@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {publicNavigation} from './public-navigation.mjs';
 
 const [toolchain, chrome, origin, generator, version, receipt, mode = 'navigation', ready, resume] = process.argv.slice(2);
-assert.ok(['navigation', 'cutover'].includes(mode));
+assert.ok(['navigation', 'cutover', 'error-configured', 'error-unconfigured', 'error-denied'].includes(mode));
 const {chromium} = createRequire(path.join(toolchain, 'package.json'))('playwright-core');
 const browser = await chromium.launch({executablePath: chrome, headless: true,
   args: process.platform === 'linux' && process.getuid() === 0 ? ['--no-sandbox'] : []});
@@ -19,13 +19,13 @@ async function view(page, text, build) {
   assert.equal(await page.locator('body').evaluate(element => getComputedStyle(element).color), 'rgb(20, 50, 80)');
 }
 
-function headers(response) {
+function headers(response, notFound = false) {
   const fields = response.headers();
   assert.match(fields['content-security-policy'], /script-src 'self'/);
   assert.match(fields['content-security-policy'], /base-uri 'none'/);
   assert.equal(fields['x-content-type-options'], 'nosniff');
   assert.equal(fields['cross-origin-resource-policy'], 'same-origin');
-  assert.equal(fields['cache-control'], 'private, no-cache');
+  assert.equal(fields['cache-control'], notFound ? 'private, no-store' : 'private, no-cache');
   assert.ok(fields.vary.includes('Accept') || fields.vary.includes('accept'));
   assert.equal(fields['access-control-allow-origin'], undefined);
 }
@@ -40,7 +40,25 @@ try {
     if (responses.length < 32) responses.push({status: response.status(), type: response.request().resourceType()});
     if (response.request().resourceType() === 'script' && response.status() === 200) scripts.add(response.url());
   });
-  if (mode === 'cutover') {
+  if (mode.startsWith('error-')) {
+    const target = generator + '/guide/missing';
+    const expected = mode === 'error-denied' ? 403 : 404;
+    const received = page.waitForResponse(response => response.url() === target, {timeout: 15000});
+    const [response] = await Promise.all([received,
+      page.goto(target, {waitUntil: 'networkidle', timeout: 15000}).catch(error => {
+        assert.notEqual(mode, 'error-configured');
+        assert.match(error.message, /net::ERR_HTTP_RESPONSE_CODE_FAILURE/);
+      })]);
+    assert.equal(response.status(), expected);
+    if (mode === 'error-configured') {
+      headers(response, true);
+      assert.equal(await page.locator('#view').textContent(), 'Page not found');
+    } else {
+      assert.equal((await response.body()).length, 0);
+      assert.match(response.headers()['cache-control'], /no-store/);
+    }
+    result.errorDocument = {mode, status: expected, html: mode === 'error-configured'};
+  } else if (mode === 'cutover') {
     let held = false;
     await page.route('**/assets/main-*.js', async route => {
       if (held) return route.continue();
@@ -132,9 +150,34 @@ try {
         assert.equal(await site.locator('html').getAttribute('lang'), locale);
         assert.equal(await site.locator('#view').textContent(), title);
       }
-      // An empty 404 can finish by committing Chromium's own error document.
-      // Keep that negative navigation last; no later request races its commit.
       const missingUrl = base + mount + '/guide/missing';
+      if (!mount) {
+        const notFound = await site.goto(missingUrl, {waitUntil: 'networkidle', timeout: 15000});
+        assert.equal(notFound.status(), 404);
+        headers(notFound, true);
+        assert.equal(await site.locator('#view').textContent(), 'Page not found');
+        assert.equal(await site.locator('body').evaluate(element => getComputedStyle(element).color), 'rgb(20, 50, 80)');
+        await site.setExtraHTTPHeaders({'If-None-Match': notFound.headers().etag});
+        const conditional = await site.goto(missingUrl, {waitUntil: 'networkidle', timeout: 15000});
+        assert.equal(conditional.status(), 404);
+        assert.equal(await site.locator('#view').textContent(), 'Page not found');
+        await site.setExtraHTTPHeaders({});
+        const subresources = await site.evaluate(async () => {
+          const result = [];
+          for (const path of ['/assets/missing.js', '/assets/missing.css', '/assets/missing.png', '/assets/missing.woff2', '/api/missing', '/guide/missing']) {
+            const response = await fetch(path, {cache: 'no-store', headers: {Accept: 'text/html'}});
+            result.push({status: response.status, bytes: (await response.arrayBuffer()).byteLength});
+          }
+          return result;
+        });
+        assert.deepEqual(subresources, Array(6).fill({status: 404, bytes: 0}));
+        result.signed404NavigationNoStoreAndConditional404 = true;
+        result.htmlFetchAndMissingSubresourcesStayEmpty404 = true;
+        await site.close();
+        continue;
+      }
+      // The unconfigured mounted publication retains its empty 404. Chromium
+      // may commit its own error document, so this navigation is last.
       const missingDocument = site.waitForResponse(response => response.url() === missingUrl, {timeout: 15000});
       const [notFound] = await Promise.all([missingDocument,
         site.goto(missingUrl, {timeout: 15000}).catch(error => {
@@ -142,6 +185,8 @@ try {
           assert.match(error.message, /net::ERR_HTTP_RESPONSE_CODE_FAILURE/);
         })]);
       assert.equal(notFound.status(), 404);
+      assert.equal((await notFound.body()).length, 0);
+      result.unconfigured404RemainsEmpty = true;
       await site.close();
     }
     result.version = version;

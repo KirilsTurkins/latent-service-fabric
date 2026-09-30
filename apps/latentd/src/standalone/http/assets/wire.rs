@@ -154,7 +154,9 @@ async fn delivery<W: AsyncWrite + Unpin>(
     close: bool,
     scheme: Scheme,
 ) -> io::Result<()> {
-    let cache_control = if response.request.route.is_some() {
+    let cache_control = if response.request.not_found {
+        "private, no-store"
+    } else if response.request.route.is_some() {
         "private, no-cache"
     } else {
         "private, max-age=31536000, immutable"

@@ -207,7 +207,23 @@ def smoke(client, node, hosts, records, publications):
         require(b'Static home' in http_response(client, node, host, mount + '/')[0], 'static-root-document')
         _, redirect = http_response(client, node, host, mount + '/guide?q=1', expected=308)
         require(redirect['location'] == mount + '/guide/?q=1', 'static-mounted-redirect')
-        http_response(client, node, host, mount + '/guide/missing', headers={'Accept': 'text/html'}, expected=404)
+        missing, error_fields = http_response(client, node, host, mount + '/guide/missing', headers={'Accept': 'text/html'}, expected=404)
+        if not mount:
+            require(b'Page not found' in missing and error_fields['cache-control'] == 'private, no-store', 'static-signed-404')
+            head, head_fields = http_response(client, node, host, mount + '/guide/missing', method='HEAD',
+                headers={'Accept': 'text/html', 'If-None-Match': error_fields['etag']}, expected=404)
+            require(not head and head_fields['content-length'] == str(len(missing))
+                    and head_fields['etag'] == error_fields['etag'], 'static-error-head-representation')
+            for condition in [{'If-None-Match': error_fields['etag']}, {'If-Match': '"other"'}]:
+                body, _ = http_response(client, node, host, mount + '/guide/missing',
+                    headers={'Accept': 'text/html', **condition}, expected=404)
+                require(body == missing, 'static-error-condition-preserves-404')
+            for path in ['/missing.js', '/missing.css', '/missing.svg', '/missing.woff2', '/api/missing']:
+                body, _ = http_response(client, node, host, path, headers={'Accept': 'text/html',
+                    'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document'}, expected=404)
+                require(not body, 'spoofed-metadata-cannot-return-error-document')
+        else:
+            require(not missing, 'static-unconfigured-404')
     record = records['csr-a']
     asset = next(row for row in record['assets'] if row['mediaType'] == 'text/javascript')
     immutable = '/_lsf/assets/' + publications['csr-a'] + asset['path']
@@ -288,8 +304,27 @@ def run(args):
             denied = client.call('web', 'get', '--publication', publications['csr-b'], codes=(4, 6))
             require(denied['category'] != 'success', 'static-foreign-publication')
             client.config = original_profile
+            # Both configurations use ordinary signed publications. Switching
+            # and rollback never mutate HTML or reinstate retired authority.
+            error_lifecycle = []
+            for method in ('GET', 'HEAD'):
+                receipts.append(apply(client, 'generator-' + method.lower(), publications['generator-docs'], hosts['generator'], method=method))
+            error_lifecycle.append(browser(client, args, hosts, 'B', mode='error-unconfigured'))
+            for method in ('GET', 'HEAD'):
+                receipts.append(apply(client, 'generator-' + method.lower(), publications['generator'], hosts['generator'], method=method))
+            error_lifecycle.append(browser(client, args, hosts, 'B', mode='error-configured'))
             audit_receipt = audit(client, receipts)
+            # The existing reconciliation campaign explicitly retires generator
+            # after testing eligible cutover/rollback. Reuse that transition;
+            # retiring it earlier would invalidate its historical obligations.
             reconciliation = route_reconciliation(client, args, directory, hosts['csr'], publications)
+            for method in ('GET', 'HEAD'):
+                body, _ = http_response(client, node, hosts['generator'], '/guide/missing', method=method,
+                    headers={'Accept': 'text/html'}, expected=(403, 404))
+                require(not body, 'retired-error-document-served')
+            error_lifecycle.append(browser(client, args, hosts, 'B', mode='error-denied'))
+            rejected = apply(client, 'generator-get', publications['generator'], hosts['generator'], codes=(4,))
+            require(rejected['category'] == 'platform-failure', 'static-retired-error-rollback-admitted')
             retained_capacity = catalog_capacity(client, args)
             for key in ('sharedBlobBytes', 'publicationLinkBytes'):
                 require(retained_capacity['accounting'][key] == capacity_observations[-1]['accounting'][key],
@@ -312,6 +347,7 @@ def run(args):
                 'rollback': rollback, 'revokedConditionalDenied': True, 'revokedRollbackDenied': True,
                 'foreignPublicationDenied': True, 'before': before, 'dormant': dormant, 'after': after,
                 'audit': audit_receipt, 'routeReconciliation': reconciliation,
+                'errorDocumentLifecycle': error_lifecycle,
                 'catalogCapacity': {'finitePublicationSequence': capacity_observations,
                                     'afterRetirementAndRevocation': retained_capacity,
                                     'stoppedRestoreAndExpansion': maintenance},

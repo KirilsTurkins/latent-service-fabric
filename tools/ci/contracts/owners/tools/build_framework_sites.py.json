@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_framework_sites.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Capture the existing maintained Docusaurus 404 output as an optional signed document",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c82fe7e64de08e7e42e170a75148a24f2de8ebab71173cf4a8570b650b336fe8"
+  "sha256": "b9fe318a4648571c8ae8abb312546c2f50670eef8a83433d39b06b3c1119bcc2"
 }

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_static_site_workflow.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain original reconciliation retirement owner and add signed error navigation rollback and retired browser rejection afterward",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "cb06179e97b1b7122579e7137fab5508ca5566131ba4e0ee2e860cc77cd0d788"
+  "sha256": "fb487c8afc31ad63c6d0baf68920dea2e1cc171e7def4eeeb182923f6366e4e7"
 }

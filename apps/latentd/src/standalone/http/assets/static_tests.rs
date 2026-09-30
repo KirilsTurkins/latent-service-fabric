@@ -33,11 +33,45 @@ fn publish(h: &Harness, operation: &str, page: &[u8]) -> PublicationRef {
                 mode: StaticFallbackMode::Spa,
                 document: Some("/index.html".into()),
             },
+            error_document: None,
         }),
         vec![WebRoute {
             path: "/exact.html".into(),
             mode: WebRenderMode::Prerender,
             asset: Some("/other.html".into()),
+        }],
+    );
+    h.repository
+        .publish_web_package(fixture::context(operation, 0), upload, &mut |_| Ok(()))
+        .unwrap()
+        .receipt
+        .publication
+}
+fn publish_error_site(h: &Harness, operation: &str, error: Option<&[u8]>) -> PublicationRef {
+    let upload = fixture::configured_upload(
+        &[
+            ("/404.html", "text/html", error.unwrap_or(b"unconfigured")),
+            ("/guide/index.html", "text/html", b"guide"),
+            ("/index.html", "text/html", b"generator root"),
+        ],
+        Some(StaticWebRouting {
+            profile: StaticWebRoutingProfile::StaticSiteV1,
+            entry_document: "/index.html".into(),
+            directory_index: StaticDirectoryIndexMode::Redirect,
+            directory_index_document: "/index.html".into(),
+            fallback: StaticWebFallback {
+                mode: StaticFallbackMode::None,
+                document: None,
+            },
+            error_document: error.map(|_| StaticWebErrorDocument {
+                profile: StaticWebErrorDocumentProfile::HtmlNotFoundV1,
+                document: "/404.html".into(),
+            }),
+        }),
+        vec![WebRoute {
+            path: "/exact".into(),
+            mode: WebRenderMode::Client,
+            asset: Some("/index.html".into()),
         }],
     );
     h.repository
@@ -147,6 +181,7 @@ async fn signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared
                         mode: StaticFallbackMode::None,
                         document: None,
                     },
+                    error_document: None,
                 }),
                 Vec::new(),
                 hashes.clone(),
@@ -351,6 +386,114 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         .1
         .contains("private, max-age=31536000, immutable"));
     assert!(h.store().snapshot().cache_hits > 0);
+    let error = publish_error_site(&h, "configured-error", Some(b"signed not found"));
+    for method in ["GET", "HEAD"] {
+        apply(
+            &h,
+            &format!("root-{method}"),
+            &error,
+            "/",
+            "prefix",
+            method,
+            1,
+        );
+        apply(
+            &h,
+            &format!("error-docs-{method}"),
+            &error,
+            "/docs/nested",
+            "prefix",
+            method,
+            0,
+        );
+    }
+    for path in [
+        "/unknown",
+        "/docs/nested/guide/missing",
+        "/docs/nested/missing.html",
+    ] {
+        let (code, headers, body) = get(&h, path, NAVIGATION).await;
+        assert_eq!(
+            (code, body.as_slice()),
+            (404, b"signed not found".as_slice())
+        );
+        assert!(headers.contains("Cache-Control: private, no-store\r\n"));
+        assert!(headers.contains("Content-Type: text/html\r\n"));
+        assert!(headers.contains("Content-Length: 16\r\n"));
+        assert!(headers
+            .to_ascii_lowercase()
+            .contains("content-security-policy:"));
+        let (head_code, head_headers, body) = h.call("HEAD", path, NAVIGATION, node::TOKEN).await;
+        assert_eq!((head_code, body.len()), (404, 0));
+        assert_eq!(etag(&head_headers), etag(&headers));
+        assert!(head_headers.contains("Content-Length: 16\r\n"));
+        for condition in [
+            format!("If-None-Match: {}\r\n", etag(&headers)),
+            "If-None-Match: *\r\n".into(),
+            "If-Match: \"other\"\r\n".into(),
+        ] {
+            let response = get(&h, path, &format!("{NAVIGATION}{condition}")).await;
+            assert_eq!(
+                (response.0, response.2.as_slice()),
+                (404, b"signed not found".as_slice())
+            );
+        }
+    }
+    assert_eq!(get(&h, "/docs/nested/exact", NAVIGATION).await.0, 200);
+    assert_eq!(get(&h, "/docs/nested/guide", NAVIGATION).await.0, 308);
+    let plain = publish_error_site(&h, "unconfigured-error", None);
+    apply(&h, "plain", &plain, "/plain", "prefix", "GET", 0);
+    let empty = get(&h, "/plain/unknown", NAVIGATION).await;
+    assert_eq!((empty.0, empty.2.len()), (404, 0));
+    for (path, headers, status) in [
+        ("/docs/nested/missing.js", NAVIGATION, 404),
+        ("/docs/nested/missing.css", NAVIGATION, 404),
+        ("/docs/nested/missing.png", NAVIGATION, 404),
+        ("/docs/nested/missing.woff2", NAVIGATION, 404),
+        ("/docs/nested/api/users", NAVIGATION, 404),
+        (
+            "/docs/nested/unknown",
+            "Accept: text/html\r\nSec-Fetch-Mode: cors\r\nSec-Fetch-Dest: empty\r\n",
+            404,
+        ),
+        (
+            "/docs/nested/unknown",
+            "Accept: text/html\r\nSec-Fetch-Mode: broken\r\n",
+            403,
+        ),
+        ("/docs/nested/unknown", "Accept: */*\r\n", 404),
+        (
+            "/docs/nested/unknown",
+            "Accept: text/html\r\nSec-Fetch-Dest: document\r\nsec-fetch-dest: document\r\n",
+            400,
+        ),
+        ("/docs/nested/unknown", "Accept: broken\r\n", 400),
+        (
+            "/docs/nested/unknown",
+            "Accept: text/html\r\nIf-None-Match: broken\r\n",
+            400,
+        ),
+    ] {
+        let response = get(&h, path, headers).await;
+        assert_eq!((response.0, response.2.len()), (status, 0), "{path}");
+    }
+    assert_eq!(
+        h.call("POST", "/docs/nested/unknown", HTML, node::TOKEN)
+            .await
+            .0,
+        405
+    );
+    assert!(matches!(
+        h.call("GET", "/docs/nested/unknown", NAVIGATION, "invalid")
+            .await
+            .0,
+        401 | 403
+    ));
+    let old = get(&h, "/docs/nested/unknown", HTML).await;
+    assert_eq!(
+        (old.0, old.2.as_slice()),
+        (404, b"signed not found".as_slice())
+    );
     no_execution(&h);
     h.finish().await;
 }
@@ -461,6 +604,45 @@ async fn static_cutover_rollback_delete_recreate_and_specific_precedence_keep_ca
         "stale specific route never falls through to broad"
     );
     assert_eq!(get(&h, "/elsewhere", HTML).await.2, b"second");
+    let error_first = publish_error_site(&h, "error-first", Some(b"error A"));
+    let error_second = publish_error_site(&h, "error-second", Some(b"error B"));
+    let mut error_generation = apply(&h, "error", &error_first, "/errors", "prefix", "GET", 0);
+    let first_error = get(&h, "/errors/missing", HTML).await;
+    assert_eq!(
+        (first_error.0, first_error.2.as_slice()),
+        (404, b"error A".as_slice())
+    );
+    error_generation = apply(
+        &h,
+        "error",
+        &error_second,
+        "/errors",
+        "prefix",
+        "GET",
+        error_generation,
+    );
+    assert_eq!(get(&h, "/errors/missing", HTML).await.2, b"error B");
+    apply(
+        &h,
+        "error",
+        &error_first,
+        "/errors",
+        "prefix",
+        "GET",
+        error_generation,
+    );
+    assert_eq!(get(&h, "/errors/missing", HTML).await.2, b"error A");
+    h.repository
+        .transition_web_publication(
+            fixture::context("retire-error", 1),
+            &error_first,
+            ReleaseLifecycleAction::Retire,
+            ReleaseLifecycleReason::OperatorRetirement,
+            &mut |_| Ok(()),
+        )
+        .unwrap();
+    let retired = get(&h, "/errors/missing", NAVIGATION).await;
+    assert_eq!((retired.0, retired.2.len()), (403, 0));
     no_execution(&h);
     h.finish().await;
 }
@@ -508,6 +690,50 @@ async fn static_cached_head_and_prepared_304_recheck_current_publication_authori
         );
     }
     assert!(h.store().snapshot().retained_buffer_bytes > 0);
+    let error = publish_error_site(&h, "prepared-error", Some(b"prepared not found"));
+    for method in ["GET", "HEAD"] {
+        apply(
+            &h,
+            &format!("error-{method}"),
+            &error,
+            "/errors",
+            "prefix",
+            method,
+            0,
+        );
+    }
+    let initial = get(&h, "/errors/missing", HTML).await;
+    assert_eq!(initial.0, 404);
+    let raw = node::request("GET", "/errors/missing", node::TOKEN, 0, true);
+    let target = CanonicalTarget::parse(Scheme::Http, node::AUTHORITY, "/errors/missing").unwrap();
+    let mut request = Request::parse_routed(
+        raw.as_bytes(),
+        &TenantId("tests".into()),
+        error.clone(),
+        "/404.html".into(),
+    )
+    .unwrap();
+    request.not_found = true;
+    request.route = Some(h.deployments.select_http(&target, Method::Get).unwrap());
+    let prepared = h.store().begin(request).unwrap().await.unwrap().unwrap();
+    assert_eq!(prepared.code, 404);
+    h.repository
+        .transition_web_publication(
+            fixture::context("revoke-error", 1),
+            &error,
+            ReleaseLifecycleAction::Revoke,
+            ReleaseLifecycleReason::OperatorRevocation,
+            &mut |_| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(prepared.accept(&TenantId("tests".into())), Err(403));
+    drop(prepared);
+    for method in ["GET", "HEAD"] {
+        let rejected = h
+            .call(method, "/errors/missing", NAVIGATION, node::TOKEN)
+            .await;
+        assert_eq!((rejected.0, rejected.2.len()), (403, 0));
+    }
     no_execution(&h);
     h.finish().await;
 }
@@ -591,6 +817,20 @@ async fn static_concurrency_corruption_and_read_saturation_never_enter_renderer_
         get(&h, "/missing.js", "Sec-Fetch-Dest: script\r\n").await.0,
         404
     );
+    let error = publish_error_site(&h, "corrupt-error", Some(b"unique error document"));
+    apply(&h, "error", &error, "/errors", "prefix", "GET", 0);
+    let digest = latent_artifacts::package::artifact_blob_digest(b"unique error document");
+    std::fs::write(
+        h.repository
+            .root()
+            .join("blobs")
+            .join(digest.as_str().strip_prefix("sha256:").unwrap()),
+        b"corrupt",
+    )
+    .unwrap();
+    let rejected = get(&h, "/errors/missing", NAVIGATION).await;
+    assert_eq!((rejected.0, rejected.2.len()), (502, 0));
+    assert_eq!(get(&h, "/errors/guide/", HTML).await.0, 200);
     no_execution(&h);
     h.finish().await;
 }
