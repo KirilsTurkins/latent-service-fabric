@@ -1,0 +1,111 @@
+name: PR 700 CI qualification
+
+on:
+  push:
+    branches: [fix/pr700-ci-qualification-20260930]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 484c46aef9b36e41b436c03dbc6be5493872a25d
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Prepare the exact merge candidate without publishing repository changes
+        env:
+          PR_HEAD: 484c46aef9b36e41b436c03dbc6be5493872a25d
+          BASE_HEAD: 711c5773eab56487270b95d395bb6e4879394ea7
+        run: |
+          git config user.name 'PR 700 qualification'
+          git config user.email 'qualification@localhost'
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path.cwd()
+          head, base = os.environ['PR_HEAD'], os.environ['BASE_HEAD']
+          def git(*args):
+              return subprocess.check_output(['git', *args])
+          assert git('rev-parse', 'HEAD').decode().strip() == head
+          assert git('merge-base', head, base).decode().strip() == '40271d0e6bc31a239f2878ee62346d395900ab8e'
+          result = subprocess.run(['git', 'merge', '--no-commit', '--no-ff', base])
+          assert result.returncode in (0, 1), result.returncode
+          conflicts = set(git('diff', '--name-only', '--diff-filter=U').decode().splitlines())
+          expected = {'.github/workflows/ci.yml', 'docs/development/workflow-action-pins.md',
+                      'tools/ci/contracts/workflows/ci.yml/jobs/msrv.json'}
+          assert conflicts <= expected, sorted(conflicts)
+          for name in sorted(expected):
+              incoming = git('show', f'{base}:{name}').decode()
+              assert '1.94.1' in incoming, name
+              # Preserve the incoming reviewed action pins and explicit MSRV
+              # installation, using the minimum required by this PR's graph.
+              incoming = incoming.replace('1.94.1', '1.95.0')
+              (root / name).write_text(incoming)
+              subprocess.run(['git', 'add', '--', name], check=True)
+          assert not git('diff', '--name-only', '--diff-filter=U').strip()
+          from tools import ci_contracts
+          name = 'tools/tests/test_dev_build_cache.py'
+          path = root / 'tools/ci/contracts/python/test_dev_build_cache.py.json'
+          old = json.loads(path.read_text())
+          observed = ci_contracts.python_expectations(root)[name]
+          assert set(old['cases']) <= set(observed['cases'])
+          assert len(set(observed['cases']) - set(old['cases'])) == 8
+          assert all(old['guards'][case] == observed['guards'][case] for case in old['cases'])
+          old.update(observed)
+          old['reviewReason'] = ('Retain all existing build-attempt obligations and skip guards; add eight '
+                                 'managed SDK entry-boundary and independent byte/depth/link/special-file regressions.')
+          path.write_text(json.dumps(old, indent=2, sort_keys=True) + '\n')
+          subprocess.run(['git', 'add', '--', str(path)], check=True)
+          inventory = json.loads((root / '.github/security/inventory.json').read_text())
+          entry = next(e for e in inventory['manifests'] if e['path'] == 'tools/native-fixture/Cargo.toml')
+          assert entry['manifest_sha256'] == hashlib.sha256((root / entry['path']).read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+          changed = git('diff', '--cached', '--name-only', head).decode().splitlines()
+          allowed = expected | {'tools/ci/contracts/python/test_dev_build_cache.py.json',
+              '.github/workflows/developer-packaged-qualification.yml', '.github/workflows/developer-tools.yml',
+              '.github/workflows/docs-pages.yml', '.github/workflows/docs-site.yml',
+              '.github/workflows/registry-cli.yml', '.github/workflows/typescript-guest.yml'}
+          assert set(changed) <= allowed, changed
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr700-evidence'
+          out.mkdir()
+          manifest = {'head': head, 'base': base, 'tree': git('write-tree').decode().strip(), 'files': []}
+          for name in changed:
+              payload = (root / name).read_bytes()
+              dest = out / 'files' / name
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              dest.write_bytes(payload)
+              manifest['files'].append({'path': name, 'sha256': hashlib.sha256(payload).hexdigest(),
+                  'blob': git('hash-object', name).decode().strip()})
+          (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          (out / 'candidate.patch').write_bytes(git('diff', '--cached', '--binary', head))
+          print(json.dumps(manifest, indent=2))
+          PY
+      - name: Install the repository's pinned validator dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Validate candidate contracts and regressions
+        run: |
+          set -o pipefail
+          {
+            git diff --cached --check
+            python3 -m unittest -v tools.tests.test_dev_build_cache tools.tests.test_ci_contracts tools.tests.test_ci_coverage tools.tests.test_repository_audit_security tools.tests.test_runtime_sbom
+            python3 tools/ci_coverage.py
+            python3 tools/validate_docs.py
+            python3 tools/validate_repository.py
+            python3 tools/validate_foundation.py
+          } 2>&1 | tee "$RUNNER_TEMP/pr700-evidence/validation.txt"
+      - name: Retain exact candidate source and validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr700-ci-qualification
+          path: ${{ runner.temp }}/pr700-evidence/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
