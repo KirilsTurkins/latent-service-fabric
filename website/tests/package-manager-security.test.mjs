@@ -94,3 +94,25 @@ test('installed npm passes the NAT64 advisory and control regressions', () => {
   assert.equal(result.ipAddress, ipAddressVersion);
   assert.equal(result.classificationCases, 20);
 });
+
+test('an already patched 10.5.1 installation upgrades to the current reviewed version', t => {
+  const {root, target} = fixture(t);
+  fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({name: 'ip-address', version: '10.5.1'}));
+  replaceBundledIpAddress(root);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(target, 'package.json'))).version, ipAddressVersion);
+});
+
+test('Dependabot cannot restore stale bundled metadata for a separately pinned replacement', t => {
+  const {root, target} = fixture(t);
+  const file = path.join(root, 'toolchain/package-lock.json');
+  const lock = JSON.parse(fs.readFileSync(file));
+  for (const location of ['node_modules/ip-address', 'node_modules/npm/node_modules/ip-address']) {
+    for (const [field, value] of [['inBundle', true], ['version', '10.5.1']]) {
+      const changed = structuredClone(lock);
+      changed.packages[location][field] = value;
+      fs.writeFileSync(file, JSON.stringify(changed));
+      assert.throws(() => replaceBundledIpAddress(root));
+      assert.equal(JSON.parse(fs.readFileSync(path.join(target, 'package.json'))).version, '10.5.0');
+    }
+  }
+});

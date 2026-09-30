@@ -34,7 +34,7 @@ root Cargo and SDK manifests. Docusaurus 3.10.2, React 19.3.0 and TypeScript 5.9
 are exact pins, not floating recommendations. There is no root npm workspace.
 
 From the repository checkout, use the system npm only to bootstrap the separately
-locked toolchain. Replace its vulnerable bundled `ip-address` before invoking it:
+locked toolchain. Replace its vulnerable bundled dependencies before invoking it:
 
 ```text
 node --version
@@ -50,9 +50,11 @@ node toolchain/node_modules/npm/bin/npm-cli.js run build:root
 
 Run the patch command after every clean toolchain install. npm bundles its own
 copy of `ip-address`; an override or a lockfile-only edit does not replace those
-files. The bootstrap installs the separately integrity-pinned upstream 10.5.1,
+files. The bootstrap installs the separately integrity-pinned upstream 10.7.2,
 replaces the complete bundled copy, and verifies the installed graph and NAT64
-classification before the selected npm runs. See the
+classification before the selected npm runs. The same step replaces bundled
+Undici with 6.28.1 and `brace-expansion` with 5.0.12, and checks their real module
+resolution and security controls. See the
 [security bootstrap details](../../website/README.md#package-manager-security-bootstrap).
 For every later `npm run` command in this guide, use
 `node toolchain/node_modules/npm/bin/npm-cli.js run` from `website/`, or explicitly
