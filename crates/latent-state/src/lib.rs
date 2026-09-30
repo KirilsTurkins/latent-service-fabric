@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod entity_lanes;
+pub mod store_io;
 
 use latent_core::{
     ActivationId, BoxFuture, EntityKey, LeaseId, Metadata, PlatformError, StateNamespaceId,
