@@ -1,7 +1,9 @@
 //! Safe observations from one owned, non-instantiated preparation. These fields
 //! are descriptive and cannot substitute for admission or execution authority.
 use crate::PreparationKey;
-use latent_core::{diagnostic::DiagnosticProfile, ContractId, FunctionId, ReleaseDigest, ResourceBudget};
+use latent_core::{
+    diagnostic::DiagnosticProfile, ContractId, FunctionId, ReleaseDigest, ResourceBudget,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PreparationInspection {

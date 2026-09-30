@@ -99,7 +99,7 @@ pub(super) fn inspect(
     })
 }
 
-fn diagnostic(value: &ActivationDiagnostic) -> proto::ActivationDiagnostic {
+pub(super) fn diagnostic(value: &ActivationDiagnostic) -> proto::ActivationDiagnostic {
     use std::fmt::Write as _;
     proto::ActivationDiagnostic {
         schema_version: ActivationDiagnostic::VERSION,

@@ -11,11 +11,11 @@ mod scoped_routes;
 
 pub use scoped_routes::{RouteReadLimits, ScopedRouteRequest, ScopedRouteSnapshot};
 
+pub use deployments::target_inspection;
 pub use deployments::{
     deployment_revision_id, DeploymentPage, DeploymentPageRequest, DirectoryDeploymentRepository,
     DirectoryDeploymentRepositoryConfig, PinnedRouteResolver,
 };
-pub use deployments::target_inspection;
 
 #[cfg(feature = "catalog-observation")]
 pub use deployments::{
