@@ -138,6 +138,22 @@ blocking-task queue is created.
 
 ## Validation and node handoff
 
+`start_validated_view(config, validator_retained_bytes, validator)` runs the
+complete registry validator against one coherent borrowed `ReadView` on the
+accepted initialization worker. It can check command/result/outbox/payload and
+other cross-row links with bounded pages and point reads before Ready. The
+validator declares captured memory, bounds temporary decode and page buffers,
+and rejects unsupported formats or inconsistent links. It returns no native
+view or engine handle. The physical view retires and protected root/lock fences
+are checked before readiness. The row-codec port delegates its bounded family
+walk to this same coherent path.
+
+The additive view-validator qualification passed all 71 state tests and strict
+all-target/all-feature Clippy on the same pinned Linux image. Its schedules pause
+validation to prove readiness stays pending, exclusive root ownership persists,
+and a one-view native cap is available only after validation retires. A broken
+cross-family link rejects readiness while preserving every existing row.
+
 The owner tests exercise actual worker pauses and resource destruction using
 shared rendezvous/clock helpers. Production tests use the real protected root
 and redb engine on a session-owned Docker Linux ext4 volume. They cover exclusive
