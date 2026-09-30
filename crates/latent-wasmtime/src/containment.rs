@@ -170,6 +170,14 @@ impl StopControl {
         None
     }
 
+    /// Trusted host revocation closes accepted execution under its original
+    /// stop owner. This does not install a user-requested registry winner.
+    pub(crate) fn cancel_for_revocation(&self) {
+        if self.observe().is_none() {
+            self.record(StopCause::Cancelled);
+        }
+    }
+
     #[cfg(test)]
     pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {
         stop_kind(self.cause())

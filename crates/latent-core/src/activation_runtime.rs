@@ -389,6 +389,10 @@ impl ActivationRuntime {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if state.phase != RuntimePhase::Retired {
             state.phase = RuntimePhase::Cancelling;
+            drop(state);
+            // The original tree signals accepted child/provider work without
+            // finalizing or releasing its actual reservations.
+            let _ = self.inner.budget.cancel_descendants();
         }
     }
 
