@@ -243,7 +243,7 @@ fn validate_imports(
                 ComponentItem::ComponentFunc(function) => {
                     signature_with_resources(
                         &function,
-                        specification.asynchronous,
+                        specification.operation_is_asynchronous(name),
                         config,
                         remaining,
                         &resources,
