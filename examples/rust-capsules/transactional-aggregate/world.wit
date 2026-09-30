@@ -1,0 +1,22 @@
+package examples:transactional-aggregate@1.0.0;
+
+interface api {
+    record update-request { delta: u32, reject: bool }
+    record aggregate { count: u64, version: list<u8> }
+    record scan-result {
+        count: u32,
+        encoded-bytes: u64,
+        view-version: list<u8>,
+        next-cursor: option<list<u8>>,
+    }
+    enum business-error { rejected, malformed-state, overflow }
+    update: async func(request: update-request) -> result<aggregate, business-error>;
+    query: async func() -> result<aggregate, business-error>;
+    scan: async func(prefix: list<u8>, limit: u32, cursor: option<list<u8>>) -> result<scan-result, business-error>;
+}
+
+world service {
+    import latent:state/key-value@0.2.0;
+    import latent:intents/staging@0.1.0;
+    export api;
+}

@@ -1,0 +1,21 @@
+package intents
+
+import (
+	raw "wit_component/@raw@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+	"wit_component/lsf/state"
+)
+
+// Builder payload and lifetime requests never choose host policy or provider IDs.
+type Builder struct { value raw.Intent }
+func New(binding string, operation string, payload state.Value) Builder {
+	return Builder{raw.Intent{Binding: binding, Operation: operation, Payload: payload,
+		ExpiresAtUnixMillis: wit.None[uint64]()}}
+}
+func (b Builder) ExpiresAt(unixMillis uint64) Builder {
+	b.value.ExpiresAtUnixMillis = wit.Some[uint64](unixMillis)
+	return b
+}
+func (b Builder) Stage(command *state.Command) wit.Result[StagedIntent, IntentError] {
+	return command.Stage(b.value)
+}

@@ -1,0 +1,1 @@
+{"format":"lsf.aggregate-v1","version":1,"namespace":"transactional-aggregate","key":{"bytes":"aggregate/count","maximumBytes":1024},"value":{"mediaType":"application/vnd.lsf.aggregate-v1","encoding":"unsigned-u64-little-endian","bytes":8,"metadata":[]}}

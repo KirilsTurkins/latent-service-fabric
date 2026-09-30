@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 if __package__ in {None, ""}: sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.java_capsule_project import ROOT, TEMPLATES, create
+from tools.java_capsule_project import ROOT, AUTHORING_TEMPLATES, create
 from tools.java_capsule_build import build
 
 
@@ -16,7 +16,7 @@ def main() -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     new = commands.add_parser("new", help="Create an independent Java project")
     new.add_argument("directory", type=Path)
-    new.add_argument("--template", choices=TEMPLATES, default="greeting")
+    new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
     compile_ = commands.add_parser("build", help="Compile, validate and package captured Java sources")
     compile_.add_argument("project", type=Path)

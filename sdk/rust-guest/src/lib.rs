@@ -9,7 +9,9 @@
 pub mod bindings;
 pub mod blob;
 pub mod http;
+pub mod intents;
 pub mod secrets;
+pub mod state;
 pub mod streaming;
 
 /// Authoritative context, logging and clocks, without ambient process state.

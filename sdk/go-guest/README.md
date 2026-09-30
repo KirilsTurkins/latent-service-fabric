@@ -51,6 +51,8 @@ Use the generated `wit_component/lsf/<module>` packages for capabilities:
 | `service` | `Call` preserves returned, declared-error and platform-error outcomes and host descendant budgets. |
 | `random` | `Bytes` and `U64Value` call the granted entropy provider once. |
 | `metrics` | `EmitMetric` uses only host-configured instruments and labels. |
+| `state` | `AcquireCommand`/`AcquireQuery` scope get/put/delete/scan and bounded pages to the admitted activation. |
+| `intents` | `New`/`ExpiresAt`/`Stage` request a logical deferred effect through an admitted command. |
 
 Complete typed fixtures are in [examples](examples). They include HTTP denial,
 EOF and trailers, reader/body closure with a surviving chunk, stale raw-handle
