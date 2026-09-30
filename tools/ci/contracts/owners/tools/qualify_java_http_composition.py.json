@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_http_composition.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review bounded signed Java HTTP fixture qualification entry point",
+  "reviewReason": "Review complete signed Java composition owner including source identity preservation",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7c03d1a2115b35c78b14195bc54bb4ac57f9e7dd516a5462498213dedceac4c6"
+  "sha256": "469c15cbe28b226b61a3a3af2602095cc4333941c4e7d5e129d18ae6f3f79b0b"
 }

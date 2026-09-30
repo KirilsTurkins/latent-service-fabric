@@ -158,6 +158,13 @@ def run_node(binaries, releases, output, *, http):
                     require(request(host)[0] in (409, 503), "java-http-stale-deployment-target-accepted")
                     route(client, host, publications["adapter"])
                     result["composed"] = fresh_status(client, targets, host, "java-domain-direct-composed")
+                    generated_client = run_bounded_result(["node", "--dns-result-order=ipv4first",
+                        str(ROOT / "examples/java-http-composition/client-test.mjs"), "http://" + host],
+                        cwd=ROOT, env=client.environment, timeout_seconds=180, max_output_bytes=8192)
+                    (evidence / "generated-client.stdout.log").write_bytes(generated_client.stdout)
+                    (evidence / "generated-client.stderr.log").write_bytes(generated_client.stderr)
+                    require(generated_client.returncode == 0, "java-http-normal-generated-client-failed")
+                    result["generatedClient"] = json.loads(generated_client.stdout)
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
                     impersonation = invoke(client, targets, "adapter", "handle", web_request(host), "java-trigger-impersonation")
