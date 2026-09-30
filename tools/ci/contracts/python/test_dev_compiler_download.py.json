@@ -1,5 +1,9 @@
 {
   "cases": [
+    "CacheTests.test_cache_verification_cannot_extend_original_deadline",
+    "CacheTests.test_cold_download_and_warm_cache_preserve_exact_bytes_without_network",
+    "CacheTests.test_failed_upstream_bytes_are_never_published_to_cache",
+    "CacheTests.test_restored_wrong_or_oversized_bytes_fail_closed_without_retry",
     "DownloadTests.test_cancellation_removes_only_the_file_created_by_this_download",
     "DownloadTests.test_deadline_is_checked_before_read_after_read_and_after_eof",
     "DownloadTests.test_digest_verification_does_not_extend_acceptance_deadline",
@@ -10,6 +14,54 @@
     "DownloadTests.test_wrong_digest_and_truncated_archive_are_not_retained"
   ],
   "guards": {
+    "CacheTests.test_cache_verification_cannot_extend_original_deadline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:c251366b3c39326dce9fb795496a568fb5de503c00ccdb0dee418f81bd58d76f"
+      ],
+      "skipSites": []
+    },
+    "CacheTests.test_cold_download_and_warm_cache_preserve_exact_bytes_without_network": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:c251366b3c39326dce9fb795496a568fb5de503c00ccdb0dee418f81bd58d76f"
+      ],
+      "skipSites": []
+    },
+    "CacheTests.test_failed_upstream_bytes_are_never_published_to_cache": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:c251366b3c39326dce9fb795496a568fb5de503c00ccdb0dee418f81bd58d76f"
+      ],
+      "skipSites": []
+    },
+    "CacheTests.test_restored_wrong_or_oversized_bytes_fail_closed_without_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4244177160e6af0a95752bcbdfe474049dd6b3b1fd470df237c86c0a9594d2b",
+        "class:setup-sha256:c251366b3c39326dce9fb795496a568fb5de503c00ccdb0dee418f81bd58d76f"
+      ],
+      "skipSites": []
+    },
     "DownloadTests.test_cancellation_removes_only_the_file_created_by_this_download": {
       "bases": [
         "unittest.TestCase"
@@ -109,6 +161,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_compiler_download.py",
-  "reviewReason": "PR #733 CI repair: review finite compiler download acceptance, unchanged digest/byte pins, and failure cleanup.",
+  "reviewReason": "Add cold/warm cache exact-byte tests, reject restored corruption and oversize without fallback, keep original deadline and all eight existing download cases.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
