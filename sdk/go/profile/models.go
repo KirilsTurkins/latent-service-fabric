@@ -398,11 +398,15 @@ type ActivationTreeNode struct {
 	GrantedBudget               *ResourceBudget
 	EffectiveDeadlineUnixMillis *uint64
 	DiagnosticIsTerminal        bool
+	TargetService               string
+	ReceivedAtUnixMillis        uint64
 }
 
 type InspectActivationTreeRequest struct {
-	ActivationId string
-	Page         *PageRequest
+	ActivationId   string
+	Page           *PageRequest
+	Service        *string
+	FromUnixMillis *uint64
 }
 
 type InspectActivationTreeResponse struct {

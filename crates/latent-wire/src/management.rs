@@ -109,6 +109,7 @@ impl ManagementServiceAdapter {
 
     /// Attach the manager's existing bounded journal. This opens no observer,
     /// worker, durable payload log, or per-deployment resource.
+    #[must_use]
     pub fn with_activation_journal(mut self, journal: latent_node::LocalActivationJournal) -> Self {
         self.activations = Some(journal);
         self

@@ -7,6 +7,7 @@ fn query(id: &str, size: u32) -> proto::InspectActivationTreeRequest {
             page_size: size,
             page_token: None,
         }),
+        ..proto::InspectActivationTreeRequest::default()
     }
 }
 
@@ -39,6 +40,24 @@ async fn tree_requires_trusted_tenant_authority_and_reports_missing_history_hone
         .await
         .unwrap()
         .into_inner();
+    let mut roots = query("", 0);
+    roots.service = Some("http-adapter".into());
+    roots.from_unix_millis = Some(0);
+    let empty = client
+        .inspect_activation_tree(request("alice", roots.clone()))
+        .await
+        .unwrap()
+        .into_inner();
+    assert!(empty.nodes.is_empty() && empty.history_available && empty.retained_history_only);
+    roots.activation_id = "ambiguous-selector".into();
+    assert_eq!(
+        client
+            .inspect_activation_tree(request("alice", roots))
+            .await
+            .unwrap_err()
+            .code(),
+        Code::InvalidArgument
+    );
     let foreign = client
         .inspect_activation_tree(request("bob", query("private-anchor", 0)))
         .await

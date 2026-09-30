@@ -275,13 +275,23 @@ message ActivationTreeNode {
   // False means a caught broker observation, not the terminal failure cause.
   // Neither value proves physical provider cleanup or external disposition.
   bool diagnostic_is_terminal = 12;
+  // Accepted target service, including failures before admission/preparation.
+  string target_service = 13;
+  uint64 received_at_unix_millis = 14;
 }
 
 message InspectActivationTreeRequest {
   // A retained authorized parent, root or child. IDs confer no authority.
+  // Empty only when service is supplied for retained root discovery.
   string activation_id = 1;
   // Maximum 128 nodes / 64 KiB. Zero selects 32. One page per request.
   PageRequest page = 2;
+  // Exactly one selector: activation_id or service. The latter returns roots
+  // of actual accepted ingress activations without exposing a public header.
+  optional string service = 3;
+  // Service discovery only; inclusive observed receive time, not a promise
+  // of complete history. Absent includes every retained observed root.
+  optional uint64 from_unix_millis = 4;
 }
 
 message InspectActivationTreeResponse {

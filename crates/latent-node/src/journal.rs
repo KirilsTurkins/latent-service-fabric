@@ -116,6 +116,8 @@ impl LocalActivationJournal {
 
     /// Capacity/identity checks and cancellation registration share the journal
     /// lock. The callback must be synchronous, bounded, and never reenter it.
+    // Registration and lineage validation publish one atomic owned transition.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn begin_with<T>(
         &self,
         envelope: &ActivationEnvelope,
@@ -153,6 +155,7 @@ impl LocalActivationJournal {
             // Base already reserves all three bounded sparse indexes. Charge
             // this index's additional tenant allocation explicitly.
             .and_then(|bytes| bytes.checked_add(tenant.0.len()))
+            .and_then(|bytes| bytes.checked_add(envelope.target.service.0.len()))
             .and_then(|bytes| {
                 bytes.checked_add(
                     envelope
@@ -216,6 +219,7 @@ impl LocalActivationJournal {
         record.parent = envelope.parent_activation_id.clone();
         record.principal_kind = envelope.principal.kind;
         record.caller_service = envelope.principal.service.clone();
+        record.target_service = envelope.target.service.clone();
         record.root = envelope.root_activation_id.clone();
         record.root_serial = root_serial;
         state.lineage_order.insert(

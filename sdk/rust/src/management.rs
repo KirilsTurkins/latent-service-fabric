@@ -442,12 +442,16 @@ pub struct ActivationTreeNode {
     pub granted_budget: Option<ResourceBudget>,
     pub effective_deadline_unix_millis: Option<u64>,
     pub diagnostic_is_terminal: bool,
+    pub target_service: String,
+    pub received_at_unix_millis: u64,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct InspectActivationTreeRequest {
     pub activation_id: String,
     pub page: Option<PageRequest>,
+    pub service: Option<String>,
+    pub from_unix_millis: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

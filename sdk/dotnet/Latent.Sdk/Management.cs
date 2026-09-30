@@ -629,6 +629,8 @@ public sealed record ActivationDiagnostic(
 /// <param name="GrantedBudget">The exact granted_budget value with preserved presence.</param>
 /// <param name="EffectiveDeadlineUnixMillis">The exact effective_deadline_unix_millis value with preserved presence.</param>
 /// <param name="DiagnosticIsTerminal">The exact diagnostic_is_terminal value with preserved presence.</param>
+/// <param name="TargetService">The exact target_service value with preserved presence.</param>
+/// <param name="ReceivedAtUnixMillis">The exact received_at_unix_millis value with preserved presence.</param>
 public sealed record ActivationTreeNode(
     string ActivationId,
     string? ParentActivationId,
@@ -641,14 +643,20 @@ public sealed record ActivationTreeNode(
     string? CallerService,
     ResourceBudget? GrantedBudget,
     ulong? EffectiveDeadlineUnixMillis,
-    bool DiagnosticIsTerminal);
+    bool DiagnosticIsTerminal,
+    string TargetService,
+    ulong ReceivedAtUnixMillis);
 
 /// <summary>Transport-neutral InspectActivationTreeRequest; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="ActivationId">The exact activation_id value with preserved presence.</param>
 /// <param name="Page">The exact page value with preserved presence.</param>
+/// <param name="Service">The exact service value with preserved presence.</param>
+/// <param name="FromUnixMillis">The exact from_unix_millis value with preserved presence.</param>
 public sealed record InspectActivationTreeRequest(
     string ActivationId,
-    PageRequest? Page);
+    PageRequest? Page,
+    string? Service,
+    ulong? FromUnixMillis);
 
 /// <summary>Transport-neutral InspectActivationTreeResponse; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="SchemaVersion">The exact schema_version value with preserved presence.</param>
