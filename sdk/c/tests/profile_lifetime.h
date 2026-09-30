@@ -90,6 +90,18 @@ static latent_profile_call *fixture_profile_status(latent_profile_client *client
     return call;
 }
 
+static latent_profile_call *fixture_profile_tree(latent_profile_client *client,
+    const latent_profile_inspect_activation_tree_request *request, const latent_profile_call_options *options,
+    latent_profile_inspect_activation_tree_callback callback, void *user_data) {
+    (void)request;
+    (void)options;
+    latent_profile_call *call = fixture_profile_begin(client);
+    latent_profile_inspect_activation_tree_result result = {.value = {.schema_version = 1, .retained_history_only = true, .has_page = true}};
+    callback(&result, NULL, user_data);
+    call->completed = true;
+    return call;
+}
+
 static latent_profile_call *fixture_profile_policy(latent_profile_client *client,
     const latent_profile_get_policy_request *request, const latent_profile_call_options *options,
     latent_profile_get_policy_callback callback, void *user_data) {
@@ -197,6 +209,7 @@ static void fixture_profile_destroy(latent_profile_client *client) {
 
 static const latent_profile_client_vtable fixture_profile_vtable = {
     .invoke = fixture_profile_invoke, .cancel = fixture_profile_cancel, .get_activation = fixture_profile_status,
+    .inspect_activation_tree = fixture_profile_tree,
     .get_policy = fixture_profile_policy, .list_policies = fixture_profile_policies,
     .list_capabilities = fixture_profile_capabilities, .apply_policy = fixture_profile_apply,
     .get_policy_operation = fixture_profile_recover, .cancel_local = fixture_profile_cancel_local,

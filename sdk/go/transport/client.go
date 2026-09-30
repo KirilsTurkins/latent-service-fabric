@@ -26,6 +26,7 @@ type Client struct {
 	invocation invocationv1.InvocationServiceClient
 	policy     controlv1.PolicyServiceClient
 	capability controlv1.CapabilityServiceClient
+	node       controlv1.NodeServiceClient
 	lifetime   context.Context
 	stop       context.CancelFunc
 	mutex      sync.Mutex
@@ -177,6 +178,7 @@ func newClient(ctx context.Context, config Config, supplied *net.TCPConn, adopt 
 	client.invocation = invocationv1.NewInvocationServiceClient(wire)
 	client.policy = controlv1.NewPolicyServiceClient(wire)
 	client.capability = controlv1.NewCapabilityServiceClient(wire)
+	client.node = controlv1.NewNodeServiceClient(wire)
 	success = true
 	go func() {
 		defer close(client.watchDone)

@@ -15,6 +15,14 @@ function bounded(value: unknown, maximum = 256): void {
 
 function pageLimit(operation: Operation, value: unknown): number {
   const capability = operation === "listCapabilities";
+  if (operation === "inspectActivationTree") {
+    if (value === undefined) return 32;
+    const page = object(value);
+    const size = page.pageSize ?? 0;
+    if (typeof size !== "number" || !Number.isInteger(size) || size < 0 || size > 128) throw new ShapeError();
+    bounded(page.pageToken, 160);
+    return size === 0 ? 32 : size;
+  }
   if (value === undefined && capability) return 128;
   const page = object(value);
   const size = page.pageSize ?? 0;
@@ -26,7 +34,11 @@ function pageLimit(operation: Operation, value: unknown): number {
 
 export function validateRequest(operation: Operation, value: unknown, tenant: string): void {
   const request = object(value);
-  for (const key of ["activationId", "rootActivationId", "parentActivationId", "operationId", "id", "deploymentId"]) bounded(request[key]);
+  for (const key of ["activationId", "rootActivationId", "parentActivationId", "operationId", "id", "deploymentId"]) bounded(request[key], operation === "inspectActivationTree" ? 512 : 256);
+  if (operation === "inspectActivationTree") {
+    if (typeof request.activationId !== "string" || !request.activationId || /[\s\x00-\x1f\x7f]/.test(request.activationId)) throw new ShapeError();
+    pageLimit(operation, request.page);
+  }
   if (operation === "invoke") {
     const target = object(request.target);
     if (target.tenant !== tenant) throw new ShapeError();
@@ -50,6 +62,27 @@ export function validateRequest(operation: Operation, value: unknown, tenant: st
 
 export function validateResponse(operation: Operation, request: unknown, raw: RecordValue, tenant: string): void {
   const input = object(request);
+  if (operation === "inspectActivationTree") {
+    const page = object(raw.page);
+    bounded(page.nextPageToken, 160);
+    if (raw.schemaVersion !== 1 || raw.retainedHistoryOnly !== true || !Array.isArray(raw.nodes)
+      || raw.nodes.length > pageLimit(operation, input.page) || page.nextPageToken === ""
+      || (raw.historyAvailable === false && (raw.nodes.length !== 0 || page.nextPageToken !== undefined))) throw new ShapeError();
+    for (const value of raw.nodes) {
+      const node = object(value);
+      for (const key of ["activationId", "rootActivationId", "parentActivationId", "callerService"]) {
+        bounded(node[key], 512);
+        if (node[key] !== undefined && (node[key] === "" || /[\s\x00-\x1f\x7f]/.test(node[key] as string))) throw new ShapeError();
+      }
+      if (node.activationId === undefined || node.rootActivationId === undefined) throw new ShapeError();
+      for (const key of ["phase", "principalKind", "terminalState"]) bounded(node[key], 64);
+      if (node.diagnostic !== undefined) {
+        const diagnostic = object(node.diagnostic);
+        if (diagnostic.schemaVersion !== 1 || (diagnostic.profileDigest !== undefined &&
+          (typeof diagnostic.profileDigest !== "string" || !/^[0-9a-f]{64}$/.test(diagnostic.profileDigest)))) throw new ShapeError();
+      }
+    }
+  }
   if (operation === "invoke" || operation === "getActivation") {
     if (typeof raw.activationId !== "string" || !raw.activationId || raw.activationId.length > 256
       || /\s/.test(raw.activationId) || (input.activationId !== undefined && raw.activationId !== input.activationId)) throw new ShapeError();

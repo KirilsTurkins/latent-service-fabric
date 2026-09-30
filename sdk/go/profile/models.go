@@ -32,6 +32,50 @@ const (
 	CapabilityPolicyRecordKindProviderBinding CapabilityPolicyRecordKind = 2
 )
 
+type DiagnosticStage int32
+
+const (
+	DiagnosticStageUnspecified      DiagnosticStage = 0
+	DiagnosticStageAdmission        DiagnosticStage = 1
+	DiagnosticStageQueue            DiagnosticStage = 2
+	DiagnosticStagePreparation      DiagnosticStage = 3
+	DiagnosticStageBinding          DiagnosticStage = 4
+	DiagnosticStageExecution        DiagnosticStage = 5
+	DiagnosticStageProvider         DiagnosticStage = 6
+	DiagnosticStageCleanup          DiagnosticStage = 7
+	DiagnosticStageOutputValidation DiagnosticStage = 8
+)
+
+type DiagnosticReason int32
+
+const (
+	DiagnosticReasonUnspecified                 DiagnosticReason = 0
+	DiagnosticReasonSignatureAllocationLimit    DiagnosticReason = 1
+	DiagnosticReasonValueAllocationLimit        DiagnosticReason = 2
+	DiagnosticReasonUnsupportedComponentSurface DiagnosticReason = 3
+	DiagnosticReasonUnsupportedEngineProfile    DiagnosticReason = 4
+	DiagnosticReasonProviderAbsent              DiagnosticReason = 5
+	DiagnosticReasonBindingAbsent               DiagnosticReason = 6
+	DiagnosticReasonAdmissionDenied             DiagnosticReason = 7
+	DiagnosticReasonGrantDenied                 DiagnosticReason = 8
+	DiagnosticReasonQueuePressure               DiagnosticReason = 9
+	DiagnosticReasonGuestMemoryExhausted        DiagnosticReason = 10
+	DiagnosticReasonGuestFuelExhausted          DiagnosticReason = 11
+	DiagnosticReasonGuestResourceExhausted      DiagnosticReason = 12
+	DiagnosticReasonProviderTimeout             DiagnosticReason = 13
+	DiagnosticReasonDeadlineExceeded            DiagnosticReason = 14
+	DiagnosticReasonCancelled                   DiagnosticReason = 15
+	DiagnosticReasonHttpResponseRejected        DiagnosticReason = 16
+)
+
+type DiagnosticProfile int32
+
+const (
+	DiagnosticProfileUnspecified                 DiagnosticProfile = 0
+	DiagnosticProfileWasmtimeServiceValuesV1     DiagnosticProfile = 1
+	DiagnosticProfileWasmtimeBufferedWebValuesV1 DiagnosticProfile = 2
+)
+
 type FailureCategory int32
 
 const (
@@ -328,6 +372,48 @@ type PublicationRef struct {
 	Tenant string
 }
 
+type ActivationDiagnostic struct {
+	SchemaVersion         uint32
+	Stage                 DiagnosticStage
+	Reason                DiagnosticReason
+	Profile               *DiagnosticProfile
+	ProfileDigest         *string
+	ConfiguredBound       *uint64
+	CalculatedRequirement *uint64
+	FixedBytes            *uint64
+	LiftingFuel           *uint64
+	LiftMultiplier        *uint64
+}
+
+type ActivationTreeNode struct {
+	ActivationId                string
+	ParentActivationId          *string
+	RootActivationId            string
+	Phase                       string
+	TerminalState               *string
+	LastUpdatedUnixMillis       uint64
+	Diagnostic                  *ActivationDiagnostic
+	PrincipalKind               string
+	CallerService               *string
+	GrantedBudget               *ResourceBudget
+	EffectiveDeadlineUnixMillis *uint64
+	DiagnosticIsTerminal        bool
+}
+
+type InspectActivationTreeRequest struct {
+	ActivationId string
+	Page         *PageRequest
+}
+
+type InspectActivationTreeResponse struct {
+	SchemaVersion       uint32
+	Nodes               []ActivationTreeNode
+	Page                *PageResponse
+	HistoryAvailable    bool
+	CursorExpired       bool
+	RetainedHistoryOnly bool
+}
+
 type PublicationIdentity struct {
 	Publication     PublicationRef
 	ComponentDigest string
@@ -379,6 +465,7 @@ type ClientProfile interface {
 	Invoke(ctx context.Context, request InvokeRequest, options CallOptions) (ClientResponse[InvokeResponse], error)
 	Cancel(ctx context.Context, request CancelRequest, options CallOptions) (ClientResponse[CancelResponse], error)
 	GetActivation(ctx context.Context, request GetActivationRequest, options CallOptions) (ClientResponse[ActivationStatus], error)
+	InspectActivationTree(ctx context.Context, request InspectActivationTreeRequest, options CallOptions) (ClientResponse[InspectActivationTreeResponse], error)
 	GetPolicy(ctx context.Context, request GetPolicyRequest, options CallOptions) (ClientResponse[GetPolicyResponse], error)
 	ListPolicies(ctx context.Context, request ListPoliciesRequest, options CallOptions) (ClientResponse[ListPoliciesResponse], error)
 	ListCapabilities(ctx context.Context, request ListCapabilitiesRequest, options CallOptions) (ClientResponse[ListCapabilitiesResponse], error)
