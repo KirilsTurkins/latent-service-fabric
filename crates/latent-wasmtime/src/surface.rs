@@ -57,6 +57,7 @@ fn lookup_function<'a, T>(
 
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Providers {
+    pub activation_runtime: bool,
     pub local_services: bool,
     pub http: bool,
     pub streaming_http: bool,
@@ -69,7 +70,8 @@ pub(crate) struct Providers {
 }
 impl Providers {
     fn supports(self, name: &str) -> bool {
-        (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+        (self.activation_runtime && name == crate::host::runtime::CAPABILITY)
+            || (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
             || (self.random && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
             || (self.metrics && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
             || (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)

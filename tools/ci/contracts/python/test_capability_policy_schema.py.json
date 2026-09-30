@@ -57,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_capability_policy_schema.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Reviewed V5 opt-in runtime and outbound stream source identity, generator parity, unchanged skip controls, and active native/node profile selection; preserve every existing case.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

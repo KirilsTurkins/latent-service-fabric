@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Reviewed selected V5 aggregate world exclusion from package dependencies; historical worlds remain exact and unchanged, no staging overlap guard is removed.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
+  "sha256": "178ecd8f660301fbd939246ac76e1d7c3d95f8e6be2b817b5c3bc042fd0a3d2b"
 }

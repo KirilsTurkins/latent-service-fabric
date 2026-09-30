@@ -32,6 +32,7 @@ impl HostInterfaceSpec {
         match self.interface {
             "latent:http/streaming@0.3.0" => &["upload", "body", "chunk"],
             "latent:blob/blob@0.2.0" => &["chunk"],
+            "latent:network/streams@0.1.0" => &["connection", "chunk"],
             _ => &[],
         }
     }
@@ -244,7 +245,43 @@ pub const PHASE3_HOST_ABI_V4: HostAbiProfile = HostAbiProfile {
     interfaces: &PHASE3_V4_INTERFACES,
 };
 /// The single selected profile for current inspection, policy and execution.
-pub const PHASE3_HOST_ABI_CURRENT: HostAbiProfile = PHASE3_HOST_ABI_V4;
+pub const PHASE3_HOST_ABI_CURRENT: HostAbiProfile = PHASE3_HOST_ABI_V5;
+
+const PHASE3_V5_INTERFACES: [HostInterfaceSpec; 15] = [
+    PHASE3_V4_INTERFACES[0],
+    PHASE3_V4_INTERFACES[1],
+    PHASE3_V4_INTERFACES[2],
+    PHASE3_V4_INTERFACES[3],
+    PHASE3_V4_INTERFACES[4],
+    PHASE3_V4_INTERFACES[5],
+    PHASE3_V4_INTERFACES[6],
+    PHASE3_V4_INTERFACES[7],
+    PHASE3_V4_INTERFACES[8],
+    PHASE3_V4_INTERFACES[9],
+    PHASE3_V4_INTERFACES[10],
+    PHASE3_V4_INTERFACES[11],
+    PHASE3_V4_INTERFACES[12],
+    HostInterfaceSpec {
+        interface: "latent:runtime/activation@0.1.0",
+        package: "latent:runtime",
+        binding: HostInterfaceBinding::Provider,
+        wit: include_str!("../../../wit/platform/activation-runtime/package.wit"),
+        asynchronous: true,
+    },
+    HostInterfaceSpec {
+        interface: "latent:network/streams@0.1.0",
+        package: "latent:network",
+        binding: HostInterfaceBinding::Provider,
+        wit: include_str!("../../../wit/platform/network/package.wit"),
+        asynchronous: true,
+    },
+];
+/// Recognizes activation-local logical ownership/waits. Installation, measured
+/// language profile selection and exact capability grants remain independent.
+pub const PHASE3_HOST_ABI_V5: HostAbiProfile = HostAbiProfile {
+    id: "lsf-host-abi-phase3-v5",
+    interfaces: &PHASE3_V5_INTERFACES,
+};
 
 #[cfg(test)]
 mod tests {
@@ -253,7 +290,6 @@ mod tests {
 
     #[test]
     fn current_v4_preserves_every_frozen_v3_interface_and_adds_only_blob_v2() {
-        assert_eq!(PHASE3_HOST_ABI_CURRENT, PHASE3_HOST_ABI_V4);
         for old in PHASE3_HOST_ABI_V3.interfaces() {
             assert_eq!(PHASE3_HOST_ABI_V4.interface(old.interface), Some(old));
         }
@@ -267,6 +303,34 @@ mod tests {
         assert_eq!(blob.resource_types(), &["chunk"]);
         assert!(blob.asynchronous);
         assert!(PHASE3_HOST_ABI_V3.interface(blob.interface).is_none());
+    }
+
+    #[test]
+    fn current_v5_preserves_v4_and_recognizes_only_exact_opt_in_runtime_and_streams() {
+        assert_eq!(PHASE3_HOST_ABI_CURRENT, PHASE3_HOST_ABI_V5);
+        for old in PHASE3_HOST_ABI_V4.interfaces() {
+            assert_eq!(PHASE3_HOST_ABI_V5.interface(old.interface), Some(old));
+        }
+        assert_eq!(
+            PHASE3_HOST_ABI_V5.interfaces().len(),
+            PHASE3_HOST_ABI_V4.interfaces().len() + 2
+        );
+        for (name, resources) in [
+            ("latent:runtime/activation@0.1.0", &[][..]),
+            ("latent:network/streams@0.1.0", &["connection", "chunk"][..]),
+        ] {
+            let spec = PHASE3_HOST_ABI_V5.interface(name).unwrap();
+            assert_eq!(spec.binding, HostInterfaceBinding::Provider);
+            assert!(spec.asynchronous);
+            assert_eq!(spec.resource_types(), resources);
+            assert!(PHASE3_HOST_ABI_V4.interface(name).is_none());
+        }
+        assert!(PHASE3_HOST_ABI_V5
+            .interface("latent:runtime/activation@0.2.0")
+            .is_none());
+        assert!(PHASE3_HOST_ABI_V5
+            .interface("latent:network/streams@0.2.0")
+            .is_none());
     }
 
     #[test]

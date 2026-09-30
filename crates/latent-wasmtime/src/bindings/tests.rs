@@ -63,6 +63,33 @@ fn generated_builtin_linker_matches_every_exact_pinned_shape() {
         .is_err());
 }
 
+#[test]
+fn activation_runtime_linker_preserves_exact_shape_and_unknown_profile_denial() {
+    let engine = engine();
+    let spec = latent_core::PHASE3_HOST_ABI_V5
+        .interface(crate::host::runtime::CAPABILITY)
+        .unwrap();
+    let bytes = fixture::with_host(
+        fixture::Options::default(),
+        spec.interface,
+        &host_fixture::interface(spec.wit, spec.interface, None),
+    );
+    let component = Component::new(&engine, bytes).unwrap();
+    let mut linker = Linker::<HostState>::new(&engine);
+    assert!(linker.instantiate_pre(&component).is_err());
+    crate::host::runtime::install(&mut linker).unwrap();
+    linker.instantiate_pre(&component).unwrap();
+    let wrong_version = spec.interface.replace("0.1.0", "0.2.0");
+    let bytes = fixture::with_host(
+        fixture::Options::default(),
+        &wrong_version,
+        &host_fixture::interface(spec.wit, spec.interface, None),
+    );
+    assert!(linker
+        .instantiate_pre(&Component::new(&engine, bytes).unwrap())
+        .is_err());
+}
+
 // Only a test provider: no endpoint, credential, pool or production registration.
 struct TestHttp;
 impl http::Host for TestHttp {}
@@ -107,7 +134,7 @@ fn generated_async_provider_binding_accepts_only_its_exact_interface() {
 fn frozen_schema_matrix_matches_host_shapes_identity_and_generated_sdk_baseline() {
     use sha2::{Digest, Sha256};
     let matrix: serde_json::Value =
-        serde_json::from_str(include_str!("../../../../wit/host-abi-phase3-v4.json")).unwrap();
+        serde_json::from_str(include_str!("../../../../wit/host-abi-phase3-v5.json")).unwrap();
     let profile = latent_core::PHASE3_HOST_ABI_CURRENT;
     assert_eq!(matrix["id"], profile.id);
     assert_eq!(

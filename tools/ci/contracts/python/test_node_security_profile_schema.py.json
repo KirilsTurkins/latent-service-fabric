@@ -5,29 +5,17 @@
     "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement"
   ],
   "guards": {
-    "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:574ef8ec264d0e219e7cbeb7e94ba059b7eb6e75a8bfc905fbbcf005c83972f7",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    },
     "SecurityProfileSchema.test_external_report_requires_every_observed_control": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
-      "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:574ef8ec264d0e219e7cbeb7e94ba059b7eb6e75a8bfc905fbbcf005c83972f7",
+        "module:setup-sha256:a343c9d4dd3e5b2a1d9c16e4012b837ada7ce80c9cd1267b4bf9a847d3c8a708",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
+      ],
+      "skipSites": []
     },
     "SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings": {
       "bases": [
@@ -35,15 +23,27 @@
       ],
       "classDecorators": [],
       "decorators": [],
-      "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:574ef8ec264d0e219e7cbeb7e94ba059b7eb6e75a8bfc905fbbcf005c83972f7",
+        "module:setup-sha256:a343c9d4dd3e5b2a1d9c16e4012b837ada7ce80c9cd1267b4bf9a847d3c8a708",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
+      ],
+      "skipSites": []
+    },
+    "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a343c9d4dd3e5b2a1d9c16e4012b837ada7ce80c9cd1267b4bf9a847d3c8a708",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_node_security_profile_schema.py",
-  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "reviewReason": "Reviewed V5 opt-in runtime and outbound stream source identity, generator parity, unchanged skip controls, and active native/node profile selection; preserve every existing case.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

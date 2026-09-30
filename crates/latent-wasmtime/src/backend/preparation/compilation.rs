@@ -201,6 +201,7 @@ impl super::super::PreparationContext {
             artifact,
             &self.config,
             surface::Providers {
+                activation_runtime: self.config.activation_runtime.is_some(),
                 local_services: self.local_services().is_some(),
                 http: self.http().is_some(),
                 streaming_http: self.streaming_http().is_some(),

@@ -11,8 +11,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:59a390a5427cbe400fa3ca4c719ef49ecb6f0a91dedd0677bbd81986a71bda16",
-        "class:setup-sha256:a36c55b12adb2d7a72f7d8de4ac81f51eda4c3a0bf1fba0685a00b5dfb57006f"
+        "module:setup-sha256:405d9b3b48a1231606208520aaba6522679c7e899a4710fee598bbe1b283ee2e",
+        "class:setup-sha256:8abbc3b09d779ad967d36b59b23e5c0e61a28a12daf187a42084aa8e8ba7c073"
       ],
       "skipSites": []
     },
@@ -23,14 +23,14 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:59a390a5427cbe400fa3ca4c719ef49ecb6f0a91dedd0677bbd81986a71bda16",
-        "class:setup-sha256:a36c55b12adb2d7a72f7d8de4ac81f51eda4c3a0bf1fba0685a00b5dfb57006f"
+        "module:setup-sha256:405d9b3b48a1231606208520aaba6522679c7e899a4710fee598bbe1b283ee2e",
+        "class:setup-sha256:8abbc3b09d779ad967d36b59b23e5c0e61a28a12daf187a42084aa8e8ba7c073"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_host_abi_profile.py",
-  "reviewReason": "Reviewed Wasmtime 48.0.3 fixture identities and unchanged skip/execution controls; preserve every existing case. Add exact frozen ABI generator rejection and bounded compiler-cache regression coverage where applicable.",
+  "reviewReason": "Reviewed V5 opt-in runtime and outbound stream source identity, generator parity, unchanged skip controls, and active native/node profile selection; preserve every existing case.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

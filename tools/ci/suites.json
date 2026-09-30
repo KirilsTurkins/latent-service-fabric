@@ -1571,6 +1571,11 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "activation_runtime::tests::close_allows_bounded_live_continuations_and_rejects_independent_work",
+        "activation_runtime::tests::foreign_store_token_and_opaque_sleeping_work_cannot_establish_quiescence",
+        "activation_runtime::tests::lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits",
+        "activation_runtime::tests::recurring_timer_coalesces_storms_and_cancelled_waits_keep_physical_ownership",
+        "activation_runtime::tests::waking_a_parked_thread_leaves_runnable_sibling_and_fences_reused_slots",
         "budget::descendants::tests::abandoned_accepted_child_consumes_its_grant_without_a_completion_claim",
         "budget::descendants::tests::admission_cannot_restart_the_parents_absolute_child_deadline",
         "budget::descendants::tests::child_reservations_retire_only_after_execution_and_retained_provider_owners",
@@ -1587,6 +1592,8 @@
         "budget::descendants::tests::retained_ancestry_stays_charged_through_late_grandchild_completion",
         "budget::descendants::tests::simultaneous_delegation_never_exceeds_the_original_ledger",
         "budget::descendants::tests::terminal_notification_wakes_waiting_descendant_without_releasing_ownership",
+        "budget::host_memory::tests::actual_native_owner_keeps_capacity_after_terminal_report_and_settles_once",
+        "budget::host_memory::tests::native_and_linear_memory_compete_before_allocation_and_failed_preparations_roll_back",
         "budget::incoming::tests::diagnostic_saturation_and_irrelevant_huge_ceiling_do_not_rewrite_timing",
         "budget::incoming::tests::each_relative_ceiling_is_anchored_to_this_admission_and_intersected_exactly",
         "budget::incoming::tests::exact_deadline_does_not_bypass_budget_intersection_or_unsupported_dimensions",
@@ -1633,6 +1640,7 @@
         "digest::tests::validated_identities_support_deterministic_keys_and_deduplication",
         "host_profile::tests::canonical_identity_changes_with_version_and_bounds_its_data",
         "host_profile::tests::current_v4_preserves_every_frozen_v3_interface_and_adds_only_blob_v2",
+        "host_profile::tests::current_v5_preserves_v4_and_recognizes_only_exact_opt_in_runtime_and_streams",
         "host_profile::tests::lookup_does_not_accept_wrong_or_missing_versions",
         "host_profile::tests::phase3_v1_is_exact_versioned_and_unique",
         "host_profile::tests::v2_preserves_every_builtin_and_selects_only_explicit_async_interfaces",
@@ -1666,7 +1674,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 89,
+      "minimumCases": 97,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -3509,6 +3517,8 @@
       "expectedCases": [
         "capability::control::tests::cancelled_waiter_keeps_queued_or_running_work_charged_until_actual_completion",
         "capability::control::tests::shutdown_timeout_reports_owned_work_and_rejects_new_submissions",
+        "capability::resources::stream_tests::endpoint_scope_is_exact_and_cannot_be_derived_from_http_authority",
+        "capability::resources::stream_tests::malformed_ambiguous_and_wildcard_endpoints_fail_closed",
         "capability::store::tests::authority::held_policy_snapshots_reject_later_calls_after_revocation_and_owner_retirement",
         "capability::store::tests::authority::principal_policy_and_binding_revisions_narrow_and_invalidate_independently",
         "capability::store::tests::authority::publication::final_admission_checks_real_catalog_owner_publication_and_every_narrowing",
@@ -3631,7 +3641,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 102,
+      "minimumCases": 104,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -5495,6 +5505,7 @@
         "backend::readiness::worker_wait::tests::worker_window_retries_only_exact_busy_and_preserves_other_error_allocations",
         "backend::result_lifetime_tests::native_errors_release_while_the_actual_cleanup_helper_still_owns_runtime_and_permit",
         "backend::result_lifetime_tests::successful_classification_and_unwind_keep_the_same_final_drop_order",
+        "bindings::compatibility_tests::activation_runtime_linker_preserves_exact_shape_and_unknown_profile_denial",
         "bindings::compatibility_tests::blob_preparation_requires_exact_owned_chunk_and_async_shapes",
         "bindings::compatibility_tests::frozen_schema_matrix_matches_host_shapes_identity_and_generated_sdk_baseline",
         "bindings::compatibility_tests::generated_async_provider_binding_accepts_only_its_exact_interface",
@@ -5719,7 +5730,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 336,
+      "minimumCases": 337,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
