@@ -215,6 +215,19 @@
       "testThreads": 1,
       "timeoutSeconds": 300
     },
+    "http-response-policy": {
+      "exact": true,
+      "filter": "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity",
+      "ignored": true,
+      "names": [
+        "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latentd.lib.latentd",
+      "testThreads": 1,
+      "timeoutSeconds": 180
+    },
     "metadata-working-set": {
       "exact": true,
       "filter": "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set",

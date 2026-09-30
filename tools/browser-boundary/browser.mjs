@@ -19,7 +19,7 @@ try {
     if (request.resourceType() === 'script' && initialScripts.length < 32) initialScripts.push(request);
   });
   page.on('pageerror', error => { if (errors.length < 8) errors.push(error.name); });
-  const loaded = await page.goto(origin + home + '?synthetic-token=' + syntheticToken,
+  const loaded = await page.goto(origin + home,
     {waitUntil: 'networkidle', timeout: 15000});
   assert.equal(loaded.status(), 200);
   const headers = loaded.headers();
@@ -33,9 +33,14 @@ try {
   assert.equal(await page.locator('meta[name="referrer"]').getAttribute('content'), 'no-referrer');
   assert.ok(initialScripts.length > 0 && initialScripts.length < 32);
   for (const request of initialScripts) assert.equal((await request.allHeaders()).referer, undefined);
-  assert.equal(await page.evaluate(() => globalThis.boundaryTokenRemoved), true);
   assert.equal(page.url(), origin + home);
-  const tokenFetchUrl = origin + home + '?synthetic-token=' + syntheticToken;
+  // Immutable ingress asset locators reject queries. A real history-created
+  // document query exercises Referer semantics without changing that boundary.
+  await page.evaluate(token => {
+    history.replaceState(null, '', location.pathname + '?synthetic-token=' + token);
+  }, syntheticToken);
+  assert.equal(page.url(), origin + home + '?synthetic-token=' + syntheticToken);
+  const tokenFetchUrl = origin + home;
   const [tokenRequest, tokenFetch] = await Promise.all([
     page.waitForRequest(request => request.url() === tokenFetchUrl, {timeout: 5000}),
     page.evaluate(async target => {
@@ -73,6 +78,8 @@ try {
     assert.equal(applicationResponse.headers()['x-app-principal'], 'browser-fixture');
     assert.equal(applicationResponse.headers()['cache-control'], 'no-store');
     assert.equal(applicationResponse.headers()['access-control-allow-origin'], undefined);
+    assert.equal(await page.evaluate(() => globalThis.boundaryTokenRemoved), true);
+    assert.equal(page.url(), origin + home);
     for (const forbidden of ['/latent.invocation.v1.InvocationService/Invoke',
       '/latent.control.v1.PolicyService/ApplyPolicy', '/admin', '/api/greeting/extra']) {
       assert.equal(await page.evaluate(async target => (await fetch(target, {
@@ -95,17 +102,19 @@ try {
     });
     assert.deepEqual(anonymous, {status: 200, principal: 'browser-fixture', body: {greeting: 'Hello Browser'}});
     const [noReferrerPost, rejectedOrigin] = await Promise.all([
-      page.waitForRequest(request => request.url() === origin + '/api/greeting' &&
+      page.waitForRequest(request => request.url() === origin + '/api/greeting?synthetic-token=' + syntheticToken &&
         request.method() === 'POST', {timeout: 5000}),
-      page.evaluate(async () => {
-        const response = await fetch('/api/greeting', {method: 'POST', mode: 'same-origin',
+      page.evaluate(async token => {
+        const response = await fetch('/api/greeting?synthetic-token=' + token, {method: 'POST', mode: 'same-origin',
           credentials: 'omit', referrerPolicy: 'no-referrer', headers: {'content-type': 'application/json'},
           body: '{"name":"Browser"}', cache: 'no-store', redirect: 'error'});
-        return {status: response.status, body: await response.text()};
-      }),
+        return {status: response.status, body: await response.text(),
+          cache: response.headers.get('cache-control')};
+      }, syntheticToken),
     ]);
     assert.equal((await noReferrerPost.allHeaders()).origin, 'null');
-    assert.deepEqual(rejectedOrigin, {status: 403, body: ''});
+    assert.equal((await noReferrerPost.allHeaders()).referer, undefined);
+    assert.deepEqual(rejectedOrigin, {status: 403, body: '', cache: 'no-store'});
     for (const policy of ['referrer', 'casing', 'duplicate-location', 'duplicate-encoding',
       'header-case', 'crlf', 'header-bound']) {
       const rejected = await page.evaluate(async policy => {
@@ -190,7 +199,7 @@ try {
     cookiesDoNotAuthenticate: mode === 'public-application',
     fixedSameOriginReferrerPolicy: true, buildTimeNoReferrerBeforeResources: true,
     syntheticTokenNavigationAndFetchDoNotBecomeReferrers: true,
-    consumedTokenRemovedBeforeApplicationFetch: true,
+    consumedTokenRemovedBeforeApplicationFetch: mode === 'public-application',
     unsafeSameOriginNoReferrerOriginRejected: mode === 'public-application',
     applicationCacheInputQualified: mode === 'public-application',
     reservedHeadersRejectedAndRecoveryQualified: mode === 'public-application',

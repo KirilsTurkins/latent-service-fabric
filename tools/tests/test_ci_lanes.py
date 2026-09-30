@@ -311,6 +311,46 @@ class ExecutionPolicyTests(unittest.TestCase):
 
 
 class IntegrationContractTests(unittest.TestCase):
+    def test_renderer_worker_and_coordinator_require_the_exact_http_policy_proof(self):
+        from tools.ci_lane_worker import RENDERER_STEPS, _renderer_cases
+        from tools.ci_rust_artifacts import registered_suites
+        data = ci_suite_inventory.load()
+        case = data["selections"]["http-response-policy"]["names"][0]
+        renderer, = (item for item in stages(True) if item.name == "renderer-integrations")
+        self.assertEqual(list(renderer.cases), RENDERER_STEPS)
+        self.assertEqual(tuple(_renderer_cases(data)), _expected_cases(data, "renderer"))
+        self.assertIn("http-response-policy", renderer.cases)
+        self.assertEqual(_expected_cases(data, "renderer").count(case), 1)
+        selection = registered_suites()["http-response-policy"]
+        self.assertTrue(selection.exact)
+        self.assertEqual(selection.names, frozenset({case}))
+        self.assertLessEqual(selection.timeout, 180)
+        del data["selections"]["http-response-policy"]
+        with self.assertRaisesRegex(LaneError, "http-response-policy-selection-contract"):
+            _expected_cases(data, "renderer")
+        with self.assertRaisesRegex(ValueError, "http-response-policy-selection-contract"):
+            _renderer_cases(data)
+
+    def test_renderer_receipt_cannot_omit_the_executed_http_operator_proof(self):
+        data = ci_suite_inventory.load()
+        sched = Scheduler(stages(True), workers=2, capacities={"provider": 1, "renderer": 1})
+        lease, = (item for item in sched.claim_ready() if item.stage.name == "renderer-integrations")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "renderer.json"
+            receipt = {
+                "schemaVersion": CHILD_SCHEMA, "lane": "renderer", "outcome": "passed",
+                "steps": list(lease.stage.cases),
+                "selectedCases": list(_expected_cases(data, "renderer")),
+                "timings": [{"stage": "renderer-http-response-policy", "elapsedMs": 1.0}],
+            }
+            path.write_text(json.dumps(receipt), encoding="utf-8")
+            self.assertEqual(_read_receipt(path, lease, data)["outcome"], "passed")
+            case = data["selections"]["http-response-policy"]["names"][0]
+            receipt["selectedCases"].remove(case)
+            path.write_text(json.dumps(receipt), encoding="utf-8")
+            with self.assertRaisesRegex(LaneError, "lane-selected-case-parity"):
+                _read_receipt(path, lease, data)
+
     def test_current_inventory_supplies_nonempty_exact_lane_cases(self):
         data = ci_suite_inventory.load()
         provider = _expected_cases(data, "provider")

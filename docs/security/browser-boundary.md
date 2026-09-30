@@ -216,8 +216,13 @@ same-origin unsafe-method Origin behavior in the application; the maintained
 POST helper uses an explicit `same-origin` policy after URL cleanup.
 
 The maintained controlled Angular/browser example includes the meta policy
-before its external bootstrap, exercises synthetic token-bearing document/fetch
-URLs, and verifies no token reaches unintended referrers or reused output.
+before its external bootstrap and verifies no token reaches unintended referrers
+or reused output. It loads a canonical signed asset URL, then uses browser history
+to give the document a synthetic query token before fetch/navigation probes.
+Immutable asset URLs still reject queries; this is not evidence that direct
+query-bearing asset navigation is supported. The public application helper
+removes the document token before its POST, while a separate token-bearing POST
+using `no-referrer` exercises the existing `Origin: null` rejection.
 Its actual host responses still report `same-origin`, strict CSP and `no-store`
 on application traffic. A meta element inserted after initial resource fetching
 cannot retroactively protect those requests. LSF never inserts it at runtime or
@@ -378,6 +383,10 @@ coverage. Ordinary test output marks missing component/browser prerequisites as
 ignored, not successful execution. CI runs the browser probe from its current
 Cargo artifact inventory and retains the compact observations; a missing test,
 browser, fixture or receipt is a failure, not substituted security evidence.
+The required renderer lane also runs the exact `http-response-policy` selection
+with that prepared public component. It checks the real fixed 502 response,
+successful subsequent requests and the admitted activation's bounded nonterminal
+output-validation diagnostic through tenant-scoped operator journal queries.
 
 See the [bounded local validation observations](../testing/browser-boundary.md)
 for exact tested code, dependency heads, counts and redacted artifact identities.

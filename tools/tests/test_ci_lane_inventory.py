@@ -126,6 +126,43 @@ class InventoryTests(unittest.TestCase):
         data["selections"]["s3-blobs"]["runner"] = "unknown"
         self.assertTrue(inventory_errors(data, baseline()))
 
+    def test_http_response_policy_cannot_be_dropped_redirected_or_unbounded(self):
+        original = ci_suite_inventory.load()
+        expected = "inventory:http-response-policy-selection-drift"
+        edits = {
+            "runner": "provider-owner", "suite": "latent-ingress.lib.latent-ingress",
+            "exact": False, "ignored": False, "filter": "actual_http_component",
+            "names": [], "resourceClass": "host-bounded", "testThreads": 2,
+            "timeoutSeconds": 181,
+        }
+        for field, value in edits.items():
+            with self.subTest(field=field):
+                data = copy.deepcopy(original)
+                data["selections"]["http-response-policy"][field] = value
+                self.assertIn(expected, inventory_errors(data, baseline()))
+        for field in ("testThreads", "timeoutSeconds"):
+            with self.subTest(boolean=field):
+                data = copy.deepcopy(original)
+                data["selections"]["http-response-policy"][field] = True
+                self.assertIn(expected, inventory_errors(data, baseline()))
+        data = copy.deepcopy(original)
+        del data["selections"]["http-response-policy"]
+        self.assertIn(expected, inventory_errors(data, baseline()))
+
+    def test_http_response_policy_requires_the_discovered_ignored_native_owner(self):
+        original = ci_suite_inventory.load()
+        case = original["selections"]["http-response-policy"]["names"][0]
+        for field, value in (("recipe", "core-host"), ("kind", "bin"),
+                             ("source", "src/main.rs"), ("expectedIgnored", []),
+                             ("expectedCases", [])):
+            with self.subTest(field=field):
+                data = copy.deepcopy(original)
+                row = next(row for row in data["suites"] if row["id"] == "latentd.lib.latentd")
+                self.assertIn(case, row["expectedIgnored"])
+                row[field] = value
+                self.assertIn("inventory:http-response-policy-selection-drift",
+                              inventory_errors(data, baseline()))
+
     def test_unknown_schema_is_rejected(self):
         spec = baseline()
         spec["schema"] = "future"

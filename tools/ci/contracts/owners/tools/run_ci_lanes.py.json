@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_ci_lanes.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Issue #713: require response-policy selection and receipt case parity in the existing bounded renderer lane.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "895017b292b9935a603f399e68fd16be20d491d7946c8345814c72636562fbdf"
+  "sha256": "68edf0f551be4471fc0edf0f9fb929ee5d9df6fe11a005dcc91f72eb78b7a6b9"
 }

@@ -24,6 +24,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import ci_suite_inventory as registry
+from tools.ci_lane_inventory import response_policy_cases
 from tools.ci_lanes import Completion, LaneError, Phase, Scheduler, Stage, State
 from tools.owned_test_process import ProcessFailure, run_owned_async
 
@@ -43,6 +44,7 @@ PROVIDER_STEPS = (
 RENDERER_STEPS = (
     "angular-ssr-hydration",
     "browser-boundary",
+    "http-response-policy",
     "angular-renderer",
     "renderer-failure-control",
     "angular-build-contracts",
@@ -78,6 +80,10 @@ def _expected_cases(data: dict, lane: str) -> tuple[str, ...]:
     require(isinstance(browser, dict) and browser.get("runner") == "ci_rust_artifacts",
             "browser-selection-contract")
     values = list(browser["names"])
+    try:
+        values.extend(response_policy_cases(data))
+    except ValueError as error:
+        raise LaneError("http-response-policy-selection-contract") from error
     process = data.get("processContracts", {}).get("angular-renderer")
     require(isinstance(process, dict) and process.get("suiteIds"), "renderer-process-contract")
     for key in process["suiteIds"]:

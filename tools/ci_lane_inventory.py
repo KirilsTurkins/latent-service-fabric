@@ -12,6 +12,37 @@ from typing import Any
 
 
 SCHEMA = "lsf.ci-lane-baseline.v2"
+HTTP_RESPONSE_POLICY_CASE = (
+    "standalone::http::tests::browser_component::"
+    "actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity"
+)
+
+
+def response_policy_cases(data: dict[str, Any]) -> tuple[str, ...]:
+    """Require the prepared, exact HTTP/operator proof in the renderer lane."""
+    selections = data.get("selections")
+    selected = selections.get("http-response-policy") if isinstance(selections, dict) else None
+    rows = data.get("suites", [])
+    owner = next((row for row in rows if isinstance(row, dict)
+                  and row.get("id") == "latentd.lib.latentd"), None)
+    if (not isinstance(selected, dict) or not isinstance(owner, dict)
+            or selected.get("suite") != "latentd.lib.latentd"
+            or selected.get("runner") != "ci_rust_artifacts"
+            or selected.get("exact") is not True or selected.get("ignored") is not True
+            or selected.get("filter") != HTTP_RESPONSE_POLICY_CASE
+            or selected.get("names") != [HTTP_RESPONSE_POLICY_CASE]
+            or selected.get("resourceClass") != "runtime-bounded"
+            or type(selected.get("testThreads")) is not int or selected["testThreads"] != 1
+            or type(selected.get("timeoutSeconds")) is not int
+            or not 0 < selected["timeoutSeconds"] <= 180
+            or owner.get("recipe") != "workspace-all-features"
+            or owner.get("kind") != "lib" or owner.get("mode") != "libtest"
+            or owner.get("manifest") != "apps/latentd/Cargo.toml"
+            or owner.get("target") != "latentd" or owner.get("source") != "src/lib_root.rs"
+            or HTTP_RESPONSE_POLICY_CASE not in owner.get("expectedIgnored", [])
+            or HTTP_RESPONSE_POLICY_CASE not in owner.get("expectedCases", [])):
+        raise ValueError("http-response-policy-selection-contract")
+    return (HTTP_RESPONSE_POLICY_CASE,)
 
 
 def _steps(job: object) -> list[dict[str, Any]]:
@@ -127,6 +158,11 @@ def inventory_errors(data: dict[str, Any], baseline: dict[str, Any]) -> tuple[st
     if (not isinstance(browser, dict) or browser.get("runner") != "ci_rust_artifacts"
             or not browser.get("names")):
         errors.append("inventory:browser-selection-drift")
+
+    try:
+        response_policy_cases(data)
+    except ValueError:
+        errors.append("inventory:http-response-policy-selection-drift")
 
     contracts = data.get("processContracts", {})
     contract = contracts.get(baseline["inventory"]["renderer_process_contract"]) if isinstance(contracts, dict) else None

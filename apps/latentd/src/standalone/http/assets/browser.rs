@@ -213,11 +213,11 @@ async fn run_browser(component: Option<Vec<u8>>) {
         "fixedSameOriginReferrerPolicy",
         "buildTimeNoReferrerBeforeResources",
         "syntheticTokenNavigationAndFetchDoNotBecomeReferrers",
-        "consumedTokenRemovedBeforeApplicationFetch",
     ] {
         assert_eq!(receipt[field], true);
     }
     for field in [
+        "consumedTokenRemovedBeforeApplicationFetch",
         "unsafeSameOriginNoReferrerOriginRejected",
         "applicationCacheInputQualified",
         "reservedHeadersRejectedAndRecoveryQualified",
