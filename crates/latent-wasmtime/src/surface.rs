@@ -29,6 +29,7 @@ pub(crate) struct Function {
 pub(crate) struct Surface {
     functions: Vec<((String, String), Function)>,
     pub imports: BTreeSet<String>,
+    pub type_imports: BTreeSet<String>,
     pub retained_bytes: usize,
     pub value_codec_limits: crate::values::ValueCodecLimits,
     pub hostcall_fuel: usize,
@@ -151,7 +152,7 @@ pub(crate) fn validate_with_providers(
     let mut remaining = config.value_codec_limits.max_type_nodes;
     let mut retained_bytes = 0;
     retain(1024, &mut retained_bytes, config)?;
-    let imports = validate_imports(
+    let (imports, type_imports) = validate_imports(
         &component_type,
         engine,
         artifact,
@@ -246,6 +247,7 @@ pub(crate) fn validate_with_providers(
         // retain the same sorted keys for borrowed allocation-free invocation.
         functions: functions.into_iter().collect(),
         imports,
+        type_imports,
         retained_bytes,
         value_codec_limits: config.value_codec_limits,
         hostcall_fuel: config.hostcall_fuel,
@@ -283,13 +285,22 @@ fn validate_imports(
     remaining: &mut usize,
     retained_bytes: &mut usize,
     providers: Providers,
-) -> Result<BTreeSet<String>, PlatformError> {
+) -> Result<(BTreeSet<String>, BTreeSet<String>), PlatformError> {
     let mut imports = BTreeSet::new();
+    let mut type_imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
-        let specification = latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(name)
-            .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
+        let ComponentItem::ComponentInstance(interface) = item.ty else {
+            return Err(incompatible(
+                "host capabilities and structural types must be imported interfaces",
+            ));
+        };
+        let Some(specification) = latent_core::PHASE3_HOST_ABI_CURRENT.interface(name) else {
+            validate_type_interface(&interface, engine, config, remaining)?;
+            retain(256 + name.len(), retained_bytes, config)?;
+            type_imports.insert(name.to_owned());
+            continue;
+        };
         if specification.binding == latent_core::HostInterfaceBinding::Provider
             && !providers.supports(name)
         {
@@ -303,11 +314,6 @@ fn validate_imports(
                 "required host capability provider is unavailable",
             )));
         }
-        let ComponentItem::ComponentInstance(interface) = item.ty else {
-            return Err(incompatible(
-                "host capabilities must be imported interfaces",
-            ));
-        };
         let mut resources = Vec::new();
         for (resource_name, item) in interface.exports(engine) {
             if let ComponentItem::Resource(resource) = item.ty {
@@ -370,7 +376,27 @@ fn validate_imports(
         return Err(incompatible("manifest imports disagree with the component"));
     }
 
-    Ok(imports)
+    Ok((imports, type_imports))
+}
+
+fn validate_type_interface(
+    interface: &wasmtime::component::types::ComponentInstance,
+    engine: &Engine,
+    config: &WasmtimeConfig,
+    remaining: &mut usize,
+) -> Result<(), PlatformError> {
+    for (name, item) in interface.exports(engine) {
+        take_name(name, config, remaining)?;
+        let ComponentItem::Type(ty) = item.ty else {
+            return Err(incompatible(
+                "unknown imported interfaces may contain only structural value types",
+            ));
+        };
+        // The same finite signature proof and shared type-work allowance apply.
+        // Resource, own/borrow, future, stream and nested instances fail closed.
+        check_types(&[ty], config, remaining)?;
+    }
+    Ok(())
 }
 
 fn register_functions(
