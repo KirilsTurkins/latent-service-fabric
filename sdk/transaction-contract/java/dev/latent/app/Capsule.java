@@ -15,7 +15,7 @@ public final class Capsule implements Bindings.Exports {
                 try (var page = Bindings.LatentStateKeyValue.scanQuery(view, new byte[0], 1L, Option.none()).value()) {
                     var bounds = Bindings.LatentStateKeyValue.describePage(page).value();
                     var item = Bindings.LatentStateKeyValue.pageNext(page).value();
-                    return Unsigned64.bits(identity.version().length + bounds.entryCount()
+                    return new Unsigned64(identity.version().length + bounds.entryCount()
                         + (value.isSome() ? 1 : 0) + (item.isSome() ? 1 : 0));
                 }
             }
@@ -30,9 +30,9 @@ public final class Capsule implements Bindings.Exports {
                 var bounds = Bindings.LatentStateKeyValue.describePage(page).value();
                 var item = Bindings.LatentStateKeyValue.pageNext(page).value();
                 var intent = new Bindings.LatentIntentsStagingIntent("approved-mail", "send", value,
-                    Option.some(Unsigned64.bits(-1L)));
+                    Option.some(new Unsigned64(-1L)));
                 var staged = Bindings.LatentIntentsStaging.stage(transaction, intent).value();
-                return Unsigned64.bits(staged.sequence() + bounds.entryCount() + identity.commandId().length()
+                return new Unsigned64(staged.sequence() + bounds.entryCount() + identity.commandId().length()
                     + (existing.isSome() ? 1 : 0) + (item.isSome() ? 1 : 0));
             }
         }

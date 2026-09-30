@@ -43,6 +43,8 @@ class Bindings(unittest.TestCase):
         self.assertIn("stage(ExamplesSampleStateTransaction arg0)", output)
         self.assertIn("return new ExamplesSampleStateTransaction((int) input.integer(4));", output)
         self.assertNotIn("ExamplesSampleIntentsTransaction", output)
+        self.assertNotIn("writeT2(", output)
+        self.assertNotIn("readT2(", output)
         graph.types[2]["kind"] = {"type": 2}
         with self.assertRaisesRegex(ValueError, "recursive Java resource alias"):
             graph.resource_index(2)
