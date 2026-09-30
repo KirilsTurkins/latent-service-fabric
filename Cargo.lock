@@ -2071,7 +2071,7 @@ name = "latent-state"
 version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
- "latent-testkit",
+ "latent-test-process",
  "redb",
  "serde_json",
  "tempfile",
@@ -2091,6 +2091,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-test-process"
+version = "0.1.0-alpha.5"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "latent-testkit"
 version = "0.1.0-alpha.5"
 dependencies = [
@@ -2101,6 +2111,7 @@ dependencies = [
  "latent-node",
  "latent-routing",
  "latent-telemetry",
+ "latent-test-process",
  "serde",
  "serde_json",
  "tempfile",
