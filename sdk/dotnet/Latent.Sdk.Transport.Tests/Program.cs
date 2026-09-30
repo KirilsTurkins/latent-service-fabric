@@ -16,7 +16,7 @@ internal static partial class Program
             SharedVectors();
             foreach (Func<Task> scenario in new Func<Task>[]
             {
-                EightOperations, CancellationAndQueue, DeadlinesAndShutdown, NoReplay, LostMutation,
+                EightOperations, TargetInspection, CancellationAndQueue, DeadlinesAndShutdown, NoReplay, LostMutation,
                 MalformedAndBounds, AuditAndRawStatus, ConnectionOwnership, ZeroLengthReads, FrameFragments, StalledRawPeers
             })
             {

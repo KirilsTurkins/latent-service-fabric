@@ -33,6 +33,9 @@ final class ProfileLifetime {
         @Override public CompletableFuture<Management.ClientResponse<Management.InspectActivationTreeResponse>> inspectActivationTree(Management.InspectActivationTreeRequest request, Management.CallOptions options) {
             return ready(new Management.InspectActivationTreeResponse(1, List.of(), Optional.of(new Management.PageResponse(Optional.empty())), false, false, true));
         }
+        @Override public CompletableFuture<Management.ClientResponse<Management.InspectHttpTargetResponse>> inspectHttpTarget(Management.InspectHttpTargetRequest request, Management.CallOptions options) {
+            return CompletableFuture.failedFuture(new AssertionError("target inspection is not used by the lifetime fixture"));
+        }
         private int writes;
         private int waiters;
         private int cancels;

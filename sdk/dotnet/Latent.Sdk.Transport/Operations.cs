@@ -23,6 +23,9 @@ public sealed partial class BoundedClient : Profile.IClientProfile
     public ValueTask<Profile.ClientResponse<Profile.InspectActivationTreeResponse>> InspectActivationTreeAsync(Profile.InspectActivationTreeRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
         ExecuteAsync<Profile.InspectActivationTreeResponse, WireControl.InspectActivationTreeRequest, WireControl.InspectActivationTreeResponse>(request, options, cancellationToken,
             (invoker, wire) => new WireControl.NodeService.NodeServiceClient(invoker).InspectActivationTreeAsync(wire, cancellationToken: invoker.Token).ResponseAsync);
+    public ValueTask<Profile.ClientResponse<Profile.InspectHttpTargetResponse>> InspectHttpTargetAsync(Profile.InspectHttpTargetRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
+        ExecuteAsync<Profile.InspectHttpTargetResponse, WireControl.InspectHttpTargetRequest, WireControl.InspectHttpTargetResponse>(request, options, cancellationToken,
+            (invoker, wire) => new WireControl.NodeService.NodeServiceClient(invoker).InspectHttpTargetAsync(wire, cancellationToken: invoker.Token).ResponseAsync);
 
     public ValueTask<Profile.ClientResponse<Profile.GetPolicyResponse>> GetPolicyAsync(Profile.GetPolicyRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
         ExecuteAsync<Profile.GetPolicyResponse, WireControl.GetPolicyRequest, WireControl.GetPolicyResponse>(request, options, cancellationToken,

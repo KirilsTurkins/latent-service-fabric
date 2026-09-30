@@ -47,6 +47,7 @@ export class RpcClient implements profile.ClientProfile {
   cancel(request: profile.CancelRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.CancelResponse>> { return this.call("cancel", request, options); }
   getActivation(request: profile.GetActivationRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.ActivationStatus>> { return this.call("getActivation", request, options); }
   inspectActivationTree(request: profile.InspectActivationTreeRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.InspectActivationTreeResponse>> { return this.call("inspectActivationTree", request, options); }
+  inspectHttpTarget(request: profile.InspectHttpTargetRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.InspectHttpTargetResponse>> { return this.call("inspectHttpTarget", request, options); }
   getPolicy(request: profile.GetPolicyRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.GetPolicyResponse>> { return this.call("getPolicy", request, options); }
   listPolicies(request: profile.ListPoliciesRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.ListPoliciesResponse>> { return this.call("listPolicies", request, options); }
   listCapabilities(request: profile.ListCapabilitiesRequest, options?: profile.CallOptions): Promise<profile.ClientResponse<profile.ListCapabilitiesResponse>> { return this.call("listCapabilities", request, options); }
@@ -110,13 +111,19 @@ export class RpcClient implements profile.ClientProfile {
     let context: unknown;
     try {
       validateRequest(operation, request, this.#tenant);
-      encoded = encode(method(operation).input, request, operation === "inspectActivationTree" ? Math.min(8192, this.#limits.maximumRequestBytes) : this.#limits.maximumRequestBytes);
+      encoded = encode(method(operation).input, request, operation === "inspectActivationTree" || operation === "inspectHttpTarget" ? Math.min(8192, this.#limits.maximumRequestBytes) : this.#limits.maximumRequestBytes);
       const value = request as Record<string, unknown>;
       context = {
         ...recovery,
         ...(value.page === undefined ? {} : { page: { pageSize: (value.page as profile.PageRequest).pageSize } }),
         ...(value.policy === undefined ? {} : { policy: { id: (value.policy as profile.Policy).id } }),
       };
+      if (operation === "inspectHttpTarget") {
+        const publication = value.publication as profile.PublicationRef | undefined;
+        context = { service: value.service, contract: value.contract, function: value.function, route: value.route,
+          revisionId: value.revisionId, routingKey: value.routingKey, includePreparation: value.includePreparation,
+          ...(publication === undefined ? {} : { publication: { id: publication.id, tenant: publication.tenant } }) };
+      }
     } catch {
       retire();
       return Promise.reject(failure(profile.FailureCategory.InvalidRequest, recovery, false));
@@ -141,7 +148,7 @@ export class RpcClient implements profile.ClientProfile {
       });
       return exchange(stream, frame, {
         operation, request: context, tenant: this.#tenant, identity: recovery, deadline,
-        maximum: operation === "inspectActivationTree" ? Math.min(65536, this.#limits.maximumResponseBytes) : this.#limits.maximumResponseBytes, signal: options.signal,
+        maximum: operation === "inspectActivationTree" || operation === "inspectHttpTarget" ? Math.min(65536, this.#limits.maximumResponseBytes) : this.#limits.maximumResponseBytes, signal: options.signal,
         closed: () => this.#channel.closed, retired: retire,
       });
     } catch {

@@ -1021,6 +1021,266 @@ impl From<model::InspectActivationTreeResponse> for control::InspectActivationTr
     }
 }
 
+impl From<control::InspectHttpTargetRequest> for model::InspectHttpTargetRequest {
+    fn from(value: control::InspectHttpTargetRequest) -> Self {
+        Self {
+            service: value.service,
+            contract: value.contract,
+            function: value.function,
+            route: value.route,
+            revision_id: value.revision_id,
+            publication: value.publication.map(Into::into),
+            routing_key: value.routing_key,
+            include_preparation: value.include_preparation,
+            maximum_wait_millis: value.maximum_wait_millis,
+        }
+    }
+}
+
+impl From<model::InspectHttpTargetRequest> for control::InspectHttpTargetRequest {
+    fn from(value: model::InspectHttpTargetRequest) -> Self {
+        Self {
+            service: value.service,
+            contract: value.contract,
+            function: value.function,
+            route: value.route,
+            revision_id: value.revision_id,
+            publication: value.publication.map(Into::into),
+            routing_key: value.routing_key,
+            include_preparation: value.include_preparation,
+            maximum_wait_millis: value.maximum_wait_millis,
+        }
+    }
+}
+
+impl From<control::TargetDependency> for model::TargetDependency {
+    fn from(value: control::TargetDependency) -> Self {
+        Self {
+            capability: value.capability,
+            state: value.state,
+            policy_identity_digest: value.policy_identity_digest,
+            provider_configuration_epoch: value.provider_configuration_epoch,
+            binding: value.binding.map(Into::into),
+            policies: value.policies.into_iter().map(Into::into).collect(),
+            provider_profile: value.provider_profile,
+            configuration_digest: value.configuration_digest,
+        }
+    }
+}
+
+impl From<model::TargetDependency> for control::TargetDependency {
+    fn from(value: model::TargetDependency) -> Self {
+        Self {
+            capability: value.capability,
+            state: value.state,
+            policy_identity_digest: value.policy_identity_digest,
+            provider_configuration_epoch: value.provider_configuration_epoch,
+            binding: value.binding.map(Into::into),
+            policies: value.policies.into_iter().map(Into::into).collect(),
+            provider_profile: value.provider_profile,
+            configuration_digest: value.configuration_digest,
+        }
+    }
+}
+
+impl From<control::TargetDependencyRevision> for model::TargetDependencyRevision {
+    fn from(value: control::TargetDependencyRevision) -> Self {
+        Self {
+            id: value.id,
+            digest: value.digest,
+            revision: value.revision,
+        }
+    }
+}
+
+impl From<model::TargetDependencyRevision> for control::TargetDependencyRevision {
+    fn from(value: model::TargetDependencyRevision) -> Self {
+        Self {
+            id: value.id,
+            digest: value.digest,
+            revision: value.revision,
+        }
+    }
+}
+
+impl From<control::PreparedTargetExport> for model::PreparedTargetExport {
+    fn from(value: control::PreparedTargetExport) -> Self {
+        Self {
+            contract: value.contract,
+            function: value.function,
+        }
+    }
+}
+
+impl From<model::PreparedTargetExport> for control::PreparedTargetExport {
+    fn from(value: model::PreparedTargetExport) -> Self {
+        Self {
+            contract: value.contract,
+            function: value.function,
+        }
+    }
+}
+
+impl From<control::TargetPreparation> for model::TargetPreparation {
+    fn from(value: control::TargetPreparation) -> Self {
+        Self {
+            state: model::TargetPreparationState(value.state),
+            diagnostic: value.diagnostic.map(Into::into),
+            profile: value.profile.map(model::DiagnosticProfile),
+            engine_version: value.engine_version,
+            engine_configuration_digest: value.engine_configuration_digest,
+            target_triple: value.target_triple,
+            cpu_feature_set: value.cpu_feature_set,
+            sealed_metadata_fingerprint: value.sealed_metadata_fingerprint,
+            import_count: value.import_count,
+            function_count: value.function_count,
+            hostcall_fuel: value.hostcall_fuel,
+            maximum_lifted_bytes: value.maximum_lifted_bytes,
+            maximum_type_nodes: value.maximum_type_nodes,
+            declared_budget: value.declared_budget.map(Into::into),
+            imports: value.imports,
+            exports: value.exports.into_iter().map(Into::into).collect(),
+            type_imports: value.type_imports,
+        }
+    }
+}
+
+impl From<model::TargetPreparation> for control::TargetPreparation {
+    fn from(value: model::TargetPreparation) -> Self {
+        Self {
+            state: value.state.0,
+            diagnostic: value.diagnostic.map(Into::into),
+            profile: value.profile.map(|value| value.0),
+            engine_version: value.engine_version,
+            engine_configuration_digest: value.engine_configuration_digest,
+            target_triple: value.target_triple,
+            cpu_feature_set: value.cpu_feature_set,
+            sealed_metadata_fingerprint: value.sealed_metadata_fingerprint,
+            import_count: value.import_count,
+            function_count: value.function_count,
+            hostcall_fuel: value.hostcall_fuel,
+            maximum_lifted_bytes: value.maximum_lifted_bytes,
+            maximum_type_nodes: value.maximum_type_nodes,
+            declared_budget: value.declared_budget.map(Into::into),
+            imports: value.imports,
+            exports: value.exports.into_iter().map(Into::into).collect(),
+            type_imports: value.type_imports,
+        }
+    }
+}
+
+impl From<control::TargetCandidate> for model::TargetCandidate {
+    fn from(value: control::TargetCandidate) -> Self {
+        Self {
+            deployment_id: value.deployment_id,
+            deployment_generation: value.deployment_generation,
+            revision_id: value.revision_id,
+            component_digest: value.component_digest,
+            publication: value.publication.map(Into::into),
+            requested_publication: value.requested_publication.map(Into::into),
+            package_digest: value.package_digest,
+            publication_generation: value.publication_generation,
+            routing_weight: value.routing_weight,
+            export_compatible: value.export_compatible,
+            http_compatible: value.http_compatible,
+            eligible: value.eligible,
+            reasons: value.reasons.into_iter().map(model::TargetReason).collect(),
+            dependencies: value.dependencies.into_iter().map(Into::into).collect(),
+            preparation: value.preparation.map(Into::into),
+            publication_kind: value.publication_kind,
+            http_bindings: value.http_bindings.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<model::TargetCandidate> for control::TargetCandidate {
+    fn from(value: model::TargetCandidate) -> Self {
+        Self {
+            deployment_id: value.deployment_id,
+            deployment_generation: value.deployment_generation,
+            revision_id: value.revision_id,
+            component_digest: value.component_digest,
+            publication: value.publication.map(Into::into),
+            requested_publication: value.requested_publication.map(Into::into),
+            package_digest: value.package_digest,
+            publication_generation: value.publication_generation,
+            routing_weight: value.routing_weight,
+            export_compatible: value.export_compatible,
+            http_compatible: value.http_compatible,
+            eligible: value.eligible,
+            reasons: value.reasons.into_iter().map(|value| value.0).collect(),
+            dependencies: value.dependencies.into_iter().map(Into::into).collect(),
+            preparation: value.preparation.map(Into::into),
+            publication_kind: value.publication_kind,
+            http_bindings: value.http_bindings.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<control::InspectedHttpBinding> for model::InspectedHttpBinding {
+    fn from(value: control::InspectedHttpBinding) -> Self {
+        Self {
+            id: value.id,
+            generation: value.generation,
+            selected_deployment_generation: value.selected_deployment_generation,
+            state: value.state,
+        }
+    }
+}
+
+impl From<model::InspectedHttpBinding> for control::InspectedHttpBinding {
+    fn from(value: model::InspectedHttpBinding) -> Self {
+        Self {
+            id: value.id,
+            generation: value.generation,
+            selected_deployment_generation: value.selected_deployment_generation,
+            state: value.state,
+        }
+    }
+}
+
+impl From<control::InspectHttpTargetResponse> for model::InspectHttpTargetResponse {
+    fn from(value: control::InspectHttpTargetResponse) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            tenant: value.tenant,
+            service: value.service,
+            contract: value.contract,
+            function: value.function,
+            route: value.route,
+            state: model::TargetObservationState(value.state),
+            catalog_transaction: value.catalog_transaction,
+            route_generation: value.route_generation,
+            binding_generation: value.binding_generation,
+            policy_store_generation: value.policy_store_generation,
+            candidates: value.candidates.into_iter().map(Into::into).collect(),
+            selected_revision_id: value.selected_revision_id,
+            live_grants_checked: value.live_grants_checked,
+        }
+    }
+}
+
+impl From<model::InspectHttpTargetResponse> for control::InspectHttpTargetResponse {
+    fn from(value: model::InspectHttpTargetResponse) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            tenant: value.tenant,
+            service: value.service,
+            contract: value.contract,
+            function: value.function,
+            route: value.route,
+            state: value.state.0,
+            catalog_transaction: value.catalog_transaction,
+            route_generation: value.route_generation,
+            binding_generation: value.binding_generation,
+            policy_store_generation: value.policy_store_generation,
+            candidates: value.candidates.into_iter().map(Into::into).collect(),
+            selected_revision_id: value.selected_revision_id,
+            live_grants_checked: value.live_grants_checked,
+        }
+    }
+}
+
 impl From<invocation::ResourceBudget> for model::ResourceBudget {
     fn from(value: invocation::ResourceBudget) -> Self {
         Self {

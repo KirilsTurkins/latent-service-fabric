@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/go/generate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Extend pinned NodeService RPC generation for bounded activation inspection; preserve all authoritative sources, plugin pins, command checks and historical obligations.",
+  "reviewReason": "Add release.proto for the bounded tenth read-only NodeService operation; retain every prior generated source and native transport obligation",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2e28539f9a7843300697897029fc7f8f1553eff16c52bccf9e64547a540931ac"
+  "sha256": "a7429dae7cce45d4d3d8232e68d860bf93d86e5d1bac29df5db6b05cbadcb4d6"
 }

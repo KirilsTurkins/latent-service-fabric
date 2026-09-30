@@ -15,6 +15,7 @@ pub(super) struct Context {
     pub recovery_read: bool,
     pub inspection_service: Option<String>,
     pub inspection_from: Option<u64>,
+    pub target_inspection: Option<model::InspectHttpTargetRequest>,
 }
 
 pub(super) trait RequestProfile {
@@ -80,6 +81,7 @@ pub(super) fn context<Request: RequestProfile>(
             recovery_read: false,
             inspection_service: None,
             inspection_from: None,
+            target_inspection: None,
         };
         request.validate(&mut context, &client.inner.tenant.0)?;
         Ok(context)

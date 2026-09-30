@@ -50,6 +50,10 @@ func (client *fixtureProfile) InspectActivationTree(_ context.Context, _ Inspect
 	return fixtureResponse(InspectActivationTreeResponse{SchemaVersion: 1, RetainedHistoryOnly: true, Page: &PageResponse{}}), nil
 }
 
+func (client *fixtureProfile) InspectHttpTarget(_ context.Context, _ InspectHttpTargetRequest, _ CallOptions) (ClientResponse[InspectHttpTargetResponse], error) {
+    panic("target inspection is not used by the lifetime fixture")
+}
+
 func (client *fixtureProfile) ListPolicies(_ context.Context, _ ListPoliciesRequest, _ CallOptions) (ClientResponse[ListPoliciesResponse], error) {
 	client.mutex.Lock()
 	defer client.mutex.Unlock()

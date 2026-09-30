@@ -182,6 +182,7 @@ static void dispatch(latent_profile_call *call) {
         case LSF_CANCEL: call->callback.cancel(failure == NULL ? &call->result.cancel : NULL, failure, call->user_data); break;
         case LSF_GET_ACTIVATION: call->callback.get_activation(failure == NULL ? &call->result.get_activation : NULL, failure, call->user_data); break;
         case LSF_INSPECT_ACTIVATION_TREE: call->callback.inspect_activation_tree(failure == NULL ? &call->result.inspect_activation_tree : NULL, failure, call->user_data); break;
+        case LSF_INSPECT_HTTP_TARGET: call->callback.inspect_http_target(failure == NULL ? &call->result.inspect_http_target : NULL, failure, call->user_data); break;
         case LSF_GET_POLICY: call->callback.get_policy(failure == NULL ? &call->result.get_policy : NULL, failure, call->user_data); break;
         case LSF_LIST_POLICIES: call->callback.list_policies(failure == NULL ? &call->result.list_policies : NULL, failure, call->user_data); break;
         case LSF_LIST_CAPABILITIES: call->callback.list_capabilities(failure == NULL ? &call->result.list_capabilities : NULL, failure, call->user_data); break;
@@ -289,7 +290,7 @@ latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
     call->arena = (lsf_arena){.owner = owner, .maximum = owner->config.maximum_decoded_bytes};
     call->maximum_response = owner->config.maximum_response_bytes;
     if (operation == LSF_LIST_CAPABILITIES && call->maximum_response > 131072) call->maximum_response = 131072;
-    if (operation == LSF_INSPECT_ACTIVATION_TREE && call->maximum_response > 65536) call->maximum_response = 65536;
+    if ((operation == LSF_INSPECT_ACTIVATION_TREE || operation == LSF_INSPECT_HTTP_TARGET) && call->maximum_response > 65536) call->maximum_response = 65536;
     call->next = owner->calls;
     owner->calls = call;
     ++owner->usage.retained_calls;
@@ -300,7 +301,7 @@ latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
     size_t maximum_request = owner->config.maximum_request_bytes;
     if (operation >= LSF_GET_POLICY && maximum_request > 131072) maximum_request = 131072;
     if (operation == LSF_LIST_CAPABILITIES && maximum_request > 8192) maximum_request = 8192;
-    if (operation == LSF_INSPECT_ACTIVATION_TREE && maximum_request > 8192) maximum_request = 8192;
+    if ((operation == LSF_INSPECT_ACTIVATION_TREE || operation == LSF_INSPECT_HTTP_TARGET) && maximum_request > 8192) maximum_request = 8192;
     if (!lsf_request_valid(call, request)) lsf_fail(call, LATENT_PROFILE_FAILURE_CATEGORY_INVALID_REQUEST);
     else {
         call->request = lsf_allocate(owner, maximum_request + 5);
@@ -350,6 +351,7 @@ LSF_METHOD(list_policies, LSF_LIST_POLICIES, latent_profile_list_policies_reques
 LSF_METHOD(list_capabilities, LSF_LIST_CAPABILITIES, latent_profile_list_capabilities_request, latent_profile_list_capabilities_callback)
 LSF_METHOD(apply_policy, LSF_APPLY_POLICY, latent_profile_apply_policy_request, latent_profile_apply_policy_callback)
 LSF_METHOD(get_policy_operation, LSF_GET_POLICY_OPERATION, latent_profile_get_policy_operation_request, latent_profile_get_policy_operation_callback)
+LSF_METHOD(inspect_http_target, LSF_INSPECT_HTTP_TARGET, latent_profile_inspect_http_target_request, latent_profile_inspect_http_target_callback)
 
 static void cancel_local(latent_profile_call *call) {
     if (call == NULL || call->completed) return;
@@ -366,7 +368,7 @@ static void destroy_profile(latent_profile_client *client) {
 const latent_profile_client_vtable *latent_transport_profile_vtable(void) {
     static const latent_profile_client_vtable vtable = {
         invoke, cancel, get_activation, inspect_activation_tree, get_policy, list_policies, list_capabilities,
-        apply_policy, get_policy_operation, cancel_local, lsf_release, destroy_profile
+        apply_policy, get_policy_operation, inspect_http_target, cancel_local, lsf_release, destroy_profile
     };
     return &vtable;
 }

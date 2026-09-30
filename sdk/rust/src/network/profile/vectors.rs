@@ -1072,5 +1072,78 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
             "publication-reference-tenant-scope"
         );
     }
-    println!("shared protobuf model vectors: 58");
+    {
+        let value = InspectHttpTargetRequest{service: "service-a".into(), contract: "latent:web/application@0.1.0".into(), function: "handle".into(), route: Some("web".into()), revision_id: Some("revision-a".into()), publication: Some(PublicationRef{id: "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), tenant: "tenant-a".into()}), routing_key: Some("reviewed-key".into()), include_preparation: true, maximum_wait_millis: 30_000_u64};
+        let encoded = control::InspectHttpTargetRequest::from(value.clone()).encode_to_vec();
+        let decoded = control::InspectHttpTargetRequest::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            InspectHttpTargetRequest::from(decoded),
+            value,
+            "target-inspection-exact-bounded-publication-selector"
+        );
+    }
+    {
+        let value = InspectHttpTargetResponse{schema_version: 1_u32, tenant: "tenant-a".into(), service: "service-a".into(), contract: "latent:web/application@0.1.0".into(), function: "handle".into(), route: "web".into(), state: TargetObservationState(1), catalog_transaction: 18_446_744_073_709_551_615_u64, route_generation: 18_446_744_073_709_551_615_u64, binding_generation: 18_446_744_073_709_551_615_u64, policy_store_generation: Some(0_u64), candidates: vec![TargetCandidate{deployment_id: "deployment-a".into(), deployment_generation: 18_446_744_073_709_551_615_u64, revision_id: "revision-a".into(), component_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), publication: Some(PublicationRef{id: "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), tenant: "tenant-a".into()}), requested_publication: Some(PublicationRef{id: "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), tenant: "tenant-a".into()}), package_digest: Some("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()), publication_generation: Some(18_446_744_073_709_551_615_u64), routing_weight: 100_u32, export_compatible: true, http_compatible: true, eligible: true, reasons: vec![TargetReason(1)], dependencies: vec![TargetDependency{capability: "latent:runtime/clocks@0.1.0".into(), state: "configured-current".into(), policy_identity_digest: "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee".into(), provider_configuration_epoch: 18_446_744_073_709_551_615_u64, binding: Some(TargetDependencyRevision{id: "binding-a".into(), digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), revision: 18_446_744_073_709_551_615_u64}), policies: vec![TargetDependencyRevision{id: "policy-a".into(), digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), revision: 0_u64}], provider_profile: "host-runtime-v1".into(), configuration_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()}], preparation: Some(TargetPreparation{state: TargetPreparationState(1), profile: Some(DiagnosticProfile(2)), engine_version: Some("wasmtime-42".into()), engine_configuration_digest: Some("blake3:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc".into()), target_triple: Some("x86_64-unknown-linux-gnu".into()), cpu_feature_set: Some("baseline".into()), sealed_metadata_fingerprint: Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()), import_count: Some(2_u64), function_count: Some(1_u64), hostcall_fuel: Some(18_446_744_073_709_551_615_u64), maximum_lifted_bytes: Some(67_108_864_u64), maximum_type_nodes: Some(65_536_u64), declared_budget: Some(ResourceBudget{cpu_fuel: 18_446_744_073_709_551_615_u64, memory_bytes: 18_446_744_073_709_551_615_u64, child_calls: 4_294_967_295_u32, outbound_requests: 0_u32, state_read_bytes: 18_446_744_073_709_551_615_u64, state_write_bytes: 0_u64, blob_read_bytes: 0_u64, blob_write_bytes: 0_u64, log_bytes: 0_u64, effect_count: 0_u32, wall_time_limit_millis: Some(0_u64)}), imports: vec!["latent:runtime/clocks@0.1.0".into()], exports: vec![PreparedTargetExport{contract: "latent:web/application@0.1.0".into(), function: "handle".into()}], type_imports: vec!["examples:java-http-domain/types@1.0.0".into()], ..Default::default()}), publication_kind: Some("capsule".into()), http_bindings: vec![InspectedHttpBinding{id: "trigger-a".into(), generation: 18_446_744_073_709_551_615_u64, selected_deployment_generation: 18_446_744_073_709_551_615_u64, state: "configured-current".into()}]}], selected_revision_id: Some("revision-a".into()), live_grants_checked: false};
+        let encoded = control::InspectHttpTargetResponse::from(value.clone()).encode_to_vec();
+        let decoded = control::InspectHttpTargetResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            InspectHttpTargetResponse::from(decoded),
+            value,
+            "target-inspection-ready-keeps-full-width-owner-identities"
+        );
+    }
+    {
+        let value = InspectHttpTargetResponse {
+            schema_version: 1_u32,
+            tenant: "tenant-a".into(),
+            service: "service-a".into(),
+            contract: "domain:application/api@1.0.0".into(),
+            function: "get".into(),
+            route: "domain".into(),
+            state: TargetObservationState(777),
+            catalog_transaction: 0_u64,
+            route_generation: 0_u64,
+            binding_generation: 0_u64,
+            candidates: vec![TargetCandidate {
+                deployment_id: "deployment-a".into(),
+                deployment_generation: 0_u64,
+                revision_id: "revision-a".into(),
+                component_digest:
+                    "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+                routing_weight: 0_u32,
+                export_compatible: false,
+                http_compatible: false,
+                eligible: false,
+                reasons: vec![TargetReason(-2_147_483_648), TargetReason(778)],
+                dependencies: vec![],
+                preparation: Some(TargetPreparation {
+                    state: TargetPreparationState(779),
+                    diagnostic: Some(ActivationDiagnostic {
+                        schema_version: 1_u32,
+                        stage: DiagnosticStage(780),
+                        reason: DiagnosticReason(781),
+                        configured_bound: Some(0_u64),
+                        calculated_requirement: Some(18_446_744_073_709_551_615_u64),
+                        ..Default::default()
+                    }),
+                    imports: vec![],
+                    exports: vec![],
+                    type_imports: vec![],
+                    ..Default::default()
+                }),
+                http_bindings: vec![],
+                ..Default::default()
+            }],
+            live_grants_checked: false,
+            ..Default::default()
+        };
+        let encoded = control::InspectHttpTargetResponse::from(value.clone()).encode_to_vec();
+        let decoded = control::InspectHttpTargetResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            InspectHttpTargetResponse::from(decoded),
+            value,
+            "target-inspection-future-states-remain-descriptive"
+        );
+    }
+    println!("shared protobuf model vectors: 61");
 }

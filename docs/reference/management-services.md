@@ -24,7 +24,7 @@ generated package inputs through this RPC boundary.
 | Deployment | `ApplyDeployment`, `GetDeployment`, `ListDeployments`, `DeleteDeployment`, `GetDeploymentOperation` | Atomic tenant-scoped versions, optional managed operation receipts and coherent state snapshots, and bounded pages. |
 | Trigger | `ApplyTrigger`, `GetTrigger`, `ListTriggers`, `DeleteTrigger`, `GetTriggerOperation` | [Closed HTTP routes](http-triggers.md), explicit tenant publication/deployment pins, atomic CAS and bounded historical receipts. Mutations require durable audit. |
 | Route | `GetRouteSnapshot` | Complete projection of the current catalog generation for one tenant. |
-| Node | `GetNode`, `ListNodes` | The one configured node's bounded inventory snapshot. |
+| Node | `GetNode`, `ListNodes`, `InspectActivationTree`, `InspectHttpTarget` | Configured node inventory, bounded authorized [activation history](activation-inspection.md) and [immutable target inspection](target-inspection.md). Inspection is descriptive and does not execute components or authorize mutations. |
 | Audit | `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
 | Rollout | `StartRollout`, `ChangeRollout`, `EvaluateRollout`, `GetRollout`, `ListRollouts`, `GetRolloutOperation` | Optional audited stages and declared canary promotion over one tenant/service cohort. |
 | Policy | `ApplyPolicy`, `GetPolicy`, `ListPolicies`, `DeletePolicy`, `GetPolicyOperation`, `EvaluatePolicy` | Optional durable tenant-scoped capability policies and provider-binding metadata, CAS/replay, bounded pages and descriptive explanation. |

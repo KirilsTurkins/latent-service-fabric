@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/dotnet/validate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Include NodeService and publication references in ten generated sources and two isolated snapshots; retain the pinned Linux generator, exact package/signature checks and all prior native semantic and transport validation",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f16d1917e58fb7f0e9239e3d8ca43ba3bc0a415b650f30dcb6f54d4c52d77c64"
+  "sha256": "3e82f3199b9372adcb90c1236814e9420be4dce79bea3c4b248bdc9d518956ed"
 }
