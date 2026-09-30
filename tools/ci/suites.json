@@ -1709,14 +1709,20 @@
         "dispatch::tests::process_restart_before_persisted_send_marker_is_known_nondispatch",
         "dispatch::tests::qualified_retry_preserves_payload_provider_incarnation_and_dedup_horizon",
         "dispatch::tests::receipt_and_record_limits_reject_corruption_without_false_acknowledgement",
-        "dispatch::tests::retained_old_envelope_and_command_link_survive_state_schema_and_result_expiry"
+        "dispatch::tests::retained_old_envelope_and_command_link_survive_state_schema_and_result_expiry",
+        "dispatch_store::tests::due_index_orders_time_and_identity_and_rejects_unknown_or_malformed_rows",
+        "dispatch_store::tests::envelope_outbox_payload_and_due_index_are_atomic_and_survive_reopen",
+        "payload::tests::canonical_payload_identity_sorts_metadata_and_binds_media_and_binary_bytes",
+        "payload::tests::payload_byte_and_metadata_caps_preserve_empty_presence_and_exact_authority_link",
+        "payload::tests::payload_decoder_checks_all_lengths_counts_utf8_formats_and_trailing_bytes",
+        "payload::tests::tampered_retained_payload_cannot_dispatch_with_the_original_authority"
       ],
       "expectedIgnored": [],
       "id": "latent-effects.lib.latent-effects",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 22,
+      "minimumCases": 28,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [

@@ -1677,8 +1677,11 @@ name = "latent-effects"
 version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
+ "latent-state",
  "serde",
  "serde_json",
+ "sha2 0.11.0",
+ "tempfile",
 ]
 
 [[package]]

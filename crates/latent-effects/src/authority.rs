@@ -276,6 +276,11 @@ impl DurableEffectAuthority {
     }
 
     #[must_use]
+    pub const fn payload_bytes(&self) -> u64 {
+        self.payload_bytes
+    }
+
+    #[must_use]
     pub const fn ceiling(&self) -> DispatchCeiling {
         self.ceiling
     }
