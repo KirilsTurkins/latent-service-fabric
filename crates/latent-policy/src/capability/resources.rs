@@ -56,18 +56,54 @@ impl HttpOrigin {
         {
             return false;
         }
-        if let Ok(address) = self.host.parse::<std::net::IpAddr>() {
-            return address.to_string() == self.host;
+        canonical_host(&self.host)
+    }
+}
+
+fn canonical_host(host: &str) -> bool {
+    if host.is_empty() || host.len() > 253 {
+        return false;
+    }
+    if let Ok(address) = host.parse::<std::net::IpAddr>() {
+        return address.to_string() == host;
+    }
+    host.split('.').all(|label| {
+        !label.is_empty()
+            && label.len() <= 63
+            && label.as_bytes()[0].is_ascii_alphanumeric()
+            && label.as_bytes()[label.len() - 1].is_ascii_alphanumeric()
+            && label
+                .bytes()
+                .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+    })
+}
+
+/// Opaque bytes need their own endpoint authority. Neither transport authorizes
+/// an HTTP method/path or asserts the protocol carried by the guest's bytes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum StreamTransport {
+    Tcp,
+    HostTls,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StreamEndpoint {
+    pub host: String,
+    pub port: u16,
+    pub transport: StreamTransport,
+}
+
+impl StreamEndpoint {
+    pub fn validate(&self) -> Result<(), PlatformError> {
+        if self.port == 0
+            || !canonical_host(&self.host)
+            || matches!(self.host.parse::<std::net::IpAddr>(), Ok(std::net::IpAddr::V6(value)) if value.to_ipv4_mapped().is_some())
+        {
+            return Err(invalid());
         }
-        self.host.split('.').all(|label| {
-            !label.is_empty()
-                && label.len() <= 63
-                && label.as_bytes()[0].is_ascii_alphanumeric()
-                && label.as_bytes()[label.len() - 1].is_ascii_alphanumeric()
-                && label
-                    .bytes()
-                    .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
-        })
+        Ok(())
     }
 }
 
@@ -92,6 +128,9 @@ pub enum ResourceConstraint {
         methods: Vec<String>,
         paths: Vec<String>,
         path_prefixes: Vec<String>,
+    },
+    Stream {
+        endpoints: Vec<StreamEndpoint>,
     },
     Blob {
         namespaces: Vec<String>,
@@ -126,6 +165,9 @@ pub enum ResourceTarget<'a> {
         method: &'a str,
         path: &'a str,
     },
+    Stream {
+        endpoint: &'a StreamEndpoint,
+    },
     Blob {
         namespace: &'a str,
     },
@@ -154,6 +196,7 @@ impl ResourceTarget<'_> {
                 method,
                 path,
             } => origin.valid() && http_method(method) && http_path(path),
+            Self::Stream { endpoint } => endpoint.validate().is_ok(),
             Self::Blob { namespace } => identifier(namespace),
             Self::Secrets { reference } => identifier(reference),
             Self::Events { subject } => subject_name(subject),
@@ -184,6 +227,7 @@ impl ResourceConstraint {
                         http_path(value) && value.ends_with('/')
                     })
             }
+            Self::Stream { endpoints } => unique(endpoints, |value| value.validate().is_ok()),
             Self::Blob { namespaces } => unique(namespaces, |value| identifier(value)),
             Self::Secrets { references } => unique(references, |value| identifier(value)),
             Self::Events { subjects } => unique(subjects, |value| subject_name(value)),
@@ -217,6 +261,7 @@ impl ResourceConstraint {
                     Self::Http { .. },
                     "latent:http/client@0.2.0" | "latent:http/streaming@0.3.0"
                 )
+                | (Self::Stream { .. }, "latent:network/streams@0.1.0")
                 | (
                     Self::Blob { .. },
                     "latent:blob/blob@0.1.0" | "latent:blob/blob@0.2.0"
@@ -257,6 +302,9 @@ impl ResourceConstraint {
             }
             (Self::Blob { namespaces }, ResourceTarget::Blob { namespace }) => {
                 contains(namespaces, namespace)
+            }
+            (Self::Stream { endpoints }, ResourceTarget::Stream { endpoint }) => {
+                endpoints.contains(endpoint)
             }
             (Self::Secrets { references }, ResourceTarget::Secrets { reference }) => {
                 contains(references, reference)
@@ -307,4 +355,111 @@ fn http_path(value: &str) -> bool {
         && !value
             .split('/')
             .any(|segment| matches!(segment, "." | ".."))
+}
+
+#[cfg(test)]
+mod stream_tests {
+    use super::*;
+    fn endpoint() -> StreamEndpoint {
+        StreamEndpoint {
+            host: "mail.example".into(),
+            port: 587,
+            transport: StreamTransport::Tcp,
+        }
+    }
+    #[test]
+    fn endpoint_scope_is_exact_and_cannot_be_derived_from_http_authority() {
+        let endpoint = endpoint();
+        let streams = ResourceConstraint::Stream {
+            endpoints: vec![endpoint.clone()],
+        };
+        assert!(streams.validate().is_ok());
+        assert!(streams.covers(&ResourceTarget::Stream {
+            endpoint: &endpoint
+        }));
+        let http = ResourceConstraint::Http {
+            origins: vec![HttpOrigin {
+                scheme: "https".into(),
+                host: endpoint.host.clone(),
+                port: endpoint.port,
+            }],
+            methods: vec!["POST".into()],
+            paths: vec![],
+            path_prefixes: vec!["/".into()],
+        };
+        assert!(!http.covers(&ResourceTarget::Stream {
+            endpoint: &endpoint
+        }));
+        assert!(!http.compatible("latent:network/streams@0.1.0"));
+        assert!(!streams.compatible("latent:http/client@0.2.0"));
+        for alternate in [
+            StreamEndpoint {
+                port: 465,
+                ..endpoint.clone()
+            },
+            StreamEndpoint {
+                host: "alternate.example".into(),
+                ..endpoint.clone()
+            },
+            StreamEndpoint {
+                transport: StreamTransport::HostTls,
+                ..endpoint.clone()
+            },
+        ] {
+            assert!(!streams.covers(&ResourceTarget::Stream {
+                endpoint: &alternate
+            }));
+        }
+    }
+    #[test]
+    fn malformed_ambiguous_and_wildcard_endpoints_fail_closed() {
+        for host in [
+            "",
+            "MAIL.EXAMPLE",
+            "mail.example.",
+            "*.example",
+            "user@mail.example",
+            "https://mail.example",
+            "127.000.0.1",
+            "[::1]",
+            "::ffff:127.0.0.1",
+            "a..example",
+            "-a.example",
+        ] {
+            assert!(
+                StreamEndpoint {
+                    host: host.into(),
+                    ..endpoint()
+                }
+                .validate()
+                .is_err(),
+                "{host}"
+            );
+        }
+        assert!(StreamEndpoint {
+            port: 0,
+            ..endpoint()
+        }
+        .validate()
+        .is_err());
+        for host in ["mail.example", "127.0.0.1", "::1", "2001:db8::1"] {
+            assert!(StreamEndpoint {
+                host: host.into(),
+                ..endpoint()
+            }
+            .validate()
+            .is_ok());
+        }
+        let endpoint = endpoint();
+        assert!(ResourceConstraint::Stream {
+            endpoints: vec![endpoint.clone(), endpoint]
+        }
+        .validate()
+        .is_err());
+        assert!(!ResourceConstraint::Stream { endpoints: vec![] }.covers(
+            &ResourceTarget::Stream {
+                endpoint: &self::endpoint()
+            }
+        ));
+    }
 }
