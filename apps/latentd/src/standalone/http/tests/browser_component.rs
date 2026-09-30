@@ -1,4 +1,8 @@
 use super::fixture::*;
+use latent_core::{
+    diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage},
+    ActivationTerminalState, ServiceId, TenantId,
+};
 use latent_ingress::http::browser;
 use serde_json::json;
 use tempfile::TempDir;
@@ -16,6 +20,8 @@ async fn actual_http_component_browser_policy_rejects_unsafe_output_without_refl
     let safe = call(&fixture, "/browser-relative").await;
     assert_eq!(safe.0, 303);
     assert!(safe.1.contains("location: /next?from=fixture\r\n"));
+    fixture.idle().await;
+    assert_output_observation(&fixture, false);
     fixture.shutdown().await;
     let root = TempDir::new().unwrap();
     let mut value = config(&root);
@@ -75,6 +81,7 @@ async fn assert_rejected_outputs(fixture: &Fixture) {
         "/browser-charset",
         "/browser-utf8",
     ] {
+        let before = fixture.node.manager.journal().snapshot().begun;
         let reply = call(fixture, path).await;
         assert_eq!(reply.0, 502, "{path}");
         assert!(reply.2.is_empty());
@@ -87,6 +94,54 @@ async fn assert_rejected_outputs(fixture: &Fixture) {
         assert!(!reply.1.contains("access-control-allow-origin:"));
         assert!(!reply.1.contains("set-cookie:"));
         assert!(reply.1.contains("cache-control: no-store\r\n"));
+        for private in [
+            "HttpResponseRejected",
+            "OutputValidation",
+            "synthetic-private-token",
+            TOKEN,
+        ] {
+            assert!(!reply.1.contains(private));
+        }
         fixture.idle().await;
+        assert_eq!(fixture.node.manager.journal().snapshot().begun, before + 1);
+        assert_output_observation(fixture, true);
     }
+}
+
+fn assert_output_observation(fixture: &Fixture, rejected: bool) {
+    let journal = fixture.node.manager.journal();
+    let tenant = TenantId("tests".into());
+    let service = ServiceId("web".into());
+    let page = journal
+        .inspect_roots(&tenant, &service, None, 32, None)
+        .unwrap();
+    assert!(page.next_page_token.is_none());
+    let node = page.nodes.last().unwrap();
+    assert_eq!(
+        node.terminal_state,
+        Some(ActivationTerminalState::Completed)
+    );
+    assert!(
+        !node.diagnostic_is_terminal,
+        "output acceptance is distinct from execution success"
+    );
+    assert_eq!(
+        node.diagnostic,
+        rejected.then(|| ActivationDiagnostic::new(
+            DiagnosticStage::OutputValidation,
+            DiagnosticReason::HttpResponseRejected
+        ))
+    );
+    assert_eq!(
+        journal
+            .inspect_tree(&tenant, &node.activation_id, 32, None)
+            .unwrap()
+            .nodes[0],
+        *node
+    );
+    assert!(journal
+        .inspect_roots(&TenantId("other".into()), &service, None, 32, None)
+        .unwrap()
+        .nodes
+        .is_empty());
 }
