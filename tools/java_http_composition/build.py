@@ -4,6 +4,7 @@ import json
 
 from tools.java_capsule_build import build
 from tools.java_capsule_project import create
+from tools.java_http_composition.revision import create_revision
 from tools.rust_capsule_project import ROOT, digest, read_json, write_json
 
 
@@ -25,6 +26,7 @@ def projects(output: Path) -> dict[str, Path]:
                             "witDigest": digest((fixture / "world.wit").read_bytes())}
         (project / "sdk-lock.json").write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
         result[name] = project
+    result["adapter-next"] = create_revision(result["adapter"], output / "adapter-next")
     return result
 
 
