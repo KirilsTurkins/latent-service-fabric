@@ -36,6 +36,7 @@ fn main() -> io::Result<()> {
     stage_runtime_world(&platform_wit, &blob_wit, "runtime-phase3-blobs")?;
     write_blob_bindings(&output, &blob_wit)?;
     write_web_bindings(&output, &platform_wit)?;
+    write_activation_bindings(&output, &platform_wit)?;
 
     println!(
         "cargo:rerun-if-changed={}",
@@ -105,6 +106,7 @@ fn stage_runtime_world(platform_wit: &Path, destination: &Path, world: &str) -> 
             || package.file_name() == OsStr::new("runtime-phase3")
             || package.file_name() == OsStr::new("runtime-phase3-streaming")
             || package.file_name() == OsStr::new("runtime-phase3-blobs")
+            || package.file_name() == OsStr::new("runtime-phase3-activation")
         {
             continue;
         }
@@ -130,6 +132,29 @@ fn stage_runtime_world(platform_wit: &Path, destination: &Path, world: &str) -> 
         "missing runtime WIT dependencies: {required:?}"
     );
     Ok(())
+}
+
+fn write_activation_bindings(output: &Path, platform: &Path) -> io::Result<()> {
+    let wit = output.join("activation-wit");
+    stage_runtime_world(platform, &wit, "runtime-phase3-activation")?;
+    let path = format!("{:?}", wit.to_string_lossy());
+    fs::write(
+        output.join("activation_host.rs"),
+        format!(
+            r#"wasmtime::component::bindgen!({{
+        path: {path}, world: "latent:platform/capsule@0.5.0",
+        imports: {{ default: async }}, exports: {{ default: async }},
+    }});"#
+        ),
+    )?;
+    fs::write(
+        output.join("activation_guest.rs"),
+        format!(
+            r#"wit_bindgen::generate!({{
+        path: {path}, world: "latent:platform/capsule@0.5.0", generate_all,
+    }});"#
+        ),
+    )
 }
 
 fn stage_echo_world(repository_root: &Path, destination: &Path) -> io::Result<()> {

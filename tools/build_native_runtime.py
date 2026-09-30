@@ -83,7 +83,7 @@ def build(arguments) -> dict:
     print('{"nativeBuildStage":"elf-and-identity"}', flush=True)
     dependencies = sorted({dependency for path in assets.values() for dependency in elf_identity(path, run)})
     print(json.dumps({"nativeBuildStage": "observed-elf-dependencies", "dynamicDependencies": dependencies}), flush=True)
-    abi = document(files.read(ROOT / "wit/host-abi-phase3-v4.json"))
+    abi = document(files.read(ROOT / "wit/host-abi-phase3-v5.json"))
     identity = {"version": arguments.version, "sourceCommit": commit, "target": verify.TARGET,
                 "toolchain": {"rust": toolchain, "lockSha256": files.digest(ROOT / "Cargo.lock")},
                 "engine": {"wasmtimeVersion": abi["wasmtimeVersion"], "hostAbiProfile": abi["id"],

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_native_runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Reviewed V5 opt-in runtime and outbound stream source identity, generator parity, unchanged skip controls, and active native/node profile selection; preserve every existing case.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dc66e6adb1cf346d5169ea046f8087c581a09e348ed6b51710166f62fe2c55f6"
+  "sha256": "af769e5e863345792a6242c2b775d40478889ecfab3de8b9439e5ae41f66be31"
 }

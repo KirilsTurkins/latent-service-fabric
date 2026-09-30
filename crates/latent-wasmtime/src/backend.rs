@@ -569,8 +569,14 @@ impl WasmtimeBackend {
                 .as_micros(),
         )
         .unwrap_or(u64::MAX);
+        let lifecycle_error = store
+            .data_mut()
+            .runtime
+            .as_mut()
+            .and_then(|runtime| runtime.finalize().err());
         let (consumption, accounting_error) =
             invocation_accounting(&mut store, wall_time_micros, timing);
+        let accounting_error = accounting_error.or(lifecycle_error);
         let memory_exhausted = call_result
             .as_ref()
             .err()
@@ -692,6 +698,7 @@ impl WasmtimeBackend {
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
         host_state.currentness_read_wait = self.shared.currentness_read_wait.clone();
+        host_state.runtime_stop = Some(Arc::clone(stop));
         if self.config.java_guest {
             host_state.limiter.reserve_exception_heap()?;
         }
