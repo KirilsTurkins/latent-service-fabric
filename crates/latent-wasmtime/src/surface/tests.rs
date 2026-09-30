@@ -3,6 +3,73 @@ use std::collections::BTreeMap;
 use super::lookup_function;
 
 #[test]
+fn structural_imports_link_without_authority_and_reject_calls_resources_and_work_exhaustion() {
+    use wasm_encoder::{
+        Component, ComponentImportSection, ComponentTypeRef, ComponentTypeSection, InstanceType,
+        PrimitiveValType, TypeBounds,
+    };
+    use wasmtime::component::types::ComponentItem;
+    let policy = crate::WasmtimeConfig::default();
+    let mut configuration = wasmtime::Config::new();
+    policy.apply_engine(&mut configuration).unwrap();
+    let engine = wasmtime::Engine::new(&configuration).unwrap();
+    for extra in ["none", "call", "resource"] {
+        let mut interface = InstanceType::new();
+        interface
+            .ty()
+            .defined_type()
+            .primitive(PrimitiveValType::String);
+        interface.export("value", ComponentTypeRef::Type(TypeBounds::Eq(0)));
+        match extra {
+            "call" => {
+                let index = interface.type_count();
+                interface
+                    .ty()
+                    .function()
+                    .params([] as [(&str, PrimitiveValType); 0])
+                    .result(None);
+                interface.export("hidden", ComponentTypeRef::Func(index));
+            }
+            "resource" => {
+                interface.export("authority", ComponentTypeRef::Type(TypeBounds::SubResource));
+            }
+            _ => {}
+        }
+        let mut types = ComponentTypeSection::new();
+        types.instance(&interface);
+        let mut imports = ComponentImportSection::new();
+        let name = "example:values/types@1.0.0";
+        imports.import(name, ComponentTypeRef::Instance(0));
+        let mut encoded = Component::new();
+        encoded.section(&types).section(&imports);
+        let component = wasmtime::component::Component::new(&engine, encoded.finish()).unwrap();
+        let component_type = component.component_type();
+        let (_, item) = component_type.imports(&engine).next().unwrap();
+        let ComponentItem::ComponentInstance(interface) = item.ty else {
+            panic!("interface")
+        };
+        let validated = super::validate_type_interface(&interface, &engine, &policy, &mut 64);
+        if extra == "none" {
+            validated.unwrap();
+            assert_eq!(
+                super::validate_type_interface(&interface, &engine, &policy, &mut 0)
+                    .unwrap_err()
+                    .code,
+                latent_core::PlatformErrorCode::ResourceExhausted
+            );
+            let mut linker = wasmtime::component::Linker::<()>::new(&engine);
+            linker.instance(name).unwrap();
+            linker.instantiate_pre(&component).unwrap();
+        } else {
+            assert_eq!(
+                validated.unwrap_err().code,
+                latent_core::PlatformErrorCode::IncompatibleContract
+            );
+        }
+    }
+}
+
+#[test]
 fn borrowed_lookup_preserves_exact_contract_and_function_identity_order() {
     let registered: BTreeMap<_, _> = [
         (("b".to_owned(), "identify".to_owned()), 22),

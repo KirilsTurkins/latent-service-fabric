@@ -270,6 +270,7 @@ impl WasmtimeConfig {
             "value-max-decoded-value-bytes",
             values.max_decoded_value_bytes
         );
+        include!("structural-type-imports", "resource-free-values-v1");
     }
 }
 
