@@ -144,5 +144,67 @@ class DownloadTests(unittest.TestCase):
             self.assertFalse(target.exists())
 
 
+class CacheTests(unittest.TestCase):
+    def source(self, payload):
+        return {"url": "https://compiler.invalid/pinned-archive",
+                "sha256": "sha256:" + hashlib.sha256(payload).hexdigest(), "maximum": len(payload)}
+
+    def test_cold_download_and_warm_cache_preserve_exact_bytes_without_network(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = self.source(b"pinned compiler bytes")
+            with patch.object(builder.urllib.request, "urlopen", return_value=io.BytesIO(b"pinned compiler bytes")) as opened:
+                builder.download(root / "cold.archive", source, cache=root / "cache")
+            opened.assert_called_once_with(source["url"], timeout=30)
+            with patch.object(builder.urllib.request, "urlopen") as opened:
+                builder.download(root / "warm.archive", source, cache=root / "cache")
+            opened.assert_not_called()
+            self.assertEqual((root / "cold.archive").read_bytes(), (root / "warm.archive").read_bytes())
+
+    def test_restored_wrong_or_oversized_bytes_fail_closed_without_retry(self):
+        for payload, code in ((b"wrong!", "compiler-upstream-archive-digest"),
+                              (b"far too many bytes", "compiler-download-byte-limit")):
+            with self.subTest(payload=payload), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                cache = root / "cache"
+                cache.mkdir()
+                source = self.source(b"pinned")
+                entry = cache / (source["sha256"][7:] + ".archive")
+                entry.write_bytes(payload)
+                with patch.object(builder.urllib.request, "urlopen") as opened, self.assertRaisesRegex(DevError, code):
+                    builder.download(root / "candidate.archive", source, cache=cache)
+                opened.assert_not_called()
+                self.assertFalse((root / "candidate.archive").exists())
+                self.assertEqual(entry.read_bytes(), payload)
+
+    def test_failed_upstream_bytes_are_never_published_to_cache(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch.object(builder.urllib.request, "urlopen", return_value=io.BytesIO(b"wrong!")), \
+                    self.assertRaisesRegex(DevError, "compiler-upstream-archive-digest"):
+                builder.download(root / "candidate.archive", self.source(b"pinned"), cache=root / "cache")
+            self.assertFalse((root / "candidate.archive").exists())
+            self.assertEqual(list((root / "cache").iterdir()), [])
+
+    def test_cache_verification_cannot_extend_original_deadline(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cache = root / "cache"
+            cache.mkdir()
+            source = self.source(b"pinned")
+            (cache / (source["sha256"][7:] + ".archive")).write_bytes(b"pinned")
+            clock = [0.0]
+            def digest(_path):
+                clock[0] = builder.DOWNLOAD_TIMEOUT_SECONDS
+                return source["sha256"], 6
+            with patch.object(builder.time, "monotonic", side_effect=lambda: clock[0]), \
+                    patch.object(builder, "file_digest", side_effect=digest), \
+                    patch.object(builder.urllib.request, "urlopen") as opened, \
+                    self.assertRaisesRegex(DevError, "compiler-download-deadline"):
+                builder.download(root / "candidate.archive", source, cache=cache)
+            opened.assert_not_called()
+            self.assertFalse((root / "candidate.archive").exists())
+
+
 if __name__ == "__main__":
     unittest.main()
