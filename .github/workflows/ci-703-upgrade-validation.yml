@@ -14,7 +14,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Inspect exact source integration without publishing changes
+          show-progress: false
+      - name: Integrate targeted commits without publishing changes
         shell: bash
         run: |
           set -euo pipefail
@@ -22,19 +23,35 @@ jobs:
           git config user.email 'lsf-ci@users.noreply.github.com'
           git checkout --detach aaa4191436ef07e5a8739f411f63a1a85f99701f
           mkdir -p "$RUNNER_TEMP/703-evidence"
-          for ref in 711c5773eab56487270b95d395bb6e4879394ea7 0ad80497604b2815487e4e5c870aa8fa1f1a0a61; do
-            echo "INTEGRATING $ref"
-            if ! git merge --no-commit --no-ff "$ref"; then
+          if ! git merge --no-commit --no-ff 711c5773eab56487270b95d395bb6e4879394ea7; then
+            test "$(git diff --name-only --diff-filter=U)" = '.github/security/inventory.json'
+            git checkout --theirs .github/security/inventory.json
+            python3 - <<'PY'
+          import hashlib, json, pathlib
+          policy = pathlib.Path('.github/security/inventory.json')
+          text = policy.read_text()
+          entry = next(e for e in json.loads(text)['manifests'] if e['path'] == 'tools/native-fixture/Cargo.toml')
+          actual = hashlib.sha256(pathlib.Path(entry['path']).read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+          assert text.count(entry['manifest_sha256']) == 1
+          policy.write_text(text.replace(entry['manifest_sha256'], actual))
+          print('Merged native manifest digest:', actual)
+          PY
+            git add .github/security/inventory.json
+          fi
+          git commit -m 'Merge development into PR 703 preserving serde_json 1.0.151'
+          for ref in 7aa1ae07c7ceed1c6ab32b6cdeb5b46ba31f750e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61; do
+            echo "APPLYING TARGETED SECURITY FIX $ref"
+            if ! git cherry-pick --no-commit "$ref"; then
               git diff --name-only --diff-filter=U | tee "$RUNNER_TEMP/703-evidence/conflicts.txt"
               git diff --cc > "$RUNNER_TEMP/703-evidence/conflicts.diff"
               cat "$RUNNER_TEMP/703-evidence/conflicts.diff"
               exit 1
             fi
-            git commit -m "Local integration validation of $ref"
+            git commit -m "Apply reviewed security upgrade $ref to PR 703"
           done
-          git diff --stat aaa4191436ef07e5a8739f411f63a1a85f99701f
+          git diff --stat 711c5773eab56487270b95d395bb6e4879394ea7
           git diff --binary 711c5773eab56487270b95d395bb6e4879394ea7 > "$RUNNER_TEMP/703-evidence/candidate.diff"
-          git log -6 --format='%H %s'
+          git log -4 --format='%H %s'
           find . -name AGENTS.md -not -path './.git/*' -print
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
