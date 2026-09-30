@@ -86,7 +86,7 @@ export class JavaHttpClient {
     requireValue(encoder.encode(payload).length <= limits.bytes);
     const response = await fetch(this.origin + route.path, {
       method: route.method, credentials: 'omit', redirect: 'error', signal: options.signal,
-      headers: route.method === 'POST' ? {'content-type': 'application/vnd.latent.wit-values.v1+json'} : {},
+      headers: route.method === 'POST' ? {'content-type': 'application/vnd.latent.wit-values.v1+json', origin: this.origin} : {},
       body: route.method === 'POST' ? payload : undefined,
     });
     const body = await boundedBody(response);

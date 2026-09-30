@@ -108,7 +108,7 @@ def service_grant(client, node, publications, *, generation=0, trigger_only=Fals
         principals.append({"kind": "administrator", "subject": "workflow-operator"})
     result = policy(client, "policy", "java-domain-allow", {"formatVersion": 1, "tenant": TENANT, "rules": [{
         "id": "selected-domain", "effect": "allow", "principals": principals,
-        "services": [ADAPTER], "publications": [publications["adapter"]], "capability": SERVICE_CAPABILITY,
+        "services": [ADAPTER], "publications": [publications["adapter"], publications["adapter-next"]], "capability": SERVICE_CAPABILITY,
         "operations": ["call"], "resources": {"kind": "service", "services": [DOMAIN],
                                                   "publications": [publications["domain"]]},
         "ceiling": {"operations": 4, "inputBytes": 1048576, "outputBytes": 1048576, "wallTimeMillis": 60000}}]}, generation)
@@ -144,7 +144,7 @@ def request(host, path="/api/status", *, method="GET", value=None, headers=None,
     try:
         body = None if value is None else json.dumps(value, ensure_ascii=False).encode("utf-8")
         connection.request(method, path, body=body, headers={"Host": host, "Connection": "close",
-            "Content-Type": MEDIA, **(headers or {})})
+            "Content-Type": MEDIA, "Origin": "http://" + host, **(headers or {})})
         response = connection.getresponse()
         body = response.read(maximum + 1)
         require(len(body) <= maximum, "java-http-response-bound")
@@ -166,6 +166,18 @@ def invoke(client, targets, name, function, arguments, activation, *, route_name
     return result
 
 
+
+def rebind(client, targets, releases, publications, names=("adapter",)):
+    """Explicit new deployment operations after a policy revision changes."""
+    result = {}
+    for name in names:
+        previous = targets[name]
+        targets[name] = deploy(client, releases / ("java-http-" + name) / "deployment.json",
+            publications[name], generation=str(previous["generation"]), grants=previous["grants"])
+        result[name] = {"previousGeneration": previous["generation"],
+            "currentGeneration": targets[name]["generation"], "publication": publications[name]}
+    return result
+
 def decoded(result):
     payload = result["data"].get("payload") or (result["data"].get("declaredError") or {}).get("payload")
     return None if payload is None else json.loads(base64.b64decode(payload["data"], validate=True))
@@ -173,7 +185,7 @@ def decoded(result):
 
 def web_request(host, path="/api/status", *, method="get", body=""):
     return [{"profile": "buffered-v1", "method": method, "scheme": "http", "authority": host,
-        "path": path, "query": None, "headers": [], "media-type": MEDIA if body else None,
+        "path": path, "query": {"none": None}, "headers": [], "media-type": {"some": MEDIA} if body else {"none": None},
         "body-base64": base64.b64encode(body.encode()).decode()}]
 
 

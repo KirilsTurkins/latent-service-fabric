@@ -14,9 +14,10 @@ from tools.build_process_signals import owned_cancellation
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.java_http_composition.build import compile_pair
+from tools.java_http_composition import trust
 from tools.java_http_composition.node import (
     ADAPTER, DOMAIN_CONTRACT, SERVICE_CAPABILITY, WEB_CONTRACT, configure, decoded,
-    grant, idle, invoke, request, route, service_grant, web_request,
+    grant, idle, invoke, request, route, service_grant, web_request, rebind,
 )
 from tools.phase2_operator_process import Process, read_json, require, write_json
 from tools.phase2_operator_scenario import NODE_ID, connect, receipt, stop
@@ -30,11 +31,14 @@ from tools.rust_capsule_build import Commands
 
 def publish(client, releases):
     result = {}
-    for name in ("domain", "adapter"):
+    for name in ("domain", "adapter", "adapter-next"):
         source = releases / ("java-http-" + name)
         published = client.call("release", "publish-package", source / "package", "--evidence", source / "evidence/index.json",
-            "--operation-id", "publish-" + name, "--expected-generation", 0)
-        require(published["outcomeKnown"], "java-http-publication-unknown")
+            "--operation-id", "publish-" + name, "--expected-generation", 0, codes=(0, 2, 4, 5, 6))
+        recovered = client.call("release", "operation", "publish-" + name, codes=(0, 6))
+        require(published["outcomeKnown"] and published["category"] == "success", "java-http-publication-rejected-or-unknown")
+        require(recovered["category"] == "success" and recovered["data"]["receipt"] == published["data"]["operation"],
+            "java-http-original-publication-operation-recovery")
         result[name] = published["data"]["operation"]["publication"]["id"]
     require(result["domain"] != result["adapter"], "java-http-independent-publications")
     return result
@@ -58,16 +62,20 @@ def readiness(client):
     raise RuntimeError("java-http-child-readiness-observation-bound")
 
 
-def cancellation(client, targets, host, result):
-    input_path = client.directory / "cancel-input.json"
-    budget_path = client.directory / "cancel-budget.json"
+def running_adapter(client, targets, host, activation):
+    input_path = client.directory / (activation + "-input.json")
+    budget_path = client.directory / (activation + "-budget.json")
     write_json(input_path, web_request(host, "/api/spin"))
     write_json(budget_path, targets["adapter"]["budget"])
     argv = [client.executable, "--output", "json", "--config", str(client.config), "--profile", "operator",
         "--rpc-timeout-ms", "120000", "invoke", "--service", ADAPTER, "--route", "java-http-adapter",
-        "--contract", WEB_CONTRACT, "--function", "handle", "--activation-id", "java-composed-cancel",
+        "--contract", WEB_CONTRACT, "--function", "handle", "--activation-id", activation,
         "--input", str(input_path), "--budget", str(budget_path), "--budget-profile", "phase3"]
-    process = Process(argv, client.directory, client.environment, client.cancellation, maximum=65536)
+    return Process(argv, client.directory, client.environment, client.cancellation, maximum=65536)
+
+
+def cancellation(client, targets, host, result):
+    process = running_adapter(client, targets, host, "java-composed-cancel")
     try:
         result["cancellationReady"] = readiness(client)
         cancelled = client.call("activation", "cancel", "java-composed-cancel", "--reason", "Synthetic composed cancellation")
@@ -84,16 +92,15 @@ def cancellation(client, targets, host, result):
 
 def canary(client, targets, publications, releases, host):
     base = client.call("deployment", "get", "java-http-adapter")["data"]["deployment"]
-    candidate = read_json(releases / "java-http-adapter/deployment.json")
+    candidate = read_json(releases / "java-http-adapter-next/deployment.json")
     candidate["metadata"]["name"] = "java-http-adapter-next"
-    candidate["spec"].update(publication=publications["adapter"], grants=targets["adapter"]["grants"])
+    candidate["spec"].update(publication=publications["adapter-next"], grants=targets["adapter"]["grants"])
     candidate["spec"]["route"]["weight"] = 5000
-    candidate["spec"]["resources"]["cpuFuel"] -= 1
     candidate_path = client.directory / "candidate.json"
     write_json(candidate_path, candidate)
     policy_path = client.directory / "canary-policy.json"
     write_json(policy_path, {"formatVersion": 1, "observationMillis": 5000, "minimumCandidateSamples": 1,
-        "maximumFailureBasisPoints": 0, "latencyThresholdMicros": 120000000, "maximumSlowBasisPoints": 0})
+        "maximumFailureBasisPoints": 0, "latencyThresholdMicros": 10000000, "maximumSlowBasisPoints": 0})
     started = receipt(client.call("rollout", "start", "java-http-canary", "--base", "java-http-adapter",
         "--expected-base-generation", base["generation"], "--candidate", candidate_path, "--weights", "5000,10000",
         "--operation-id", "java-canary-start", "--expected-revision", 0, "--canary-policy", policy_path), "java-canary-start")
@@ -113,17 +120,38 @@ def canary(client, targets, publications, releases, host):
     require(report["assessment"]["verdict"].endswith("HEALTHY") and int(report["terminal"]) == 16
         and int(report["live"]) == 0 and len({row["revisionId"] for row in samples}) == 2,
         "java-canary-live-sample-attribution")
-    promoted = receipt(client.call("rollout", "promote", "java-http-canary", "--expected-revision", started["revision"],
-        "--operation-id", "java-canary-promote", "--next-step", 1), "java-canary-promote")
-    # The original exact trigger must not silently float to a new deployment.
-    stale_status = request(host)[0]
-    require(stale_status in (409, 503), "java-http-stale-trigger-silently-followed-rollout")
-    rolled = receipt(client.call("rollout", "rollback", "java-http-canary", "--expected-revision", promoted["revision"],
-        "--operation-id", "java-canary-rollback", "--target-generation", historical), "java-canary-rollback")
+    # The closed healthy window is retained before starting a bounded old
+    # invocation. Promotion/rollback may change routing while the actual parent
+    # and child continue to own their cells and quota reservations.
+    draining = running_adapter(client, targets, host, "java-canary-drain")
+    drain = {}
+    try:
+        drain["beforePromotion"] = readiness(client)
+        drain["activation"] = client.call("activation", "get", "java-canary-drain")["data"]
+        promoted = receipt(client.call("rollout", "promote", "java-http-canary", "--expected-revision", started["revision"],
+            "--operation-id", "java-canary-promote", "--next-step", 1), "java-canary-promote")
+        held = client.call("node", "get", NODE_ID)["data"]["inventory"]
+        require(sum(int(row["active"]) for row in held["cellCapacity"]) == 2
+            and any(int(value) > 0 for value in held["quotas"]["usage"].values()),
+            "java-canary-promotion-released-live-owners")
+        drain["afterPromotion"] = held
+        stale_status = request(host)[0]
+        require(stale_status in (409, 503), "java-http-stale-trigger-silently-followed-rollout")
+        rolled = receipt(client.call("rollout", "rollback", "java-http-canary", "--expected-revision", promoted["revision"],
+            "--operation-id", "java-canary-rollback", "--target-generation", historical), "java-canary-rollback")
+        cancelled = client.call("activation", "cancel", "java-canary-drain", "--reason", "Synthetic canary drain completion")
+        require(cancelled["outcomeKnown"] and cancelled["data"]["disposition"] == "accepted", "java-canary-drain-cancel-uncertain")
+        completed = draining.complete(min(client.deadline, time.monotonic() + 15))
+        response = json.loads(completed.stdout)
+        require(completed.returncode == 4 and response["error"]["code"] == "cancelled", "java-canary-drain-result")
+        drain["completion"] = response
+    finally:
+        draining.close()
+    drain["afterPhysicalRelease"] = idle(client)
     route(client, host, publications["adapter"])
     require(request(host)[0] == 200, "java-http-rollback-fresh-route")
     return {"started": started, "samples": samples, "evaluation": report, "promoted": promoted,
-            "staleTriggerStatus": stale_status, "rolledBack": rolled, "idle": idle(client)}
+            "staleTriggerStatus": stale_status, "rolledBack": rolled, "drain": drain, "idle": idle(client)}
 
 
 def run_node(binaries, releases, output, *, http, former_profile=False):
@@ -194,15 +222,17 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     result["generatedClient"] = json.loads(generated_client.stdout)
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
+                    result["triggerOnlyRebinding"] = rebind(client, targets, releases, publications)
                     impersonation = invoke(client, targets, "adapter", "handle", web_request(host), "java-trigger-impersonation")
                     require(decoded(impersonation)[0]["status"] == 403, "java-operator-impersonated-original-http-trigger")
                     result["triggerImpersonationDenied"] = impersonation
                     service_generation = service_grant(client, node, publications, generation=service_generation)
+                    result["restoredGrantRebinding"] = rebind(client, targets, releases, publications)
                     route(client, host, publications["adapter"])
                     wide = decoded(result["standaloneStatus"])[0][0]
                     for path, arguments in (("echo", [wide]),
-                            ("nested", [{"value": wide, "optional": {"some": wide}, "labels": ["Grüße 😀"]}]),
-                            ("text", ["UTF-8 Grüße 😀\u0000"]), ("items", [["a", "b", "😀"]])):
+                            ("nested", [{"value": wide, "optional": {"some": wide}, "labels": ["Gr\u00fc\u00dfe \U0001f600"]}]),
+                            ("text", ["UTF-8 Gr\u00fc\u00dfe \U0001f600\u0000"]), ("items", [["a", "b", "\U0001f600"]])):
                         status, body, _ = request(host, "/api/" + path, method="POST", value=arguments)
                         require(status == 200 and json.loads(body) == arguments, "java-http-safe-typed-" + path)
                     for path in ("private-admin", "publishing", "provider-event", "missing"):
@@ -222,7 +252,7 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     result["canary"] = canary(client, targets, publications, releases, host)
                 result["cleanup"] = idle(client)
                 deployments = client.call("deployment", "list")["data"]["deployments"]
-                delete_all(client, [row["name"] for row in deployments])
+                delete_all(client, [row["manifest"]["metadata"]["name"] for row in deployments])
                 stop(client, node)
                 result["nodeStopped"] = node.owner.finished
                 result["status"] = "passed"
@@ -272,10 +302,12 @@ def qualify(output, wasi_sdk, target):
         stage = "sign"
         (output / "signing").mkdir(mode=0o700)
         commands = Commands(ROOT, output / "signing", build_environment(output / "signing"))
-        commands.run("demo-sign", binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built.values())
+        commands.run("demo-sign-separated", binaries["examples/capsule_authoring"], "demo-sign-separated", output / "releases", *built.values())
         result["releaseSet"] = read_json(output / "releases/release-set.json")
         signed_inputs = inventory(output / "releases", maximum_bytes=128 * 1024 * 1024)
         result["signedInputs"] = signed_inputs
+        stage = "paired-canonical-trust"
+        result["pairedTrust"] = trust.qualify(binaries, output / "releases", output / "paired-trust")
         stage = "former-http-global-profile"
         result["formerProfile"] = run_node(binaries, output / "releases", output / "former-profile", http=False,
                                             former_profile=True)
