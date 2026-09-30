@@ -27,6 +27,14 @@ DENIAL_CONTROL = r'''
 
 def install(project: Path, outside: Path, cargo: Path) -> dict:
     """Capture a normal external crate, real transitive packages and a macro."""
+    # Native Unicode tables enlarge cold component preparation. Keep this
+    # experiment inside the node's existing five-second ceiling; ordinary
+    # project templates and the explicit 100ms interruption cases are unchanged.
+    descriptor = project / 'capsule-project.json'
+    recipe = json.loads(descriptor.read_bytes())
+    original_wall_limit = recipe['limits']['wallTimeLimitMillis']
+    recipe['limits']['wallTimeLimitMillis'] = 5000
+    descriptor.write_bytes(canonical(recipe) + b'\n')
     outside.mkdir(mode=0o700)
     library, macro = outside / 'developer-owned-library', outside / 'developer-owned-macro'
     for directory in (library, macro):
@@ -112,4 +120,7 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
     return {'formatVersion': 1, 'thirdParty': 'unicode-normalization/0.1.24',
             'transitives': ['tinyvec', 'tinyvec_macros'], 'developerOwned': 'outside-qualification-library/0.1.0',
             'resourceDigest': digest(resource), 'sourceDigest': digest(after),
+            'coldPreparationBudget': {'originalWallTimeLimitMillis': original_wall_limit,
+                                      'wallTimeLimitMillis': recipe['limits']['wallTimeLimitMillis'],
+                                      'scope': 'dependency-qualification-greeting-only'},
             'executableInputs': lock['executableInputs'], 'offlineOriginals': 'unavailable-after-capture'}
