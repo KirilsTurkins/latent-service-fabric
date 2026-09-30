@@ -6775,15 +6775,20 @@
         "runtime::policy_revocation_at_real_timer_barrier_stops_original_work_and_reclaims_owners",
         "runtime::root_deadline_does_not_complete_long_timer_and_cpu_loop_remains_contained",
         "runtime::root_result_idle_worker_and_trap_never_skip_runtime_retirement",
+        "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
         "runtime::signed_runtime_limits_closing_and_generation_fences_use_normal_node_admission",
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
-      "expectedIgnored": [],
+      "expectedIgnored": [
+        "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers"
+      ],
       "id": "latent-wasmtime.test.local-service",
-      "ignoredLeaves": [],
+      "ignoredLeaves": [
+        "signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers"
+      ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 24,
+      "minimumCases": 25,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

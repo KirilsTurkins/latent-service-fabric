@@ -267,6 +267,13 @@ impl Fixture {
             epoch_tick_interval_millis: 1,
             ..Default::default()
         };
+        let runtime_clocks = activation_runtime.is_some()
+            && caller
+                .surface()
+                .unwrap()
+                .imports()
+                .iter()
+                .any(|import| import.as_ref() == "latent:clock/monotonic@0.1.0");
         let store = Arc::new(
             DirectoryDeploymentRepository::open_with_catalog(
                 root.path().join("routes"),
@@ -299,10 +306,23 @@ impl Fixture {
             .execution
             .resource_budget_ceiling;
         consumer.grants = if activation_runtime.is_some() {
-            vec![CapabilityGrantSpec::new(
+            let mut grants = vec![CapabilityGrantSpec::new(
                 latent_core::CapabilityId(guest_runtime::ACTIVATION.into()),
                 PolicyId("sdk-runtime-policy-0".into()),
-            )]
+            )];
+            if runtime_clocks {
+                for (index, capability) in
+                    ["latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0"]
+                        .iter()
+                        .enumerate()
+                {
+                    grants.push(CapabilityGrantSpec::new(
+                        latent_core::CapabilityId((*capability).into()),
+                        PolicyId(format!("sdk-runtime-policy-{}", index + 1)),
+                    ));
+                }
+            }
+            grants
         } else {
             let mut grants = vec![CapabilityGrantSpec::new(
                 latent_core::CapabilityId(SERVICE_INVOCATION_CAPABILITY.into()),
@@ -312,7 +332,11 @@ impl Fixture {
             grants
         };
         let mut target = deployment("callee", target_tenant, &callee, &callee_publication);
-        target.grants = guest_runtime::grants();
+        target.grants = if activation_runtime.is_some() {
+            vec![]
+        } else {
+            guest_runtime::grants()
+        };
         target.resources = catalog
             .fetch(&packages::release(&callee))
             .await
@@ -406,12 +430,13 @@ impl Fixture {
             },
         ];
         let guest_runtime = if let Some((_, call_wall_millis)) = activation_runtime {
-            guest_runtime::Runtime::activation_scoped(
+            guest_runtime::Runtime::activation_scoped_with_clocks(
                 &broker,
                 &policies,
                 "tenant-a",
                 &scopes,
                 call_wall_millis,
+                runtime_clocks,
             )
         } else {
             guest_runtime::Runtime::scoped(&broker, &policies, "tenant-a", &scopes, false)

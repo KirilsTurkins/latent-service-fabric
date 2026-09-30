@@ -38,6 +38,23 @@ async fn configured_with_wait_ceiling(
     call_wall_millis: u64,
 ) -> Fixture {
     let caller = packages::activation_runtime(component::bytes());
+    signed_runtime(
+        root,
+        cells,
+        call_wall_millis,
+        caller,
+        include_bytes!("runtime/component.rs"),
+    )
+    .await
+}
+
+async fn signed_runtime(
+    root: &std::path::Path,
+    cells: u32,
+    call_wall_millis: u64,
+    caller: latent_packaging::PackageBundle,
+    source_input: &[u8],
+) -> Fixture {
     let callee = packages::callee(42);
     let signers = package::Signers::new(latent_signing::PROVENANCE_BUILD_TYPE);
     let mut uploads = vec![];
@@ -48,7 +65,7 @@ async fn configured_with_wait_ceiling(
         observation.component_digest = bundle.layout().component_release().unwrap().0;
         observation.component_size = bundle.blob("component.wasm").unwrap().len() as u64;
         // Bind the actual checked-in binary builder and frozen runtime WIT.
-        let mut source = include_bytes!("runtime/component.rs").to_vec();
+        let mut source = source_input.to_vec();
         source.extend_from_slice(include_bytes!(
             "../../../../wit/platform/activation-runtime/package.wit"
         ));
@@ -72,6 +89,62 @@ async fn configured_with_wait_ceiling(
     }
     Fixture::with_activation_runtime(cells, (catalog, caller, callee), limits(), call_wall_millis)
         .await
+}
+
+/// The normal suite does not build a toolchain. Run the explicit compiler
+/// qualification first; a missing fixture is a failure when this is selected.
+#[tokio::test]
+#[ignore = "requires the pinned Java activation fiber component and explicit java profile"]
+async fn signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers() {
+    assert_eq!(
+        std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
+        Ok("java")
+    );
+    let prepared = std::path::PathBuf::from(
+        std::env::var_os("LSF_JAVA_FIBER_FIXTURE").expect("prepare the pinned Java fiber fixture"),
+    );
+    let source = std::fs::read(prepared.join("src/dev/latent/app/Capsule.java")).unwrap();
+    assert_eq!(
+        source,
+        include_bytes!("../../../../sdk/java-guest/fibers/conformance/Capsule.java")
+    );
+    let record: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(prepared.join("FIBERS-COMPILE.json")).unwrap())
+            .unwrap();
+    assert_eq!(record["profile"], "teavm-activation-fibers-v1");
+    let bytes = std::fs::read(prepared.join("build/component.wasm")).unwrap();
+    assert_eq!(
+        record["componentDigest"],
+        latent_artifacts::package::artifact_blob_digest(&bytes).as_str()
+    );
+    assert_eq!(
+        record["sourceDigest"],
+        latent_artifacts::package::artifact_blob_digest(&source).as_str()
+    );
+    assert_eq!(record["reference"].as_array().unwrap().len(), 3);
+    let wit = std::fs::read_to_string(prepared.join("wit/service.wit")).unwrap();
+    let caller = packages::java_activation_runtime(bytes, &wit);
+    let root = tempfile::tempdir().unwrap();
+    let f = signed_runtime(root.path(), 1, 120_000, caller, &source).await;
+    for iteration in 0..3 {
+        let receipt = success(
+            f.manager
+                .start(f.request(&format!("java-fibers-{iteration}"), 0))
+                .unwrap()
+                .await,
+        );
+        assert_eq!(
+            serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+            [42]
+        );
+        assert!(receipt.consumption.cpu_fuel > 0);
+        assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+        eprintln!(
+            "teavm-activation-fibers-v1 iteration={iteration} consumption={:?}",
+            receipt.consumption
+        );
+        f.idle().await;
+    }
 }
 fn success(receipt: latent_node::ActivationReceipt) -> latent_activation::ActivationSuccess {
     let ActivationOutcome::Succeeded(success) = receipt.outcome else {
