@@ -1,7 +1,12 @@
 //! Owned capture for fixed-worker activation contexts. It retains original row
 //! stamps and a real bounded read lease, never reusable authentication tokens.
-use super::*;
+use super::{
+    denied, CapabilityCeiling, EvaluationInput, PolicySnapshot, PolicyStore, ReleaseUseEligibility,
+    ResourceTarget, SealedPolicyDecision,
+};
 use crate::capability::ResourceRequest;
+use latent_core::{InvocationPrincipal, Metadata, PlatformError};
+use std::sync::Arc;
 
 struct Input {
     principal: InvocationPrincipal,
@@ -34,6 +39,11 @@ pub struct OwnedPolicyDecision {
     require_audit: bool,
 }
 impl OwnedPolicyDecision {
+    #[must_use]
+    pub const fn requires_audit(&self) -> bool {
+        self.require_audit
+    }
+
     fn borrowed(&self) -> SealedPolicyDecision<'_> {
         SealedPolicyDecision {
             snapshot: &self.snapshot,
@@ -69,7 +79,7 @@ impl PolicyStore {
                         kind: actual.principal.kind,
                         tenant: actual.principal.tenant.clone(),
                         service: actual.principal.service.clone(),
-                        claims: Default::default(),
+                        claims: Metadata::new(),
                     },
                     service: actual.service.into(),
                     publication: actual.publication.into(),

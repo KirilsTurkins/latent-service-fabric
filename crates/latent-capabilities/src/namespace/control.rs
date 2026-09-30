@@ -61,6 +61,68 @@ pub struct NamespaceControlFence<'a> {
     replay: bool,
 }
 impl NamespaceControl {
+    /// Check before receipt lookup and again before exposing metadata. A
+    /// tombstone can be inspected with a current grant for its exact incarnation;
+    /// a historical management receipt cannot reveal another caller's operation.
+    /// The action is short and performs no IO.
+    pub fn with_inspection(
+        store: &PolicyStore,
+        decision: &SealedPolicyDecision<'_>,
+        lifecycle: &NamespaceLifecycleRegistry,
+        current: &NamespaceRead,
+        receipt: Option<&NamespaceOperationReceipt>,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        let mut action = Some(action);
+        store.with_current(decision, &mut |actual, _| {
+            let ResourceTarget::State {
+                namespace,
+                incarnation,
+                entity,
+                recovery_kind,
+                recovery_scope,
+                ..
+            } = actual.resource
+            else {
+                return Err(denied());
+            };
+            let caller = CallerScope::derive(actual.principal, &RecoverySelection::OriginalCaller)?;
+            let record = current.record();
+            if actual.capability != STATE_CONTRACT
+                || actual.operation != "namespace-inspect"
+                || actual.principal.tenant.as_ref() != Some(&record.tenant)
+                || namespace != record.id.0
+                || incarnation != record.version.incarnation
+                || entity.is_some()
+                || recovery_kind != caller.kind
+                || recovery_scope != caller.scope
+            {
+                return Err(denied());
+            }
+            if receipt.is_some_and(|value| {
+                value.context.tenant != record.tenant
+                    || value.record.tenant != record.tenant
+                    || value.record.id != record.id
+                    || value.record.version.incarnation != incarnation
+                    || value.context.actor != format!("{}:{}", caller.owner_kind, caller.scope)
+            }) {
+                return Err(denied());
+            }
+            let mut failure = None;
+            let result = lifecycle.with_current_record(current, || {
+                action.take().ok_or(NamespaceError::PermissionDenied)?().map_err(|error| {
+                    failure = Some(error);
+                    NamespaceError::PermissionDenied
+                })
+            });
+            if let Some(error) = failure {
+                Err(error)
+            } else {
+                result.map_err(platform)
+            }
+        })
+    }
+
     /// Run inside `ProtectedStoreOwner.with_store` on its bounded worker. Snapshot
     /// preparation is outside policy locks; acceptance is in the actual writer.
     pub fn prepare<'a>(

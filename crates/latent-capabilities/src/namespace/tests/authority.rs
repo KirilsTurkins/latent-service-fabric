@@ -965,3 +965,139 @@ fn final_effect_guard_is_held_through_cancellation_cas_and_failure_does_not_cons
         .unwrap();
     assert!(!authority.cancellation().request());
 }
+
+#[test]
+fn real_lifecycle_handle_for_another_namespace_cannot_seal_an_authorized_row_or_leak_a_pin() {
+    let fixture = Fixture::new();
+    let other = latent_core::StateNamespaceId("other".into());
+    let mutation = NamespaceMutation::Create {
+        id: other.clone(),
+        state_schema: schema(),
+        quota: latent_state::namespace::NamespaceQuota::default(),
+    };
+    let prepared = fixture
+        .namespaces
+        .prepare(
+            &fixture.database,
+            NamespaceOperationContext {
+                tenant: TenantId("a".into()),
+                actor: "fixture".into(),
+                operation_id: "other".into(),
+            },
+            &mutation,
+            0,
+        )
+        .unwrap();
+    // Trusted fixture data does not supply the application a policy grant.
+    fixture.database.apply(prepared.batch).unwrap();
+    let view = fixture.database.snapshot().unwrap();
+    let other = latent_state::namespace::catalog::NamespaceCatalog::read_in(
+        &view,
+        &TenantId("a".into()),
+        &other,
+    )
+    .unwrap()
+    .unwrap();
+    let wrong_handle = fixture.namespaces.lifecycle().pin(&other).unwrap();
+    assert_eq!(fixture.namespaces.lifecycle().retained_owners(), 1);
+    let actor = principal("alice");
+    let scope = scope(
+        &actor,
+        Some("alice-order"),
+        &RecoverySelection::OriginalCaller,
+    );
+    let snapshot = fixture.snapshot();
+    let initial = fixture.decision(&snapshot, &actor, &scope, "acquire-command");
+    assert!(NamespaceAuthority::seal(
+        &fixture.policy,
+        &initial,
+        &fixture.read(),
+        NamespaceAdmission {
+            activation: ActivationId("wrong-life".into()),
+            deadline: deadline(),
+            recovery: &RecoverySelection::OriginalCaller,
+            state_schema: &schema()
+        },
+        wrong_handle
+    )
+    .is_err());
+    assert_eq!(fixture.namespaces.lifecycle().retained_owners(), 0);
+    absent(&fixture, "wrong-life");
+}
+
+#[test]
+fn management_receipt_disclosure_rechecks_current_permission_and_exact_stable_actor() {
+    let fixture = Fixture::new();
+    let actor = principal("alice");
+    let scope = scope(&actor, None, &RecoverySelection::OriginalCaller);
+    approve_management(&fixture, &scope);
+    let snapshot = fixture.snapshot();
+    let quiesce = fixture.decision(&snapshot, &actor, &scope, "namespace-quiesce");
+    let inspect = fixture.decision(&snapshot, &actor, &scope, "namespace-inspect");
+    let mutation = lifecycle_mutation(&fixture.read(), NamespaceTransition::Quiesce);
+    let prepared = NamespaceControl::prepare(
+        &fixture.policy,
+        &quiesce,
+        &fixture.namespaces,
+        &fixture.database,
+        NamespaceControlRequest {
+            mutation: &mutation,
+            operation_id: "managed",
+            inspection: None,
+        },
+        0,
+    )
+    .unwrap();
+    let (receipt, _) = persist_control(&fixture, prepared);
+    let current = fixture.read();
+    let mut disclosed = 0;
+    NamespaceControl::with_inspection(
+        &fixture.policy,
+        &inspect,
+        fixture.namespaces.lifecycle(),
+        &current,
+        None,
+        || Ok(()),
+    )
+    .unwrap();
+    NamespaceControl::with_inspection(
+        &fixture.policy,
+        &inspect,
+        fixture.namespaces.lifecycle(),
+        &current,
+        Some(&receipt),
+        || {
+            disclosed += 1;
+            Ok(())
+        },
+    )
+    .unwrap();
+    let mut foreign = receipt.clone();
+    foreign.context.actor = "different-authenticated-subject".into();
+    assert!(NamespaceControl::with_inspection(
+        &fixture.policy,
+        &inspect,
+        fixture.namespaces.lifecycle(),
+        &current,
+        Some(&foreign),
+        || {
+            disclosed += 1;
+            Ok(())
+        }
+    )
+    .is_err());
+    fixture.update(None, "revoke-after-receipt-read");
+    assert!(NamespaceControl::with_inspection(
+        &fixture.policy,
+        &inspect,
+        fixture.namespaces.lifecycle(),
+        &current,
+        Some(&receipt),
+        || {
+            disclosed += 1;
+            Ok(())
+        }
+    )
+    .is_err());
+    assert_eq!(disclosed, 1);
+}
