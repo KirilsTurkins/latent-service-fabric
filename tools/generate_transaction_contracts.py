@@ -92,11 +92,24 @@ def vectors():
             for name, actions, expected in scenarios])
 
 
+def preparation():
+    value = dict(schemaVersion="latent.transaction-contract.preparation-profile.v1",
+        profile="lsf-transaction-http-preparation-v1", engine="wasmtime@" + matrix()["wasmtimeVersion"],
+        componentAsync=True, hostAbiDigest=matrix()["digest"], codec="application/vnd.latent.wit-values.v1+json",
+        hostcallFuel=2097152, limits=dict(maxInputBytes=2097152, maxOutputBytes=2097152, maxDepth=32,
+            maxNodes=32768, maxStringBytes=524288, maxCollectionItems=4096, maxTypeNodes=4096,
+            maxTypeNameBytes=256, maxLiftedBytes=67108864, maxDecodedValueBytes=16777216),
+        runtimeInstallation=False, runtimeExecutionQualified=False)
+    identity = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return {**value, "digest": digest(b"lsf-transaction-preparation-profile-v1\0" + identity)}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    for relative, value in (("wit/host-abi-phase4-v1.json", matrix()), ("sdk/profile/transaction-vectors.json", vectors())):
+    for relative, value in (("wit/host-abi-phase4-v1.json", matrix()), ("sdk/profile/transaction-vectors.json", vectors()),
+                            ("sdk/profile/transaction-preparation-v1.json", preparation())):
         expected, path = encode(value), ROOT / relative
         if args.check:
             if not path.is_file() or path.read_bytes() != expected:

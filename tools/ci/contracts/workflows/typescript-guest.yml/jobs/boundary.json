@@ -64,6 +64,10 @@
         "run": "cargo install --locked wasm-tools --version 1.254.0"
       },
       {
+        "name": "Qualify proposed transaction shapes with the maintained stackful TypeScript compiler",
+        "run": "python3 tools/qualify_transaction_contracts.py --language typescript --tools \"$RUNNER_TEMP/typescript-guest-tools\" --output \"$RUNNER_TEMP/transaction-contract-typescript\""
+      },
+      {
         "name": "Compile the real async-boundary diagnostic",
         "run": "python3 tools/typescript_guest/probe.py --output \"$RUNNER_TEMP/typescript-guest-probe\" --node \"$(command -v node)\" --wasm-tools \"$(command -v wasm-tools)\" --compiler \"$RUNNER_TEMP/typescript-guest-tools/node_modules/@bytecodealliance/componentize-js/src/componentize.js\""
       },
@@ -91,7 +95,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "typescript-guest-runtime-${{ github.sha }}",
-          "path": "target/typescript-guest-runtime/runtime-tests.log\ntarget/typescript-guest-runtime/owner-tests.log\n${{ runner.temp }}/typescript-guest-probe/\n${{ runner.temp }}/typescript-capsule-authoring/\n",
+          "path": "${{ runner.temp }}/transaction-contract-typescript/report.json\n${{ runner.temp }}/transaction-contract-typescript/source.tar.gz\n${{ runner.temp }}/transaction-contract-typescript/component.wit\n${{ runner.temp }}/transaction-contract-typescript/preparation.json\n${{ runner.temp }}/transaction-contract-typescript/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-typescript/logs/**\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.log\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wit\n${{ runner.temp }}/transaction-contract-typescript/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/generated/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-typescript/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/component.wasm\ntarget/typescript-guest-runtime/runtime-tests.log\ntarget/typescript-guest-runtime/owner-tests.log\n${{ runner.temp }}/typescript-guest-probe/\n${{ runner.temp }}/typescript-capsule-authoring/\n",
           "retention-days": 7
         }
       }
@@ -100,7 +104,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Issue #732: retain sharded review inputs, run contract regressions, and upload commit-bound failure diagnostics without changing required result coverage.",
+  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

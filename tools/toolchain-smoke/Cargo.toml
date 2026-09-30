@@ -165,6 +165,14 @@ bench = false
 doc = false
 
 [[example]]
+name = "transaction-contract"
+path = "../../sdk/transaction-contract/rust/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
 name = "tutorial-greeting"
 path = "examples/tutorial_greeting/component.rs"
 crate-type = ["cdylib"]

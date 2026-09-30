@@ -86,6 +86,10 @@
         "shell": "bash"
       },
       {
+        "name": "Qualify proposed transaction shapes with the maintained NativeAOT compiler",
+        "run": "python3 tools/qualify_transaction_contracts.py --language dotnet --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --output \"$RUNNER_TEMP/transaction-contract-dotnet\""
+      },
+      {
         "name": "Check independent editable projects and closed provenance profiles",
         "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas\n"
       },
@@ -123,7 +127,7 @@
         "with": {
           "if-no-files-found": "error",
           "name": "dotnet-guest-qualification-${{ github.sha }}",
-          "path": "${{ runner.temp }}/dotnet-guest/\n${{ runner.temp }}/dotnet-capsule-authoring/\n${{ runner.temp }}/dotnet-authoring-tools/logs/\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json\n",
+          "path": "${{ runner.temp }}/transaction-contract-dotnet/report.json\n${{ runner.temp }}/transaction-contract-dotnet/source.tar.gz\n${{ runner.temp }}/transaction-contract-dotnet/component.wit\n${{ runner.temp }}/transaction-contract-dotnet/preparation.json\n${{ runner.temp }}/transaction-contract-dotnet/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-dotnet/logs/**\n${{ runner.temp }}/transaction-contract-dotnet/compiler/*.log\n${{ runner.temp }}/transaction-contract-dotnet/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-dotnet/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-dotnet/compiled/component.wit\n${{ runner.temp }}/transaction-contract-dotnet/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-dotnet/compiled/generated/**\n${{ runner.temp }}/transaction-contract-dotnet/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-dotnet/bindings/**\n${{ runner.temp }}/transaction-contract-dotnet/component.wasm\n${{ runner.temp }}/dotnet-guest/\n${{ runner.temp }}/dotnet-capsule-authoring/\n${{ runner.temp }}/dotnet-authoring-tools/logs/\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json\n",
           "retention-days": 7
         }
       }
@@ -132,7 +136,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Issue #732: retain sharded review inputs, run contract regressions, and upload commit-bound failure diagnostics without changing required result coverage.",
+  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

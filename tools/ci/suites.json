@@ -5710,6 +5710,8 @@
         "values::tests::scalars::floating_point_round_trips_preserve_finite_bits_and_signed_zero",
         "values::tests::scalars::floats_accept_explicit_special_values_and_reject_accidental_overflow",
         "values::tests::scalars::scalar_widths_unicode_and_lossless_decimal64",
+        "values::tests::transactions::transaction_owned_signatures_fit_the_existing_http_preparation_profile",
+        "values::tests::transactions::transaction_resources_need_an_explicit_allowlist_and_nested_pages_reject",
         "values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan",
         "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults"
       ],
@@ -5724,7 +5726,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 336,
+      "minimumCases": 338,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -8458,6 +8460,30 @@
       "resourceClass": "runtime-bounded",
       "source": "examples/java_runtime_probe.rs",
       "target": "java_runtime_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.transaction-contract",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "../../sdk/transaction-contract/rust/component.rs",
+      "target": "transaction-contract",
       "timeoutSeconds": 900
     }
   ],

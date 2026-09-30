@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'sdk/typescript-guest/**'
+      - 'sdk/transaction-contract/**'
+      - 'tools/qualify_transaction_contracts.py'
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe/**'
       - 'tools/typescript_guest/**'
@@ -26,6 +28,8 @@ on:
     branches: [development]
     paths:
       - 'sdk/typescript-guest/**'
+      - 'sdk/transaction-contract/**'
+      - 'tools/qualify_transaction_contracts.py'
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe.rs'
       - 'crates/latent-wasmtime/examples/typescript_runtime_probe/**'
       - 'tools/typescript_guest/**'
@@ -102,6 +106,8 @@ jobs:
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-guest-tools"
       - name: Install pinned component validator
         run: cargo install --locked wasm-tools --version 1.254.0
+      - name: Qualify proposed transaction shapes with the maintained stackful TypeScript compiler
+        run: python3 tools/qualify_transaction_contracts.py --language typescript --tools "$RUNNER_TEMP/typescript-guest-tools" --output "$RUNNER_TEMP/transaction-contract-typescript"
       - name: Compile the real async-boundary diagnostic
         run: python3 tools/typescript_guest/probe.py --output "$RUNNER_TEMP/typescript-guest-probe" --node "$(command -v node)" --wasm-tools "$(command -v wasm-tools)" --compiler "$RUNNER_TEMP/typescript-guest-tools/node_modules/@bytecodealliance/componentize-js/src/componentize.js"
       - name: Execute the compiled async-boundary diagnostic
@@ -132,6 +138,21 @@ jobs:
         with:
           name: typescript-guest-runtime-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/transaction-contract-typescript/report.json
+            ${{ runner.temp }}/transaction-contract-typescript/source.tar.gz
+            ${{ runner.temp }}/transaction-contract-typescript/component.wit
+            ${{ runner.temp }}/transaction-contract-typescript/preparation.json
+            ${{ runner.temp }}/transaction-contract-typescript/compiler-inputs.json
+            ${{ runner.temp }}/transaction-contract-typescript/logs/**
+            ${{ runner.temp }}/transaction-contract-typescript/compiler/*.log
+            ${{ runner.temp }}/transaction-contract-typescript/compiler/*.command.json
+            ${{ runner.temp }}/transaction-contract-typescript/compiled/component.wasm
+            ${{ runner.temp }}/transaction-contract-typescript/compiled/component.wit
+            ${{ runner.temp }}/transaction-contract-typescript/compiled/bindings/**
+            ${{ runner.temp }}/transaction-contract-typescript/compiled/generated/**
+            ${{ runner.temp }}/transaction-contract-typescript/compiled/raw-generated-bindings.json
+            ${{ runner.temp }}/transaction-contract-typescript/bindings/**
+            ${{ runner.temp }}/transaction-contract-typescript/component.wasm
             target/typescript-guest-runtime/runtime-tests.log
             target/typescript-guest-runtime/owner-tests.log
             ${{ runner.temp }}/typescript-guest-probe/

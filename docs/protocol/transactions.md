@@ -189,6 +189,22 @@ amplification from #708. Successful generation/compilation alone is not successf
 preparation or real state-engine execution. #708 retains its separate composed
 Java regression; the definition probes consume the same preparation limits.
 
+[The generated preparation profile](../../sdk/profile/transaction-preparation-v1.json)
+binds these dimensions with its own digest. Engine reflection checks all 13
+operations, including eight async imports, and writes per-signature allocation
+plans when `LSF_TRANSACTION_PREPARATION_REPORT` names a new output file. A
+negative nested-page signature consumes the #708 allocation regression, and
+unrecognized resource owners reject before lifting.
+
+[The shared compiler inputs](../../sdk/transaction-contract) use each maintained
+language owner through `tools/qualify_transaction_contracts.py --language LANGUAGE
+--output NEW_DIRECTORY`. Java also needs `--wasi-sdk`; TypeScript and .NET need
+their existing pinned `--tools` directory. The six existing language CI lanes
+retain actual components, exact generated bindings, source identity and compiler
+definition receipts. They preserve the later executable SDK gates. The required
+Jco `delete` declaration and Java shared-owner alias corrections are exact
+compiler projections; neither changes WIT authority or lowers typecheck strictness.
+
 [Shared vectors](../../sdk/profile/transaction-vectors.json) retain one scenario
 vocabulary across guest models, external client models, HTTP and actual execution.
 Every result must name its actual boundary and source/compiler/engine/profile
