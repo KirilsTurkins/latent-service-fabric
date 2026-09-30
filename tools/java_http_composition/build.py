@@ -11,7 +11,7 @@ from tools.rust_capsule_project import ROOT, digest, read_json, write_json
 
 def projects(output: Path) -> dict[str, Path]:
     result = {}
-    for name in ("domain",):
+    for name in ("domain", "context-required"):
         project = create(output / name, "greeting", "java-http-" + name)
         fixture = ROOT / "examples/java-http-composition" / name
         (project / "src/dev/latent/app/Capsule.java").write_bytes((fixture / "Capsule.java").read_bytes())

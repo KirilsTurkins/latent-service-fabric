@@ -1,5 +1,8 @@
 # Typed Java domain and generated HTTP adapter
 
+For actual host-derived lineage, admitted grants, deadlines and the ordinary
+context-import support boundary, run the [context and budget example](java-http-context.md).
+
 Use `latent.java-http.adapter.v1` to keep a typed Java business contract and
 expose explicitly selected operations through shared HTTP ingress. This profile
 uses two independently compiled, packaged and signed components. The domain

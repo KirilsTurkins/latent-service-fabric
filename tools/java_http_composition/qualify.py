@@ -14,6 +14,7 @@ from tools.build_process_signals import owned_cancellation
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.java_http_composition.build import compile_pair
+from tools.java_http_composition import context
 from tools.java_http_composition.node import (
     ADAPTER, DOMAIN_CONTRACT, SERVICE_CAPABILITY, WEB_CONTRACT, configure, decoded,
     grant, idle, invoke, request, route, service_grant, web_request,
@@ -30,7 +31,7 @@ from tools.rust_capsule_build import Commands
 
 def publish(client, releases):
     result = {}
-    for name in ("domain", "adapter"):
+    for name in ("domain", "adapter", "context-required"):
         source = releases / ("java-http-" + name)
         published = client.call("release", "publish-package", source / "package", "--evidence", source / "evidence/index.json",
             "--operation-id", "publish-" + name, "--expected-generation", 0)
@@ -79,6 +80,14 @@ def cancellation(client, targets, host, result):
     finally:
         process.close()
     result["afterCancellation"] = idle(client)
+    result["cancellationTree"] = context.tree(client, "java-composed-cancel")
+    cancelled_nodes = result["cancellationTree"]["nodes"]
+    require(len(cancelled_nodes) == 2 and all(row["terminalState"] == "cancelled" for row in cancelled_nodes),
+            "java-context-cancellation-did-not-terminate-parent-and-child")
+    cancelled_parent = next(row for row in cancelled_nodes if row["activationId"] == "java-composed-cancel")
+    cancelled_child = next(row for row in cancelled_nodes if row["parentActivationId"] == "java-composed-cancel")
+    require(cancelled_parent["principalKind"] == "administrator" and cancelled_child["principalKind"] == "service"
+        and cancelled_child["callerService"] == ADAPTER, "java-context-cancellation-child-authority")
     result["afterCancellationFresh"] = fresh_status(client, targets, host, "java-after-cancellation")
 
 
@@ -175,7 +184,7 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                             "java-domain-full-width-result")
                 if http:
                     route(client, host, publications["adapter"])
-                    require(request(host)[0] == 403, "java-http-missing-child-grant-was-accepted")
+                    result["missingGrant"] = context.capture_http(client, host, expected=(403,))
                     result["missingGrantStatus"] = 403
                     service_generation = service_grant(client, node, publications)
                     targets["adapter"] = deploy(client, releases / "java-http-adapter/deployment.json", publications["adapter"],
@@ -192,11 +201,17 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     (evidence / "generated-client.stderr.log").write_bytes(generated_client.stderr)
                     require(generated_client.returncode == 0, "java-http-normal-generated-client-failed")
                     result["generatedClient"] = json.loads(generated_client.stdout)
+                    result["context"] = context.qualify(client, targets, host, evidence)
+                    result["ordinaryContextImport"] = context.ordinary_import(client, targets, releases, publications, host)
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
                     impersonation = invoke(client, targets, "adapter", "handle", web_request(host), "java-trigger-impersonation")
                     require(decoded(impersonation)[0]["status"] == 403, "java-operator-impersonated-original-http-trigger")
                     result["triggerImpersonationDenied"] = impersonation
+                    result["triggerImpersonationTree"] = context.tree(client, "java-trigger-impersonation")
+                    impersonation_nodes = result["triggerImpersonationTree"]["nodes"]
+                    require(len(impersonation_nodes) == 1 and impersonation_nodes[0]["principalKind"] == "administrator"
+                        and impersonation_nodes[0]["callerService"] is None, "java-context-operator-cannot-inherit-ingress-trigger")
                     service_generation = service_grant(client, node, publications, generation=service_generation)
                     route(client, host, publications["adapter"])
                     wide = decoded(result["standaloneStatus"])[0][0]
@@ -222,7 +237,7 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     result["canary"] = canary(client, targets, publications, releases, host)
                 result["cleanup"] = idle(client)
                 deployments = client.call("deployment", "list")["data"]["deployments"]
-                delete_all(client, [row["name"] for row in deployments])
+                delete_all(client, [row["manifest"]["metadata"]["name"] for row in deployments])
                 stop(client, node)
                 result["nodeStopped"] = node.owner.finished
                 result["status"] = "passed"

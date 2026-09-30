@@ -19,6 +19,7 @@ from tools.static_api.node import policy
 TENANT = "examples"
 DOMAIN = "examples/java-http-domain"
 ADAPTER = "examples/java-http-adapter"
+CONTEXT_REQUIRED = "examples/java-http-context-required"
 DOMAIN_CONTRACT = "examples:java-http-domain/api@1.0.0"
 WEB_CONTRACT = "latent:web/application@0.1.0"
 SERVICE_CAPABILITY = "latent:service/invoke@0.1.0"
@@ -51,7 +52,7 @@ def configure(directory: Path, releases: Path, *, http=True, former_profile=Fals
     for name, (contract, _profile, _operation, _kind) in profiles("java").items():
         value["providers"][name] = {"identity": {"id": name, "tenant": TENANT,
                                                "service": "runtime-host", "epoch": 1}}
-        for service in (ADAPTER, DOMAIN):
+        for service in (ADAPTER, DOMAIN, CONTEXT_REQUIRED):
             value["providers"]["bindings"].append({"name": name + "-" + service.rsplit("/", 1)[1],
                 "tenant": TENANT, "consumerService": service, "providerService": "runtime-host",
                 "contract": contract, "providerBinding": name + "-installed"})
@@ -88,7 +89,7 @@ def grant(client, node, releases, publications, *, child_trigger=False):
                 {"kind": "administrator", "subject": "workflow-operator"},
                 {"kind": "trigger", "subject": "java-http-ingress"},
                 {"kind": "service", "subject": CHILD_SUBJECT}],
-            "services": [ADAPTER, DOMAIN], "publications": sorted(publications.values()), "capability": contract,
+            "services": [ADAPTER, DOMAIN, CONTEXT_REQUIRED], "publications": sorted(publications.values()), "capability": contract,
             "operations": [operation], "resources": {"kind": kind},
             "ceiling": {"operations": 4096, "inputBytes": 0, "outputBytes": 32768, "wallTimeMillis": 5000}}]})
         grants.append({"capability": contract, "policy": name + "-allow"})
@@ -144,7 +145,7 @@ def request(host, path="/api/status", *, method="GET", value=None, headers=None,
     try:
         body = None if value is None else json.dumps(value, ensure_ascii=False).encode("utf-8")
         connection.request(method, path, body=body, headers={"Host": host, "Connection": "close",
-            "Content-Type": MEDIA, **(headers or {})})
+            "Content-Type": MEDIA, "Origin": "http://" + host, **(headers or {})})
         response = connection.getresponse()
         body = response.read(maximum + 1)
         require(len(body) <= maximum, "java-http-response-bound")
@@ -153,16 +154,17 @@ def request(host, path="/api/status", *, method="GET", value=None, headers=None,
         connection.close()
 
 
-def invoke(client, targets, name, function, arguments, activation, *, route_name=True, codes=(0,)):
+def invoke(client, targets, name, function, arguments, activation, *, route_name=True, codes=(0,), budget_override=None,
+           context_flags=()):
     source = client.directory / (activation + ".json")
     write_json(source, arguments)
     budget = client.directory / (activation + "-budget.json")
-    write_json(budget, targets[name]["budget"])
+    write_json(budget, targets[name]["budget"] if budget_override is None else budget_override)
     extra = ("--route", targets[name]["name"]) if route_name else ()
     result = client.call("--rpc-timeout-ms", "120000", "invoke", "--service", DOMAIN if name == "domain" else ADAPTER,
         "--contract", DOMAIN_CONTRACT if name == "domain" else WEB_CONTRACT, "--function", function,
         "--activation-id", activation, "--input", source, "--budget", budget, "--budget-profile", "phase3",
-        *extra, codes=codes)
+        *extra, *context_flags, codes=codes)
     return result
 
 
@@ -173,7 +175,7 @@ def decoded(result):
 
 def web_request(host, path="/api/status", *, method="get", body=""):
     return [{"profile": "buffered-v1", "method": method, "scheme": "http", "authority": host,
-        "path": path, "query": None, "headers": [], "media-type": MEDIA if body else None,
+        "path": path, "query": {"none": None}, "headers": [], "media-type": {"some": MEDIA} if body else {"none": None},
         "body-base64": base64.b64encode(body.encode()).decode()}]
 
 
