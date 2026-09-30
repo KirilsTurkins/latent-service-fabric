@@ -83,6 +83,7 @@ class Isolation:
         if sys.platform != "linux" or not (sandbox := shutil.which("bwrap")) or not (loader_probe := shutil.which("ldd")):
             raise DependencyError("captured-compiler-isolation-requires-linux-bubblewrap")
         self.workspace = regular_path(workspace).resolve(strict=True)
+        self.read_only_inputs: list[Path] = []
         self.sandbox = regular_path(Path(sandbox)).resolve(strict=True)
         self.tools = {name: regular_path(path).resolve(strict=True) for name, path in tools.items()}
         self.distributions = {name: regular_path(path).resolve(strict=True) for name, path in distributions.items()}
@@ -122,8 +123,8 @@ class Isolation:
                    "--setenv", "HOME", "/home", "--setenv", "PATH", "/nonexistent",
                    "--bind", str(self.workspace), str(self.workspace)]
         for root in self.distributions.values():
-            if root == self.workspace or self.workspace in root.parents:
-                continue  # Captured private tool staging already belongs here.
+            command += ["--ro-bind", str(root), str(root)]
+        for root in self.read_only_inputs:
             command += ["--ro-bind", str(root), str(root)]
         for selected in self.tools.values():
             if any(selected.is_relative_to(root) for root in self.distributions.values()):
@@ -134,10 +135,18 @@ class Isolation:
         for key in ("LC_ALL", "LANG", "TZ", "ZIG_GLOBAL_CACHE_DIR", "ZIG_LOCAL_CACHE_DIR",
                     "CARGO_HOME", "CARGO_NET_OFFLINE", "CARGO_TARGET_DIR", "CARGO_INCREMENTAL", "CARGO_BUILD_JOBS",
                     "RUSTC", "RUSTDOC", "RUSTUP_AUTO_INSTALL", "RUSTUP_TOOLCHAIN",
-                    "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER"):
+                    "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER", "LSF_CAPTURED_ZIG"):
             if key in environment:
                 command += ["--setenv", key, environment[key]]
         return [*command, "--chdir", str(cwd), "--", str(tool), *arguments]
+
+    def protect_inputs(self, *roots: Path):
+        for root in roots:
+            root = regular_path(root).resolve(strict=True)
+            if not root.is_relative_to(self.workspace) or root == self.workspace:
+                raise DependencyError("compiler-read-only-inputs-outside-owned-workspace")
+            if root not in self.read_only_inputs:
+                self.read_only_inputs.append(root)
 
     def observe_inputs(self, depfile: Path) -> list[dict]:
         rows = []
