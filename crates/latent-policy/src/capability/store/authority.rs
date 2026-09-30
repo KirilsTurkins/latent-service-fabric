@@ -13,7 +13,10 @@ use std::{
     sync::{atomic::Ordering, Arc},
     time::Instant,
 };
+mod owned;
+pub use owned::OwnedPolicyDecision;
 
+#[derive(Clone)]
 struct Pinned {
     id: Box<str>,
     stamp: Arc<Stamp>,
@@ -172,6 +175,41 @@ impl PolicyStore {
         ) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
         self.with_current_dependencies(decision, &[], action)
+    }
+
+    /// Recheck captured activation grants and a fresh operation decision under
+    /// one policy/catalog fence. The bounded callback must not wait or do I/O.
+    /// Every decision retains its original policy owner and exact publication;
+    /// a replacement snapshot cannot revive a revoked captured grant.
+    pub fn with_current_decisions(
+        &self,
+        decisions: &[&SealedPolicyDecision<'_>],
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if decisions.is_empty() || decisions.len() > 16 {
+            return Err(capacity());
+        }
+        for decision in decisions {
+            if !Arc::ptr_eq(&self.owner, &decision.snapshot.owner) {
+                return Err(denied());
+            }
+        }
+        let inputs = decisions
+            .iter()
+            .map(|decision| &decision.input)
+            .collect::<Vec<_>>();
+        let _fence = self.owner.fence.try_read().map_err(|_| unavailable())?;
+        for decision in decisions {
+            decision.snapshot.check()?;
+            decision.publication.check_for_catalog(&self.catalog)?;
+        }
+        decisions[0].publication.with_current(&mut |checker| {
+            for decision in decisions {
+                checker.check_eligibility(decision.publication)?;
+                decision.snapshot.check()?;
+            }
+            action(&inputs)
+        })
     }
     /// Same final-start fence, including exact local-provider publications from
     /// the trusted binding compiler. Reuse the catalog rechecker instead of

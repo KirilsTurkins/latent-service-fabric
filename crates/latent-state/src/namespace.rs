@@ -14,6 +14,7 @@ pub const IDENTITY_BYTES: usize = 256;
 const RECORD_MAGIC: &[u8] = b"lsf-namespace-v1\0";
 
 pub mod catalog;
+pub mod lifecycle;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NamespaceError {
@@ -600,7 +601,7 @@ mod tests {
             namespace_operation_key(&TenantId("a".into()), "bob", "d").unwrap()
         );
         assert_eq!(
-            namespace_tenant_prefix(&TenantId("".into())),
+            namespace_tenant_prefix(&TenantId(String::new())),
             Err(NamespaceError::Invalid)
         );
         assert_eq!(
