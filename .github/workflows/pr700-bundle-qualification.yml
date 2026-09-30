@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          ref: e5ab04674c363802550f683aa2678f209c635b15
           persist-credentials: false
           fetch-depth: 2
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
@@ -19,18 +20,29 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24.19.0
-      - name: Run the pinned qualification recipe with the fully patched brace release
+      - name: Qualify the exact existing graph and fully patched bundle
         shell: bash
         run: |
           python3 - <<'PY'
-          import subprocess, textwrap
+          import re, subprocess, textwrap
           source = subprocess.check_output(['git', 'show', 'e5ab04674c363802550f683aa2678f209c635b15:.github/workflows/pr700-bundle-qualification.yml'], text=True)
           begin = source.index('          set -euo pipefail\n')
           end = source.index('      - uses: actions/upload-artifact@', begin)
           script = textwrap.dedent(source[begin:end])
           assert script.count('5.0.11') == 4
           script = script.replace('5.0.11', '5.0.12')
+          script = re.sub(r'(?<!\^)4\.0\.2', '4.0.4', script)
           script = script.replace("['{' + '{a},'.repeat(7000)", "['{a}' + '}'.repeat(128000) + ',z}', '{' + '{a},'.repeat(7000)")
+          before = "subprocess.run(['npm', 'install', '--package-lock-only'"
+          assert script.count(before) == 1
+          script = script.replace(before, "old_lock = json.loads((here / 'package-lock.json').read_text())\n(here / 'package-lock.json').unlink()\n" + before)
+          before = "assert lock['packages']['node_modules/npm']['integrity'] == actual"
+          after = before + "\nassert set(lock['packages']) == set(old_lock['packages']), 'bundled graph membership drift'\n"
+          after += "for path, row in old_lock['packages'].items():\n"
+          after += "    if path not in {'node_modules/npm', 'node_modules/npm/node_modules/ip-address', 'node_modules/npm/node_modules/brace-expansion'}:\n"
+          after += "        assert lock['packages'][path] == row, ('unrelated bundled package changed', path)"
+          assert script.count(before) == 1
+          script = script.replace(before, after)
           subprocess.run(['bash', '-euo', 'pipefail'], input=script, text=True, check=True)
           PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
