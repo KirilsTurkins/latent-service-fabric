@@ -1627,6 +1627,8 @@
         "deadline_wait_observer::tests::affine_waits_account_completion_drop_and_rechecks",
         "deadline_wait_observer::tests::counter_exhaustion_is_explicit_and_never_wraps",
         "deadline_wait_observer::tests::unwinding_releases_the_guard_without_retaining_its_creator",
+        "diagnostic::tests::closed_projection_preserves_absence_and_maximum_unsigned_values",
+        "diagnostic::tests::hostile_atoms_unknown_enums_and_oversized_values_never_project",
         "digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain",
         "digest::tests::digest_bytes_keep_leading_zeroes_and_lowercase_hex",
         "digest::tests::noncanonical_and_malformed_digests_are_rejected_without_normalization",
@@ -1666,7 +1668,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 89,
+      "minimumCases": 91,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -5563,6 +5565,7 @@
         "config::tests::engine_policy::explicit_default_matches_the_pinned_engine_layout_and_optimization",
         "config::tests::engine_policy::four_profiles_bind_actual_engine_policy_and_remain_distinct",
         "config::tests::engine_policy::pooling_rejects_host_sized_products_before_mutating_engine_configuration",
+        "config::tests::every_buffered_web_bound_changes_authenticated_preparation_compatibility",
         "config::tests::generic_and_legacy_payload_adapters_have_distinct_compatibility",
         "config::tests::invalid_and_overflowing_policy_is_rejected_before_engine_construction",
         "config::tests::legacy_alias_preserves_the_existing_default_policy",
@@ -5671,6 +5674,7 @@
         "telemetry::tests::observer_panic_is_counted_without_changing_accepted_log_or_budget",
         "timing::timing_tests::timing_store_snapshot_reports_bounded_occupancy",
         "values::tests::bounds::decoded_values_have_a_separate_allocation_budget",
+        "values::tests::bounds::http_ingress_does_not_amplify_domain_service_signature_allocations",
         "values::tests::bounds::input_bytes_depth_nodes_strings_and_collections_are_independently_bounded",
         "values::tests::bounds::output_writer_checks_escaped_bytes_and_structure_during_emission",
         "values::tests::bounds::schema_walk_limits_and_unsupported_types_fail_before_values_exist",
@@ -5719,7 +5723,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 336,
+      "minimumCases": 338,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -6850,6 +6854,7 @@
       "boundary": "runtime",
       "expectedCases": [
         "ownership::evicted_ready_handle_keeps_its_image_and_revocation_never_recovers_from_native_cache",
+        "reopen::buffered_web_profile_change_after_restart_cannot_reuse_a_stale_native_image",
         "reopen::identical_component_after_restart_requires_its_exact_engine_before_native_reuse",
         "reopen::real_miss_invokes_then_reopened_native_hit_verifies_source_without_compiling",
         "tamper::replaced_bytes_with_matching_sha_and_wrong_host_key_never_reach_the_loader"
@@ -6859,7 +6864,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 4,
+      "minimumCases": 5,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

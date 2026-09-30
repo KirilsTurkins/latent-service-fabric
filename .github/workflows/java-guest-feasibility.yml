@@ -5,6 +5,7 @@ on:
     branches: [development]
     paths:
       - 'sdk/java-guest/**'
+      - 'examples/java-http-composition/**'
       - 'tools/**'
       - 'apps/**'
       - 'crates/**'
@@ -97,6 +98,10 @@ jobs:
         run: |
           set -o pipefail
           python3 tools/qualify_java_capsules.py --output "$RUNNER_TEMP/java-capsule-authoring" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-capsule-authoring.log"
+      - name: Qualify separately signed typed Java domain through ordinary Java HTTP adapter
+        run: |
+          set -o pipefail
+          python3 tools/qualify_java_http_composition.py --output "$RUNNER_TEMP/java-http-composition" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-http-composition.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -121,6 +126,12 @@ jobs:
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
             ${{ runner.temp }}/java-capsule-authoring.log
+            ${{ runner.temp }}/java-http-composition.log
+            ${{ runner.temp }}/java-http-composition/**/*.json
+            ${{ runner.temp }}/java-http-composition/**/component.wasm
+            ${{ runner.temp }}/java-http-composition/**/compiler-logs/**
+            ${{ runner.temp }}/java-http-composition/**/generated-bindings/**
+            ${{ runner.temp }}/java-http-composition/signing/logs/**
             ${{ runner.temp }}/java-capsule-authoring/*.json
             ${{ runner.temp }}/java-capsule-authoring/logs/**
             ${{ runner.temp }}/java-capsule-authoring/builds/**

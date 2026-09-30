@@ -13,6 +13,7 @@
         ],
         "paths": [
           "sdk/java-guest/**",
+          "examples/java-http-composition/**",
           "tools/**",
           "apps/**",
           "crates/**",
@@ -32,7 +33,7 @@
   "requiredJobs": [
     "compiler-component"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add exact Java HTTP fixture selection while retaining all existing authoring obligations",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
