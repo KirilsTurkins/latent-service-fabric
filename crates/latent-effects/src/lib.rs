@@ -4,6 +4,9 @@
 
 pub mod authority;
 pub mod dispatch;
+pub mod dispatch_store;
+mod effect_identity;
+pub mod payload;
 
 use latent_core::{
     ActivationId, BoxFuture, CapabilityId, EffectId, IdempotencyKey, Metadata, Payload,
