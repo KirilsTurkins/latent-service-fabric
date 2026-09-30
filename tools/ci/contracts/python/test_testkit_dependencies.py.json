@@ -4,7 +4,9 @@
     "TestkitDependencyTests.test_empty_workspace_is_not_success",
     "TestkitDependencyTests.test_missing_test_support_feature_fails",
     "TestkitDependencyTests.test_neutral_core_direction_is_acyclic",
+    "TestkitDependencyTests.test_neutral_process_helpers_cannot_gain_even_optional_workspace_edges",
     "TestkitDependencyTests.test_original_feature_hidden_admission_and_scheduler_cycles_fail",
+    "TestkitDependencyTests.test_phase4_storage_cannot_select_feature_hidden_testkit_runtime_cycle",
     "TestkitDependencyTests.test_repository_itself_obeys_unconditional_graph_contract",
     "TestkitDependencyTests.test_selected_checks_include_test_dependencies",
     "TestkitDependencyTests.test_selected_graph_rejects_empty_or_heavy_results",
@@ -19,7 +21,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
-        "class:setup-sha256:75434a330bc51add797da04311b5ef424a03f454ba2aed918b803d32528cfd0f"
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
       ],
       "skipSites": []
     },
@@ -31,7 +33,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
-        "class:setup-sha256:75434a330bc51add797da04311b5ef424a03f454ba2aed918b803d32528cfd0f"
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
       ],
       "skipSites": []
     },
@@ -43,7 +45,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
-        "class:setup-sha256:75434a330bc51add797da04311b5ef424a03f454ba2aed918b803d32528cfd0f"
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
       ],
       "skipSites": []
     },
@@ -55,7 +57,19 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
-        "class:setup-sha256:75434a330bc51add797da04311b5ef424a03f454ba2aed918b803d32528cfd0f"
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
+      ],
+      "skipSites": []
+    },
+    "TestkitDependencyTests.test_neutral_process_helpers_cannot_gain_even_optional_workspace_edges": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
       ],
       "skipSites": []
     },
@@ -67,7 +81,19 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
-        "class:setup-sha256:75434a330bc51add797da04311b5ef424a03f454ba2aed918b803d32528cfd0f"
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
+      ],
+      "skipSites": []
+    },
+    "TestkitDependencyTests.test_phase4_storage_cannot_select_feature_hidden_testkit_runtime_cycle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
       ],
       "skipSites": []
     },
@@ -79,7 +105,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
-        "class:setup-sha256:75434a330bc51add797da04311b5ef424a03f454ba2aed918b803d32528cfd0f"
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
       ],
       "skipSites": []
     },
@@ -91,7 +117,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
-        "class:setup-sha256:75434a330bc51add797da04311b5ef424a03f454ba2aed918b803d32528cfd0f"
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
       ],
       "skipSites": []
     },
@@ -103,7 +129,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
-        "class:setup-sha256:75434a330bc51add797da04311b5ef424a03f454ba2aed918b803d32528cfd0f"
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
       ],
       "skipSites": []
     },
@@ -115,13 +141,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:8e50518170810a1dc0c5d1a45737eedd9553300b076f49782744d1e73176e2db",
-        "class:setup-sha256:75434a330bc51add797da04311b5ef424a03f454ba2aed918b803d32528cfd0f"
+        "class:setup-sha256:1e9a05ca0ba744cf03ddcbe7c1b9ed1ac6b78be57479a94068856e64155d567f"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_testkit_dependencies.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain all graph regressions and add Phase 4 storage and neutral process owner cases. Reviewed class fixture adds only graph owners/edges; bases, decorators, skip sites and module setup are unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
