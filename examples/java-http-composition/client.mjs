@@ -4,7 +4,7 @@ export class JavaDomainHttpClient {
   async call(path, method, arguments_) {
     const response = await fetch(this.origin + path, {
       method,
-      headers: method === 'POST' ? { 'content-type': 'application/vnd.latent.wit-values.v1+json' } : {},
+      headers: method === 'POST' ? { 'content-type': 'application/vnd.latent.wit-values.v1+json', origin: this.origin } : {},
       body: method === 'POST' ? JSON.stringify(arguments_) : undefined,
     });
     const text = await response.text();
