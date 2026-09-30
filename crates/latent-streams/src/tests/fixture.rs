@@ -103,6 +103,31 @@ pub struct Fixture {
     _directory: TempDir,
 }
 impl Fixture {
+    pub fn runtime(&self) -> latent_capabilities::broker::ActivationCapabilityRuntime {
+        struct Plans(Arc<CompiledCapabilityPlan>);
+        impl latent_capabilities::broker::CapabilityPlanSource for Plans {
+            fn plan(
+                &self,
+                revision: &ResolvedRevision,
+            ) -> Result<Arc<CompiledCapabilityPlan>, latent_core::PlatformError> {
+                if self.0.matches_revision(revision) {
+                    Ok(Arc::clone(&self.0))
+                } else {
+                    Err(latent_core::PlatformError {
+                        code: latent_core::PlatformErrorCode::PermissionDenied,
+                        message: "fixture-revision-mismatch".into(),
+                        retryable: false,
+                        details: Vec::new(),
+                    })
+                }
+            }
+        }
+        latent_capabilities::broker::ActivationCapabilityRuntime::new(
+            self.broker.clone(),
+            Arc::new(Plans(self.plan.clone())),
+        )
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "explicit real broker and sealed policy composition"

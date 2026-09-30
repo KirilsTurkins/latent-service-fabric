@@ -59,7 +59,7 @@ impl AsRef<[u8]> for IoInputChunk {
 /// guest resource keeps this owner through every borrow and its final Drop.
 pub struct IoOutputChunk {
     bytes: IoBuffer,
-    _copy: IoMemory,
+    copy: IoMemory,
     _slot: Slot,
     owner: Option<Arc<dyn Send + Sync>>,
 }
@@ -78,7 +78,7 @@ impl IoOutputChunk {
         if bytes.capacity() > self.bytes.capacity() {
             return Err(capacity());
         }
-        self._copy.confirm_host();
+        self.copy.confirm_host();
         Ok(bytes)
     }
     pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
@@ -125,7 +125,7 @@ impl IoTransferBuffer {
         )?;
         Ok(IoOutputChunk {
             bytes: self.bytes.retain_for_transfer()?,
-            _copy: self.copy,
+            copy: self.copy,
             _slot: self.slot,
             owner: self.owner,
         })

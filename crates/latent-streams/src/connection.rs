@@ -500,12 +500,12 @@ impl Connection {
             application_write_attempted: state.attempted_write,
         }
     }
-    pub(crate) fn usage(&self) -> StreamUsage {
+    pub(crate) fn usage(&self) -> Result<StreamUsage, StreamError> {
         let state = self
             .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        StreamUsage {
+            .try_lock()
+            .map_err(|_| error(StreamErrorCode::Exhausted))?;
+        Ok(StreamUsage {
             owners: 1,
             connections: usize::from(state.socket.is_some()),
             pending_operations: state.pending,
@@ -513,7 +513,7 @@ impl Connection {
             accepted_write_bytes: state.accepted_write,
             delivered_read_bytes: state.delivered_read,
             retired: false,
-        }
+        })
     }
     async fn authorize(
         &self,
@@ -821,7 +821,7 @@ impl OutboundStream for Handle {
                 let changed = connection.changed.notified();
                 tokio::pin!(changed);
                 changed.as_mut().enable();
-                if connection.usage().pending_operations == 0 {
+                if connection.usage()?.pending_operations == 0 {
                     break;
                 }
                 if tokio::time::timeout_at(connection.deadline.into(), changed)

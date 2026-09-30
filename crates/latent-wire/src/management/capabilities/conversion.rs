@@ -172,6 +172,7 @@ pub(super) fn node_usage(value: &domain::NodeUsage) -> proto::CapabilityResource
     result
         .counters
         .insert("audit_capture_dropped".into(), value.audit_capture_dropped);
+    stream_usage(&mut result, value.streams);
     if let Some(audit) = value.audit {
         result
             .counters
@@ -200,6 +201,41 @@ pub(super) fn node_usage(value: &domain::NodeUsage) -> proto::CapabilityResource
     result
 }
 
+fn stream_usage(
+    result: &mut proto::CapabilityResourceUsage,
+    usage: Option<latent_capabilities::broker::network::StreamNodeUsage>,
+) {
+    let Some(usage) = usage else {
+        result
+            .unavailable
+            .push("outbound-streams-no-retained-observation".into());
+        return;
+    };
+    for (name, count) in [
+        ("stream_configuration_epoch", usage.configuration_epoch),
+        (
+            "stream_retired_generations",
+            usage.retired_generations as u64,
+        ),
+        ("stream_stopped", u64::from(usage.stopped)),
+        ("stream_owners", usage.owners as u64),
+        ("stream_connections", usage.connections as u64),
+        ("stream_pending_operations", usage.pending_operations as u64),
+        ("stream_retained_chunks", usage.retained_chunks as u64),
+        ("stream_maintenance_owners", usage.maintenance_owners as u64),
+        (
+            "stream_live_accepted_write_bytes",
+            usage.live_accepted_write_bytes,
+        ),
+        (
+            "stream_live_delivered_read_bytes",
+            usage.live_delivered_read_bytes,
+        ),
+    ] {
+        result.counters.insert(name.into(), count);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -210,6 +246,7 @@ mod tests {
             broker: Default::default(),
             pools: None,
             io: None,
+            streams: None,
             audit_capture_dropped: 0,
             audit: Some(latent_audit::AuditSnapshot {
                 queued_bytes: 16 * 1024,

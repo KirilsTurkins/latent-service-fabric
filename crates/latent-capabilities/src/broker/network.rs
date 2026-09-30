@@ -105,12 +105,36 @@ pub struct StreamConnectRequest {
 }
 
 pub type StreamInvocation = BoxFuture<'static, Result<Box<dyn OutboundStream>, StreamError>>;
+
+/// Finite instantaneous physical ownership observations for trusted node
+/// operators. Live byte counts disappear only with their retained owners;
+/// they are neither cumulative audit totals nor permission/readiness proofs.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct StreamNodeUsage {
+    pub configuration_epoch: u64,
+    pub retired_generations: usize,
+    pub stopped: bool,
+    pub owners: usize,
+    pub connections: usize,
+    pub pending_operations: usize,
+    pub retained_chunks: usize,
+    pub maintenance_owners: usize,
+    pub live_accepted_write_bytes: u64,
+    pub live_delivered_read_bytes: u64,
+}
+
 pub trait OutboundStreamInvoker: Send + Sync {
     fn start(
         &self,
         session: &CapabilitySession,
         request: StreamConnectRequest,
     ) -> Result<StreamInvocation, StreamError>;
+
+    /// Implementations use bounded nonblocking reads of their actual owners.
+    /// An unavailable observation must never be replaced by a zero count.
+    fn inspect_node_usage(&self) -> Result<Option<StreamNodeUsage>, PlatformError> {
+        Ok(None)
+    }
 }
 
 /// Each operation owns its future independently of a guest facade/Store borrow.

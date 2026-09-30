@@ -7380,6 +7380,7 @@
         "deployment::versions::deployment_watch_is_explicitly_unimplemented",
         "deployment::versions::versioned_rpc_round_trip_preserves_fields_and_delete_recreate_stamps",
         "inspection::capabilities::capability_inspection_is_tenant_scoped_operator_gated_and_lease_bounded",
+        "inspection::capabilities::stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visible",
         "inspection::cluster_only_node_operations_and_route_watch_are_unimplemented",
         "inspection::nodes::inventory_requires_trusted_operator_before_snapshot_and_round_trips",
         "inspection::nodes::local_node_list_has_exact_filters_and_no_continuation",
@@ -7416,7 +7417,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 44,
+      "minimumCases": 45,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

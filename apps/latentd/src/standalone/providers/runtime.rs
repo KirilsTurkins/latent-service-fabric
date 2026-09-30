@@ -137,8 +137,10 @@ impl ProviderRuntime {
                     provider.reference().map_err(|_| unavailable())?,
                 ));
                 owner.runtime.install_outbound_streams(provider.clone())?;
+                // Retain the concrete manager before driver admission so an
+                // admission failure explicitly retires it during rollback.
+                owner.streams = Some(provider.clone());
                 owner.stream_driver = Some(streams::Driver::start(&provider, &stream_control)?);
-                owner.streams = Some(provider);
             }
             if let Some(blob) = &config.blob {
                 let root = settings

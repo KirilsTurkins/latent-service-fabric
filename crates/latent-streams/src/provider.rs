@@ -159,11 +159,11 @@ impl StreamProvider {
             let connection = self
                 .inner
                 .connections
-                .lock()
+                .try_lock()
                 .map_err(|_| error(StreamErrorCode::Exhausted))?[index]
                 .upgrade();
             if let Some(connection) = connection {
-                let usage = connection.usage();
+                let usage = connection.usage()?;
                 result.owners += usage.owners;
                 result.connections += usage.connections;
                 result.pending_operations += usage.pending_operations;
@@ -195,6 +195,28 @@ impl StreamProvider {
     }
 }
 impl OutboundStreamInvoker for StreamProvider {
+    fn inspect_node_usage(
+        &self,
+    ) -> Result<
+        Option<latent_capabilities::broker::network::StreamNodeUsage>,
+        latent_core::PlatformError,
+    > {
+        let usage = self.usage().map_err(crate::inspection_unavailable)?;
+        Ok(Some(
+            latent_capabilities::broker::network::StreamNodeUsage {
+                configuration_epoch: self.reference().configuration_epoch(),
+                stopped: usage.retired,
+                owners: usage.owners,
+                connections: usage.connections,
+                pending_operations: usage.pending_operations,
+                retained_chunks: usage.retained_chunks,
+                live_accepted_write_bytes: usage.accepted_write_bytes,
+                live_delivered_read_bytes: usage.delivered_read_bytes,
+                ..Default::default()
+            },
+        ))
+    }
+
     fn start(
         &self,
         session: &CapabilitySession,

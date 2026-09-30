@@ -76,6 +76,7 @@ struct Inner {
     counters: Arc<Counters>,
     sessions: Mutex<Vec<session::RegistryEntry>>,
     pool_diagnostics: std::sync::OnceLock<Weak<pools::Inner>>,
+    stream_diagnostics: std::sync::OnceLock<Weak<dyn network::OutboundStreamInvoker>>,
     pool_registered: std::sync::atomic::AtomicBool,
 }
 impl ActivationCapabilityBroker {
@@ -105,6 +106,7 @@ impl ActivationCapabilityBroker {
                         .collect(),
                 ),
                 pool_diagnostics: std::sync::OnceLock::new(),
+                stream_diagnostics: std::sync::OnceLock::new(),
             }),
         })
     }

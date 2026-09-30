@@ -58,9 +58,30 @@ This slice rejects host TLS installation and accepts no host key paths, trust
 directories, environment lookup or plaintext application credentials. Node
 administrator credentials remain protected by the existing configuration owner.
 
+After deploying a capsule, an authenticated node operator can inspect the same
+bounded ownership counters with the normal command:
+
+```bash
+latent --config client.json capability list --deployment your-deployment-id --include-node-usage
+```
+
+Select an existing protected credential with the `operator` role for this query.
+Tenant administrators and invocation callers cannot request shared node usage,
+and request metadata cannot manufacture that role. The response includes
+`stream_configuration_epoch`, `stream_retired_generations`, `stream_stopped`,
+`stream_owners`, `stream_connections`, `stream_pending_operations`,
+`stream_retained_chunks`, `stream_maintenance_owners` and two live byte counters.
+Live bytes follow the retained connection owners, not a cumulative audit total.
+These observations carry no endpoint, payload or credential data and grant no
+permission. Busy inspection returns a bounded error. Missing physical observation
+is explicit as `outbound-streams-no-retained-observation`, rather than fabricated
+zero counters. Combine these values with the existing pool/I/O counters and
+authenticated node cleanup topology when assessing actual retirement.
+
 Retirement fences the provider and cancels its original I/O owners. Shutdown
-reports stream owners, physical connections, pending operations and retained
-chunks alongside existing provider-pool and I/O snapshots. A clean result requires
-all actual stream owners to be zero. The shared lifecycle implementation supports
+reports stream owners, physical connections, pending operations, retained chunks
+and the one maintained control future alongside existing provider-pool and I/O
+snapshots. A clean result requires actual stream and maintenance owners to be
+zero; the node joins the original maintenance task before that result. The shared lifecycle implementation supports
 bounded rotation and drain with old-owner retention; authenticated live operator
 rotation and packaged-node qualification remain tracked in #739.

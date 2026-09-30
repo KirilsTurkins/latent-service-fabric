@@ -7,7 +7,11 @@ pub(super) fn configure(
     root: &std::path::Path,
     artifacts: &Arc<DirectoryArtifactRepository>,
     deployments: &Arc<DirectoryDeploymentRepository>,
-) -> (ManagementServiceAdapter, PolicyControlHandle) {
+) -> (
+    ManagementServiceAdapter,
+    PolicyControlHandle,
+    Arc<ActivationCapabilityBroker>,
+) {
     let policies = Arc::new(
         PolicyStore::open(
             &root.join("policies"),
@@ -33,7 +37,7 @@ pub(super) fn configure(
     let adapter = adapter
         .with_policy_control(control.clone())
         .unwrap()
-        .with_capability_inspection(deployments.clone(), broker)
+        .with_capability_inspection(deployments.clone(), broker.clone())
         .unwrap();
-    (adapter, control)
+    (adapter, control, broker)
 }

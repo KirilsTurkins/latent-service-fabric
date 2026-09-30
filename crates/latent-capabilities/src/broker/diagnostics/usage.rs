@@ -23,6 +23,7 @@ pub struct NodeUsage {
     pub broker: crate::broker::CapabilityBrokerSnapshot,
     pub pools: Option<crate::broker::pools::ProviderPoolSnapshot>,
     pub io: Option<crate::broker::io::IoSnapshot>,
+    pub streams: Option<crate::broker::network::StreamNodeUsage>,
     pub audit_capture_dropped: u64,
     pub audit: Option<latent_audit::AuditSnapshot>,
 }
@@ -78,10 +79,17 @@ impl ActivationCapabilityBroker {
             .unwrap_or_default();
         let (pools, io) = crate::broker::pools::diagnostic_snapshot(&owner)?
             .map_or((None, None), |(pools, io)| (Some(pools), Some(io)));
+        let streams = self
+            .inner
+            .stream_diagnostics
+            .get()
+            .and_then(std::sync::Weak::upgrade)
+            .map_or(Ok(None), |owner| owner.inspect_node_usage())?;
         Ok(NodeUsage {
             broker: self.snapshot(),
             pools,
             io,
+            streams,
             audit_capture_dropped: self
                 .inner
                 .audit

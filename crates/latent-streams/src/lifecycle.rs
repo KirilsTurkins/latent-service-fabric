@@ -178,7 +178,10 @@ impl StreamLifecycle {
         Ok(state.current.reference())
     }
     pub fn status(&self) -> Result<StreamStatus, StreamError> {
-        let state = self.state.lock().map_err(|_| unavailable())?;
+        let state = self
+            .state
+            .try_lock()
+            .map_err(|_| StreamError::new(StreamErrorCode::Exhausted))?;
         let reference = state.current.reference();
         let mut usage = state.current.usage()?;
         for retired in state.retired.iter().flatten() {
@@ -230,6 +233,29 @@ impl StreamLifecycle {
     }
 }
 impl OutboundStreamInvoker for StreamLifecycle {
+    fn inspect_node_usage(
+        &self,
+    ) -> Result<
+        Option<latent_capabilities::broker::network::StreamNodeUsage>,
+        latent_core::PlatformError,
+    > {
+        let status = self.status().map_err(crate::inspection_unavailable)?;
+        Ok(Some(
+            latent_capabilities::broker::network::StreamNodeUsage {
+                configuration_epoch: status.configuration_epoch,
+                retired_generations: status.retired_generations,
+                stopped: status.stopped,
+                owners: status.usage.owners,
+                connections: status.usage.connections,
+                pending_operations: status.usage.pending_operations,
+                retained_chunks: status.usage.retained_chunks,
+                maintenance_owners: status.maintenance_owners,
+                live_accepted_write_bytes: status.usage.accepted_write_bytes,
+                live_delivered_read_bytes: status.usage.delivered_read_bytes,
+            },
+        ))
+    }
+
     fn start(
         &self,
         session: &CapabilitySession,

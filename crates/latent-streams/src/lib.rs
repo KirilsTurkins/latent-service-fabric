@@ -28,5 +28,14 @@ pub struct StreamUsage {
 fn error(code: StreamErrorCode) -> StreamError {
     StreamError::new(code)
 }
+
+fn inspection_unavailable(_: StreamError) -> latent_core::PlatformError {
+    latent_core::PlatformError {
+        code: latent_core::PlatformErrorCode::ResourceExhausted,
+        message: "outbound-stream-inspection-unavailable".into(),
+        retryable: false,
+        details: Vec::new(),
+    }
+}
 #[cfg(test)]
 mod tests;

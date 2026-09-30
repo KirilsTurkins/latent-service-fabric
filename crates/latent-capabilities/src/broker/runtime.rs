@@ -97,6 +97,14 @@ impl ActivationCapabilityRuntime {
         &self,
         invoker: Arc<dyn super::network::OutboundStreamInvoker>,
     ) -> Result<(), PlatformError> {
+        // The single original broker observes the same installed owner weakly.
+        // Reserving this once also prevents a second runtime from replacing
+        // the diagnostic source after an earlier installation is retired.
+        self.broker
+            .inner
+            .stream_diagnostics
+            .set(Arc::downgrade(&invoker))
+            .map_err(|_| denied())?;
         self.outbound_streams.set(invoker).map_err(|_| denied())
     }
     pub fn outbound_streams(
