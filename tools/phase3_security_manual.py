@@ -145,9 +145,13 @@ def browser_output(directory: Path, deadline: float, *, application: bool = Fals
     report = json.loads(raw, object_pairs_hook=unique_object)
     observed = ("liveSharedIngress", "controlledNodeSsr", "originalDomReused", "navigationHydrated",
                 "escapedDataRoundTrip", "inlineAndRemoteScriptsBlocked", "baseOverrideBlocked",
-                "wrongScriptMimeBlocked", "sameOriginPostReachedMethodPolicy")
+                "wrongScriptMimeBlocked", "sameOriginPostReachedMethodPolicy",
+                "fixedSameOriginReferrerPolicy", "buildTimeNoReferrerBeforeResources",
+                "syntheticTokenNavigationAndFetchDoNotBecomeReferrers", "consumedTokenRemovedBeforeApplicationFetch")
     public = ("publicApplicationQualified", "applicationComponentInvoked", "managementRpcAbsent",
-              "browserFetchCredentialsOmitted", "cookiesDoNotAuthenticate")
+              "browserFetchCredentialsOmitted", "cookiesDoNotAuthenticate",
+              "unsafeSameOriginNoReferrerOriginRejected", "applicationCacheInputQualified",
+              "reservedHeadersRejectedAndRecoveryQualified")
     require(isinstance(report, dict) and set(report) == {*observed, *public, "browser", "componentRenderClaimed", "errors"},
             "browser-receipt-fields")
     require(all(report[name] is True for name in observed) and report["componentRenderClaimed"] is False

@@ -12,30 +12,7 @@ async fn actual_http_component_browser_policy_rejects_unsafe_output_without_refl
     value["httpIngress"]["browserOrigins"] = json!([{"authority":AUTHORITY, "tenant":"tests"}]);
     let bytes = std::fs::read(std::env::var_os("LSF_WEB_COMPONENT").unwrap()).unwrap();
     let fixture = Fixture::start(root, value, Some(bytes.clone())).await;
-    for path in [
-        "/browser-crlf",
-        "/browser-header-bound",
-        "/browser-csp",
-        "/browser-cors",
-        "/browser-compressed",
-        "/browser-cookie",
-        "/browser-redirect",
-        "/browser-charset",
-        "/browser-utf8",
-    ] {
-        let reply = call(&fixture, path).await;
-        assert_eq!(reply.0, 502, "{path}");
-        assert_eq!(reply.1.matches("HTTP/1.1").count(), 1);
-        assert!(reply
-            .1
-            .contains(&format!("content-security-policy: {}\r\n", browser::CSP)));
-        assert!(!reply.1.contains("x-injected:"));
-        assert!(!reply.1.contains("attacker.invalid"));
-        assert!(!reply.1.contains("access-control-allow-origin:"));
-        assert!(!reply.1.contains("set-cookie:"));
-        assert!(reply.1.contains("cache-control: no-store\r\n"));
-        fixture.idle().await;
-    }
+    assert_rejected_outputs(&fixture).await;
     let safe = call(&fixture, "/browser-relative").await;
     assert_eq!(safe.0, 303);
     assert!(safe.1.contains("location: /next?from=fixture\r\n"));
@@ -79,4 +56,37 @@ async fn actual_http_component_browser_policy_rejects_unsafe_output_without_refl
     assert_eq!(fixture.node.manager.journal().snapshot().begun, 0);
     assert_eq!(fixture.node.backend.resource_snapshot().stores_created, 0);
     fixture.shutdown().await;
+}
+
+async fn assert_rejected_outputs(fixture: &Fixture) {
+    for path in [
+        "/browser-crlf",
+        "/browser-header-bound",
+        "/browser-csp",
+        "/browser-referrer",
+        "/browser-security-case",
+        "/browser-header-case",
+        "/browser-location-duplicate",
+        "/browser-encoding-duplicate",
+        "/browser-cors",
+        "/browser-compressed",
+        "/browser-cookie",
+        "/browser-redirect",
+        "/browser-charset",
+        "/browser-utf8",
+    ] {
+        let reply = call(fixture, path).await;
+        assert_eq!(reply.0, 502, "{path}");
+        assert!(reply.2.is_empty());
+        assert_eq!(reply.1.matches("HTTP/1.1").count(), 1);
+        assert!(reply
+            .1
+            .contains(&format!("content-security-policy: {}\r\n", browser::CSP)));
+        assert!(!reply.1.contains("x-injected:"));
+        assert!(!reply.1.contains("attacker.invalid"));
+        assert!(!reply.1.contains("access-control-allow-origin:"));
+        assert!(!reply.1.contains("set-cookie:"));
+        assert!(reply.1.contains("cache-control: no-store\r\n"));
+        fixture.idle().await;
+    }
 }

@@ -26,6 +26,28 @@ pub(super) fn response(path: &str) -> Option<Response> {
         "/browser-csp" => response
             .headers
             .push(header("content-security-policy", b"default-src *")),
+        "/browser-referrer" => response
+            .headers
+            .push(header("referrer-policy", b"no-referrer")),
+        "/browser-security-case" => response
+            .headers
+            .push(header("Referrer-Policy", b"no-referrer")),
+        "/browser-header-case" => response
+            .headers
+            .push(header("X-App-Value", b"synthetic-private-token")),
+        "/browser-encoding-duplicate" => {
+            response
+                .headers
+                .push(header("content-encoding", b"identity"));
+            response
+                .headers
+                .push(header("content-encoding", b"identity"));
+        }
+        "/browser-location-duplicate" => {
+            response.status = 303;
+            response.headers.push(header("location", b"/next"));
+            response.headers.push(header("location", b"/another"));
+        }
         "/browser-cors" => response
             .headers
             .push(header("access-control-allow-origin", b"*")),

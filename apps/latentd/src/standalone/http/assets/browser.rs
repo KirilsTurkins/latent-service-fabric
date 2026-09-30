@@ -209,6 +209,21 @@ async fn run_browser(component: Option<Vec<u8>>) {
     assert_eq!(receipt["navigationHydrated"], true);
     assert_eq!(receipt["componentRenderClaimed"], false);
     assert_eq!(receipt["publicApplicationQualified"], application);
+    for field in [
+        "fixedSameOriginReferrerPolicy",
+        "buildTimeNoReferrerBeforeResources",
+        "syntheticTokenNavigationAndFetchDoNotBecomeReferrers",
+        "consumedTokenRemovedBeforeApplicationFetch",
+    ] {
+        assert_eq!(receipt[field], true);
+    }
+    for field in [
+        "unsafeSameOriginNoReferrerOriginRejected",
+        "applicationCacheInputQualified",
+        "reservedHeadersRejectedAndRecoveryQualified",
+    ] {
+        assert_eq!(receipt[field], application);
+    }
     let stores = harness.node.node.backend.resource_snapshot().stores_created;
     if application {
         assert!(stores >= 2, "the public POST must execute real components");

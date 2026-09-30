@@ -15,7 +15,7 @@ export async function render(request: {path: string}, context: {principal: {subj
     serverContext => bootstrapApplication(App, {providers: [provideZonelessChangeDetection(),
       provideServerRendering(), provideClientHydration(withNoHttpTransferCache()),
       {provide: STATE, useValue: projected}]}, serverContext),
-    {document: '<!doctype html><html><head><meta charset="utf-8"></head><body><lsf-boundary></lsf-boundary>' +
+    {document: '<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"></head><body><lsf-boundary></lsf-boundary>' +
       '<script id="browser-state" type="application/json">' + state + '</script>' +
       '<script type="module" src="__LSF_CLIENT_ASSET__"></script></body></html>',
     url: 'https://renderer.invalid' + request.path, allowedHosts: ['renderer.invalid']});

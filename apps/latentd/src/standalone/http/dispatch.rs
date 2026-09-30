@@ -1,13 +1,18 @@
 use super::{head::Head, Shared};
 use latent_activation::{ActivationOutcome, ActivationRequest};
 use latent_control_store::http_routes::{AcceptedHttpRoute, AcceptedHttpTarget};
-use latent_core::{Metadata, PlatformError, PlatformErrorCode};
+use latent_core::{
+    diagnostic::{
+        ActivationDiagnostic, ActivationDiagnosticSink, DiagnosticReason, DiagnosticStage,
+    },
+    Metadata, PlatformError, PlatformErrorCode, TenantId,
+};
 use latent_ingress::http::{
     self,
     cache::{CacheLookup, CacheRequest, CacheScope},
-    Delivery, Invocation, Outcome, TrustedContext,
+    Delivery, DeliveryCause, Invocation, Outcome, TrustedContext,
 };
-use latent_node::ActivationReceipt;
+use latent_node::{ActivationReceipt, LocalActivationJournal};
 use latent_wire::invocation::{
     InvocationTraceSource, LocalPrincipalPolicy, PrincipalPolicy, RetainedActivation,
 };
@@ -82,6 +87,9 @@ pub(super) struct Retention {
     pub invocation: Invocation,
     pub _route: latent_control_store::http_routes::TriggerReadLease,
     cache: Option<CacheRequest>,
+    journal: LocalActivationJournal,
+    tenant: TenantId,
+    scheme: http::Scheme,
 }
 pub(super) enum Begun {
     Cached(Delivery),
@@ -136,6 +144,9 @@ pub(super) fn begin(
         input: Vec::new(),
         input_media_type: http::VALUE_MEDIA_TYPE.to_owned(),
     };
+    // Diagnostics belong to the admitted target, including principals whose
+    // tenant scope is global. Never derive this from a guest header or value.
+    let tenant = revision.target.tenant.clone();
     let mut reserved = shared
         .services
         .manager
@@ -171,6 +182,9 @@ pub(super) fn begin(
             invocation,
             _route: lease,
             cache,
+            journal: shared.services.manager.journal(),
+            tenant,
+            scheme: shared.settings.scheme,
         },
     );
     // This fixed-size owner allocation is covered by the exchange reservation.
@@ -230,13 +244,28 @@ pub(super) fn complete(receipt: ActivationReceipt, retention: Retention) -> Resu
         ActivationOutcome::DeclaredError { .. } => Outcome::DeclaredError,
         ActivationOutcome::Failed { error, .. } => Outcome::Platform(error.code),
     };
-    let delivery = retention
+    let mut delivery = retention
         .invocation
         .complete_cached(outcome, retention.cache)
-        .map_err(|e| e.status().unwrap_or(0));
+        .map_err(|e| e.status().unwrap_or(0))?;
+    // Validate while the actual activation ID is still owned. The socket writer
+    // also checks the profile; no invalid output can publish a pending cache fill.
+    delivery
+        .enforce_browser_profile(retention.scheme)
+        .map_err(|e| e.status().unwrap_or(0))?;
+    if delivery.cause() == DeliveryCause::InvalidGuestResponse {
+        retention.journal.record(
+            &retention.tenant,
+            &receipt.activation_id,
+            ActivationDiagnostic::new(
+                DiagnosticStage::OutputValidation,
+                DiagnosticReason::HttpResponseRejected,
+            ),
+        );
+    }
     // Only the bounded delivery owner survives into socket writes.
     drop(receipt);
-    delivery
+    Ok(delivery)
 }
 fn status(error: PlatformError) -> u16 {
     let code = error.code;

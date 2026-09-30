@@ -7,6 +7,19 @@ struct Capsule;
 impl Guest for Capsule {
     async fn handle(request: Request) -> Response {
         if request.path == "/api/greeting" {
+            let rejected = match request.query.as_deref() {
+                Some("header-policy=referrer") => Some("/browser-referrer"),
+                Some("header-policy=casing") => Some("/browser-security-case"),
+                Some("header-policy=duplicate-location") => Some("/browser-location-duplicate"),
+                Some("header-policy=duplicate-encoding") => Some("/browser-encoding-duplicate"),
+                Some("header-policy=header-case") => Some("/browser-header-case"),
+                Some("header-policy=crlf") => Some("/browser-crlf"),
+                Some("header-policy=header-bound") => Some("/browser-header-bound"),
+                _ => None,
+            };
+            if let Some(path) = rejected {
+                return browser::response(path).expect("fixed browser-policy fixture");
+            }
             let accepted = matches!(
                 request.method,
                 bindings::exports::latent::web::application::Method::Post
@@ -18,7 +31,15 @@ impl Guest for Capsule {
                 headers: vec![
                     Header {
                         name: "cache-control".into(),
-                        value: b"no-store".to_vec(),
+                        value: if request.query.as_deref() == Some("header-policy=cache") {
+                            b"public, max-age=60".to_vec()
+                        } else {
+                            b"no-store".to_vec()
+                        },
+                    },
+                    Header {
+                        name: "x-app-activation".into(),
+                        value: bindings::latent::context::context::activation_id().into_bytes(),
                     },
                     Header {
                         name: "x-app-principal".into(),
