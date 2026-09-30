@@ -97,6 +97,18 @@ class CompilerNamespace(unittest.TestCase):
         marker.write_bytes(b'fresh-build')
         self.assertEqual(self.execute(self.cat, str(marker)).stdout, b'fresh-build')
 
+    def test_selected_sources_are_read_only_and_owned_outputs_remain_writable(self):
+        source = self.workspace / 'source'
+        source.mkdir()
+        (source / 'selected.bin').write_bytes(b'original')
+        self.isolation.protect_inputs(source)
+        self.assertEqual(self.execute(self.cat, str(source / 'selected.bin')).stdout, b'original')
+        script = 'printf changed > source/selected.bin'
+        self.assertNotEqual(self.execute(self.shell, '-c', script).returncode, 0)
+        self.assertEqual((source / 'selected.bin').read_bytes(), b'original')
+        self.assertEqual(self.execute(self.shell, '-c', 'printf generated > output.bin').returncode, 0)
+        self.assertEqual((self.workspace / 'output.bin').read_bytes(), b'generated')
+
 
 if __name__ == '__main__':
     unittest.main()
