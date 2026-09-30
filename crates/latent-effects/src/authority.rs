@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, MutexGuard},
     time::{Duration, Instant},
 };
 
@@ -204,9 +204,29 @@ pub struct DurableEffectAuthority {
 }
 
 impl DurableEffectAuthority {
+    fn validate(&self) -> Result<(), AuthorityError> {
+        let expected_expiry = self
+            .committed_at_millis
+            .checked_add(self.ceiling.maximum_age_millis)
+            .ok_or(AuthorityError::Invalid)?;
+        if !self.scope.valid()
+            || !self.profile.valid()
+            || !self.link.valid()
+            || self.policy_revision == 0
+            || !self.ceiling.valid()
+            || self.expires_at_millis != expected_expiry
+            || self.payload_bytes > self.ceiling.maximum_payload_bytes
+            || !digest(&self.payload_digest)
+        {
+            return Err(AuthorityError::Invalid);
+        }
+        Ok(())
+    }
+
     /// Independent bounded authority-record format; application schema changes
     /// do not reinterpret it. Decoding never restores a permission or credential.
     pub fn encode(&self) -> Result<Vec<u8>, AuthorityError> {
+        self.validate()?;
         let body = serde_json::to_vec(self).map_err(|_| AuthorityError::Invalid)?;
         if body.len() > 8192 {
             return Err(AuthorityError::Capacity);
@@ -226,21 +246,7 @@ impl DurableEffectAuthority {
         }
         let authority: Self =
             serde_json::from_slice(&bytes[5..]).map_err(|_| AuthorityError::Invalid)?;
-        let expected_expiry = authority
-            .committed_at_millis
-            .checked_add(authority.ceiling.maximum_age_millis)
-            .ok_or(AuthorityError::Invalid)?;
-        if !authority.scope.valid()
-            || !authority.profile.valid()
-            || !authority.link.valid()
-            || authority.policy_revision == 0
-            || !authority.ceiling.valid()
-            || authority.expires_at_millis != expected_expiry
-            || authority.payload_bytes > authority.ceiling.maximum_payload_bytes
-            || !digest(&authority.payload_digest)
-        {
-            return Err(AuthorityError::Invalid);
-        }
+        authority.validate()?;
         Ok(authority)
     }
 
@@ -314,6 +320,14 @@ struct Owner {
 #[derive(Clone)]
 pub struct EffectAuthorityOwner(Arc<Owner>);
 
+/// Affine, metadata-only final writer fence. Hold this through the host's
+/// cancellation acceptance CAS under Policy -> `NamespaceLifecycle` -> Effects
+/// lock order, then drop it before engine flush. It owns no dispatch permit,
+/// provider credential, guest reference or I/O work.
+pub struct EffectCommitFence<'a> {
+    _state: MutexGuard<'a, State>,
+}
+
 impl EffectAuthorityOwner {
     pub fn new(
         maximum_rules: usize,
@@ -380,6 +394,20 @@ impl EffectAuthorityOwner {
         payload_digest: String,
         time: EffectTime,
     ) -> Result<DurableEffectAuthority, AuthorityError> {
+        self.capture_until(scope, link, payload_bytes, payload_digest, time, None)
+    }
+
+    /// A guest may shorten the approved intent lifetime. A requested expiry
+    /// never widens the host rule and is frozen in the durable envelope.
+    pub fn capture_until(
+        &self,
+        scope: &EffectScope,
+        link: CommitLink,
+        payload_bytes: u64,
+        payload_digest: String,
+        time: EffectTime,
+        requested_expiry_millis: Option<u64>,
+    ) -> Result<DurableEffectAuthority, AuthorityError> {
         if !scope.valid() || !link.valid() || !digest(&payload_digest) {
             return Err(AuthorityError::Invalid);
         }
@@ -397,21 +425,52 @@ impl EffectAuthorityOwner {
         if payload_bytes > rule.ceiling.maximum_payload_bytes {
             return Err(AuthorityError::Capacity);
         }
+        let mut ceiling = rule.ceiling;
+        if let Some(expiry) = requested_expiry_millis {
+            let age = expiry
+                .checked_sub(time.unix_millis)
+                .filter(|age| *age != 0)
+                .ok_or(AuthorityError::Invalid)?;
+            ceiling.maximum_age_millis = ceiling.maximum_age_millis.min(age);
+        }
         let expires_at_millis = time
             .unix_millis
-            .checked_add(rule.ceiling.maximum_age_millis)
+            .checked_add(ceiling.maximum_age_millis)
             .ok_or(AuthorityError::Invalid)?;
         Ok(DurableEffectAuthority {
             scope: scope.clone(),
             profile: rule.profile.clone(),
             link,
             policy_revision: rule.policy_revision,
-            ceiling: rule.ceiling,
+            ceiling,
             committed_at_millis: time.unix_millis,
             expires_at_millis,
             payload_bytes,
             payload_digest,
         })
+    }
+
+    /// Revalidate the complete finite set immediately before the physical
+    /// transaction is accepted. Rule publication cannot race the cancellation
+    /// CAS while the returned guard lives; no locks remain held during flush.
+    pub fn commit_fence<'a>(
+        &'a self,
+        authorities: &[DurableEffectAuthority],
+        time: EffectTime,
+    ) -> Result<EffectCommitFence<'a>, AuthorityError> {
+        if authorities.len() > 128 {
+            return Err(AuthorityError::Capacity);
+        }
+        let mut state = self
+            .0
+            .state
+            .lock()
+            .map_err(|_| AuthorityError::Unavailable)?;
+        check_time(&mut state, time)?;
+        for authority in authorities {
+            current_ceiling(&state, authority, time)?;
+        }
+        Ok(EffectCommitFence { _state: state })
     }
 
     /// Accept one physical attempt. Local expiry of this owner never permits a
@@ -429,29 +488,13 @@ impl EffectAuthorityOwner {
             .lock()
             .map_err(|_| AuthorityError::Unavailable)?;
         check_time(&mut state, time)?;
+        let (ceiling, expiry) = current_ceiling(&state, authority, time)?;
         let rule = state
             .rules
             .get(&authority.scope)
             .filter(|rule| rule.enabled)
             .ok_or(AuthorityError::PolicyBlocked)?;
-        if rule.profile != authority.profile {
-            return Err(AuthorityError::UnsupportedFormat);
-        }
-        if rule.policy_revision < authority.policy_revision {
-            return Err(AuthorityError::Stale);
-        }
-        let ceiling = authority.ceiling.intersection(rule.ceiling);
-        let current_expiry = authority
-            .committed_at_millis
-            .checked_add(ceiling.maximum_age_millis)
-            .ok_or(AuthorityError::Invalid)?;
-        if time.unix_millis >= authority.expires_at_millis.min(current_expiry) {
-            return Err(AuthorityError::Expired);
-        }
-        if attempt == 0
-            || attempt > ceiling.maximum_attempts
-            || authority.payload_bytes > ceiling.maximum_payload_bytes
-        {
+        if attempt == 0 || attempt > ceiling.maximum_attempts {
             return Err(AuthorityError::Capacity);
         }
         if state.physical >= self.0.maximum_physical {
@@ -459,7 +502,7 @@ impl EffectAuthorityOwner {
         }
         let credential_epoch = rule.credential_epoch;
         let reference = rule.protected_credential_reference.clone();
-        let expiry_remaining = authority.expires_at_millis.min(current_expiry) - time.unix_millis;
+        let expiry_remaining = expiry - time.unix_millis;
         let timeout = Duration::from_millis(ceiling.attempt_timeout_millis.min(expiry_remaining));
         let deadline = Instant::now()
             .checked_add(timeout)
@@ -489,6 +532,41 @@ impl EffectAuthorityOwner {
             quarantined: state.quarantined,
         })
     }
+}
+
+fn current_ceiling(
+    state: &State,
+    authority: &DurableEffectAuthority,
+    time: EffectTime,
+) -> Result<(DispatchCeiling, u64), AuthorityError> {
+    authority.validate()?;
+    let rule = state
+        .rules
+        .get(&authority.scope)
+        .filter(|rule| rule.enabled)
+        .ok_or(AuthorityError::PolicyBlocked)?;
+    if rule.profile != authority.profile {
+        return Err(AuthorityError::UnsupportedFormat);
+    }
+    if rule.policy_revision < authority.policy_revision {
+        return Err(AuthorityError::Stale);
+    }
+    let ceiling = authority.ceiling.intersection(rule.ceiling);
+    let expiry = authority
+        .committed_at_millis
+        .checked_add(ceiling.maximum_age_millis)
+        .ok_or(AuthorityError::Invalid)?
+        .min(authority.expires_at_millis);
+    if time.unix_millis < authority.committed_at_millis {
+        return Err(AuthorityError::ClockDiscontinuity);
+    }
+    if time.unix_millis >= expiry {
+        return Err(AuthorityError::Expired);
+    }
+    if authority.payload_bytes > ceiling.maximum_payload_bytes {
+        return Err(AuthorityError::Capacity);
+    }
+    Ok((ceiling, expiry))
 }
 
 /// Owned transport work, moved into the actual fixed worker. Dropping a waiter
