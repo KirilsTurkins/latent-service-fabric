@@ -56,6 +56,14 @@ pub(super) fn directory(path: &Path) -> Result<()> {
 }
 
 pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
+    sign(output, paths, false)
+}
+
+pub(super) fn sign_demo_separated(output: &Path, paths: &[OsString]) -> Result<()> {
+    sign(output, paths, true)
+}
+
+fn sign(output: &Path, paths: &[OsString], separate_builders: bool) -> Result<()> {
     if !output.is_absolute() || output.exists() || !(1..=16).contains(&paths.len()) {
         return Err("choose a fresh absolute output and one to sixteen completed builds".into());
     }
@@ -82,20 +90,34 @@ pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
         PublisherId(PUBLISHER.into()),
         publisher_public,
     )?;
-    let builder_key = generate_signing_key()?;
-    let builder_public = *builder_key.public_key();
-    let builder =
-        LocalBuilderSigner::from_pkcs8(builder_key.into_pkcs8(), BUILDER.into(), builder_public)?;
-    let observations = builds
+    let builders = (0..if separate_builders { builds.len() } else { 1 })
+        .map(|ordinal| {
+            let id = if separate_builders {
+                format!("{BUILDER}-{:02}", ordinal + 1)
+            } else {
+                BUILDER.to_owned()
+            };
+            let key = generate_signing_key()?;
+            let public = *key.public_key();
+            let signer = LocalBuilderSigner::from_pkcs8(key.into_pkcs8(), id.clone(), public)?;
+            Ok((id, public, signer))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let assignments = builds
         .iter()
-        .map(|build| &build.observation)
+        .enumerate()
+        .map(|(ordinal, build)| {
+            let builder = &builders[if separate_builders { ordinal } else { 0 }];
+            (builder.0.as_str(), &builder.1, &build.observation)
+        })
         .collect::<Vec<_>>();
     let (policy, policy_document) =
-        policy::create(now, &publisher_public, &builder_public, &observations)?;
+        policy::create_for_builders(now, &publisher_public, &assignments)?;
     directory(output)?;
     write(&output.join("policy.json"), &policy_document)?;
     let mut releases = Vec::new();
-    for build in builds {
+    for (ordinal, build) in builds.into_iter().enumerate() {
+        let (builder_id, _, builder) = &builders[if separate_builders { ordinal } else { 0 }];
         let subject = PackageSigningSubject::from_package(
             build.bundle.manifest_bytes(),
             build.bundle.config_bytes(),
@@ -150,11 +172,16 @@ pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
             &destination.join("build-observation.json"),
             &serde_json::to_vec(&build.observation)?,
         )?;
-        releases.push(json!({"name": name, "world": build.world, "service": build.service,
+        let mut release = json!({"name": name, "world": build.world, "service": build.service,
             "buildType": build.observation.build_type,
             "packageDigest": digest.to_string(), "componentDigest": build.observation.component_digest,
             "sourceSnapshotDigest": build.observation.source.snapshot_digest,
-            "observationDigest": artifact_blob_digest(&serde_json::to_vec(&build.observation)?).to_string()}));
+            "observationDigest": artifact_blob_digest(&serde_json::to_vec(&build.observation)?).to_string()});
+        if separate_builders {
+            release["builderId"] = json!(builder_id);
+            release["builderKeyFingerprint"] = json!(builder.key_fingerprint().as_str());
+        }
+        releases.push(release);
     }
     // Written last; failed/partial signing attempts have no success marker.
     let record = json!({"schemaVersion":"latent.capsule.demo.v1", "tenant":TENANT,

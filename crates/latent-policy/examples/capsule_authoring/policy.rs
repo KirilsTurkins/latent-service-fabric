@@ -5,36 +5,54 @@ use latent_signing::{
 };
 use serde_json::json;
 
-use super::{Result, BUILDER, DEMO_VALIDITY_SECONDS, PUBLISHER, TENANT};
+#[cfg(test)]
+use super::BUILDER;
+use super::{Result, DEMO_VALIDITY_SECONDS, PUBLISHER, TENANT};
 
+#[cfg(test)]
 pub(super) fn create(
     now: u64,
     publisher_key: &[u8; 32],
     builder_key: &[u8; 32],
     builds: &[&BuildObservation],
 ) -> Result<(SupplyChainPolicy, Vec<u8>)> {
+    let assignments = builds
+        .iter()
+        .map(|build| (BUILDER, builder_key, *build))
+        .collect::<Vec<_>>();
+    create_for_builders(now, publisher_key, &assignments)
+}
+
+pub(super) fn create_for_builders(
+    now: u64,
+    publisher_key: &[u8; 32],
+    builds: &[(&str, &[u8; 32], &BuildObservation)],
+) -> Result<(SupplyChainPolicy, Vec<u8>)> {
     let publisher = json!({"formatVersion":1,"scope":TENANT,"generation":1,"validFrom":now-60,"validUntil":now+3600,
         "maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":DEMO_VALIDITY_SECONDS,
         "keys":[{"publisherId":PUBLISHER,"publicKey":STANDARD.encode(publisher_key),"validFrom":now-60,"validUntil":now+3600}]});
     let mut requirements = std::collections::BTreeMap::new();
-    for build in builds {
+    let mut keys = std::collections::BTreeSet::new();
+    for (builder_id, builder_key, build) in builds {
+        keys.insert((builder_id, builder_key));
         let source = &build.source;
         requirements.insert(
             (
+                (*builder_id).to_owned(),
                 source.repository.clone(),
                 source.revision.clone(),
                 source.snapshot_digest.clone(),
                 build.build_type.clone(),
             ),
             json!({
-            "builderId":BUILDER,"buildType":build.build_type,
+            "builderId":builder_id,"buildType":build.build_type,
             "sourceRepository":source.repository,"sourceRevision":source.revision,
             "sourceSnapshotDigest":source.snapshot_digest,"requireReproducible":false}),
         );
     }
     let builder = json!({"formatVersion":1,"scope":TENANT,"generation":1,"validFrom":now-60,"validUntil":now+3600,
         "maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":DEMO_VALIDITY_SECONDS,
-        "keys":[{"builderId":BUILDER,"publicKey":STANDARD.encode(builder_key),"validFrom":now-60,"validUntil":now+3600}],
+        "keys":keys.into_iter().map(|(id,key)| json!({"builderId":id,"publicKey":STANDARD.encode(key),"validFrom":now-60,"validUntil":now+3600})).collect::<Vec<_>>(),
         "requirements":requirements.into_values().collect::<Vec<_>>()});
     let publisher_digest =
         PublisherPolicy::from_json(&serde_json::to_vec(&publisher)?, SignatureLimits::default())?

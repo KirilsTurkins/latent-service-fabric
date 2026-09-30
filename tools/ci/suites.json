@@ -3483,6 +3483,7 @@
       "expectedCases": [
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
         "authoring::policy::tests::demo_publisher_and_builder_proof_age_ceilings_remain_independent",
+        "authoring::policy::tests::separated_builders_verify_only_their_exact_source_under_permuted_policy",
         "fixture_tls::tests::fixture_tls_is_fresh_private_and_never_replaces_an_existing_identity"
       ],
       "expectedIgnored": [],
@@ -3490,7 +3491,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 3,
+      "minimumCases": 4,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
