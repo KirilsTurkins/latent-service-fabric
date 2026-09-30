@@ -45,7 +45,8 @@ def sdk_snapshot(root: Path) -> dict:
         "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
         "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
         "tools/teavm_platform.py", "tools/capture.py")}
-    for folder in ("runtime", "templates", "wit"):
+    for folder in ("runtime", "templates", "wit", "fibers"):
+        if folder == "fibers" and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
     return dict(sorted(files.items()))
 
@@ -158,13 +159,17 @@ class Compiler:
             # each command's bounded exit/cleanup record beside its log anyway.
             write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
 
-    def compile(self, sources: Path, wit: Path, world: str, destination: Path) -> tuple[Path, dict]:
+    def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
+                application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
+                activation_profile: bool = False) -> tuple[Path, dict]:
+        if type(activation_profile) is not bool:
+            raise ValueError("Java activation profile requires an explicit boolean selection")
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
         for package in dependencies(wit, self.platform): copy_wit_tree(package, staged / "deps" / package.name)
-        bindings = generate(self.run, staged, world, destination / "bindings")
-        second = generate(self.run, staged, world, destination / "bindings-check")
+        bindings = generate(self.run, staged, world, destination / "bindings", activation_profile=activation_profile)
+        second = generate(self.run, staged, world, destination / "bindings-check", activation_profile=activation_profile)
         if second != bindings: raise ValueError("nondeterministic Java WIT bindings")
         project = destination / "project"
         project.mkdir()
@@ -174,6 +179,14 @@ class Compiler:
         # Build script is owned by the SDK; applications supply Java and WIT,
         # never arbitrary Gradle plugins or unrecorded repository dependencies.
         (project / "build.gradle").write_bytes(read_file(self.sdk / "compiler.gradle"))
+        # Only already captured, selected JAR bytes enter this owned file-based
+        # classpath. No application repository, plugin or processor is installed.
+        for index, jar in enumerate(application_classpath):
+            target = project / "captured-application/jars" / f"{index:04d}.jar"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(read_file(jar, 64 * 1024 * 1024))
+        if application_resources is not None:
+            shutil.copytree(application_resources, project / "captured-application/resources")
         # Never let Gradle silently select or provision an unobserved JDK. This
         # generated private property file is part of this source-bound recipe.
         (project / "gradle.properties").write_text(
@@ -182,13 +195,36 @@ class Compiler:
             "org.gradle.java.installations.fromEnv=JAVA_HOME\n", encoding="utf-8")
         java_root = project / "src/main/java"
         shutil.copytree(self.sdk / "runtime/dev", java_root / "dev")
+        if activation_profile:
+            for folder in ("fibers/dev", "fibers/compiler/dev"):
+                for name, data in snapshot(self.sdk / folder).items():
+                    target = java_root / "dev" / name
+                    if target.exists(): raise ValueError("Java runtime source collision")
+                    target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+            for name, data in snapshot(self.sdk / "fibers/services").items():
+                target = project / "src/main/resources" / name
+                target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+            with (project / "build.gradle").open("a", encoding="utf-8") as build:
+                build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
+        application_source_names = set()
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")
             target = java_root / path.relative_to(sources)
             if target.exists(): raise ValueError("application overrides Java SDK source")
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(read_file(path))
+            application_source_names.add(path.relative_to(sources).as_posix())
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
+        if activation_profile:
+            from tools.java_guest.class_origin import checkpoint_index
+            self.run("java-owned-classes", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "classes", cwd=project)
+            index = checkpoint_index(project / "build/classes/java/main", application_source_names, application_classpath)
+            target = project / "src/main/resources/META-INF/latent/runtime-checkpoints.classes"
+            target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(index)
+            write_json(destination / "runtime-profile.json", {
+                "profile": "teavm-activation-fibers-v1", "qualification": "pending",
+                "checkpointClassIndexDigest": digest(index), "checkpointClasses": index.decode("utf-8").splitlines(),
+            })
         self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)
         retain = source_module(self.sdk / "tools/dependencies.py").retain
         retained = retain(self.directory / "gradle-home/caches/modules-2/files-2.1", project, destination, False)
@@ -197,6 +233,7 @@ class Compiler:
         adaptation = adapt(generated)
         core, component = destination / "core.wasm", destination / "component.wasm"
         self.run("c-to-wasm", "clang", "-target", "wasm32-wasip1", "-std=c11", "-O2",
+                 *(["-DLSF_JAVA_ACTIVATION_PROFILE=1"] if activation_profile else []),
                  "-DLSF_TEAVM_WASM=1", "-DTEAVM_CUSTOM_LOG=1", "-mllvm", "-wasm-enable-sjlj", "-lsetjmp",
                  "-mllvm", "-wasm-use-legacy-eh=false", "-mexec-model=reactor", "-Wl,--no-entry",
                  "-Wl,--export-memory", "-Wl,-z,stack-size=65536", "-Wl,--max-memory=67108864",

@@ -93,6 +93,19 @@ jobs:
         run: |
           set -o pipefail
           cargo --config .cargo/managed-guest.toml run --locked -p latent-wasmtime --features java-guest-diagnostic --example java_runtime_probe -- "$RUNNER_TEMP/java-guest-bindings/compiled/component.wasm" --typed 2>&1 | tee "$RUNNER_TEMP/java-guest-bindings/runtime-probe.log"
+      - name: Prepare the opt-in Java fibers and reference JDK controls
+        id: prepare-java-activation-fibers
+        run: python3 tools/qualify_java_fibers.py --output "$RUNNER_TEMP/java-activation-fibers" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute signed activation threads with actual physical cleanup
+        id: signed-java-activation-fibers
+        env:
+          LSF_GUEST_SDK_LANGUAGE: java
+          LSF_JAVA_FIBER_FIXTURE: ${{ runner.temp }}/java-activation-fibers
+        run: |
+          set -o pipefail
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
+            runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers -- \
+            --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-activation-fibers/signed-runtime.log"
       - name: Qualify standalone Java projects, nine SDK components, signed node and printed guide
         run: |
           set -o pipefail
@@ -120,6 +133,15 @@ jobs:
             ${{ runner.temp }}/java-guest-bindings/runtime-probe.log
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
+            ${{ runner.temp }}/java-activation-fibers/FIBERS-COMPILE.json
+            ${{ runner.temp }}/java-activation-fibers/compiler-inputs.json
+            ${{ runner.temp }}/java-activation-fibers/compiler/*.log
+            ${{ runner.temp }}/java-activation-fibers/compiler/*.command.json
+            ${{ runner.temp }}/java-activation-fibers/src/**
+            ${{ runner.temp }}/java-activation-fibers/wit/**
+            ${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json
+            ${{ runner.temp }}/java-activation-fibers/build/component.wasm
+            ${{ runner.temp }}/java-activation-fibers/signed-runtime.log
             ${{ runner.temp }}/java-capsule-authoring.log
             ${{ runner.temp }}/java-capsule-authoring/*.json
             ${{ runner.temp }}/java-capsule-authoring/logs/**
