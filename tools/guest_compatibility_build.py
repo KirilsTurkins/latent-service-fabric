@@ -84,6 +84,20 @@ def package_report(output: Path, files: dict[str, bytes], component: bytes) -> N
 
 def failure_report(output: Path, language: str, stage: str) -> None:
     """Retain safe known observations when captured inputs exist; never guess errors."""
+    try:
+        _failure_report(output, language, stage)
+    except Exception:
+        # Reporting runs while the compiler exception is already propagating.
+        # A stale/unreadable report input must never replace that original error.
+        try:
+            write_json(output / "compatibility-report-failed.json", {
+                "schemaVersion": "lsf.guest.compatibility.failure.v1", "status": "unavailable",
+                "authority": "none", "reason": "report-input-unavailable-or-stale"})
+        except Exception:
+            pass  # The caller retains its existing bounded build-failure path.
+
+
+def _failure_report(output: Path, language: str, stage: str) -> None:
     source_path = output / "source-inputs.json"
     if not source_path.exists():
         return  # Source identity is unavailable; do not fabricate a snapshot.

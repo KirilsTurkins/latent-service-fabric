@@ -112,6 +112,29 @@ class CompatibilityReport(unittest.TestCase):
 
 
 class FinalComponentInspection(unittest.TestCase):
+    def test_reporting_stale_input_preserves_original_build_failure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            (output / "source-inputs.json").write_bytes(b"captured source")
+            (output / "compatibility-inspection.json").write_bytes(b"invalid json")
+            build.failure_report(output, "rust", "compile")
+            marker = json.loads((output / "compatibility-report-failed.json").read_bytes())
+            self.assertEqual(marker["status"], "unavailable")
+            self.assertEqual(marker["authority"], "none")
+
+    def test_unwritable_failure_report_cannot_mask_compiler_exception(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            (output / "source-inputs.json").write_bytes(b"captured source")
+            with patch.object(build, "write_json", side_effect=PermissionError("private path")):
+                try:
+                    raise ValueError("original-compiler-failure")
+                except ValueError:
+                    build.failure_report(output, "rust", "compile")
+                    with self.assertRaisesRegex(ValueError, "original-compiler-failure"):
+                        raise
+
     def test_final_graph_tables_and_indices_are_checked(self):
         self.assertEqual(build.interface_names(graph())["imports"], [HTTP])
         for changed in (graph(), graph()):
