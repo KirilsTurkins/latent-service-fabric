@@ -348,8 +348,27 @@ class Closure:
                     raise DependencyError("dependency-unobserved-materialized-input")
 
 
-def prepare(project: Path, work: Path, output: Path, language: str, *, cache: Path | None = None,
-            profile_identity: dict | None = None) -> Closure | None:
+@dataclass(frozen=True)
+class VerifiedInputs:
+    project: Path
+    store: Store
+    manifest_bytes: bytes
+    lock_bytes: bytes
+    manifest: dict
+    lock: dict
+
+    @property
+    def identity(self) -> str:
+        return digest(canonical({"manifest": digest(self.manifest_bytes), "lock": digest(self.lock_bytes)}))
+
+
+def verify_inputs(project: Path, language: str, *, cache: Path | None = None,
+                  profile_identity: dict | None = None) -> VerifiedInputs | None:
+    """Verify a synced closure without materializing or executing any input.
+
+    Executable-input metadata is allowed for attributable trust review. Its
+    presence never authorizes compilation or execution; ``prepare`` denies it.
+    """
     if not (project / MANIFEST).exists():
         if (project / LOCK).exists():
             raise DependencyError("dependency-manifest-missing")
@@ -367,8 +386,6 @@ def prepare(project: Path, work: Path, output: Path, language: str, *, cache: Pa
     expected_tools = [row["id"] for row in manifest["artifacts"] if row["role"] == "build-tool"]
     if lock["executableInputs"] != expected_tools:
         raise DependencyError("dependency-executable-input-drift")
-    if expected_tools:
-        raise DependencyError("dependency-executable-tools-require-isolated-stage")
     if profile_identity is not None and lock["selection"] != profile_identity:
         raise DependencyError("dependency-selected-profile-drift")
     store = Store(cache or project / "dependency-inputs/objects")
@@ -400,6 +417,22 @@ def prepare(project: Path, work: Path, output: Path, language: str, *, cache: Pa
         if total_files > MAX_CLOSURE_FILES or total_bytes > MAX_CLOSURE_BYTES:
             raise DependencyError("dependency-closure-limit")
         verify_artifact(item, spec, manifest["transformations"], store)
+        for row in item["files"]:
+            store.get(row["digest"], row["size"])
+        if item["format"] == "file" and (len(item["files"]) != 1 or item["files"][0]["path"] != Path(item["mount"]).name):
+            raise DependencyError("dependency-file-inventory-invalid")
+    return VerifiedInputs(project, store, manifest_bytes, lock_bytes, manifest, lock)
+
+
+def prepare(project: Path, work: Path, output: Path, language: str, *, cache: Path | None = None,
+            profile_identity: dict | None = None) -> Closure | None:
+    verified = verify_inputs(project, language, cache=cache, profile_identity=profile_identity)
+    if verified is None:
+        return None
+    if verified.lock["executableInputs"]:
+        raise DependencyError("dependency-executable-tools-require-isolated-stage")
+    store, lock = verified.store, verified.lock
+    for item in lock["artifacts"]:
         destination = regular_path(work / item["mount"])
         if destination.exists():
             raise DependencyError("dependency-mount-collision")
@@ -411,6 +444,7 @@ def prepare(project: Path, work: Path, output: Path, language: str, *, cache: Pa
                 stream.write(store.get(item["files"][0]["digest"], item["files"][0]["size"]))
         else:
             materialize(item["files"], destination, store)
+    manifest_bytes, lock_bytes = verified.manifest_bytes, verified.lock_bytes
     closure = Closure(project, work, store, manifest_bytes, lock_bytes, lock)
     closure.check_unchanged()
     receipt = {"formatVersion": 1, "inputIdentity": closure.identity, "language": language,
