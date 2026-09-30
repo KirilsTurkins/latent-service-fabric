@@ -132,6 +132,9 @@ jobs:
             ${{ runner.temp }}/java-http-composition/**/*.json
             ${{ runner.temp }}/java-http-composition/**/*.log
             ${{ runner.temp }}/java-http-composition/**/component.wasm
+            ${{ runner.temp }}/java-http-composition/**/wit/**/*.wit
+            ${{ runner.temp }}/java-http-composition/**/package/**
+            ${{ runner.temp }}/java-http-composition/**/evidence/**
             ${{ runner.temp }}/java-http-composition/**/compiler-logs/**
             ${{ runner.temp }}/java-http-composition/**/generated-bindings/**
             ${{ runner.temp }}/java-http-composition/signing/logs/**
