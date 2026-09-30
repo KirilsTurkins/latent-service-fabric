@@ -64,7 +64,7 @@ def _preparation(value):
     required = {"state", "stateName", "diagnostic", "profile", "profileName", "engineVersion",
                 "engineConfigurationDigest", "targetTriple", "cpuFeatureSet", "sealedMetadataFingerprint",
                 "importCount", "functionCount", "hostcallFuel", "maximumLiftedBytes", "maximumTypeNodes",
-                "declaredBudget", "imports", "exports"}
+                "declaredBudget", "imports", "typeImports", "exports"}
     members(value, required)
     require(type(value["state"]) is int and _PREPARATION.get(value["state"]) == value["stateName"],
             "preflight-preparation-state")
@@ -92,21 +92,25 @@ def _preparation(value):
     for name, number in budget.items():
         if name != "wallTimeLimitMillis" or number is not None:
             uint(number)
-    require(isinstance(value["imports"], list) and len(value["imports"]) <= 64
+    require(isinstance(value["imports"], list) and isinstance(value["typeImports"], list)
+            and len(value["imports"]) + len(value["typeImports"]) <= 64
             and isinstance(value["exports"], list) and len(value["exports"]) <= 2048, "preflight-surface-bound")
     imports = sorted(contract(row) for row in value["imports"])
+    type_imports = sorted(contract(row) for row in value["typeImports"])
     exports = []
     for row in value["exports"]:
         members(row, {"contract", "function"})
         exports.append((contract(row["contract"]), atom(row["function"], 64)))
-    require(len(set(imports)) == len(imports) and len(set(exports)) == len(exports), "preflight-surface-ambiguity")
+    require(len(set(imports + type_imports)) == len(imports) + len(type_imports)
+            and len(set(exports)) == len(exports), "preflight-surface-ambiguity")
+    require(uint(value["importCount"]) == len(imports) + len(type_imports), "preflight-surface-import-count")
     # Only closed identities, bounded counts and the actual surface are retained;
     # CPU labels and arbitrary diagnostic names never enter the public result.
     return {**result, "profile": value["profile"], "engineConfigurationDigest": value["engineConfigurationDigest"],
             "engineVersion": value["engineVersion"], "targetTriple": value["targetTriple"],
             "cpuFeatureSetDigest": digest(value["cpuFeatureSet"].encode()),
             "sealedMetadataFingerprint": value["sealedMetadataFingerprint"],
-            "imports": imports, "exports": sorted(exports), "declaredBudget": budget,
+            "imports": imports, "typeImports": type_imports, "exports": sorted(exports), "declaredBudget": budget,
             **{name: value[name] for name in ("importCount", "functionCount", "hostcallFuel", "maximumLiftedBytes", "maximumTypeNodes")}}
 
 
@@ -155,7 +159,7 @@ def _snapshot(value, component, tenant):
         dependencies = sorted((_dependency(item) for item in row["dependencies"]), key=lambda item: item["capability"])
         require(len({item["capability"] for item in dependencies}) == len(dependencies), "preflight-dependency-ambiguity")
         require(row["publicationKind"] is None or row["publicationKind"] == "capsule", "preflight-publication-kind")
-        require(isinstance(row["httpBindings"], list) and len(row["httpBindings"]) <= 256, "preflight-http-binding-bound")
+        require(isinstance(row["httpBindings"], list) and len(row["httpBindings"]) <= 32, "preflight-http-binding-bound")
         bindings = []
         for binding in row["httpBindings"]:
             members(binding, {"id", "generation", "selectedDeploymentGeneration", "state"})
@@ -203,7 +207,8 @@ def _component(component, snapshot, value, checks, add):
         return {"component": component["id"], "state": _PREPARATION[prepared["state"]],
                 "engineConfigurationDigest": prepared.get("engineConfigurationDigest")}
     declared_exports = sorted((item["contract"], function) for item in component["exports"] for function in item["functions"])
-    surface = sorted(component["imports"]) == prepared["imports"] and declared_exports == prepared["exports"]
+    surface = sorted(component["imports"]) == sorted(prepared["imports"] + prepared["typeImports"])
+    surface = surface and declared_exports == prepared["exports"]
     add(checks, "authoritative-preparation", "passed" if surface else "failed", "actual-component-contract-surface", component=component["id"])
     add(checks, "authoritative-preparation", "passed" if component["budget"] == prepared["declaredBudget"] else "failed",
         "actual-declared-resource-budget", component=component["id"])
@@ -211,16 +216,18 @@ def _component(component, snapshot, value, checks, add):
     add(checks, "authoritative-preparation", "passed" if prepared["profile"] == expected_profile else "failed",
         "selected-signature-profile", component=component["id"])
     add(checks, "authoritative-preparation", "not-checked", "signed-contract-document-hash-not-projected", component=component["id"])
-    _providers(component, row["dependencies"], value, checks, add)
+    _providers(component, prepared["imports"], row["dependencies"], value, checks, add)
     return {"component": component["id"], "state": "ready", "profile": prepared["profile"],
             "metadataFingerprintFormat": "lsf-wasmtime-preparation-metadata-v2",
             **{name: prepared[name] for name in ("engineConfigurationDigest", "sealedMetadataFingerprint", "importCount",
                                                "functionCount", "hostcallFuel", "maximumLiftedBytes", "maximumTypeNodes")}}
 
 
-def _providers(component, dependencies, value, checks, add):
+def _providers(component, imports, dependencies, value, checks, add):
     declarations = {row["contract"]: row for row in value["providers"]}
     policies = {row["id"]: row["digest"] for row in value["policies"]}
+    if set(imports) - {row["capability"] for row in dependencies}:
+        add(checks, "authenticated-live-state", "failed", "required-provider-binding-not-observed", component=component["id"])
     for dependency in dependencies:
         selected = declarations.get(dependency["capability"])
         if selected is None:

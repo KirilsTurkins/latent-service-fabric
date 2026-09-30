@@ -51,7 +51,7 @@ def observed(selected, value):
                 "cpuFeatureSet": "baseline", "sealedMetadataFingerprint": "c" * 64, "importCount": str(len(imports)),
                 "functionCount": str(len(exported)), "hostcallFuel": "1048576", "maximumLiftedBytes": "33554432", "maximumTypeNodes": "1024",
                 "declaredBudget": {name: int(number) if name in preflight.U32_BUDGETS else number
-                                   for name, number in selected["budget"].items()}, "imports": imports, "exports": exported}
+                                   for name, number in selected["budget"].items()}, "imports": imports, "typeImports": [], "exports": exported}
     dependencies = [{"capability": row["contract"], "state": "configured-current", "policyIdentityDigest": "d" * 64,
                      "providerConfigurationEpoch": row.get("configurationEpoch", "1"),
                      "binding": {"id": row["bindingId"], "digest": row["bindingDigest"], "revision": "1"},
@@ -180,6 +180,19 @@ class CompositionPreflight(unittest.TestCase):
         self.assertIn("selected-provider-binding-policy-current", codes(result, "passed"))
         self.assertFalse(result["fullyChecked"])
         self.assertFalse(result["observation"]["liveGrantsChecked"])
+        selected = value["components"][0]
+        shared_types = "examples:domain/types@1.0.0"
+        selected["imports"].append(shared_types)
+        def typed_observation(component, **_):
+            reply = observed(component, value)
+            prepared = reply["data"]["candidates"][0]["preparation"]
+            prepared["imports"] = [SERVICE]
+            prepared["typeImports"] = [shared_types]
+            return reply
+        result = preflight.run(value, observe=typed_observation)
+        self.assertTrue(result["passed"], result)
+        self.assertIn("actual-component-contract-surface", codes(result, "passed"))
+        self.assertNotIn("required-provider-not-selected", codes(result, "failed"))
 
     def test_changed_catalog_policy_provider_or_profile_refuses_mixed_positive(self):
         for change in (lambda data: data.update(catalogTransaction="6"),
@@ -217,6 +230,7 @@ class CompositionPreflight(unittest.TestCase):
     def test_missing_or_changed_provider_and_current_grant_denial_fail(self):
         for change in (lambda row: row["dependencies"][0].update(state="policy-changed-or-revoked"),
                        lambda row: row["dependencies"][0].update(configurationDigest=sha("b")),
+                       lambda row: row.update(dependencies=[]),
                        lambda row: row.update(eligible=False, reasons=[5])):
             value = composition(imported=True)
             def observe(selected, **_):
