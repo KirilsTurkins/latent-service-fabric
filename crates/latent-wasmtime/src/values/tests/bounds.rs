@@ -295,6 +295,44 @@ fn schema_walk_limits_and_unsupported_types_fail_before_values_exist() {
     .is_err());
 }
 
+#[test]
+fn http_ingress_does_not_amplify_domain_service_signature_allocations() {
+    let service = crate::WasmtimeConfig::default();
+    let mut old_http = service.clone();
+    old_http.hostcall_fuel = 2 * 1024 * 1024;
+    old_http.value_codec_limits.max_lifted_bytes = 64 * 1024 * 1024;
+    let signature = [types()["wide-list"].clone()];
+    validate_signature(
+        &signature,
+        service.value_codec_limits,
+        service.hostcall_fuel,
+    )
+    .unwrap();
+    assert_eq!(
+        validate_signature(
+            &signature,
+            old_http.value_codec_limits,
+            old_http.hostcall_fuel
+        )
+        .unwrap_err()
+        .code,
+        PlatformErrorCode::ResourceExhausted
+    );
+    // The repair preserves this conservative rejection for a web surface; a
+    // domain child gets the unchanged service budget even on the same node.
+    let mut node = service.clone();
+    node.buffered_web_value_profile = Some(crate::BufferedWebValueProfile {
+        hostcall_fuel: old_http.hostcall_fuel,
+        limits: old_http.value_codec_limits,
+    });
+    let domain = crate::surface::selected_value_config(&node, false);
+    assert_eq!(domain.hostcall_fuel, service.hostcall_fuel);
+    assert_eq!(domain.value_codec_limits, service.value_codec_limits);
+    validate_signature(&signature, domain.value_codec_limits, domain.hostcall_fuel).unwrap();
+    let web = crate::surface::selected_value_config(&node, true);
+    assert!(validate_signature(&signature, web.value_codec_limits, web.hostcall_fuel).is_err());
+}
+
 fn fixed_length_types() -> Vec<Type> {
     use wasm_encoder::{ComponentExportKind, ComponentExportSection, ComponentTypeSection};
     use wasm_encoder::{ComponentValType, PrimitiveValType};

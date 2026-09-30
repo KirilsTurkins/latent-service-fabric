@@ -51,7 +51,17 @@ pub(crate) fn validate_host_signature(
         .and_then(|dynamic| fixed.checked_add(dynamic))
         .ok_or_else(limit)?;
     if maximum > limits.max_lifted_bytes {
-        return Err(limit());
+        use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
+        let mut observation = ActivationDiagnostic::new(
+            DiagnosticStage::Preparation,
+            DiagnosticReason::SignatureAllocationLimit,
+        );
+        observation.configured_bound = u64::try_from(limits.max_lifted_bytes).ok();
+        observation.calculated_requirement = u64::try_from(maximum).ok();
+        observation.fixed_bytes = u64::try_from(fixed).ok();
+        observation.lifting_fuel = u64::try_from(hostcall_fuel).ok();
+        observation.lift_multiplier = u64::try_from(multiplier).ok();
+        return Err(observation.attach(limit()));
     }
     Ok(SignaturePlan {
         examined_type_nodes: limits.max_type_nodes - state.remaining,
