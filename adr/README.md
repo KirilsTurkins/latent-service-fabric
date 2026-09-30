@@ -115,3 +115,7 @@ old implementation snapshots are not setup instructions.
 ### Library transport research
 
 - [ADR-0059: Defer general outbound streams; evaluate typed protocol boundaries first](0059-defer-general-outbound-streams.md)
+
+### Library concurrency research
+
+- [ADR-0060: Bound invocation-scoped concurrency; defer a universal guest executor](0060-bound-invocation-scoped-concurrency.md)

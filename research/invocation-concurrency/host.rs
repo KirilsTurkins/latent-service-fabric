@@ -300,7 +300,10 @@ async fn run(engine: &Engine, component: &Component, case: Case) -> wasmtime::Re
     // A terminal trap may leave canonical host futures owned by the Store.
     // A returned normal scope must have joined; a trap is not a drain witness.
     if case.expected.is_some() {
-        assert_eq!(before_drop, 0, "host operation still owned after normal join");
+        assert_eq!(
+            before_drop, 0,
+            "host operation still owned after normal join"
+        );
     }
     assert!(before_drop <= MAX_TASKS);
     assert!(!shared.facts.lock().unwrap().store_dropped);
