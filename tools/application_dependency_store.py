@@ -115,11 +115,15 @@ class Entries:
         self.files: dict[str, bytes] = {}
         self.spellings: dict[str, str] = {}
         self.directories: set[str] = set()
+        self.headers: set[str] = set()
         self.expanded = 0
         self.count = 0
 
     def add(self, name: str, data: bytes | None):
         name = path_name(name)
+        if name in self.headers:
+            raise DependencyError("dependency-path-collision")
+        self.headers.add(name)
         self.count += 1
         if self.count > MAX_FILES:
             raise DependencyError("dependency-entry-limit")
