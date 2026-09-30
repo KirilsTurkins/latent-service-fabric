@@ -261,7 +261,7 @@ CSP violations, base-override rejection, wrong-script-MIME rejection and a
 same-origin POST reaching the asset method policy. Build/browser receipts are
 small version/hash/boolean observations and contain no real credentials.
 
-The fixture uses pinned Angular 22.1.7 and Node 24.19.0 to produce controlled
+The fixture uses pinned Angular 22.2.0 and Node 24.19.0 to produce controlled
 Node SSR HTML; it does **not** claim Wasm-component SSR execution, browser login,
 production deployment or malicious-application isolation. The asset test authority
 is explicitly non-cryptographic; existing signature/admission tests own that

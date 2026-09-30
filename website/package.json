@@ -12,7 +12,8 @@
     "serialize-javascript": "7.0.5",
     "sockjs": {
       "uuid": "11.1.1"
-    }
+    },
+    "dompurify": "3.4.16"
   },
   "scripts": {
     "start": "node scripts/site.mjs start",
