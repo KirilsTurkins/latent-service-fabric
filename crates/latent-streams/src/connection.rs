@@ -2,7 +2,7 @@
 //! pool connection survives every pending Arc<TcpStream> and is never parked.
 use crate::{error, provider::Inner, StreamError, StreamErrorCode, StreamResolution, StreamUsage};
 use latent_capabilities::broker::{
-    io::{IoInputChunk, IoOutputChunk, IoTransfer, IoTransferOptions},
+    io::{IoCall, IoInputChunk, IoOutputChunk, IoTransfer, IoTransferOptions},
     network::{
         OutboundStream, StreamInterest, StreamObservation, StreamReadiness, StreamScope,
         StreamShutdown, StreamState, MAXIMUM_CHUNK_BYTES, STREAM_CAPABILITY,
@@ -27,6 +27,27 @@ use tokio::{
     net::{TcpSocket, TcpStream},
     sync::Notify,
 };
+
+// One accepted readiness/DNS/connect future stays owned by the original IoCall.
+// Only its pinned authority is inspected periodically; network work is never
+// restarted or replayed when a policy or provider publication changes.
+async fn wait_current<F: Future>(
+    call: &IoCall,
+    future: F,
+) -> Result<F::Output, latent_core::PlatformError> {
+    call.wait_for(async {
+        tokio::pin!(future);
+        loop {
+            call.recheck_authority()?;
+            tokio::select! {
+                biased;
+                result = &mut future => { call.recheck_authority()?; return Ok(result); }
+                () = tokio::time::sleep(Duration::from_millis(10)) => {}
+            }
+        }
+    })
+    .await?
+}
 
 pub(crate) struct Socket {
     stream: Arc<TcpStream>,
@@ -202,9 +223,7 @@ async fn create_socket(
             let resolver = inner.resolvers[index]
                 .as_ref()
                 .ok_or_else(|| error(StreamErrorCode::DnsFailed))?;
-            let answers = call
-                .io()
-                .wait_for(resolver.resolve_with_expiry(deadline.into()))
+            let answers = wait_current(call.io(), resolver.resolve_with_expiry(deadline.into()))
                 .await?
                 .map_err(network_error)?;
             let first = answers
@@ -252,15 +271,13 @@ async fn create_socket(
         metadata: Some(metadata),
     };
     call.io().recheck_authority()?;
-    let stream = call
-        .io()
-        .wait_for(tokio::time::timeout_at(
-            deadline.min(valid_until).into(),
-            connecting.future.as_mut(),
-        ))
-        .await?
-        .map_err(|_| error(StreamErrorCode::Timeout))?
-        .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
+    let stream = wait_current(
+        call.io(),
+        tokio::time::timeout_at(deadline.min(valid_until).into(), connecting.future.as_mut()),
+    )
+    .await?
+    .map_err(|_| error(StreamErrorCode::Timeout))?
+    .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
     let peer = stream
         .peer_addr()
         .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
@@ -460,14 +477,14 @@ impl Connection {
         future: F,
     ) -> Result<F::Output, StreamError> {
         let deadline = pending.deadline.min(call_deadline);
-        self.call
-            .io()
-            .wait_for(tokio::time::timeout_at(deadline.into(), future))
-            .await?
-            .map_err(|_| {
-                error(StreamErrorCode::Timeout)
-                    .uncertain(self.observe().application_write_attempted)
-            })
+        wait_current(
+            self.call.io(),
+            tokio::time::timeout_at(deadline.into(), future),
+        )
+        .await?
+        .map_err(|_| {
+            error(StreamErrorCode::Timeout).uncertain(self.observe().application_write_attempted)
+        })
     }
     async fn audit(&self, mut call: ProviderCall, success: bool) -> Result<(), StreamError> {
         call.record_provider_outcome(if success {

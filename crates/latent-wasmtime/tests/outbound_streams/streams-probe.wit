@@ -1,0 +1,10 @@
+package tests:outbound-streams@1.0.0;
+
+interface api {
+  run: async func(which: u32) -> u32;
+}
+
+world service {
+  import latent:network/streams@0.1.0;
+  export api;
+}

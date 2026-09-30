@@ -29,6 +29,32 @@
       "source": "src/lib.rs",
       "target": "latent_streams",
       "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "cancelling_a_suspended_canonical_read_closes_socket_before_reuse",
+        "canonical_guest_reads_partial_chunks_eof_and_reuses_no_authenticated_socket",
+        "dormant_stream_deployments_create_no_activation_or_socket_owners",
+        "revoking_a_policy_during_canonical_read_closes_the_real_socket",
+        "stream_package_preserves_exact_owned_resources_and_async_signatures",
+        "traps_wrong_kind_stale_resources_and_oversized_write_retire_actual_owners"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.test.outbound_streams",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "minimumCases": 6,
+      "mode": "libtest",
+      "package": "latent-wasmtime",
+      "platforms": ["linux-x86_64"],
+      "prerequisites": ["pinned Rust toolchain", "successful source-matched Cargo artifact inventory"],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/outbound_streams.rs",
+      "target": "outbound_streams",
+      "timeoutSeconds": 900
     }
   ]
 }
