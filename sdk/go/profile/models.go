@@ -76,6 +76,41 @@ const (
 	DiagnosticProfileWasmtimeBufferedWebValuesV1 DiagnosticProfile = 2
 )
 
+type TargetObservationState int32
+
+const (
+	TargetObservationStateUnspecified TargetObservationState = 0
+	TargetObservationStateCoherent    TargetObservationState = 1
+	TargetObservationStateStale       TargetObservationState = 2
+	TargetObservationStateUnavailable TargetObservationState = 3
+)
+
+type TargetReason int32
+
+const (
+	TargetReasonUnspecified            TargetReason = 0
+	TargetReasonCurrent                TargetReason = 1
+	TargetReasonExportAbsent           TargetReason = 2
+	TargetReasonZeroRoutingWeight      TargetReason = 3
+	TargetReasonPublicationUnavailable TargetReason = 4
+	TargetReasonBindingPlanUnavailable TargetReason = 5
+	TargetReasonPolicyChanged          TargetReason = 6
+	TargetReasonProviderUnavailable    TargetReason = 7
+	TargetReasonInspectionUnavailable  TargetReason = 8
+	TargetReasonUnmanagedPublication   TargetReason = 9
+	TargetReasonHttpIncompatible       TargetReason = 10
+)
+
+type TargetPreparationState int32
+
+const (
+	TargetPreparationStateUnspecified  TargetPreparationState = 0
+	TargetPreparationStateReady        TargetPreparationState = 1
+	TargetPreparationStateRejected     TargetPreparationState = 2
+	TargetPreparationStateUnavailable  TargetPreparationState = 3
+	TargetPreparationStateNotRequested TargetPreparationState = 4
+)
+
 type FailureCategory int32
 
 const (
@@ -418,6 +453,104 @@ type InspectActivationTreeResponse struct {
 	RetainedHistoryOnly bool
 }
 
+type InspectHttpTargetRequest struct {
+	Service            string
+	Contract           string
+	Function           string
+	Route              *string
+	RevisionId         *string
+	Publication        *PublicationRef
+	RoutingKey         *string
+	IncludePreparation bool
+	MaximumWaitMillis  uint64
+}
+
+type TargetDependencyRevision struct {
+	Id       string
+	Digest   string
+	Revision uint64
+}
+
+type TargetDependency struct {
+	Capability                 string
+	State                      string
+	PolicyIdentityDigest       string
+	ProviderConfigurationEpoch uint64
+	Binding                    *TargetDependencyRevision
+	Policies                   []TargetDependencyRevision
+	ProviderProfile            string
+	ConfigurationDigest        string
+}
+
+type PreparedTargetExport struct {
+	Contract string
+	Function string
+}
+
+type TargetPreparation struct {
+	State                     TargetPreparationState
+	Diagnostic                *ActivationDiagnostic
+	Profile                   *DiagnosticProfile
+	EngineVersion             *string
+	EngineConfigurationDigest *string
+	TargetTriple              *string
+	CpuFeatureSet             *string
+	SealedMetadataFingerprint *string
+	ImportCount               *uint64
+	FunctionCount             *uint64
+	HostcallFuel              *uint64
+	MaximumLiftedBytes        *uint64
+	MaximumTypeNodes          *uint64
+	DeclaredBudget            *ResourceBudget
+	Imports                   []string
+	Exports                   []PreparedTargetExport
+	TypeImports               []string
+}
+
+type InspectedHttpBinding struct {
+	Id                           string
+	Generation                   uint64
+	SelectedDeploymentGeneration uint64
+	State                        string
+}
+
+type TargetCandidate struct {
+	DeploymentId          string
+	DeploymentGeneration  uint64
+	RevisionId            string
+	ComponentDigest       string
+	Publication           *PublicationRef
+	RequestedPublication  *PublicationRef
+	PackageDigest         *string
+	PublicationGeneration *uint64
+	RoutingWeight         uint32
+	ExportCompatible      bool
+	HttpCompatible        bool
+	Eligible              bool
+	Reasons               []TargetReason
+	Dependencies          []TargetDependency
+	Preparation           *TargetPreparation
+	PublicationKind       *string
+	HttpBindings          []InspectedHttpBinding
+}
+
+type InspectHttpTargetResponse struct {
+	SchemaVersion         uint32
+	Tenant                string
+	Service               string
+	Contract              string
+	Function              string
+	Route                 string
+	State                 TargetObservationState
+	CatalogTransaction    uint64
+	RouteGeneration       uint64
+	BindingGeneration     uint64
+	PolicyStoreGeneration *uint64
+	Candidates            []TargetCandidate
+	SelectedRevisionId    *string
+	LiveGrantsChecked     bool
+}
+
 type PublicationIdentity struct {
 	Publication     PublicationRef
 	ComponentDigest string
@@ -475,6 +608,7 @@ type ClientProfile interface {
 	ListCapabilities(ctx context.Context, request ListCapabilitiesRequest, options CallOptions) (ClientResponse[ListCapabilitiesResponse], error)
 	ApplyPolicy(ctx context.Context, request ApplyPolicyRequest, options CallOptions) (ClientResponse[ApplyPolicyResponse], error)
 	GetPolicyOperation(ctx context.Context, request GetPolicyOperationRequest, options CallOptions) (ClientResponse[GetPolicyOperationResponse], error)
+	InspectHttpTarget(ctx context.Context, request InspectHttpTargetRequest, options CallOptions) (ClientResponse[InspectHttpTargetResponse], error)
 }
 
 func (failure *ClientFailure) Error() string { return failure.Message }

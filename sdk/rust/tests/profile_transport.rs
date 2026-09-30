@@ -49,6 +49,83 @@ async fn shutdown(client: &RpcClient) {
 }
 
 #[tokio::test]
+async fn target_inspection_uses_generated_rpc_and_preserves_original_bounded_selectors() {
+    let peer = ScriptedPeer::start().await;
+    let client = peer.client();
+    let request = InspectHttpTargetRequest {
+        service: "service-a".into(),
+        contract: "domain:api/contract@1.0.0".into(),
+        function: "get".into(),
+        revision_id: Some("revision-a".into()),
+        publication: Some(PublicationRef {
+            tenant: "tests".into(),
+            id: format!("publication:sha256:{}", "b".repeat(64)),
+        }),
+        include_preparation: true,
+        ..Default::default()
+    };
+    let result = client
+        .inspect_http_target(request.clone(), options())
+        .await
+        .unwrap();
+    assert_eq!(result.value.catalog_transaction, u64::MAX);
+    assert_eq!(result.value.candidates[0].reasons[0].0, 777);
+    assert!(!result.value.live_grants_checked);
+    assert!(result.metadata.identity.operation_id.is_none());
+    for function in ["foreign", "drift", "unmeasured"] {
+        let failure = client
+            .inspect_http_target(
+                InspectHttpTargetRequest {
+                    function: function.into(),
+                    ..request.clone()
+                },
+                options(),
+            )
+            .await
+            .unwrap_err();
+        assert_eq!(failure.category, FailureCategory::DECODE);
+        assert!(failure.dispatched);
+    }
+    let result = client
+        .inspect_http_target(
+            InspectHttpTargetRequest {
+                function: "future".into(),
+                ..request.clone()
+            },
+            options(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(result.value.state.0, 777);
+    assert_eq!(
+        result.value.candidates[0]
+            .preparation
+            .as_ref()
+            .unwrap()
+            .state
+            .0,
+        779
+    );
+    assert!(!result.value.candidates[0].eligible);
+    let failure = client
+        .inspect_http_target(
+            InspectHttpTargetRequest {
+                maximum_wait_millis: 30_001,
+                ..request
+            },
+            options(),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(failure.category, FailureCategory::INVALID_REQUEST);
+    assert!(!failure.dispatched);
+    assert_eq!(peer.target_requests.load(Ordering::Acquire), 5);
+    assert_eq!(client.usage().sockets, 1);
+    shutdown(&client).await;
+    peer.stop().await;
+}
+
+#[tokio::test]
 #[allow(clippy::too_many_lines)]
 async fn all_eight_facade_operations_share_one_channel_and_owned_responses() {
     let peer = Peer::start().await;

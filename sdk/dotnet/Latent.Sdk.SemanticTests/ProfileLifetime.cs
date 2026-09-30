@@ -44,6 +44,8 @@ internal static class ProfileLifetime
 
         public ValueTask<Profile.ClientResponse<Profile.InspectActivationTreeResponse>> InspectActivationTreeAsync(Profile.InspectActivationTreeRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
             Reply(new Profile.InspectActivationTreeResponse(1, Array.Empty<Profile.ActivationTreeNode>(), new Profile.PageResponse(null), false, false, true));
+        public ValueTask<Profile.ClientResponse<Profile.InspectHttpTargetResponse>> InspectHttpTargetAsync(Profile.InspectHttpTargetRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("target inspection is not used by the lifetime fixture");
 
         public ValueTask<Profile.ClientResponse<Profile.GetPolicyResponse>> GetPolicyAsync(Profile.GetPolicyRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
             Reply(new Profile.GetPolicyResponse(policy));

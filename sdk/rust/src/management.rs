@@ -80,6 +80,44 @@ impl DiagnosticProfile {
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TargetObservationState(pub i32);
+
+impl TargetObservationState {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const COHERENT: Self = Self(1);
+    pub const STALE: Self = Self(2);
+    pub const UNAVAILABLE: Self = Self(3);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TargetReason(pub i32);
+
+impl TargetReason {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const CURRENT: Self = Self(1);
+    pub const EXPORT_ABSENT: Self = Self(2);
+    pub const ZERO_ROUTING_WEIGHT: Self = Self(3);
+    pub const PUBLICATION_UNAVAILABLE: Self = Self(4);
+    pub const BINDING_PLAN_UNAVAILABLE: Self = Self(5);
+    pub const POLICY_CHANGED: Self = Self(6);
+    pub const PROVIDER_UNAVAILABLE: Self = Self(7);
+    pub const INSPECTION_UNAVAILABLE: Self = Self(8);
+    pub const UNMANAGED_PUBLICATION: Self = Self(9);
+    pub const HTTP_INCOMPATIBLE: Self = Self(10);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TargetPreparationState(pub i32);
+
+impl TargetPreparationState {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const READY: Self = Self(1);
+    pub const REJECTED: Self = Self(2);
+    pub const UNAVAILABLE: Self = Self(3);
+    pub const NOT_REQUESTED: Self = Self(4);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct FailureCategory(pub i32);
 
 impl FailureCategory {
@@ -465,6 +503,112 @@ pub struct InspectActivationTreeResponse {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InspectHttpTargetRequest {
+    pub service: String,
+    pub contract: String,
+    pub function: String,
+    pub route: Option<String>,
+    pub revision_id: Option<String>,
+    pub publication: Option<PublicationRef>,
+    pub routing_key: Option<String>,
+    pub include_preparation: bool,
+    pub maximum_wait_millis: u64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TargetDependencyRevision {
+    pub id: String,
+    pub digest: String,
+    pub revision: u64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TargetDependency {
+    pub capability: String,
+    pub state: String,
+    pub policy_identity_digest: String,
+    pub provider_configuration_epoch: u64,
+    pub binding: Option<TargetDependencyRevision>,
+    pub policies: Vec<TargetDependencyRevision>,
+    pub provider_profile: String,
+    pub configuration_digest: String,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PreparedTargetExport {
+    pub contract: String,
+    pub function: String,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TargetPreparation {
+    pub state: TargetPreparationState,
+    pub diagnostic: Option<ActivationDiagnostic>,
+    pub profile: Option<DiagnosticProfile>,
+    pub engine_version: Option<String>,
+    pub engine_configuration_digest: Option<String>,
+    pub target_triple: Option<String>,
+    pub cpu_feature_set: Option<String>,
+    pub sealed_metadata_fingerprint: Option<String>,
+    pub import_count: Option<u64>,
+    pub function_count: Option<u64>,
+    pub hostcall_fuel: Option<u64>,
+    pub maximum_lifted_bytes: Option<u64>,
+    pub maximum_type_nodes: Option<u64>,
+    pub declared_budget: Option<ResourceBudget>,
+    pub imports: Vec<String>,
+    pub exports: Vec<PreparedTargetExport>,
+    pub type_imports: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InspectedHttpBinding {
+    pub id: String,
+    pub generation: u64,
+    pub selected_deployment_generation: u64,
+    pub state: String,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TargetCandidate {
+    pub deployment_id: String,
+    pub deployment_generation: u64,
+    pub revision_id: String,
+    pub component_digest: String,
+    pub publication: Option<PublicationRef>,
+    pub requested_publication: Option<PublicationRef>,
+    pub package_digest: Option<String>,
+    pub publication_generation: Option<u64>,
+    pub routing_weight: u32,
+    pub export_compatible: bool,
+    pub http_compatible: bool,
+    pub eligible: bool,
+    pub reasons: Vec<TargetReason>,
+    pub dependencies: Vec<TargetDependency>,
+    pub preparation: Option<TargetPreparation>,
+    pub publication_kind: Option<String>,
+    pub http_bindings: Vec<InspectedHttpBinding>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InspectHttpTargetResponse {
+    pub schema_version: u32,
+    pub tenant: String,
+    pub service: String,
+    pub contract: String,
+    pub function: String,
+    pub route: String,
+    pub state: TargetObservationState,
+    pub catalog_transaction: u64,
+    pub route_generation: u64,
+    pub binding_generation: u64,
+    pub policy_store_generation: Option<u64>,
+    pub candidates: Vec<TargetCandidate>,
+    pub selected_revision_id: Option<String>,
+    pub live_grants_checked: bool,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PublicationIdentity {
     pub publication: PublicationRef,
     pub component_digest: String,
@@ -575,6 +719,12 @@ pub trait ClientProfile: Send + Sync {
         request: GetPolicyOperationRequest,
         options: CallOptions,
     ) -> ClientFuture<'_, GetPolicyOperationResponse>;
+
+    fn inspect_http_target(
+        &self,
+        request: InspectHttpTargetRequest,
+        options: CallOptions,
+    ) -> ClientFuture<'_, InspectHttpTargetResponse>;
 }
 
 impl std::fmt::Display for ClientFailure {
