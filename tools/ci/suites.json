@@ -4506,14 +4506,22 @@
     },
     {
       "boundary": "host",
-      "expectedCases": [],
+      "expectedCases": [
+        "namespace::tests::active_commit_blocks_retirement_and_lifecycle_preconditions_reject_races",
+        "namespace::tests::create_quiesce_retire_destroy_recreate_never_reuses_aba_version",
+        "namespace::tests::destruction_cannot_drop_required_results_effects_payloads_or_inbox",
+        "namespace::tests::generation_and_incarnation_exhaustion_refuse_without_mutation",
+        "namespace::tests::namespace_record_round_trip_is_bounded_and_independent_of_revision",
+        "namespace::tests::tenant_actor_and_operation_key_framing_cannot_alias_or_leak_cross_scope",
+        "namespace::tests::wrong_format_truncation_unknown_status_and_trailing_bytes_fail_closed"
+      ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 0,
-      "mode": "compile-only",
+      "minimumCases": 7,
+      "mode": "libtest",
       "package": "latent-state",
       "platforms": [
         "linux-x86_64"
