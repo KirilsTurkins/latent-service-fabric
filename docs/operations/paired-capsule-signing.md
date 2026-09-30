@@ -73,3 +73,44 @@ The two-Java-component execution qualification is owned by the maintained
 HTTP composition fixture from [issue #708](https://github.com/KirilsTurkins/latent-service-fabric/issues/708).
 Canonical vectors and CLI unit tests do not alone qualify its live admission,
 deployment, HTTP behavior or a private application integration.
+
+## Run the maintained paired Java qualification
+
+From a Linux checkout, install the exact compiler pins described by the
+[Java authoring guide](../component-development/java-authoring.md), then build
+the native binary targets and helper examples explicitly:
+
+```sh
+cargo build --locked -p latent -p latentd --bins --features latentd/development-test-node
+cargo build --locked -p latent-packaging --example package --example capsule_contracts
+cargo build --locked -p latent-policy --example capsule_authoring
+python tools/qualify_java_http_composition.py --output "$FreshEvidenceDirectory" --wasi-sdk "$WasiSdk" --target "$CargoTargetDirectory"
+```
+
+The qualification independently compiles the typed domain, generated HTTP
+adapter and compatible adapter revision. `demo-sign-separated` creates a
+distinct ephemeral builder identity and Ed25519 key for each completed build,
+after checking its actual captured compiler inputs. It preserves one exact
+builder/source requirement per artifact and verifies every package through the
+same runtime verifier used by enforced admission. The private keys are never
+written into the build, signing, evidence or source directories. This command
+is development test tooling and supplies no production trust.
+
+The `paired-trust` receipts compare actual Rust canonical bytes and digests for
+alternate property, key and requirement orders and verify both original Java
+packages under each equivalent policy. Separate negative copies exercise an
+altered component, altered policy, a raw-input revocation digest, another
+builder's source or key, missing provenance, revoked builder key, stale proof
+and stale trust. Policy digest and expiry failures remain rejected before node
+startup; the valid-policy negatives also reach the real package/admission
+boundary. The former construction mistake records the authoritative builder
+digest alongside the incorrect supplied raw-input digest without correcting
+approved trust automatically.
+
+The ordinary node stages admit both original components, deploy them with
+explicit grants, and execute direct and composed HTTP operations. Each
+publication has its own persisted operation ID and zero-generation
+precondition. The fixture looks up the original operation, including after
+an uncertain result, and never replays publication to obtain a different
+receipt. Failed attempts, bounded logs and exact component/source/compiler
+identities remain in the chosen fresh evidence directory.
