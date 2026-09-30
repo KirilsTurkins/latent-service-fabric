@@ -22,6 +22,7 @@ struct Transfer {
     output: AtomicU64,
     outstanding: AtomicUsize,
     closed: AtomicBool,
+    host_memory: bool,
     _metadata: Charge,
     _stream: Charge,
 }
@@ -38,6 +39,16 @@ pub struct IoInputChunk {
     bytes: Vec<u8>,
     _memory: IoMemory,
     _slot: Slot,
+    owner: Option<Arc<dyn Send + Sync>>,
+}
+impl IoInputChunk {
+    pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
+        if self.owner.is_some() {
+            return Err(denied());
+        }
+        self.owner = Some(owner);
+        Ok(())
+    }
 }
 impl AsRef<[u8]> for IoInputChunk {
     fn as_ref(&self) -> &[u8] {
@@ -50,19 +61,48 @@ pub struct IoOutputChunk {
     bytes: IoBuffer,
     _copy: IoMemory,
     _slot: Slot,
+    owner: Option<Arc<dyn Send + Sync>>,
 }
 impl IoOutputChunk {
     #[must_use]
     pub fn bytes(&self) -> &[u8] {
         self.bytes.bytes()
     }
+    /// The prepaid canonical copy stays charged with this affine chunk. A host
+    /// must retain the chunk while lowering the returned bytes into guest memory.
+    pub fn copy_bytes(&mut self) -> Result<Vec<u8>, PlatformError> {
+        self.bytes
+            .operation
+            .with_session(super::CapabilitySession::check_liveness)?;
+        let bytes = self.bytes.bytes().to_vec();
+        if bytes.capacity() > self.bytes.capacity() {
+            return Err(capacity());
+        }
+        self._copy.confirm_host();
+        Ok(bytes)
+    }
+    pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
+        if self.owner.is_some() {
+            return Err(denied());
+        }
+        self.owner = Some(owner);
+        Ok(())
+    }
 }
 pub struct IoTransferBuffer {
     bytes: IoBuffer,
     copy: IoMemory,
     slot: Slot,
+    owner: Option<Arc<dyn Send + Sync>>,
 }
 impl IoTransferBuffer {
+    pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
+        if self.owner.is_some() {
+            return Err(denied());
+        }
+        self.owner = Some(owner);
+        Ok(())
+    }
     pub fn spare_mut(&mut self) -> Result<&mut [u8], PlatformError> {
         self.bytes.spare_mut()
     }
@@ -87,6 +127,7 @@ impl IoTransferBuffer {
             bytes: self.bytes.retain_for_transfer()?,
             _copy: self.copy,
             _slot: self.slot,
+            owner: self.owner,
         })
     }
 }
@@ -94,6 +135,21 @@ impl IoCall {
     /// Available only when the original final policy decision explicitly
     /// authorized a stream budget. This allowance can be issued only once.
     pub fn transfer(&self, options: IoTransferOptions) -> Result<IoTransfer, PlatformError> {
+        self.transfer_inner(options, false)
+    }
+    /// Track real stream buffers in the activation's original native-memory
+    /// ledger as well as the shared node I/O ceilings.
+    pub fn transfer_with_host_memory(
+        &self,
+        options: IoTransferOptions,
+    ) -> Result<IoTransfer, PlatformError> {
+        self.transfer_inner(options, true)
+    }
+    fn transfer_inner(
+        &self,
+        options: IoTransferOptions,
+        host_memory: bool,
+    ) -> Result<IoTransfer, PlatformError> {
         self.checkpoint()?;
         let runtime = &self.operation.runtime;
         if options.maximum_chunk_bytes == 0
@@ -130,6 +186,7 @@ impl IoCall {
             output: AtomicU64::new(0),
             outstanding: AtomicUsize::new(0),
             closed: AtomicBool::new(false),
+            host_memory,
             _metadata: metadata,
             _stream: stream,
         });
@@ -181,13 +238,19 @@ impl IoTransfer {
             return Err(capacity());
         }
         let slot = self.inner.slot()?;
-        let memory = IoMemory::reserve(&self.inner.operation, bytes.capacity(), 512)?;
+        let mut memory = if self.inner.host_memory {
+            IoMemory::reserve_host(&self.inner.operation, bytes.capacity(), 512)?
+        } else {
+            IoMemory::reserve(&self.inner.operation, bytes.capacity(), 512)?
+        };
+        memory.confirm_host();
         // Construct the real data owner first: a failed total-byte check must
         // drop its bytes before returning the resident-memory reservation.
         let chunk = IoInputChunk {
             bytes,
             _memory: memory,
             _slot: slot,
+            owner: None,
         };
         spend(
             &self.inner.input,
@@ -204,9 +267,22 @@ impl IoTransfer {
             return Err(invalid());
         }
         let slot = self.inner.slot()?;
-        let copy = IoMemory::reserve(&self.inner.operation, capacity, 512)?;
-        let bytes = IoBuffer::allocate(&self.inner.operation, capacity, 512)?;
-        Ok(IoTransferBuffer { bytes, copy, slot })
+        let copy = if self.inner.host_memory {
+            IoMemory::reserve_host(&self.inner.operation, capacity, 512)?
+        } else {
+            IoMemory::reserve(&self.inner.operation, capacity, 512)?
+        };
+        let bytes = if self.inner.host_memory {
+            IoBuffer::allocate_host(&self.inner.operation, capacity, 512)?
+        } else {
+            IoBuffer::allocate(&self.inner.operation, capacity, 512)?
+        };
+        Ok(IoTransferBuffer {
+            bytes,
+            copy,
+            slot,
+            owner: None,
+        })
     }
     #[must_use]
     pub fn outstanding_chunks(&self) -> usize {
