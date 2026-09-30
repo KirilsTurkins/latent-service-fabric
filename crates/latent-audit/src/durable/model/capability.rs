@@ -134,7 +134,7 @@ impl AuditCapabilityContext {
             }
             AuditProviderOutcome::HostCompleted => matches!(
                 self.resource_class,
-                R::Context | R::Clock | R::Random | R::Log | R::Telemetry
+                R::Context | R::Clock | R::Random | R::Log | R::Telemetry | R::Stream
             ),
         }
     }
