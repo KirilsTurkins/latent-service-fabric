@@ -3,7 +3,7 @@ from copy import deepcopy
 from pathlib import Path
 import time
 
-from tools.java_http_composition.node import ADAPTER, CHILD_SUBJECT, CONTEXT_REQUIRED, decoded, idle, invoke, request, web_request
+from tools.java_http_composition.node import ADAPTER, CHILD_SUBJECT, CONTEXT_REQUIRED, decoded, idle, invoke, request, web_request, rebind, route
 from tools.phase2_operator_process import require, read_json, write_json
 from tools.run_rust_capsule_workflow import write_workflow_receipt
 from tools.static_api.node import policy
@@ -109,7 +109,7 @@ def narrowed(parent, child):
             "remainingCpuEffectObserved": True}
 
 
-def qualify(client, targets, host, evidence: Path):
+def qualify(client, targets, releases, publications, host, evidence: Path):
     result = {"schemaVersion": "latent.java-http.context.v1", "status": "in-progress",
         "guestContextImport": "omitted-ordinary-profile", "sourceActorObservations": "unavailable-to-ordinary-guest"}
     try:
@@ -145,6 +145,8 @@ def qualify(client, targets, host, evidence: Path):
                     principal["subject"] = "service:8:examples:22:examples/wrong-adapter"
         changed = policy(client, "policy", "clockMonotonic-allow", wrong, int(record["generation"]))
         try:
+            result["wrongClockPolicyRebinding"] = rebind(client, targets, releases, publications, ("domain", "adapter"))
+            route(client, host, publications["adapter"])
             denied = capture_http(client, host, expected=(403,))
             if denied["tree"]:
                 require(all(row["terminalState"] != "completed" for row in denied["tree"]["nodes"]
@@ -152,6 +154,8 @@ def qualify(client, targets, host, evidence: Path):
             result["wrongChildPrincipalGrant"] = denied
         finally:
             policy(client, "policy", "clockMonotonic-allow", record["document"], int(changed["generation"]))
+            result["restoredClockPolicyRebinding"] = rebind(client, targets, releases, publications, ("domain", "adapter"))
+            route(client, host, publications["adapter"])
         idle(client)
         require(request(host)[0] == 200, "java-context-restored-child-grant-not-fresh")
 

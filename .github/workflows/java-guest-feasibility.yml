@@ -136,6 +136,7 @@ jobs:
             ${{ runner.temp }}/java-http-composition/**/package/**
             ${{ runner.temp }}/java-http-composition/**/evidence/**
             ${{ runner.temp }}/java-http-composition/**/compiler-logs/**
+            ${{ runner.temp }}/java-http-composition/**/logs/**
             ${{ runner.temp }}/java-http-composition/**/generated-bindings/**
             ${{ runner.temp }}/java-http-composition/signing/logs/**
             ${{ runner.temp }}/java-http-composition/**/generated-client.*.log

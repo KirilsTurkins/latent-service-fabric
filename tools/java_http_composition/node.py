@@ -109,7 +109,7 @@ def service_grant(client, node, publications, *, generation=0, trigger_only=Fals
         principals.append({"kind": "administrator", "subject": "workflow-operator"})
     result = policy(client, "policy", "java-domain-allow", {"formatVersion": 1, "tenant": TENANT, "rules": [{
         "id": "selected-domain", "effect": "allow", "principals": principals,
-        "services": [ADAPTER], "publications": [publications["adapter"]], "capability": SERVICE_CAPABILITY,
+        "services": [ADAPTER], "publications": [publications["adapter"], publications["adapter-next"]], "capability": SERVICE_CAPABILITY,
         "operations": ["call"], "resources": {"kind": "service", "services": [DOMAIN],
                                                   "publications": [publications["domain"]]},
         "ceiling": {"operations": 4, "inputBytes": 1048576, "outputBytes": 1048576, "wallTimeMillis": 60000}}]}, generation)
@@ -167,6 +167,18 @@ def invoke(client, targets, name, function, arguments, activation, *, route_name
         *extra, *context_flags, codes=codes)
     return result
 
+
+
+def rebind(client, targets, releases, publications, names=("adapter",)):
+    """Explicit new deployment operations after a policy revision changes."""
+    result = {}
+    for name in names:
+        previous = targets[name]
+        targets[name] = deploy(client, releases / ("java-http-" + name) / "deployment.json",
+            publications[name], generation=str(previous["generation"]), grants=previous["grants"])
+        result[name] = {"previousGeneration": previous["generation"],
+            "currentGeneration": targets[name]["generation"], "publication": publications[name]}
+    return result
 
 def decoded(result):
     payload = result["data"].get("payload") or (result["data"].get("declaredError") or {}).get("payload")

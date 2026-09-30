@@ -4,6 +4,7 @@ import json
 
 from tools.java_capsule_build import build
 from tools.java_capsule_project import create
+from tools.java_http_composition.revision import create_revision
 from tools.java_http_generation.project import generate, check
 from tools.java_http_generation.probes import qualify as qualify_generation
 from tools.rust_capsule_project import ROOT, digest, read_json, write_json
@@ -30,6 +31,7 @@ def projects(output: Path) -> dict[str, Path]:
     selection = ROOT / "examples/java-http-composition/routes.json"
     result["adapter"] = generate(result["domain"], selection, output / "adapter")
     check(result["domain"], selection, result["adapter"])
+    result["adapter-next"] = create_revision(result["adapter"], output / "adapter-next")
     return result
 
 
