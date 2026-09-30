@@ -52,4 +52,8 @@ pub struct ProviderShutdownReport {
     pub blob_work: usize,
     pub secret_generations: usize,
     pub secret_references: usize,
+    pub stream_owners: usize,
+    pub stream_connections: usize,
+    pub stream_pending_operations: usize,
+    pub stream_retained_chunks: usize,
 }

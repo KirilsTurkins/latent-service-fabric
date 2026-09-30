@@ -7,13 +7,16 @@ import tempfile
 import unittest
 
 import jsonschema
+from referencing import Registry, Resource
 
 from tools.phase2_operator_process import write_json
 from tools.phase3_management_scenario import configure_provider_node
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = json.loads((ROOT / "schemas/node-providers.schema.json").read_text(encoding="utf-8"))
-VALIDATOR = jsonschema.Draft202012Validator(SCHEMA)
+STREAM_SCHEMA = json.loads((ROOT / "schemas/outbound-stream-provider.schema.json").read_text(encoding="utf-8"))
+REGISTRY = Registry().with_resource(STREAM_SCHEMA["$id"], Resource.from_contents(STREAM_SCHEMA))
+VALIDATOR = jsonschema.Draft202012Validator(SCHEMA, registry=REGISTRY)
 
 
 class NodeProvidersSchema(unittest.TestCase):
@@ -93,6 +96,31 @@ class NodeProvidersSchema(unittest.TestCase):
                              ("endpoint", "https://foreign"), ("publication", "implicit-grant")):
             changed = copy.deepcopy(value)
             changed["localService"][key] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed))
+
+    def test_documented_development_streams_have_closed_bounded_configuration_without_secrets(self):
+        jsonschema.Draft202012Validator.check_schema(STREAM_SCHEMA)
+        guide = (ROOT / "docs/reference/standalone-streams.md").read_text(encoding="utf-8")
+        value = json.loads(re.findall(r"```json\n(.*?)\n```", guide, re.S)[0])["providers"]
+        VALIDATOR.validate(value)
+        for field, invalid in (("trustRoots", "/private/roots"), ("clientKey", "/private/key"),
+                               ("credential", "DO-NOT-ECHO"), ("environment", ["HOME"]),
+                               ("profile", "future-profile"), ("destinations", [])):
+            changed = copy.deepcopy(value)
+            changed["outboundStreams"]["configuration"][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for field, invalid in (("maximumTransferBytes", 1048577), ("idleTimeoutMillis", 2001),
+                               ("absoluteTimeoutMillis", 10001), ("maximumTransferBytes", True)):
+            changed = copy.deepcopy(value)
+            changed["outboundStreams"]["configuration"]["limits"][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for field, invalid in (("port", 0), ("transport", "host-tls"), ("host", "")):
+            changed = copy.deepcopy(value)
+            changed["outboundStreams"]["configuration"]["destinations"][0]["endpoint"][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for invalid in (None, {"credential": "DO-NOT-ECHO"}):
+            changed = copy.deepcopy(value)
+            changed["outboundStreams"] = invalid
             self.assertFalse(VALIDATOR.is_valid(changed))
 
 

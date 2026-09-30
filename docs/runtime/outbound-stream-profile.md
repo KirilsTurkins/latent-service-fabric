@@ -4,8 +4,11 @@ This is the frozen proposal owned by [ADR-0061](../../adr/0061-bound-standard-ou
 and [#737](https://github.com/KirilsTurkins/latent-service-fabric/issues/737).
 Production installation remains disabled pending architecture/security review,
 provider #738, operator #739 and conformance #740. The current shipped HTTP
-profiles are unchanged. The candidate [WIT](../../research/standard-outbound/streams.wit)
-is comparison input, not an installed capability.
+profiles are unchanged. The exact [WIT](../../wit/platform/network/package.wit)
+is recognized by host ABI V5; actual installation is restricted to the explicit
+`development-outbound` provider and `development-outbound-streams` node features.
+Ordinary builds accept no stream installation. See the measured
+[implementation status](outbound-stream-qualification.md) before selecting a profile.
 
 ## ABI, operations and states
 
@@ -13,6 +16,10 @@ Identity: `latent:network/streams@0.1.0`; feature/profile:
 `lsf-outbound-streams-v1`; WIT canonical async operations and affine resources.
 `connection` and `chunk` are Store-local resources, not native descriptors.
 There is no process-wide descriptor namespace.
+Components importing streams use UTF-8 canonical strings and linear memory.
+Preparation rejects UTF-16, compact UTF-16 and GC canonical encodings before
+creating a Store. Host input lifting retains borrowed strings/lists, bounds and
+prepays their original native-memory charge before creating an owned copy.
 
 | Operation | Contract |
 | --- | --- |
@@ -112,14 +119,17 @@ already accepted physical work retains its original charge until destruction.
 ## Caps, suspension and physical retirement
 
 All limits intersect the original activation/parent ledger and node IoRuntime.
-One logical thread cannot mint another budget. No provider admission queue or
-idle authenticated connection pool exists for this profile.
+One logical thread cannot mint another budget. The original shared bounded
+provider admission queue is reused; no new queue/executor is created. Limits are
+128 pending globally, 32 total requests per tenant and 64 per provider, including
+64 running globally, 16 per tenant and 32 per provider. The queue retains the
+original deadline and currentness checks. No idle authenticated stream is pooled.
 
 | Dimension | Hard maximum; configured policy may narrow |
 | --- | --- |
 | Live connections | 2 activation, 16 tenant, 32 provider, 64 process |
 | Cumulative connect attempts | 32 activation; dispatched attempts never refund |
-| Read/write windows | 16 KiB each; 4 outstanding chunks; <=64 KiB connection live payload including lowering copies |
+| Read/write windows | 16 KiB each; 4 outstanding chunks; <=64 KiB activation live payload including lowering copies across every connection |
 | Cumulative transfer | 1 MiB each direction/connection, 2 MiB combined/activation |
 | Metadata | Prepay 1 KiB table row, 16 KiB owner/operation state |
 | Socket buffers | Request send 16 KiB/receive 32 KiB; reserve 96 KiB logical kernel allowance, inspect actual OS sizes and reject overflow |

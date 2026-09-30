@@ -14,6 +14,7 @@ mod metrics;
 mod providers;
 mod renderer;
 mod security;
+mod streams;
 
 use super::{input, CellConfig, CredentialRole, NodeConfig, NodeSettings, MIB};
 

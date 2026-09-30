@@ -1,15 +1,18 @@
 //! Stable trusted invoker across explicit immutable provider epochs. No guest
 //! can rotate this owner or mint the replacement publication/binding grants.
-use crate::{StreamError, StreamErrorCode, StreamProvider, StreamProviderConfig, StreamUsage};
+#[cfg(any(test, feature = "development-outbound"))]
+use crate::StreamProviderConfig;
+use crate::{StreamError, StreamErrorCode, StreamProvider, StreamUsage};
+#[cfg(any(test, feature = "development-outbound"))]
+use latent_capabilities::broker::pools::ProviderPools;
 use latent_capabilities::broker::{
     network::{OutboundStreamInvoker, StreamConnectRequest, StreamInvocation},
-    pools::{ProviderMetadata, ProviderPools},
+    pools::ProviderMetadata,
     CapabilitySession, ProviderReference,
 };
-use std::{
-    sync::{Arc, Mutex},
-    time::Instant,
-};
+#[cfg(any(test, feature = "development-outbound"))]
+use std::sync::Arc;
+use std::{sync::Mutex, time::Instant};
 
 const MAX_RETIRED: usize = 8;
 struct State {
@@ -20,7 +23,9 @@ struct State {
 /// Its installation remains explicitly restricted to qualification builds.
 pub struct StreamLifecycle {
     state: Mutex<State>,
+    #[cfg(any(test, feature = "development-outbound"))]
     pools: Arc<ProviderPools>,
+    #[cfg(any(test, feature = "development-outbound"))]
     id: String,
     _metadata: ProviderMetadata,
 }
@@ -49,9 +54,19 @@ impl StreamLifecycle {
         if id.is_empty() || id.len() > 128 {
             return Err(StreamError::new(StreamErrorCode::InvalidInput));
         }
+        let current = StreamProvider::install_for_qualification(pools, id, epoch, 0, config)?;
+        Self::from_installed_for_qualification(id, current)
+    }
+    #[cfg(any(test, feature = "development-outbound"))]
+    pub fn from_installed_for_qualification(
+        id: &str,
+        current: StreamProvider,
+    ) -> Result<Self, StreamError> {
+        if id.is_empty() || id.len() > 128 || current.inner.installed.is_retired() {
+            return Err(StreamError::new(StreamErrorCode::InvalidInput));
+        }
+        let pools = Arc::clone(&current.inner.pools);
         let metadata = pools.reserve_protocol_metadata(16 * 1024)?;
-        let current =
-            StreamProvider::install_for_qualification(Arc::clone(&pools), id, epoch, 0, config)?;
         Ok(Self {
             state: Mutex::new(State {
                 current,

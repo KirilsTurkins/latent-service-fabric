@@ -162,3 +162,7 @@ configuration, startup and authenticated management.
 
 The maintained test fixture, exported package format and startup regression
 history belong to [the contributor validation reference](../development/standalone-provider-validation.md).
+
+The separately gated [development outbound TCP installation](standalone-streams.md)
+requires an explicit build feature and retains its architecture/security and
+qualification gates.

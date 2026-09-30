@@ -6,6 +6,7 @@
       "expectedCases": [
         "tests::currentness::a_policy_change_while_readable_is_pending_is_checked_before_syscall",
         "tests::currentness::provider_retirement_wakes_pending_read_without_early_refund",
+        "tests::lifecycle::rotation_fences_old_grants_and_drain_reports_actual_retained_owners",
         "tests::opaque_transport_requires_exact_special_address_authority",
         "tests::sockets::actual_tcp_partial_reads_eof_and_send_half_close",
         "tests::sockets::dropped_facade_does_not_refund_an_unpolled_pending_socket",
@@ -19,7 +20,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 9,
+      "minimumCases": 10,
       "mode": "libtest",
       "package": "latent-streams",
       "platforms": ["linux-x86_64"],

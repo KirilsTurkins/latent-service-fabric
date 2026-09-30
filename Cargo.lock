@@ -2302,6 +2302,7 @@ dependencies = [
  "latent-scheduler",
  "latent-secrets",
  "latent-signing",
+ "latent-streams",
  "latent-telemetry",
  "latent-testkit",
  "latent-wasmtime",

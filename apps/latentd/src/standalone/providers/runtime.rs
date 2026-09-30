@@ -36,6 +36,8 @@ mod scalar;
 mod secrets;
 #[path = "startup.rs"]
 mod startup;
+#[path = "streams.rs"]
+mod streams;
 
 pub(in crate::standalone) struct ProviderRuntime {
     pub runtime: Arc<ActivationCapabilityRuntime>,
@@ -45,6 +47,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
+    streams: Option<Arc<latent_streams::StreamLifecycle>>,
     blobs: Option<Arc<LocalBlobStore>>,
     registrations: Vec<ProviderRegistration>,
     descriptors: Vec<ProviderDescriptor>,
@@ -91,13 +94,14 @@ impl ProviderRuntime {
             guest_secrets: None,
             event_secrets: None,
             metrics: None,
+            streams: None,
             blobs: None,
             registrations: Vec::with_capacity(3),
-            descriptors: Vec::with_capacity(9),
+            descriptors: Vec::with_capacity(10),
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
-            let mut providers = Vec::with_capacity(9);
+            let mut providers = Vec::with_capacity(10);
             for (installation, monotonic) in
                 [(&config.clock_monotonic, true), (&config.clock_wall, false)]
             {
@@ -122,6 +126,15 @@ impl ProviderRuntime {
                 owner.secrets = secrets;
                 providers.push(owner.record(&http.identity, provider.reference()));
                 owner.runtime.install_http(Arc::new(provider))?;
+            }
+            if let Some(config) = &config.outbound_streams {
+                let provider = Arc::new(streams::install(&owner.pools, config)?);
+                providers.push(owner.record(
+                    &config.identity,
+                    provider.reference().map_err(|_| unavailable())?,
+                ));
+                owner.runtime.install_outbound_streams(provider.clone())?;
+                owner.streams = Some(provider);
             }
             if let Some(blob) = &config.blob {
                 let root = settings
@@ -245,6 +258,9 @@ impl ProviderRuntime {
 
     pub fn retire(&self) {
         self.runtime.retire();
+        if let Some(streams) = &self.streams {
+            streams.retire();
+        }
         for registration in &self.registrations {
             registration.retire();
         }
@@ -287,6 +303,14 @@ impl ProviderRuntime {
         }
         let broker = self.runtime.broker().snapshot();
         let io = self.io.snapshot();
+        let streams = self
+            .streams
+            .as_ref()
+            .map(|owner| owner.status())
+            .transpose()
+            .map_err(|_| unavailable())?
+            .map(|status| status.usage)
+            .unwrap_or_default();
         let blob = self
             .blobs
             .as_ref()
@@ -295,6 +319,7 @@ impl ProviderRuntime {
             .map_err(|_| unavailable())?
             .unwrap_or_default();
         let clean = pools.is_clean()
+            && streams.owners == 0
             && secrets_closed
             && secret_generations == 0
             && secret_references == 0
@@ -332,6 +357,10 @@ impl ProviderRuntime {
             blob_work: blob.active_work,
             secret_generations,
             secret_references,
+            stream_owners: streams.owners,
+            stream_connections: streams.connections,
+            stream_pending_operations: streams.pending_operations,
+            stream_retained_chunks: streams.retained_chunks,
         })
     }
 }

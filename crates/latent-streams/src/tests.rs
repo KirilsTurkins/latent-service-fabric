@@ -7,6 +7,8 @@ mod currentness;
 #[cfg(unix)]
 mod fixture;
 #[cfg(unix)]
+mod lifecycle;
+#[cfg(unix)]
 mod sockets;
 
 fn config() -> StreamProviderConfig {

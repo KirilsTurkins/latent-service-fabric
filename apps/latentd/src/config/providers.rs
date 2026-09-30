@@ -19,6 +19,9 @@ pub use local_service::LocalServiceInstallation;
 #[path = "providers/events.rs"]
 mod events;
 pub use events::EventInstallation;
+#[path = "providers/streams.rs"]
+mod streams;
+pub use streams::StreamInstallation;
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -26,6 +29,8 @@ pub struct ConfiguredProviders {
     pub format_version: u32,
     #[serde(default, deserialize_with = "present")]
     pub http: Option<HttpInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub outbound_streams: Option<StreamInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub blob: Option<BlobInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -121,6 +126,7 @@ pub(super) fn derive(
         || config.budget_profile.profile() != BudgetProfile::Phase3
         || providers.format_version != 1
         || (providers.http.is_none()
+            && providers.outbound_streams.is_none()
             && providers.blob.is_none()
             && providers.secrets.is_none()
             && providers.metrics.is_none()
@@ -133,6 +139,9 @@ pub(super) fn derive(
         || providers.bindings.capacity() > 16
     {
         return Err(invalid("providers"));
+    }
+    if let Some(streams) = &providers.outbound_streams {
+        streams.validate_installation(providers)?;
     }
     if let Some(http) = &providers.http {
         http.identity.validate()?;
@@ -243,6 +252,7 @@ impl ConfiguredProviders {
             }
             let installed = match binding.contract.as_str() {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
+                "latent:network/streams@0.1.0" => self.outbound_streams.as_ref().map(|v| &v.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
                 "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
                 "latent:telemetry/custom@0.1.0" => self.metrics.as_ref().map(|v| &v.identity),
