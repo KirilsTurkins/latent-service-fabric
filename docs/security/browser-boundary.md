@@ -133,11 +133,101 @@ Use AOT Angular, external same-origin bootstrap/CSS and URLs derived from the
 admitted publication. The controlled fixture uses no inline component styles.
 This work does not rewrite Angular output to fit that policy.
 
+The complete development discovery contract is
+`latent.browser.response-ownership.v1`, in
+[the machine-readable ownership table](../../contracts/http/browser-response-ownership-v1.json).
+It describes the existing alpha.4 `buffered-v1`/`same-origin-v1` response policy;
+development adds early helpers and bounded operator reasons, without granting
+new guest header authority. Native classification, Java authoring tests and this
+table are checked together. Names/prefixes collide case-insensitively; actual
+guest fields must already be canonical lowercase HTTP tokens.
+
+<!-- response-ownership-v1:begin -->
+| Class | Names and prefixes | Behavior |
+| --- | --- | --- |
+| Host security | `content-security-policy`, `x-content-type-options`, `x-frame-options`, `referrer-policy`, `cross-origin-opener-policy`, `cross-origin-resource-policy`, `permissions-policy`, `strict-transport-security` | Reserved on HTTP and HTTPS; host emits fixed policy (HSTS on HTTPS only). Guest conflict returns empty no-store 502. |
+| Host transport/framing | `host`, `content-length`, `content-type`, `server`, `date`, `via`, `alt-svc` | Guest fields forbidden. Use typed media-type/representation-length/body; transport owns framing. Invalid output returns empty no-store 502. |
+| Hop-by-hop | `connection`, `keep-alive`, `proxy-connection`, `te`, `trailer`, `transfer-encoding`, `upgrade` | Forbidden in the buffered profile; no chunking, trailers, upgrades or guest connection control. Invalid output returns empty no-store 502. |
+| Identity/credential forwarding | `authorization`, `proxy-authorization`, `forwarded`, `traceparent`, `tracestate`, `baggage`, `x-real-ip`, `remote-user`, `x-remote-user`, `x-original-url`, `x-rewrite-url`, `x-forwarded-*`, `x-auth-request-*`, `x-authenticated-*` | Forbidden guest output; request identity fields are stripped by host mapping. Never an application principal channel; conflict returns empty no-store 502. |
+| Platform namespace | `x-lsf-*` | Reserved platform namespace. Guest output returns empty no-store 502. |
+| Unsupported browser policy | `refresh`, `content-location`, `link`, `clear-site-data`, `report-to`, `nel`, `content-security-policy-report-only`, `cross-origin-embedder-policy`, `access-control-*` | Forbidden; guests cannot add CORS, alternate navigation, reporting or embedding policy. Conflict returns empty no-store 502. |
+| Conditional application fields | `location`, `content-encoding`, `set-cookie`, `vary` | Location: singleton canonical root-relative redirect (or 201). Encoding: singleton identity. Set-Cookie: bounded unique HTTPS __Host- cookies with exact attributes. Vary: application field; private host caching needs approved dimensions. Failed value rules return empty no-store 502. |
+| Application cache input | `cache-control`, `age` | Accepted bounded input. Host strips supplied Cache-Control/Age from dynamic wire output and emits no-store plus its own local-hit Age. Duplicate/unsafe cache directives bypass host caching; they do not authorize shared browser/proxy caching. |
+| Credential-sensitive application data | `cookie`, `www-authenticate`, `proxy-authenticate`, `authentication-info`, `proxy-authentication-info` | Accepted as bounded application response fields; never platform authentication. Authors must classify their data and avoid disclosing credentials. Set-Cookie uses the separate strict conditional profile. |
+| Other application fields | Other valid names | Other canonical lowercase HTTP-token names are accepted (for example etag, last-modified, expires, content-language and x-app-*). Ordinary duplicate fields are retained; applications define their semantics. All fields obey the shared grammar and finite budgets. |
+<!-- response-ownership-v1:end -->
+
 Guests cannot override these headers, set any `Access-Control-*`, or emit
 Refresh, Content-Location, Link, Clear-Site-Data, Report-To, NEL, CSP-report-only
 or COEP. Invalid guest output becomes a fixed non-reflective, no-store 502 before
 any bytes or pending cache fill are committed. This preserves the delivery
 lease and existing cancellation/cleanup accounting.
+
+### Validate before returning traffic
+
+New development Java projects include
+[`BufferedWebResponseValidator`](../../sdk/java-guest/runtime/dev/latent/guest/BufferedWebResponseValidator.java).
+It is a pure SDK helper, independent of application-specific generated Bindings.
+Pass the actual method/scheme, status, typed header list, optional media,
+decoded body bytes and optional unsigned representation length immediately before
+constructing/returning the generated response. `validate` returns a closed
+`Reason`; `requireValid` throws only `buffered-web-response-<REASON>`. Neither
+returns or formats an arbitrary header name/value, token or body. The shared
+[inspection helper](../../tools/browser_response_ownership.py) catches declared
+header-name conflicts for tooling; dynamically computed fields are explicitly
+marked as requiring execution, and values/body always require full validation.
+
+Early helpers are authoring feedback, not admission or browser qualification.
+Mutating a response after validation cannot bypass the host's current validation,
+authorization or cleanup. Existing projects retain their pinned SDK snapshot;
+adopt the new SDK through the normal project/source snapshot and rebuild/sign
+workflow. There is no automatic rewrite of signed bytes or saved responses.
+
+The runtime records only the bounded typed operator reason
+`OutputValidation / HttpResponseRejected` for a rejected application response,
+under the actual admitted tenant/activation scope and current diagnostic-read
+authorization. Execution success is distinct from accepted HTTP output. This
+does not expose a raw internal diagnostic in HTTP: public output remains the
+fixed empty 502 with host security headers and `no-store`. Use the local SDK
+reason and this ownership table to correct output rather than copying raw
+application values into error messages.
+
+### Referrer decision and application-side mitigation
+
+The reviewed development decision for #713 is to defer an operator-selectable
+`no-referrer` response profile. Alpha.4 and current development both ship the
+fixed `Referrer-Policy: same-origin`; there is no node configuration or web
+manifest field for choosing another value. A future choice needs a closed
+versioned identity, cache-policy association and actual unsafe-method/browser
+qualification. Referrer suppression also interacts with the
+[Fetch Origin-header algorithm](https://fetch.spec.whatwg.org/#origin-header):
+an unsafe non-CORS request using `no-referrer` can acquire `Origin: null`, which
+this existing CSRF boundary rejects. The response policy cannot be changed
+independently of those semantics.
+
+Applications that carry sensitive URL data can include a build-time
+`<meta name="referrer" content="no-referrer">` **before** any resources in their
+owned HTML, use `referrerpolicy="no-referrer"`/`rel="noreferrer"` on appropriate
+links, and set the Fetch `referrerPolicy` on individual calls. These are browser
+application choices, not permission to return a guest `Referrer-Policy` header.
+Remove a consumed token from the visible URL using `history.replaceState`
+before subsequent requests. Keep trusted data classification and explicit
+same-origin unsafe-method Origin behavior in the application; the maintained
+POST helper uses an explicit `same-origin` policy after URL cleanup.
+
+The maintained controlled Angular/browser example includes the meta policy
+before its external bootstrap, exercises synthetic token-bearing document/fetch
+URLs, and verifies no token reaches unintended referrers or reused output.
+Its actual host responses still report `same-origin`, strict CSP and `no-store`
+on application traffic. A meta element inserted after initial resource fetching
+cannot retroactively protect those requests. LSF never inserts it at runtime or
+mutates immutable HTML. This is not a login/session/token product or secret scanner.
+
+This decision uses the [Referrer Policy editors' draft](https://w3c.github.io/webappsec-referrer-policy/)
+(20 March 2026, work in progress), the [HTML referrer-policy attributes](https://html.spec.whatwg.org/multipage/urls-and-fetching.html#referrer-policy-attribute)
+and the Fetch living standard, reviewed on 30 September 2026. Actual maintained
+Chromium receipts establish the implemented examples on the recorded source;
+the standards links do not replace that execution evidence.
 
 Redirects 301/302/303/307/308 require exactly one canonical root-relative Location;
 201 may have one. Other statuses may not have one. Absolute URLs, protocol-relative

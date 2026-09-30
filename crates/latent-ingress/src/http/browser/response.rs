@@ -1,4 +1,4 @@
-use super::{cookies, security_headers, MAX_COOKIE_BYTES};
+use super::{cookies, header_ownership, HeaderOwnership, MAX_COOKIE_BYTES};
 use crate::http::{model::ResponseData, CanonicalTarget, Scheme};
 
 pub(in crate::http) fn validate(response: &ResponseData, scheme: Scheme) -> bool {
@@ -9,20 +9,10 @@ pub(in crate::http) fn validate(response: &ResponseData, scheme: Scheme) -> bool
     for header in &response.headers.0 {
         let name = header.name.0.as_str();
         let value = header.value.0.as_slice();
-        if security_headers(Scheme::Https).any(|owned| owned.name == name)
-            || name.starts_with("access-control-")
-            || matches!(
-                name,
-                "refresh"
-                    | "content-location"
-                    | "link"
-                    | "clear-site-data"
-                    | "report-to"
-                    | "nel"
-                    | "content-security-policy-report-only"
-                    | "cross-origin-embedder-policy"
-            )
-        {
+        if matches!(
+            header_ownership(name),
+            HeaderOwnership::HostSecurity | HeaderOwnership::ForbiddenBrowserPolicy
+        ) {
             return false;
         }
         if name == "content-encoding" {
