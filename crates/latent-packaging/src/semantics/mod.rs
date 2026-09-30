@@ -205,10 +205,11 @@ fn compare_manifest(
         }
     }
     if declared.imports.keys().any(|name| {
-        !manifest
-            .imports
-            .iter()
-            .any(|entry| entry.contract.0 == *name)
+        host::recognizes(name)
+            && !manifest
+                .imports
+                .iter()
+                .any(|entry| entry.contract.0 == *name)
     }) {
         return Err(incompatible("capsule-undeclared-import"));
     }

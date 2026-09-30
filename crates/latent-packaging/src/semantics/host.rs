@@ -14,10 +14,18 @@ pub(super) fn validate(
 ) -> Result<(), PlatformError> {
     let mut trusted = Resolve::default();
     let mut loaded = BTreeSet::new();
-    for name in imports.keys() {
-        let specification = PHASE3_HOST_ABI_CURRENT
-            .interface(name)
-            .ok_or_else(|| incompatible("unsupported-host-import"))?;
+    // One shared structural work allowance for non-callable type interfaces.
+    // Self-comparison rejects resources, handles, futures and unknown shapes;
+    // no provider binding or capability is created by these value definitions.
+    let mut values = Comparison::new(resolve, resolve, limits);
+    for (name, id) in imports {
+        let Some(specification) = PHASE3_HOST_ABI_CURRENT.interface(name) else {
+            if !resolve.interfaces[*id].functions.is_empty() {
+                return Err(incompatible("unsupported-host-import"));
+            }
+            values.interface(*id, *id)?;
+            continue;
+        };
         // Semantic inspection recognizes the exact ABI without installing or
         // authorizing a provider. Runtime preparation checks actual availability.
         let source = specification.wit;
@@ -33,9 +41,9 @@ pub(super) fn validate(
     // visits. A caller cannot reset the comparison budget by adding interfaces.
     let mut comparison = Comparison::new(resolve, &trusted, limits);
     for (name, id) in imports {
-        let specification = PHASE3_HOST_ABI_CURRENT
-            .interface(name)
-            .ok_or_else(|| incompatible("unsupported-host-import"))?;
+        let Some(specification) = PHASE3_HOST_ABI_CURRENT.interface(name) else {
+            continue;
+        };
         let interface = trusted
             .interfaces
             .iter()
