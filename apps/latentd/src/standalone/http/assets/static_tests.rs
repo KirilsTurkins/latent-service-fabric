@@ -386,10 +386,16 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         .1
         .contains("private, max-age=31536000, immutable"));
     assert!(h.store().snapshot().cache_hits > 0);
-    let error = publish_error_site(&h, "configured-error", Some(b"signed not found"));
+    signed_error_documents(&h).await;
+    no_execution(&h);
+    h.finish().await;
+}
+
+async fn signed_error_documents(h: &Harness) {
+    let error = publish_error_site(h, "configured-error", Some(b"signed not found"));
     for method in ["GET", "HEAD"] {
         apply(
-            &h,
+            h,
             &format!("root-{method}"),
             &error,
             "/",
@@ -398,7 +404,7 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
             1,
         );
         apply(
-            &h,
+            h,
             &format!("error-docs-{method}"),
             &error,
             "/docs/nested",
@@ -411,8 +417,9 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         "/unknown",
         "/docs/nested/guide/missing",
         "/docs/nested/missing.html",
+        "/docs/nested/missing.HTML",
     ] {
-        let (code, headers, body) = get(&h, path, NAVIGATION).await;
+        let (code, headers, body) = get(h, path, NAVIGATION).await;
         assert_eq!(
             (code, body.as_slice()),
             (404, b"signed not found".as_slice())
@@ -432,18 +439,18 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
             "If-None-Match: *\r\n".into(),
             "If-Match: \"other\"\r\n".into(),
         ] {
-            let response = get(&h, path, &format!("{NAVIGATION}{condition}")).await;
+            let response = get(h, path, &format!("{NAVIGATION}{condition}")).await;
             assert_eq!(
                 (response.0, response.2.as_slice()),
                 (404, b"signed not found".as_slice())
             );
         }
     }
-    assert_eq!(get(&h, "/docs/nested/exact", NAVIGATION).await.0, 200);
-    assert_eq!(get(&h, "/docs/nested/guide", NAVIGATION).await.0, 308);
-    let plain = publish_error_site(&h, "unconfigured-error", None);
-    apply(&h, "plain", &plain, "/plain", "prefix", "GET", 0);
-    let empty = get(&h, "/plain/unknown", NAVIGATION).await;
+    assert_eq!(get(h, "/docs/nested/exact", NAVIGATION).await.0, 200);
+    assert_eq!(get(h, "/docs/nested/guide", NAVIGATION).await.0, 308);
+    let plain = publish_error_site(h, "unconfigured-error", None);
+    apply(h, "plain", &plain, "/plain", "prefix", "GET", 0);
+    let empty = get(h, "/plain/unknown", NAVIGATION).await;
     assert_eq!((empty.0, empty.2.len()), (404, 0));
     for (path, headers, status) in [
         ("/docs/nested/missing.js", NAVIGATION, 404),
@@ -474,7 +481,7 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
             400,
         ),
     ] {
-        let response = get(&h, path, headers).await;
+        let response = get(h, path, headers).await;
         assert_eq!((response.0, response.2.len()), (status, 0), "{path}");
     }
     assert_eq!(
@@ -489,13 +496,11 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
             .0,
         401 | 403
     ));
-    let old = get(&h, "/docs/nested/unknown", HTML).await;
+    let old = get(h, "/docs/nested/unknown", HTML).await;
     assert_eq!(
         (old.0, old.2.as_slice()),
         (404, b"signed not found".as_slice())
     );
-    no_execution(&h);
-    h.finish().await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
