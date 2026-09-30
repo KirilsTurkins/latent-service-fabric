@@ -118,4 +118,4 @@ old implementation snapshots are not setup instructions.
 
 ### Library concurrency research
 
-- [ADR-0060: Bound invocation-scoped concurrency; defer a universal guest executor](0060-bound-invocation-scoped-concurrency.md)
+- [ADR-0060: Provide activation-scoped runtime compatibility for ordinary dependencies](0060-bound-invocation-scoped-concurrency.md)

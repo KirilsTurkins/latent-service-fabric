@@ -7,6 +7,29 @@ production executor, SDK task API, host ABI, timer grant or persistent guest wor
 The [six-language inventory](languages.md) distinguishes profile/source evidence
 from this Rust-only actual-component experiment and unqualified library candidates.
 
+## Revised compatibility direction
+
+The 2026-09-30 usability review changes the proposed architecture, not this
+experiment's implementation. ADR-0060 now targets standard language/runtime APIs
+beneath unchanged application and transitive dependency code. Developers should
+not need to inject an LSF executor or custom transport. LSF-owned runtime/compiler
+ports must preserve real scheduling, synchronization, thread identity, per-thread
+host waits, timers and API-specific completion behavior within the activation.
+
+Java integration should first evaluate the pinned TeaVM fiber/event machinery
+and LSF's currently trapping scheduling hooks. Other languages retain their own
+runtime contracts over shared activation ownership. Standard outbound I/O needs
+a separately qualified substrate and explicit reconciliation with ADR-0059;
+this revision grants no sockets and does not infer protocols from arbitrary bytes.
+
+Library helpers and recurring callbacks may be implementation targets while an
+activation is active, but cannot survive its retirement. Idle managed workers
+must be distinguished from unfinished work; an opaque waiting thread cannot be
+silently discarded as harmless. The eight-task prototype is not the production
+concurrency limit or the developer-facing compatibility API. Qualification must
+use unchanged real libraries and default paths, not count adapter-assisted cases
+as transparent compatibility. The ADR specifies the implementation and review gates.
+
 ## Run
 
 Use the repository's pinned Rust 1.97.1 toolchain with `rustfmt` and
@@ -97,15 +120,21 @@ results and limitations. A `status: passed` receipt requires every component cas
 and complete comparison samples. Presence of the prototype, a build-only run,
 a failed receipt or a native/Python test result alone does not meet that condition.
 
+The usability revision leaves executable sources and original receipts unchanged.
+The runner hashes selected Rust/WIT/Python and build inputs, not ADR prose, and
+records the actual tested checkout. Historical passing execution does not qualify
+the revised standard-runtime design, automatic checkpointing, timers or unchanged
+third-party libraries. New runtime work needs its own source-bound execution evidence.
+
 ## Requirement map
 
 | #695 requirement | Review location / executable coverage |
 | --- | --- |
-| Six runtimes and six distinct concurrency dimensions | `languages.md`, pinned baseline and evidence labels. |
-| Sequential, adapter, cooperative, component-task and provider alternatives | ADR alternatives table and per-language decisions. |
-| Scope ownership, task/stack/heap/queue/timer caps and shared limits | ADR candidate resource table; `scope.rs`, `memory.rs`, root fuel/epoch tests. |
-| Fairness, blocking, nested progress and no fake Thread.start | Native round-robin tests; real thread trap, inline deadlock, cooperative rendezvous; ADR node-capacity gate. |
-| Identity, capability and detached-work boundary | Private linker checkpoints/denial; unchanged production linkers; ADR authority/generation/cleanup contract. |
-| Invocation timers versus durable work; no second budget ledger | ADR timer and promotion sections; no timer/worker production code. |
+| Six runtimes and six distinct concurrency dimensions | `languages.md`, pinned baseline, upstream source findings and separate target labels. |
+| Sequential, adapter, cooperative, component-task and provider alternatives | ADR alternatives table; standard-runtime ports are the revised default, adapters optional. |
+| Scope ownership, task/stack/heap/queue/timer caps and shared limits | ADR resource-accounting contract; experiment-only numeric limits; `scope.rs`, `memory.rs`, root fuel/epoch tests. |
+| Fairness, blocking, nested progress and no fake Thread.start | Existing native round-robin and component deadlock/trap cases; ADR separately requires compiler checkpoints, standard synchronization and real-node progress. |
+| Identity, capability and detached-work boundary | Private linker checkpoints/denial; unchanged production linkers; ADR activation-local helpers, generation fencing and physical retirement. |
+| Invocation timers versus durable work; no second budget ledger | ADR timer and lifecycle sections; no timer/worker production code in this PR. |
 | Bounded actual-component proof and measurements | `guest.rs`, `host.rs`, source-bound runner, required-case receipt validation and retained evidence. |
-| Per-language implement/defer/reject decision and narrow follow-ups | ADR decision matrix and five explicit promotion/conformance gates. |
+| Per-language implement/defer/reject decision and narrow follow-ups | ADR implementation matrix and five conformance gates; unchanged published libraries and default paths are required for new compatibility claims. |

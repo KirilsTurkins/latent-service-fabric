@@ -22,6 +22,11 @@ production sockets; it is not a dependency of ordinary libraries or HTTP adapter
 The [invocation concurrency investigation](invocation-concurrency/README.md)
 compares the six compiler profiles, includes an isolated actual-component Rust
 experiment and records scope ownership, fairness, cancellation and timer limits.
-[ADR-0060](../adr/0060-bound-invocation-scoped-concurrency.md) proposes deferring a
-universal executor and rejecting transparent thread emulation. The prototype is
-not a production compatibility promise or a blocker for ordinary dependencies.
+The revised [ADR-0060](../adr/0060-bound-invocation-scoped-concurrency.md) targets
+standard runtime compatibility beneath unchanged application and transitive
+dependency code, without requiring developer-supplied executor/transport adapters.
+Logical threads, pools and timers are implementation targets during an activation;
+persistent guest work and fabricated execution remain forbidden. Separate runtime
+and standard-I/O qualification must precede enablement and reconcile ADR-0059's
+outbound recommendation. The original prototype and receipts are not evidence of
+these new runtime facilities, nor a blocker for ordinary dependency ingestion.
