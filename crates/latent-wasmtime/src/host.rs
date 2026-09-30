@@ -144,7 +144,7 @@ impl ResourceLimiter for TrackingLimiter {
                 .map(|budget| {
                     budget
                         .reserve_runtime_memory(aggregate as u64)
-                        .map_err(|error| wasmtime::Error::msg(error.to_platform_error().message))
+                        .map_err(wasmtime::Error::new)
                 })
                 .transpose()?;
             let previous_peak_memory_bytes = self.peak_memory_bytes;

@@ -73,9 +73,38 @@ installation and wrong versions, and require canonical async types for waits.
 Independent policy/schema/source/matrix checks preserve the frozen earlier
 profiles and ensure runtime clock resources cannot grant network stream access.
 
-These checks are implementation evidence for #736. They do not complete its
-required signed actual-node matrix, measured cold/active/parked physical owner
-plateaus, tenant/node fairness, standard-language scheduler ports or API-specific
-error aggregation. ADR-0060 remains Proposed. Language profiles and the larger
-#695/#677 qualification gates remain open until those requirements are exercised
-under their exact source, compiler, runtime, policy and artifact identities.
+The `local_service` signed component matrix also exercises the actual directory
+catalog admission, policy and binding compiler, deployment controller, activation
+manager, scheduler, broker and Wasmtime Store. Test signing keys bind the actual
+component bytes and the checked-in component builder/runtime WIT source digest.
+The other builder materials are fixture assertions; this is not an observed
+production compiler build or a qualified language artifact.
+
+Its runtime cases cover each owner ceiling, managed workers sharing the task
+ceiling, closing and necessary continuations, stale owner tokens and fresh Store
+generations, root-result retirement failure, trap cleanup, canonical timer
+suspension with same-Store sibling work, timer stop, recurrence coalescing and
+registration storms. Cancellation and policy revocation use a barrier that
+observes a real pending timer, Store and broker call. A narrower policy wait
+deadline remains a structured deadline result and allows the original root task
+to settle. Root deadline and a tight CPU loop remain contained. Each case checks
+physical Store/host/instance, broker and activation capacity reclamation before
+fresh admission. Revoking a declared import also rejects a fresh activation even
+when that path would not actually call the import.
+
+The fixture compares the lazy path with a real registered owner, verifies that
+native accounting raises the same original peak, and verifies failed native
+reservation rollback. On the pinned Linux debug fixture the four-page lazy guest
+reported 262144 bytes and runtime registration reported 263128 bytes. This 984
+byte difference is fixture evidence, not a language memory or latency claim.
+Growing linear memory to the entire original ceiling while native owners are
+live produces resource exhaustion; cleanup preserves the original trap or
+interruption instead of replacing it with cleanup cancellation.
+
+These checks are implementation evidence for #736. Remaining requirements
+include the complete signed cross-tenant, late-wake and node-stop matrix,
+measured cold/active/parked physical owner plateaus, tenant/node fairness,
+standard-language scheduler ports and API-specific error aggregation. ADR-0060
+remains Proposed. Language profiles and the larger #695/#677 qualification gates
+remain open until those requirements are exercised under their exact source,
+compiler, runtime, policy and artifact identities.

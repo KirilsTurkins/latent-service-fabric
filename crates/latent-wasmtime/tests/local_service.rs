@@ -13,6 +13,8 @@ mod fixture;
 mod load;
 #[path = "local_service/packages.rs"]
 mod packages;
+#[path = "local_service/runtime.rs"]
+mod runtime;
 
 #[tokio::test]
 async fn declared_service_import_without_a_node_adapter_has_no_execution_authority() {
