@@ -126,6 +126,14 @@ pub trait OutboundStream: Send + Sync {
         bytes: Vec<u8>,
         timeout_millis: Option<u32>,
     ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError>;
+    /// Prepay the window and original native memory before invoking this
+    /// synchronous producer. The resulting future owns only materialized bytes.
+    fn write_from(
+        &self,
+        maximum: usize,
+        timeout_millis: Option<u32>,
+        produce: &mut dyn FnMut() -> Result<Vec<u8>, PlatformError>,
+    ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError>;
     fn ready(
         &self,
         interest: StreamInterest,

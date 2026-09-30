@@ -105,6 +105,9 @@ pub(crate) fn validate_with_providers(
         &mut retained_bytes,
         providers,
     )?;
+    if imports.contains(latent_capabilities::broker::network::STREAM_CAPABILITY) {
+        networking::validate_encoding(&artifact.component_bytes)?;
+    }
 
     let declared_exports = artifact
         .manifest

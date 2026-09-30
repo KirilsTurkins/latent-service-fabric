@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "tests::currentness::a_policy_change_while_readable_is_pending_is_checked_before_syscall",
+        "tests::currentness::provider_retirement_wakes_pending_read_without_early_refund",
+        "tests::opaque_transport_requires_exact_special_address_authority",
+        "tests::sockets::actual_tcp_partial_reads_eof_and_send_half_close",
+        "tests::sockets::dropped_facade_does_not_refund_an_unpolled_pending_socket",
+        "tests::sockets::retained_chunks_keep_original_charges_after_socket_close",
+        "tests::sockets::revoking_policy_prevents_application_write_on_existing_socket",
+        "tests::sockets::wrong_endpoint_is_denied_before_network_dispatch",
+        "tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-streams.lib.latent-streams",
+      "ignoredLeaves": [],
+      "kind": "lib",
+      "manifest": "crates/latent-streams/Cargo.toml",
+      "minimumCases": 9,
+      "mode": "libtest",
+      "package": "latent-streams",
+      "platforms": ["linux-x86_64"],
+      "prerequisites": ["pinned Rust toolchain", "successful source-matched Cargo artifact inventory"],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "src/lib.rs",
+      "target": "latent_streams",
+      "timeoutSeconds": 900
+    }
+  ]
+}

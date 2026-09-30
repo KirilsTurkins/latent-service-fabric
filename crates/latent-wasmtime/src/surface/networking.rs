@@ -8,6 +8,36 @@ use wasmtime::{
     Engine,
 };
 
+/// This finite linear-memory profile uses borrowed WasmStr/WasmList cursors.
+/// Reject transcoding and GC canonical options before any Store exists so host
+/// parameter lifting cannot allocate an unbounded string before prepayment.
+pub(crate) fn validate_encoding(bytes: &[u8]) -> Result<(), PlatformError> {
+    use wasmparser::{CanonicalFunction, CanonicalOption, Parser, Payload};
+    let invalid = || incompatible("outbound streams require UTF-8 linear canonical memory");
+    for payload in Parser::new(0).parse_all(bytes) {
+        if let Payload::ComponentCanonicalSection(section) = payload.map_err(|_| invalid())? {
+            for function in section {
+                let options = match function.map_err(|_| invalid())? {
+                    CanonicalFunction::Lift { options, .. }
+                    | CanonicalFunction::Lower { options, .. } => options,
+                    _ => continue,
+                };
+                if options.iter().any(|option| {
+                    matches!(
+                        option,
+                        CanonicalOption::UTF16
+                            | CanonicalOption::CompactUTF16
+                            | CanonicalOption::Gc
+                    )
+                }) {
+                    return Err(invalid());
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn validate(
     name: &str,
     function: &ComponentFunc,

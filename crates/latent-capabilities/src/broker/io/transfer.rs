@@ -233,16 +233,29 @@ impl IoTransfer {
         self.inner.options.maximum_chunk_bytes
     }
     pub fn input(&self, bytes: Vec<u8>) -> Result<IoInputChunk, PlatformError> {
+        self.input_with(bytes.capacity(), || Ok(bytes))
+    }
+    /// Reserve the original resident/native charges before materializing guest
+    /// bytes. The producer runs synchronously and no Store borrow is retained.
+    pub fn input_with(
+        &self,
+        maximum: usize,
+        produce: impl FnOnce() -> Result<Vec<u8>, PlatformError>,
+    ) -> Result<IoInputChunk, PlatformError> {
         self.inner.check()?;
-        if bytes.is_empty() || bytes.capacity() > self.maximum_chunk_bytes() {
+        if maximum == 0 || maximum > self.maximum_chunk_bytes() {
             return Err(capacity());
         }
         let slot = self.inner.slot()?;
         let mut memory = if self.inner.host_memory {
-            IoMemory::reserve_host(&self.inner.operation, bytes.capacity(), 512)?
+            IoMemory::reserve_host(&self.inner.operation, maximum, 512)?
         } else {
-            IoMemory::reserve(&self.inner.operation, bytes.capacity(), 512)?
+            IoMemory::reserve(&self.inner.operation, maximum, 512)?
         };
+        let bytes = produce()?;
+        if bytes.is_empty() || bytes.capacity() > maximum {
+            return Err(capacity());
+        }
         memory.confirm_host();
         // Construct the real data owner first: a failed total-byte check must
         // drop its bytes before returning the resident-memory reservation.

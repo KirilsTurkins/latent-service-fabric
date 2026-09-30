@@ -57,6 +57,14 @@ struct Cached {
     expires: Instant,
 }
 
+/// Literal answers and their actual bounded DNS validity. Callers must retain
+/// this fence instead of restarting the configured maximum TTL after resolution.
+#[derive(Clone, Copy, Debug)]
+pub struct ResolvedAnswers {
+    pub answers: Answers,
+    pub valid_until: Instant,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ResolverUsage {
     pub active: usize,
@@ -117,9 +125,21 @@ impl Resolver {
     }
 
     pub async fn resolve(&self, deadline: Instant) -> Result<Answers, NetworkError> {
+        self.resolve_with_expiry(deadline)
+            .await
+            .map(|value| value.answers)
+    }
+
+    pub async fn resolve_with_expiry(
+        &self,
+        deadline: Instant,
+    ) -> Result<ResolvedAnswers, NetworkError> {
         self.check(deadline)?;
         if let Some(answers) = self.cached()? {
-            return Ok(answers);
+            return Ok(ResolvedAnswers {
+                answers: answers.answers,
+                valid_until: answers.expires,
+            });
         }
         let _permit = self
             .admission
@@ -132,7 +152,10 @@ impl Resolver {
         drop(waiting);
         self.check(deadline)?;
         if let Some(answers) = self.cached()? {
-            return Ok(answers);
+            return Ok(ResolvedAnswers {
+                answers: answers.answers,
+                valid_until: answers.expires,
+            });
         }
         let _active = Count::new(&self.active);
         let (answers, expires) = timeout_at(deadline, self.query())
@@ -144,7 +167,10 @@ impl Resolver {
             self.check(deadline)?;
             *cache = Some(Cached { answers, expires });
         }
-        Ok(answers)
+        Ok(ResolvedAnswers {
+            answers,
+            valid_until: expires,
+        })
     }
 
     pub fn close(&self) -> Result<(), NetworkError> {
@@ -179,12 +205,12 @@ impl Resolver {
         Ok(())
     }
 
-    fn cached(&self) -> Result<Option<Answers>, NetworkError> {
+    fn cached(&self) -> Result<Option<Cached>, NetworkError> {
         let mut cache = self.cache.lock().map_err(|_| NetworkError::Closed)?;
         if cache.is_some_and(|cached| cached.expires <= Instant::now()) {
             *cache = None;
         }
-        Ok(cache.map(|cached| cached.answers))
+        Ok(*cache)
     }
 
     async fn query(&self) -> Result<(Answers, Instant), NetworkError> {

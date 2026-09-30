@@ -76,20 +76,24 @@ async fn truncated_udp_uses_only_the_same_explicit_tcp_resolver_and_fixed_cache(
     let (server, worker) = truncated_fixture(false).await;
     let resolver = resolver(server);
     let answers = resolver
-        .resolve(Instant::now() + Duration::from_secs(2))
+        .resolve_with_expiry(Instant::now() + Duration::from_secs(2))
         .await
         .unwrap();
     assert_eq!(
-        answers.iter().collect::<Vec<_>>(),
+        answers.answers.iter().collect::<Vec<_>>(),
         vec!["127.0.0.1".parse::<std::net::IpAddr>().unwrap()]
     );
     worker.await.unwrap();
     assert_eq!(resolver.usage().active, 0);
     assert_eq!(resolver.usage().cached_answers, 1);
-    assert!(resolver
-        .resolve(Instant::now() + Duration::from_secs(1))
+    let cached = resolver
+        .resolve_with_expiry(Instant::now() + Duration::from_secs(1))
         .await
-        .is_ok());
+        .unwrap();
+    assert_eq!(
+        cached.valid_until, answers.valid_until,
+        "a cache hit cannot renew authority lifetime"
+    );
     resolver.close().unwrap();
     assert_eq!(resolver.usage().cached_answers, 0);
     assert_eq!(

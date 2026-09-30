@@ -93,8 +93,13 @@ impl Table {
         entry.value = Some(value);
         Ok(())
     }
-    pub(super) fn connection(&mut self, rep: u32) -> Result<&dyn OutboundStream, StreamError> {
-        match &self.entry(rep, Kind::Connection)?.value {
+    pub(super) fn connection(&self, rep: u32) -> Result<&dyn OutboundStream, StreamError> {
+        let entry = self
+            .entries
+            .iter()
+            .find(|entry| rep != 0 && entry.rep == rep && entry.kind == Kind::Connection)
+            .ok_or_else(invalid)?;
+        match &entry.value {
             Some(Value::Connection(connection)) => Ok(connection.as_ref()),
             _ => Err(invalid()),
         }

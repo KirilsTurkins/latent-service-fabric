@@ -12,11 +12,21 @@ use latent_component_bindings::host::activation::latent::network::streams as wit
 use latent_policy::capability::{StreamEndpoint, StreamTransport};
 use std::{sync::Arc, time::Instant};
 use wasmtime::{
-    component::{Linker, Resource, ResourceType},
+    component::{Linker, Resource, ResourceType, WasmList, WasmStr},
     AsContextMut,
 };
 pub(super) mod table;
 use table::{Kind, Value};
+
+#[derive(wasmtime::component::ComponentType, wasmtime::component::Lift)]
+#[component(record)]
+struct ConnectInput {
+    host: WasmStr,
+    port: u16,
+    transport: wit::Transport,
+    #[component(name = "timeout-millis")]
+    timeout_millis: Option<u32>,
+}
 
 pub(crate) fn install(
     linker: &mut Linker<HostState>,
@@ -93,72 +103,90 @@ fn connect(
     host: &mut wasmtime::component::LinkerInstance<'_, HostState>,
     invoker: Arc<dyn OutboundStreamInvoker>,
 ) -> wasmtime::Result<()> {
-    host.func_wrap_concurrent(
-        "connect",
-        move |access, (request,): (wit::ConnectRequest,)| {
-            let invoker = Arc::clone(&invoker);
-            Box::pin(async move {
-                let started = Instant::now();
-                let opening = access.with(|mut access| {
-                    let mut store = access.as_context_mut();
-                    checkpoint(&mut store)?;
-                    let result = (|| {
-                        let capabilities = &mut store.data_mut().capabilities;
-                        let session = capabilities
-                            .session
-                            .as_ref()
-                            .ok_or_else(|| StreamError::new(StreamErrorCode::Denied))?;
-                        capabilities.network.initialize(session)?;
-                        let rep = capabilities.network.reserve(Kind::Connection)?;
-                        let request = StreamConnectRequest {
-                            endpoint: StreamEndpoint {
-                                host: request.host,
-                                port: request.port,
-                                transport: match request.transport {
-                                    wit::Transport::Tcp => StreamTransport::Tcp,
-                                    wit::Transport::HostTls => StreamTransport::HostTls,
-                                },
+    host.func_wrap_concurrent("connect", move |access, (request,): (ConnectInput,)| {
+        let invoker = Arc::clone(&invoker);
+        Box::pin(async move {
+            let started = Instant::now();
+            let opening = access.with(|mut access| {
+                let mut store = access.as_context_mut();
+                checkpoint(&mut store)?;
+                let result = (|| {
+                    let session = store
+                        .data()
+                        .capabilities
+                        .session
+                        .as_ref()
+                        .ok_or_else(|| StreamError::new(StreamErrorCode::Denied))?;
+                    let mut host_memory = session.reserve_host_memory(512)?;
+                    // Preparation validates UTF-8 canonical options for
+                    // stream imports; decoding here therefore stays borrowed.
+                    let host = request
+                        .host
+                        .to_str(&store)
+                        .map_err(|_| StreamError::new(StreamErrorCode::InvalidInput))?;
+                    if host.len() > 253
+                        || !host.is_ascii()
+                        || !matches!(host, std::borrow::Cow::Borrowed(_))
+                    {
+                        return Err(StreamError::new(StreamErrorCode::InvalidInput));
+                    }
+                    let host = host.into_owned();
+                    host_memory.confirm();
+                    let capabilities = &mut store.data_mut().capabilities;
+                    let session = capabilities
+                        .session
+                        .as_ref()
+                        .ok_or_else(|| StreamError::new(StreamErrorCode::Denied))?;
+                    capabilities.network.initialize(session)?;
+                    let rep = capabilities.network.reserve(Kind::Connection)?;
+                    let request = StreamConnectRequest {
+                        endpoint: StreamEndpoint {
+                            host,
+                            port: request.port,
+                            transport: match request.transport {
+                                wit::Transport::Tcp => StreamTransport::Tcp,
+                                wit::Transport::HostTls => StreamTransport::HostTls,
                             },
-                            timeout_millis: request.timeout_millis,
-                        };
-                        match invoker.start(session, request) {
-                            Ok(future) => Ok((rep, future)),
-                            Err(error) => {
-                                capabilities.network.remove(rep, Kind::Connection)?;
-                                Err(error)
-                            }
+                        },
+                        timeout_millis: request.timeout_millis,
+                    };
+                    match invoker.start(session, request) {
+                        Ok(future) => Ok((rep, future, host_memory)),
+                        Err(error) => {
+                            capabilities.network.remove(rep, Kind::Connection)?;
+                            Err(error)
                         }
-                    })();
-                    synchronize(&mut store)?;
-                    Ok::<_, wasmtime::Error>(result)
-                })?;
-                let completion = match opening {
-                    Ok((rep, future)) => Ok((rep, future.await)),
-                    Err(error) => Err(error),
-                };
-                access.with(|mut access| {
-                    let mut store = access.as_context_mut();
-                    checkpoint(&mut store)?;
-                    let result = completion.and_then(|(rep, result)| {
-                        let table = &mut store.data_mut().capabilities.network;
-                        match result {
-                            Ok(connection) => {
-                                table.put(rep, Kind::Connection, Value::Connection(connection))?;
-                                Ok(Resource::<wit::Connection>::new_own(rep))
-                            }
-                            Err(error) => {
-                                table.remove(rep, Kind::Connection)?;
-                                Err(error)
-                            }
+                    }
+                })();
+                synchronize(&mut store)?;
+                Ok::<_, wasmtime::Error>(result)
+            })?;
+            let completion = match opening {
+                Ok((rep, future, _host_memory)) => Ok((rep, future.await)),
+                Err(error) => Err(error),
+            };
+            access.with(|mut access| {
+                let mut store = access.as_context_mut();
+                checkpoint(&mut store)?;
+                let result = completion.and_then(|(rep, result)| {
+                    let table = &mut store.data_mut().capabilities.network;
+                    match result {
+                        Ok(connection) => {
+                            table.put(rep, Kind::Connection, Value::Connection(connection))?;
+                            Ok(Resource::<wit::Connection>::new_own(rep))
                         }
-                    });
-                    synchronize(&mut store)?;
-                    store.data_mut().record_host_call(started);
-                    Ok((result.map_err(convert_error),))
-                })
+                        Err(error) => {
+                            table.remove(rep, Kind::Connection)?;
+                            Err(error)
+                        }
+                    }
+                });
+                synchronize(&mut store)?;
+                store.data_mut().record_host_call(started);
+                Ok((result.map_err(convert_error),))
             })
-        },
-    )?;
+        })
+    })?;
     Ok(())
 }
 fn read(host: &mut wasmtime::component::LinkerInstance<'_, HostState>) -> wasmtime::Result<()> {
@@ -224,17 +252,22 @@ fn read(host: &mut wasmtime::component::LinkerInstance<'_, HostState>) -> wasmti
 fn write(host: &mut wasmtime::component::LinkerInstance<'_, HostState>) -> wasmtime::Result<()> {
     host.func_wrap_concurrent(
         "write",
-        |access, (target, bytes, timeout): (Resource<wit::Connection>, Vec<u8>, Option<u32>)| {
+        |access,
+         (target, bytes, timeout): (Resource<wit::Connection>, WasmList<u8>, Option<u32>)| {
             Box::pin(async move {
                 let opening = access.with(|mut access| {
                     let mut store = access.as_context_mut();
                     checkpoint(&mut store)?;
                     let result = store
-                        .data_mut()
+                        .data()
                         .capabilities
                         .network
                         .connection(target.rep())
-                        .and_then(|value| value.write(bytes, timeout));
+                        .and_then(|value| {
+                            value.write_from(bytes.len(), timeout, &mut || {
+                                Ok(bytes.as_le_slice(&store).to_vec())
+                            })
+                        });
                     synchronize(&mut store)?;
                     Ok::<_, wasmtime::Error>(result)
                 })?;
