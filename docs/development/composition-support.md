@@ -54,3 +54,24 @@ fetched from the network. Record structural, authoritative preparation,
 authenticated coherent live-state and separately executed qualification evidence
 at their actual boundaries. Observed identities expire; normal admission and
 dispatch always recheck current authority.
+
+[The frontend build](../../tools/build_dev_frontend.py) snapshots these exact
+canonical bytes for both the Linux helper ZIP and the native PyInstaller
+frontend: `schemas/dev-composition-input.schema.json`,
+`schemas/static-site-budget.schema.json`,
+`contracts/dev/composition-support-v1.json`, and
+`contracts/http/browser-response-ownership-v1.json`. They share the package
+resource prefix `tools/dev_workflow/data/`. The build binds each resource digest
+and size, verifies installed native copies, and rejects changed source contracts.
+The helper also includes the response ownership module; a missing packaged table
+fails with a finite reason.
+
+Every native build runs the actual `dev preflight` command outside the checkout,
+with no Python in `PATH` or `PYTHONPATH`. Its synthetic static selection succeeds,
+while ordinary context and reserved response headers reject. All three preserve
+unobserved authority and create no controller state. The build receipt records
+this as `packaged-structural-preflight-only`; real publication preparation,
+authenticated observation, execution and release qualification remain separate.
+The [packaging regressions](../../tools/tests/test_dev_frontend_preflight_packaging.py)
+also run isolated `-I` ZIP imports with an unrelated current directory, reject
+missing/oversized resources, and reject a fabricated authority claim.

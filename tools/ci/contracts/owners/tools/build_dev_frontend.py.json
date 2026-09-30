@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Bundle four canonical preflight contracts as immutable ZIP and PyInstaller data snapshots; execute finite actual native structural preflight smoke outside checkout without controller state; preserve every existing build and license obligation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b86e895abc7baf6f191c6ce2cf059f14d754c933c5d2f59bb6a75693a9ebf0b8"
+  "sha256": "89423bc82d7e7a634a3daae3e955dc9a1f5cfe8b7462482b391b122933b1b87b"
 }
