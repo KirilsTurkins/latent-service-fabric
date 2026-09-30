@@ -13,6 +13,8 @@ pub const RECORD_BYTES: usize = 4096;
 pub const IDENTITY_BYTES: usize = 256;
 const RECORD_MAGIC: &[u8] = b"lsf-namespace-v1\0";
 
+pub mod catalog;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NamespaceError {
     Invalid,
@@ -459,6 +461,21 @@ mod tests {
         assert_eq!(
             NamespaceRecord::decode(&wrong),
             Err(NamespaceError::UnsupportedFormat)
+        );
+        let mut unknown_status = bytes.clone();
+        let descriptor = record();
+        let status = RECORD_MAGIC.len()
+            + 2
+            + 2
+            + descriptor.tenant.0.len()
+            + 2
+            + descriptor.id.0.len()
+            + 2
+            + descriptor.state_schema.len();
+        unknown_status[status] = u8::MAX;
+        assert_eq!(
+            NamespaceRecord::decode(&unknown_status),
+            Err(NamespaceError::Corrupt)
         );
         let mut trailing = bytes;
         trailing.push(0);
