@@ -383,11 +383,15 @@ export interface ActivationTreeNode {
   readonly grantedBudget?: ResourceBudget;
   readonly effectiveDeadlineUnixMillis?: bigint;
   readonly diagnosticIsTerminal: boolean;
+  readonly targetService: string;
+  readonly receivedAtUnixMillis: bigint;
 }
 
 export interface InspectActivationTreeRequest {
   readonly activationId: string;
   readonly page?: PageRequest;
+  readonly service?: string;
+  readonly fromUnixMillis?: bigint;
 }
 
 export interface InspectActivationTreeResponse {

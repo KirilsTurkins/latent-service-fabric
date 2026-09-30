@@ -41,11 +41,25 @@ pub enum ActivationCommand {
     Cancel(CancelArgs),
     /// Inspect retained authorized lineage and safe operator diagnostics.
     Tree(ActivationTreeArgs),
+    /// Discover retained actual ingress roots in the authenticated tenant.
+    Roots(ActivationRootsArgs),
 }
 
 #[derive(Args)]
 pub struct ActivationTreeArgs {
     pub id: String,
+    #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u32).range(..=128))]
+    pub page_size: u32,
+    #[arg(long)]
+    pub page_token: Option<String>,
+}
+
+#[derive(Args)]
+pub struct ActivationRootsArgs {
+    #[arg(long)]
+    pub service: String,
+    #[arg(long)]
+    pub from_unix_millis: Option<u64>,
     #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u32).range(..=128))]
     pub page_size: u32,
     #[arg(long)]

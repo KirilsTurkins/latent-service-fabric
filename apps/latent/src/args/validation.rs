@@ -54,6 +54,10 @@ impl Cli {
                 identifier(&args.id, 512)?;
                 page_token(args.page_token.as_deref(), args.page_size)
             }
+            Command::Activation(ActivationCommand::Roots(args)) => {
+                identifier(&args.service, 512)?;
+                page_token(args.page_token.as_deref(), args.page_size)
+            }
             Command::Activation(ActivationCommand::Cancel(args)) => {
                 identifier(&args.id, 512)?;
                 if args.reason.len() > 256 {

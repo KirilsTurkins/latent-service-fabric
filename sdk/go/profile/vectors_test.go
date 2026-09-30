@@ -103,6 +103,105 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !(!(value.Page != nil)) {
 			tester.Fatal("activation-tree-default-page.page.presence")
 		}
+		if !(!(value.Service != nil)) {
+			tester.Fatal("activation-tree-default-page.service.presence")
+		}
+		if !(!(value.FromUnixMillis != nil)) {
+			tester.Fatal("activation-tree-default-page.from_unix_millis.presence")
+		}
+	}
+	{
+		value := InspectActivationTreeRequest{ActivationId: "", Page: fixturePointer(PageRequest{PageSize: uint32(128)}), Service: fixturePointer("examples/java-http-adapter"), FromUnixMillis: fixturePointer(uint64(18446744073709551615))}
+		if !(value.ActivationId == "") {
+			tester.Fatal("activation-roots-service-time-selector.activation_id")
+		}
+		if !(value.Page != nil) {
+			tester.Fatal("activation-roots-service-time-selector.page.presence")
+		}
+		if !((*value.Page).PageSize == uint32(128)) {
+			tester.Fatal("activation-roots-service-time-selector.page.page_size")
+		}
+		if !(!((*value.Page).PageToken != nil)) {
+			tester.Fatal("activation-roots-service-time-selector.page.page_token.presence")
+		}
+		if !(value.Service != nil) {
+			tester.Fatal("activation-roots-service-time-selector.service.presence")
+		}
+		if !((*value.Service) == "examples/java-http-adapter") {
+			tester.Fatal("activation-roots-service-time-selector.service")
+		}
+		if !(value.FromUnixMillis != nil) {
+			tester.Fatal("activation-roots-service-time-selector.from_unix_millis.presence")
+		}
+		if !((*value.FromUnixMillis) == uint64(18446744073709551615)) {
+			tester.Fatal("activation-roots-service-time-selector.from_unix_millis")
+		}
+	}
+	{
+		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{ActivationTreeNode{ActivationId: "host-generated-root", RootActivationId: "host-generated-root", Phase: "running", LastUpdatedUnixMillis: uint64(0), PrincipalKind: "trigger", DiagnosticIsTerminal: false, TargetService: "examples/java-http-adapter", ReceivedAtUnixMillis: uint64(18446744073709551615)}}, Page: fixturePointer(PageResponse{}), HistoryAvailable: true, CursorExpired: false, RetainedHistoryOnly: true}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-root-real-ingress-identity.schema_version")
+		}
+		if !(len(value.Nodes) == 1) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.count")
+		}
+		if !(value.Nodes[0].ActivationId == "host-generated-root") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.activation_id")
+		}
+		if !(!(value.Nodes[0].ParentActivationId != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.parent_activation_id.presence")
+		}
+		if !(value.Nodes[0].RootActivationId == "host-generated-root") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.root_activation_id")
+		}
+		if !(value.Nodes[0].Phase == "running") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.phase")
+		}
+		if !(!(value.Nodes[0].TerminalState != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.terminal_state.presence")
+		}
+		if !(value.Nodes[0].LastUpdatedUnixMillis == uint64(0)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.last_updated_unix_millis")
+		}
+		if !(!(value.Nodes[0].Diagnostic != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.diagnostic.presence")
+		}
+		if !(value.Nodes[0].PrincipalKind == "trigger") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.principal_kind")
+		}
+		if !(!(value.Nodes[0].CallerService != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.caller_service.presence")
+		}
+		if !(!(value.Nodes[0].GrantedBudget != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.granted_budget.presence")
+		}
+		if !(!(value.Nodes[0].EffectiveDeadlineUnixMillis != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.effective_deadline_unix_millis.presence")
+		}
+		if !(value.Nodes[0].DiagnosticIsTerminal == false) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal")
+		}
+		if !(value.Nodes[0].TargetService == "examples/java-http-adapter") {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.target_service")
+		}
+		if !(value.Nodes[0].ReceivedAtUnixMillis == uint64(18446744073709551615)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.received_at_unix_millis")
+		}
+		if !(value.Page != nil) {
+			tester.Fatal("activation-root-real-ingress-identity.page.presence")
+		}
+		if !(!((*value.Page).NextPageToken != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.page.next_page_token.presence")
+		}
+		if !(value.HistoryAvailable == true) {
+			tester.Fatal("activation-root-real-ingress-identity.history_available")
+		}
+		if !(value.CursorExpired == false) {
+			tester.Fatal("activation-root-real-ingress-identity.cursor_expired")
+		}
+		if !(value.RetainedHistoryOnly == true) {
+			tester.Fatal("activation-root-real-ingress-identity.retained_history_only")
+		}
 	}
 	{
 		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{}, Page: fixturePointer(PageResponse{}), HistoryAvailable: false, CursorExpired: true, RetainedHistoryOnly: true}
@@ -129,7 +228,7 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 	}
 	{
-		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{ActivationTreeNode{ActivationId: "child-a", ParentActivationId: fixturePointer("root-a"), RootActivationId: "root-a", Phase: "received", TerminalState: fixturePointer("resource_exhausted"), LastUpdatedUnixMillis: uint64(18446744073709551615), Diagnostic: fixturePointer(ActivationDiagnostic{SchemaVersion: uint32(1), Stage: DiagnosticStage(3), Reason: DiagnosticReason(1), Profile: fixturePointer(DiagnosticProfile(1)), ConfiguredBound: fixturePointer(uint64(16777216)), CalculatedRequirement: fixturePointer(uint64(67108864))}), PrincipalKind: "service", CallerService: fixturePointer("adapter"), DiagnosticIsTerminal: true}}, Page: fixturePointer(PageResponse{NextPageToken: fixturePointer("opaque-scoped-cursor")}), HistoryAvailable: true, CursorExpired: false, RetainedHistoryOnly: true}
+		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{ActivationTreeNode{ActivationId: "child-a", ParentActivationId: fixturePointer("root-a"), RootActivationId: "root-a", Phase: "received", TerminalState: fixturePointer("resource_exhausted"), LastUpdatedUnixMillis: uint64(18446744073709551615), Diagnostic: fixturePointer(ActivationDiagnostic{SchemaVersion: uint32(1), Stage: DiagnosticStage(3), Reason: DiagnosticReason(1), Profile: fixturePointer(DiagnosticProfile(1)), ConfiguredBound: fixturePointer(uint64(16777216)), CalculatedRequirement: fixturePointer(uint64(67108864))}), PrincipalKind: "service", CallerService: fixturePointer("adapter"), DiagnosticIsTerminal: true, TargetService: "", ReceivedAtUnixMillis: uint64(0)}}, Page: fixturePointer(PageResponse{NextPageToken: fixturePointer("opaque-scoped-cursor")}), HistoryAvailable: true, CursorExpired: false, RetainedHistoryOnly: true}
 		if !(value.SchemaVersion == uint32(1)) {
 			tester.Fatal("activation-tree-failed-preparation-before-guest.schema_version")
 		}
@@ -219,6 +318,12 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 		if !(value.Nodes[0].DiagnosticIsTerminal == true) {
 			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal")
+		}
+		if !(value.Nodes[0].TargetService == "") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.target_service")
+		}
+		if !(value.Nodes[0].ReceivedAtUnixMillis == uint64(0)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis")
 		}
 		if !(value.Page != nil) {
 			tester.Fatal("activation-tree-failed-preparation-before-guest.page.presence")

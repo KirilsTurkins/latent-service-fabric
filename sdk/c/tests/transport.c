@@ -148,6 +148,12 @@ static void tree(const latent_profile_inspect_activation_tree_result *result, co
     assert(result->value.schema_version == 1 && result->value.retained_history_only);
     assert(result->value.has_page && result->value.nodes_count == 1);
     const latent_profile_activation_tree_node *node = &result->value.nodes[0];
+    if (record->variant == 2) {
+        assert(!node->has_parent_activation_id && node->received_at_unix_millis == UINT64_MAX);
+        assert(node->target_service.length == 12 && memcmp(node->target_service.data, "http-adapter", 12) == 0);
+        record->count = 1;
+        return;
+    }
     assert(node->has_parent_activation_id && node->has_diagnostic);
     assert(!node->diagnostic_is_terminal && !node->has_granted_budget);
     assert(node->diagnostic.stage == 777 && node->diagnostic.reason == 778);
@@ -400,6 +406,17 @@ static void management(void) {
     wait_for(owner, &tree_record);
     assert(!tree_record.failed && tree_record.count == 1);
     api->release_call(tree_call);
+    char roots_service[] = "http-adapter";
+    tree_request = (latent_profile_inspect_activation_tree_request){.has_service = true,
+        .service = {roots_service, strlen(roots_service)}, .has_from_unix_millis = true, .from_unix_millis = UINT64_MAX};
+    tree_record = (observed){.variant = 2};
+    tree_call = api->inspect_activation_tree(client, &tree_request, NULL, tree, &tree_record);
+    assert(tree_call != NULL);
+    memset(roots_service, 'x', strlen(roots_service));
+    wait_for(owner, &tree_record);
+    assert(!tree_record.failed && tree_record.count == 1);
+    api->release_call(tree_call);
+    tree_request = (latent_profile_inspect_activation_tree_request){.activation_id = TEXT("operator-root")};
     tree_request.has_page = true;
     tree_request.page.page_size = 129;
     tree_record = (observed){0};

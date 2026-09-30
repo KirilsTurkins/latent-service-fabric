@@ -59,6 +59,53 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
         );
     }
     {
+        let value = InspectActivationTreeRequest {
+            activation_id: String::new(),
+            page: Some(PageRequest {
+                page_size: 128_u32,
+                ..Default::default()
+            }),
+            service: Some("examples/java-http-adapter".into()),
+            from_unix_millis: Some(18_446_744_073_709_551_615_u64),
+        };
+        let encoded = control::InspectActivationTreeRequest::from(value.clone()).encode_to_vec();
+        let decoded = control::InspectActivationTreeRequest::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            InspectActivationTreeRequest::from(decoded),
+            value,
+            "activation-roots-service-time-selector"
+        );
+    }
+    {
+        let value = InspectActivationTreeResponse {
+            schema_version: 1_u32,
+            nodes: vec![ActivationTreeNode {
+                activation_id: "host-generated-root".into(),
+                root_activation_id: "host-generated-root".into(),
+                phase: "running".into(),
+                last_updated_unix_millis: 0_u64,
+                principal_kind: "trigger".into(),
+                diagnostic_is_terminal: false,
+                target_service: "examples/java-http-adapter".into(),
+                received_at_unix_millis: 18_446_744_073_709_551_615_u64,
+                ..Default::default()
+            }],
+            page: Some(PageResponse {
+                ..Default::default()
+            }),
+            history_available: true,
+            cursor_expired: false,
+            retained_history_only: true,
+        };
+        let encoded = control::InspectActivationTreeResponse::from(value.clone()).encode_to_vec();
+        let decoded = control::InspectActivationTreeResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            InspectActivationTreeResponse::from(decoded),
+            value,
+            "activation-root-real-ingress-identity"
+        );
+    }
+    {
         let value = InspectActivationTreeResponse {
             schema_version: 1_u32,
             nodes: vec![],
@@ -99,6 +146,8 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
                 principal_kind: "service".into(),
                 caller_service: Some("adapter".into()),
                 diagnostic_is_terminal: true,
+                target_service: String::new(),
+                received_at_unix_millis: 0_u64,
                 ..Default::default()
             }],
             page: Some(PageResponse {
@@ -1023,5 +1072,5 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
             "publication-reference-tenant-scope"
         );
     }
-    println!("shared protobuf model vectors: 56");
+    println!("shared protobuf model vectors: 58");
 }
