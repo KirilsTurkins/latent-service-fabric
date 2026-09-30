@@ -6,6 +6,7 @@ pub mod budget;
 pub mod clock;
 pub mod deadline_diagnostic_observer;
 pub mod deadline_wait_observer;
+pub mod diagnostic;
 pub mod digest;
 pub mod error;
 pub mod host_profile;
