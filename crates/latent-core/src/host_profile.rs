@@ -20,11 +20,25 @@ pub struct HostInterfaceSpec {
     pub binding: HostInterfaceBinding,
     /// Authoritative immutable source, shared with bounded semantic validation.
     pub wit: &'static str,
-    /// Only freestanding async functions are selected; no implicit future/stream support.
+    /// The interface contains selected freestanding async operations. Individual
+    /// operation kinds remain fixed by its immutable WIT, including mixed interfaces.
     pub asynchronous: bool,
 }
 
 impl HostInterfaceSpec {
+    /// Exact canonical function kind. Older interfaces are uniform; the V5
+    /// runtime and stream interfaces also contain synchronous observations.
+    #[must_use]
+    pub fn operation_is_asynchronous(&self, operation: &str) -> bool {
+        match self.interface {
+            "latent:runtime/activation@0.1.0" => {
+                matches!(operation, "wait-for" | "wait-until" | "timer-next")
+            }
+            "latent:network/streams@0.1.0" => operation != "inspect",
+            _ => self.asynchronous,
+        }
+    }
+
     /// Only this exact pinned host interface admits owned resource handles.
     /// Its immutable source and profile identity bind their complete shapes.
     #[must_use]
