@@ -1,16 +1,13 @@
 name: PR 734 isolated npm verification
-
 on:
   push:
     branches: [fix/pr734-verify-npm-bundle]
-
 permissions:
   contents: read
-
 jobs:
-  inputs:
+  verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -18,22 +15,94 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24.19.0
-      - name: Collect exact source and dependency inputs without lifecycle scripts
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - name: Apply the locally validated changes
         run: |
-          mkdir -p verification-inputs
-          git archive HEAD | gzip -n > verification-inputs/source.tar.gz
+          python3 .github/pr734-fix.py
+          git diff --check
+      - name: Validate a clean toolchain install and all website checks
+        run: |
           npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
-          npm view brace-expansion@5.0.12 --json > verification-inputs/brace-expansion.json
-          npm install --prefix verification-inputs/brace --ignore-scripts --no-audit --no-fund --save-exact brace-expansion@5.0.12
-          node -e "for (const p of ['ip-address','brace-expansion','undici']) console.log(p, require('./website/toolchain/node_modules/npm/node_modules/' + p + '/package.json').version)"
-          tar -czf verification-inputs/toolchain.tar.gz website/toolchain/node_modules
-          tar -czf verification-inputs/brace.tar.gz -C verification-inputs/brace node_modules package.json package-lock.json
-          rm -rf verification-inputs/brace
-          cat verification-inputs/brace-expansion.json
+          node website/scripts/patch-package-manager.mjs
+          node website/scripts/patch-package-manager.mjs
+          node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+          node website/toolchain/node_modules/npm/bin/npm-cli.js run check --prefix website
+          node website/toolchain/node_modules/npm/bin/npm-cli.js test --prefix website
+      - name: Check current advisories without exceptions
+        run: python3 tools/security_scan.py dependencies --repo . --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan"
+      - name: Retain only the exact validated source files
+        run: |
+          python3 - <<'PY'
+          import pathlib, hashlib, json
+          expected = {
+            'docs/development/website.md': 'e7c2166f87e439cdbfb6818a5f0faba3bb43c7fa',
+            'website/README.md': '9c88d567faf501eb694d34b5f760fb274fee9ef1',
+            'website/lib/package-manager-security.mjs': '20baa4be4840103b9a6cbf811608a0eacc45822d',
+            'website/scripts/check-package-manager.mjs': 'f3c2cb8d9370abf06e8868c3b638b21bb48e8b30',
+            'website/scripts/patch-package-manager.mjs': '14d81431bf5ee37b101acfe63d93c879e30accea',
+            'website/tests/package-manager-brace-expansion.test.mjs': 'e243ea10ba20cad7e831c36905df22e7736a03a6',
+            'website/tests/package-manager-security.test.mjs': '7415b9d2f7b8b7cd7d1b23a19d749fe0b5e2c2cf',
+            'website/toolchain/package-lock.json': '77faa2859fb3371dce98dd0a97d404017fa59992',
+            'website/toolchain/package.json': '4a6e79e66002c0ec61aa306a29ceb6811255d5ec',
+          }
+          for name, sha in expected.items():
+            source = pathlib.Path(name)
+            assert not source.is_symlink()
+            data = source.read_bytes()
+            assert len(data) < 131072
+            assert hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest() == sha, name
+            target = pathlib.Path('verification-output') / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+          pathlib.Path('verification-output/manifest.json').write_text(json.dumps(expected))
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: pr734-verification-inputs
-          path: verification-inputs/
+          name: pr734-verified-files
+          path: verification-output/
           if-no-files-found: error
           retention-days: 1
-          compression-level: 0
+  stage-objects:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: pr734-verified-files
+          path: validated
+      - name: Stage verified Git blobs without changing any branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import pathlib, hashlib, json, base64, os, urllib.request
+          expected = {
+            'docs/development/website.md': 'e7c2166f87e439cdbfb6818a5f0faba3bb43c7fa',
+            'website/README.md': '9c88d567faf501eb694d34b5f760fb274fee9ef1',
+            'website/lib/package-manager-security.mjs': '20baa4be4840103b9a6cbf811608a0eacc45822d',
+            'website/scripts/check-package-manager.mjs': 'f3c2cb8d9370abf06e8868c3b638b21bb48e8b30',
+            'website/scripts/patch-package-manager.mjs': '14d81431bf5ee37b101acfe63d93c879e30accea',
+            'website/tests/package-manager-brace-expansion.test.mjs': 'e243ea10ba20cad7e831c36905df22e7736a03a6',
+            'website/tests/package-manager-security.test.mjs': '7415b9d2f7b8b7cd7d1b23a19d749fe0b5e2c2cf',
+            'website/toolchain/package-lock.json': '77faa2859fb3371dce98dd0a97d404017fa59992',
+            'website/toolchain/package.json': '4a6e79e66002c0ec61aa306a29ceb6811255d5ec',
+          }
+          for name, sha in expected.items():
+            source = pathlib.Path('validated') / name
+            assert not source.is_symlink()
+            data = source.read_bytes()
+            assert len(data) < 131072
+            assert hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest() == sha, name
+            request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',
+              data=json.dumps({'content': base64.b64encode(data).decode(), 'encoding': 'base64'}).encode(),
+              headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'}, method='POST')
+            with urllib.request.urlopen(request, timeout=30) as response:
+              result = json.load(response)
+            assert result['sha'] == sha
+            print('PR734_BLOB', name, sha)
+          PY
