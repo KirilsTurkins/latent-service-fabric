@@ -44,6 +44,82 @@ public readonly record struct CapabilityPolicyRecordKind(int Value)
     public static readonly CapabilityPolicyRecordKind ProviderBinding = new(2);
 }
 
+/// <summary>Open numeric DiagnosticStage value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct DiagnosticStage(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly DiagnosticStage Unspecified = new(0);
+    /// <summary>The admission value.</summary>
+    public static readonly DiagnosticStage Admission = new(1);
+    /// <summary>The queue value.</summary>
+    public static readonly DiagnosticStage Queue = new(2);
+    /// <summary>The preparation value.</summary>
+    public static readonly DiagnosticStage Preparation = new(3);
+    /// <summary>The binding value.</summary>
+    public static readonly DiagnosticStage Binding = new(4);
+    /// <summary>The execution value.</summary>
+    public static readonly DiagnosticStage Execution = new(5);
+    /// <summary>The provider value.</summary>
+    public static readonly DiagnosticStage Provider = new(6);
+    /// <summary>The cleanup value.</summary>
+    public static readonly DiagnosticStage Cleanup = new(7);
+    /// <summary>The output validation value.</summary>
+    public static readonly DiagnosticStage OutputValidation = new(8);
+}
+
+/// <summary>Open numeric DiagnosticReason value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct DiagnosticReason(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly DiagnosticReason Unspecified = new(0);
+    /// <summary>The signature allocation limit value.</summary>
+    public static readonly DiagnosticReason SignatureAllocationLimit = new(1);
+    /// <summary>The value allocation limit value.</summary>
+    public static readonly DiagnosticReason ValueAllocationLimit = new(2);
+    /// <summary>The unsupported component surface value.</summary>
+    public static readonly DiagnosticReason UnsupportedComponentSurface = new(3);
+    /// <summary>The unsupported engine profile value.</summary>
+    public static readonly DiagnosticReason UnsupportedEngineProfile = new(4);
+    /// <summary>The provider absent value.</summary>
+    public static readonly DiagnosticReason ProviderAbsent = new(5);
+    /// <summary>The binding absent value.</summary>
+    public static readonly DiagnosticReason BindingAbsent = new(6);
+    /// <summary>The admission denied value.</summary>
+    public static readonly DiagnosticReason AdmissionDenied = new(7);
+    /// <summary>The grant denied value.</summary>
+    public static readonly DiagnosticReason GrantDenied = new(8);
+    /// <summary>The queue pressure value.</summary>
+    public static readonly DiagnosticReason QueuePressure = new(9);
+    /// <summary>The guest memory exhausted value.</summary>
+    public static readonly DiagnosticReason GuestMemoryExhausted = new(10);
+    /// <summary>The guest fuel exhausted value.</summary>
+    public static readonly DiagnosticReason GuestFuelExhausted = new(11);
+    /// <summary>The guest resource exhausted value.</summary>
+    public static readonly DiagnosticReason GuestResourceExhausted = new(12);
+    /// <summary>The provider timeout value.</summary>
+    public static readonly DiagnosticReason ProviderTimeout = new(13);
+    /// <summary>The deadline exceeded value.</summary>
+    public static readonly DiagnosticReason DeadlineExceeded = new(14);
+    /// <summary>The cancelled value.</summary>
+    public static readonly DiagnosticReason Cancelled = new(15);
+    /// <summary>The http response rejected value.</summary>
+    public static readonly DiagnosticReason HttpResponseRejected = new(16);
+}
+
+/// <summary>Open numeric DiagnosticProfile value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct DiagnosticProfile(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly DiagnosticProfile Unspecified = new(0);
+    /// <summary>The wasmtime service values v1 value.</summary>
+    public static readonly DiagnosticProfile WasmtimeServiceValuesV1 = new(1);
+    /// <summary>The wasmtime buffered web values v1 value.</summary>
+    public static readonly DiagnosticProfile WasmtimeBufferedWebValuesV1 = new(2);
+}
+
 /// <summary>Open numeric FailureCategory value; unknown integers are retained.</summary>
 /// <param name="Value">The exact signed protobuf enum value.</param>
 public readonly record struct FailureCategory(int Value)
@@ -517,6 +593,78 @@ public sealed record PublicationRef(
     string Id,
     string Tenant);
 
+/// <summary>Transport-neutral ActivationDiagnostic; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="SchemaVersion">The exact schema_version value with preserved presence.</param>
+/// <param name="Stage">The exact stage value with preserved presence.</param>
+/// <param name="Reason">The exact reason value with preserved presence.</param>
+/// <param name="Profile">The exact profile value with preserved presence.</param>
+/// <param name="ProfileDigest">The exact profile_digest value with preserved presence.</param>
+/// <param name="ConfiguredBound">The exact configured_bound value with preserved presence.</param>
+/// <param name="CalculatedRequirement">The exact calculated_requirement value with preserved presence.</param>
+/// <param name="FixedBytes">The exact fixed_bytes value with preserved presence.</param>
+/// <param name="LiftingFuel">The exact lifting_fuel value with preserved presence.</param>
+/// <param name="LiftMultiplier">The exact lift_multiplier value with preserved presence.</param>
+public sealed record ActivationDiagnostic(
+    uint SchemaVersion,
+    DiagnosticStage Stage,
+    DiagnosticReason Reason,
+    DiagnosticProfile? Profile,
+    string? ProfileDigest,
+    ulong? ConfiguredBound,
+    ulong? CalculatedRequirement,
+    ulong? FixedBytes,
+    ulong? LiftingFuel,
+    ulong? LiftMultiplier);
+
+/// <summary>Transport-neutral ActivationTreeNode; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="ActivationId">The exact activation_id value with preserved presence.</param>
+/// <param name="ParentActivationId">The exact parent_activation_id value with preserved presence.</param>
+/// <param name="RootActivationId">The exact root_activation_id value with preserved presence.</param>
+/// <param name="Phase">The exact phase value with preserved presence.</param>
+/// <param name="TerminalState">The exact terminal_state value with preserved presence.</param>
+/// <param name="LastUpdatedUnixMillis">The exact last_updated_unix_millis value with preserved presence.</param>
+/// <param name="Diagnostic">The exact diagnostic value with preserved presence.</param>
+/// <param name="PrincipalKind">The exact principal_kind value with preserved presence.</param>
+/// <param name="CallerService">The exact caller_service value with preserved presence.</param>
+/// <param name="GrantedBudget">The exact granted_budget value with preserved presence.</param>
+/// <param name="EffectiveDeadlineUnixMillis">The exact effective_deadline_unix_millis value with preserved presence.</param>
+/// <param name="DiagnosticIsTerminal">The exact diagnostic_is_terminal value with preserved presence.</param>
+public sealed record ActivationTreeNode(
+    string ActivationId,
+    string? ParentActivationId,
+    string RootActivationId,
+    string Phase,
+    string? TerminalState,
+    ulong LastUpdatedUnixMillis,
+    ActivationDiagnostic? Diagnostic,
+    string PrincipalKind,
+    string? CallerService,
+    ResourceBudget? GrantedBudget,
+    ulong? EffectiveDeadlineUnixMillis,
+    bool DiagnosticIsTerminal);
+
+/// <summary>Transport-neutral InspectActivationTreeRequest; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="ActivationId">The exact activation_id value with preserved presence.</param>
+/// <param name="Page">The exact page value with preserved presence.</param>
+public sealed record InspectActivationTreeRequest(
+    string ActivationId,
+    PageRequest? Page);
+
+/// <summary>Transport-neutral InspectActivationTreeResponse; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="SchemaVersion">The exact schema_version value with preserved presence.</param>
+/// <param name="Nodes">The exact nodes value with preserved presence.</param>
+/// <param name="Page">The exact page value with preserved presence.</param>
+/// <param name="HistoryAvailable">The exact history_available value with preserved presence.</param>
+/// <param name="CursorExpired">The exact cursor_expired value with preserved presence.</param>
+/// <param name="RetainedHistoryOnly">The exact retained_history_only value with preserved presence.</param>
+public sealed record InspectActivationTreeResponse(
+    uint SchemaVersion,
+    IReadOnlyList<ActivationTreeNode> Nodes,
+    PageResponse? Page,
+    bool HistoryAvailable,
+    bool CursorExpired,
+    bool RetainedHistoryOnly);
+
 /// <summary>Transport-neutral PublicationIdentity; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Publication">The exact publication value with preserved presence.</param>
 /// <param name="ComponentDigest">The exact component_digest value with preserved presence.</param>
@@ -607,6 +755,12 @@ public interface IClientProfile
     /// <summary>Calls GetActivation once within a bounded local deadline.</summary>
     ValueTask<ClientResponse<ActivationStatus>> GetActivationAsync(
         GetActivationRequest request,
+        CallOptions options,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Calls InspectActivationTree once within a bounded local deadline.</summary>
+    ValueTask<ClientResponse<InspectActivationTreeResponse>> InspectActivationTreeAsync(
+        InspectActivationTreeRequest request,
         CallOptions options,
         CancellationToken cancellationToken = default);
 

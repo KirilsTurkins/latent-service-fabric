@@ -6,6 +6,103 @@
 
 static void profile_vectors(void) {
     {
+        latent_profile_activation_diagnostic value = (latent_profile_activation_diagnostic){.schema_version = 1U, .stage = ((latent_profile_diagnostic_stage)(3)), .reason = ((latent_profile_diagnostic_reason)(1))};
+        assert((value.schema_version == 1U) && "diagnostic-absent-profile-and-bound.schema_version");
+        assert((value.stage == 3) && "diagnostic-absent-profile-and-bound.stage");
+        assert((value.reason == 1) && "diagnostic-absent-profile-and-bound.reason");
+        assert((!(value.has_profile)) && "diagnostic-absent-profile-and-bound.profile.presence");
+        assert((!(value.has_profile_digest)) && "diagnostic-absent-profile-and-bound.profile_digest.presence");
+        assert((!(value.has_configured_bound)) && "diagnostic-absent-profile-and-bound.configured_bound.presence");
+        assert((!(value.has_calculated_requirement)) && "diagnostic-absent-profile-and-bound.calculated_requirement.presence");
+        assert((!(value.has_fixed_bytes)) && "diagnostic-absent-profile-and-bound.fixed_bytes.presence");
+        assert((!(value.has_lifting_fuel)) && "diagnostic-absent-profile-and-bound.lifting_fuel.presence");
+        assert((!(value.has_lift_multiplier)) && "diagnostic-absent-profile-and-bound.lift_multiplier.presence");
+    }
+    {
+        latent_profile_activation_diagnostic value = (latent_profile_activation_diagnostic){.schema_version = 1U, .stage = ((latent_profile_diagnostic_stage)(2147483647)), .reason = ((latent_profile_diagnostic_reason)(-1)), .has_profile = true, .profile = ((latent_profile_diagnostic_profile)(999)), .has_profile_digest = true, .profile_digest = PROFILE_TEXT("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), .has_configured_bound = true, .configured_bound = UINT64_C(0), .has_calculated_requirement = true, .calculated_requirement = UINT64_C(18446744073709551615), .has_fixed_bytes = true, .fixed_bytes = UINT64_C(9223372036854775808), .has_lifting_fuel = true, .lifting_fuel = UINT64_C(0), .has_lift_multiplier = true, .lift_multiplier = UINT64_C(18446744073709551615)};
+        assert((value.schema_version == 1U) && "diagnostic-unknown-enums-and-present-zero.schema_version");
+        assert((value.stage == 2147483647) && "diagnostic-unknown-enums-and-present-zero.stage");
+        assert((value.reason == -1) && "diagnostic-unknown-enums-and-present-zero.reason");
+        assert((value.has_profile) && "diagnostic-unknown-enums-and-present-zero.profile.presence");
+        assert((value.profile == 999) && "diagnostic-unknown-enums-and-present-zero.profile");
+        assert((value.has_profile_digest) && "diagnostic-unknown-enums-and-present-zero.profile_digest.presence");
+        assert((value.profile_digest.length == 64) && "diagnostic-unknown-enums-and-present-zero.profile_digest.length");
+        assert((memcmp(value.profile_digest.data, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 64) == 0) && "diagnostic-unknown-enums-and-present-zero.profile_digest");
+        assert((value.has_configured_bound) && "diagnostic-unknown-enums-and-present-zero.configured_bound.presence");
+        assert((value.configured_bound == UINT64_C(0)) && "diagnostic-unknown-enums-and-present-zero.configured_bound");
+        assert((value.has_calculated_requirement) && "diagnostic-unknown-enums-and-present-zero.calculated_requirement.presence");
+        assert((value.calculated_requirement == UINT64_C(18446744073709551615)) && "diagnostic-unknown-enums-and-present-zero.calculated_requirement");
+        assert((value.has_fixed_bytes) && "diagnostic-unknown-enums-and-present-zero.fixed_bytes.presence");
+        assert((value.fixed_bytes == UINT64_C(9223372036854775808)) && "diagnostic-unknown-enums-and-present-zero.fixed_bytes");
+        assert((value.has_lifting_fuel) && "diagnostic-unknown-enums-and-present-zero.lifting_fuel.presence");
+        assert((value.lifting_fuel == UINT64_C(0)) && "diagnostic-unknown-enums-and-present-zero.lifting_fuel");
+        assert((value.has_lift_multiplier) && "diagnostic-unknown-enums-and-present-zero.lift_multiplier.presence");
+        assert((value.lift_multiplier == UINT64_C(18446744073709551615)) && "diagnostic-unknown-enums-and-present-zero.lift_multiplier");
+    }
+    {
+        latent_profile_inspect_activation_tree_request value = (latent_profile_inspect_activation_tree_request){.activation_id = PROFILE_TEXT("activation-a")};
+        assert((value.activation_id.length == 12) && "activation-tree-default-page.activation_id.length");
+        assert((memcmp(value.activation_id.data, "activation-a", 12) == 0) && "activation-tree-default-page.activation_id");
+        assert((!(value.has_page)) && "activation-tree-default-page.page.presence");
+    }
+    {
+        latent_profile_inspect_activation_tree_response value = (latent_profile_inspect_activation_tree_response){.schema_version = 1U, .nodes = NULL, .nodes_count = 0, .has_page = true, .page = (latent_profile_page_response){0}, .history_available = false, .cursor_expired = true, .retained_history_only = true};
+        assert((value.schema_version == 1U) && "activation-tree-expired-is-not-absence-proof.schema_version");
+        assert((value.nodes_count == 0) && "activation-tree-expired-is-not-absence-proof.nodes.count");
+        assert((value.has_page) && "activation-tree-expired-is-not-absence-proof.page.presence");
+        assert((!(value.page.has_next_page_token)) && "activation-tree-expired-is-not-absence-proof.page.next_page_token.presence");
+        assert((value.history_available == false) && "activation-tree-expired-is-not-absence-proof.history_available");
+        assert((value.cursor_expired == true) && "activation-tree-expired-is-not-absence-proof.cursor_expired");
+        assert((value.retained_history_only == true) && "activation-tree-expired-is-not-absence-proof.retained_history_only");
+    }
+    {
+        latent_profile_inspect_activation_tree_response value = (latent_profile_inspect_activation_tree_response){.schema_version = 1U, .nodes = (const latent_profile_activation_tree_node[]){(latent_profile_activation_tree_node){.activation_id = PROFILE_TEXT("child-a"), .has_parent_activation_id = true, .parent_activation_id = PROFILE_TEXT("root-a"), .root_activation_id = PROFILE_TEXT("root-a"), .phase = PROFILE_TEXT("received"), .has_terminal_state = true, .terminal_state = PROFILE_TEXT("resource_exhausted"), .last_updated_unix_millis = UINT64_C(18446744073709551615), .has_diagnostic = true, .diagnostic = (latent_profile_activation_diagnostic){.schema_version = 1U, .stage = ((latent_profile_diagnostic_stage)(3)), .reason = ((latent_profile_diagnostic_reason)(1)), .has_profile = true, .profile = ((latent_profile_diagnostic_profile)(1)), .has_configured_bound = true, .configured_bound = UINT64_C(16777216), .has_calculated_requirement = true, .calculated_requirement = UINT64_C(67108864)}, .principal_kind = PROFILE_TEXT("service"), .has_caller_service = true, .caller_service = PROFILE_TEXT("adapter"), .diagnostic_is_terminal = true}}, .nodes_count = 1, .has_page = true, .page = (latent_profile_page_response){.has_next_page_token = true, .next_page_token = PROFILE_TEXT("opaque-scoped-cursor")}, .history_available = true, .cursor_expired = false, .retained_history_only = true};
+        assert((value.schema_version == 1U) && "activation-tree-failed-preparation-before-guest.schema_version");
+        assert((value.nodes_count == 1) && "activation-tree-failed-preparation-before-guest.nodes.count");
+        assert((value.nodes[0].activation_id.length == 7) && "activation-tree-failed-preparation-before-guest.nodes.0.activation_id.length");
+        assert((memcmp(value.nodes[0].activation_id.data, "child-a", 7) == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.activation_id");
+        assert((value.nodes[0].has_parent_activation_id) && "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id.presence");
+        assert((value.nodes[0].parent_activation_id.length == 6) && "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id.length");
+        assert((memcmp(value.nodes[0].parent_activation_id.data, "root-a", 6) == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id");
+        assert((value.nodes[0].root_activation_id.length == 6) && "activation-tree-failed-preparation-before-guest.nodes.0.root_activation_id.length");
+        assert((memcmp(value.nodes[0].root_activation_id.data, "root-a", 6) == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.root_activation_id");
+        assert((value.nodes[0].phase.length == 8) && "activation-tree-failed-preparation-before-guest.nodes.0.phase.length");
+        assert((memcmp(value.nodes[0].phase.data, "received", 8) == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.phase");
+        assert((value.nodes[0].has_terminal_state) && "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state.presence");
+        assert((value.nodes[0].terminal_state.length == 18) && "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state.length");
+        assert((memcmp(value.nodes[0].terminal_state.data, "resource_exhausted", 18) == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state");
+        assert((value.nodes[0].last_updated_unix_millis == UINT64_C(18446744073709551615)) && "activation-tree-failed-preparation-before-guest.nodes.0.last_updated_unix_millis");
+        assert((value.nodes[0].has_diagnostic) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.presence");
+        assert((value.nodes[0].diagnostic.schema_version == 1U) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.schema_version");
+        assert((value.nodes[0].diagnostic.stage == 3) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.stage");
+        assert((value.nodes[0].diagnostic.reason == 1) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.reason");
+        assert((value.nodes[0].diagnostic.has_profile) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile.presence");
+        assert((value.nodes[0].diagnostic.profile == 1) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile");
+        assert((!(value.nodes[0].diagnostic.has_profile_digest)) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile_digest.presence");
+        assert((value.nodes[0].diagnostic.has_configured_bound) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound.presence");
+        assert((value.nodes[0].diagnostic.configured_bound == UINT64_C(16777216)) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound");
+        assert((value.nodes[0].diagnostic.has_calculated_requirement) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement.presence");
+        assert((value.nodes[0].diagnostic.calculated_requirement == UINT64_C(67108864)) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement");
+        assert((!(value.nodes[0].diagnostic.has_fixed_bytes)) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.fixed_bytes.presence");
+        assert((!(value.nodes[0].diagnostic.has_lifting_fuel)) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lifting_fuel.presence");
+        assert((!(value.nodes[0].diagnostic.has_lift_multiplier)) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lift_multiplier.presence");
+        assert((value.nodes[0].principal_kind.length == 7) && "activation-tree-failed-preparation-before-guest.nodes.0.principal_kind.length");
+        assert((memcmp(value.nodes[0].principal_kind.data, "service", 7) == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.principal_kind");
+        assert((value.nodes[0].has_caller_service) && "activation-tree-failed-preparation-before-guest.nodes.0.caller_service.presence");
+        assert((value.nodes[0].caller_service.length == 7) && "activation-tree-failed-preparation-before-guest.nodes.0.caller_service.length");
+        assert((memcmp(value.nodes[0].caller_service.data, "adapter", 7) == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.caller_service");
+        assert((!(value.nodes[0].has_granted_budget)) && "activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence");
+        assert((!(value.nodes[0].has_effective_deadline_unix_millis)) && "activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence");
+        assert((value.nodes[0].diagnostic_is_terminal == true) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
+        assert((value.has_page) && "activation-tree-failed-preparation-before-guest.page.presence");
+        assert((value.page.has_next_page_token) && "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
+        assert((value.page.next_page_token.length == 20) && "activation-tree-failed-preparation-before-guest.page.next_page_token.length");
+        assert((memcmp(value.page.next_page_token.data, "opaque-scoped-cursor", 20) == 0) && "activation-tree-failed-preparation-before-guest.page.next_page_token");
+        assert((value.history_available == true) && "activation-tree-failed-preparation-before-guest.history_available");
+        assert((value.cursor_expired == false) && "activation-tree-failed-preparation-before-guest.cursor_expired");
+        assert((value.retained_history_only == true) && "activation-tree-failed-preparation-before-guest.retained_history_only");
+    }
+    {
         latent_profile_invoke_request value = (latent_profile_invoke_request){.has_target = true, .target = (latent_profile_invocation_target){.tenant = PROFILE_TEXT("tenant-a"), .service = PROFILE_TEXT("echo"), .contract = PROFILE_TEXT("example:echo/api@1.0.0"), .function = PROFILE_TEXT("echo")}, .payload = (latent_bytes){.data = (const uint8_t[]){0, 1, 2, 255}, .length = 4}, .media_type = PROFILE_TEXT("application/octet-stream"), .priority = 0U, .has_budget = true, .budget = (latent_profile_resource_budget){.cpu_fuel = UINT64_C(18446744073709551615), .memory_bytes = UINT64_C(9223372036854775808), .child_calls = 0U, .outbound_requests = 0U, .state_read_bytes = UINT64_C(0), .state_write_bytes = UINT64_C(0), .blob_read_bytes = UINT64_C(0), .blob_write_bytes = UINT64_C(0), .log_bytes = UINT64_C(0), .effect_count = 0U}, .metadata = (const latent_key_value[]){{.key = PROFILE_TEXT("trace"), .value = PROFILE_TEXT("redacted")}}, .metadata_count = 1};
         assert((!(value.has_activation_id)) && "invoke-absent-identity-and-deadlines.activation_id.presence");
         assert((!(value.has_parent_activation_id)) && "invoke-absent-identity-and-deadlines.parent_activation_id.presence");

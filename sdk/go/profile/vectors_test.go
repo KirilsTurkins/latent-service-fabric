@@ -9,6 +9,237 @@ func fixturePointer[Value any](value Value) *Value { return &value }
 
 func TestSharedProfileVectors(tester *testing.T) {
 	{
+		value := ActivationDiagnostic{SchemaVersion: uint32(1), Stage: DiagnosticStage(3), Reason: DiagnosticReason(1)}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.schema_version")
+		}
+		if !(int32(value.Stage) == 3) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.stage")
+		}
+		if !(int32(value.Reason) == 1) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.reason")
+		}
+		if !(!(value.Profile != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.profile.presence")
+		}
+		if !(!(value.ProfileDigest != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.profile_digest.presence")
+		}
+		if !(!(value.ConfiguredBound != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.configured_bound.presence")
+		}
+		if !(!(value.CalculatedRequirement != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.calculated_requirement.presence")
+		}
+		if !(!(value.FixedBytes != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.fixed_bytes.presence")
+		}
+		if !(!(value.LiftingFuel != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.lifting_fuel.presence")
+		}
+		if !(!(value.LiftMultiplier != nil)) {
+			tester.Fatal("diagnostic-absent-profile-and-bound.lift_multiplier.presence")
+		}
+	}
+	{
+		value := ActivationDiagnostic{SchemaVersion: uint32(1), Stage: DiagnosticStage(2147483647), Reason: DiagnosticReason(-1), Profile: fixturePointer(DiagnosticProfile(999)), ProfileDigest: fixturePointer("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ConfiguredBound: fixturePointer(uint64(0)), CalculatedRequirement: fixturePointer(uint64(18446744073709551615)), FixedBytes: fixturePointer(uint64(9223372036854775808)), LiftingFuel: fixturePointer(uint64(0)), LiftMultiplier: fixturePointer(uint64(18446744073709551615))}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.schema_version")
+		}
+		if !(int32(value.Stage) == 2147483647) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.stage")
+		}
+		if !(int32(value.Reason) == -1) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.reason")
+		}
+		if !(value.Profile != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.profile.presence")
+		}
+		if !(int32((*value.Profile)) == 999) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.profile")
+		}
+		if !(value.ProfileDigest != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.profile_digest.presence")
+		}
+		if !((*value.ProfileDigest) == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.profile_digest")
+		}
+		if !(value.ConfiguredBound != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.configured_bound.presence")
+		}
+		if !((*value.ConfiguredBound) == uint64(0)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.configured_bound")
+		}
+		if !(value.CalculatedRequirement != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.calculated_requirement.presence")
+		}
+		if !((*value.CalculatedRequirement) == uint64(18446744073709551615)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.calculated_requirement")
+		}
+		if !(value.FixedBytes != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.fixed_bytes.presence")
+		}
+		if !((*value.FixedBytes) == uint64(9223372036854775808)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.fixed_bytes")
+		}
+		if !(value.LiftingFuel != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.lifting_fuel.presence")
+		}
+		if !((*value.LiftingFuel) == uint64(0)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.lifting_fuel")
+		}
+		if !(value.LiftMultiplier != nil) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.lift_multiplier.presence")
+		}
+		if !((*value.LiftMultiplier) == uint64(18446744073709551615)) {
+			tester.Fatal("diagnostic-unknown-enums-and-present-zero.lift_multiplier")
+		}
+	}
+	{
+		value := InspectActivationTreeRequest{ActivationId: "activation-a"}
+		if !(value.ActivationId == "activation-a") {
+			tester.Fatal("activation-tree-default-page.activation_id")
+		}
+		if !(!(value.Page != nil)) {
+			tester.Fatal("activation-tree-default-page.page.presence")
+		}
+	}
+	{
+		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{}, Page: fixturePointer(PageResponse{}), HistoryAvailable: false, CursorExpired: true, RetainedHistoryOnly: true}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.schema_version")
+		}
+		if !(len(value.Nodes) == 0) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.nodes.count")
+		}
+		if !(value.Page != nil) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.page.presence")
+		}
+		if !(!((*value.Page).NextPageToken != nil)) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.page.next_page_token.presence")
+		}
+		if !(value.HistoryAvailable == false) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.history_available")
+		}
+		if !(value.CursorExpired == true) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.cursor_expired")
+		}
+		if !(value.RetainedHistoryOnly == true) {
+			tester.Fatal("activation-tree-expired-is-not-absence-proof.retained_history_only")
+		}
+	}
+	{
+		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{ActivationTreeNode{ActivationId: "child-a", ParentActivationId: fixturePointer("root-a"), RootActivationId: "root-a", Phase: "received", TerminalState: fixturePointer("resource_exhausted"), LastUpdatedUnixMillis: uint64(18446744073709551615), Diagnostic: fixturePointer(ActivationDiagnostic{SchemaVersion: uint32(1), Stage: DiagnosticStage(3), Reason: DiagnosticReason(1), Profile: fixturePointer(DiagnosticProfile(1)), ConfiguredBound: fixturePointer(uint64(16777216)), CalculatedRequirement: fixturePointer(uint64(67108864))}), PrincipalKind: "service", CallerService: fixturePointer("adapter"), DiagnosticIsTerminal: true}}, Page: fixturePointer(PageResponse{NextPageToken: fixturePointer("opaque-scoped-cursor")}), HistoryAvailable: true, CursorExpired: false, RetainedHistoryOnly: true}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.schema_version")
+		}
+		if !(len(value.Nodes) == 1) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.count")
+		}
+		if !(value.Nodes[0].ActivationId == "child-a") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.activation_id")
+		}
+		if !(value.Nodes[0].ParentActivationId != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id.presence")
+		}
+		if !((*value.Nodes[0].ParentActivationId) == "root-a") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id")
+		}
+		if !(value.Nodes[0].RootActivationId == "root-a") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.root_activation_id")
+		}
+		if !(value.Nodes[0].Phase == "received") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.phase")
+		}
+		if !(value.Nodes[0].TerminalState != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.terminal_state.presence")
+		}
+		if !((*value.Nodes[0].TerminalState) == "resource_exhausted") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.terminal_state")
+		}
+		if !(value.Nodes[0].LastUpdatedUnixMillis == uint64(18446744073709551615)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.last_updated_unix_millis")
+		}
+		if !(value.Nodes[0].Diagnostic != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.presence")
+		}
+		if !((*value.Nodes[0].Diagnostic).SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.schema_version")
+		}
+		if !(int32((*value.Nodes[0].Diagnostic).Stage) == 3) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.stage")
+		}
+		if !(int32((*value.Nodes[0].Diagnostic).Reason) == 1) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.reason")
+		}
+		if !((*value.Nodes[0].Diagnostic).Profile != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile.presence")
+		}
+		if !(int32((*(*value.Nodes[0].Diagnostic).Profile)) == 1) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile")
+		}
+		if !(!((*value.Nodes[0].Diagnostic).ProfileDigest != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile_digest.presence")
+		}
+		if !((*value.Nodes[0].Diagnostic).ConfiguredBound != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound.presence")
+		}
+		if !((*(*value.Nodes[0].Diagnostic).ConfiguredBound) == uint64(16777216)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound")
+		}
+		if !((*value.Nodes[0].Diagnostic).CalculatedRequirement != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement.presence")
+		}
+		if !((*(*value.Nodes[0].Diagnostic).CalculatedRequirement) == uint64(67108864)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement")
+		}
+		if !(!((*value.Nodes[0].Diagnostic).FixedBytes != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.fixed_bytes.presence")
+		}
+		if !(!((*value.Nodes[0].Diagnostic).LiftingFuel != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lifting_fuel.presence")
+		}
+		if !(!((*value.Nodes[0].Diagnostic).LiftMultiplier != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lift_multiplier.presence")
+		}
+		if !(value.Nodes[0].PrincipalKind == "service") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.principal_kind")
+		}
+		if !(value.Nodes[0].CallerService != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.caller_service.presence")
+		}
+		if !((*value.Nodes[0].CallerService) == "adapter") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.caller_service")
+		}
+		if !(!(value.Nodes[0].GrantedBudget != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence")
+		}
+		if !(!(value.Nodes[0].EffectiveDeadlineUnixMillis != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence")
+		}
+		if !(value.Nodes[0].DiagnosticIsTerminal == true) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal")
+		}
+		if !(value.Page != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.page.presence")
+		}
+		if !((*value.Page).NextPageToken != nil) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.page.next_page_token.presence")
+		}
+		if !((*(*value.Page).NextPageToken) == "opaque-scoped-cursor") {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.page.next_page_token")
+		}
+		if !(value.HistoryAvailable == true) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.history_available")
+		}
+		if !(value.CursorExpired == false) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.cursor_expired")
+		}
+		if !(value.RetainedHistoryOnly == true) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.retained_history_only")
+		}
+	}
+	{
 		value := InvokeRequest{Target: fixturePointer(InvocationTarget{Tenant: "tenant-a", Service: "echo", Contract: "example:echo/api@1.0.0", Function: "echo"}), Payload: []byte{0, 1, 2, 255}, MediaType: "application/octet-stream", Priority: uint32(0), Budget: fixturePointer(ResourceBudget{CpuFuel: uint64(18446744073709551615), MemoryBytes: uint64(9223372036854775808), ChildCalls: uint32(0), OutboundRequests: uint32(0), StateReadBytes: uint64(0), StateWriteBytes: uint64(0), BlobReadBytes: uint64(0), BlobWriteBytes: uint64(0), LogBytes: uint64(0), EffectCount: uint32(0)}), Metadata: map[string]string{"trace": "redacted"}}
 		if !(!(value.ActivationId != nil)) {
 			tester.Fatal("invoke-absent-identity-and-deadlines.activation_id.presence")

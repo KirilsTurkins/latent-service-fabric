@@ -287,6 +287,35 @@ impl RequestProfile for model::ApplyPolicyRequest {
     }
 }
 
+impl RequestProfile for model::InspectActivationTreeRequest {
+    const MAXIMUM_REQUEST: usize = 8 * 1024;
+    const MAXIMUM_RESPONSE: usize = 64 * 1024;
+
+    fn validate(&self, context: &mut Context, _tenant: &str) -> Result<(), RpcFailure> {
+        if self.activation_id.is_empty()
+            || self.activation_id.len() > 512
+            || self
+                .activation_id
+                .chars()
+                .any(|c| c.is_control() || c.is_whitespace())
+            || self.page.as_ref().is_some_and(|p| {
+                p.page_size > 128 || p.page_token.as_ref().is_some_and(|t| t.len() > 160)
+            })
+        {
+            return Err(invalid());
+        }
+        context.page_size = self.page.as_ref().map_or(32, |p| {
+            if p.page_size == 0 {
+                32
+            } else {
+                p.page_size as usize
+            }
+        });
+        context.token_bytes = 160;
+        Ok(())
+    }
+}
+
 impl RequestProfile for model::GetPolicyOperationRequest {
     fn recovery(&self) -> RecoveryIdentity {
         RecoveryIdentity {
