@@ -23,7 +23,9 @@ public sealed partial class BoundedClient
             case Profile.CancelRequest cancel: Require(Text(cancel.ActivationId, 256) && Text(cancel.Reason, 1024, true)); break;
             case Profile.GetActivationRequest activation: Require(Text(activation.ActivationId, 256)); break;
             case Profile.InspectActivationTreeRequest tree:
-                Require(Text(tree.ActivationId, 512) && !tree.ActivationId.Any(char.IsWhiteSpace) && !tree.ActivationId.Any(char.IsControl)
+                string selector = tree.Service ?? tree.ActivationId;
+                Require((tree.Service is not null ? tree.ActivationId == "" : tree.FromUnixMillis is null)
+                    && Text(selector, 512) && !selector.Any(char.IsWhiteSpace) && !selector.Any(char.IsControl)
                     && (tree.Page is null || tree.Page.PageSize <= 128 && OptionalText(tree.Page.PageToken, 160)));
                 break;
             case Profile.GetPolicyRequest policy: Require(Text(policy.Id, 256) && RecordKind(policy.RecordKind)); break;
@@ -71,11 +73,15 @@ public sealed partial class BoundedClient
                 Require(policies.Policies.Count <= ((Profile.ListPoliciesRequest)request).Page!.PageSize && OptionalText(policies.Page?.NextPageToken, 117));
                 break;
             case Profile.InspectActivationTreeResponse tree:
+                var treeSelector = (Profile.InspectActivationTreeRequest)request;
                 uint maximum = ((Profile.InspectActivationTreeRequest)request).Page?.PageSize ?? 0;
                 Require(tree.SchemaVersion == 1 && tree.RetainedHistoryOnly && tree.Page is not null && tree.Nodes.Count <= (maximum == 0 ? 32 : maximum)
                     && OptionalText(tree.Page?.NextPageToken, 160) && (tree.HistoryAvailable || tree.Nodes.Count == 0 && tree.Page?.NextPageToken is null));
                 foreach (var node in tree.Nodes)
                 {
+                    Require(Text(node.TargetService, 512, true) && (treeSelector.Service is null || node.TargetService == treeSelector.Service
+                        && node.ParentActivationId is null && node.ActivationId == node.RootActivationId
+                        && (treeSelector.FromUnixMillis is null || node.ReceivedAtUnixMillis >= treeSelector.FromUnixMillis)));
                     Require(Text(node.ActivationId, 512) && Text(node.RootActivationId, 512) && OptionalText(node.ParentActivationId, 512) && OptionalText(node.CallerService, 512)
                         && Text(node.Phase, 64, true) && Text(node.PrincipalKind, 64, true) && OptionalText(node.TerminalState, 64));
                     if (node.Diagnostic is { } diagnostic)

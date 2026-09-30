@@ -72,6 +72,11 @@ struct latent_profile_call {
     size_t policy_id_length;
     int32_t record_kind;
     uint32_t page_size;
+    char inspection_service[513];
+    size_t inspection_service_length;
+    bool inspection_roots;
+    bool inspection_has_from;
+    uint64_t inspection_from;
     uint32_t header_blocks;
     uint32_t header_count;
     size_t header_bytes;

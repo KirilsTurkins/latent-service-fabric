@@ -13,8 +13,21 @@ pub(super) fn inspect(
         .map_err(|error| errors::platform_status(error, &adapter.limits))?;
     let mut budget = RequestBudget::new::<proto::InspectActivationTreeRequest>(&adapter.limits)?;
     let query = request.get_ref();
-    budget.string(&query.activation_id, adapter.limits.max_id_bytes)?;
-    identifier(&query.activation_id, adapter.limits.max_id_bytes)?;
+    match (&query.service, query.activation_id.is_empty()) {
+        (None, false) if query.from_unix_millis.is_none() => {
+            budget.string(&query.activation_id, adapter.limits.max_id_bytes)?;
+            identifier(&query.activation_id, adapter.limits.max_id_bytes)?;
+        }
+        (Some(service), true) => {
+            budget.string(service, adapter.limits.max_id_bytes)?;
+            identifier(service, adapter.limits.max_id_bytes)?;
+        }
+        _ => {
+            return Err(Status::invalid_argument(
+                "one activation inspection selector is required",
+            ))
+        }
+    }
     budget.page(query.page.as_ref(), &adapter.limits)?;
     adapter.check_encoded(query)?;
     let journal = adapter
@@ -22,17 +35,26 @@ pub(super) fn inspect(
         .as_ref()
         .ok_or_else(|| Status::unimplemented("activation inspection unavailable"))?;
     let page_size = query.page.as_ref().map_or(0, |page| page.page_size);
-    let value = journal
-        .inspect_tree(
+    let token = query
+        .page
+        .as_ref()
+        .and_then(|page| page.page_token.as_deref());
+    let value = match &query.service {
+        Some(service) => journal.inspect_roots(
+            tenant,
+            &latent_core::ServiceId(service.clone()),
+            query.from_unix_millis,
+            page_size as usize,
+            token,
+        ),
+        None => journal.inspect_tree(
             tenant,
             &latent_core::ActivationId(query.activation_id.clone()),
             page_size as usize,
-            query
-                .page
-                .as_ref()
-                .and_then(|page| page.page_token.as_deref()),
-        )
-        .map_err(|error| errors::platform_status(error, &adapter.limits))?;
+            token,
+        ),
+    }
+    .map_err(|error| errors::platform_status(error, &adapter.limits))?;
     let nodes = value
         .nodes
         .into_iter()
@@ -43,7 +65,7 @@ pub(super) fn inspect(
             phase: phase(node.phase).into(),
             terminal_state: node.terminal_state.map(|state| terminal(state).into()),
             last_updated_unix_millis: node.last_updated_unix_millis,
-            diagnostic: node.diagnostic.map(diagnostic),
+            diagnostic: node.diagnostic.as_ref().map(diagnostic),
             diagnostic_is_terminal: node.diagnostic_is_terminal,
             principal_kind: match node.principal_kind {
                 latent_core::PrincipalKind::Anonymous => "anonymous",
@@ -61,6 +83,8 @@ pub(super) fn inspect(
                 .as_ref()
                 .map(super::control_budget_to_proto),
             effective_deadline_unix_millis: node.effective_deadline_unix_millis,
+            target_service: node.target_service.0,
+            received_at_unix_millis: node.received_at_unix_millis,
         })
         .collect();
     adapter.response(proto::InspectActivationTreeResponse {
@@ -75,7 +99,7 @@ pub(super) fn inspect(
     })
 }
 
-fn diagnostic(value: ActivationDiagnostic) -> proto::ActivationDiagnostic {
+fn diagnostic(value: &ActivationDiagnostic) -> proto::ActivationDiagnostic {
     use std::fmt::Write as _;
     proto::ActivationDiagnostic {
         schema_version: ActivationDiagnostic::VERSION,

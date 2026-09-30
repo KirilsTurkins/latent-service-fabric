@@ -53,9 +53,46 @@ internal static class ProfileVectors
             Check(value.LiftMultiplier!.Value == 18446744073709551615UL, "diagnostic-unknown-enums-and-present-zero.lift_multiplier");
         }
         {
-            var value = new Profile.InspectActivationTreeRequest("activation-a", null);
+            var value = new Profile.InspectActivationTreeRequest("activation-a", null, null, null);
             Check(value.ActivationId == "activation-a", "activation-tree-default-page.activation_id");
             Check(!(value.Page is not null), "activation-tree-default-page.page.presence");
+            Check(!(value.Service is not null), "activation-tree-default-page.service.presence");
+            Check(!(value.FromUnixMillis is not null), "activation-tree-default-page.from_unix_millis.presence");
+        }
+        {
+            var value = new Profile.InspectActivationTreeRequest("", new Profile.PageRequest(128U, null), "examples/java-http-adapter", 18446744073709551615UL);
+            Check(value.ActivationId == "", "activation-roots-service-time-selector.activation_id");
+            Check(value.Page is not null, "activation-roots-service-time-selector.page.presence");
+            Check(value.Page!.PageSize == 128U, "activation-roots-service-time-selector.page.page_size");
+            Check(!(value.Page!.PageToken is not null), "activation-roots-service-time-selector.page.page_token.presence");
+            Check(value.Service is not null, "activation-roots-service-time-selector.service.presence");
+            Check(value.Service! == "examples/java-http-adapter", "activation-roots-service-time-selector.service");
+            Check(value.FromUnixMillis is not null, "activation-roots-service-time-selector.from_unix_millis.presence");
+            Check(value.FromUnixMillis!.Value == 18446744073709551615UL, "activation-roots-service-time-selector.from_unix_millis");
+        }
+        {
+            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {new Profile.ActivationTreeNode("host-generated-root", null, "host-generated-root", "running", null, 0UL, null, "trigger", null, null, null, false, "examples/java-http-adapter", 18446744073709551615UL)}, new Profile.PageResponse(null), true, false, true);
+            Check(value.SchemaVersion == 1U, "activation-root-real-ingress-identity.schema_version");
+            Check(value.Nodes.Count == 1, "activation-root-real-ingress-identity.nodes.count");
+            Check(value.Nodes[0].ActivationId == "host-generated-root", "activation-root-real-ingress-identity.nodes.0.activation_id");
+            Check(!(value.Nodes[0].ParentActivationId is not null), "activation-root-real-ingress-identity.nodes.0.parent_activation_id.presence");
+            Check(value.Nodes[0].RootActivationId == "host-generated-root", "activation-root-real-ingress-identity.nodes.0.root_activation_id");
+            Check(value.Nodes[0].Phase == "running", "activation-root-real-ingress-identity.nodes.0.phase");
+            Check(!(value.Nodes[0].TerminalState is not null), "activation-root-real-ingress-identity.nodes.0.terminal_state.presence");
+            Check(value.Nodes[0].LastUpdatedUnixMillis == 0UL, "activation-root-real-ingress-identity.nodes.0.last_updated_unix_millis");
+            Check(!(value.Nodes[0].Diagnostic is not null), "activation-root-real-ingress-identity.nodes.0.diagnostic.presence");
+            Check(value.Nodes[0].PrincipalKind == "trigger", "activation-root-real-ingress-identity.nodes.0.principal_kind");
+            Check(!(value.Nodes[0].CallerService is not null), "activation-root-real-ingress-identity.nodes.0.caller_service.presence");
+            Check(!(value.Nodes[0].GrantedBudget is not null), "activation-root-real-ingress-identity.nodes.0.granted_budget.presence");
+            Check(!(value.Nodes[0].EffectiveDeadlineUnixMillis is not null), "activation-root-real-ingress-identity.nodes.0.effective_deadline_unix_millis.presence");
+            Check(value.Nodes[0].DiagnosticIsTerminal == false, "activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal");
+            Check(value.Nodes[0].TargetService == "examples/java-http-adapter", "activation-root-real-ingress-identity.nodes.0.target_service");
+            Check(value.Nodes[0].ReceivedAtUnixMillis == 18446744073709551615UL, "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis");
+            Check(value.Page is not null, "activation-root-real-ingress-identity.page.presence");
+            Check(!(value.Page!.NextPageToken is not null), "activation-root-real-ingress-identity.page.next_page_token.presence");
+            Check(value.HistoryAvailable == true, "activation-root-real-ingress-identity.history_available");
+            Check(value.CursorExpired == false, "activation-root-real-ingress-identity.cursor_expired");
+            Check(value.RetainedHistoryOnly == true, "activation-root-real-ingress-identity.retained_history_only");
         }
         {
             var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {}, new Profile.PageResponse(null), false, true, true);
@@ -68,7 +105,7 @@ internal static class ProfileVectors
             Check(value.RetainedHistoryOnly == true, "activation-tree-expired-is-not-absence-proof.retained_history_only");
         }
         {
-            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {new Profile.ActivationTreeNode("child-a", "root-a", "root-a", "received", "resource_exhausted", 18446744073709551615UL, new Profile.ActivationDiagnostic(1U, new Profile.DiagnosticStage(3), new Profile.DiagnosticReason(1), new Profile.DiagnosticProfile(1), null, 16777216UL, 67108864UL, null, null, null), "service", "adapter", null, null, true)}, new Profile.PageResponse("opaque-scoped-cursor"), true, false, true);
+            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {new Profile.ActivationTreeNode("child-a", "root-a", "root-a", "received", "resource_exhausted", 18446744073709551615UL, new Profile.ActivationDiagnostic(1U, new Profile.DiagnosticStage(3), new Profile.DiagnosticReason(1), new Profile.DiagnosticProfile(1), null, 16777216UL, 67108864UL, null, null, null), "service", "adapter", null, null, true, "", 0UL)}, new Profile.PageResponse("opaque-scoped-cursor"), true, false, true);
             Check(value.SchemaVersion == 1U, "activation-tree-failed-preparation-before-guest.schema_version");
             Check(value.Nodes.Count == 1, "activation-tree-failed-preparation-before-guest.nodes.count");
             Check(value.Nodes[0].ActivationId == "child-a", "activation-tree-failed-preparation-before-guest.nodes.0.activation_id");
@@ -99,6 +136,8 @@ internal static class ProfileVectors
             Check(!(value.Nodes[0].GrantedBudget is not null), "activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence");
             Check(!(value.Nodes[0].EffectiveDeadlineUnixMillis is not null), "activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence");
             Check(value.Nodes[0].DiagnosticIsTerminal == true, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
+            Check(value.Nodes[0].TargetService == "", "activation-tree-failed-preparation-before-guest.nodes.0.target_service");
+            Check(value.Nodes[0].ReceivedAtUnixMillis == 0UL, "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis");
             Check(value.Page is not null, "activation-tree-failed-preparation-before-guest.page.presence");
             Check(value.Page!.NextPageToken is not null, "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
             Check(value.Page!.NextPageToken! == "opaque-scoped-cursor", "activation-tree-failed-preparation-before-guest.page.next_page_token");
@@ -1017,6 +1056,6 @@ internal static class ProfileVectors
         Rejects(() => Profile.UnsignedDecimal.Parse("1\u0000"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\n"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\r\n"));
-        Console.WriteLine("shared profile vectors: 72");
+        Console.WriteLine("shared profile vectors: 74");
     }
 }

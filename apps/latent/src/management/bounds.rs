@@ -359,6 +359,9 @@ impl Check for proto::InspectActivationTreeResponse {
         for node in &self.nodes {
             b.id(&node.activation_id)?;
             b.id(&node.root_activation_id)?;
+            if !node.target_service.is_empty() {
+                b.id(&node.target_service)?;
+            }
             if let Some(parent) = &node.parent_activation_id {
                 b.id(parent)?;
             }

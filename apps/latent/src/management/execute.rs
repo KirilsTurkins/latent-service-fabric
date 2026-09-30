@@ -115,7 +115,28 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
             response::got_node(value)
         }
         Operation::InspectActivationTree(request) => {
+            let selector = request.service.clone();
+            let from = request.from_unix_millis;
+            let maximum = request.page.as_ref().map_or(32, |page| {
+                if page.page_size == 0 {
+                    32
+                } else {
+                    page.page_size as usize
+                }
+            });
             let value = call!(session, NodeServiceClient, inspect_activation_tree, request);
+            if value.nodes.len() > maximum
+                || value.nodes.iter().any(|node| {
+                    selector.as_ref().is_some_and(|service| {
+                        &node.target_service != service
+                            || node.parent_activation_id.is_some()
+                            || node.activation_id != node.root_activation_id
+                            || from.is_some_and(|from| node.received_at_unix_millis < from)
+                    })
+                })
+            {
+                return Err(super::invalid_response());
+            }
             response::activation_tree(value)
         }
         Operation::ListNodes(request) => list_nodes(request, session).await,

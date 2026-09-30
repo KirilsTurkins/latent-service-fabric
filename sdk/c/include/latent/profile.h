@@ -460,12 +460,18 @@ typedef struct latent_profile_activation_tree_node {
     bool has_effective_deadline_unix_millis;
     uint64_t effective_deadline_unix_millis;
     bool diagnostic_is_terminal;
+    latent_string target_service;
+    uint64_t received_at_unix_millis;
 } latent_profile_activation_tree_node;
 
 typedef struct latent_profile_inspect_activation_tree_request {
     latent_string activation_id;
     bool has_page;
     latent_profile_page_request page;
+    bool has_service;
+    latent_string service;
+    bool has_from_unix_millis;
+    uint64_t from_unix_millis;
 } latent_profile_inspect_activation_tree_request;
 
 typedef struct latent_profile_inspect_activation_tree_response {

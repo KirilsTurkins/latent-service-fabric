@@ -88,7 +88,8 @@ def prepare():
         outer = source.stem.title()
         if re.search(rf"\b(?:message|enum|service) {outer}\b", text):
             outer += "OuterClass"
-        names = [outer] + [service + "Grpc" for service in re.findall(r"service (\w+)", text)]
+        declarations = re.sub(r"//[^\n]*|/\*[\s\S]*?\*/", "", text)
+        names = [outer] + [service + "Grpc" for service in re.findall(r"^\s*service\s+(\w+)\s*\{", declarations, re.MULTILINE)]
         selected.extend(str(generated / package / (name + ".java")) for name in names)
     (BUILD / "generated-sources.json").write_text(json.dumps(selected), encoding="utf-8")
     run([sys.executable, SDK / "tools/generate_bridge.py", "--check"])

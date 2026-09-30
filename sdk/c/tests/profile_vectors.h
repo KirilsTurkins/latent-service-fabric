@@ -44,6 +44,49 @@ static void profile_vectors(void) {
         assert((value.activation_id.length == 12) && "activation-tree-default-page.activation_id.length");
         assert((memcmp(value.activation_id.data, "activation-a", 12) == 0) && "activation-tree-default-page.activation_id");
         assert((!(value.has_page)) && "activation-tree-default-page.page.presence");
+        assert((!(value.has_service)) && "activation-tree-default-page.service.presence");
+        assert((!(value.has_from_unix_millis)) && "activation-tree-default-page.from_unix_millis.presence");
+    }
+    {
+        latent_profile_inspect_activation_tree_request value = (latent_profile_inspect_activation_tree_request){.activation_id = PROFILE_TEXT(""), .has_page = true, .page = (latent_profile_page_request){.page_size = 128U}, .has_service = true, .service = PROFILE_TEXT("examples/java-http-adapter"), .has_from_unix_millis = true, .from_unix_millis = UINT64_C(18446744073709551615)};
+        assert((value.activation_id.length == 0) && "activation-roots-service-time-selector.activation_id.length");
+        assert((value.has_page) && "activation-roots-service-time-selector.page.presence");
+        assert((value.page.page_size == 128U) && "activation-roots-service-time-selector.page.page_size");
+        assert((!(value.page.has_page_token)) && "activation-roots-service-time-selector.page.page_token.presence");
+        assert((value.has_service) && "activation-roots-service-time-selector.service.presence");
+        assert((value.service.length == 26) && "activation-roots-service-time-selector.service.length");
+        assert((memcmp(value.service.data, "examples/java-http-adapter", 26) == 0) && "activation-roots-service-time-selector.service");
+        assert((value.has_from_unix_millis) && "activation-roots-service-time-selector.from_unix_millis.presence");
+        assert((value.from_unix_millis == UINT64_C(18446744073709551615)) && "activation-roots-service-time-selector.from_unix_millis");
+    }
+    {
+        latent_profile_inspect_activation_tree_response value = (latent_profile_inspect_activation_tree_response){.schema_version = 1U, .nodes = (const latent_profile_activation_tree_node[]){(latent_profile_activation_tree_node){.activation_id = PROFILE_TEXT("host-generated-root"), .root_activation_id = PROFILE_TEXT("host-generated-root"), .phase = PROFILE_TEXT("running"), .last_updated_unix_millis = UINT64_C(0), .principal_kind = PROFILE_TEXT("trigger"), .diagnostic_is_terminal = false, .target_service = PROFILE_TEXT("examples/java-http-adapter"), .received_at_unix_millis = UINT64_C(18446744073709551615)}}, .nodes_count = 1, .has_page = true, .page = (latent_profile_page_response){0}, .history_available = true, .cursor_expired = false, .retained_history_only = true};
+        assert((value.schema_version == 1U) && "activation-root-real-ingress-identity.schema_version");
+        assert((value.nodes_count == 1) && "activation-root-real-ingress-identity.nodes.count");
+        assert((value.nodes[0].activation_id.length == 19) && "activation-root-real-ingress-identity.nodes.0.activation_id.length");
+        assert((memcmp(value.nodes[0].activation_id.data, "host-generated-root", 19) == 0) && "activation-root-real-ingress-identity.nodes.0.activation_id");
+        assert((!(value.nodes[0].has_parent_activation_id)) && "activation-root-real-ingress-identity.nodes.0.parent_activation_id.presence");
+        assert((value.nodes[0].root_activation_id.length == 19) && "activation-root-real-ingress-identity.nodes.0.root_activation_id.length");
+        assert((memcmp(value.nodes[0].root_activation_id.data, "host-generated-root", 19) == 0) && "activation-root-real-ingress-identity.nodes.0.root_activation_id");
+        assert((value.nodes[0].phase.length == 7) && "activation-root-real-ingress-identity.nodes.0.phase.length");
+        assert((memcmp(value.nodes[0].phase.data, "running", 7) == 0) && "activation-root-real-ingress-identity.nodes.0.phase");
+        assert((!(value.nodes[0].has_terminal_state)) && "activation-root-real-ingress-identity.nodes.0.terminal_state.presence");
+        assert((value.nodes[0].last_updated_unix_millis == UINT64_C(0)) && "activation-root-real-ingress-identity.nodes.0.last_updated_unix_millis");
+        assert((!(value.nodes[0].has_diagnostic)) && "activation-root-real-ingress-identity.nodes.0.diagnostic.presence");
+        assert((value.nodes[0].principal_kind.length == 7) && "activation-root-real-ingress-identity.nodes.0.principal_kind.length");
+        assert((memcmp(value.nodes[0].principal_kind.data, "trigger", 7) == 0) && "activation-root-real-ingress-identity.nodes.0.principal_kind");
+        assert((!(value.nodes[0].has_caller_service)) && "activation-root-real-ingress-identity.nodes.0.caller_service.presence");
+        assert((!(value.nodes[0].has_granted_budget)) && "activation-root-real-ingress-identity.nodes.0.granted_budget.presence");
+        assert((!(value.nodes[0].has_effective_deadline_unix_millis)) && "activation-root-real-ingress-identity.nodes.0.effective_deadline_unix_millis.presence");
+        assert((value.nodes[0].diagnostic_is_terminal == false) && "activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal");
+        assert((value.nodes[0].target_service.length == 26) && "activation-root-real-ingress-identity.nodes.0.target_service.length");
+        assert((memcmp(value.nodes[0].target_service.data, "examples/java-http-adapter", 26) == 0) && "activation-root-real-ingress-identity.nodes.0.target_service");
+        assert((value.nodes[0].received_at_unix_millis == UINT64_C(18446744073709551615)) && "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis");
+        assert((value.has_page) && "activation-root-real-ingress-identity.page.presence");
+        assert((!(value.page.has_next_page_token)) && "activation-root-real-ingress-identity.page.next_page_token.presence");
+        assert((value.history_available == true) && "activation-root-real-ingress-identity.history_available");
+        assert((value.cursor_expired == false) && "activation-root-real-ingress-identity.cursor_expired");
+        assert((value.retained_history_only == true) && "activation-root-real-ingress-identity.retained_history_only");
     }
     {
         latent_profile_inspect_activation_tree_response value = (latent_profile_inspect_activation_tree_response){.schema_version = 1U, .nodes = NULL, .nodes_count = 0, .has_page = true, .page = (latent_profile_page_response){0}, .history_available = false, .cursor_expired = true, .retained_history_only = true};
@@ -56,7 +99,7 @@ static void profile_vectors(void) {
         assert((value.retained_history_only == true) && "activation-tree-expired-is-not-absence-proof.retained_history_only");
     }
     {
-        latent_profile_inspect_activation_tree_response value = (latent_profile_inspect_activation_tree_response){.schema_version = 1U, .nodes = (const latent_profile_activation_tree_node[]){(latent_profile_activation_tree_node){.activation_id = PROFILE_TEXT("child-a"), .has_parent_activation_id = true, .parent_activation_id = PROFILE_TEXT("root-a"), .root_activation_id = PROFILE_TEXT("root-a"), .phase = PROFILE_TEXT("received"), .has_terminal_state = true, .terminal_state = PROFILE_TEXT("resource_exhausted"), .last_updated_unix_millis = UINT64_C(18446744073709551615), .has_diagnostic = true, .diagnostic = (latent_profile_activation_diagnostic){.schema_version = 1U, .stage = ((latent_profile_diagnostic_stage)(3)), .reason = ((latent_profile_diagnostic_reason)(1)), .has_profile = true, .profile = ((latent_profile_diagnostic_profile)(1)), .has_configured_bound = true, .configured_bound = UINT64_C(16777216), .has_calculated_requirement = true, .calculated_requirement = UINT64_C(67108864)}, .principal_kind = PROFILE_TEXT("service"), .has_caller_service = true, .caller_service = PROFILE_TEXT("adapter"), .diagnostic_is_terminal = true}}, .nodes_count = 1, .has_page = true, .page = (latent_profile_page_response){.has_next_page_token = true, .next_page_token = PROFILE_TEXT("opaque-scoped-cursor")}, .history_available = true, .cursor_expired = false, .retained_history_only = true};
+        latent_profile_inspect_activation_tree_response value = (latent_profile_inspect_activation_tree_response){.schema_version = 1U, .nodes = (const latent_profile_activation_tree_node[]){(latent_profile_activation_tree_node){.activation_id = PROFILE_TEXT("child-a"), .has_parent_activation_id = true, .parent_activation_id = PROFILE_TEXT("root-a"), .root_activation_id = PROFILE_TEXT("root-a"), .phase = PROFILE_TEXT("received"), .has_terminal_state = true, .terminal_state = PROFILE_TEXT("resource_exhausted"), .last_updated_unix_millis = UINT64_C(18446744073709551615), .has_diagnostic = true, .diagnostic = (latent_profile_activation_diagnostic){.schema_version = 1U, .stage = ((latent_profile_diagnostic_stage)(3)), .reason = ((latent_profile_diagnostic_reason)(1)), .has_profile = true, .profile = ((latent_profile_diagnostic_profile)(1)), .has_configured_bound = true, .configured_bound = UINT64_C(16777216), .has_calculated_requirement = true, .calculated_requirement = UINT64_C(67108864)}, .principal_kind = PROFILE_TEXT("service"), .has_caller_service = true, .caller_service = PROFILE_TEXT("adapter"), .diagnostic_is_terminal = true, .target_service = PROFILE_TEXT(""), .received_at_unix_millis = UINT64_C(0)}}, .nodes_count = 1, .has_page = true, .page = (latent_profile_page_response){.has_next_page_token = true, .next_page_token = PROFILE_TEXT("opaque-scoped-cursor")}, .history_available = true, .cursor_expired = false, .retained_history_only = true};
         assert((value.schema_version == 1U) && "activation-tree-failed-preparation-before-guest.schema_version");
         assert((value.nodes_count == 1) && "activation-tree-failed-preparation-before-guest.nodes.count");
         assert((value.nodes[0].activation_id.length == 7) && "activation-tree-failed-preparation-before-guest.nodes.0.activation_id.length");
@@ -94,6 +137,8 @@ static void profile_vectors(void) {
         assert((!(value.nodes[0].has_granted_budget)) && "activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence");
         assert((!(value.nodes[0].has_effective_deadline_unix_millis)) && "activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence");
         assert((value.nodes[0].diagnostic_is_terminal == true) && "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
+        assert((value.nodes[0].target_service.length == 0) && "activation-tree-failed-preparation-before-guest.nodes.0.target_service.length");
+        assert((value.nodes[0].received_at_unix_millis == UINT64_C(0)) && "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis");
         assert((value.has_page) && "activation-tree-failed-preparation-before-guest.page.presence");
         assert((value.page.has_next_page_token) && "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
         assert((value.page.next_page_token.length == 20) && "activation-tree-failed-preparation-before-guest.page.next_page_token.length");

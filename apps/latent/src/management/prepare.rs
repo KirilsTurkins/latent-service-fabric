@@ -28,6 +28,18 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
                 proto::InspectActivationTreeRequest {
                     activation_id: args.id.clone(),
                     page: Some(page(args.page_size, args.page_token.as_deref())?),
+                    ..proto::InspectActivationTreeRequest::default()
+                },
+            ))
+        }
+        Command::Activation(crate::args::ActivationCommand::Roots(args)) => {
+            identifier(&args.service)?;
+            Ok(Operation::InspectActivationTree(
+                proto::InspectActivationTreeRequest {
+                    activation_id: String::new(),
+                    service: Some(args.service.clone()),
+                    from_unix_millis: args.from_unix_millis,
+                    page: Some(page(args.page_size, args.page_token.as_deref())?),
                 },
             ))
         }

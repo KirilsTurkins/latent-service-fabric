@@ -111,8 +111,18 @@ impl Cost {
         self.charge(value.len())
     }
     fn metadata(&mut self, metadata: &Metadata) -> Result<(), PlatformError> {
-        // One KiB per entry bounds sparse string-to-string B-tree nodes too.
-        self.charge(metadata.len().checked_mul(1024).ok_or_else(capacity)?)?;
+        // The resolved lifecycle producer emits one three-entry leaf. Its
+        // immutable identifiers are finite and every string is charged below.
+        // Keep the conservative per-entry bound for arbitrary attribute maps.
+        let resolved = metadata.len() == 3
+            && ["revision", "release", "route-generation"]
+                .iter()
+                .all(|key| metadata.get(*key).is_some_and(|value| value.len() <= 512));
+        self.charge(if resolved {
+            768
+        } else {
+            metadata.len().checked_mul(1024).ok_or_else(capacity)?
+        })?;
         for (key, value) in metadata {
             self.string(key)?;
             self.string(value)?;

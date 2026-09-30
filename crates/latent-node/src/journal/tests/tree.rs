@@ -1,11 +1,138 @@
 use super::*;
 use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
+use latent_core::{PrincipalKind, ServiceId};
 
 fn child(id: &str, parent: &str, root: &str) -> ActivationEnvelope {
     let mut value = envelope(id);
     value.parent_activation_id = Some(ActivationId(parent.into()));
     value.root_activation_id = ActivationId(root.into());
     value
+}
+
+#[test]
+fn root_discovery_is_scoped_bounded_filtered_and_keeps_one_serial_horizon() {
+    let (initial, clock) = journal(4, 400);
+    assert!(initial
+        .inspect_roots(
+            &TenantId("tenant".into()),
+            &ServiceId("http-adapter".into()),
+            None,
+            32,
+            None
+        )
+        .unwrap()
+        .nodes
+        .is_empty());
+    let journal = LocalActivationJournal::new(
+        LocalActivationJournalConfig {
+            maximum_retained_bytes: 8 * 1024 * 1024,
+            ..initial.inner.config
+        },
+        clock.clone(),
+    )
+    .unwrap();
+    let tenant = TenantId("tenant".into());
+    let service = ServiceId("http-adapter".into());
+    for serial in 0..300 {
+        journal
+            .begin(&envelope(&format!("other-{serial}")))
+            .unwrap()
+            .finish(outcome());
+    }
+    clock.wall(2000);
+    let mut actual = envelope("real-ingress-root");
+    actual.target.service = service.clone();
+    actual.principal.kind = PrincipalKind::Trigger;
+    let root = journal.begin(&actual).unwrap();
+    journal
+        .begin(&child(
+            "real-domain-child",
+            "real-ingress-root",
+            "real-ingress-root",
+        ))
+        .unwrap()
+        .finish(outcome());
+    let first = journal
+        .inspect_roots(&tenant, &service, Some(2000), 32, None)
+        .unwrap();
+    assert!(
+        first.nodes.is_empty(),
+        "the finite scan ceiling can produce an empty page"
+    );
+    let cursor = first.next_page_token.unwrap();
+    assert!(journal
+        .inspect_roots(
+            &TenantId("foreign".into()),
+            &service,
+            Some(2000),
+            32,
+            Some(&cursor)
+        )
+        .is_err());
+    assert!(journal
+        .inspect_roots(
+            &tenant,
+            &ServiceId("other".into()),
+            Some(2000),
+            32,
+            Some(&cursor)
+        )
+        .is_err());
+    assert!(journal
+        .inspect_roots(&tenant, &service, None, 32, Some(&cursor))
+        .is_err());
+    let mut later = envelope("later-ingress");
+    later.target.service = service.clone();
+    journal.begin(&later).unwrap().finish(outcome());
+    let next = journal
+        .inspect_roots(&tenant, &service, Some(2000), 32, Some(&cursor))
+        .unwrap();
+    assert_eq!(
+        next.nodes.len(),
+        1,
+        "new roots stay outside the original horizon"
+    );
+    assert_eq!(next.nodes[0].activation_id.0, "real-ingress-root");
+    assert_eq!(next.nodes[0].principal_kind, PrincipalKind::Trigger);
+    assert_eq!(next.nodes[0].target_service, service);
+    assert_eq!(next.nodes[0].received_at_unix_millis, 2000);
+    assert!(next.nodes[0].parent_activation_id.is_none());
+    assert!(next.next_page_token.is_none());
+    assert_eq!(
+        journal
+            .inspect_tree(&tenant, &next.nodes[0].activation_id, 32, None)
+            .unwrap()
+            .nodes
+            .len(),
+        2
+    );
+    assert!(journal
+        .inspect_roots(&tenant, &service, Some(2001), 32, None)
+        .unwrap()
+        .nodes
+        .is_empty());
+    // New children under an old root must neither join root membership nor
+    // produce an invalid cursor when the finite scan advances past the horizon.
+    for serial in 0..300 {
+        journal
+            .begin(&child(
+                &format!("late-child-{serial}"),
+                "real-ingress-root",
+                "real-ingress-root",
+            ))
+            .unwrap()
+            .finish(outcome());
+    }
+    let again = journal
+        .inspect_roots(&tenant, &service, Some(2000), 32, Some(&cursor))
+        .unwrap();
+    assert_eq!(again.nodes.len(), 1);
+    let late_cursor = again.next_page_token.unwrap();
+    let tail = journal
+        .inspect_roots(&tenant, &service, Some(2000), 32, Some(&late_cursor))
+        .unwrap();
+    assert!(tail.nodes.is_empty() && tail.next_page_token.is_none());
+    root.finish(outcome());
 }
 
 #[test]
