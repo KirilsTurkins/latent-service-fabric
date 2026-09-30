@@ -712,6 +712,8 @@ public final class Wire {
         if (value.grantedBudget().isPresent()) result.setGrantedBudget(toWire(value.grantedBudget().get()));
         if (value.effectiveDeadlineUnixMillis().isPresent()) result.setEffectiveDeadlineUnixMillis(value.effectiveDeadlineUnixMillis().get());
         result.setDiagnosticIsTerminal(value.diagnosticIsTerminal());
+        result.setTargetService(value.targetService());
+        result.setReceivedAtUnixMillis(value.receivedAtUnixMillis());
         return result.build();
     }
 
@@ -728,20 +730,26 @@ public final class Wire {
                 value.hasCallerService() ? Optional.of(value.getCallerService()) : Optional.empty(),
                 value.hasGrantedBudget() ? Optional.of(fromWire(value.getGrantedBudget())) : Optional.empty(),
                 value.hasEffectiveDeadlineUnixMillis() ? Optional.of(value.getEffectiveDeadlineUnixMillis()) : Optional.empty(),
-                value.getDiagnosticIsTerminal());
+                value.getDiagnosticIsTerminal(),
+                value.getTargetService(),
+                value.getReceivedAtUnixMillis());
     }
 
     public static latent.control.v1.Node.InspectActivationTreeRequest toWire(Management.InspectActivationTreeRequest value) {
         var result = latent.control.v1.Node.InspectActivationTreeRequest.newBuilder();
         result.setActivationId(value.activationId());
         if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
+        if (value.service().isPresent()) result.setService(value.service().get());
+        if (value.fromUnixMillis().isPresent()) result.setFromUnixMillis(value.fromUnixMillis().get());
         return result.build();
     }
 
     public static Management.InspectActivationTreeRequest fromWire(latent.control.v1.Node.InspectActivationTreeRequest value) {
         return new Management.InspectActivationTreeRequest(
                 value.getActivationId(),
-                value.hasPage() ? Optional.of(fromWire(value.getPage())) : Optional.empty());
+                value.hasPage() ? Optional.of(fromWire(value.getPage())) : Optional.empty(),
+                value.hasService() ? Optional.of(value.getService()) : Optional.empty(),
+                value.hasFromUnixMillis() ? Optional.of(value.getFromUnixMillis()) : Optional.empty());
     }
 
     public static latent.control.v1.Node.InspectActivationTreeResponse toWire(Management.InspectActivationTreeResponse value) {

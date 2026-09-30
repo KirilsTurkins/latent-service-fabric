@@ -42,7 +42,16 @@ bool lsf_request_valid(latent_profile_call *call, const void *request) {
         case LSF_INSPECT_ACTIVATION_TREE: {
             const latent_profile_inspect_activation_tree_request *value = request;
             call->page_size = !value->has_page || value->page.page_size == 0 ? 32 : value->page.page_size;
-            return value->activation_id.length != 0 && bounded(value->activation_id, 512)
+            const latent_string selected = value->has_service ? value->service : value->activation_id;
+            if (value->has_service && bounded(selected, 512)) {
+                if (selected.length != 0) memcpy(call->inspection_service, selected.data, selected.length);
+                call->inspection_service_length = selected.length;
+                call->inspection_roots = true;
+                call->inspection_has_from = value->has_from_unix_millis;
+                call->inspection_from = value->from_unix_millis;
+            }
+            return (value->has_service ? value->activation_id.length == 0 : !value->has_from_unix_millis)
+                && selected.length != 0 && bounded(selected, 512)
                 && (!value->has_page || page_request(&value->page, 128, 160));
         }
         case LSF_GET_POLICY: {
@@ -225,6 +234,10 @@ bool lsf_response_valid(latent_profile_call *call) {
                 || (!value->history_available && (value->nodes_count != 0 || value->page.has_next_page_token))) return false;
             for (size_t index = 0; index < value->nodes_count; ++index) {
                 const latent_profile_activation_tree_node *node = &value->nodes[index];
+                if (!bounded(node->target_service, 512) || (call->inspection_roots && (node->has_parent_activation_id
+                    || !lsf_text_equal(node->activation_id, node->root_activation_id)
+                    || !lsf_text_equal(node->target_service, (latent_string){call->inspection_service, call->inspection_service_length})
+                    || (call->inspection_has_from && node->received_at_unix_millis < call->inspection_from)))) return false;
                 if (node->activation_id.length == 0 || node->root_activation_id.length == 0 || !bounded(node->activation_id, 512)
                     || !bounded(node->root_activation_id, 512) || (node->has_parent_activation_id && !bounded(node->parent_activation_id, 512))
                     || (node->has_caller_service && !bounded(node->caller_service, 512)) || !bounded(node->phase, 64)

@@ -1661,7 +1661,9 @@
         "test_support::deterministic::tests::executor_handles_a_wake_before_parking",
         "test_support::deterministic::tests::identifiers_are_repeatable",
         "test_support::deterministic::tests::workspace_rejects_path_traversal",
-        "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up"
+        "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up",
+        "diagnostic::tests::closed_projection_preserves_absence_and_maximum_unsigned_values",
+        "diagnostic::tests::hostile_atoms_unknown_enums_and_oversized_values_never_project"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
@@ -2446,14 +2448,21 @@
         "journal::tests::tenant_queries_and_cancellation_never_expose_another_tenants_record",
         "journal::tests::terminal_eviction_and_monotonic_ttl_never_remove_active_records",
         "journal::tests::unowned_append_is_rejected_without_changing_a_live_history",
-        "budgeted_execution::tests::preparation_wait::wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay"
+        "budgeted_execution::tests::preparation_wait::wait_aware_materialization_forwards_exact_ready_owner_and_timer_without_replay",
+        "journal::tests::tree::failed_preparation_child_is_visible_before_any_guest_or_capability_event",
+        "journal::tests::tree::caught_provider_observation_is_bounded_scoped_and_never_certifies_terminal_cause",
+        "journal::tests::tree::cursor_freezes_membership_and_is_bound_to_tenant_anchor_and_journal",
+        "journal::tests::tree::retention_removes_index_entries_and_explains_expired_anchor_without_certifying_absence",
+        "journal::tests::tree::forged_lineage_and_cross_tenant_parent_reject_before_registration",
+        "journal::tests::tree::concurrent_children_keep_one_bounded_index_entry_per_owned_record",
+        "journal::tests::tree::root_discovery_is_scoped_bounded_filtered_and_keeps_one_serial_horizon"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 77,
+      "minimumCases": 84,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -2533,14 +2542,15 @@
         "transport_cleanup_failures::unacknowledged_disconnect_quarantines_after_the_original_grace",
         "transport_cleanup_pool::transport_handoff_during_pool_disposition_keeps_its_original_owner_and_timer",
         "preparation::materialization_wait_obeys_original_cancellation_deadline_and_transport_stops",
-        "preparation::materialization_wait_retains_one_ready_owner_and_cell_without_repreparing"
+        "preparation::materialization_wait_retains_one_ready_owner_and_cell_without_repreparing",
+        "identity::untrusted_ancestry_is_rejected_without_lifecycle_or_backend_work"
       ],
       "expectedIgnored": [],
       "id": "latent-node.test.activation-lifecycle",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 62,
+      "minimumCases": 63,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -7282,14 +7292,15 @@
         "management::rollouts::tests::unknown_state_and_absent_command_are_invalid",
         "management::triggers::tests::static_web_wire_has_no_application_target_fields_and_rejects_hybrids",
         "management::triggers::tests::trigger_native_wire_sparse_maps_and_reserved_strings_deny_before_conversion",
-        "management::triggers::tests::trigger_wire_derives_actor_and_preserves_explicit_cas_and_publication"
+        "management::triggers::tests::trigger_wire_derives_actor_and_preserves_explicit_cas_and_publication",
+        "invocation::conversion::tests::bounds::operator_diagnostics_remain_outside_public_and_browser_errors"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.lib.latent-wire",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 119,
+      "minimumCases": 120,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -7394,14 +7405,15 @@
         "triggers::audit_recovery::trigger_audit_expiry_caller_loss_and_identity_mismatch_never_claim_false_success",
         "triggers::audit_recovery::trigger_audit_recovery_requires_an_exact_committed_receipt",
         "triggers::trigger_rpc_authentication_atomic_crud_receipts_and_audit",
-        "triggers::trigger_rpc_requires_audit_and_preflights_response_capacity_before_commit"
+        "triggers::trigger_rpc_requires_audit_and_preflights_response_capacity_before_commit",
+        "inspection::activations::tree_requires_trusted_tenant_authority_and_reports_missing_history_honestly"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.test.management-service",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 44,
+      "minimumCases": 45,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -7617,14 +7629,17 @@
         "package::registry::tests::cancellation::denied_pull_does_not_export_and_diagnostics_exclude_credentials",
         "package::registry::tests::copy_budget_and_complete_push_association_are_checked_before_transfer",
         "package::registry::tests::partial_push_retains_confirmed_package_and_uncertain_evidence_without_retry",
-        "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners"
+        "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners",
+        "args::tests::activation_tree_has_one_bounded_page_without_cancellation_authority",
+        "args::tests::activation_roots_preserves_exact_time_without_minting_an_activation_identity",
+        "management::tests::activation_tree_preserves_future_enums_numeric_presence_and_history_gaps"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 126,
+      "minimumCases": 129,
       "mode": "libtest",
       "package": "latent",
       "platforms": [

@@ -33,7 +33,16 @@ func validateRequest(request any, maximum int) error {
 			return errShape
 		}
 	case profile.InspectActivationTreeRequest:
-		if value.ActivationId == "" || len(value.ActivationId) > 512 || strings.IndexFunc(value.ActivationId, func(c rune) bool { return unicode.IsControl(c) || unicode.IsSpace(c) }) >= 0 || (value.Page != nil && (value.Page.PageSize > 128 || !validToken(value.Page.PageToken, 160))) {
+		selected := value.ActivationId
+		if value.Service != nil {
+			if value.ActivationId != "" {
+				return errShape
+			}
+			selected = *value.Service
+		} else if value.FromUnixMillis != nil {
+			return errShape
+		}
+		if selected == "" || len(selected) > 512 || strings.IndexFunc(selected, func(c rune) bool { return unicode.IsControl(c) || unicode.IsSpace(c) }) >= 0 || (value.Page != nil && (value.Page.PageSize > 128 || !validToken(value.Page.PageToken, 160))) {
 			return errShape
 		}
 	case profile.ListPoliciesRequest:
@@ -144,18 +153,34 @@ func validateResponse(response, request any, state *callState) error {
 			return invalid()
 		}
 	case *profile.InspectActivationTreeResponse:
+		selector := request.(profile.InspectActivationTreeRequest)
 		page := request.(profile.InspectActivationTreeRequest).Page
 		maximum := 32
-		if page != nil && page.PageSize != 0 { maximum = int(page.PageSize) }
-		if value.SchemaVersion != 1 || !value.RetainedHistoryOnly || value.Page == nil || len(value.Nodes) > maximum || !validToken(value.Page.NextPageToken, 160) || (!value.HistoryAvailable && (len(value.Nodes) != 0 || value.Page.NextPageToken != nil)) { return invalid() }
+		if page != nil && page.PageSize != 0 {
+			maximum = int(page.PageSize)
+		}
+		if value.SchemaVersion != 1 || !value.RetainedHistoryOnly || value.Page == nil || len(value.Nodes) > maximum || !validToken(value.Page.NextPageToken, 160) || (!value.HistoryAvailable && (len(value.Nodes) != 0 || value.Page.NextPageToken != nil)) {
+			return invalid()
+		}
 		for _, node := range value.Nodes {
-			for _, id := range []*string{&node.ActivationId, &node.RootActivationId, node.ParentActivationId, node.CallerService} {
-				if id != nil && (*id == "" || len(*id) > 512 || strings.IndexFunc(*id, func(c rune) bool {return unicode.IsControl(c) || unicode.IsSpace(c)}) >= 0) { return invalid() }
+			if len(node.TargetService) > 512 || (selector.Service != nil && (node.TargetService != *selector.Service || node.ParentActivationId != nil || node.ActivationId != node.RootActivationId || (selector.FromUnixMillis != nil && node.ReceivedAtUnixMillis < *selector.FromUnixMillis))) {
+				return invalid()
 			}
-			if len(node.Phase) > 64 || len(node.PrincipalKind) > 64 || (node.TerminalState != nil && len(*node.TerminalState) > 64) { return invalid() }
+			for _, id := range []*string{&node.ActivationId, &node.RootActivationId, node.ParentActivationId, node.CallerService} {
+				if id != nil && (*id == "" || len(*id) > 512 || strings.IndexFunc(*id, func(c rune) bool { return unicode.IsControl(c) || unicode.IsSpace(c) }) >= 0) {
+					return invalid()
+				}
+			}
+			if len(node.Phase) > 64 || len(node.PrincipalKind) > 64 || (node.TerminalState != nil && len(*node.TerminalState) > 64) {
+				return invalid()
+			}
 			if node.Diagnostic != nil {
-				if node.Diagnostic.SchemaVersion != 1 {return invalid()}
-				if digest := node.Diagnostic.ProfileDigest; digest != nil && (len(*digest) != 64 || strings.Trim(*digest, "0123456789abcdef") != "") {return invalid()}
+				if node.Diagnostic.SchemaVersion != 1 {
+					return invalid()
+				}
+				if digest := node.Diagnostic.ProfileDigest; digest != nil && (len(*digest) != 64 || strings.Trim(*digest, "0123456789abcdef") != "") {
+					return invalid()
+				}
 			}
 		}
 	case *profile.ListCapabilitiesResponse:

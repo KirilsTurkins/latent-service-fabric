@@ -157,6 +157,167 @@ fn shared_profile_vectors() {
             value.page.is_none(),
             "activation-tree-default-page.page.presence"
         );
+        assert!(
+            value.service.is_none(),
+            "activation-tree-default-page.service.presence"
+        );
+        assert!(
+            value.from_unix_millis.is_none(),
+            "activation-tree-default-page.from_unix_millis.presence"
+        );
+    }
+    {
+        let value = InspectActivationTreeRequest {
+            activation_id: String::new(),
+            page: Some(PageRequest {
+                page_size: 128_u32,
+                ..Default::default()
+            }),
+            service: Some("examples/java-http-adapter".into()),
+            from_unix_millis: Some(18_446_744_073_709_551_615_u64),
+        };
+        assert_eq!(
+            value.activation_id, "",
+            "activation-roots-service-time-selector.activation_id"
+        );
+        assert!(
+            value.page.is_some(),
+            "activation-roots-service-time-selector.page.presence"
+        );
+        assert_eq!(
+            value.page.as_ref().unwrap().page_size,
+            128_u32,
+            "activation-roots-service-time-selector.page.page_size"
+        );
+        assert!(
+            value.page.as_ref().unwrap().page_token.is_none(),
+            "activation-roots-service-time-selector.page.page_token.presence"
+        );
+        assert!(
+            value.service.is_some(),
+            "activation-roots-service-time-selector.service.presence"
+        );
+        assert_eq!(
+            value.service.as_deref().unwrap(),
+            "examples/java-http-adapter",
+            "activation-roots-service-time-selector.service"
+        );
+        assert!(
+            value.from_unix_millis.is_some(),
+            "activation-roots-service-time-selector.from_unix_millis.presence"
+        );
+        assert_eq!(
+            value.from_unix_millis.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "activation-roots-service-time-selector.from_unix_millis"
+        );
+    }
+    {
+        let value = InspectActivationTreeResponse {
+            schema_version: 1_u32,
+            nodes: vec![ActivationTreeNode {
+                activation_id: "host-generated-root".into(),
+                root_activation_id: "host-generated-root".into(),
+                phase: "running".into(),
+                last_updated_unix_millis: 0_u64,
+                principal_kind: "trigger".into(),
+                diagnostic_is_terminal: false,
+                target_service: "examples/java-http-adapter".into(),
+                received_at_unix_millis: 18_446_744_073_709_551_615_u64,
+                ..Default::default()
+            }],
+            page: Some(PageResponse {
+                ..Default::default()
+            }),
+            history_available: true,
+            cursor_expired: false,
+            retained_history_only: true,
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "activation-root-real-ingress-identity.schema_version"
+        );
+        assert_eq!(
+            value.nodes.len(),
+            1,
+            "activation-root-real-ingress-identity.nodes.count"
+        );
+        assert_eq!(
+            value.nodes[0].activation_id, "host-generated-root",
+            "activation-root-real-ingress-identity.nodes.0.activation_id"
+        );
+        assert!(
+            value.nodes[0].parent_activation_id.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.parent_activation_id.presence"
+        );
+        assert_eq!(
+            value.nodes[0].root_activation_id, "host-generated-root",
+            "activation-root-real-ingress-identity.nodes.0.root_activation_id"
+        );
+        assert_eq!(
+            value.nodes[0].phase, "running",
+            "activation-root-real-ingress-identity.nodes.0.phase"
+        );
+        assert!(
+            value.nodes[0].terminal_state.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.terminal_state.presence"
+        );
+        assert_eq!(
+            value.nodes[0].last_updated_unix_millis, 0_u64,
+            "activation-root-real-ingress-identity.nodes.0.last_updated_unix_millis"
+        );
+        assert!(
+            value.nodes[0].diagnostic.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.diagnostic.presence"
+        );
+        assert_eq!(
+            value.nodes[0].principal_kind, "trigger",
+            "activation-root-real-ingress-identity.nodes.0.principal_kind"
+        );
+        assert!(
+            value.nodes[0].caller_service.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.caller_service.presence"
+        );
+        assert!(
+            value.nodes[0].granted_budget.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.granted_budget.presence"
+        );
+        assert!(
+            value.nodes[0].effective_deadline_unix_millis.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.effective_deadline_unix_millis.presence"
+        );
+        assert!(
+            !value.nodes[0].diagnostic_is_terminal,
+            "activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal"
+        );
+        assert_eq!(
+            value.nodes[0].target_service, "examples/java-http-adapter",
+            "activation-root-real-ingress-identity.nodes.0.target_service"
+        );
+        assert_eq!(
+            value.nodes[0].received_at_unix_millis, 18_446_744_073_709_551_615_u64,
+            "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis"
+        );
+        assert!(
+            value.page.is_some(),
+            "activation-root-real-ingress-identity.page.presence"
+        );
+        assert!(
+            value.page.as_ref().unwrap().next_page_token.is_none(),
+            "activation-root-real-ingress-identity.page.next_page_token.presence"
+        );
+        assert!(
+            value.history_available,
+            "activation-root-real-ingress-identity.history_available"
+        );
+        assert!(
+            !value.cursor_expired,
+            "activation-root-real-ingress-identity.cursor_expired"
+        );
+        assert!(
+            value.retained_history_only,
+            "activation-root-real-ingress-identity.retained_history_only"
+        );
     }
     {
         let value = InspectActivationTreeResponse {
@@ -221,6 +382,8 @@ fn shared_profile_vectors() {
                 principal_kind: "service".into(),
                 caller_service: Some("adapter".into()),
                 diagnostic_is_terminal: true,
+                target_service: String::new(),
+                received_at_unix_millis: 0_u64,
                 ..Default::default()
             }],
             page: Some(PageResponse {
@@ -350,6 +513,14 @@ fn shared_profile_vectors() {
         assert!(
             value.nodes[0].diagnostic_is_terminal,
             "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal"
+        );
+        assert_eq!(
+            value.nodes[0].target_service, "",
+            "activation-tree-failed-preparation-before-guest.nodes.0.target_service"
+        );
+        assert_eq!(
+            value.nodes[0].received_at_unix_millis, 0_u64,
+            "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis"
         );
         assert!(
             value.page.is_some(),

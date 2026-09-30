@@ -112,9 +112,26 @@ async fn manager_assigns_identity_and_preserves_opaque_lineage_and_uninterpreted
         input
             .metadata
             .insert("retry_attempt".to_owned(), "99".to_owned());
-        finish(adapter.invoke(authenticated(input)))
+        assert_eq!(
+            finish(adapter.invoke(authenticated(input)))
+                .await
+                .expect_err("caller correlation cannot manufacture retained ancestry")
+                .code(),
+            Code::PermissionDenied
+        );
+        let mut correlation = request(id);
+        correlation
+            .metadata
+            .insert("requested-root-correlation".into(), "unknown-root".into());
+        correlation
+            .metadata
+            .insert("trace_id".into(), "guest-spoof".into());
+        correlation
+            .metadata
+            .insert("retry_attempt".into(), "99".into());
+        finish(adapter.invoke(authenticated(correlation)))
             .await
-            .expect("opaque lineage");
+            .expect("opaque descriptive correlation remains application metadata");
     }
     let observed = harness.backend.requests.lock().expect("requests");
     let first = &observed[0].activation;
@@ -132,21 +149,18 @@ async fn manager_assigns_identity_and_preserves_opaque_lineage_and_uninterpreted
         assert!(activation.trace.baggage.is_empty());
         assert_ne!(activation.trace.trace_id.0, "guest-spoof");
         if index > 0 {
-            assert_eq!(activation.root_activation_id.0, "unknown-root");
+            assert_eq!(activation.root_activation_id, activation.activation_id);
+            assert!(activation.parent_activation_id.is_none());
+            assert_eq!(
+                activation.metadata["requested-root-correlation"],
+                "unknown-root"
+            );
             assert_ne!(activation.trace.trace_id, first.trace.trace_id);
             assert_ne!(activation.trace.span_id, first.trace.span_id);
             assert_eq!(activation.metadata["retry_attempt"], "99");
         }
     }
-    assert_eq!(
-        observed[1]
-            .activation
-            .parent_activation_id
-            .as_ref()
-            .expect("parent")
-            .0,
-        "unknown-parent"
-    );
+    assert!(observed[1].activation.parent_activation_id.is_none());
     assert_eq!(observed[2].activation.parent_activation_id, None);
     drop(observed);
     assert_eq!(harness.ids.0.load(Ordering::Relaxed), 1);
