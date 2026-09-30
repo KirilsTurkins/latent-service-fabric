@@ -16,6 +16,7 @@ import tomllib
 sys.dont_write_bytecode = True
 if __package__ in {None, ""}: sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.build_observation import build_environment, resolve_tools
+from tools.browser_response_ownership import java_vectors
 from tools.java_capsule_build import build
 from tools.java_capsule_project import create
 from tools.phase3_resource_identity import file_identity, inventory, source_identity
@@ -25,10 +26,10 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, read_json, write_json
 
 JAVA_HELPERS = (*HELPERS, "java_capsule.py", "java_capsule_project.py", "java_capsule_build.py",
-    "qualify_java_capsules.py", "qualify_java_bridge.py", "build_java_guest_capsules.py",
+    "qualify_java_capsules.py", "qualify_java_bridge.py", "build_java_guest_capsules.py", "browser_response_ownership.py",
     "java_guest/compiler.py", "java_guest/bindings.py", "java_guest/model.py", "java_guest/java.py",
     "java_guest/c.py", "java_guest/lock.py", "java_guest/surface.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
-    "build_snapshot.py", "../.cargo/managed-guest.toml")
+    "build_snapshot.py", "../.cargo/managed-guest.toml", "../contracts/http/browser-response-ownership-v1.json")
 
 
 def inputs():
@@ -98,8 +99,11 @@ def qualify(output: Path, wasi_sdk: Path):
         classes.mkdir()
         runtime = ROOT / "sdk/java-guest/runtime/dev/latent/guest"
         commands.run("ownership-compile", "javac", "-d", classes, ROOT / "sdk/java-guest/tests/Ownership.java",
-            *(runtime / (name + ".java") for name in ("Handle", "SensitiveBytes", "Unsigned64")))
-        commands.run(stage, "java", "-cp", classes, "dev.latent.guest.Ownership")
+            ROOT / "sdk/java-guest/tests/ResponseValidation.java",
+            *(runtime / (name + ".java") for name in ("Handle", "SensitiveBytes", "Unsigned64", "BufferedWebResponseValidator")))
+        vectors = output / "response-ownership.tsv"
+        vectors.write_text(java_vectors(), encoding="utf-8")
+        commands.run(stage, "java", "-cp", classes, "dev.latent.guest.Ownership", vectors)
         stage = "sdk-runtime-ownership"
         commands.run("build-sdk-guests", sys.executable, ROOT / "tools/build_java_guest_capsules.py",
             "--output", output / "sdk-guests", "--wasi-sdk", wasi_sdk,

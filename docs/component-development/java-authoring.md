@@ -87,6 +87,17 @@ and replace `greeting` in the creation command with either template name.
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
 
+When authoring an inbound buffered web application, validate the actual response
+before returning the generated record with the development SDK's
+[`BufferedWebResponseValidator`](../../sdk/java-guest/runtime/dev/latent/guest/BufferedWebResponseValidator.java).
+Its fixed local reasons explain reserved host headers and bounded body/header,
+redirect, media and cookie rules before live traffic. The
+[SDK example](../../sdk/java-guest/README.md#inbound-buffered-web-responses-development)
+and [complete ownership table](../security/browser-boundary.md#response-headers)
+show the supported contract. Dynamically calculated responses still require
+execution and current host validation; a declared safe header list does not
+qualify an application or change the shipped `same-origin` referrer policy.
+
 ## 2. Build and package the project
 
 ```bash

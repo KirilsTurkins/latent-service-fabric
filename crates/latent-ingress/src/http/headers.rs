@@ -3,7 +3,7 @@ use super::{
     model::{Header, ResponseData},
     target::canonical_authority,
     HeaderView, HttpError, HttpVersion, Method, RawHead, MAX_HEADERS, MAX_HEADER_BYTES,
-    MAX_REQUEST_BODY,
+    MAX_HEADER_NAME_BYTES, MAX_HEADER_VALUE_BYTES, MAX_MEDIA_TYPE_BYTES, MAX_REQUEST_BODY,
 };
 
 pub(super) struct RequestHeaders {
@@ -15,49 +15,60 @@ pub(super) struct RequestHeaders {
 pub(super) fn token(byte: u8) -> bool {
     byte.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&byte)
 }
-fn prefix(name: &str, value: &str) -> bool {
+pub(super) fn prefix(name: &str, value: &str) -> bool {
     name.get(..value.len())
         .is_some_and(|s| s.eq_ignore_ascii_case(value))
 }
+pub(super) const HOP_BY_HOP: &[&str] = &[
+    "connection",
+    "keep-alive",
+    "proxy-connection",
+    "te",
+    "trailer",
+    "transfer-encoding",
+    "upgrade",
+];
 fn hop(name: &str) -> bool {
-    [
-        "connection",
-        "keep-alive",
-        "proxy-connection",
-        "te",
-        "trailer",
-        "transfer-encoding",
-        "upgrade",
-    ]
-    .iter()
-    .any(|field| name.eq_ignore_ascii_case(field))
+    HOP_BY_HOP
+        .iter()
+        .any(|field| name.eq_ignore_ascii_case(field))
 }
-fn private_input(name: &str) -> bool {
-    [
-        "authorization",
-        "proxy-authorization",
-        "forwarded",
-        "traceparent",
-        "tracestate",
-        "baggage",
-        "x-real-ip",
-        "remote-user",
-        "x-remote-user",
-        "x-original-url",
-        "x-rewrite-url",
-    ]
-    .iter()
-    .any(|field| name.eq_ignore_ascii_case(field))
-        || prefix(name, "x-forwarded-")
-        || prefix(name, "x-auth-request-")
-        || prefix(name, "x-authenticated-")
+pub(super) const PRIVATE_FIELDS: &[&str] = &[
+    "authorization",
+    "proxy-authorization",
+    "forwarded",
+    "traceparent",
+    "tracestate",
+    "baggage",
+    "x-real-ip",
+    "remote-user",
+    "x-remote-user",
+    "x-original-url",
+    "x-rewrite-url",
+];
+pub(super) const PRIVATE_PREFIXES: &[&str] =
+    &["x-forwarded-", "x-auth-request-", "x-authenticated-"];
+pub(super) const HOST_RESPONSE_FIELDS: &[&str] = &[
+    "host",
+    "content-length",
+    "content-type",
+    "server",
+    "date",
+    "via",
+    "alt-svc",
+];
+pub(super) fn private_input(name: &str) -> bool {
+    PRIVATE_FIELDS
+        .iter()
+        .any(|field| name.eq_ignore_ascii_case(field))
+        || PRIVATE_PREFIXES.iter().any(|value| prefix(name, value))
 }
 
 fn field(header: HeaderView<'_>) -> Result<(), HttpError> {
     if header.name.is_empty()
-        || header.name.len() > 64
+        || header.name.len() > MAX_HEADER_NAME_BYTES
         || !header.name.bytes().all(token)
-        || header.value.len() > 4096
+        || header.value.len() > MAX_HEADER_VALUE_BYTES
         || header.value.iter().any(|byte| *byte < 32 || *byte == 127)
         || header.value.first() == Some(&b' ')
         || header.value.last() == Some(&b' ')
@@ -163,17 +174,7 @@ pub(super) fn response(value: &ResponseData, method: Method) -> Result<(), HttpE
         let name = &header.name.0;
         if name.bytes().any(|b| b.is_ascii_uppercase())
             || private_input(name)
-            || [
-                "host",
-                "content-length",
-                "content-type",
-                "server",
-                "date",
-                "via",
-                "alt-svc",
-            ]
-            .iter()
-            .any(|field| name == field)
+            || HOST_RESPONSE_FIELDS.iter().any(|field| name == field)
         {
             return Err(HttpError::InvalidResponse);
         }
@@ -197,7 +198,7 @@ pub(super) fn response(value: &ResponseData, method: Method) -> Result<(), HttpE
 /// A deliberately bounded MIME grammar: type/subtype and unique token or quoted
 /// parameters. No commas, controls, obs-text, escapes or ambiguous duplicate keys.
 pub(super) fn media_type(value: &str) -> Result<(), HttpError> {
-    if value.len() > 256 || !value.is_ascii() {
+    if value.len() > MAX_MEDIA_TYPE_BYTES || !value.is_ascii() {
         return Err(HttpError::InvalidHeaders);
     }
     let mut parts = value.split(';');
