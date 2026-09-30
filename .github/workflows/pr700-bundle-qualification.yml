@@ -18,7 +18,8 @@ jobs:
         with:
           python-version: 3.13.5
       - name: Install the reviewed scanner prerequisite
-        run: python3 -m pip install --require-hashes --only-binary=:all: --no-deps -r .github/security/requirements.txt
+        run: |
+          python3 -m pip install --require-hashes --only-binary=:all: --no-deps -r .github/security/requirements.txt
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24.19.0
