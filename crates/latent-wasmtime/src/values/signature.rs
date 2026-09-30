@@ -61,7 +61,13 @@ pub(crate) fn validate_host_signature(
         observation.fixed_bytes = u64::try_from(fixed).ok();
         observation.lifting_fuel = u64::try_from(hostcall_fuel).ok();
         observation.lift_multiplier = u64::try_from(multiplier).ok();
-        return Err(observation.attach(limit()));
+        // This producer owns preparation's exact allocation proof. The
+        // execution codec's generic limit already carries a diagnosis, which
+        // must not mask this more specific observation via attach().
+        return Err(observation.attach(super::failure(
+            latent_core::PlatformErrorCode::ResourceExhausted,
+            "invocation-value-limit",
+        )));
     }
     Ok(SignaturePlan {
         examined_type_nodes: limits.max_type_nodes - state.remaining,
