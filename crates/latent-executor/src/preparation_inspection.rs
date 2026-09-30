@@ -20,5 +20,8 @@ pub struct PreparationInspection {
     /// is lsf-wasmtime-preparation-metadata-v2, not a signed document digest.
     pub sealed_metadata_fingerprint: Option<[u8; 32]>,
     pub imports: Vec<ContractId>,
+    /// Actual validated resource-free type-only interfaces. These do not grant
+    /// callable provider authority. import_count includes both collections.
+    pub type_imports: Vec<ContractId>,
     pub exports: Vec<(ContractId, FunctionId)>,
 }
