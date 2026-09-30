@@ -1,0 +1,39 @@
+name: PR 734 isolated npm verification
+
+on:
+  push:
+    branches: [fix/pr734-verify-npm-bundle]
+
+permissions:
+  contents: read
+
+jobs:
+  inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.19.0
+      - name: Collect exact source and dependency inputs without lifecycle scripts
+        run: |
+          mkdir -p verification-inputs
+          git archive HEAD | gzip -n > verification-inputs/source.tar.gz
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          npm view brace-expansion@5.0.12 --json > verification-inputs/brace-expansion.json
+          npm install --prefix verification-inputs/brace --ignore-scripts --no-audit --no-fund --save-exact brace-expansion@5.0.12
+          node -e "for (const p of ['ip-address','brace-expansion','undici']) console.log(p, require('./website/toolchain/node_modules/npm/node_modules/' + p + '/package.json').version)"
+          tar -czf verification-inputs/toolchain.tar.gz website/toolchain/node_modules
+          tar -czf verification-inputs/brace.tar.gz -C verification-inputs/brace node_modules package.json package-lock.json
+          rm -rf verification-inputs/brace
+          cat verification-inputs/brace-expansion.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr734-verification-inputs
+          path: verification-inputs/
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
