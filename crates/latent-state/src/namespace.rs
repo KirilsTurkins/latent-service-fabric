@@ -195,7 +195,7 @@ impl NamespaceRecord {
             .ok_or(NamespaceError::Capacity)?;
         match action {
             NamespaceTransition::Quiesce if self.status == NamespaceStatus::Active => {
-                next.status = NamespaceStatus::Quiescing
+                next.status = NamespaceStatus::Quiescing;
             }
             NamespaceTransition::Retire if self.status == NamespaceStatus::Quiescing => {
                 if active_commits != 0 {

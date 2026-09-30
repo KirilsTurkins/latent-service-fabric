@@ -33,6 +33,151 @@ fn bundle(value: &str) -> AtomicBatch {
 }
 
 #[test]
+fn final_acceptance_rejection_aborts_every_staged_family_before_flush() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("fenced.redb");
+    let store = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
+    let mut accepted = 0;
+    assert_eq!(
+        store.apply_fenced(bundle("must-not-persist"), || {
+            accepted += 1;
+            Err("revoked")
+        }),
+        Err(FencedStoreError::Fence("revoked"))
+    );
+    assert_eq!(accepted, 1);
+    for family in [Family::State, Family::Command, Family::Outbox] {
+        assert_eq!(
+            store.snapshot().unwrap().get(&key(family, "command-1")),
+            Ok(None)
+        );
+    }
+    drop(store);
+    let reopened = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
+    assert_eq!(
+        reopened
+            .snapshot()
+            .unwrap()
+            .get(&key(Family::Command, "command-1")),
+        Ok(None)
+    );
+    reopened
+        .apply_fenced(bundle("accepted"), || Ok::<(), &str>(()))
+        .unwrap();
+    assert_eq!(
+        reopened
+            .snapshot()
+            .unwrap()
+            .get(&key(Family::Outbox, "command-1")),
+        Ok(Some(b"accepted".to_vec()))
+    );
+}
+
+#[test]
+fn occ_and_capacity_failures_do_not_consume_final_commit_acceptance() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = EmbeddedStore::open_file(
+        file(&dir.path().join("fenced.redb")),
+        StoreLimits {
+            maximum_rows: 3,
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    store.apply(bundle("first")).unwrap();
+    let calls = std::cell::Cell::new(0);
+    let mut conflicting = bundle("second");
+    conflicting.expectations.push(ExpectedRow {
+        key: key(Family::Command, "command-1"),
+        value: None,
+    });
+    assert_eq!(
+        store.apply_fenced(conflicting, || {
+            calls.set(calls.get() + 1);
+            Ok::<(), &str>(())
+        }),
+        Err(FencedStoreError::Store(StoreError::Conflict))
+    );
+    let excessive = AtomicBatch {
+        expectations: vec![],
+        mutations: vec![RowMutation {
+            key: key(Family::State, "extra"),
+            value: Some(vec![1]),
+        }],
+    };
+    assert_eq!(
+        store.apply_fenced(excessive, || {
+            calls.set(calls.get() + 1);
+            Ok::<(), &str>(())
+        }),
+        Err(FencedStoreError::Store(StoreError::Capacity))
+    );
+    assert_eq!(calls.get(), 0);
+    assert_eq!(
+        store.snapshot().unwrap().get(&key(Family::State, "extra")),
+        Ok(None)
+    );
+}
+
+#[test]
+fn coherent_prefix_pages_resume_exactly_and_refuse_unrepresentable_first_row() {
+    let dir = tempfile::tempdir().unwrap();
+    let store =
+        EmbeddedStore::open_file(file(&dir.path().join("pages.redb")), StoreLimits::default())
+            .unwrap();
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: ["aa", "ab", "ac", "b"]
+                .into_iter()
+                .map(|id| RowMutation {
+                    key: key(Family::State, id),
+                    value: Some(vec![1; 3]),
+                })
+                .collect(),
+        })
+        .unwrap();
+    let view = store.snapshot().unwrap();
+    let first = view.scan_after(Family::State, b"a", None, 1, 100).unwrap();
+    assert_eq!(first.rows[0].0.key, b"aa");
+    assert_eq!(first.resume.as_deref(), Some(b"aa".as_slice()));
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: key(Family::State, "ad"),
+                value: Some(vec![2]),
+            }],
+        })
+        .unwrap();
+    let second = view
+        .scan_after(Family::State, b"a", first.resume.as_deref(), 2, 100)
+        .unwrap();
+    assert_eq!(
+        second
+            .rows
+            .iter()
+            .map(|(key, _)| key.key.clone())
+            .collect::<Vec<_>>(),
+        vec![b"ab".to_vec(), b"ac".to_vec()]
+    );
+    assert_eq!(second.resume, None);
+    assert_eq!(
+        view.scan_after(Family::State, b"a", Some(b"b"), 1, 100),
+        Err(StoreError::Invalid)
+    );
+    assert_eq!(
+        view.scan_after(Family::State, b"a", None, 1, 5),
+        Err(StoreError::Capacity)
+    );
+    assert!(view
+        .scan_after(Family::State, b"z", None, 1, 5)
+        .unwrap()
+        .rows
+        .is_empty());
+}
+
+#[test]
 fn state_command_and_outbox_have_one_atomic_snapshot_and_reopen_identity() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("store.redb");
