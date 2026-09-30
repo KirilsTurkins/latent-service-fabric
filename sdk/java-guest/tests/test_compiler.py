@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from tools.build_process import BuildProcessError
 from tools.java_capsule_build import retain_logs
-from tools.java_guest.compiler import Compiler
+from tools.java_guest.compiler import Compiler, stage_sdk_service
 from tools.java_guest.class_origin import checkpoint_index, source_file
 
 
@@ -49,6 +49,22 @@ class Diagnostics(unittest.TestCase):
                     self.assertEqual(record["processFailure"], "command-deadline")
                 else:
                     self.assertIn(b"compiler failure", (output / "compiler-logs/0-java-version.log").read_bytes())
+
+    def test_trusted_compiler_services_merge_without_replacing_existing_profile(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            name = "META-INF/services/org.teavm.extension.spi.substitution.SubstitutionPolicy"
+            target = Path(temporary) / name
+            stage_sdk_service(target, name, b"dev.latent.guest.server.compiler.ServerSubstitution\n")
+            stage_sdk_service(target, name, b"dev.latent.guest.runtime.compiler.RuntimeSubstitution\n")
+            expected = (b"dev.latent.guest.server.compiler.ServerSubstitution\n"
+                        b"dev.latent.guest.runtime.compiler.RuntimeSubstitution\n")
+            self.assertEqual(target.read_bytes(), expected)
+            with self.assertRaisesRegex(ValueError, "duplicate"):
+                stage_sdk_service(target, name, b"dev.latent.guest.runtime.compiler.RuntimeSubstitution\n")
+            self.assertEqual(target.read_bytes(), expected)
+            with self.assertRaisesRegex(ValueError, "invalid"):
+                stage_sdk_service(target, "ordinary-resource.txt", b"app.CompilerExtension\n")
+            self.assertEqual(target.read_bytes(), expected)
 
 
 class ClassOrigin(unittest.TestCase):

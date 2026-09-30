@@ -4,6 +4,7 @@ import json
 import importlib.util
 import os
 from pathlib import Path
+import re
 import shutil
 import sys
 import time
@@ -45,10 +46,33 @@ def sdk_snapshot(root: Path) -> dict:
         "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
         "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
         "tools/teavm_platform.py", "tools/capture.py")}
-    for folder in ("runtime", "templates", "wit", "fibers"):
-        if folder == "fibers" and not (root / folder).is_dir(): continue
+    for folder in ("runtime", "templates", "wit", "fibers", "server"):
+        if folder in ("fibers", "server") and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
     return dict(sorted(files.items()))
+
+
+def stage_sdk_service(target: Path, name: str, data: bytes) -> None:
+    """Merge explicit trusted SDK extensions without replacing another profile."""
+    if (not name.startswith("META-INF/services/org.teavm.") or len(data) > 16384
+            or target.is_symlink()):
+        raise ValueError("invalid Java SDK compiler service")
+    def entries(raw: bytes) -> list[str]:
+        providers = []
+        for line in raw.decode("utf-8").splitlines():
+            provider = line.split("#", 1)[0].strip()
+            if not provider: continue
+            if (len(providers) >= 128 or not re.fullmatch(r"[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)+", provider)
+                    or provider in providers):
+                raise ValueError("invalid Java SDK compiler service provider")
+            providers.append(provider)
+        if not providers: raise ValueError("empty Java SDK compiler service")
+        return providers
+    previous = entries(read_file(target, 16384)) if target.exists() else []
+    selected = entries(data)
+    if set(previous) & set(selected): raise ValueError("duplicate Java SDK compiler service provider")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(("\n".join([*previous, *selected]) + "\n").encode("utf-8"))
 
 
 def tool_inventory(roots: dict[str, Path]) -> bytes:
@@ -161,9 +185,12 @@ class Compiler:
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
-                activation_profile: bool = False) -> tuple[Path, dict]:
+                activation_profile: bool = False, server_profile: bool = False,
+                server_bridge: bytes | None = None) -> tuple[Path, dict]:
         if type(activation_profile) is not bool:
             raise ValueError("Java activation profile requires an explicit boolean selection")
+        if type(server_profile) is not bool or server_bridge is not None and not server_profile:
+            raise ValueError("automatic server bridge requires an explicitly selected profile")
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
@@ -195,15 +222,19 @@ class Compiler:
             "org.gradle.java.installations.fromEnv=JAVA_HOME\n", encoding="utf-8")
         java_root = project / "src/main/java"
         shutil.copytree(self.sdk / "runtime/dev", java_root / "dev")
-        if activation_profile:
-            for folder in ("fibers/dev", "fibers/compiler/dev"):
+        for selected, profile in ((server_profile, "server"), (activation_profile, "fibers")):
+            if not selected: continue
+            # Both extensions are SDK-owned; application compiler services stay
+            # separate. Source collisions fail instead of replacing either port.
+            for folder in (profile + "/dev", profile + "/compiler/dev"):
                 for name, data in snapshot(self.sdk / folder).items():
                     target = java_root / "dev" / name
                     if target.exists(): raise ValueError("Java runtime source collision")
                     target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
-            for name, data in snapshot(self.sdk / "fibers/services").items():
+            for name, data in snapshot(self.sdk / (profile + "/services")).items():
                 target = project / "src/main/resources" / name
-                target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+                stage_sdk_service(target, name, data)
+        if activation_profile:
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         application_source_names = set()
@@ -213,6 +244,11 @@ class Compiler:
             if target.exists(): raise ValueError("application overrides Java SDK source")
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(read_file(path))
             application_source_names.add(path.relative_to(sources).as_posix())
+        if server_bridge is not None:
+            target = java_root / "dev/latent/app/Capsule.java"
+            if target.exists(): raise ValueError("application overrides the automatic server invocation bridge")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(server_bridge)
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
         if activation_profile:
