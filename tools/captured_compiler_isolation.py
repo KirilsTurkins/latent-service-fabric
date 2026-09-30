@@ -104,6 +104,8 @@ class Isolation:
             if "not found" in text:
                 raise DependencyError("compiler-runtime-library-missing")
             for name in re.findall(r"(?:=>\s*)?(/[^\s()]+)", text):
+                if any(Path(name).resolve(strict=True).is_relative_to(root) for root in self.distributions.values()):
+                    continue  # Already bound by the complete selected distribution.
                 if not name.startswith(("/lib/", "/lib64/", "/usr/lib/")):
                     raise DependencyError("compiler-runtime-library-outside-system-root")
                 path = Path(name).resolve(strict=True)

@@ -19,6 +19,14 @@ def main() -> int:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=project.TEMPLATES, default="greeting")
     new.add_argument("--name")
+    resolve_ = commands.add_parser("resolve", help="Capture the locked native Cargo graph and vendor closure")
+    resolve_.add_argument("project", type=Path)
+    resolve_.add_argument("--candidate", type=Path, required=True)
+    resolve_.add_argument("--cargo", type=Path)
+    resolve_.add_argument("--registry-config", type=Path, help="Explicit HTTPS private registry aliases; credentials stay in resolver environment")
+    resolve_.add_argument("--features", action="append", default=[])
+    resolve_.add_argument("--all-features", action="store_true")
+    resolve_.add_argument("--no-default-features", action="store_true")
     compile_ = commands.add_parser("build", help="Compile, validate and package actual project sources")
     compile_.add_argument("project", type=Path)
     compile_.add_argument("--output", type=Path, required=True, help="Fresh directory; failed attempts are retained")
@@ -32,6 +40,11 @@ def main() -> int:
     try:
         if args.command == "new":
             result = project.create(args.directory, args.template, args.name)
+        elif args.command == "resolve":
+            from tools.rust_application_dependencies import resolve
+            resolve(args.project, args.candidate, cargo=args.cargo, registry_config=args.registry_config, selection={"features": args.features,
+                    "allFeatures": args.all_features, "noDefaultFeatures": args.no_default_features})
+            result = args.candidate
         else:
             result = build(args.project, args.output, args.contracts_tool, None if args.package_inputs_only else args.packager,
                            args.repository, offline=args.offline)
