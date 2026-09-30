@@ -23,6 +23,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/attest-build-provenance` | `v4.2.2` | `4d101475d8b20a2381f78447822ac1eab6504dd8` |
 | `actions/upload-pages-artifact` | `v5.0.0` | `fc324d3547104276b827a68afc52ff2a11cc49c9` |
 | `dtolnay/rust-toolchain` | `1.97.1` | `4716b85f2fac3e324e64fa2810f6b5c3905760a5` |
+| `dtolnay/rust-toolchain` | `1.94.1` | `9376cdc5a5e25b16da71af47712785cf06b0d6d4` |
 | `Swatinem/rust-cache` | `v2.9.2` | `6323deb102c322ba6fcbdcafc7e3dddab59af2b6` |
 | `bytecodealliance/actions` | `v1` | `9152e710e9f7182e4c29ad218e4f335a7b203613` |
 | `bufbuild/buf-setup-action` | `v1` | `a47c93e0b1648d5651a065437926377d060baa99` |
@@ -69,14 +70,6 @@ diff were reviewed on **2026-09-27**. It uses Node 24 and keeps the explicit
 .NET SDK and cache inputs selected by the workflows. No new installer options
 or package sources are enabled. The workflow hashes in `tools/ci/commands.json`
 reflect the new pin; required commands and job conditions are unchanged.
-
-The shared `dtolnay/rust-toolchain` 1.97.1 identity and upstream action-definition
-diff were reviewed on **2026-09-28**. That revision hardcodes Rust 1.97.1 and has
-no `toolchain` input. The MSRV job therefore installs Rust 1.94.1 explicitly with
-`rustup toolchain install 1.94.1 --profile minimal --no-self-update` after the
-action runs. Its full and selected-package checks continue to invoke
-`cargo +1.94.1`. The installation command and updated workflow identity are
-recorded in `tools/ci/commands.json`; the declared MSRV remains 1.94.1.
 
 ## Updating a pin
 

@@ -2069,16 +2069,6 @@
       "workingDirectory": ".",
       "shell": "default",
       "run": "docker run --rm --network none --cpus 2 --memory 256m --pids-limit 32 --mount \"type=bind,source=$PWD,target=/source,readonly\" lsf-container-publisher --test /source/tools/trusted_edge/representation.test.mjs\npython3 tools/trusted_edge/qualification.py --image lsf-container-runtime --frontend-image lsf-container-publisher --edge-image lsf-trusted-edge --release-directory \"$CONTAINER_WORK/context/release\" --output \"$RUNNER_TEMP/compression-qualification\" --compression"
-    },
-    ".github/workflows/ci.yml:msrv:Install the declared minimum supported Rust toolchain": {
-      "workflow": ".github/workflows/ci.yml",
-      "job": "msrv",
-      "name": "Install the declared minimum supported Rust toolchain",
-      "jobIf": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
-      "stepIf": "success()",
-      "workingDirectory": ".",
-      "shell": "default",
-      "run": "rustup toolchain install 1.94.1 --profile minimal --no-self-update"
     }
   },
   "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -7212,7 +7202,7 @@
   "workflowIdentities": {
     ".github/workflows/registry-cli.yml": "a713a8b94a6165e048cbb65688f6c767010393b619c8c9cc9e080830786be854",
     ".github/workflows/c-guest-authoring.yml": "9517e1d2a98749f05121d389421f649c3b8aff8323e97046d5f456f1d489bc42",
-    ".github/workflows/ci.yml": "38801edce46219ef59a5a74f3ba2b55586f718c856361e09e08ea401c48e23bb",
+    ".github/workflows/ci.yml": "757a1841908f6f25de27a981bf85f7c197060d8fd7895664c8ad382dc3001dc4",
     ".github/workflows/developer-packaged-qualification.yml": "e9ec2f74bb293bd7694830746f8d23bc00eb439413ce8aa2312f6e223acea758",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "ba8a97d024e2735da86ff0e82c4ec20866195ad00b9cd7b77526d670aa94b27f",
