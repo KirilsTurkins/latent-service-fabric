@@ -4,6 +4,8 @@ use crate::payload::tests as payload_fixture;
 
 use super::*;
 
+mod validation;
+
 struct Fixture {
     directory: tempfile::TempDir,
     store: Option<EmbeddedStore>,

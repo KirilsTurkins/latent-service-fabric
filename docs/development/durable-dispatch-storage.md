@@ -45,6 +45,15 @@ prefixes; other namespace/command/maintenance codecs remain responsible for
 their own rows. Full dispatcher startup must also verify cross-row linkage and
 recover interrupted claims under exclusive process ownership before readiness.
 
+`DispatchCatalog::validate_view` validates this dispatcher's closed prefixes and
+cross-row links against one coherent borrowed startup snapshot. It checks exact
+due generations, unresolved payload digests, owner epochs, complete bounded
+history, active history placeholders and matching logical reservations, including
+orphaned rows. It walks finite 16-row/4 MiB pages and bounded point reads instead
+of collecting the backlog. The command registry validates its own foreign
+prefixes and command/commit linkage. `has_owner_history` exposes whether startup
+must obtain an admitted external epoch/clock checkpoint before claims.
+
 ## Integration ports
 
 `payload_digest(&Value)` lets the command coordinator capture immutable payload
@@ -85,8 +94,8 @@ send/claim restart boundaries, qualified retry, bounded history, policy/expiry,
 clock regression and older-checkpoint rejection. Fixed provider workers and
 standalone node lifecycle remain the ongoing #391 implementation.
 
-Measured on 2026-10-01: all 35 effect tests passed on Windows and the pinned
+Measured on 2026-10-01: all 38 effect tests passed on Windows and the pinned
 Linux Rust 1.97.1 image, with strict all-target/all-feature Clippy on both hosts.
-All 69 state tests and strict Clippy also passed on Linux. This includes the
+All 71 state tests and strict Clippy also passed on Linux. This includes the
 native full-store receipt pressure schedule and the shared engine reservation
 port from `fbe2c8e2`. Exact Linux discovery is registered in the workspace suite.
