@@ -4507,6 +4507,15 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "embedded::tests::closed_store_backup_compaction_and_independent_writer_rows_preserve_receipts",
+        "embedded::tests::conflicting_and_over_budget_batches_abort_all_families",
+        "embedded::tests::corrupt_bytes_and_concurrent_process_ownership_never_reset_the_store",
+        "embedded::tests::measurement::finite_engine_qualification_records_actual_commit_conflict_snapshot_and_recovery_costs",
+        "embedded::tests::owned_commit_child",
+        "embedded::tests::owned_process_termination_before_and_after_commit_recovers_all_or_none",
+        "embedded::tests::read_views_duplicates_and_prefix_scan_are_bounded",
+        "embedded::tests::state_command_and_outbox_have_one_atomic_snapshot_and_reopen_identity",
+        "embedded::tests::writers::bounded_concurrent_writers_serialize_conflicts_and_preserve_independent_rows",
         "namespace::tests::active_commit_blocks_retirement_and_lifecycle_preconditions_reject_races",
         "namespace::tests::create_quiesce_retire_destroy_recreate_never_reuses_aba_version",
         "namespace::tests::destruction_cannot_drop_required_results_effects_payloads_or_inbox",
@@ -4520,7 +4529,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 7,
+      "minimumCases": 16,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

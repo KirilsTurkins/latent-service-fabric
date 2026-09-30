@@ -1,0 +1,395 @@
+{
+  "schemaVersion": "latent.storage.selection-evidence.v1",
+  "issue": 381,
+  "sourceBaseRevision": "0632964db052fce601fb5844f0cb97c5a51f4715",
+  "testedSourceSnapshotDigest": "sha256:9263c32ed85d1aa1530c997bb6cd44b343762c6c2269f26d4e7337b6a2dd3c7f",
+  "testedSources": [
+    {
+      "path": "Cargo.lock",
+      "sha256": "4817206cd807b816d24ddb64db78efc4f385b36d8dae4084271ee6ef78c01a24"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "880b8d05023147de17a4bee061fb47a793660e164a7176c7a2c60a8ea57d0e1f"
+    },
+    {
+      "path": "crates/latent-core/Cargo.toml",
+      "sha256": "714fb4eb8661cf61629ffc39f239807ba3aa48258f8080b1a3e649dbd6639cc8"
+    },
+    {
+      "path": "crates/latent-core/src/budget/descendants/admission.rs",
+      "sha256": "dec46fe9077c580a1aaa6896b43ba2fb3a010edaf5b2fddc17ab7ec8be27d36b"
+    },
+    {
+      "path": "crates/latent-core/src/budget/descendants/memory.rs",
+      "sha256": "e1c0ab9b9f0de57f74d3e6e736e6e298222b3636983b239ef8fe91d96df01b15"
+    },
+    {
+      "path": "crates/latent-core/src/budget/descendants/mod.rs",
+      "sha256": "9c0b2d7db6b1fff48d35d3b0e0132dc4a82c443eb5f0ea4ac4d8929cb97c4892"
+    },
+    {
+      "path": "crates/latent-core/src/budget/descendants/retirement.rs",
+      "sha256": "f64a3dd348ea3dcdd5caa3597a586d862795f892633a8ceb1ea25db03e301b6c"
+    },
+    {
+      "path": "crates/latent-core/src/budget/descendants/tests.rs",
+      "sha256": "f60c28bccd6bc9c10da5f0a64d7e99044bfdcbf4070458af8dbe11439b8d6fc7"
+    },
+    {
+      "path": "crates/latent-core/src/budget/incoming/tests.rs",
+      "sha256": "7d539321e5f46f1aed9d59a09a7ef51bd81ef0137a25d92b81a380e74ce8c198"
+    },
+    {
+      "path": "crates/latent-core/src/budget/incoming.rs",
+      "sha256": "9f177318e84389d9e31f01ce341dfbcd2730d5c9ca7792ca0a993196fd116cc0"
+    },
+    {
+      "path": "crates/latent-core/src/budget/profile/tests.rs",
+      "sha256": "aa059991d3190ace59f57a41135fed0a848a5eddf078e9facc55ae789c1c2b4d"
+    },
+    {
+      "path": "crates/latent-core/src/budget/profile.rs",
+      "sha256": "37f4bf02167c270c5607159df3847953961ac16b7ebaf1955bd8ea02586ff206"
+    },
+    {
+      "path": "crates/latent-core/src/budget/reservation_group.rs",
+      "sha256": "43a3001dcdd45798140a7413c62ae871c4d932082355ca324c0805ac710086d3"
+    },
+    {
+      "path": "crates/latent-core/src/budget/runtime_memory.rs",
+      "sha256": "3ad5335908fe544dc7a7ff4523c7b07a84b934209b105b6858b2291df6e28185"
+    },
+    {
+      "path": "crates/latent-core/src/budget/runtime_usage/tests.rs",
+      "sha256": "8c50a546df4a53de350c7cd016c1718d44de9324cc72b400808a1377dfb35e80"
+    },
+    {
+      "path": "crates/latent-core/src/budget/runtime_usage.rs",
+      "sha256": "5d0e346ef2c58ba6180ee1b6869051be1dd12edc0eec2e1d0b5da74ab38e422d"
+    },
+    {
+      "path": "crates/latent-core/src/budget.rs",
+      "sha256": "01ad4bd3adfffec585d15d36f40052f9c17265f9507fe8bc706cbeaf202719e5"
+    },
+    {
+      "path": "crates/latent-core/src/clock.rs",
+      "sha256": "b44778f002b2e7afdbc5a9a47ac2160343a1e8575348e3b2b9ee93c8455e9d52"
+    },
+    {
+      "path": "crates/latent-core/src/deadline_diagnostic_observer/tests.rs",
+      "sha256": "48e2023e99c65fba51be8d8f7e0b79875a09773c8e224f83272db99898f6d6e8"
+    },
+    {
+      "path": "crates/latent-core/src/deadline_diagnostic_observer.rs",
+      "sha256": "b9a335e0041a271c4faad4ef9c7e036cbd61c71825644cb213c212c578c5d9de"
+    },
+    {
+      "path": "crates/latent-core/src/deadline_wait_observer.rs",
+      "sha256": "c5e3633fc8c792938ae06294ec3fddf20cc0f88b9fcc9533e961051d9c41ee1e"
+    },
+    {
+      "path": "crates/latent-core/src/digest.rs",
+      "sha256": "c9b5922b93ab0b15e1283dcda14f2ded79675f70ef42000d597a8244e2ce70c3"
+    },
+    {
+      "path": "crates/latent-core/src/error.rs",
+      "sha256": "d7c9718dcde13b9bfc7b0ce68c0aa12e66c38fe90eef178d9d4b2254860915f1"
+    },
+    {
+      "path": "crates/latent-core/src/host_profile.rs",
+      "sha256": "a542f6c954c828d38cad2dbb2b6b3141c50225e88b8f199c9e73aaecdfea280b"
+    },
+    {
+      "path": "crates/latent-core/src/identity.rs",
+      "sha256": "3b6afbc56a274205f07a3947afc0d21b6227c81360848f3dbd1ddf5f2080ca2f"
+    },
+    {
+      "path": "crates/latent-core/src/ids.rs",
+      "sha256": "310d382169fa9c45a2af8d0143f8b11132c724999fccfca590fe35c934da4d2f"
+    },
+    {
+      "path": "crates/latent-core/src/lib.rs",
+      "sha256": "2c6353c6def16d161286c2a05c8f0ff45fe74423014c1e2f5a09df4a7d31c3c1"
+    },
+    {
+      "path": "crates/latent-core/src/lifecycle.rs",
+      "sha256": "9f9a37d633cbb45c3ecb83d3da57b33fceafad93431a586471e0e0cd73cf93b6"
+    },
+    {
+      "path": "crates/latent-core/src/publication.rs",
+      "sha256": "7ff30d73bd2359e08b8216bf92ef3efbb487d3f8db74a3ad7bdfd41524feb0dd"
+    },
+    {
+      "path": "crates/latent-core/src/test_support/clocks/tests.rs",
+      "sha256": "b299c7d50233717f22bf5d7f29d224202024a3423504607d23fd1fdac6427397"
+    },
+    {
+      "path": "crates/latent-core/src/test_support/clocks.rs",
+      "sha256": "846c55df1a7c34c4bc40d572c75317a9e154f89b44d62771b7552d4e20b13c3f"
+    },
+    {
+      "path": "crates/latent-core/src/test_support/coordination/identity_tests.rs",
+      "sha256": "2d2156e4fc63d77c1cff0b08854b186bb3b2085e6d95686ab8e8bb63c42eaeae"
+    },
+    {
+      "path": "crates/latent-core/src/test_support/coordination/rendezvous.rs",
+      "sha256": "044ac163bdc479afdf4579063e5c5ce46ca600521b609f95eaace394fc9c60f0"
+    },
+    {
+      "path": "crates/latent-core/src/test_support/coordination/tests.rs",
+      "sha256": "6a9ae059e79f0a579902d801e424be6f3650cb967e371f3042946aeb46996e13"
+    },
+    {
+      "path": "crates/latent-core/src/test_support/coordination/watchdog.rs",
+      "sha256": "c86bb563883f67a5be4479c020eb543f8f1ca51a5b537dad78293af9d87d8746"
+    },
+    {
+      "path": "crates/latent-core/src/test_support/coordination.rs",
+      "sha256": "9fd6fe6265db16eabb1f70e927498deeb5f60af74c11f1b881ad264ecd03246f"
+    },
+    {
+      "path": "crates/latent-core/src/test_support/deterministic.rs",
+      "sha256": "3cca7471f2a9fc9f39ffd2013a453686bb23191ae30da746a055526cfdc4358a"
+    },
+    {
+      "path": "crates/latent-core/src/test_support/mod.rs",
+      "sha256": "9426de78d57e19678f672777376923e9aa1ffb4014fe397292bf77d3a27a6770"
+    },
+    {
+      "path": "crates/latent-state/Cargo.toml",
+      "sha256": "75ea9ba57708b28dd28a269bfc28980cdd468d6acfc2581734d726c5bb2c2ce0"
+    },
+    {
+      "path": "crates/latent-state/src/embedded/tests/measurement.rs",
+      "sha256": "1b7c6d8479ff3e7e2212aca62a4993de1d9e7cf87e0b77c3c978f61fa9238fb8"
+    },
+    {
+      "path": "crates/latent-state/src/embedded/tests/writers.rs",
+      "sha256": "d729b0c60a6a0ee680fe948fed304f29ef86637464f851249325cb9531a8d3be"
+    },
+    {
+      "path": "crates/latent-state/src/embedded/tests.rs",
+      "sha256": "abe5c0df7d410911896a36a4bcada5411f4bf1dbe7f16fc9e75c3b108f65ee47"
+    },
+    {
+      "path": "crates/latent-state/src/embedded.rs",
+      "sha256": "bca46f5921b9f1f809be40323d9fd4ee0c240d90d0a2a1054323d681f7c026e8"
+    },
+    {
+      "path": "crates/latent-state/src/lib.rs",
+      "sha256": "35f6946dcb0cd0227f5fcc0475d059c80e7cbc73dec78160c1c5174beb403fa2"
+    },
+    {
+      "path": "crates/latent-testkit/Cargo.toml",
+      "sha256": "b7d025eae165d74bbcbb7489570303f26b75d7c6453a0c45ac5806275fea30ec"
+    },
+    {
+      "path": "crates/latent-testkit/examples/cancellation.rs",
+      "sha256": "3dca94a07cb960b71fc6cc7612c77ec6556023d7debcedb21181e13404b6e638"
+    },
+    {
+      "path": "crates/latent-testkit/examples/deadline.rs",
+      "sha256": "f1df7a419f5c2be0b67ae54f81cef594a2bab98740a20d9f1afa7c750897931a"
+    },
+    {
+      "path": "crates/latent-testkit/src/async_runtime.rs",
+      "sha256": "cb9e990e8458661a0472cd7922822fbfab17d98967b52c9c5e4b8c9a3fbff922"
+    },
+    {
+      "path": "crates/latent-testkit/src/conformance/model.rs",
+      "sha256": "8e94e089095027353b60507642b26c1257087283ecc9d57ca0d1fec45e0e51c7"
+    },
+    {
+      "path": "crates/latent-testkit/src/conformance/tests.rs",
+      "sha256": "f0e76484d03d1594fae73f138dd68631088c79379a57480db016a0cdbcdfcb67"
+    },
+    {
+      "path": "crates/latent-testkit/src/conformance/work.rs",
+      "sha256": "c9557320eebe530de0a35154f116e87effe5c2d93d53ce9bfce63af4c8ea7aa1"
+    },
+    {
+      "path": "crates/latent-testkit/src/conformance/writer.rs",
+      "sha256": "d736b54ccb64eb2bb550d67a31f5722e66ac41ab35347b12930653272ac690a9"
+    },
+    {
+      "path": "crates/latent-testkit/src/conformance.rs",
+      "sha256": "86edf59a8e4ffa59e0142636031134e44c9795a66a67f9afaf4b66a7702c2efa"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness/backend.rs",
+      "sha256": "6bc1ef5e96466539d3791a9904d73e20e1ed8028c64eaa728b370b165f9e6432"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness/node/tests.rs",
+      "sha256": "6a7bec7fcb590c1bda535e2edba4828b0f58b878979b57f3879089281557b71b"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness/node.rs",
+      "sha256": "1145f939c57988cec4f864ee36bb372f5d0c171d1099bb5e61df106d08d50cad"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness/probe.rs",
+      "sha256": "849ddf1dc0b83fbb27ca85b793c07696e0d5cb1f2888d81f353fc3b9daf7cc80"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness/suite.rs",
+      "sha256": "266259038bfd46e00fa3c7264a7bab6b9507d91af5cb7dfa6e660248c13ad394"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness/tests/contracts.rs",
+      "sha256": "0f9052a292e71cf096d962a4dbc1201698cd478a068a5778b7375f11de457bf3"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness/tests/probes.rs",
+      "sha256": "d586f5c936a2b2c6be48ed38929a8a2fe176f36252a7345746941d707fc9db13"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness/tests/support.rs",
+      "sha256": "d6b78e410f28ab5a2998d4f8bef88d80044f53093862a391c8ade769db6a1920"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness/tests.rs",
+      "sha256": "c2fc140182cb98d6e1af0539944891361c152e0179a6cd53dfe3236e3ef32739"
+    },
+    {
+      "path": "crates/latent-testkit/src/harness.rs",
+      "sha256": "ec9612cc0809e10bb095a4377a41f88acdb2c975182ff224abf2fb9b7d1b0f58"
+    },
+    {
+      "path": "crates/latent-testkit/src/lib.rs",
+      "sha256": "b4bb3ba56d19112a1bc575d69d79dd056368b34de922fe13c2d83e8d5852fffe"
+    },
+    {
+      "path": "crates/latent-testkit/src/process/owned/capture.rs",
+      "sha256": "a916c9893926f2bb0b34a386aabb78ab315d82995bbb8438257c6bc3c42a0e6e"
+    },
+    {
+      "path": "crates/latent-testkit/src/process/owned/tests.rs",
+      "sha256": "e8c56c758e4f0696feb724441c5fbb3678ae460bf275fe00689507413b60c2fb"
+    },
+    {
+      "path": "crates/latent-testkit/src/process/owned.rs",
+      "sha256": "410e09882f5979ca36872be453602ca0c71be528d81069a4f439ba3996fcfbe7"
+    },
+    {
+      "path": "crates/latent-testkit/src/process.rs",
+      "sha256": "2a8c2e7af1b64f7ecb9e388635711821e2a12f64f38d1e3dd4801703be296cb6"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/child/tests.rs",
+      "sha256": "f34ccd8fdb01f63fb535c510af9ed6b3a61d39fa090daf72834074557d88c65c"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/child.rs",
+      "sha256": "d282770b7d3c0994f9842069c0fb49177ed1b582a7d7d6b70474e3f33d4e8850"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/current.rs",
+      "sha256": "8c5615b6ba4cee32a6f67bf6ef89c8acf925f96ddbc7b072e5073a5967a74aa4"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/linux/files.rs",
+      "sha256": "c404fcf2bea6781ed97d663ff8decd1f966ddec95c6d1016c0cbce509f9d92b6"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/linux/parse/tests.rs",
+      "sha256": "50cc6ccd64ed7169d0c02f379475d374925bc025a9c16eb34768c5b8c0465578"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/linux/parse.rs",
+      "sha256": "9627797c3612b62da4e49674da761df5ed39364f7ef4509f857f5484f55ed9c9"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/linux/tests.rs",
+      "sha256": "0d51882a8973a9d908f34b192b95d36514d246eeb79314ab7de5bc3b8b91fad0"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/linux/tree.rs",
+      "sha256": "52a7de2b0ee61c490fff459545e0188095c3a5c54c7e6d17cb94b3d87237d389"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/linux.rs",
+      "sha256": "a032655e5a430fa14b392005694de453e656287170b30c58ac9b1135161e6e37"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources/serialized.rs",
+      "sha256": "440bbff89b8131b3bd1c807f1e56d7bde466d20a467836b6c64448c33f6541d5"
+    },
+    {
+      "path": "crates/latent-testkit/src/resources.rs",
+      "sha256": "3f6ec1193b1434d487ef6f6486d366e285d931ed39ea97c099be6ded60128e80"
+    },
+    {
+      "path": "crates/latent-testkit/src/runtime_contract.rs",
+      "sha256": "d27ac415debf313a0149cbd59375690fcfb1c9512a3c6650048eed17c061dc76"
+    },
+    {
+      "path": "crates/latent-testkit/tests/test_support_compatibility.rs",
+      "sha256": "a0b8557cc5a0a4604c748b19baf9abb0f8e0d31d59dcc40814f45b5e67cbeaa3"
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "sha256": "7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc"
+    }
+  ],
+  "environment": [
+    "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "ext2/ext3",
+    "6.18.33.2-microsoft-standard-WSL2"
+  ],
+  "container": "rust:1.97.1-bookworm",
+  "storage": "isolated Docker local volume, ext filesystem reported by statfs, WSL2 kernel",
+  "candidateSqlite": "3.49.1 in Python 3.13.5, primary-document comparison only, no runtime dependency",
+  "qualification": {
+    "backupBytes": 40960,
+    "cacheBytes": 8388608,
+    "closedBackupMicros": 4620,
+    "compactionMicros": 18195,
+    "conflictMicros": 70,
+    "durability": "immediate",
+    "engine": "redb",
+    "engineVersion": "4.3.0",
+    "initializeMicros": 30630,
+    "networkFilesystemQualified": false,
+    "powerLossQualified": false,
+    "processCrashTests": 2,
+    "productionStoreOwnerQualified": false,
+    "reopenMicros": 1995,
+    "resources": {
+      "openFileDescriptors": "7",
+      "processId": 242,
+      "residentMemoryBytes": "8798208",
+      "socketCount": "2",
+      "threadCount": "2"
+    },
+    "schemaVersion": "latent.storage.qualification.v1",
+    "sequentialCommits": 32,
+    "sequentialMicros": 121336,
+    "snapshotAgeBoundMillis": 20,
+    "writerWithReadViewMicros": 2746
+  },
+  "concurrentWriters": {
+    "conflicts": 1,
+    "elapsedMicros": 14396,
+    "independentCommits": 2,
+    "winningCommits": 1,
+    "workers": 2
+  },
+  "passedRustCases": 9,
+  "linuxClippyPassed": true,
+  "powerLossQualified": false,
+  "protectedProductionOwnerQualified": false,
+  "notes": [
+    "One bounded real run under shared virtualized host load. No throughput target or performance comparison.",
+    "Process-kill before/after commit; no arbitrary power interruption or disk-full simulation.",
+    "Resource sample covers the test process; it is not a per-store maximum or isolated allocation measurement."
+  ],
+  "hardware": {
+    "cpuModel": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz",
+    "visibleCpuCount": 16,
+    "architecture": "x86_64",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "mount": "/dev/sdd /store ext4 rw,relatime 0 0"
+  }
+}

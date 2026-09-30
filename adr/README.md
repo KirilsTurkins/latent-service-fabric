@@ -119,3 +119,7 @@ old implementation snapshots are not setup instructions.
 ### Library concurrency research
 
 - [ADR-0060: Provide activation-scoped runtime compatibility for ordinary dependencies](0060-bound-invocation-scoped-concurrency.md)
+
+### Transactional state
+
+- [ADR-0061: Select redb for transactional host state](0061-select-redb-for-transactional-host-state.md)
