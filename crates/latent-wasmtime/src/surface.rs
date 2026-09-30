@@ -473,6 +473,10 @@ fn diagnostic_profile(mut error: PlatformError, config: &WasmtimeConfig) -> Plat
     use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticProfile};
     for detail in &mut error.details {
         if let Some(mut observation) = ActivationDiagnostic::from_detail(detail) {
+            // Every error returned by this type walker is preparation-owned;
+            // the execution codec's shared schema-limit helper is also used
+            // here and must not mislabel a failure before any Store exists.
+            observation.stage = latent_core::diagnostic::DiagnosticStage::Preparation;
             observation.profile = Some(if config.buffered_web_value_profile.is_some() {
                 DiagnosticProfile::WasmtimeBufferedWebValuesV1
             } else {
