@@ -4,12 +4,15 @@ import fs from 'node:fs';
 import {createRequire} from 'node:module';
 import path from 'node:path';
 
-export const ipAddressVersion = '10.5.1';
-export const ipAddressIntegrity = 'sha512-EXujUp9jyOI/chPgtqk6uy7fDq8AeCB/WlfEuPg9LN0fN9lzKAKfuDYi60SMhHwgUiEhZvVYsbGZN+RUU1INiA==';
+export const ipAddressVersion = '10.7.2';
+export const ipAddressIntegrity = 'sha512-7H/2gFSIitxc0hG3nOI1glS8QLo/EHBFFLk8vEUjXY/xu0AdL8jZ9U1IzO2PUm0d2D/ofQcAifb0g6OBkt8U7w==';
 export const undiciVersion = '6.28.1';
 export const undiciIntegrity = 'sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA==';
-const ipAddress = Object.freeze({name: 'ip-address', version: ipAddressVersion, integrity: ipAddressIntegrity, previousVersion: '10.5.0'});
-const undici = Object.freeze({name: 'undici', version: undiciVersion, integrity: undiciIntegrity, previousVersion: '6.28.0'});
+export const braceExpansionVersion = '5.0.12';
+export const braceExpansionIntegrity = 'sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==';
+const ipAddress = Object.freeze({name: 'ip-address', version: ipAddressVersion, integrity: ipAddressIntegrity, previousVersions: ['10.5.0', '10.5.1']});
+const undici = Object.freeze({name: 'undici', version: undiciVersion, integrity: undiciIntegrity, previousVersions: ['6.28.0']});
+const braceExpansion = Object.freeze({name: 'brace-expansion', version: braceExpansionVersion, integrity: braceExpansionIntegrity, previousVersions: ['5.0.9']});
 const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
 
 function directory(root, relative) {
@@ -78,7 +81,7 @@ function replaceBundledDependency(websiteRoot, selected) {
   const target = directory(root, bundleLocation);
   const old = read(path.join(target, 'package.json'));
   assert.equal(old.name, selected.name);
-  assert.ok([selected.previousVersion, selected.version].includes(old.version), 'Unexpected npm bundle; review it before replacing it');
+  assert.ok([...selected.previousVersions, selected.version].includes(old.version), 'Unexpected npm bundle; review it before replacing it');
   const parent = path.dirname(target);
   const staged = fs.mkdtempSync(path.join(parent, `.${selected.name}-patched-`));
   try {
@@ -102,6 +105,10 @@ export function replaceBundledIpAddress(websiteRoot) {
 
 export function replaceBundledUndici(websiteRoot) {
   replaceBundledDependency(websiteRoot, undici);
+}
+
+export function replaceBundledBraceExpansion(websiteRoot) {
+  replaceBundledDependency(websiteRoot, braceExpansion);
 }
 
 export function assertNat64Classification(Address6) {
@@ -140,7 +147,14 @@ export function verifyBundledIpAddress(websiteRoot) {
   const socksRequire = createRequire(npmRequire.resolve('socks'));
   assert.equal(fs.realpathSync(socksRequire.resolve('ip-address')), fs.realpathSync(path.join(target, 'dist/ip-address.js')),
     'The real npm SOCKS dependency must load the patched bundled copy');
-  const cases = assertNat64Classification(socksRequire('ip-address').Address6);
+  const {Address4, Address6} = socksRequire('ip-address');
+  const cases = assertNat64Classification(Address6);
+  // GHSA-j6r3-76f7-8jcv: a subnet of the other family never contains the address.
+  assert.equal(new Address4('127.0.0.1').isInSubnet(new Address6('::/0')), false);
+  assert.equal(new Address6('::1').isInSubnet(new Address4('0.0.0.0/0')), false);
+  // GHSA-h3mg-xc3c-68pw: reject length before running the address parser.
+  assert.throws(() => new Address4('1'.repeat(4096)), {name: 'AddressError', message: /at most 15 characters/});
+  assert.throws(() => new Address6(':'.repeat(4096)), {name: 'AddressError', message: /at most 45 characters/});
   return {advisory: 'GHSA-2vr4-cq9g-pvrc', ipAddress: ipAddressVersion, classificationCases: cases};
 }
 
@@ -154,4 +168,19 @@ export function verifyBundledUndici(websiteRoot) {
   assert.equal(npmRequire('undici/package.json').version, undiciVersion);
   assert.equal(typeof npmRequire('undici').fetch, 'function');
   return {undiciAdvisory: 'GHSA-3wwx-pv8p-q78v', undici: undiciVersion};
+}
+
+export function verifyBundledBraceExpansion(websiteRoot) {
+  const {root, files, bundleLocation} = inputs(websiteRoot, braceExpansion);
+  const target = directory(root, bundleLocation);
+  assert.deepEqual(inventory(target), files, 'npm must contain the complete reviewed brace-expansion replacement');
+  const npmRequire = createRequire(path.join(root, 'node_modules/npm/package.json'));
+  const minimatchRequire = createRequire(npmRequire.resolve('minimatch'));
+  assert.equal(fs.realpathSync(minimatchRequire.resolve('brace-expansion')), fs.realpathSync(path.join(target, 'dist/commonjs/index.js')),
+    'The real npm minimatch dependency must load the patched bundled copy');
+  const {expand} = minimatchRequire('brace-expansion');
+  assert.deepEqual(expand('file-{a,b}-{1..2}.txt'), ['file-a-1.txt', 'file-a-2.txt', 'file-b-1.txt', 'file-b-2.txt']);
+  assert.deepEqual(expand('{{{{a,b}}}}', {maxDepth: 2}), ['{{{{a,b}}}}']);
+  assert.deepEqual(expand('{a}}},z}', {maxRewrites: 1}), ['{a}}},z}']);
+  return {braceExpansion: braceExpansionVersion};
 }

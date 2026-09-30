@@ -1,4 +1,4 @@
-import {verifyBundledIpAddress, verifyBundledUndici} from '../lib/package-manager-security.mjs';
+import {verifyBundledIpAddress, verifyBundledUndici, verifyBundledBraceExpansion} from '../lib/package-manager-security.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,4 +22,4 @@ for (const [location, expected] of Object.entries(lock.packages)) {
   assert.equal(actual.version, expected.version, `Installed package manager dependency differs: ${location}`);
   packages++;
 }
-console.log(JSON.stringify({npm: toolchain.dependencies.npm, verifiedInstalledPackages: packages, ...verifyBundledIpAddress(root), ...verifyBundledUndici(root)}));
+console.log(JSON.stringify({npm: toolchain.dependencies.npm, verifiedInstalledPackages: packages, ...verifyBundledIpAddress(root), ...verifyBundledUndici(root), ...verifyBundledBraceExpansion(root)}));
