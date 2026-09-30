@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review native Rust library fixture capture, explicit executable approval denial and approved signed-component qualification entrypoint",
+  "reviewReason": "Capture Go native module inputs and exercise the real local/transitive/embed fixture in the signed workflow.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "989cb80dc5acca463e7c79c043dc0d8c512310a407f19a0a0dbda74923752a57"
+  "sha256": "44a9a9867ceb37c303f783cb5596d54062ff9317f513f4c2acaa2aa6abba02bb"
 }

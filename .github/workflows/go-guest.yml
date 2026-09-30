@@ -6,12 +6,17 @@ on:
       - sdk/go-guest/**
       - tools/go_guest/**
       - tools/go_capsule*.py
+      - tools/go_application_dependencies.py
+      - tools/go_dependency_fixture.py
+      - tools/application_dependenc*.py
+      - tools/captured_compiler_isolation.py
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
       - tools/tests/test_go_capsule_authoring.py
+      - tools/tests/test_go_application_dependencies.py
       - tools/tests/test_build_provenance_schemas.py
       - schemas/**
       - docs/component-development/go-authoring.md
@@ -35,12 +40,17 @@ on:
       - sdk/go-guest/**
       - tools/go_guest/**
       - tools/go_capsule*.py
+      - tools/go_application_dependencies.py
+      - tools/go_dependency_fixture.py
+      - tools/application_dependenc*.py
+      - tools/captured_compiler_isolation.py
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
       - tools/tests/test_go_capsule_authoring.py
+      - tools/tests/test_go_application_dependencies.py
       - tools/tests/test_build_provenance_schemas.py
       - schemas/**
       - docs/component-development/go-authoring.md
@@ -105,6 +115,9 @@ jobs:
       - name: Install the locked compiler and generator
         run: |
           set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
           cargo install --locked wasm-tools --version 1.254.0
           mkdir -p "$RUNNER_TEMP/go-guest-tools"
@@ -137,9 +150,9 @@ jobs:
       - name: Check standalone project source boundaries and closed provenance
         run: |
           python3 -m pip install -r tools/requirements.lock
-          python3 -m unittest tools.tests.test_go_capsule_authoring tools.tests.test_build_provenance_schemas
+          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_capsule_authoring tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation tools.tests.test_build_provenance_schemas
       - name: Qualify editable projects, all SDK owners, enforced node and printed guide
-        run: python3 tools/qualify_go_capsules.py --output "$RUNNER_TEMP/go-capsule-authoring"
+        run: python3 tools/qualify_go_capsules.py --application-dependencies --output "$RUNNER_TEMP/go-capsule-authoring"
       - name: Retain successful and failed upstream observations
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

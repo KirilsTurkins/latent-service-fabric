@@ -49,7 +49,10 @@ def inputs(language="rust"):
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
-                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml")
+                    "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml",
+                    "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
+                    "application_dependency_approval.py", "go_application_dependencies.py", "captured_compiler_isolation.py",
+                    "go_dependency_fixture.py")
     elif language == "typescript":
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
@@ -198,6 +201,15 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 from tools.c_dependency_fixture import install
                 stage = "application-dependency-capture"
                 result["applicationDependencies"] = install(project, output / "outside-project-dependencies")
+                write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
+                stage = "standalone-builds"
+            if language == "go" and application_dependencies and template == "greeting":
+                from tools.go_dependency_fixture import install
+                stage = "application-dependency-capture"
+                go = shutil.which("go", path=commands.environment["PATH"])
+                if go is None:
+                    raise ValueError("missing pinned Go module resolver")
+                result["applicationDependencies"] = install(project, output / "outside-project-dependencies", Path(go).resolve(strict=True))
                 write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
                 stage = "standalone-builds"
             artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],

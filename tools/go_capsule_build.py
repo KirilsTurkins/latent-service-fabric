@@ -10,6 +10,7 @@ from tools.build_observation import build_environment, file_identity, public_rep
 from tools.build_process import BuildProcessError
 from tools.go_guest.compiler import Compiler
 from tools.go_capsule_project import validate
+from tools.application_dependencies import prepare
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
                                         read_file, read_json, snapshot, write_json)
@@ -21,6 +22,8 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
           "examples/echo-contract/deployment.json")
+RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
+           "tools/application_dependency_approval.py", "tools/go_application_dependencies.py", "tools/captured_compiler_isolation.py")
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
@@ -48,8 +51,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
+            stage = "application-dependencies"
+            closure = prepare(project_path, work, output, "go")
             compiler = Compiler(temporary / "compiler", work / "vendor/lsf/sdk/go-guest", commands,
-                                offline_cache=offline_cache, source_root=project_path / "src")
+                                offline_cache=offline_cache, source_root=project_path / "src", application_closure=closure)
             materials = list(compiler.materials.values())
             paths = {"contracts-tool": checked_path(contracts_tool)}
             if packager is not None:
@@ -75,11 +80,13 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                 commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
-            if snapshot(project_path) != files or snapshot(work) != files:
+            if snapshot(project_path) != files or snapshot(work, exclude=("dependencies", "application-vendor") if closure else ()) != files:
                 raise ValueError("project changed during the observed Go build")
             if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
                 raise ValueError("Go authoring recipe changed during the build")
             compiler.check_unchanged()
+            if closure is not None:
+                closure.check_unchanged()
             for name, path in paths.items():
                 if file_identity(path, name) not in materials:
                     raise ValueError("packaging binary changed during the Go build")
@@ -92,6 +99,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("source-snapshot", source_inputs), ("build-recipe", recipe_inputs), ("package-inputs", package_inventory),
                 ("toolchain-config", files["vendor/lsf/sdk/go-guest/toolchain.lock.json"]),
                 ("dependency-lock", files["vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json"])))
+            if closure is not None:
+                for name in ("application-dependencies.json", "compiler-containment.json", "go-module-build-inputs.json"):
+                    data = read_file(output / name, 16 * 1024 * 1024)
+                    materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("Go build clock or overall deadline invalid")
