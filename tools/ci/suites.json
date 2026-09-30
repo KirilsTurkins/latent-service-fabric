@@ -1753,6 +1753,7 @@
         "dispatch::tests::qualified_retry_preserves_payload_provider_incarnation_and_dedup_horizon",
         "dispatch::tests::receipt_and_record_limits_reject_corruption_without_false_acknowledgement",
         "dispatch::tests::retained_old_envelope_and_command_link_survive_state_schema_and_result_expiry",
+        "dispatch_store::catalog::tests::accepted_attempt_reserves_disposition_bytes_and_actual_history_row_under_full_store_pressure",
         "dispatch_store::catalog::tests::claim_before_send_restart_is_known_nonexecution_and_missing_payload_fails_recovery",
         "dispatch_store::catalog::tests::native_claim_send_complete_and_history_are_generation_cas_atomic",
         "dispatch_store::catalog::tests::policy_block_and_expiry_persist_without_send_and_clock_restore_rollback_never_advances",
@@ -1771,7 +1772,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 34,
+      "minimumCases": 35,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [

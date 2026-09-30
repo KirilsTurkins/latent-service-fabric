@@ -18,6 +18,8 @@ requires a separately supported profile and is rejected by the dispatcher.
 | Maintenance | `dispatch-due-v1\0` + BE u64 due milliseconds + raw effect identity | `LDI\0\x01` + BE u64 namespace incarnation + BE u64 claim generation |
 | Maintenance | `dispatch-owner-v1\0` | `LDO\0\x01` + BE u64 process epoch + BE u64 trusted clock floor |
 | Attempt | `dispatch-history-v1\0` + raw effect identity + BE u64 history sequence | `LDH\0\x01` + bounded receipt/attempt JSON, at most 4 KiB |
+| Attempt | Same future history key while an attempt is active | `LHP\0\x01` + BE u64 owner epoch + BE u64 claim generation + BE u32 attempt |
+| Maintenance | `logical-reservation-v1\0dispatch-attempt-v1\0` + raw effect identity | Checked engine `LSR\x01` reservation, 70 KiB, bound to claim generation |
 
 The initial due time is the immutable authority's committed time, and initial
 claim generation is zero. Big-endian time and binary identity make finite prefix
@@ -60,6 +62,15 @@ cannot overwrite an active or terminal disposition. Qualified retries alone add
 another due row under the same stable effect/payload/provider identity. Unsafe
 retry proofs preserve the actual uncertain receipt.
 
+Claim also reserves 70 KiB of logical capacity and installs the future history
+row. Every engine writer counts that reserved capacity. Completion replaces the
+actual history placeholder and releases the reservation in the same transaction;
+the released reservation row can hold a qualified retry index. This preserves
+receipt capacity even when another writer fills the remaining byte and row
+quota. Pending history slots remain visible as a bounded diagnostic count, never
+as completed receipts. These reservations do not promise disk-free space or
+eliminate an uncertain physical flush failure.
+
 Startup advances the process epoch under exclusive store ownership, then checks
 cross-row linkage and recovers finite outbox pages. A persisted send marker means
 uncertain provider acceptance. Recovery before that marker is known nonexecution
@@ -74,6 +85,8 @@ send/claim restart boundaries, qualified retry, bounded history, policy/expiry,
 clock regression and older-checkpoint rejection. Fixed provider workers and
 standalone node lifecycle remain the ongoing #391 implementation.
 
-Measured on 2026-10-01: all 34 effect tests passed on Windows and the pinned
+Measured on 2026-10-01: all 35 effect tests passed on Windows and the pinned
 Linux Rust 1.97.1 image, with strict all-target/all-feature Clippy on both hosts.
-The exact Linux test discovery is registered in the existing workspace suite.
+All 69 state tests and strict Clippy also passed on Linux. This includes the
+native full-store receipt pressure schedule and the shared engine reservation
+port from `fbe2c8e2`. Exact Linux discovery is registered in the workspace suite.
