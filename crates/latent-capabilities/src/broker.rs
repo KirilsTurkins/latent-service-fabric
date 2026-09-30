@@ -24,6 +24,7 @@ mod invocation;
 pub mod io;
 mod limits;
 mod local_service;
+pub mod network;
 mod ownership;
 mod plan;
 pub mod pools;

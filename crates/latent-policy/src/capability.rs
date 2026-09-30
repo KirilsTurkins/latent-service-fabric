@@ -18,7 +18,10 @@ pub use control::{PolicyControlHandle, PolicyWorkPermit};
 pub use language::{CapabilityPolicy, PrincipalClass};
 pub use narrowing::GrantRestriction;
 pub use resource_request::ResourceRequest;
-pub use resources::{CapabilityCeiling, HttpOrigin, ResourceConstraint, ResourceTarget};
+pub use resources::{
+    CapabilityCeiling, HttpOrigin, ResourceConstraint, ResourceTarget, StreamEndpoint,
+    StreamTransport,
+};
 pub use store::{
     CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, PolicySnapshot,
     PolicySnapshotState, SealedPolicyDecision,
@@ -125,6 +128,16 @@ fn operation(contract: &str, name: &str) -> bool {
         "latent:secrets/reader@0.1.0" => &["read"],
         "latent:events/publisher@0.2.0" => &["publish"],
         "latent:http/client@0.2.0" => &["send"],
+        "latent:network/streams@0.1.0" => &[
+            "connect",
+            "read",
+            "write",
+            "ready",
+            "chunk-bytes",
+            "inspect",
+            "shutdown",
+            "close",
+        ],
         "latent:http/streaming@0.3.0" => &[
             "open",
             "write",
