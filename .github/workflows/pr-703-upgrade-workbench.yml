@@ -13,28 +13,22 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: 711c5773eab56487270b95d395bb6e4879394ea7
-          fetch-depth: 0
+          fetch-depth: 1
           persist-credentials: false
-      - name: Preserve exact source objects for local reconciliation
+      - name: Retain exact shallow snapshots, not unrelated repository history
         shell: bash
         run: |
           set -euo pipefail
-          git cat-file -e aaa4191436ef07e5a8739f411f63a1a85f99701f^{commit}
-          git cat-file -e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61^{commit}
-          git cat-file -e f92fd1d7d204e7f0a8d6a2974a6042d025ec4f38^{commit}
+          for sha in aaa4191436ef07e5a8739f411f63a1a85f99701f 10dc4c35fea30a4b67afc1e111054f75167b6166 f92fd1d7d204e7f0a8d6a2974a6042d025ec4f38 7aa1ae07c7ceed1c6ab32b6cdeb5b46ba31f750e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61; do
+            git fetch --no-tags --depth=1 origin "$sha"
+            git update-ref "refs/snapshots/$sha" "$sha"
+          done
           git config user.name 'Kirils Turkins'
           git config user.email '236028511+KirilsTurkins@users.noreply.github.com'
           tar -czf "$RUNNER_TEMP/pr703-git.tar.gz" .git
+          stat -c %s "$RUNNER_TEMP/pr703-git.tar.gz"
           test "$(stat -c %s "$RUNNER_TEMP/pr703-git.tar.gz")" -le 536870912
           sha256sum "$RUNNER_TEMP/pr703-git.tar.gz"
-      - name: Diagnose the development merge without changing remote branches
-        shell: bash
-        run: |
-          set -euo pipefail
-          git checkout --detach aaa4191436ef07e5a8739f411f63a1a85f99701f
-          git merge --no-commit --no-ff 711c5773eab56487270b95d395bb6e4879394ea7 || test -f .git/MERGE_HEAD
-          git status --short
-          git diff --cc
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: pr703-source-objects
@@ -42,3 +36,8 @@ jobs:
           retention-days: 1
           compression-level: 0
           if-no-files-found: error
+      - name: Diagnose the development merge without changing remote branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-tree --write-tree --merge-base=10dc4c35fea30a4b67afc1e111054f75167b6166 aaa4191436ef07e5a8739f411f63a1a85f99701f 711c5773eab56487270b95d395bb6e4879394ea7 || test "$?" = 1
