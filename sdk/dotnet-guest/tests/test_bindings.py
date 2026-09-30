@@ -15,6 +15,23 @@ from tools import dotnet_guest_bindings as bindings
 
 
 class BindingTests(unittest.TestCase):
+    def test_state_array_pin_repairs_only_the_exact_generated_memory_overload(self):
+        raw = 'global::ServiceWorld.wit.Imports.latent.state.IKeyValueImports'
+        original = ('namespace ServiceWorld.wit.Imports.latent.state;\n'
+            'public struct Value {\n        public byte[] bytes;\n}\n'
+            'public static unsafe Result<None, ' + raw + '.StateError> Put(' + raw +
+            '.Transaction transaction, global::System.Memory<byte> key, ' + raw + '.Value value)\n'
+            '{ fixed (void* listPtr = key.Span, listPtr0 = value.bytes.Span) {} }')
+        repaired = bindings.pinned_byte_array_access(original)
+        self.assertEqual(repaired, original.replace('value.bytes.Span', 'value.bytes'))
+        self.assertEqual(bindings.pinned_byte_array_access(repaired), repaired)
+        for changed in (original.replace('byte[] bytes', 'global::System.Memory<byte> bytes'),
+                        original.replace('.latent.state;', '.latent.http;'),
+                        original.replace('Value value)', 'Value input)'), original + original):
+            with self.subTest(changed=changed):
+                with self.assertRaisesRegex(bindings.BindingError, 'unreviewed-byte-array-pin'):
+                    bindings.pinned_byte_array_access(changed)
+
     def test_resource_order_is_canonical_but_bodies_remain_authoritative(self):
         first = '    public class Body: global::System.IDisposable {\n        public void Dispose() { Drop(1); }\n    }\n'
         second = '    public class Upload: global::System.IDisposable {\n        public void Dispose() { Drop(2); }\n    }\n'

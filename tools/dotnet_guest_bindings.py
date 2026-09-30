@@ -68,6 +68,28 @@ def canonical_resource_order(text: str) -> str:
     return text
 
 
+def pinned_byte_array_access(text: str) -> str:
+    """Repair the exact 0.62.0 state Value pin, retaining generated signatures.
+
+    The Memory overload's key is Memory<byte>, while a record's byte list is
+    byte[]. The pinned generator incorrectly reads .Span on that array. This
+    finite, signature-checked adaptation leaves metadata and layouts intact.
+    """
+    if "value.bytes.Span" not in text:
+        return text
+    namespace = re.search(r"(?m)^namespace ([A-Za-z_][\w]*World\.wit\.Imports\.latent\.state);$", text)
+    expected = "fixed (void* listPtr = key.Span, listPtr0 = value.bytes.Span)"
+    if namespace is None:
+        raise BindingError("unreviewed-byte-array-pin")
+    raw = "global::" + namespace[1] + ".IKeyValueImports"
+    signature = ("public static unsafe Result<None, " + raw + ".StateError> Put(" + raw +
+                 ".Transaction transaction, global::System.Memory<byte> key, " + raw + ".Value value)")
+    if (text.count(expected) != 1 or text.count("value.bytes.Span") != 1 or text.count(signature) != 1
+            or "public struct Value {\n        public byte[] bytes;" not in text):
+        raise BindingError("unreviewed-byte-array-pin")
+    return text.replace(expected, expected.replace("value.bytes.Span", "value.bytes"))
+
+
 def stackful_projection(document: dict) -> dict:
     """Change only async implementation kinds, never signatures or identities."""
     result = copy.deepcopy(document)
@@ -210,7 +232,7 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
              "--runtime", "native-aot", "--with-wit-results", "--out-dir", str(generated)])
         for path in generated.glob("*.cs"):
             value = read_bytes(path).decode("utf-8")
-            path.write_text(canonical_resource_order(value), encoding="utf-8", newline="\n")
+            path.write_text(pinned_byte_array_access(canonical_resource_order(value)), encoding="utf-8", newline="\n")
         metadata = list(generated.glob("*_component_type.wit"))
         if len(metadata) != 1:
             raise BindingError("missing-unique-component-type")
