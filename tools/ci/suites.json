@@ -7217,6 +7217,7 @@
         "invocation::validation::tests::unsupported_budgets_and_missing_targets_fail_before_authorization",
         "management::audit::lease::tests::page_lease_follows_unpolled_body_and_transport_retained_bytes",
         "management::audit::tests::audit_authorization_requires_admin_and_existing_operator_claim_for_node_scope",
+        "management::audit::tests::audit_resource_class_wire_numbers_remain_stable_and_stream_is_distinct",
         "management::audit::tests::query_bounds_reject_hidden_capacity_unknown_kind_bad_time_and_oversized_cursor",
         "management::audit::tests::typed_query_requires_an_explicit_scope",
         "management::audit::tests::typed_scopes_cannot_select_foreign_tenant_even_for_an_operator",
@@ -7293,7 +7294,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 119,
+      "minimumCases": 120,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
