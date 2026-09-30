@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.composition.support.v1",
   "inputVersion": "latent.composition.v1",
-  "sourceRevision": "da6e50d182f6ae302ec305c71165cb89f31b564c",
+  "sourceRevision": "e7eb1e4e6f44fb5a38d7d41c87ad99a21a0b97fb",
   "selectionRule": "first-matching-row-after-closed-input-and-Java-interface-ambiguity-checks",
   "unlistedCombination": "selected-combination-needs-source-matched-owner-evidence",
   "unlistedState": "untested",
@@ -21,8 +21,8 @@
     },
     "native-surface": {
       "path": "crates/latent-wasmtime/src/surface.rs",
-      "digest": "sha256:7a1dd863cbef78dbf13bfb8b5c48e6050e606f15d577a6b73d04a702e0082fc8",
-      "commit": "768a3573c0671c09c58b602546971b1997eb4f78"
+      "digest": "sha256:d410f13dab4605e832d6b8ba73ec5dcf1845435244d69e44bb39b6ba8eb5c909",
+      "commit": "1c30a98d70b7dbb89bed52414f75571f7b7b407f"
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
@@ -83,6 +83,21 @@
       "path": "apps/latent/src/management/phase2/projection/trigger.rs",
       "digest": "sha256:cc75273e869950f5c690d08fd3c9b0c3429c4808eb0cf913f5849a68143404d2",
       "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "structural-packaging": {
+      "path": "crates/latent-packaging/src/semantics/host.rs",
+      "digest": "sha256:da68c0c7186ec6eb2b64587d519870a2e82c2ed22692adf986ff217c8f9313bb",
+      "commit": "1c30a98d70b7dbb89bed52414f75571f7b7b407f"
+    },
+    "structural-engine-profile": {
+      "path": "crates/latent-wasmtime/src/config/profile.rs",
+      "digest": "sha256:001ae8c2b9c374a420b238d6e807c904dd7fefdd1ae3fee8ea11af482881dcc9",
+      "commit": "1c30a98d70b7dbb89bed52414f75571f7b7b407f"
+    },
+    "ready-inspection": {
+      "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",
+      "digest": "sha256:2f062d6af24f7dd09d94060c766705d8398cab549c71885db5e51269e7a6094e",
+      "commit": "9c8d836c6ac950c27b2d8add4fbd7e150fd55c7d"
     }
   },
   "axes": {
@@ -142,7 +157,22 @@
       "ordinaryConfiguredProvider": false,
       "sealedWebProjection": "implicit-only-after-native-checked-layout-and-projection-validation"
     },
-    "streaming": "ABI recognition and SDK ownership do not install a configured standalone provider binding"
+    "streaming": "ABI recognition and SDK ownership do not install a configured standalone provider binding",
+    "structuralInterfaces": {
+      "profile": "structural-type-imports=resource-free-values-v1",
+      "classification": "actual-checked-component-instance",
+      "callableAuthority": false,
+      "resourceHandles": false,
+      "futuresAndStreams": false,
+      "nestedInstances": false,
+      "inspectionMaximumTotalInterfaces": 64,
+      "sources": [
+        "native-surface",
+        "structural-packaging",
+        "structural-engine-profile",
+        "ready-inspection"
+      ]
+    }
   },
   "resourceBudgetTypes": {
     "u32DecimalStrings": [
