@@ -17,6 +17,6 @@ sha2.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
-latent-testkit = { path = "../latent-testkit", default-features = false }
+latent-test-process = { path = "../latent-test-process" }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 serde_json.workspace = true
