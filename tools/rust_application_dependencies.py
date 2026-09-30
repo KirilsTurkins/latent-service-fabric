@@ -194,9 +194,18 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
                          Path(package['manifest_path']).parent.resolve().relative_to(project)
                          for package in metadata['packages'] if Path(package['manifest_path']).resolve().is_relative_to(project)}})
         root_id = 'cargo-project/' + digest(before['Cargo.toml'])[7:31]
-        artifacts.append({'id': root_id, 'role': 'generated', 'format': 'file', 'mount': 'application-vendor/cargo-project/Cargo.toml',
+        root_package = next(package for package in metadata['packages'] if Path(package['manifest_path']).resolve() == project / 'Cargo.toml')
+        build_target = next((target for target in root_package['targets'] if 'custom-build' in target['kind']), None)
+        build_script = None
+        if build_target is not None:
+            path = Path(build_target['src_path']).resolve(strict=True)
+            if not path.is_relative_to(project):
+                raise DependencyError('cargo-root-build-script-outside-captured-source')
+            data = read_bytes(path)
+            build_script = {'path': path.relative_to(project).as_posix(), 'digest': digest(data), 'size': len(data)}
+        artifacts.append({'id': root_id, 'role': 'build-tool' if build_script else 'generated', 'format': 'file', 'mount': 'application-vendor/cargo-project/Cargo.toml',
                           'source': {'path': str(project / 'Cargo.toml')}, 'dependencies': [row['id'] for row in artifacts],
-                          'metadata': {'ecosystem': 'cargo', 'rootManifest': True}})
+                          'metadata': {'ecosystem': 'cargo', 'rootManifest': True, 'buildScript': build_script}})
         store = Store(project / 'dependency-inputs/objects')
         transforms = []
         for row in artifacts:
@@ -251,6 +260,17 @@ def configure(closure, work: Path, home: Path) -> tuple[bytes, dict]:
     root = next((row for row in closure.lock['artifacts'] if row['metadata'].get('rootManifest')), None)
     if root is None:
         raise DependencyError('cargo-selected-root-manifest-missing')
+    if digest(read_bytes(work / 'Cargo.toml')) != root['original']['digest']:
+        raise DependencyError('cargo-root-manifest-drift-resolve-and-review')
+    declaration = tomllib.loads(read_bytes(work / 'Cargo.toml').decode())
+    script = declaration['package'].get('build', 'build.rs' if (work / 'build.rs').exists() else False)
+    expected_script = root['metadata'].get('buildScript')
+    if script is not False:
+        data = read_bytes(work / script)
+        if expected_script != {'path': script, 'digest': digest(data), 'size': len(data)} or root['role'] != 'build-tool':
+            raise DependencyError('cargo-root-build-script-drift-resolve-and-review')
+    elif expected_script is not None:
+        raise DependencyError('cargo-root-build-script-drift-resolve-and-review')
     adapted = read_bytes(work / root['mount'])
     (work / 'Cargo.toml').write_bytes(adapted)
     source = graph['sourceReplacement'].get('source', {})

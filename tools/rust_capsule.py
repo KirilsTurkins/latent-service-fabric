@@ -36,6 +36,7 @@ def main() -> int:
     packaging.add_argument("--packager", type=Path, default=project.ROOT / "target/debug/examples/package")
     packaging.add_argument("--package-inputs-only", action="store_true", help="Emit checked bytes for a separately invoked packager")
     compile_.add_argument("--offline", action="store_true", help="Use already-cached pinned Cargo dependencies only")
+    compile_.add_argument("--executable-approval", help="Exact captured build-script/proc-macro compiler/profile approval digest")
     args = parser.parse_args()
     try:
         if args.command == "new":
@@ -47,7 +48,7 @@ def main() -> int:
             result = args.candidate
         else:
             result = build(args.project, args.output, args.contracts_tool, None if args.package_inputs_only else args.packager,
-                           args.repository, offline=args.offline)
+                           args.repository, offline=args.offline, executable_approval=args.executable_approval)
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError) as error:
