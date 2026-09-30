@@ -32,6 +32,9 @@ pub struct NodeConfig {
     #[cfg(feature = "development-test-node")]
     #[serde(default, deserialize_with = "super::development::present")]
     pub development_test: Option<super::DevelopmentTestConfig>,
+    #[cfg(feature = "development-test-node")]
+    #[serde(default, deserialize_with = "super::development_preparation::present")]
+    pub development_preparation: Option<super::DevelopmentPreparationProfile>,
     #[serde(default, deserialize_with = "super::renderer::present")]
     pub renderer_profile: Option<latent_manifest::RendererProfile>,
     #[serde(default)]

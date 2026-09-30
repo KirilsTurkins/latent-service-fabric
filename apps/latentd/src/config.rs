@@ -7,6 +7,8 @@ mod capability_policies;
 mod derive;
 #[cfg(feature = "development-test-node")]
 mod development;
+#[cfg(feature = "development-test-node")]
+mod development_preparation;
 mod engine;
 pub(crate) mod http;
 mod input;
@@ -34,6 +36,8 @@ pub use budgets::BudgetConfig;
 pub use capability_policies::CapabilityPolicyConfig;
 #[cfg(feature = "development-test-node")]
 pub use development::DevelopmentTestConfig;
+#[cfg(feature = "development-test-node")]
+pub use development_preparation::DevelopmentPreparationProfile;
 pub use http::{
     HttpAuthentication, HttpIngressConfig, HttpIngressLimits, HttpOrigin, HttpTransport,
 };
