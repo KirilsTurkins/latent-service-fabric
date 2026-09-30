@@ -165,9 +165,17 @@ impl AuditCapabilityContext {
                 return Err(invalid());
             }
         }
-        latent_core::PHASE3_HOST_ABI_CURRENT
+        if latent_core::PHASE3_HOST_ABI_CURRENT
             .interface(&self.capability)
-            .ok_or_else(invalid)?;
+            .is_none()
+            && !(self.resource_class == AuditCapabilityResourceClass::State
+                && matches!(
+                    self.capability.as_str(),
+                    "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
+                ))
+        {
+            return Err(invalid());
+        }
         codec::token(&self.operation, 64)?;
         let expected = match self.resource_class {
             AuditCapabilityResourceClass::Context => "latent:context/",

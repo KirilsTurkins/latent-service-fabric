@@ -184,6 +184,12 @@ impl NamespaceAuthority {
     pub fn ceiling(&self) -> CapabilityCeiling {
         self.ceiling
     }
+    /// The transaction/audit owner must honor this captured requirement and any
+    /// stricter fresh operation requirement. This getter allocates no audit slot.
+    #[must_use]
+    pub const fn requires_audit(&self) -> bool {
+        self.initial.requires_audit()
+    }
     #[must_use]
     pub fn cancellation(&self) -> CommitCancellation {
         CommitCancellation {

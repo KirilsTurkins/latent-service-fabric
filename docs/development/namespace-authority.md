@@ -36,6 +36,12 @@ operation ID conflicts. Replaying a historical receipt additionally requires
 current `namespace-inspect` permission and a current namespace row. An old
 incarnation's grant cannot inspect or replay a recreated namespace.
 
+Use `NamespaceControl::with_inspection` before receipt lookup and again before
+response disclosure. It checks the current exact namespace grant, mutable
+lifecycle and stable actor ownership; a historical receipt cannot reveal another
+caller's operation. Tombstone metadata remains inspectable with the current
+grant for its exact incarnation. Its short callback performs no I/O.
+
 The explicit lifecycle is create, active, quiescing, retired, tombstone, and
 explicitly approved recreation. Quiescing closes new commands and invalidates
 existing command/query/page authority at logical acceptance. Retirement,
