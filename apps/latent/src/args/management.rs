@@ -33,6 +33,34 @@ pub enum DeploymentCommand {
 #[derive(Subcommand)]
 pub enum RouteCommand {
     Get(RouteGetArgs),
+    /// Inspect an immutable typed/HTTP target without invoking or binding it.
+    Target(TargetInspectionArgs),
+}
+
+#[derive(Args)]
+pub struct TargetInspectionArgs {
+    #[arg(long)]
+    pub service: String,
+    #[arg(long)]
+    pub contract: String,
+    #[arg(long)]
+    pub function: String,
+    #[arg(long)]
+    pub route: Option<String>,
+    #[arg(long)]
+    pub revision: Option<String>,
+    /// Exact publication:sha256: identity in the authenticated tenant.
+    #[arg(long)]
+    pub publication: Option<String>,
+    /// Evaluate this hypothetical routing key; absence returns candidates only.
+    #[arg(long)]
+    pub routing_key: Option<String>,
+    /// Validate and compile the selected component without materialization.
+    #[arg(long)]
+    pub include_preparation: bool,
+    /// One total wait across every candidate. Zero selects 10 seconds.
+    #[arg(long, default_value_t = 0, value_parser = clap::value_parser!(u64).range(..=30_000))]
+    pub maximum_wait_millis: u64,
 }
 
 #[derive(Subcommand)]

@@ -31,8 +31,13 @@ impl WasmtimeBackend {
         let runtime = &pending.owner.runtime;
         self.shared.preparation_context.check_runtime(runtime)?;
         let surface = &runtime.surface;
-        if surface.imports.len() > 64 || surface.imports.iter().any(|contract| contract.len() > 512) {
-            return Err(platform_error(PlatformErrorCode::ResourceExhausted, "preparation-inspection-import-limit", false));
+        if surface.imports.len() > 64 || surface.imports.iter().any(|contract| contract.len() > 512)
+        {
+            return Err(platform_error(
+                PlatformErrorCode::ResourceExhausted,
+                "preparation-inspection-import-limit",
+                false,
+            ));
         }
         let profile =
             if surface.has_web_application() && self.config.buffered_web_value_profile.is_some() {
@@ -40,6 +45,8 @@ impl WasmtimeBackend {
             } else {
                 latent_core::diagnostic::DiagnosticProfile::WasmtimeServiceValuesV1
             };
+        // Validate the aggregate name bound before cloning either collection.
+        let exports = surface.inspection_exports()?;
         Ok(latent_executor::PreparationInspection {
             key: pending.descriptor.key.clone(),
             component_digest: latent_core::ReleaseDigest(
@@ -52,9 +59,12 @@ impl WasmtimeBackend {
             maximum_lifted_bytes: surface.value_codec_limits.max_lifted_bytes as u64,
             maximum_type_nodes: surface.value_codec_limits.max_type_nodes as u64,
             declared_budget: runtime.declared_budget.clone(),
-            sealed_metadata_fingerprint: runtime.authentication.as_ref().map(|identity| *identity.metadata().digest()),
+            sealed_metadata_fingerprint: runtime
+                .authentication
+                .as_ref()
+                .map(|identity| *identity.metadata().digest()),
             imports: surface.imports.iter().cloned().map(ContractId).collect(),
-            exports: surface.inspection_exports()?,
+            exports,
         })
     }
 

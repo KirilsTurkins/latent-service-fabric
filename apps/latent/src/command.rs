@@ -260,6 +260,7 @@ fn name(command: &Command) -> &'static str {
         Command::Deployment(D::List(_)) => "deployment list",
         Command::Deployment(D::Delete(_)) => "deployment delete",
         Command::Route(Route::Get(_)) => "route get",
+        Command::Route(Route::Target(_)) => "route target",
         Command::Invoke(_) => "invoke",
         Command::Activation(A::Get(_)) => "activation get",
         Command::Activation(A::Cancel(_)) => "activation cancel",
