@@ -946,6 +946,8 @@ impl From<control::ActivationTreeNode> for model::ActivationTreeNode {
             granted_budget: value.granted_budget.map(Into::into),
             effective_deadline_unix_millis: value.effective_deadline_unix_millis,
             diagnostic_is_terminal: value.diagnostic_is_terminal,
+            target_service: value.target_service,
+            received_at_unix_millis: value.received_at_unix_millis,
         }
     }
 }
@@ -965,6 +967,8 @@ impl From<model::ActivationTreeNode> for control::ActivationTreeNode {
             granted_budget: value.granted_budget.map(Into::into),
             effective_deadline_unix_millis: value.effective_deadline_unix_millis,
             diagnostic_is_terminal: value.diagnostic_is_terminal,
+            target_service: value.target_service,
+            received_at_unix_millis: value.received_at_unix_millis,
         }
     }
 }
@@ -974,6 +978,8 @@ impl From<control::InspectActivationTreeRequest> for model::InspectActivationTre
         Self {
             activation_id: value.activation_id,
             page: value.page.map(Into::into),
+            service: value.service,
+            from_unix_millis: value.from_unix_millis,
         }
     }
 }
@@ -983,6 +989,8 @@ impl From<model::InspectActivationTreeRequest> for control::InspectActivationTre
         Self {
             activation_id: value.activation_id,
             page: value.page.map(Into::into),
+            service: value.service,
+            from_unix_millis: value.from_unix_millis,
         }
     }
 }

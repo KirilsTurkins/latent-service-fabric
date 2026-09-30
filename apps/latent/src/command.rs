@@ -264,6 +264,7 @@ fn name(command: &Command) -> &'static str {
         Command::Activation(A::Get(_)) => "activation get",
         Command::Activation(A::Cancel(_)) => "activation cancel",
         Command::Activation(A::Tree(_)) => "activation tree",
+        Command::Activation(A::Roots(_)) => "activation roots",
         Command::Node(N::Get(_)) => "node get",
         Command::Node(N::List(_)) => "node list",
     }

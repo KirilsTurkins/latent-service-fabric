@@ -347,11 +347,15 @@ public final class Management {
             Optional<String> callerService,
             Optional<ResourceBudget> grantedBudget,
             Optional<Long> effectiveDeadlineUnixMillis,
-            boolean diagnosticIsTerminal) { }
+            boolean diagnosticIsTerminal,
+            String targetService,
+            long receivedAtUnixMillis) { }
 
     public record InspectActivationTreeRequest(
             String activationId,
-            Optional<PageRequest> page) { }
+            Optional<PageRequest> page,
+            Optional<String> service,
+            Optional<Long> fromUnixMillis) { }
 
     public record InspectActivationTreeResponse(
             int schemaVersion,

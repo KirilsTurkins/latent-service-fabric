@@ -198,9 +198,15 @@ class Peer:
             else:
                 self.reply(connection, stream, value)
         elif operation == "InspectActivationTree":
-            assert request.activation_id == "operator-root"
             value = node_pb2.InspectActivationTreeResponse(schema_version=1, history_available=True, retained_history_only=True)
             value.page.SetInParent()
+            if request.HasField("service"):
+                assert request.activation_id == "" and request.service == "http-adapter" and request.from_unix_millis == MAXIMUM
+                value.nodes.add(activation_id="real-ingress", root_activation_id="real-ingress", target_service=request.service,
+                    received_at_unix_millis=MAXIMUM, principal_kind="trigger", phase="running")
+                self.reply(connection, stream, value)
+                return
+            assert request.activation_id == "operator-root"
             child = value.nodes.add(activation_id="child", root_activation_id="operator-root", parent_activation_id="operator-root", phase="materializing", principal_kind="service")
             child.diagnostic.CopyFrom(node_pb2.ActivationDiagnostic(schema_version=1, stage=777, reason=778, profile=779, configured_bound=0, calculated_requirement=MAXIMUM))
             self.reply(connection, stream, value)

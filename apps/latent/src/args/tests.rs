@@ -53,6 +53,28 @@ fn grammar_has_consistent_leaf_help_and_local_validation_needs_no_profile() {
 }
 
 #[test]
+fn activation_roots_preserves_exact_time_without_minting_an_activation_identity() {
+    let cli = parse(&[
+        "latent",
+        "activation",
+        "roots",
+        "--service",
+        "examples/java-http-adapter",
+        "--from-unix-millis",
+        "18446744073709551615",
+        "--page-size",
+        "32",
+    ]);
+    assert!(cli.validate().is_ok());
+    let Command::Activation(ActivationCommand::Roots(args)) = cli.command else {
+        panic!("roots command")
+    };
+    assert_eq!(args.from_unix_millis, Some(u64::MAX));
+    assert_eq!(args.service, "examples/java-http-adapter");
+    assert_eq!(args.page_size, 32);
+}
+
+#[test]
 fn generation_and_invocation_identity_preserve_absence_and_explicit_zero() {
     let absent = parse(&["latent", "deployment", "apply", "deployment.json"]);
     let Command::Deployment(DeploymentCommand::Apply(args)) = absent.command else {

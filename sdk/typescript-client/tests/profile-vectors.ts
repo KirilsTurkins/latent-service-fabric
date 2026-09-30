@@ -49,6 +49,43 @@ function rejects(action: () => unknown): void {
     const value: Profile.InspectActivationTreeRequest = {activationId: "activation-a"};
     check(value.activationId == "activation-a", "activation-tree-default-page.activation_id");
     check(!(value.page !== undefined), "activation-tree-default-page.page.presence");
+    check(!(value.service !== undefined), "activation-tree-default-page.service.presence");
+    check(!(value.fromUnixMillis !== undefined), "activation-tree-default-page.from_unix_millis.presence");
+}
+{
+    const value: Profile.InspectActivationTreeRequest = {activationId: "", page: {pageSize: 128}, service: "examples/java-http-adapter", fromUnixMillis: 18446744073709551615n};
+    check(value.activationId == "", "activation-roots-service-time-selector.activation_id");
+    check(value.page !== undefined, "activation-roots-service-time-selector.page.presence");
+    check(value.page!.pageSize == 128, "activation-roots-service-time-selector.page.page_size");
+    check(!(value.page!.pageToken !== undefined), "activation-roots-service-time-selector.page.page_token.presence");
+    check(value.service !== undefined, "activation-roots-service-time-selector.service.presence");
+    check(value.service! == "examples/java-http-adapter", "activation-roots-service-time-selector.service");
+    check(value.fromUnixMillis !== undefined, "activation-roots-service-time-selector.from_unix_millis.presence");
+    check(value.fromUnixMillis! == 18446744073709551615n, "activation-roots-service-time-selector.from_unix_millis");
+}
+{
+    const value: Profile.InspectActivationTreeResponse = {schemaVersion: 1, nodes: [{activationId: "host-generated-root", rootActivationId: "host-generated-root", phase: "running", lastUpdatedUnixMillis: 0n, principalKind: "trigger", diagnosticIsTerminal: false, targetService: "examples/java-http-adapter", receivedAtUnixMillis: 18446744073709551615n}], page: {}, historyAvailable: true, cursorExpired: false, retainedHistoryOnly: true};
+    check(value.schemaVersion == 1, "activation-root-real-ingress-identity.schema_version");
+    check(value.nodes.length == 1, "activation-root-real-ingress-identity.nodes.count");
+    check(value.nodes[0]!.activationId == "host-generated-root", "activation-root-real-ingress-identity.nodes.0.activation_id");
+    check(!(value.nodes[0]!.parentActivationId !== undefined), "activation-root-real-ingress-identity.nodes.0.parent_activation_id.presence");
+    check(value.nodes[0]!.rootActivationId == "host-generated-root", "activation-root-real-ingress-identity.nodes.0.root_activation_id");
+    check(value.nodes[0]!.phase == "running", "activation-root-real-ingress-identity.nodes.0.phase");
+    check(!(value.nodes[0]!.terminalState !== undefined), "activation-root-real-ingress-identity.nodes.0.terminal_state.presence");
+    check(value.nodes[0]!.lastUpdatedUnixMillis == 0n, "activation-root-real-ingress-identity.nodes.0.last_updated_unix_millis");
+    check(!(value.nodes[0]!.diagnostic !== undefined), "activation-root-real-ingress-identity.nodes.0.diagnostic.presence");
+    check(value.nodes[0]!.principalKind == "trigger", "activation-root-real-ingress-identity.nodes.0.principal_kind");
+    check(!(value.nodes[0]!.callerService !== undefined), "activation-root-real-ingress-identity.nodes.0.caller_service.presence");
+    check(!(value.nodes[0]!.grantedBudget !== undefined), "activation-root-real-ingress-identity.nodes.0.granted_budget.presence");
+    check(!(value.nodes[0]!.effectiveDeadlineUnixMillis !== undefined), "activation-root-real-ingress-identity.nodes.0.effective_deadline_unix_millis.presence");
+    check(value.nodes[0]!.diagnosticIsTerminal == false, "activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal");
+    check(value.nodes[0]!.targetService == "examples/java-http-adapter", "activation-root-real-ingress-identity.nodes.0.target_service");
+    check(value.nodes[0]!.receivedAtUnixMillis == 18446744073709551615n, "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis");
+    check(value.page !== undefined, "activation-root-real-ingress-identity.page.presence");
+    check(!(value.page!.nextPageToken !== undefined), "activation-root-real-ingress-identity.page.next_page_token.presence");
+    check(value.historyAvailable == true, "activation-root-real-ingress-identity.history_available");
+    check(value.cursorExpired == false, "activation-root-real-ingress-identity.cursor_expired");
+    check(value.retainedHistoryOnly == true, "activation-root-real-ingress-identity.retained_history_only");
 }
 {
     const value: Profile.InspectActivationTreeResponse = {schemaVersion: 1, nodes: [], page: {}, historyAvailable: false, cursorExpired: true, retainedHistoryOnly: true};
@@ -61,7 +98,7 @@ function rejects(action: () => unknown): void {
     check(value.retainedHistoryOnly == true, "activation-tree-expired-is-not-absence-proof.retained_history_only");
 }
 {
-    const value: Profile.InspectActivationTreeResponse = {schemaVersion: 1, nodes: [{activationId: "child-a", parentActivationId: "root-a", rootActivationId: "root-a", phase: "received", terminalState: "resource_exhausted", lastUpdatedUnixMillis: 18446744073709551615n, diagnostic: {schemaVersion: 1, stage: 3, reason: 1, profile: 1, configuredBound: 16777216n, calculatedRequirement: 67108864n}, principalKind: "service", callerService: "adapter", diagnosticIsTerminal: true}], page: {nextPageToken: "opaque-scoped-cursor"}, historyAvailable: true, cursorExpired: false, retainedHistoryOnly: true};
+    const value: Profile.InspectActivationTreeResponse = {schemaVersion: 1, nodes: [{activationId: "child-a", parentActivationId: "root-a", rootActivationId: "root-a", phase: "received", terminalState: "resource_exhausted", lastUpdatedUnixMillis: 18446744073709551615n, diagnostic: {schemaVersion: 1, stage: 3, reason: 1, profile: 1, configuredBound: 16777216n, calculatedRequirement: 67108864n}, principalKind: "service", callerService: "adapter", diagnosticIsTerminal: true, targetService: "", receivedAtUnixMillis: 0n}], page: {nextPageToken: "opaque-scoped-cursor"}, historyAvailable: true, cursorExpired: false, retainedHistoryOnly: true};
     check(value.schemaVersion == 1, "activation-tree-failed-preparation-before-guest.schema_version");
     check(value.nodes.length == 1, "activation-tree-failed-preparation-before-guest.nodes.count");
     check(value.nodes[0]!.activationId == "child-a", "activation-tree-failed-preparation-before-guest.nodes.0.activation_id");
@@ -92,6 +129,8 @@ function rejects(action: () => unknown): void {
     check(!(value.nodes[0]!.grantedBudget !== undefined), "activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence");
     check(!(value.nodes[0]!.effectiveDeadlineUnixMillis !== undefined), "activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence");
     check(value.nodes[0]!.diagnosticIsTerminal == true, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
+    check(value.nodes[0]!.targetService == "", "activation-tree-failed-preparation-before-guest.nodes.0.target_service");
+    check(value.nodes[0]!.receivedAtUnixMillis == 0n, "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis");
     check(value.page !== undefined, "activation-tree-failed-preparation-before-guest.page.presence");
     check(value.page!.nextPageToken !== undefined, "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
     check(value.page!.nextPageToken! == "opaque-scoped-cursor", "activation-tree-failed-preparation-before-guest.page.next_page_token");
@@ -1014,4 +1053,4 @@ rejects(() => Profile.formatU64Decimal(9007199254740992 as unknown as bigint));
 rejects(() => Profile.parseU64Decimal(1 as unknown as string));
 rejects(() => Profile.formatU64Decimal(-1n));
 rejects(() => Profile.formatU64Decimal(18446744073709551616n));
-console.log("shared profile vectors: 72");
+console.log("shared profile vectors: 74");

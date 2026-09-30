@@ -161,6 +161,7 @@ pub(super) fn activation_tree(
         }));
         json!({"activationId":node.activation_id,"parentActivationId":node.parent_activation_id,
             "rootActivationId":node.root_activation_id,"phase":node.phase,"terminalState":node.terminal_state,
+            "targetService":node.target_service,"receivedAtUnixMillis":node.received_at_unix_millis.to_string(),
             "lastUpdatedUnixMillis":node.last_updated_unix_millis.to_string(),"diagnostic":diagnostic,
             "diagnosticIsTerminal":node.diagnostic_is_terminal,
             "principalKind":node.principal_kind,"callerService":node.caller_service,

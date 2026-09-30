@@ -13,6 +13,8 @@ pub(super) struct Context {
     pub maximum_request: usize,
     pub maximum_response: usize,
     pub recovery_read: bool,
+    pub inspection_service: Option<String>,
+    pub inspection_from: Option<u64>,
 }
 
 pub(super) trait RequestProfile {
@@ -76,6 +78,8 @@ pub(super) fn context<Request: RequestProfile>(
             maximum_request: limits.maximum_request_bytes.min(Request::MAXIMUM_REQUEST),
             maximum_response: limits.maximum_response_bytes.min(Request::MAXIMUM_RESPONSE),
             recovery_read: false,
+            inspection_service: None,
+            inspection_from: None,
         };
         request.validate(&mut context, &client.inner.tenant.0)?;
         Ok(context)
@@ -292,10 +296,14 @@ impl RequestProfile for model::InspectActivationTreeRequest {
     const MAXIMUM_RESPONSE: usize = 64 * 1024;
 
     fn validate(&self, context: &mut Context, _tenant: &str) -> Result<(), RpcFailure> {
-        if self.activation_id.is_empty()
-            || self.activation_id.len() > 512
-            || self
-                .activation_id
+        let selected = match &self.service {
+            Some(service) if self.activation_id.is_empty() => service.as_str(),
+            None if self.from_unix_millis.is_none() => self.activation_id.as_str(),
+            _ => return Err(invalid()),
+        };
+        if selected.is_empty()
+            || selected.len() > 512
+            || selected
                 .chars()
                 .any(|c| c.is_control() || c.is_whitespace())
             || self.page.as_ref().is_some_and(|p| {
@@ -304,6 +312,8 @@ impl RequestProfile for model::InspectActivationTreeRequest {
         {
             return Err(invalid());
         }
+        context.inspection_service.clone_from(&self.service);
+        context.inspection_from = self.from_unix_millis;
         context.page_size = self.page.as_ref().map_or(32, |p| {
             if p.page_size == 0 {
                 32
