@@ -56,4 +56,5 @@ pub struct ProviderShutdownReport {
     pub stream_connections: usize,
     pub stream_pending_operations: usize,
     pub stream_retained_chunks: usize,
+    pub stream_maintenance_owners: usize,
 }

@@ -13,18 +13,25 @@
         "tests::sockets::retained_chunks_keep_original_charges_after_socket_close",
         "tests::sockets::revoking_policy_prevents_application_write_on_existing_socket",
         "tests::sockets::wrong_endpoint_is_denied_before_network_dispatch",
-        "tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp"
+        "tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp",
+        "tests::maintenance::idle_expiry_retires_inactive_socket_on_one_weak_owned_driver",
+        "tests::maintenance::dns_authority_expiry_retires_inactive_socket_without_another_guest_call"
       ],
       "expectedIgnored": [],
       "id": "latent-streams.lib.latent-streams",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 10,
+      "minimumCases": 12,
       "mode": "libtest",
       "package": "latent-streams",
-      "platforms": ["linux-x86_64"],
-      "prerequisites": ["pinned Rust toolchain", "successful source-matched Cargo artifact inventory"],
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
       "source": "src/lib.rs",
@@ -49,8 +56,13 @@
       "minimumCases": 6,
       "mode": "libtest",
       "package": "latent-wasmtime",
-      "platforms": ["linux-x86_64"],
-      "prerequisites": ["pinned Rust toolchain", "successful source-matched Cargo artifact inventory"],
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
       "recipe": "workspace-all-features",
       "resourceClass": "runtime-bounded",
       "source": "tests/outbound_streams.rs",

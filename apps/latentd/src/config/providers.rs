@@ -125,16 +125,7 @@ pub(super) fn derive(
         || config.audit.is_none()
         || config.budget_profile.profile() != BudgetProfile::Phase3
         || providers.format_version != 1
-        || (providers.http.is_none()
-            && providers.outbound_streams.is_none()
-            && providers.blob.is_none()
-            && providers.secrets.is_none()
-            && providers.metrics.is_none()
-            && providers.local_service.is_none()
-            && providers.events.is_none()
-            && providers.clock_monotonic.is_none()
-            && providers.clock_wall.is_none()
-            && providers.random.is_none())
+        || no_installations(providers)
         || providers.bindings.is_empty()
         || providers.bindings.capacity() > 16
     {
@@ -220,6 +211,19 @@ pub(super) fn derive(
     }
     providers.definitions()?;
     Ok(Some(Box::new(providers.clone())))
+}
+
+fn no_installations(providers: &ConfiguredProviders) -> bool {
+    providers.http.is_none()
+        && providers.outbound_streams.is_none()
+        && providers.blob.is_none()
+        && providers.secrets.is_none()
+        && providers.metrics.is_none()
+        && providers.local_service.is_none()
+        && providers.events.is_none()
+        && providers.clock_monotonic.is_none()
+        && providers.clock_wall.is_none()
+        && providers.random.is_none()
 }
 
 impl ProviderIdentity {

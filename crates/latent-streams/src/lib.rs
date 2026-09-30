@@ -4,11 +4,13 @@
 mod config;
 mod connection;
 mod lifecycle;
+mod maintenance;
 mod provider;
 
 pub use config::{StreamDestination, StreamLimits, StreamProviderConfig, StreamResolution};
 pub use latent_capabilities::broker::network::{StreamError, StreamErrorCode};
 pub use lifecycle::{StreamLifecycle, StreamStatus};
+pub use maintenance::{StreamMaintenance, StreamMaintenanceStop};
 pub use provider::StreamProvider;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, serde::Serialize)]

@@ -2076,6 +2076,7 @@ dependencies = [
 name = "latent-streams"
 version = "0.1.0-alpha.5"
 dependencies = [
+ "hickory-proto",
  "latent-activation",
  "latent-artifacts",
  "latent-audit",

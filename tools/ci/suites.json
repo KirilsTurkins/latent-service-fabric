@@ -8023,7 +8023,8 @@
         "standalone::http::assets::static_tests::signed_style_policy_requires_host_opt_in_and_never_leaks_through_shared_byte_cache",
         "config::tests::streams::stream_bindings_require_the_exact_installed_identity_and_contract",
         "config::tests::streams::stream_configuration_requires_protected_input_explicit_feature_and_exact_address_policy",
-        "config::tests::streams::stream_input_is_closed_and_never_echoes_credentials_or_host_key_paths"
+        "config::tests::streams::stream_input_is_closed_and_never_echoes_credentials_or_host_key_paths",
+        "standalone::start::tests::provider_startup::protected_stream_provider_starts_without_dialing_and_joins_one_maintenance_owner"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -8086,7 +8087,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 243,
+      "minimumCases": 244,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

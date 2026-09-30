@@ -144,7 +144,7 @@ fn stream_configuration_requires_protected_input_explicit_feature_and_exact_addr
         ),
         (
             "/providers/outboundStreams/configuration/limits/maximumTransferBytes",
-            json!(1048577),
+            json!(1_048_577),
         ),
         (
             "/providers/outboundStreams/configuration/limits/idleTimeoutMillis",

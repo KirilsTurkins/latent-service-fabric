@@ -174,6 +174,25 @@ impl StreamProvider {
         }
         Ok(result)
     }
+
+    pub(crate) fn maintenance_step(&self, now: Instant) {
+        for index in 0..32 {
+            let connection = match self.inner.connections.try_lock() {
+                Ok(slots) => slots[index].upgrade(),
+                Err(std::sync::TryLockError::WouldBlock) => continue,
+                Err(std::sync::TryLockError::Poisoned(slots)) => {
+                    let connection = slots.into_inner()[index].upgrade();
+                    if let Some(connection) = connection {
+                        connection.abort(StreamErrorCode::Exhausted);
+                    }
+                    continue;
+                }
+            };
+            if let Some(connection) = connection {
+                connection.maintenance_step(now);
+            }
+        }
+    }
 }
 impl OutboundStreamInvoker for StreamProvider {
     fn start(

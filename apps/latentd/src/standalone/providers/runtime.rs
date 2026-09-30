@@ -48,6 +48,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     event_secrets: Option<latent_secrets::LocalSecretStore>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
     streams: Option<Arc<latent_streams::StreamLifecycle>>,
+    stream_driver: Option<streams::Driver>,
     blobs: Option<Arc<LocalBlobStore>>,
     registrations: Vec<ProviderRegistration>,
     descriptors: Vec<ProviderDescriptor>,
@@ -76,6 +77,7 @@ impl ProviderRuntime {
             .with_audit(services.audit, true)?,
         );
         let io = Arc::new(IoRuntime::new(IoLimits::default())?);
+        let stream_control = services.control.clone();
         let pools = Arc::new(ProviderPools::new(
             broker.clone(),
             io.clone(),
@@ -95,6 +97,7 @@ impl ProviderRuntime {
             event_secrets: None,
             metrics: None,
             streams: None,
+            stream_driver: None,
             blobs: None,
             registrations: Vec::with_capacity(3),
             descriptors: Vec::with_capacity(10),
@@ -134,6 +137,7 @@ impl ProviderRuntime {
                     provider.reference().map_err(|_| unavailable())?,
                 ));
                 owner.runtime.install_outbound_streams(provider.clone())?;
+                owner.stream_driver = Some(streams::Driver::start(&provider, &stream_control)?);
                 owner.streams = Some(provider);
             }
             if let Some(blob) = &config.blob {
@@ -258,6 +262,9 @@ impl ProviderRuntime {
 
     pub fn retire(&self) {
         self.runtime.retire();
+        if let Some(driver) = &self.stream_driver {
+            driver.stop();
+        }
         if let Some(streams) = &self.streams {
             streams.retire();
         }
@@ -287,6 +294,10 @@ impl ProviderRuntime {
         deadline: Instant,
     ) -> Result<ProviderShutdownReport, PlatformError> {
         self.retire();
+        let stream_driver_clean = match &self.stream_driver {
+            Some(driver) => driver.join(deadline).await,
+            None => true,
+        };
         let pools = self.pools.shutdown(deadline).await?;
         let mut secret_generations = 0;
         let mut secret_references = 0;
@@ -309,8 +320,9 @@ impl ProviderRuntime {
             .map(|owner| owner.status())
             .transpose()
             .map_err(|_| unavailable())?
-            .map(|status| status.usage)
+            .map(|status| (status.usage, status.maintenance_owners))
             .unwrap_or_default();
+        let (streams, stream_maintenance_owners) = streams;
         let blob = self
             .blobs
             .as_ref()
@@ -319,6 +331,8 @@ impl ProviderRuntime {
             .map_err(|_| unavailable())?
             .unwrap_or_default();
         let clean = pools.is_clean()
+            && stream_driver_clean
+            && stream_maintenance_owners == 0
             && streams.owners == 0
             && secrets_closed
             && secret_generations == 0
@@ -361,6 +375,7 @@ impl ProviderRuntime {
             stream_connections: streams.connections,
             stream_pending_operations: streams.pending_operations,
             stream_retained_chunks: streams.retained_chunks,
+            stream_maintenance_owners,
         })
     }
 }

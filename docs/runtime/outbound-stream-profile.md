@@ -154,6 +154,15 @@ I/O, buffer, callback and execution-cell charges survive until physical retireme
 An unretired owner after grace quarantines capacity; watchdog expiry is failure.
 A fresh activation/tenant inherits no authenticated connection or guest state.
 
+An installed node owns one prepaid maintenance future on its existing bounded
+control runtime. Every 10 milliseconds it scans at most 32 weak connection slots
+per current or retired configuration generation, with at most eight retired
+generations. The scan retains no Store or activation across an await. It closes
+inactive sockets at idle, DNS and absolute expiry, and checks their original
+pinned authority. Only exact authority bookkeeping contention may wait under
+the same original deadline. Stop acknowledgement retains the physical future and
+its metadata; node shutdown joins that owner before reporting clean retirement.
+
 ## Exact source/WASI comparison and finite qualification matrix
 
 [`wasi:sockets/tcp@0.2.0`](https://github.com/WebAssembly/wasi-sockets/blob/v0.2.0/wit/tcp.wit)

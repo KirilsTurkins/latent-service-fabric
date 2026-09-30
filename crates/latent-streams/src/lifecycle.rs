@@ -10,9 +10,14 @@ use latent_capabilities::broker::{
     pools::ProviderMetadata,
     CapabilitySession, ProviderReference,
 };
-#[cfg(any(test, feature = "development-outbound"))]
 use std::sync::Arc;
-use std::{sync::Mutex, time::Instant};
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex,
+    },
+    time::Instant,
+};
 
 const MAX_RETIRED: usize = 8;
 struct State {
@@ -23,6 +28,7 @@ struct State {
 /// Its installation remains explicitly restricted to qualification builds.
 pub struct StreamLifecycle {
     state: Mutex<State>,
+    maintenance_claimed: AtomicBool,
     #[cfg(any(test, feature = "development-outbound"))]
     pools: Arc<ProviderPools>,
     #[cfg(any(test, feature = "development-outbound"))]
@@ -38,12 +44,54 @@ pub struct StreamStatus {
     pub retired_generations: usize,
     pub usage: StreamUsage,
     pub stopped: bool,
+    pub maintenance_owners: usize,
 }
 fn unavailable() -> StreamError {
     StreamError::new(StreamErrorCode::Revoked)
 }
 
 impl StreamLifecycle {
+    /// One maintained-node future scans bounded weak slots on the existing
+    /// control runtime. The node owns and joins it; installation spawns nothing.
+    pub fn maintenance(self: &Arc<Self>) -> Result<crate::StreamMaintenance, StreamError> {
+        let state = self.state.lock().map_err(|_| unavailable())?;
+        if state.stopped {
+            return Err(unavailable());
+        }
+        let metadata = state
+            .current
+            .inner
+            .pools
+            .reserve_protocol_metadata(8 * 1024)?;
+        self.maintenance_claimed
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| StreamError::new(StreamErrorCode::Exhausted))?;
+        Ok(crate::StreamMaintenance::new(
+            Arc::downgrade(self),
+            metadata,
+        ))
+    }
+
+    pub(crate) fn release_maintenance(&self) {
+        self.maintenance_claimed.store(false, Ordering::Release);
+    }
+
+    pub(crate) fn maintenance_step(&self, now: Instant) -> Result<bool, StreamError> {
+        let state = match self.state.try_lock() {
+            Ok(state) => state,
+            Err(std::sync::TryLockError::WouldBlock) => return Ok(false),
+            Err(std::sync::TryLockError::Poisoned(_)) => return Err(unavailable()),
+        };
+        if state.stopped {
+            return Ok(true);
+        }
+        state.current.maintenance_step(now);
+        for retired in state.retired.iter().flatten() {
+            retired.maintenance_step(now);
+        }
+        Ok(false)
+    }
+
     #[cfg(any(test, feature = "development-outbound"))]
     pub fn install_for_qualification(
         pools: Arc<ProviderPools>,
@@ -73,6 +121,7 @@ impl StreamLifecycle {
                 retired: std::array::from_fn(|_| None),
                 stopped: false,
             }),
+            maintenance_claimed: AtomicBool::new(false),
             pools,
             id: id.into(),
             _metadata: metadata,
@@ -148,6 +197,7 @@ impl StreamLifecycle {
             retired_generations: state.retired.iter().filter(|p| p.is_some()).count(),
             usage,
             stopped: state.stopped,
+            maintenance_owners: usize::from(self.maintenance_claimed.load(Ordering::Acquire)),
         })
     }
     pub fn retire(&self) {

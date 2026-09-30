@@ -33,20 +33,74 @@ use tokio::{
 // restarted or replayed when a policy or provider publication changes.
 async fn wait_current<F: Future>(
     call: &IoCall,
+    deadline: Instant,
     future: F,
 ) -> Result<F::Output, latent_core::PlatformError> {
-    call.wait_for(async {
+    let deadline = deadline.min(call.deadline());
+    call.wait_for(tokio::time::timeout_at(deadline.into(), async {
         tokio::pin!(future);
         loop {
-            call.recheck_authority()?;
+            current_until(|| call.recheck_authority(), deadline).await?;
             tokio::select! {
                 biased;
-                result = &mut future => { call.recheck_authority()?; return Ok(result); }
+                result = &mut future => {
+                    current_until(|| call.recheck_authority(), deadline).await?;
+                    return Ok(result);
+                }
                 () = tokio::time::sleep(Duration::from_millis(10)) => {}
             }
         }
-    })
+    }))
     .await?
+    .map_err(|_| expired())?
+}
+
+async fn current_until(
+    mut inspect: impl FnMut() -> Result<(), latent_core::PlatformError>,
+    deadline: Instant,
+) -> Result<(), latent_core::PlatformError> {
+    loop {
+        if Instant::now() >= deadline {
+            return Err(expired());
+        }
+        match inspect() {
+            Err(failure)
+                if latent_capabilities::broker::is_authority_bookkeeping_busy(&failure) =>
+            {
+                // Inspect only the same accepted authority. The original
+                // future, transfer, socket and deadline remain unchanged.
+                tokio::time::sleep_until(
+                    deadline
+                        .min(Instant::now() + Duration::from_millis(10))
+                        .into(),
+                )
+                .await;
+            }
+            result => return result,
+        }
+    }
+}
+
+async fn recheck_provider(call: &mut ProviderCall) -> Result<(), latent_core::PlatformError> {
+    let deadline = call.deadline();
+    current_until(|| call.recheck_authority(), deadline).await
+}
+
+async fn recheck_io(call: &IoCall, deadline: Instant) -> Result<(), latent_core::PlatformError> {
+    call.wait_for(current_until(
+        || call.recheck_authority(),
+        deadline.min(call.deadline()),
+    ))
+    .await?
+}
+
+fn expired() -> latent_core::PlatformError {
+    latent_core::PlatformError {
+        code: latent_core::PlatformErrorCode::DeadlineExceeded,
+        message: "outbound-stream-deadline".into(),
+        retryable: false,
+        details: Vec::new(),
+    }
 }
 
 pub(crate) struct Socket {
@@ -223,9 +277,13 @@ async fn create_socket(
             let resolver = inner.resolvers[index]
                 .as_ref()
                 .ok_or_else(|| error(StreamErrorCode::DnsFailed))?;
-            let answers = wait_current(call.io(), resolver.resolve_with_expiry(deadline.into()))
-                .await?
-                .map_err(network_error)?;
+            let answers = wait_current(
+                call.io(),
+                deadline,
+                resolver.resolve_with_expiry(deadline.into()),
+            )
+            .await?
+            .map_err(network_error)?;
             let first = answers
                 .answers
                 .iter()
@@ -237,7 +295,7 @@ async fn create_socket(
     if Instant::now() >= valid_until || !destination.addresses.permits(address) {
         return Err(error(StreamErrorCode::Denied));
     }
-    call.io().recheck_authority()?;
+    recheck_io(call.io(), deadline.min(valid_until)).await?;
     let metadata = inner.pools.reserve_protocol_metadata(96 * 1024)?;
     let mut native = scope.reserve_host_memory(96 * 1024)?;
     let socket = if address.is_ipv4() {
@@ -270,13 +328,13 @@ async fn create_socket(
         native: Some(native),
         metadata: Some(metadata),
     };
-    call.io().recheck_authority()?;
+    recheck_io(call.io(), deadline.min(valid_until)).await?;
     let stream = wait_current(
         call.io(),
-        tokio::time::timeout_at(deadline.min(valid_until).into(), connecting.future.as_mut()),
+        deadline.min(valid_until),
+        connecting.future.as_mut(),
     )
     .await?
-    .map_err(|_| error(StreamErrorCode::Timeout))?
     .map_err(|_| error(StreamErrorCode::ConnectFailed))?;
     let peer = stream
         .peer_addr()
@@ -299,12 +357,38 @@ async fn create_socket(
 }
 
 impl Connection {
+    pub(crate) fn maintenance_step(&self, now: Instant) {
+        let expired = match self.state.try_lock() {
+            Ok(state) => {
+                !state.closing && now >= self.deadline.min(state.last_progress + self.idle)
+            }
+            Err(std::sync::TryLockError::WouldBlock) => return,
+            Err(std::sync::TryLockError::Poisoned(poisoned)) => {
+                drop(poisoned.into_inner());
+                self.abort(StreamErrorCode::Exhausted);
+                return;
+            }
+        };
+        if expired {
+            self.abort(StreamErrorCode::Timeout);
+            return;
+        }
+        if let Err(failure) = self.call.io().recheck_authority() {
+            if !latent_capabilities::broker::is_authority_bookkeeping_busy(&failure) {
+                self.abort(StreamError::from(failure).code);
+            }
+        }
+    }
+
     fn pending(
         self: &Arc<Self>,
         direction: usize,
         timeout: Option<u32>,
     ) -> Result<Pending, StreamError> {
-        self.call.io().checkpoint()?;
+        self.call
+            .io()
+            .checkpoint()
+            .map_err(|failure| self.terminal_error(failure.into()))?;
         if timeout.is_some_and(|value| value == 0 || value > 10_000) {
             return Err(error(StreamErrorCode::InvalidInput));
         }
@@ -477,14 +561,9 @@ impl Connection {
         future: F,
     ) -> Result<F::Output, StreamError> {
         let deadline = pending.deadline.min(call_deadline);
-        wait_current(
-            self.call.io(),
-            tokio::time::timeout_at(deadline.into(), future),
-        )
-        .await?
-        .map_err(|_| {
-            error(StreamErrorCode::Timeout).uncertain(self.observe().application_write_attempted)
-        })
+        wait_current(self.call.io(), deadline, future)
+            .await
+            .map_err(Into::into)
     }
     async fn audit(&self, mut call: ProviderCall, success: bool) -> Result<(), StreamError> {
         call.record_provider_outcome(if success {
@@ -530,7 +609,7 @@ impl OutboundStream for Handle {
                             .readable()
                             .await
                             .map_err(|_| error(StreamErrorCode::IoFailed))?;
-                        call.recheck_authority()?;
+                        recheck_provider(&mut call).await?;
                         match pending.socket.try_read(buffer.spare_mut()?) {
                             Err(failure) if failure.kind() == io::ErrorKind::WouldBlock => {}
                             value => break value.map_err(|_| error(StreamErrorCode::IoFailed)),
@@ -610,7 +689,7 @@ impl OutboundStream for Handle {
                             .writable()
                             .await
                             .map_err(|_| error(StreamErrorCode::IoFailed))?;
-                        call.recheck_authority()?;
+                        recheck_provider(&mut call).await?;
                         connection
                             .state
                             .lock()
@@ -704,7 +783,15 @@ impl OutboundStream for Handle {
             let mut call = connection
                 .authorize("shutdown", CapabilityCallCost::new(0))
                 .await?;
-            call.recheck_authority()?;
+            let current = connection
+                .wait(&pending, call.deadline(), recheck_provider(&mut call))
+                .await
+                .and_then(|value| value.map_err(Into::into));
+            if let Err(failure) = current {
+                connection.abort(failure.code);
+                connection.audit(call, false).await?;
+                return Err(connection.terminal_error(failure));
+            }
             if how == StreamShutdown::Both {
                 connection.stop(None);
             } else {
