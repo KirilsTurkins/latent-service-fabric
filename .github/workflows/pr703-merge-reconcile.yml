@@ -6,55 +6,134 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  assemble:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    outputs:
+      candidate: ${{ steps.publish.outputs.candidate }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
           persist-credentials: false
           show-progress: false
-      - name: Export exact trees without unrelated repository history
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - name: Reproduce the reviewed merge and validate source contracts
         shell: bash
         run: |
           set -euo pipefail
-          head=260c01eb4039f6c48fa4912ffcaf53184e404769
-          base=b40a31aa7e63128698df2be86324657b4d22a590
-          common=$(git merge-base "$head" "$base")
-          out="$RUNNER_TEMP/pr703-merge"
-          mkdir -p "$out"
-          git config user.name 'LSF merge validation'
+          cp .github/pr703-reconcile.py "$RUNNER_TEMP/pr703-reconcile.py"
+          git config user.name 'LSF merge reconciliation'
           git config user.email 'lsf-ci@users.noreply.github.com'
-          # These local-only snapshot commits retain the exact original trees.
-          # Their minimal history is for offline three-way reconciliation only.
-          root=$(git commit-tree "$common^{tree}" -m "Snapshot of $common")
-          ours=$(git commit-tree "$head^{tree}" -p "$root" -m "Snapshot of $head")
-          theirs=$(git commit-tree "$base^{tree}" -p "$root" -m "Snapshot of $base")
-          git update-ref refs/heads/input-head "$ours"
-          git update-ref refs/heads/input-base "$theirs"
-          git update-ref refs/heads/input-common "$root"
-          git bundle create "$out/merge-inputs.bundle" refs/heads/input-head refs/heads/input-base refs/heads/input-common
-          for ref in "$common" "$head" "$base"; do
-            printf '%s %s\n' "$ref" "$(git rev-parse "$ref^{tree}")"
-          done > "$out/source-trees.txt"
-          printf '%s\n' "$common" > "$out/merge-base.txt"
-          git checkout --detach "$head"
-          status=0
-          git merge --no-commit --no-ff "$base" > "$out/merge.log" 2>&1 || status=$?
-          test "$status" -le 1
-          git diff --name-only --diff-filter=U | tee "$out/conflicts.txt"
-          git diff --cc > "$out/conflicts.diff"
-          git status --short > "$out/status.txt"
-          find . -name AGENTS.md -not -path './.git/*' -print > "$out/agent-files.txt"
-          cat "$out/merge.log"
-          sha256sum "$out/merge-inputs.bundle" > "$out/sha256.txt"
-          du -h "$out/merge-inputs.bundle"
+          python3 "$RUNNER_TEMP/pr703-reconcile.py"
+          python3 -m pip install --requirement tools/requirements.lock
+          mkdir -p "$RUNNER_TEMP/pr703-results"
+          python3 tools/validate_repository.py
+          python3 tools/validate_foundation.py
+          python3 tools/validate_workflow_actions.py
+          python3 tools/ci_coverage.py
+          python3 -m unittest tools.tests.test_ci_contracts tools.tests.test_ci_coverage tools.tests.test_dev_build_cache tools.tests.test_native_loader_boundary tools.tests.test_security_baseline tools.tests.test_host_abi_profile tools.tests.test_dev_tools tools.tests.test_s3_fixture_builder 2>&1 | tee "$RUNNER_TEMP/pr703-results/python.log"
+          python3 -m unittest discover -s website/toolchain/tests -v 2>&1 | tee "$RUNNER_TEMP/pr703-results/preparation.log"
+      - name: Publish only the exact reviewed candidate branch
+        id: publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tree=$(git write-tree)
+          test "$tree" = 0c7f8ad6d5f0337364bae6f9f268029801ab5041
+          commit=$(git commit-tree "$tree" -p 260c01eb4039f6c48fa4912ffcaf53184e404769 -p b40a31aa7e63128698df2be86324657b4d22a590 <<'MESSAGE'
+          Merge development into PR 703 and reconcile security upgrades
+
+          Resolve the 19 overlapping runtime, npm, and CI-contract files.
+          Preserve serde_json 1.0.151, ip-address 10.7.2, all runtime security
+          regressions, development's parser/tooling fixes, and both cache test sets.
+          Combine bounded executable hashing and package graph validation.
+          Preserve historical v2/v3 ABI evidence and active v4 runtime checks.
+          Remove duplicate lock entries introduced by the automatic merge.
+          MESSAGE
+          )
+          askpass="$RUNNER_TEMP/pr703-askpass.sh"
+          printf '%s\n' '#!/bin/sh' 'case "$1" in *Username*) printf "%s" x-access-token;; *) printf "%s" "$GH_TOKEN";; esac' > "$askpass"
+          chmod 700 "$askpass"
+          trap 'rm -f "$askpass"' EXIT
+          GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 git -c credential.helper= push origin "$commit:refs/heads/fix/pr703-resolved-20260930"
+          printf 'candidate=%s\n' "$commit" >> "$GITHUB_OUTPUT"
+          printf '{"commit":"%s","tree":"%s","parents":["260c01eb4039f6c48fa4912ffcaf53184e404769","b40a31aa7e63128698df2be86324657b4d22a590"]}\n' "$commit" "$tree" | tee "$RUNNER_TEMP/pr703-results/candidate.json"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
-          name: pr703-merge-compact
-          path: ${{ runner.temp }}/pr703-merge/
-          retention-days: 2
+          name: pr703-reconciled-source
+          path: ${{ runner.temp }}/pr703-results/
+          retention-days: 7
           if-no-files-found: error
-          compression-level: 0
+  rust:
+    needs: assemble
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.assemble.outputs.candidate }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Check formatting and locked workspace compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^{tree})" = 0c7f8ad6d5f0337364bae6f9f268029801ab5041
+          mkdir -p target/pr703-reconcile
+          cargo fmt --all --check
+          cargo check --workspace --all-targets --all-features --locked 2>&1 | tee target/pr703-reconcile/check.log
+          cargo check --manifest-path tools/native-fixture/Cargo.toml --locked 2>&1 | tee target/pr703-reconcile/native-fixture.log
+      - name: Execute runtime and merged executable identity regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test -p latent-wasmtime --lib --all-features --locked 2>&1 | tee target/pr703-reconcile/library.log
+          cargo test -p latent-wasmtime --test phase3_resource --all-features --locked observation::tests:: 2>&1 | tee target/pr703-reconcile/hashing.log
+          grep -F 'test result: ok. 2 passed; 0 failed;' target/pr703-reconcile/hashing.log
+          git diff --exit-code
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr703-reconciled-rust
+          path: target/pr703-reconcile/
+          retention-days: 7
+  npm:
+    needs: assemble
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.assemble.outputs.candidate }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.19.0
+      - name: Rebuild and test the authenticated npm distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^{tree})" = 0c7f8ad6d5f0337364bae6f9f268029801ab5041
+          mkdir -p target/pr703-reconcile
+          python3 website/toolchain/prepare.py
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node website/scripts/check-package-manager.mjs
+          python3 website/toolchain/prepare.py --offline
+          node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+          node website/toolchain/node_modules/npm/bin/npm-cli.js --prefix website test 2>&1 | tee target/pr703-reconcile/website.log
+          node website/toolchain/node_modules/npm/bin/npm-cli.js --prefix website run check 2>&1 | tee target/pr703-reconcile/types.log
+          git diff --exit-code
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr703-reconciled-npm
+          path: target/pr703-reconcile/
+          retention-days: 7
