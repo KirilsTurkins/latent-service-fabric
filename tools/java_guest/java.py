@@ -105,7 +105,7 @@ def codec(graph: Graph, index: int) -> list[str]:
         own = "own" in body
         write.append("output.resource(value, " + str(own).lower() + ");")
         if not own: read.append('throw new IllegalArgumentException("borrowed resource exports are unsupported");')
-        else: read.append("return new " + graph.name(body["own"]) + "((int) input.integer(4));")
+        else: read.append("return new " + graph.name(graph.resource_index(body["own"])) + "((int) input.integer(4));")
     else: raise ValueError("unsupported Java codec form " + form)
     jtype, suffix = graph.jtype(index), graph.codec(index)
     return [f"private static void write{suffix}(Wire.Writer output, {jtype} value) {{", *write, "}",

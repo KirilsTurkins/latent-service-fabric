@@ -1,0 +1,73 @@
+{
+  "formatVersion": 1,
+  "id": "lsf-host-abi-phase4-v1",
+  "world": "latent:platform/capsule@0.5.0",
+  "digest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "wasmtimeVersion": "48.0.3",
+  "guestGenerator": "wit-bindgen@0.62.0",
+  "interfaces": [
+    {
+      "interface": "latent:context/context@0.1.0",
+      "package": "latent:context",
+      "source": "wit/platform/context/package.wit",
+      "sourceSha256": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1",
+      "binding": "built-in",
+      "asynchronous": false,
+      "installed": true
+    },
+    {
+      "interface": "latent:log/log@0.1.0",
+      "package": "latent:log",
+      "source": "wit/platform/log/package.wit",
+      "sourceSha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e",
+      "binding": "built-in",
+      "asynchronous": false,
+      "installed": true
+    },
+    {
+      "interface": "latent:clock/monotonic@0.1.0",
+      "package": "latent:clock",
+      "source": "wit/platform/clock/package.wit",
+      "sourceSha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "binding": "built-in",
+      "asynchronous": false,
+      "installed": true
+    },
+    {
+      "interface": "latent:clock/wall@0.1.0",
+      "package": "latent:clock",
+      "source": "wit/platform/clock/package.wit",
+      "sourceSha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "binding": "built-in",
+      "asynchronous": false,
+      "installed": true
+    },
+    {
+      "interface": "latent:random/random@0.1.0",
+      "package": "latent:random",
+      "source": "wit/platform/random/package.wit",
+      "sourceSha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60",
+      "binding": "provider",
+      "asynchronous": false,
+      "installed": false
+    },
+    {
+      "interface": "latent:state/key-value@0.2.0",
+      "package": "latent:state",
+      "source": "wit/platform/state/package.wit",
+      "sourceSha256": "sha256:56b0a1304a9987395e0ea3f07e3dde4cbae5e70e5c9837ffcc6ae3b3cb9b7f25",
+      "binding": "provider",
+      "asynchronous": true,
+      "installed": false
+    },
+    {
+      "interface": "latent:intents/staging@0.1.0",
+      "package": "latent:intents",
+      "source": "wit/platform/intents/package.wit",
+      "sourceSha256": "sha256:182a2a982c470a4bd8603fba8d3e2e54e93a167dda2501de02c77b10066ea636",
+      "binding": "provider",
+      "asynchronous": true,
+      "installed": false
+    }
+  ]
+}

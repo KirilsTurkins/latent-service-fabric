@@ -1,0 +1,12 @@
+package latent:platform@0.5.0;
+
+// Definition profile. ABI recognition installs no transaction engine or grant.
+world capsule {
+    import latent:context/context@0.1.0;
+    import latent:log/log@0.1.0;
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    import latent:random/random@0.1.0;
+    import latent:state/key-value@0.2.0;
+    import latent:intents/staging@0.1.0;
+}
