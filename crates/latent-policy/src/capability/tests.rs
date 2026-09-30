@@ -133,6 +133,54 @@ fn matching_allow_rules_intersect_every_ceiling_instead_of_building_a_union() {
     );
 }
 #[test]
+fn runtime_timer_policy_requires_its_exact_contract_and_clock_scope() {
+    let mut value = policy();
+    let runtime = "latent:runtime/activation@0.1.0";
+    value["rules"][0]["capability"] = runtime.into();
+    value["rules"][0]["operations"] = json!(["wait-for", "wait-until", "timer-start"]);
+    value["rules"][0]["resources"] = json!({"kind":"clock"});
+    let parsed = CapabilityPolicy::parse(&serde_json::to_vec(&value).unwrap()).unwrap();
+    assert!(parsed
+        .evaluate(
+            &principal(),
+            "echo",
+            &publication_id(),
+            runtime,
+            "timer-start",
+            &ResourceTarget::Clock,
+        )
+        .is_some());
+    assert!(parsed
+        .evaluate(
+            &principal(),
+            "echo",
+            &publication_id(),
+            "latent:clock/monotonic@0.1.0",
+            "now-nanos",
+            &ResourceTarget::Clock,
+        )
+        .is_none());
+    for (capability, operations, resources) in [
+        (
+            "latent:clock/monotonic@0.1.0",
+            json!(["timer-start"]),
+            json!({"kind":"clock"}),
+        ),
+        (
+            "latent:runtime/activation@0.2.0",
+            json!(["timer-start"]),
+            json!({"kind":"clock"}),
+        ),
+        (runtime, json!(["timer-start"]), json!({"kind":"context"})),
+    ] {
+        let mut invalid = value.clone();
+        invalid["rules"][0]["capability"] = capability.into();
+        invalid["rules"][0]["operations"] = operations;
+        invalid["rules"][0]["resources"] = resources;
+        assert!(CapabilityPolicy::parse(&serde_json::to_vec(&invalid).unwrap()).is_err());
+    }
+}
+#[test]
 fn malformed_unknown_duplicate_and_null_constraints_are_rejected() {
     let good = serde_json::to_string(&policy()).unwrap();
     for bad in [
