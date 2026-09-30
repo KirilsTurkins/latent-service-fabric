@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_guest_bindings.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Preserve exact transaction Value byte-array pin signatures and reject generator drift with a focused regression",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6c51ffa8c2cd39b9f57f3cc4d48303d734a845c15a476038a6289b77d0efbc82"
+  "sha256": "e1a814df8cbf4cd3c5faed50305b67dd07a0bc611cdc00f353e27d3b770d64f4"
 }
