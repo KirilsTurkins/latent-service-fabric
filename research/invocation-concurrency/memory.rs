@@ -33,7 +33,9 @@ impl ResourceLimiter for Memory {
         maximum: Option<usize>,
     ) -> wasmtime::Result<bool> {
         self.pending = None;
-        let total = self.current.checked_add(desired.saturating_sub(current))
+        let total = self
+            .current
+            .checked_add(desired.saturating_sub(current))
             .ok_or_else(|| wasmtime::Error::msg("memory accounting overflow"))?;
         if total > MEMORY_LIMIT {
             return Err(wasmtime::Error::msg("research aggregate memory limit"));
@@ -65,7 +67,13 @@ impl ResourceLimiter for Memory {
     fn table_grow_failed(&mut self, error: wasmtime::Error) -> wasmtime::Result<()> {
         self.limits.table_grow_failed(error)
     }
-    fn instances(&self) -> usize { self.limits.instances() }
-    fn tables(&self) -> usize { self.limits.tables() }
-    fn memories(&self) -> usize { self.limits.memories() }
+    fn instances(&self) -> usize {
+        self.limits.instances()
+    }
+    fn tables(&self) -> usize {
+        self.limits.tables()
+    }
+    fn memories(&self) -> usize {
+        self.limits.memories()
+    }
 }

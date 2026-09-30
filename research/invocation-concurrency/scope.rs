@@ -89,12 +89,25 @@ mod tests {
         }
     }
     impl Drop for Probe {
-        fn drop(&mut self) { self.drops.set(self.drops.get() + 1); }
+        fn drop(&mut self) {
+            self.drops.set(self.drops.get() + 1);
+        }
     }
-    fn tasks(count: u32, log: &Rc<RefCell<Vec<u32>>>, drops: &Rc<Cell<usize>>) -> Vec<Task<'static>> {
-        (0..count).map(|id| Box::pin(Probe {
-            id, polled: false, log: log.clone(), drops: drops.clone(),
-        }) as Task<'static>).collect()
+    fn tasks(
+        count: u32,
+        log: &Rc<RefCell<Vec<u32>>>,
+        drops: &Rc<Cell<usize>>,
+    ) -> Vec<Task<'static>> {
+        (0..count)
+            .map(|id| {
+                Box::pin(Probe {
+                    id,
+                    polled: false,
+                    log: log.clone(),
+                    drops: drops.clone(),
+                }) as Task<'static>
+            })
+            .collect()
     }
     #[test]
     fn round_robin_preserves_results_and_errors_in_spawn_order() {
@@ -105,7 +118,10 @@ mod tests {
         let mut cx = Context::from_waker(&waker);
         assert!(join.as_mut().poll(&mut cx).is_pending());
         assert_eq!(*log.borrow(), vec![0, 1, 2]);
-        assert_eq!(join.as_mut().poll(&mut cx), Poll::Ready(Ok(vec![Ok(0), Err(7), Ok(2)])));
+        assert_eq!(
+            join.as_mut().poll(&mut cx),
+            Poll::Ready(Ok(vec![Ok(0), Err(7), Ok(2)]))
+        );
         assert_eq!(*log.borrow(), vec![0, 1, 2, 1, 2, 0]);
         drop(join);
         assert_eq!(drops.get(), 3);
@@ -116,7 +132,10 @@ mod tests {
         let drops = Rc::new(Cell::new(0));
         let mut join = Box::pin(join(tasks(8, &log, &drops)));
         let waker = Waker::from(Arc::new(Noop));
-        assert!(join.as_mut().poll(&mut Context::from_waker(&waker)).is_pending());
+        assert!(join
+            .as_mut()
+            .poll(&mut Context::from_waker(&waker))
+            .is_pending());
         assert_eq!(drops.get(), 0);
         drop(join);
         assert_eq!(drops.get(), 8);
@@ -127,7 +146,10 @@ mod tests {
         let drops = Rc::new(Cell::new(0));
         let mut join = Box::pin(join(tasks(9, &log, &drops)));
         let waker = Waker::from(Arc::new(Noop));
-        assert_eq!(join.as_mut().poll(&mut Context::from_waker(&waker)), Poll::Ready(Err(TASK_LIMIT)));
+        assert_eq!(
+            join.as_mut().poll(&mut Context::from_waker(&waker)),
+            Poll::Ready(Err(TASK_LIMIT))
+        );
         drop(join);
         assert!(log.borrow().is_empty());
         assert_eq!(drops.get(), 9);
@@ -136,6 +158,9 @@ mod tests {
     fn empty_scope_returns_without_a_wake() {
         let mut join = Box::pin(join(Vec::new()));
         let waker = Waker::from(Arc::new(Noop));
-        assert_eq!(join.as_mut().poll(&mut Context::from_waker(&waker)), Poll::Ready(Ok(Vec::new())));
+        assert_eq!(
+            join.as_mut().poll(&mut Context::from_waker(&waker)),
+            Poll::Ready(Ok(Vec::new()))
+        );
     }
 }

@@ -6,8 +6,8 @@ use std::cell::Cell;
 use std::future::Future;
 use std::pin::Pin;
 use std::rc::Rc;
-use std::task::{Context, Poll};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::task::{Context, Poll};
 
 static ENTERED: AtomicBool = AtomicBool::new(false);
 
@@ -45,18 +45,22 @@ fn frame(id: u32, future: Task<'static>) -> Task<'static> {
 
 fn summarize(results: Vec<Result<u32, u32>>) -> u64 {
     // Preserve every error: each task gets a bit in the upper 32 bits.
-    results.into_iter().enumerate().fold(0, |sum, (i, result)| {
-        match result {
+    results
+        .into_iter()
+        .enumerate()
+        .fold(0, |sum, (i, result)| match result {
             Ok(value) => sum + u64::from(value),
             Err(_) => sum | (1_u64 << (32 + i)),
-        }
-    })
+        })
 }
 
 struct Capsule;
 impl exports::research::concurrency::api::Guest for Capsule {
     async fn run(mode: u32, tasks: u32) -> u64 {
-        assert!(!ENTERED.swap(true, Ordering::Relaxed), "Store static state leaked");
+        assert!(
+            !ENTERED.swap(true, Ordering::Relaxed),
+            "Store static state leaked"
+        );
         // Check BEFORE allocating frames or dispatching any host operation.
         if tasks as usize > MAX_TASKS {
             return u64::from(TASK_LIMIT);
@@ -95,16 +99,22 @@ impl exports::research::concurrency::api::Guest for Capsule {
                 let ready = Rc::new(Cell::new(false));
                 let child = ready.clone();
                 let tasks: Vec<Task<'static>> = vec![
-                    frame(0, Box::pin(async move {
-                        while !child.get() {
-                            YieldOnce::default().await;
-                        }
-                        Ok(1)
-                    })),
-                    frame(1, Box::pin(async move {
-                        ready.set(true);
-                        Ok(2)
-                    })),
+                    frame(
+                        0,
+                        Box::pin(async move {
+                            while !child.get() {
+                                YieldOnce::default().await;
+                            }
+                            Ok(1)
+                        }),
+                    ),
+                    frame(
+                        1,
+                        Box::pin(async move {
+                            ready.set(true);
+                            Ok(2)
+                        }),
+                    ),
                 ];
                 summarize(scope::join(tasks).await.unwrap())
             }

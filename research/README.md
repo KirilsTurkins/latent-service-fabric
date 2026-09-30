@@ -16,3 +16,12 @@ local-only SMTP/TLS prototype, source-bound ownership measurements, a six-langua
 compatibility review, candidate contracts and
 [ADR-0059](../adr/0059-defer-general-outbound-streams.md). It proposes deferring
 production sockets; it is not a dependency of ordinary libraries or HTTP adapters.
+
+## Bounded invocation-scoped concurrency
+
+The [invocation concurrency investigation](invocation-concurrency/README.md)
+compares the six compiler profiles, includes an isolated actual-component Rust
+experiment and records scope ownership, fairness, cancellation and timer limits.
+[ADR-0060](../adr/0060-bound-invocation-scoped-concurrency.md) proposes deferring a
+universal executor and rejecting transparent thread emulation. The prototype is
+not a production compatibility promise or a blocker for ordinary dependencies.
