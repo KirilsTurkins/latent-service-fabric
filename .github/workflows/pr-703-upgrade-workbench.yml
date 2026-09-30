@@ -1,0 +1,44 @@
+name: PR 703 upgrade workbench
+on:
+  push:
+    branches: [fix/pr-703-upgrade-workbench]
+    paths: [.github/workflows/pr-703-upgrade-workbench.yml]
+permissions:
+  contents: read
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 711c5773eab56487270b95d395bb6e4879394ea7
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Preserve exact source objects for local reconciliation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e aaa4191436ef07e5a8739f411f63a1a85f99701f^{commit}
+          git cat-file -e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61^{commit}
+          git cat-file -e f92fd1d7d204e7f0a8d6a2974a6042d025ec4f38^{commit}
+          git config user.name 'Kirils Turkins'
+          git config user.email '236028511+KirilsTurkins@users.noreply.github.com'
+          tar -czf "$RUNNER_TEMP/pr703-git.tar.gz" .git
+          test "$(stat -c %s "$RUNNER_TEMP/pr703-git.tar.gz")" -le 536870912
+          sha256sum "$RUNNER_TEMP/pr703-git.tar.gz"
+      - name: Diagnose the development merge without changing remote branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout --detach aaa4191436ef07e5a8739f411f63a1a85f99701f
+          git merge --no-commit --no-ff 711c5773eab56487270b95d395bb6e4879394ea7 || test -f .git/MERGE_HEAD
+          git status --short
+          git diff --cc
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr703-source-objects
+          path: ${{ runner.temp }}/pr703-git.tar.gz
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
