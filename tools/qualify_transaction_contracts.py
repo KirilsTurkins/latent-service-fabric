@@ -14,10 +14,11 @@ from pathlib import Path
 import shutil
 import sys
 import time
+import tomllib
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.build_observation import build_environment, file_identity
+from tools.build_observation import build_environment, file_identity, resolve_tools
 from tools.java_guest.surface import surface as wit_surface
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
@@ -81,11 +82,19 @@ def compile_contract(language: str, output: Path, commands: Commands, *, tools: 
     if language == "rust":
         required = {"cargo": "cargo 1.97.1", "rustc": "rustc 1.97.1",
                     "wit-bindgen": "wit-bindgen-cli 0.62.0", "wasm-tools": "wasm-tools 1.254.0"}
+        # Resolving a Unix cargo/rustc proxy symlink executes rustup itself and
+        # observes the proxy's version. Reuse the maintained authoring selector
+        # to obtain the exact pinned compiler binaries, independently of PATH's
+        # default toolchain and the invoking repository's configuration.
+        selected, _ = resolve_tools(tomllib.loads(read_file(ROOT / "tools/toolchain.toml").decode()),
+                                    ROOT, commands.environment)
+        commands.environment["RUSTC"] = str(selected["rustc"])
         observed = {}
         for name, prefix in required.items():
-            path = Path(shutil.which(name, path=commands.environment["PATH"]) or "missing-" + name).resolve(strict=True)
+            path = selected.get(name) or Path(shutil.which(name, path=commands.environment["PATH"])
+                                              or "missing-" + name).resolve(strict=True)
             version = commands.run(name + "-version", path, "--version").decode().strip()
-            if not version.startswith(prefix):
+            if version.split()[:2] != prefix.split():
                 raise ValueError("unreviewed Rust definition tool: " + name)
             observed[name] = (path, file_identity(path, name))
         wit = output / "wit"
@@ -127,6 +136,10 @@ def compile_contract(language: str, output: Path, commands: Commands, *, tools: 
         (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
         return component, {**details, "tools": compiler.materials, "commands": compiler.records}
     work = project(language, output)
+    # The captured project owns global.json/go.mod and its exact SDK selection.
+    # Running managed compiler probes in ROOT can instead select the operator's
+    # .NET SDK 8.0.425; execute from the same source root as its maintained build.
+    commands.root = work
     if language == "go":
         from tools.go_guest.compiler import Compiler
         compiler = Compiler(output / "compiler", work / "vendor/lsf/sdk/go-guest", commands)
