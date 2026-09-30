@@ -28,7 +28,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/checkout` | `v7.0.1` | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
 | `actions/setup-python` | `v7.0.0` | `5fda3b95a4ea91299a34e894583c3862153e4b97` |
 | `actions/setup-go` | `v5` | `40f1582b2485089dde7abd97c1529aa768e1baff` |
-| `actions/setup-node` | `v4` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
+| `actions/setup-node` | `v7.0.0` | `820762786026740c76f36085b0efc47a31fe5020` |
 | `actions/setup-java` | `v6.0.1` | `de7274f081f381c8f8158605e0321c36c376e2e6` |
 | `actions/setup-dotnet` | `v6.0.0` | `a98b56852c35b8e3190ac28c8c2271da59106c68` |
 | `actions/upload-artifact` | `v7.0.1` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` |
@@ -90,6 +90,14 @@ artifact names, paths, retention, compression and hidden-file inputs. The new
 `archive` input defaults to true, preserving zipped artifacts for the existing
 download steps; these workflows do not enable direct single-file uploads.
 The workflow identities in `tools/ci/history/commands-v1.json` reflect all updated pins.
+
+The `actions/setup-node` v7.0.0 identity, release notes and action definition
+were reviewed on **2026-09-28**. The action runs on Node 24 and retains the
+workflows' explicit Node 24.19.0 version, npm cache inputs and dependency paths.
+Registry authentication inputs and required install/build commands are unchanged.
+Reconciled with the ownership-local CI contracts on **2026-09-29**: this is an
+action pin/comment-only workflow update, so neither the active command contracts
+nor the archived pre-sharding snapshot requires a hash refresh.
 
 ## Updating a pin
 
