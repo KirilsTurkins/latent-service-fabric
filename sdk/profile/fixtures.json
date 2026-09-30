@@ -19,6 +19,11 @@
     {"decimal": "1\r\n", "valid": false}
   ],
   "cases": [
+    {"name":"diagnostic-absent-profile-and-bound", "type":"ActivationDiagnostic", "value":{"schema_version":1,"stage":3,"reason":1}},
+    {"name":"diagnostic-unknown-enums-and-present-zero", "type":"ActivationDiagnostic", "value":{"schema_version":1,"stage":2147483647,"reason":-1,"profile":999,"configured_bound":"0","calculated_requirement":"18446744073709551615","fixed_bytes":"9223372036854775808","lifting_fuel":"0","lift_multiplier":"18446744073709551615","profile_digest":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}},
+    {"name":"activation-tree-default-page", "type":"InspectActivationTreeRequest", "value":{"activation_id":"activation-a"}},
+    {"name":"activation-tree-expired-is-not-absence-proof", "type":"InspectActivationTreeResponse", "value":{"schema_version":1,"nodes":[],"page":{},"history_available":false,"cursor_expired":true,"retained_history_only":true}},
+    {"name":"activation-tree-failed-preparation-before-guest", "type":"InspectActivationTreeResponse", "value":{"schema_version":1,"nodes":[{"activation_id":"child-a","parent_activation_id":"root-a","root_activation_id":"root-a","phase":"received","terminal_state":"resource_exhausted","last_updated_unix_millis":"18446744073709551615","diagnostic":{"schema_version":1,"stage":3,"reason":1,"profile":1,"configured_bound":"16777216","calculated_requirement":"67108864"},"diagnostic_is_terminal":true,"principal_kind":"service","caller_service":"adapter"}],"page":{"next_page_token":"opaque-scoped-cursor"},"history_available":true,"retained_history_only":true}},
     {
       "name": "invoke-absent-identity-and-deadlines",
       "type": "InvokeRequest",

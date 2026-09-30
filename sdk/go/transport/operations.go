@@ -31,6 +31,12 @@ func (client *Client) GetActivation(ctx context.Context, request profile.GetActi
 	})
 }
 
+func (client *Client) InspectActivationTree(ctx context.Context, request profile.InspectActivationTreeRequest, options profile.CallOptions) (profile.ClientResponse[profile.InspectActivationTreeResponse], error) {
+	return execute[profile.InspectActivationTreeResponse](client, ctx, request, options, &controlv1.InspectActivationTreeRequest{}, func(ctx context.Context, wire proto.Message) (proto.Message, error) {
+		return client.node.InspectActivationTree(ctx, wire.(*controlv1.InspectActivationTreeRequest))
+	})
+}
+
 func (client *Client) GetPolicy(ctx context.Context, request profile.GetPolicyRequest, options profile.CallOptions) (profile.ClientResponse[profile.GetPolicyResponse], error) {
 	return execute[profile.GetPolicyResponse](client, ctx, request, options, &controlv1.GetPolicyRequest{}, func(ctx context.Context, wire proto.Message) (proto.Message, error) {
 		return client.policy.GetPolicy(ctx, wire.(*controlv1.GetPolicyRequest))
@@ -150,6 +156,9 @@ func (client *Client) state(request any) (*callState, bool) {
 	case profile.ListCapabilitiesRequest:
 		state.requestLimit = min(client.config.MaxRequestBytes, 8*1024)
 		state.responseLimit = min(client.config.MaxResponseBytes, 128*1024)
+	case profile.InspectActivationTreeRequest:
+		state.requestLimit = min(client.config.MaxRequestBytes, 8*1024)
+		state.responseLimit = min(client.config.MaxResponseBytes, 64*1024)
 	}
 	return state, recovery
 }

@@ -252,11 +252,15 @@ impl PreparationContext {
             || key.target_triple != self.profile.target_triple
             || key.cpu_feature_set != self.profile.cpu_feature_set
         {
-            return Err(platform_error(
+            return Err(latent_core::diagnostic::ActivationDiagnostic::new(
+                latent_core::diagnostic::DiagnosticStage::Preparation,
+                latent_core::diagnostic::DiagnosticReason::UnsupportedEngineProfile,
+            )
+            .attach(platform_error(
                 PlatformErrorCode::IncompatibleContract,
                 "preparation key does not match the active Wasmtime engine profile",
                 false,
-            ));
+            )));
         }
         Ok(())
     }

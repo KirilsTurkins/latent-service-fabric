@@ -98,7 +98,7 @@ to observe close events. Local client shutdown makes no guest-cleanup claim.
 The generated wire descriptors live under `src/node/protocol`, separate from
 the generated cross-language DTO facade and the handwritten owner/convenience
 modules. The supported RPCs are `Invoke`, `Cancel`, `GetActivation`, `GetPolicy`,
-`ListPolicies`, `ListCapabilities`, `ApplyPolicy` and `GetPolicyOperation`.
+`InspectActivationTree`, `ListPolicies`, `ListCapabilities`, `ApplyPolicy` and `GetPolicyOperation`.
 Control/management operations reuse the node's real authorization and protocol;
 there is no ad hoc JSON endpoint or authority derived from lineage claims.
 

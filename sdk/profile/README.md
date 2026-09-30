@@ -58,9 +58,10 @@ request/response names are machine-readable in `client-profile.json`.
 
 | Operation | Request and response | Required behavior |
 | --- | --- | --- |
-| Invoke | `InvokeRequest` / `InvokeResponse` | Keep caller activation/lineage IDs, budget, absolute invocation deadline, priority, media type and opaque payload. Preserve exactly one success/declared-error/platform-failure result and the common receipt even for failure. |
+| Invoke | `InvokeRequest` / `InvokeResponse` | Keep activation IDs, budget, absolute invocation deadline, priority, media type and opaque payload. Preserve optional lineage fields in models; external lineage rejects and trusted brokers derive child ancestry. Preserve exactly one success/declared-error/platform-failure result and the common receipt even for failure. |
 | Cancel | `CancelRequest` / `CancelResponse` | Uses the known activation ID. Accepted is advisory, already-terminal retains its state, and not-found is not proof of nonexecution. RPC errors are never dispositions. |
 | GetActivation | `GetActivationRequest` / `ActivationStatus` | Recover by the original activation ID; retain terminal outcome, time and final consumption independently. Bounded status retention makes missing status inconclusive. |
+| InspectActivationTree | `InspectActivationTreeRequest` / `InspectActivationTreeResponse` | Tenant administrator read of retained root/parent/child links, trusted caller class/service and admitted budget, plus closed numeric diagnostics. Maximum 128 nodes and 64 KiB; zero/absent page selects 32. Opaque cursor membership is fixed while node outcomes may progress. No result or cancellation authority is conveyed. |
 | GetPolicy | `GetPolicyRequest` / `GetPolicyResponse` | Both `POLICY` and `PROVIDER_BINDING` record kinds; absence is retained, not an invented zero-generation record. |
 | ListPolicies | `ListPoliciesRequest` / `ListPoliciesResponse` | Both record kinds; explicit positive page size, exact opaque cursor, catalog generation and next-token presence. Never auto-drain pages. |
 | ListCapabilities | `ListCapabilitiesRequest` / `ListCapabilitiesResponse` | Explicit selected deployment, optional filters and bounded page; redacted binding/provider identity, revisions, configuration epoch, sampled state and unavailable resource owners. |

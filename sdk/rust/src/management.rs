@@ -33,6 +33,53 @@ impl CapabilityPolicyRecordKind {
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct DiagnosticStage(pub i32);
+
+impl DiagnosticStage {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const ADMISSION: Self = Self(1);
+    pub const QUEUE: Self = Self(2);
+    pub const PREPARATION: Self = Self(3);
+    pub const BINDING: Self = Self(4);
+    pub const EXECUTION: Self = Self(5);
+    pub const PROVIDER: Self = Self(6);
+    pub const CLEANUP: Self = Self(7);
+    pub const OUTPUT_VALIDATION: Self = Self(8);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct DiagnosticReason(pub i32);
+
+impl DiagnosticReason {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const SIGNATURE_ALLOCATION_LIMIT: Self = Self(1);
+    pub const VALUE_ALLOCATION_LIMIT: Self = Self(2);
+    pub const UNSUPPORTED_COMPONENT_SURFACE: Self = Self(3);
+    pub const UNSUPPORTED_ENGINE_PROFILE: Self = Self(4);
+    pub const PROVIDER_ABSENT: Self = Self(5);
+    pub const BINDING_ABSENT: Self = Self(6);
+    pub const ADMISSION_DENIED: Self = Self(7);
+    pub const GRANT_DENIED: Self = Self(8);
+    pub const QUEUE_PRESSURE: Self = Self(9);
+    pub const GUEST_MEMORY_EXHAUSTED: Self = Self(10);
+    pub const GUEST_FUEL_EXHAUSTED: Self = Self(11);
+    pub const GUEST_RESOURCE_EXHAUSTED: Self = Self(12);
+    pub const PROVIDER_TIMEOUT: Self = Self(13);
+    pub const DEADLINE_EXCEEDED: Self = Self(14);
+    pub const CANCELLED: Self = Self(15);
+    pub const HTTP_RESPONSE_REJECTED: Self = Self(16);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct DiagnosticProfile(pub i32);
+
+impl DiagnosticProfile {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const WASMTIME_SERVICE_VALUES_V1: Self = Self(1);
+    pub const WASMTIME_BUFFERED_WEB_VALUES_V1: Self = Self(2);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct FailureCategory(pub i32);
 
 impl FailureCategory {
@@ -368,6 +415,52 @@ pub struct PublicationRef {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ActivationDiagnostic {
+    pub schema_version: u32,
+    pub stage: DiagnosticStage,
+    pub reason: DiagnosticReason,
+    pub profile: Option<DiagnosticProfile>,
+    pub profile_digest: Option<String>,
+    pub configured_bound: Option<u64>,
+    pub calculated_requirement: Option<u64>,
+    pub fixed_bytes: Option<u64>,
+    pub lifting_fuel: Option<u64>,
+    pub lift_multiplier: Option<u64>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ActivationTreeNode {
+    pub activation_id: String,
+    pub parent_activation_id: Option<String>,
+    pub root_activation_id: String,
+    pub phase: String,
+    pub terminal_state: Option<String>,
+    pub last_updated_unix_millis: u64,
+    pub diagnostic: Option<ActivationDiagnostic>,
+    pub principal_kind: String,
+    pub caller_service: Option<String>,
+    pub granted_budget: Option<ResourceBudget>,
+    pub effective_deadline_unix_millis: Option<u64>,
+    pub diagnostic_is_terminal: bool,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InspectActivationTreeRequest {
+    pub activation_id: String,
+    pub page: Option<PageRequest>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InspectActivationTreeResponse {
+    pub schema_version: u32,
+    pub nodes: Vec<ActivationTreeNode>,
+    pub page: Option<PageResponse>,
+    pub history_available: bool,
+    pub cursor_expired: bool,
+    pub retained_history_only: bool,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PublicationIdentity {
     pub publication: PublicationRef,
     pub component_digest: String,
@@ -442,6 +535,12 @@ pub trait ClientProfile: Send + Sync {
         request: GetActivationRequest,
         options: CallOptions,
     ) -> ClientFuture<'_, ActivationStatus>;
+
+    fn inspect_activation_tree(
+        &self,
+        request: InspectActivationTreeRequest,
+        options: CallOptions,
+    ) -> ClientFuture<'_, InspectActivationTreeResponse>;
 
     fn get_policy(
         &self,

@@ -23,6 +23,7 @@ SOURCES = {
     "latent/control/v1/common.proto": "controlv1",
     "latent/control/v1/policy.proto": "controlv1",
     "latent/control/v1/capability.proto": "controlv1",
+    "latent/control/v1/node.proto": "controlv1",
     "latent/invocation/v1/invocation.proto": "invocationv1",
 }
 
@@ -91,7 +92,7 @@ def main() -> None:
                 if not target.resolve().is_relative_to(destination.resolve()):
                     raise ValueError("stale Go RPC output path escapes its directory")
                 target.unlink()
-    print("checked Go RPC regeneration" if arguments.check else "generated Go RPC bindings from four authoritative protobuf sources")
+    print("checked Go RPC regeneration" if arguments.check else "generated Go RPC bindings from five authoritative protobuf sources")
 
 
 if __name__ == "__main__":

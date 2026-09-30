@@ -74,6 +74,16 @@ pub(super) fn observe_grant(
     resource: latent_policy::capability::ResourceTarget<'_>,
     result: Result<(), &PlatformError>,
 ) {
+    if let Err(failure) = result {
+        let diagnostic = latent_core::diagnostic::ActivationDiagnostic::from_error(failure)
+            .unwrap_or_else(|| {
+                use latent_core::diagnostic::{
+                    ActivationDiagnostic as D, DiagnosticReason as R, DiagnosticStage as S,
+                };
+                D::new(S::Binding, R::GrantDenied)
+            });
+        core.observe_diagnostic(diagnostic);
+    }
     let Some(configuration) = core.owner.audit.as_ref().filter(|audit| audit.observations) else {
         return;
     };

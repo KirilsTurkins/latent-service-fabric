@@ -5,12 +5,14 @@
     "api/proto/latent/invocation/v1/invocation.proto": ["InvocationTarget", "InvokeRequest", "BudgetConsumption", "InvokeResponse", "Success", "DeclaredError", "CancelRequest", "CancelResponse", "CancelDisposition", "GetActivationRequest", "ActivationStatus", "ActivationSuccessSummary"],
     "api/proto/latent/control/v1/policy.proto": ["Policy", "CapabilityPolicyRecordKind", "ApplyPolicyRequest", "ApplyPolicyResponse", "GetPolicyRequest", "GetPolicyResponse", "CapabilityPolicyOperation", "GetPolicyOperationRequest", "GetPolicyOperationResponse", "ListPoliciesRequest", "ListPoliciesResponse"],
     "api/proto/latent/control/v1/capability.proto": ["CapabilityDescriptor", "ListCapabilitiesRequest", "ListCapabilitiesResponse", "CapabilityInspectionRevision", "CapabilityInspectionPolicy", "CapabilityBindingInspection", "CapabilityInspectionCeiling", "CapabilityResourceUsage"],
-    "api/proto/latent/control/v1/release.proto": ["PublicationRef"]
+    "api/proto/latent/control/v1/release.proto": ["PublicationRef"],
+    "api/proto/latent/control/v1/node.proto": ["DiagnosticStage", "DiagnosticReason", "DiagnosticProfile", "ActivationDiagnostic", "ActivationTreeNode", "InspectActivationTreeRequest", "InspectActivationTreeResponse"]
   },
   "operations": [
     {"name": "Invoke", "service": "latent.invocation.v1.InvocationService", "request": "InvokeRequest", "response": "InvokeResponse", "recovery": "activation_id"},
     {"name": "Cancel", "service": "latent.invocation.v1.InvocationService", "request": "CancelRequest", "response": "CancelResponse", "recovery": "activation_id"},
     {"name": "GetActivation", "service": "latent.invocation.v1.InvocationService", "request": "GetActivationRequest", "response": "ActivationStatus", "recovery": "activation_id"},
+    {"name": "InspectActivationTree", "service": "latent.control.v1.NodeService", "request": "InspectActivationTreeRequest", "response": "InspectActivationTreeResponse"},
     {"name": "GetPolicy", "service": "latent.control.v1.PolicyService", "request": "GetPolicyRequest", "response": "GetPolicyResponse"},
     {"name": "ListPolicies", "service": "latent.control.v1.PolicyService", "request": "ListPoliciesRequest", "response": "ListPoliciesResponse"},
     {"name": "ListCapabilities", "service": "latent.control.v1.CapabilityService", "request": "ListCapabilitiesRequest", "response": "ListCapabilitiesResponse"},

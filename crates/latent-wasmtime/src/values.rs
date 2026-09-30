@@ -201,10 +201,14 @@ fn invalid_input() -> PlatformError {
 }
 
 fn limit() -> PlatformError {
-    failure(
+    latent_core::diagnostic::ActivationDiagnostic::new(
+        latent_core::diagnostic::DiagnosticStage::Execution,
+        latent_core::diagnostic::DiagnosticReason::ValueAllocationLimit,
+    )
+    .attach(failure(
         PlatformErrorCode::ResourceExhausted,
         "invocation-value-limit",
-    )
+    ))
 }
 
 fn invalid_result() -> PlatformError {
@@ -212,10 +216,14 @@ fn invalid_result() -> PlatformError {
 }
 
 fn unsupported() -> PlatformError {
-    failure(
+    latent_core::diagnostic::ActivationDiagnostic::new(
+        latent_core::diagnostic::DiagnosticStage::Preparation,
+        latent_core::diagnostic::DiagnosticReason::UnsupportedComponentSurface,
+    )
+    .attach(failure(
         PlatformErrorCode::IncompatibleContract,
         "unsupported-component-value-type",
-    )
+    ))
 }
 
 fn charge(remaining: &mut usize, bytes: usize) -> Result<(), PlatformError> {

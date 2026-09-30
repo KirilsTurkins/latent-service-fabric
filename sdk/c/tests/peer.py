@@ -8,7 +8,7 @@ import sys
 from h2.config import H2Configuration
 from h2.connection import H2Connection
 from h2.events import DataReceived, RequestReceived, StreamEnded
-from latent.control.v1 import capability_pb2, common_pb2, policy_pb2
+from latent.control.v1 import capability_pb2, common_pb2, node_pb2, policy_pb2
 from latent.invocation.v1 import invocation_pb2
 
 
@@ -117,8 +117,8 @@ class Peer:
         if not timeout.endswith("m") or not 0 < int(timeout[:-1]) <= 300000:
             raise ValueError("absolute deadline header")
         service, operation = headers[":path"].rsplit("/", 1)
-        module = invocation_pb2 if operation in {"Invoke", "Cancel", "GetActivation"} else capability_pb2 if operation == "ListCapabilities" else policy_pb2
-        expected = "/latent.invocation.v1.InvocationService" if module is invocation_pb2 else "/latent.control.v1.CapabilityService" if module is capability_pb2 else "/latent.control.v1.PolicyService"
+        module = invocation_pb2 if operation in {"Invoke", "Cancel", "GetActivation"} else node_pb2 if operation == "InspectActivationTree" else capability_pb2 if operation == "ListCapabilities" else policy_pb2
+        expected = "/latent.invocation.v1.InvocationService" if module is invocation_pb2 else "/latent.control.v1.NodeService" if module is node_pb2 else "/latent.control.v1.CapabilityService" if module is capability_pb2 else "/latent.control.v1.PolicyService"
         if service != expected:
             raise ValueError("authoritative RPC path")
         request = getattr(module, operation + "Request").FromString(body[5:])
@@ -197,6 +197,13 @@ class Peer:
                 self.reply(connection, stream, value)
             else:
                 self.reply(connection, stream, value)
+        elif operation == "InspectActivationTree":
+            assert request.activation_id == "operator-root"
+            value = node_pb2.InspectActivationTreeResponse(schema_version=1, history_available=True, retained_history_only=True)
+            value.page.SetInParent()
+            child = value.nodes.add(activation_id="child", root_activation_id="operator-root", parent_activation_id="operator-root", phase="materializing", principal_kind="service")
+            child.diagnostic.CopyFrom(node_pb2.ActivationDiagnostic(schema_version=1, stage=777, reason=778, profile=779, configured_bound=0, calculated_requirement=MAXIMUM))
+            self.reply(connection, stream, value)
         elif operation == "Cancel":
             known = self.activations.get(request.activation_id)
             if request.activation_id == "future-cancel":

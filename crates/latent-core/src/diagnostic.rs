@@ -6,6 +6,17 @@
 
 use crate::{ErrorDetail, Metadata, PlatformError};
 
+/// Fixed node-owned projection sink. Observations never grant authority or
+/// certify provider completion. Retention belongs to the existing journal.
+pub trait ActivationDiagnosticSink: Send + Sync {
+    fn record(
+        &self,
+        tenant: &crate::TenantId,
+        activation: &crate::ActivationId,
+        diagnostic: ActivationDiagnostic,
+    );
+}
+
 macro_rules! vocabulary {
     ($name:ident { $($variant:ident = $number:literal),+ $(,)? }) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,7 +33,7 @@ macro_rules! vocabulary {
 
 vocabulary!(DiagnosticStage {
     Admission = 1, Queue = 2, Preparation = 3, Binding = 4,
-    Execution = 5, Provider = 6, Cleanup = 7
+    Execution = 5, Provider = 6, Cleanup = 7, OutputValidation = 8
 });
 vocabulary!(DiagnosticReason {
     SignatureAllocationLimit = 1, ValueAllocationLimit = 2,
@@ -30,7 +41,7 @@ vocabulary!(DiagnosticReason {
     ProviderAbsent = 5, BindingAbsent = 6, AdmissionDenied = 7,
     GrantDenied = 8, QueuePressure = 9, GuestMemoryExhausted = 10,
     GuestFuelExhausted = 11, GuestResourceExhausted = 12,
-    ProviderTimeout = 13, DeadlineExceeded = 14, Cancelled = 15
+    ProviderTimeout = 13, DeadlineExceeded = 14, Cancelled = 15, HttpResponseRejected = 16
 });
 vocabulary!(DiagnosticProfile {
     WasmtimeServiceValuesV1 = 1, WasmtimeBufferedWebValuesV1 = 2
@@ -189,7 +200,7 @@ impl ActivationDiagnostic {
 
     #[must_use]
     pub fn from_error(error: &PlatformError) -> Option<Self> {
-        error.details.iter().find_map(Self::from_detail)
+        error.details.iter().take(32).find_map(Self::from_detail)
     }
 }
 
