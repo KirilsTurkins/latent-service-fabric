@@ -31,7 +31,8 @@ def configure(directory: Path, releases: Path, *, http=True):
     value = read_json(config)
     value["engine"] = {"javaGuest": True}
     value["execution"].update(maximumWallTimeMillis=120000)
-    value["limits"] = {"maximumComponentBytes": 32 * 1024 * 1024, "maximumPayloadBytes": 2 * 1024 * 1024}
+    value["limits"] = {"maximumComponentBytes": 32 * 1024 * 1024,
+                       "maximumPayloadBytes": (2 if http else 1) * 1024 * 1024}
     value["cells"][0].update(capacity=2, queueCapacity=4, maximumMemoryBytes=134217728)
     value["budgetProfile"] = {"mode": "phase3", "maximumChildCalls": 4, "maximumDepth": 2,
         "maximumLiveChildren": 1, "maximumLiveDescendants": 2, "maximumOutboundRequests": 0,

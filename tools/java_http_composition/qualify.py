@@ -137,6 +137,9 @@ def run_node(binaries, releases, output, *, http):
             client = RecordingClient(binaries["latent"], work / "client", cancellation_owner, time.monotonic() + 900,
                 evidence=evidence / "controls", invocation_timeout_millis=120000)
             config, host = configure(work / "node", releases, http=http)
+            # This disposable config contains only the public workflow token.
+            # Preserve the exact finite bounds when startup fails before RPC.
+            write_json(evidence / "node-config.json", read_json(config))
             node = None
             try:
                 node = connect(client, binaries["latentd"], work / "node", config, "examples", 1)
