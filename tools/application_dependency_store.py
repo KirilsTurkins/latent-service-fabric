@@ -153,13 +153,15 @@ class Entries:
         self.files[name] = data
 
 
-def directory_files(root: Path) -> dict[str, bytes]:
+def directory_files(root: Path, *, exclude: tuple[str, ...] = ()) -> dict[str, bytes]:
     root = regular_path(root)
     entries = Entries()
     pending = [root]
     while pending:
         parent = pending.pop()
         for path in sorted(parent.iterdir()):
+            if parent == root and path.name in exclude:
+                continue
             regular_path(path)
             name = path.relative_to(root).as_posix()
             if path.is_dir():
