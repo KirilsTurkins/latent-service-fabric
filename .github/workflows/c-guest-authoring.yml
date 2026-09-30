@@ -74,8 +74,12 @@ jobs:
           cargo test --locked -p latent-policy --lib mutation_renewal_persists_a_full_window_even_before_the_sampler_margin 2>&1 | tee "$RUNNER_TEMP/c-guest-clock-window.log"
       - name: Qualify standalone C projects and the printed guide
         run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           python3 -m unittest tools.tests.test_c_capsule_authoring
-          python3 tools/qualify_c_capsules.py --output "$RUNNER_TEMP/c-capsule-authoring"
+          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_captured_compiler_isolation
+          python3 tools/qualify_c_capsules.py --application-dependencies --output "$RUNNER_TEMP/c-capsule-authoring"
       - name: Retain compiler and ownership results including failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

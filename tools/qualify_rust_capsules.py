@@ -39,7 +39,9 @@ def inputs(language="rust"):
     helpers = HELPERS
     if language == "c":
         helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
-                    "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py")
+                    "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
+                    "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
+                    "c_application_dependencies.py", "captured_compiler_isolation.py", "c_dependency_fixture.py")
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
@@ -94,7 +96,8 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
     return result
 
 
-def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None, dotnet_tools=None):
+def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None, dotnet_tools=None,
+            application_dependencies=False):
     if language not in {"rust", "c", "go", "typescript", "dotnet"}:
         raise ValueError("unsupported authoring qualification language")
     if language == "typescript" and typescript_tools is None:
@@ -164,6 +167,12 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         (output / "builds").mkdir(mode=0o700)
         for template in TEMPLATES:
             project = creator(output / "projects" / template, template)
+            if language == "c" and application_dependencies and template == "greeting":
+                from tools.c_dependency_fixture import install
+                stage = "application-dependency-capture"
+                result["applicationDependencies"] = install(project, output / "outside-project-dependencies")
+                write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
+                stage = "standalone-builds"
             artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],
                 binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric",
                 **({"offline": offline} if language == "rust" else

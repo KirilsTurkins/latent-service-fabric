@@ -10,6 +10,8 @@ from tools.build_observation import build_environment, file_identity, public_rep
 from tools.build_process import BuildProcessError
 from tools.c_guest.compiler import Compiler
 from tools.c_capsule_project import validate
+from tools.application_dependencies import prepare
+from tools.c_application_dependencies import selected
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
                                         read_file, read_json, snapshot, write_json)
@@ -17,6 +19,9 @@ from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
 BUILD_TYPE = "https://latent.dev/build/c-guest/v1"
 RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_build.py",
+          "tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
+          "tools/c_application_dependencies.py",
+          "tools/captured_compiler_isolation.py",
           "tools/c_guest/compiler.py", "tools/c_guest/bindings.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
@@ -64,10 +69,20 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
+            stage = "application-dependencies"
+            closure = prepare(project_path, work, output, "c")
             if packager is None:
                 write_json(output / "diagnostic-source.json", {"capturedSource": str(work), "requestedSource": str(project_path)})
             compiler = Compiler(temporary / "compiler", 900, sdk=work / "vendor/lsf/sdk/c-guest",
                                 platform=None, config=pins, commands=commands, installed=installed)
+            if closure is not None:
+                stage = "captured-compiler-isolation"
+                isolated_inputs = compiler.enable_captured_isolation(temporary)
+            application = selected(closure, compiler_digest=compiler.materials["zig"]["digest"],
+                                   runtime_digest=digest(inventory(snapshot(work / "vendor/lsf/sdk/c-guest"))),
+                                   compiler_distribution_digest=digest(json.dumps(isolated_inputs["distributions"],
+                                        sort_keys=True, separators=(",", ":")).encode()) if closure is not None else None)
+            write_json(output / "c-libraries.json", application.receipt)
             materials = list(compiler.materials.values())
             paths = {"contracts-tool": checked_path(contracts_tool)}
             if packager is not None:
@@ -77,8 +92,13 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             binding_digest = binding_check(work, lock, commands, compiler.paths["wit-bindgen"])
             stage = "compile"
             sources = [work / name for name in files if name.startswith("src/") and name.endswith(".c")]
+            sources.extend(application.sources)
             component_path, generated = compiler.compile(sources, work / "wit", project["world"], temporary / "compiled",
-                                                          memory_bytes=64 * 1024 * 1024)
+                                                          memory_bytes=64 * 1024 * 1024,
+                                                          include_directories=application.includes,
+                                                          static_libraries=application.archives, defines=application.defines)
+            if closure is not None:
+                write_json(output / "compiler-inputs.json", isolated_inputs)
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             write_json(output / "bindings.json", generated)
@@ -96,8 +116,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                 commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
-            if snapshot(project_path) != files or snapshot(work) != files:
+            if snapshot(project_path) != files or snapshot(work, exclude=("dependencies", "application-vendor")) != files:
                 raise ValueError("project changed during the observed C build")
+            if closure is not None:
+                closure.check_unchanged()
             if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
                 raise ValueError("C authoring recipe changed during the build")
             compiler.check_unchanged()
@@ -112,6 +134,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
                 ("source-snapshot", source_inputs), ("build-recipe", recipe_inputs), ("package-inputs", package_inventory),
                 ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"])))
+            if closure is not None:
+                for name in ("application-dependencies.json", "c-libraries.json"):
+                    data = read_file(output / name, 8 * 1024 * 1024)
+                    materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+                data = read_file(output / "compiler-inputs.json", 8 * 1024 * 1024)
+                materials.append({"name": "c-compiler-sysroot-and-isolation", "digest": digest(data), "size": len(data)})
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("C build clock or overall deadline invalid")
