@@ -9,6 +9,8 @@
   "privateOperations": ["private-admin", "publishing", "provider-event"],
   "routes": [
     {"method": "GET", "path": "/api/status", "operation": "status", "clientName": "status"},
+    {"method": "GET", "path": "/api/status-deadline", "operation": "status", "clientName": "statusDeadline", "childDeadlineOffsetMillis": 2000},
+    {"method": "GET", "path": "/api/status-expired", "operation": "status", "clientName": "statusExpired", "childDeadlineOffsetMillis": 0},
     {"method": "POST", "path": "/api/echo", "operation": "echo", "clientName": "echo"},
     {"method": "POST", "path": "/api/nested", "operation": "echo-nested", "clientName": "nested"},
     {"method": "POST", "path": "/api/text", "operation": "text", "clientName": "text"},

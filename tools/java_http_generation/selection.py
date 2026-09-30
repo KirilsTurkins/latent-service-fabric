@@ -28,8 +28,13 @@ def selected(surface: dict, selection: dict) -> list[dict]:
         raise ValueError("route-selection: explicitly select one to 64 public operations")
     identities, client_names, result = set(), set(), []
     for route in routes:
-        if not isinstance(route, dict) or set(route) != {"path", "method", "operation", "clientName"}:
+        required = {"path", "method", "operation", "clientName"}
+        if not isinstance(route, dict) or not required <= set(route) or set(route) - required - {"childDeadlineOffsetMillis"}:
             raise ValueError("route-selection: each public route requires path, method, operation and clientName")
+        if "childDeadlineOffsetMillis" in route:
+            offset = route["childDeadlineOffsetMillis"]
+            if type(offset) is not int or not 0 <= offset <= 60000:
+                raise ValueError("route-selection: childDeadlineOffsetMillis must be an integer from zero to 60000")
         path, method, operation, client = (route[key] for key in ("path", "method", "operation", "clientName"))
         if not isinstance(path, str) or len(path) > 256 or not re.fullmatch(r"/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+", path):
             raise ValueError("route-selection: only bounded literal paths are supported")

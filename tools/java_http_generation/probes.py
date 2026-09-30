@@ -29,11 +29,15 @@ def qualify(domain: Path, selection: Path, adapter: Path, output: Path) -> dict:
         raise ValueError("generator-negative-case-accepted: " + name)
 
     try:
-        for name in ("private-admin", "publishing", "provider-event", "duplicate-route", "duplicate-client", "wrong-contract"):
+        for name in ("private-admin", "publishing", "provider-event", "duplicate-route", "duplicate-client", "wrong-contract",
+                     "oversized-child-deadline", "noninteger-child-deadline"):
             changed = deepcopy(original)
             if name in original["privateOperations"]:
                 changed["routes"].append({"method": "GET", "path": "/api/" + name, "operation": name, "clientName": "forbidden"})
                 expected = "private operation"
+            elif name.endswith("child-deadline"):
+                changed["routes"][0]["childDeadlineOffsetMillis"] = 60001 if name.startswith("oversized") else True
+                expected = "childDeadlineOffsetMillis must be an integer from zero to 60000"
             elif name == "wrong-contract":
                 changed["domain"]["contract"] = changed["domain"]["contract"].replace("@1.0.0", "@2.0.0")
                 expected = "not an actual nonempty domain export"
