@@ -18,6 +18,9 @@ const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
 static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
 
+mod bounded_file;
+pub use bounded_file::StoreFileStatus;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StoreError {
     Invalid,
@@ -70,7 +73,7 @@ impl Default for StoreLimits {
     }
 }
 impl StoreLimits {
-    fn validate(self) -> Result<Self, StoreError> {
+    pub(crate) fn validate(self) -> Result<Self, StoreError> {
         if self.cache_bytes < 1024 * 1024
             || self.cache_bytes > 64 * 1024 * 1024
             || self.maximum_rows == 0
@@ -158,6 +161,32 @@ impl EmbeddedStore {
         let mut builder = Database::builder();
         builder.set_cache_size(limits.cache_bytes);
         let db = builder.create_file(file).map_err(|_| StoreError::Corrupt)?;
+        Self::open_database(db, limits, was_empty)
+    }
+
+    /// The production owner additionally caps every physical growth/write.
+    /// Upstream `FileBackend` still owns descriptor locking and native I/O.
+    pub fn open_bounded_file(
+        file: File,
+        limits: StoreLimits,
+        maximum_file_bytes: u64,
+    ) -> Result<(Self, StoreFileStatus), StoreError> {
+        let limits = limits.validate()?;
+        let was_empty = file.metadata().map_err(|_| StoreError::Unavailable)?.len() == 0;
+        let (backend, status) = bounded_file::BoundedFile::new(file, maximum_file_bytes)?;
+        let mut builder = Database::builder();
+        builder.set_cache_size(limits.cache_bytes);
+        let db = builder
+            .create_with_backend(backend)
+            .map_err(|_| StoreError::Corrupt)?;
+        Ok((Self::open_database(db, limits, was_empty)?, status))
+    }
+
+    fn open_database(
+        db: Database,
+        limits: StoreLimits,
+        was_empty: bool,
+    ) -> Result<Self, StoreError> {
         if was_empty {
             let mut tx = db.begin_write().map_err(|_| StoreError::Unavailable)?;
             tx.set_durability(Durability::Immediate)

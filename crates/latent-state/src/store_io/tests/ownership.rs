@@ -130,7 +130,7 @@ fn queue_accepted_and_retained_byte_limits_reject_before_submission() {
         let (_, ticket) = ready(&receiver);
         let queued = owner.submit(StoreIoKind::Write, 0, |_| ()).unwrap();
         let bytes = if kind == StoreIoError::ByteBudget {
-            1100
+            900
         } else {
             0
         };

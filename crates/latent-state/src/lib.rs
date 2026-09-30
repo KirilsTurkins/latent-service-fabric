@@ -10,6 +10,7 @@ pub mod namespace;
 pub mod reservation;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.
 pub mod session;
+pub mod protected_store;
 pub mod store_io;
 
 use latent_core::{

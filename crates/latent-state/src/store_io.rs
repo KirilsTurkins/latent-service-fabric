@@ -14,6 +14,7 @@
 
 mod drain;
 mod job;
+mod retained;
 mod startup;
 mod state;
 mod types;
@@ -21,6 +22,7 @@ mod worker;
 
 pub use drain::StoreIoDrain;
 pub use job::StoreIoJob;
+pub use retained::StoreIoRetained;
 pub use startup::{StoreIoReady, StoreIoStartup};
 pub use types::{
     StoreIoAdmissionError, StoreIoEnginePhase, StoreIoError, StoreIoKind, StoreIoLimits,
@@ -101,6 +103,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             let worker_engine = Arc::clone(&engine);
             if let Ok(thread) = std::thread::Builder::new()
                 .name(format!("latent-store-io-{index}"))
+                .stack_size(1024 * 1024)
                 .spawn(move || worker::run(worker_control, worker_engine))
             {
                 owner
@@ -127,6 +130,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
                     state.failure = Some(StoreIoError::WorkerStartFailed);
                     if state.live_workers == 0 {
                         state.engine_phase = StoreIoEnginePhase::Closed;
+                        state.retained_bytes -= state.limits.resident_bytes;
                     }
                 }
                 control.notify();
@@ -166,6 +170,8 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         let prepared = (|| {
             let metadata = std::mem::size_of::<TypedWork<S, T, F>>()
                 .checked_add(std::mem::size_of::<Completion<T>>())
+                // Arc/box headers, bounded queue slot and response-owner shell.
+                .and_then(|bytes| bytes.checked_add(128))
                 .and_then(|bytes| u64::try_from(bytes).ok())
                 .ok_or(StoreIoError::Exhausted)?;
             let charge = retained_bytes

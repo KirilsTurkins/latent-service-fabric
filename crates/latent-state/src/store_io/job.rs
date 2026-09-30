@@ -22,6 +22,9 @@ impl<S> Drop for Reservation<S> {
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             state.accepted -= 1;
             state.retained_bytes -= self.bytes;
+            if state.snapshot().physically_retired() {
+                state.retired_at = Some(self.control.clock.monotonic_now());
+            }
         }
         self.control.notify();
     }

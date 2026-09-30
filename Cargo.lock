@@ -2072,6 +2072,7 @@ name = "latent-state"
 version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
+ "latent-protected-files",
  "latent-testkit",
  "redb",
  "serde_json",
