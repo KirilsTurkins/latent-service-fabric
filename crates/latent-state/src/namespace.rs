@@ -583,7 +583,7 @@ mod tests {
             namespace_operation_key(&TenantId("a".into()), "bob", "d").unwrap()
         );
         assert_eq!(
-            namespace_tenant_prefix(&TenantId("".into())),
+            namespace_tenant_prefix(&TenantId(String::new())),
             Err(NamespaceError::Invalid)
         );
         assert_eq!(

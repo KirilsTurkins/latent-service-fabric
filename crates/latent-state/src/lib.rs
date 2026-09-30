@@ -5,6 +5,8 @@
 pub mod embedded;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
+/// Host-owned read/staging sessions; the complete envelope coordinator commits.
+pub mod session;
 
 use latent_core::{
     ActivationId, BoxFuture, EntityKey, LeaseId, Metadata, PlatformError, StateNamespaceId,
@@ -100,6 +102,9 @@ pub trait StateBackend: Send + Sync {
         mutation: StateMutation,
     ) -> BoxFuture<'a, Result<(), PlatformError>>;
 
+    #[deprecated(
+        note = "Independent state commit cannot atomically publish Phase 4 commands, results, intents and inbox; use the complete host envelope coordinator"
+    )]
     fn commit(
         &self,
         transaction: StateTransaction,
