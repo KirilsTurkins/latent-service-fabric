@@ -1,35 +1,162 @@
-name: PR 703 upgrade workbench
+name: PR 703 upgrade qualification
 on:
   push:
     branches: [fix/pr-703-upgrade-workbench]
     paths: [.github/workflows/pr-703-upgrade-workbench.yml]
 permissions:
   contents: read
+env:
+  CANDIDATE: 260c01eb4039f6c48fa4912ffcaf53184e404769
 jobs:
-  assemble:
+  security:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          path: controls
+          ref: 260c01eb4039f6c48fa4912ffcaf53184e404769
           persist-credentials: false
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: 711c5773eab56487270b95d395bb6e4879394ea7
-          path: source
-          persist-credentials: false
-      - name: Reconstruct and verify the complete candidate source tree
-        working-directory: source
+      - name: Install the reviewed scanner and query fresh RustSec and OSV data
+        shell: bash
         run: |
           set -euo pipefail
-          for sha in aaa4191436ef07e5a8739f411f63a1a85f99701f 7aa1ae07c7ceed1c6ab32b6cdeb5b46ba31f750e 0ad80497604b2815487e4e5c870aa8fa1f1a0a61; do
-            git fetch --no-tags --depth=1 origin "$sha"
-          done
-          python3 ../controls/.github/pr703_assemble.py
-      - name: Store only content-addressed blobs for the authorized connector
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          test "$(git rev-parse HEAD^{tree})" = 3b8a117aa71094f07202b3313900d947ce2c6f32
+          mkdir -p target/pr703-security
+          python3 tools/security_install.py --tool cargo-audit --destination "$RUNNER_TEMP/security-tools"
+          python3 tools/security_scan.py rustsec --repo . --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan" | tee target/pr703-security/rustsec.json
+          python3 tools/security_scan.py dependencies --repo . --tools "$RUNNER_TEMP/security-tools" --scratch "$RUNNER_TEMP/security-scan" | tee target/pr703-security/osv.json
+          python3 - <<'PY'
+          import json, pathlib
+          for path in pathlib.Path('target/pr703-security').glob('*.json'):
+              row = json.loads(path.read_text())
+              assert row['status'] == 'pass' and row['finding_count'] == row['exception_count'] == 0
+              assert row['source_revision'] == '260c01eb4039f6c48fa4912ffcaf53184e404769'
+              assert row['source_worktree_clean'] and row['control_worktree_clean']
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr703-security
+          path: target/pr703-security/
+          retention-days: 7
+  python:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 260c01eb4039f6c48fa4912ffcaf53184e404769
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.19.0
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - name: Validate full source, CI contracts, and the complete Python suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset CARGO_INCREMENTAL
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          python3 -m pip install --requirement tools/requirements.lock
+          mkdir -p target/pr703-python
+          python3 tools/validate_repository.py
+          python3 tools/validate_foundation.py
+          python3 tools/ci_coverage.py
+          python3 -m unittest discover -s tools/tests 2>&1 | tee target/pr703-python/tests.log
+          python3 -m unittest discover -s sdk/java-guest/tests 2>&1 | tee target/pr703-python/java-tests.log
+          git diff --exit-code
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr703-python
+          path: target/pr703-python/
+          retention-days: 7
+  npm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 260c01eb4039f6c48fa4912ffcaf53184e404769
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.19.0
+      - name: Rebuild the authenticated npm distribution and install cleanly
+        run: |
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          python3 -m unittest discover -s website/toolchain/tests -v
+          python3 website/toolchain/prepare.py
+          npm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund
+          node website/scripts/check-package-manager.mjs
+          python3 website/toolchain/prepare.py --offline
+          node website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund
+      - name: Execute advisory controls, website regressions, and TypeScript checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/pr703-npm
+          node website/toolchain/node_modules/npm/bin/npm-cli.js --prefix website test 2>&1 | tee target/pr703-npm/tests.log
+          node website/toolchain/node_modules/npm/bin/npm-cli.js --prefix website run check 2>&1 | tee target/pr703-npm/check.log
+          git diff --exit-code
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr703-npm
+          path: target/pr703-npm/
+          retention-days: 7
+  rust:
+    name: Rust ${{ matrix.version }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['1.97.1', '1.95.0']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 260c01eb4039f6c48fa4912ffcaf53184e404769
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Install and verify the selected compiler
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 controls/.github/pr703_assemble.py --store-blobs
+          SELECTED: ${{ matrix.version }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$CANDIDATE"
+          rustup toolchain install "$SELECTED" --profile minimal --no-self-update
+          cargo +"$SELECTED" --version
+      - name: Check every workspace target and feature against the locked graph
+        env:
+          SELECTED: ${{ matrix.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/pr703-rust
+          cargo +"$SELECTED" check --workspace --all-targets --all-features --locked 2>&1 | tee target/pr703-rust/check.log
+      - name: Run formatting, the reviewed Clippy recipe, and runtime regressions
+        if: matrix.version == '1.97.1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fmt --all --check
+          python3 tools/ci_cargo.py run clippy 2>&1 | tee target/pr703-rust/clippy.log
+          cargo test -p latent-wasmtime --lib --all-features --locked config::tests::security_advisories -- --nocapture 2>&1 | tee target/pr703-rust/security.log
+          grep -F 'test result: ok. 4 passed; 0 failed;' target/pr703-rust/security.log
+          cargo test -p latent-wasmtime --lib --all-features --locked 2>&1 | tee target/pr703-rust/library.log
+          cargo test -p latent-manifest --lib --locked runtime_compatibility 2>&1 | tee target/pr703-rust/manifest.log
+          git diff --exit-code
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr703-rust-${{ matrix.version }}
+          path: target/pr703-rust/
+          retention-days: 7
