@@ -1,0 +1,45 @@
+name: PR 703 upgrade validation
+on:
+  push:
+    branches: [fix/ci-703-upgrade-validation]
+    paths: [.github/workflows/ci-703-upgrade-validation.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Inspect exact source integration without publishing changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'LSF CI validation'
+          git config user.email 'lsf-ci@users.noreply.github.com'
+          git checkout --detach aaa4191436ef07e5a8739f411f63a1a85f99701f
+          mkdir -p "$RUNNER_TEMP/703-evidence"
+          for ref in 711c5773eab56487270b95d395bb6e4879394ea7 0ad80497604b2815487e4e5c870aa8fa1f1a0a61; do
+            echo "INTEGRATING $ref"
+            if ! git merge --no-commit --no-ff "$ref"; then
+              git diff --name-only --diff-filter=U | tee "$RUNNER_TEMP/703-evidence/conflicts.txt"
+              git diff --cc > "$RUNNER_TEMP/703-evidence/conflicts.diff"
+              cat "$RUNNER_TEMP/703-evidence/conflicts.diff"
+              exit 1
+            fi
+            git commit -m "Local integration validation of $ref"
+          done
+          git diff --stat aaa4191436ef07e5a8739f411f63a1a85f99701f
+          git diff --binary 711c5773eab56487270b95d395bb6e4879394ea7 > "$RUNNER_TEMP/703-evidence/candidate.diff"
+          git log -6 --format='%H %s'
+          find . -name AGENTS.md -not -path './.git/*' -print
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: pr703-integration-inspection
+          path: ${{ runner.temp }}/703-evidence/
+          retention-days: 2
+          if-no-files-found: error
