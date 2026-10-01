@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "CargoDependencies.test_build_macros_need_explicit_separate_isolated_stage",
+    "CargoDependencies.test_external_path_not_selected_by_native_resolver_fails",
+    "CargoDependencies.test_native_graph_must_include_every_selected_dependency",
+    "CargoDependencies.test_native_root_manifest_cannot_silently_ignore_edits",
+    "CargoDependencies.test_native_vendor_configuration_is_owned_offline_and_attributable",
+    "CargoDependencies.test_normal_path_declarations_require_reviewed_capture_extension",
+    "CargoDependencies.test_package_coordinates_are_provenance_without_catalogue_membership",
+    "CargoDependencies.test_selected_native_paths_relocate_without_changing_source_bytes"
+  ],
+  "guards": {
+    "CargoDependencies.test_build_macros_need_explicit_separate_isolated_stage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CargoDependencies.test_external_path_not_selected_by_native_resolver_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CargoDependencies.test_native_graph_must_include_every_selected_dependency": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CargoDependencies.test_native_root_manifest_cannot_silently_ignore_edits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CargoDependencies.test_native_vendor_configuration_is_owned_offline_and_attributable": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CargoDependencies.test_normal_path_declarations_require_reviewed_capture_extension": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CargoDependencies.test_package_coordinates_are_provenance_without_catalogue_membership": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CargoDependencies.test_selected_native_paths_relocate_without_changing_source_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_application_dependencies.py",
+  "reviewReason": "Retain native graph controls and add root manifest edit invalidation",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
