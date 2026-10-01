@@ -53,8 +53,8 @@ impl Proxy {
                 let Some(request) = endpoint::read_wire(&mut socket).await else {
                     continue;
                 };
-                let lose = request.method == "PUT" && count.load(Ordering::SeqCst) == 0;
-                if lose && matches!(loss, Loss::BeforeForward) {
+                let inject_failure = request.method == "PUT" && count.load(Ordering::SeqCst) == 0;
+                if inject_failure && matches!(loss, Loss::BeforeForward) {
                     count.fetch_add(1, Ordering::SeqCst);
                     continue;
                 }
@@ -81,7 +81,7 @@ impl Proxy {
                     assert!(reply.len() + length <= 32_768, "fixed proxy reply bound");
                     reply.extend_from_slice(&chunk[..length]);
                 }
-                if lose {
+                if inject_failure {
                     count.fetch_add(1, Ordering::SeqCst);
                     // The remote transaction has flushed before these bytes
                     // are discarded. Only a later GET can recover its receipt.

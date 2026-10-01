@@ -66,7 +66,7 @@ impl QualifiedHttpEffectAdapter {
         let pools = Arc::clone(&provider.inner.pools);
         let metadata = pools
             .reserve_protocol_metadata(16_384)
-            .map_err(operation::admission_error)?;
+            .map_err(|error| operation::admission_error(&error))?;
         let profile = contract.profile(provider.reference().configuration_digest());
         let transport = ProtocolTransport::new(
             Arc::clone(&pools),
@@ -128,6 +128,6 @@ impl DeferredEffectAdapter for QualifiedHttpEffectAdapter {
         payload: PayloadRecord,
         attempt: AttemptIdentity,
     ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
-        operation::accept(Arc::clone(&self.inner), grant, payload, attempt)
+        operation::accept(Arc::clone(&self.inner), grant, payload, &attempt)
     }
 }

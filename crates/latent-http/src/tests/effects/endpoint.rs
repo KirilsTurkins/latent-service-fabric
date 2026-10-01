@@ -37,6 +37,7 @@ struct Record {
     receipt: Option<String>,
 }
 
+#[derive(Clone, Copy)]
 struct Identity<'a> {
     effect: &'a str,
     body_sha256: &'a str,
@@ -106,7 +107,7 @@ impl Endpoint {
                     continue;
                 };
                 let current = state.clone();
-                let reply = tokio::task::spawn_blocking(move || current.handle(request))
+                let reply = tokio::task::spawn_blocking(move || current.handle(&request))
                     .await
                     .unwrap();
                 let _ = socket.write_all(&reply).await;
@@ -224,7 +225,7 @@ impl Shared {
         u64::from_le_bytes(bytes.try_into().unwrap())
     }
 
-    fn handle(&self, request: Request) -> Vec<u8> {
+    fn handle(&self, request: &Request) -> Vec<u8> {
         if request.method == "PUT" {
             self.puts.fetch_add(1, Ordering::SeqCst);
         } else if request.method == "GET" {
@@ -232,7 +233,7 @@ impl Shared {
         } else {
             return wire::reply(405, b"", "");
         }
-        let identity = match self.identify(&request) {
+        let identity = match self.identify(request) {
             Ok(identity) => identity,
             Err(status) => return wire::reply(status, b"", ""),
         };

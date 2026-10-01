@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(super) struct Receipt {
+pub(super) struct WireReceipt {
     contract: String,
     effect: String,
     body_sha256: String,
@@ -65,7 +65,7 @@ pub(super) fn verify(
     {
         return None;
     }
-    let receipt: Receipt = serde_json::from_slice(bytes).ok()?;
+    let receipt: WireReceipt = serde_json::from_slice(bytes).ok()?;
     if receipt.contract != WIRE_CONTRACT
         || receipt.effect != effect
         || receipt.body_sha256 != body_sha256

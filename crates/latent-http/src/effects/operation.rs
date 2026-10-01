@@ -33,15 +33,15 @@ pub(super) fn accept(
     inner: Arc<Inner>,
     grant: DispatchGrant,
     payload: PayloadRecord,
-    attempt: AttemptIdentity,
+    attempt: &AttemptIdentity,
 ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
-    validate(&inner, &grant, &payload, &attempt)?;
+    validate(&inner, &grant, &payload, attempt)?;
     // This whole phase is short synchronous reservation under the acceptance
     // fence. No credential resolution, socket, DNS, TLS or HTTP write occurs.
     let metadata = inner
         .pools
         .reserve_protocol_metadata(OPERATION_METADATA_BYTES)
-        .map_err(admission_error)?;
+        .map_err(|error| admission_error(&error))?;
     let retain_until = grant
         .committed_at_millis()
         .checked_add(inner.contract.retention_horizon_millis)
@@ -330,8 +330,13 @@ fn request(
     let binding = Arc::clone(&current.binding);
     drop(current);
     let mut authorization = Zeroizing::new(String::with_capacity(MAXIMUM_CREDENTIAL_BYTES + 7));
+    let mut repeated_value = false;
     binding
         .with_current_value(&mut |value| {
+            if !authorization.is_empty() {
+                repeated_value = true;
+                return Err(SecretError::PermissionDenied);
+            }
             if value.is_empty()
                 || value.len() > MAXIMUM_CREDENTIAL_BYTES
                 || !value
@@ -346,6 +351,9 @@ fn request(
             Ok(())
         })
         .map_err(|_| AuthorityError::PolicyBlocked)?;
+    if repeated_value || authorization.is_empty() {
+        return Err(AuthorityError::PolicyBlocked);
+    }
     let origin = &inner.contract.origin;
     let host = if origin.host.contains(':') {
         format!("[{}]:{}", origin.host, origin.port)
@@ -413,7 +421,7 @@ fn outcome(inner: &Inner, disposition: Disposition, reason: &str) -> AdapterOutc
     }
 }
 
-pub(super) fn admission_error(error: PlatformError) -> AuthorityError {
+pub(super) fn admission_error(error: &PlatformError) -> AuthorityError {
     match error.code {
         PlatformErrorCode::ResourceExhausted => AuthorityError::Capacity,
         PlatformErrorCode::PermissionDenied | PlatformErrorCode::Unauthenticated => {
