@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "producerSourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "policy": {
+    "purpose": "candidate",
+    "repository": "KirilsTurkins/latent-service-fabric",
+    "schemaVersion": "latent.native-publisher-policy.v1",
+    "sourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+    "sourceRef": "refs/heads/feat/feedback2-java710-integration",
+    "version": "0.1.0-alpha.5",
+    "workflow": ".github/workflows/developer-tools.yml"
+  },
+  "policyInputDigest": "sha256:ce36420661807326255232c0542f334045af5a637a157ad3c99b7e77328ffcba",
+  "verifierArchiveSha256": "sha256:c2d6acc935cd2f00e2144d7e036d5cd82e6b6bd5594e8c75aa75ef2a4ed6aac3",
+  "verifierSha256": "sha256:cd79f16203f1fbe56937c4c96e2b6eadd10549418dcb241d91576ac77af0ac8b",
+  "trustedRootSha256": "sha256:65ca537f6ed8a47fd0e560c421baa1f6c1efb8b25fc200d8c5c02c0e92eb2b9c",
+  "attestationExitCode": 0,
+  "archiveSha256": "sha256:37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+  "checksumsSha256": "sha256:2b4b7b231441aa584c772247ecfaef2c878132fe583b22fae5523a85eb59c7b7",
+  "compilerQualification": false,
+  "nodeExecutionQualification": false
+}
