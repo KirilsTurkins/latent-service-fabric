@@ -51,6 +51,17 @@ impl Project for proto::AuditCanaryDecision {
 impl Project for proto::AuditIdentities {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
+        if let Some(state) = &self.state {
+            state.validate(b)?;
+            if self.publication_id.is_none()
+                || self.component_digest.is_none()
+                || self.capability.is_some()
+                || self.static_web.is_some()
+                || self.trigger.is_some()
+            {
+                return Err(invalid_response());
+            }
+        }
         if let Some(trigger) = &self.trigger {
             b.text(trigger, 128)?;
             if trigger.is_empty() || self.trigger_generation.is_none_or(|v| v == 0) {
@@ -121,6 +132,7 @@ impl Project for proto::AuditIdentities {
     }
     fn project(self) -> Value {
         json!({
+        "state": self.state.map(Project::project),
         "trigger": self.trigger,
         "triggerGeneration": self.trigger_generation.map(|value| value.to_string()),
         "staticWeb": self.static_web.map(Project::project),
@@ -146,6 +158,27 @@ impl Project for proto::AuditIdentities {
         "canaryEvidenceDigest": self.canary_evidence_digest.map(|value| json!(value)),
         "rollbackTargetGeneration": self.rollback_target_generation.map(|value| json!(value.to_string())),
         })
+    }
+}
+
+impl Project for proto::AuditStateTarget {
+    fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
+        b.message::<Self>()?;
+        b.text(&self.namespace, 256)?;
+        b.text(&self.state_schema, 71)?;
+        if self.namespace.is_empty()
+            || self.namespace.chars().any(char::is_control)
+            || self.incarnation == 0
+        {
+            return Err(invalid_response());
+        }
+        self.state_schema
+            .parse::<latent_core::ArtifactBlobDigest>()
+            .map_err(|_| invalid_response())?;
+        Ok(())
+    }
+    fn project(self) -> Value {
+        json!({"namespace":self.namespace,"incarnation":self.incarnation.to_string(),"stateSchema":self.state_schema})
     }
 }
 

@@ -29,6 +29,11 @@ fn scope_to_proto(value: domain::AuditScope) -> proto::AuditQueryScope {
 }
 pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentities {
     proto::AuditIdentities {
+        state: value.state.map(|state| proto::AuditStateTarget {
+            namespace: state.namespace,
+            incarnation: state.incarnation,
+            state_schema: state.state_schema.into_string(),
+        }),
         static_web: value.static_web.map(|web| proto::AuditStaticWebTarget {
             web_manifest_digest: web.web_manifest_digest.into_string(),
             assets_digest: web.assets_digest.into_string(),
@@ -43,7 +48,9 @@ pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentiti
         candidate_publication_id: value
             .candidate_publication
             .map(latent_core::PublicationId::into_string),
-        publication_id: value.publication.map(|id| id.into_string()),
+        publication_id: value
+            .publication
+            .map(latent_core::PublicationId::into_string),
         package_digest: value.package.map(latent_core::PackageDigest::into_string),
         component_digest: value.component.map(|value| value.0),
         policies: value

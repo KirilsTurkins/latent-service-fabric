@@ -11,6 +11,8 @@ mod tests;
 
 pub use control::{
     NamespaceControl, NamespaceControlFence, NamespaceControlRequest, PreparedNamespaceControl,
+    PreparedRetainedNamespaceControl, RetainedNamespaceControlFence,
+    RetainedNamespaceControlRequest,
 };
 pub use gate::{AcceptedCommit, CommitCancellation, CommitIoAcceptance};
 pub use page::ScopedPage;
