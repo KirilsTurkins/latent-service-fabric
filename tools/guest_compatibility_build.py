@@ -8,7 +8,37 @@ from tools.dev_workflow.common import decode, encode, digest, require
 from tools.rust_capsule_project import ROOT, inventory, read_file, read_json, write_json
 
 RECIPE = ("tools/guest_compatibility.py", "tools/guest_compatibility_build.py",
-          "tools/dev_workflow/common.py", "wit/host-abi-phase3-v4.json")
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py",
+          "wit/host-abi-phase3-v4.json", "wit/host-abi-phase4-v1.json",
+          "sdk/profile/transaction-requirements-v1.json")
+
+
+def host_abi(files: dict[str, bytes] | None = None) -> dict:
+    """Select declared compilation compatibility; installation stays unknown."""
+    if files is None or not {"transaction-profile.json", "transaction-binding.json"} & files.keys():
+        return read_json(ROOT / "wit/host-abi-phase3-v4.json")
+    require({"transaction-profile.json", "transaction-binding.json", "capsule-project.json", "state-schema.json"}
+            <= files.keys(), "compatibility-transaction-captured-inputs-required")
+    profile = read_file(ROOT / "sdk/profile/transaction-requirements-v1.json")
+    require(files["transaction-profile.json"] == profile, "compatibility-transaction-profile-drift")
+    requirements = decode(profile, 128 * 1024)
+    project = decode(files["capsule-project.json"], 128 * 1024)
+    require(isinstance(project, dict) and {"service", "name"} <= project.keys(),
+            "compatibility-transaction-project-links-required")
+    from tools.dev_workflow.transaction_binding import validate
+    binding = validate(files["transaction-binding.json"], capsule=project["service"],
+                       deployment=project["name"], binding=project["name"])
+    require(binding["stateSchema"] == digest(files["state-schema.json"]),
+            "compatibility-transaction-schema-drift")
+    for row in requirements["guest"]["requiredInterfaces"]:
+        source = read_file(ROOT / row["source"])
+        captured = row["source"].replace("wit/platform/", "wit/deps/")
+        require(digest(source) == row["sourceSha256"] and files.get(captured) == source,
+                "compatibility-transaction-wit-drift")
+    selected = read_json(ROOT / "wit/host-abi-phase4-v1.json")
+    require(selected["digest"] == requirements["hostAbiDigest"] == binding["hostAbiDigest"],
+            "compatibility-transaction-host-abi-drift")
+    return selected
 
 
 def _structural_type_checker(indexed):
@@ -120,9 +150,9 @@ def interface_names(graph: dict, world: str | None = None, *, host_interfaces=()
     return result
 
 
-def inspect(commands, wasm: Path, output: Path, declared: dict) -> dict:
+def inspect(commands, wasm: Path, output: Path, declared: dict, *, files: dict[str, bytes] | None = None) -> dict:
     raw = commands.run("compatibility-final-wit", wasm, "component", "wit", output / "component.wasm", "--json")
-    host = read_json(ROOT / "wit/host-abi-phase3-v4.json")
+    host = host_abi(files)
     names = interface_names(decode(raw, 4 * 1024 * 1024), host_interfaces={row["interface"] for row in host["interfaces"]})
     findings = compatibility.import_findings(names["imports"], list(declared["imports"]), host)
     expected_exports = list(declared["exports"])
@@ -140,7 +170,7 @@ def inspect(commands, wasm: Path, output: Path, declared: dict) -> dict:
 def package_report(output: Path, files: dict[str, bytes], component: bytes) -> None:
     lock = decode(files["sdk-lock.json"], 8 * 1024 * 1024)
     language = lock.get("language", "rust" if "Cargo.toml" in files else None)
-    host = read_json(ROOT / "wit/host-abi-phase3-v4.json")
+    host = host_abi(files)
     inspection_path = output / "compatibility-inspection.json"
     if inspection_path.exists():
         inspection = read_json(inspection_path)
@@ -161,10 +191,10 @@ def package_report(output: Path, files: dict[str, bytes], component: bytes) -> N
     write_json(output / "compatibility-report.json", value)
 
 
-def failure_report(output: Path, language: str, stage: str) -> None:
+def failure_report(output: Path, language: str, stage: str, *, files: dict[str, bytes] | None = None) -> None:
     """Retain safe known observations when captured inputs exist; never guess errors."""
     try:
-        _failure_report(output, language, stage)
+        _failure_report(output, language, stage, files)
     except Exception:
         # Reporting runs while the compiler exception is already propagating.
         # A stale/unreadable report input must never replace that original error.
@@ -176,11 +206,11 @@ def failure_report(output: Path, language: str, stage: str) -> None:
             pass  # The caller retains its existing bounded build-failure path.
 
 
-def _failure_report(output: Path, language: str, stage: str) -> None:
+def _failure_report(output: Path, language: str, stage: str, files: dict[str, bytes] | None) -> None:
     source_path = output / "source-inputs.json"
     if not source_path.exists():
         return  # Source identity is unavailable; do not fabricate a snapshot.
-    host = read_json(ROOT / "wit/host-abi-phase3-v4.json")
+    host = host_abi(files)
     phase = "link" if stage in {"component", "contracts", "compatibility", "package"} else "compile"
     findings = [compatibility.finding("unresolved-behavior", phase, "not-evaluated")]
     inspection_path = output / "compatibility-inspection.json"
@@ -188,7 +218,8 @@ def _failure_report(output: Path, language: str, stage: str) -> None:
     component = read_file(component_path, 64 * 1024 * 1024) if component_path.exists() else None
     if inspection_path.exists():
         inspection = read_json(inspection_path)
-        require(component is not None and inspection["componentDigest"] == digest(component), "compatibility-stale-inspection")
+        require(component is not None and inspection["componentDigest"] == digest(component)
+                and inspection["hostAbiDigest"] == digest(encode(host)), "compatibility-stale-inspection")
         findings = [*inspection["findings"], *findings]
     value = compatibility.report(language, digest(read_file(source_path)),
         digest(component) if component is not None else None, host["id"], [], findings)

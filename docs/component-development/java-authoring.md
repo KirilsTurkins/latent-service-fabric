@@ -109,6 +109,12 @@ qualify an application or change the shipped `same-origin` referrer policy.
 
 Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers canonical imported owners, `Unsigned64`, try-with-resources and the captured profile, schema and binding companion. The host owns commitment. The signed transaction and HTTP recovery matrix is tracked by #389 and required Java slice #718. The tutorial below retains its existing stateless profile.
 
+The compiler selects the Phase 4 compatibility catalogue only after checking the
+captured profile, binding links, schema and exact State and intents WIT. This
+recognizes their declared ABI in the report; provider installation, current
+grants and signed execution remain separate checks. Ordinary projects retain
+the Phase 3 catalogue.
+
 ## 2. Build and package the project
 
 ```bash

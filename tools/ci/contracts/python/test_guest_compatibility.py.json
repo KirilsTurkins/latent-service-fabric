@@ -15,6 +15,9 @@
     "FinalComponentInspection.test_actual_java_type_interface_is_structural_without_installing_or_granting_a_provider",
     "FinalComponentInspection.test_catalogue_absence_and_renaming_do_not_change_import_classification",
     "FinalComponentInspection.test_final_graph_tables_and_indices_are_checked",
+    "FinalComponentInspection.test_phase4_catalog_requires_captured_profile_companion_links_schema_and_wit",
+    "FinalComponentInspection.test_phase4_package_and_failure_reports_keep_original_catalog_and_stale_inputs_fail_closed",
+    "FinalComponentInspection.test_phase4_recognition_does_not_install_providers_grant_capabilities_or_allow_immediate_http",
     "FinalComponentInspection.test_reporting_stale_input_preserves_original_build_failure",
     "FinalComponentInspection.test_resource_handle_and_async_aliases_cannot_be_classified_as_structural",
     "FinalComponentInspection.test_structural_alias_indices_cycles_and_deep_memoized_paths_fail_closed",
@@ -206,6 +209,42 @@
       ],
       "skipSites": []
     },
+    "FinalComponentInspection.test_phase4_catalog_requires_captured_profile_companion_links_schema_and_wit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9aa7f1cf0c5f343afc9db040861be9f19bd247187ff086ec72fa0faefeb3dc7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FinalComponentInspection.test_phase4_package_and_failure_reports_keep_original_catalog_and_stale_inputs_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9aa7f1cf0c5f343afc9db040861be9f19bd247187ff086ec72fa0faefeb3dc7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FinalComponentInspection.test_phase4_recognition_does_not_install_providers_grant_capabilities_or_allow_immediate_http": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9aa7f1cf0c5f343afc9db040861be9f19bd247187ff086ec72fa0faefeb3dc7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "FinalComponentInspection.test_reporting_stale_input_preserves_original_build_failure": {
       "bases": [
         "unittest.TestCase"
@@ -317,6 +356,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_compatibility.py",
-  "reviewReason": "Retain 19 original compatibility cases and guards; add five bounded actual Java structural-type import regressions without provider or grant authority",
+  "reviewReason": "Preserve all 24 compatibility cases and guards; add three captured Phase 4 selector regressions without installation, grant or execution authority",
   "schemaVersion": "latent.ci.contracts.v1"
 }
