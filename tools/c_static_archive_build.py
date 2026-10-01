@@ -6,6 +6,7 @@ from tools.application_dependencies import prepare
 from tools.build_observation import public_repository
 from tools.build_process import BuildProcessError
 from tools.c_application_dependencies import selected
+from tools.c_dependency_authoring import build_inputs
 from tools.c_guest.compiler import Compiler
 from tools.c_capsule_project import validate
 from tools.rust_capsule_build import Commands
@@ -23,7 +24,7 @@ def build(project_path: Path, output: Path, repository: str, *, installed=None) 
     repository = public_repository(repository)
     output, commands, stage = fresh(output), None, "capture"
     try:
-        files = snapshot(project_path)
+        files, dependency_root = build_inputs(project_path)
         _project, _lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe_inputs = inventory({name: read_file(ROOT / name) for name in RECIPE})
@@ -37,7 +38,7 @@ def build(project_path: Path, output: Path, repository: str, *, installed=None) 
                 path.write_bytes(raw)
             commands = Commands(work, output, build_environment(temporary))
             stage = "application-dependencies"
-            closure = prepare(project_path, work, output, "c")
+            closure = prepare(dependency_root, work, output, "c")
             if closure is None:
                 raise ValueError("C archive source recipe requires resolved application dependencies")
             stage = "captured-compiler-isolation"
@@ -60,7 +61,7 @@ def build(project_path: Path, output: Path, repository: str, *, installed=None) 
             write_json(output / "archive-profile.json", profile)
             write_json(output / "compiler-inputs.json", isolation)
             stage = "final-integrity"
-            if snapshot(project_path) != files or snapshot(work, exclude=("dependencies", "application-vendor")) != files:
+            if build_inputs(project_path) != (files, dependency_root) or snapshot(work, exclude=("dependencies", "application-vendor")) != files:
                 raise ValueError("C archive project changed during compilation")
             closure.check_unchanged()
             compiler.check_unchanged()

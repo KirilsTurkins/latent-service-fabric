@@ -12,6 +12,7 @@ from tools.c_guest.compiler import Compiler
 from tools.c_capsule_project import validate
 from tools.application_dependencies import prepare
 from tools.c_application_dependencies import selected
+from tools.c_dependency_authoring import build_inputs
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
                                         read_file, read_json, snapshot, write_json)
@@ -22,6 +23,9 @@ BUILD_TYPE = "https://latent.dev/build/c-guest/v1"
 RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
           "tools/c_application_dependencies.py", "tools/c_static_symbols.py", "tools/c_static_archive_build.py",
+          "tools/c_dependency_authoring.py",
+          "tools/dev_workflow/state.py", "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
+          "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/windows.py",
           "tools/captured_compiler_isolation.py",
           "tools/c_guest/compiler.py", "tools/c_guest/bindings.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
@@ -57,7 +61,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     commands, stage = None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
-        files = snapshot(project_path)
+        files, dependency_root = build_inputs(project_path)
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
@@ -72,7 +76,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
             stage = "application-dependencies"
-            closure = prepare(project_path, work, output, "c")
+            closure = prepare(dependency_root, work, output, "c")
             if packager is None:
                 write_json(output / "diagnostic-source.json", {"capturedSource": str(work), "requestedSource": str(project_path)})
             compiler = Compiler(temporary / "compiler", 900, sdk=work / "vendor/lsf/sdk/c-guest",
@@ -121,7 +125,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                 commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
-            if snapshot(project_path) != files or snapshot(work, exclude=("dependencies", "application-vendor")) != files:
+            if build_inputs(project_path) != (files, dependency_root) or snapshot(work, exclude=("dependencies", "application-vendor")) != files:
                 raise ValueError("project changed during the observed C build")
             if closure is not None:
                 closure.check_unchanged()
