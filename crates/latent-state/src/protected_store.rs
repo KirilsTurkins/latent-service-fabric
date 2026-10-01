@@ -82,6 +82,12 @@ impl ProtectedStoreOwner {
         digest.update(self.limits.maximum_view_age.as_nanos().to_le_bytes());
         ("protected-redb-immediate-ext4-v1", digest.finalize().into())
     }
+    /// Compares sealed physical ownership, including clones of this same owner.
+    /// Paths, epochs and caller descriptions cannot establish this identity.
+    #[must_use]
+    pub fn is_same_owner(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.failure, &other.failure)
+    }
 
     /// Trusted namespace/command control operations use this same physical
     /// owner. Declare all retained payload/result bytes and the correct I/O
