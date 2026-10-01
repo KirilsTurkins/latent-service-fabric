@@ -106,11 +106,13 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: typescript-guest-runtime-optimized-compiler
-      - name: Install the reviewed JavaScript compiler inputs
+      - name: Install captured JavaScript compiler namespace
         run: |
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install the reviewed JavaScript compiler inputs
+        run: |
           python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-guest-tools"
       - name: Install pinned component validator
         run: cargo install --locked wasm-tools --version 1.254.0
@@ -132,12 +134,19 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m pip install -r tools/requirements.lock
-          python3 -m unittest tools.tests.test_typescript_capsule_authoring tools.tests.test_typescript_application_dependencies tools.tests.test_build_provenance_schemas
+          python3 -m unittest tools.tests.test_typescript_capsule_authoring tools.tests.test_build_provenance_schemas
           node "$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-owner-tests sdk/typescript-guest/capabilities/owner.ts sdk/typescript-guest/capabilities/result.ts
           printf '{"type":"module"}\n' > target/typescript-owner-tests/package.json
           LSF_TYPESCRIPT_OWNERS="$PWD/target/typescript-owner-tests" node --test sdk/typescript-guest/tests/owner.test.mjs sdk/typescript-guest/tests/signed64.test.mjs 2>&1 | tee target/typescript-guest-runtime/owner-tests.log
+      - name: Test captured npm selections and compiler isolation
+        run: |
+          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_typescript_application_dependencies tools.tests.test_captured_compiler_isolation
       - name: Qualify captured projects, all SDK owners, enforced node and printed guide
-        run: python3 tools/qualify_typescript_capsules.py --application-dependencies --output "$RUNNER_TEMP/typescript-capsule-authoring" --tools "$RUNNER_TEMP/typescript-guest-tools"
+        run: |
+          python3 tools/qualify_typescript_capsules.py --output "$RUNNER_TEMP/typescript-capsule-authoring" --tools "$RUNNER_TEMP/typescript-guest-tools"
+      - name: Qualify captured npm libraries and resource lookups
+        run: |
+          python3 tools/qualify_typescript_capsules.py --application-dependencies --output "$RUNNER_TEMP/typescript-capsule-dependencies" --tools "$RUNNER_TEMP/typescript-guest-tools"
       - name: Preserve attempted runtime test evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -148,5 +157,6 @@ jobs:
             target/typescript-guest-runtime/owner-tests.log
             ${{ runner.temp }}/typescript-guest-probe/
             ${{ runner.temp }}/typescript-capsule-authoring/
+            ${{ runner.temp }}/typescript-capsule-dependencies/
           if-no-files-found: warn
           retention-days: 7
