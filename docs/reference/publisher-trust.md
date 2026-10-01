@@ -5,6 +5,10 @@ keys and verifies it using released binaries, see
 [Release an existing frontend build](../operations/static-release-workflow.md).
 The library contract below also supports custom signing integrations.
 
+For related independently built artifacts, use the development
+[paired-capsule policy workflow](../operations/paired-capsule-signing.md) to obtain
+canonical policy identities from the runtime verifier before policy approval.
+
 `latent-signing` signs exact immutable package subjects and verifies publisher
 authority against explicit, bounded policy and revocation snapshots. The result
 is a point-in-time publisher proof. It does not publish a catalog release,

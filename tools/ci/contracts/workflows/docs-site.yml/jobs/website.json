@@ -59,11 +59,11 @@
         }
       }
     ],
-    "timeout-minutes": 30
+    "timeout-minutes": 40
   },
   "jobId": "website",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Preserve every website command and its existing finite limit; run 36783140060 job 110142455876 completed the version matrix after 27 minutes and the 30-minute job deadline interrupted the final five-minute discovery journey. Allow 40 minutes for the full bounded matrix and receipt upload/cleanup.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-site.yml"
 }
