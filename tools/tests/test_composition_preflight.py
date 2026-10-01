@@ -257,6 +257,8 @@ class CompositionPreflight(unittest.TestCase):
 
     def test_hostile_diagnostic_or_foreign_owner_never_echoes_payload(self):
         for change in (lambda data: data.update(tenant="another-tenant"),
+                       lambda data: data["candidates"][0]["preparation"].update(exports=[
+                           {"contract": MATH, "function": "export" + str(index)} for index in range(129)]),
                        lambda data: data["candidates"][0]["preparation"].update(diagnostic={"schemaVersion": 1, "stage": 3, "reason": 1, "payload": "PRIVATE_CANARY"})):
             value = composition()
             def observe(selected, **_):

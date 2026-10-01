@@ -94,7 +94,7 @@ def _preparation(value):
             uint(number)
     require(isinstance(value["imports"], list) and isinstance(value["typeImports"], list)
             and len(value["imports"]) + len(value["typeImports"]) <= 64
-            and isinstance(value["exports"], list) and len(value["exports"]) <= 2048, "preflight-surface-bound")
+            and isinstance(value["exports"], list) and len(value["exports"]) <= 128, "preflight-surface-bound")
     imports = sorted(contract(row) for row in value["imports"])
     type_imports = sorted(contract(row) for row in value["typeImports"])
     exports = []
