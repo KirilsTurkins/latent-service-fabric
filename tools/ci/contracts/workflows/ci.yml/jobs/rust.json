@@ -413,14 +413,13 @@
         "with": {
           "cache-all-crates": false,
           "cache-bin": false,
-          "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
           "cache-on-failure": false,
-          "cache-targets": false,
+          "cache-targets": true,
           "cache-workspace-crates": false,
-          "key": "${{ inputs.cargo_dependency_cache == 'recipe' && 'ubuntu-24.04-recipe' || format('ubuntu-24.04-{0}', hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml')) }}",
-          "prefix-key": "${{ inputs.cargo_dependency_cache == 'recipe' && steps.cargo-cache-identity.outputs.prefix || 'lsf-ci-dependencies-v1' }}",
-          "save-if": "${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||\n    (github.event_name == 'workflow_dispatch' &&\n     (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}",
-          "shared-key": "${{ inputs.cargo_dependency_cache == 'recipe' && 'host-correctness' || '' }}"
+          "key": "ubuntu-24.04",
+          "prefix-key": "${{ inputs.cargo_dependency_cache == 'recipe' && steps.cargo-cache-identity.outputs.prefix || 'lsf-ci-dependencies-v2' }}",
+          "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}",
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -639,6 +638,21 @@
         "timeout-minutes": 10
       },
       {
+        "if": "needs.profile.outputs.renderer == 'true'",
+        "name": "Restore isolated Angular compiler dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}",
+          "shared-key": "angular-release-compiler",
+          "workspaces": ". -> ${{ runner.temp }}/angular-t1-compiler"
+        }
+      },
+      {
         "env": {
           "CARGO_BUILD_JOBS": 2,
           "CARGO_TARGET_DIR": "${{ runner.temp }}/angular-t1-compiler"
@@ -753,7 +767,7 @@
   },
   "jobId": "rust",
   "kind": "job",
-  "reviewReason": "Retain all historical rust job obligations and review the additional delegated real deferred JetStream fixture owners in the existing bounded integration lane",
+  "reviewReason": "Retain all historical Rust obligations and the delegated real deferred JetStream fixture owners while incorporating reviewed shared dependency caches and independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

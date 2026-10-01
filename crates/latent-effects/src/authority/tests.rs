@@ -132,7 +132,6 @@ fn provider_grant_retains_original_native_capacity_after_context_retirement_and_
     later.retire().unwrap();
 }
 
-
 #[test]
 fn retained_grant_rechecks_original_owner_revocation_profile_ceiling_and_credential_epoch() {
     for change in 0..5 {
