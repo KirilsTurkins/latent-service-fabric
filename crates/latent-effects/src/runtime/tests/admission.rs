@@ -8,6 +8,11 @@ async fn zero_adapter_commands_use_actual_epoch_bounded_owners_and_nonrewinding_
     let mut owner = fixture.start(limits, vec![], None).await.unwrap();
     let source = owner.command_admission_source();
     let clone = source.clone();
+    assert!(source.uses_store(&fixture.store));
+    assert!(source.uses_store(&fixture.store.as_ref().clone()));
+    let foreign = Fixture::new().await;
+    assert!(!source.uses_store(&foreign.store));
+    foreign.finish().await;
     assert!(source.uses_effect_authority(&fixture.authority));
     assert!(source.uses_effect_authority(&clone.effect_authority()));
     assert!(!source.uses_effect_authority(&EffectAuthorityOwner::new(128, 16, 100).unwrap()));

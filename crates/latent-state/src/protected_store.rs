@@ -60,6 +60,13 @@ impl Clone for ProtectedStoreOwner {
 }
 
 impl ProtectedStoreOwner {
+    /// Compares sealed physical ownership, including clones of this same owner.
+    /// Paths, epochs and caller descriptions cannot establish this identity.
+    #[must_use]
+    pub fn is_same_owner(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.failure, &other.failure)
+    }
+
     /// Trusted namespace/command control operations use this same physical
     /// owner. Declare all retained payload/result bytes and the correct I/O
     /// class. Return bounded owned metadata; native read views use `open_view`
