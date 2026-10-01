@@ -1,0 +1,10 @@
+﻿{
+    "source":  "bbc50e81264b642de6b17ad67cbcf0a54e1782db",
+    "sourceArchiveSha256":  "5f3df84f5f07168262241ad4e5f16ba4a773ceaacb084de2082288416c4dc9ce",
+    "toolImage":  "sha256:808682d39104dc67ea35b407841aa8ecd4d5662bb8fa8df09e78cecdf4cacde7",
+    "scope":  [
+                  "actual retained staging/current policy/native dispatcher3cases",
+                  "Linux App all-feature library check and strict lint"
+              ],
+    "remaining":  "No signed Java guest or HTTP application execution claim"
+}

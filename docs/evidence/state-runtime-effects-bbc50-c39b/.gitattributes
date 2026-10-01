@@ -1,0 +1,4 @@
+# Original reports retain CRLF/BOM and Cargo's final blank line byte-for-byte.
+r1/** -text whitespace=cr-at-eol,-blank-at-eof
+r2/** -text whitespace=cr-at-eol,-blank-at-eof
+r3/** -text whitespace=cr-at-eol,-blank-at-eof

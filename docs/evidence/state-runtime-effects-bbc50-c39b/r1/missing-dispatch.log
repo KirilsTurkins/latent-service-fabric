@@ -1,0 +1,12 @@
+   Compiling latent-core v0.1.0-alpha.5 (/source/crates/latent-core)
+   Compiling latent-protected-files v0.1.0-alpha.5 (/source/crates/latent-protected-files)
+   Compiling latent-state v0.1.0-alpha.5 (/source/crates/latent-state)
+   Compiling latent-effects v0.1.0-alpha.5 (/source/crates/latent-effects)
+    Finished `test` profile [unoptimized] target(s) in 8.23s
+     Running unittests src/lib.rs (/target/debug/deps/latent_effects-b8e1918fadbd4c3a)
+
+running 1 test
+test runtime::tests::admission::missing_dispatch_authority_retains_policy_blocked_without_provider_admission_and_retires ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 71 filtered out; finished in 0.06s
+

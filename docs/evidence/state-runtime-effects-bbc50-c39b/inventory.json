@@ -1,0 +1,269 @@
+{
+  "schemaVersion": "latent.state-runtime.effects-native-evidence.v1",
+  "reports": [
+    {
+      "path": "r1/app-check.exit.txt",
+      "bytes": 4,
+      "sha256": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c"
+    },
+    {
+      "path": "r1/app-check.log",
+      "bytes": 126,
+      "sha256": "9a6e82c7be10f8aa511a34000404f0f1efd9429f5a3c47047a807694844e4994"
+    },
+    {
+      "path": "r1/app-clippy.exit.txt",
+      "bytes": 4,
+      "sha256": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c"
+    },
+    {
+      "path": "r1/app-clippy.log",
+      "bytes": 126,
+      "sha256": "9a6e82c7be10f8aa511a34000404f0f1efd9429f5a3c47047a807694844e4994"
+    },
+    {
+      "path": "r1/campaign.log",
+      "bytes": 4930,
+      "sha256": "c373b5caa7b088fd2b5c837341e52c1f499be91c86f3fa4ce0ba897393c19a74"
+    },
+    {
+      "path": "r1/cargo.txt",
+      "bytes": 36,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    {
+      "path": "r1/missing-dispatch.cargo-exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "r1/missing-dispatch.log",
+      "bytes": 695,
+      "sha256": "ea76dc2d19d519f21681c701296e2cebb8e9c3fe2dd8d04f552d6d242170dfbe"
+    },
+    {
+      "path": "r1/missing-dispatch.verified-exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "r1/namespace-stage.cargo-exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "r1/namespace-stage.log",
+      "bytes": 1750,
+      "sha256": "93fb6a2cb71787a19501ef5429362182e67d46efbb3bedd6b0d07e3e3e74bad5"
+    },
+    {
+      "path": "r1/namespace-stage.verified-exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "r1/native-exit-code.txt",
+      "bytes": 2,
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "path": "r1/native-policy.cargo-exit.txt",
+      "bytes": 4,
+      "sha256": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c"
+    },
+    {
+      "path": "r1/native-policy.log",
+      "bytes": 121,
+      "sha256": "91d9882ea4259a2431047b4d308201f42b145a70c9c7e6d7f04ce8e6c420027a"
+    },
+    {
+      "path": "r1/native-policy.verified-exit.txt",
+      "bytes": 4,
+      "sha256": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c"
+    },
+    {
+      "path": "r1/native.sh",
+      "bytes": 2077,
+      "sha256": "2ed4a8dac1cf3fbb9e4d522d5046137d708c7f3ad4d43eb4ed966513cea9d826"
+    },
+    {
+      "path": "r1/rustc.txt",
+      "bytes": 36,
+      "sha256": "4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06"
+    },
+    {
+      "path": "r1/source-archive.sha256",
+      "bytes": 86,
+      "sha256": "ef03c1e955b1ecff97a645b19ca895427927ecbdb62f7fc9e3faadb427a8ea97"
+    },
+    {
+      "path": "r1/source.json",
+      "bytes": 531,
+      "sha256": "5be1c69ba3816edcc9a57c1c4cf73bb18560883971a274a2161a73f2aa024577"
+    },
+    {
+      "path": "r2/app-check.exit.txt",
+      "bytes": 4,
+      "sha256": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c"
+    },
+    {
+      "path": "r2/app-check.log",
+      "bytes": 10643,
+      "sha256": "79191055c0368aef6474cea6a3424e02520aee550d0e2a90ce9bbc53e93ad0ad"
+    },
+    {
+      "path": "r2/app-clippy.exit.txt",
+      "bytes": 4,
+      "sha256": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c"
+    },
+    {
+      "path": "r2/app-clippy.log",
+      "bytes": 4509,
+      "sha256": "caa3cc9491bbf5bb9c2a2b56d107d95129eafddae60feadb9964688b02235362"
+    },
+    {
+      "path": "r2/campaign.log",
+      "bytes": 11218,
+      "sha256": "99e87e696f6ec1b77380c22b3a582d388dad1790bb4d5e3748399945e6bd0f41"
+    },
+    {
+      "path": "r2/cargo.txt",
+      "bytes": 36,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    {
+      "path": "r2/native-exit-code.txt",
+      "bytes": 2,
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "path": "r2/native-policy.cargo-exit.txt",
+      "bytes": 4,
+      "sha256": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c"
+    },
+    {
+      "path": "r2/native-policy.log",
+      "bytes": 2880,
+      "sha256": "fd1b43f768b25667861184374079e862e12ce4781c7ea054bf3f875adcad99e0"
+    },
+    {
+      "path": "r2/native-policy.verified-exit.txt",
+      "bytes": 4,
+      "sha256": "39b8dc3fc8b44765c8e6f1adee04c5b465e555ab791cc42d0d9e810d5b64297c"
+    },
+    {
+      "path": "r2/native.sh",
+      "bytes": 1711,
+      "sha256": "0724660ebbea425f7b33e046a186bf6cc68f42b5c8f4fde41fa81444c2af6def"
+    },
+    {
+      "path": "r2/rustc.txt",
+      "bytes": 36,
+      "sha256": "4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06"
+    },
+    {
+      "path": "r2/source-archive.sha256",
+      "bytes": 86,
+      "sha256": "ef03c1e955b1ecff97a645b19ca895427927ecbdb62f7fc9e3faadb427a8ea97"
+    },
+    {
+      "path": "r2/source.json",
+      "bytes": 531,
+      "sha256": "5be1c69ba3816edcc9a57c1c4cf73bb18560883971a274a2161a73f2aa024577"
+    },
+    {
+      "path": "r3/app-check.exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "r3/app-check.log",
+      "bytes": 2716,
+      "sha256": "83236f471a89c850a4d3f0936b9a9e279f364d9334c193a1205292b18f0aff33"
+    },
+    {
+      "path": "r3/app-clippy.exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "r3/app-clippy.log",
+      "bytes": 2716,
+      "sha256": "b3e0ec81b1af5c17abe9377fd1f3cddfe6bd46b345f62ab3806a1ab10dcd952f"
+    },
+    {
+      "path": "r3/campaign.log",
+      "bytes": 12134,
+      "sha256": "ebdaacfe6152e6b2b7340272deb5eca46e6bc94b3b13d76554bedaa9303b7d89"
+    },
+    {
+      "path": "r3/cargo.txt",
+      "bytes": 36,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    {
+      "path": "r3/native-exit-code.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "r3/native-policy.cargo-exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "r3/native-policy.log",
+      "bytes": 1162,
+      "sha256": "bdf7daae1a9420da4397d224195e7f5e4c64b06eedc80d2ddf56c3d76b25144c"
+    },
+    {
+      "path": "r3/native-policy.verified-exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "r3/native.sh",
+      "bytes": 1711,
+      "sha256": "0724660ebbea425f7b33e046a186bf6cc68f42b5c8f4fde41fa81444c2af6def"
+    },
+    {
+      "path": "r3/rustc.txt",
+      "bytes": 36,
+      "sha256": "4ad84f16acc2f3bdcfbc7b0788f1e74a4e649b962154a585b8f8d0b28eb0dd06"
+    },
+    {
+      "path": "r3/source-archive.sha256",
+      "bytes": 86,
+      "sha256": "4e597427df573a2ea3c3f78bb597e296c3f2ea4bb0a0fdfbebea04e1d3d9e994"
+    },
+    {
+      "path": "r3/source.json",
+      "bytes": 627,
+      "sha256": "01bff255b6f03cc3891fb57f25b86f6f9940170dd29c024576d1762b7a36b0a2"
+    }
+  ],
+  "executedBinaries": [
+    {
+      "attempt": "r1",
+      "file": "latent_capabilities-c66c060c0023da96",
+      "bytes": 31459768,
+      "sha256": "d3f3d4bd4bcf1b836e130c5db951962a9f3391f8a90b97bf256db0303764b9b6",
+      "retainedLocation": "target/qualification718/native-effects-r1/latent_capabilities-c66c060c0023da96"
+    },
+    {
+      "attempt": "r1",
+      "file": "latent_effects-b8e1918fadbd4c3a",
+      "bytes": 12300376,
+      "sha256": "76f5357371ea947fc3624eeacf0a1d0e68228ef0ee68552ebc13ac1b0fd8ca2f",
+      "retainedLocation": "target/qualification718/native-effects-r1/latent_effects-b8e1918fadbd4c3a"
+    },
+    {
+      "attempt": "r3",
+      "file": "latent_policy-c3e3d27d4ed4d334",
+      "bytes": 45860856,
+      "sha256": "5b35242e7a33854444a0f914aae7b93e727ba1c0e8a9b4093a5ace2865ca293b",
+      "retainedLocation": "target/qualification718/native-effects-r3/latent_policy-c3e3d27d4ed4d334"
+    }
+  ],
+  "remaining": "No signed Java guest or HTTP application execution claim"
+}
