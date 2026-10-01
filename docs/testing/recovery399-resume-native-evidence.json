@@ -28,12 +28,18 @@
     {
       "file": "latent_protected_files-c1cea63afd223a48",
       "sha256": "75c8bd8c1e53705b8753b7eab43f2bd7591e33cc617e6dcecd80000c63bc07db",
-      "bytes": 1794424
+      "bytes": 1794424,
+      "observedTestExecutable": "/target/debug/deps/latent_protected_files-4305848268c8e578",
+      "evidenceKind": "source-matched multi-package build artifact",
+      "executedBinaryDigestCaptured": false
     },
     {
       "file": "latent_state-1d1882b485da920f",
       "sha256": "ed74d757c6415b66751dcf700ac51523b06e1e90df50d0039f37af29bb0f5b4e",
-      "bytes": 19296896
+      "bytes": 19296896,
+      "observedTestExecutable": "/target/debug/deps/latent_state-1d1882b485da920f",
+      "evidenceKind": "executed test binary",
+      "executedBinaryDigestCaptured": true
     }
   ],
   "preservedFailedClippy": {
@@ -53,5 +59,6 @@
     "original receipt replay after actual engine close/reopen; current permission recheck",
     "no effect provider or real pending/inbox closure fixture",
     "no Java compiler, signed capsule, management CLI, migration or node qualification"
-  ]
+  ],
+  "artifactClarification": "Original protected-file artifact hash is from the source-matched multi-package build; its individual test command used the separately named observed executable. Original source, test results and log hashes are preserved; no historical executed-binary digest is inferred."
 }

@@ -80,8 +80,9 @@ the recovery epoch and stays paused for external reconciliation.
 
 The maintained portable fixtures exercise the fixed recipe, interruption/reopen,
 actual byte/media change, stale checkpoint/linked-row refusal, immutable replay,
-input/quota limits and final-fence revocation. Protected-engine execution is
-recorded separately against its exact immutable source. Their host package
+input/quota limits and final-fence revocation. The [native receipt](../testing/recovery398-migration-native-evidence.json)
+records all 153 State cases and protected-engine execution against the exact
+immutable source `0c9a700eb809158e73633a35b29ba6bcc3f3512a`. Their host package
 reviewer is a concrete synthetic test owner. Actual compiled signed Java v1/v2 capsule
 execution, deployment/apply/canary/rollback integration, public management/CLI
 and complete retained-effect/inbox campaigns remain required acceptance work;

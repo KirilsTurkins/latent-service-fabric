@@ -70,3 +70,34 @@ source-staging quoting refusals and empty-cache selection error are also kept
 under the local qualification directory. These are not engine-test passes.
 No real retained effect/inbox workload, Java capsule, migration, management
 command or complete #398/#399 acceptance claim is included in this receipt.
+
+## Fixed aggregate migration
+
+The immutable source `0c9a700eb809158e73633a35b29ba6bcc3f3512a` passed
+all 153 State cases on the same pinned Linux x86_64/ext4 engine profile.
+Protected-files passed its 18 cases with one historical registered ignored
+ownership case. Both owners passed strict all-target/all-feature Clippy.
+The [migration receipt](recovery398-migration-native-evidence.json) records
+the exact maintained 153/19 inventory, source archive, log digests and the
+executable paths and hashes observed by each actual test command.
+
+The new physical cases capture a real checkpoint, persist a paused stage,
+refuse an attempted resume, retire and reopen the actual protected engine,
+then explicitly complete the same operation. The shared state codec reads
+the resulting `AG0200`/12-byte value and v2 media after separately reviewed
+resume. Namespace/incarnation and recovery epoch remain stable; schema epoch
+changes once. Another case revokes authorization after installed review and
+observes refusal at the actual writer fence with old schema and paused progress
+intact. Portable cases also refuse oversized values and insufficient quota
+before creating a progress marker.
+
+The host's package reviewer in these finite engine tests is synthetic. The
+receipt does not certify compiled signed Java v1/v2 capsules, management or
+deployment integration, or the remote effect success after a pending backup.
+Those remain separate acceptance requirements.
+
+The earlier snapshot/resume receipts preserve their original log and artifact
+hashes. Their protected-files hash described the multi-package build artifact;
+the individual test command executed a separately named binary. The receipts
+now label that boundary explicitly without inventing an old executed-binary
+digest. This migration receipt captures each actual executed binary directly.
