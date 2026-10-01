@@ -28,7 +28,9 @@ use latent_contracts::ContractDescriptor;
 use latent_core::{
     ArtifactBlobDigest, HostAbiProfile, PlatformError, PlatformErrorCode, PHASE3_HOST_ABI_CURRENT,
 };
-use latent_manifest::{CapsuleManifest, ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::{
+    CapsuleManifest, ManifestValidator, Phase1ManifestValidator, Phase4TransactionManifestValidator,
+};
 pub use limits::SemanticLimits;
 use std::collections::{BTreeMap, BTreeSet};
 use wit_parser::decoding::DecodedWasm;
@@ -149,7 +151,12 @@ pub(crate) fn validate_capsule_for_profile(
     if manifest.world.0 != lock.world {
         return Err(incompatible("capsule-wit-world-mismatch"));
     }
-    Phase1ManifestValidator
+    let validator: &dyn ManifestValidator = if host_profile == latent_core::PHASE4_HOST_ABI_V1 {
+        &Phase4TransactionManifestValidator
+    } else {
+        &Phase1ManifestValidator
+    };
+    validator
         .validate_capsule(manifest)
         .map_err(|_| invalid("invalid-capsule-manifest"))?;
     if let Some(renderer) = &manifest.runtime_requirements.renderer {
