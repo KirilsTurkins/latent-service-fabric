@@ -8,6 +8,7 @@ use crate::{
     },
 };
 use std::{fs::OpenOptions, io::Cursor};
+mod tenant;
 
 fn destination(limits: StoreLimits) -> (tempfile::TempDir, EmbeddedStore) {
     let directory = tempfile::tempdir().unwrap();
@@ -44,20 +45,22 @@ fn retire_after_backup(fixture: &Fixture) {
     let next = record
         .transition(record.version, &NamespaceTransition::Retire, 0)
         .unwrap();
-    drop(view);
-    fixture
-        .store
-        .apply(AtomicBatch {
-            expectations: vec![ExpectedRow {
-                key: key.clone(),
-                value: Some(bytes),
-            }],
-            mutations: vec![RowMutation {
-                key,
-                value: Some(next.encode().unwrap()),
-            }],
-        })
+    let mut batch = AtomicBatch {
+        expectations: vec![ExpectedRow {
+            key: key.clone(),
+            value: Some(bytes),
+        }],
+        mutations: vec![RowMutation {
+            key,
+            value: Some(next.encode().unwrap()),
+        }],
+    };
+    crate::tenant::prepare_update(&view, &record.tenant, crate::tenant::TenantDelta::default())
+        .unwrap()
+        .rebuild_batch(&mut batch)
         .unwrap();
+    drop(view);
+    fixture.store.apply(batch).unwrap();
 }
 
 #[test]

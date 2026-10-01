@@ -8,7 +8,7 @@ use crate::{
 };
 use latent_core::{transaction_contract::Value, StateNamespaceId};
 
-fn create(store: &EmbeddedStore, tenant: &str, namespace: &str) -> AtomicBatch {
+pub(super) fn create(store: &EmbeddedStore, tenant: &str, namespace: &str) -> AtomicBatch {
     NamespaceCatalog::new()
         .prepare(
             store,
@@ -27,7 +27,7 @@ fn create(store: &EmbeddedStore, tenant: &str, namespace: &str) -> AtomicBatch {
         .unwrap()
         .batch
 }
-fn scope(tenant: &str, namespace: &str) -> StateScope {
+pub(super) fn scope(tenant: &str, namespace: &str) -> StateScope {
     StateScope {
         tenant: TenantId(tenant.into()),
         namespace: StateNamespaceId(namespace.into()),
@@ -37,7 +37,7 @@ fn scope(tenant: &str, namespace: &str) -> StateScope {
         mode: StateMode::Command,
     }
 }
-fn state_write(
+pub(super) fn state_write(
     store: &EmbeddedStore,
     scope: StateScope,
     body: Option<&[u8]>,

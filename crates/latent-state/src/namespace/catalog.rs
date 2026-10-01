@@ -374,6 +374,18 @@ impl NamespaceCatalog {
         Ok(())
     }
 
+    /// Descriptive startup ownership after the original closed key/codec check.
+    pub fn tenant_for_row(key: &RowKey, bytes: &[u8]) -> Result<TenantId, NamespaceError> {
+        Self::validate_row(key, bytes)?;
+        if key.key.starts_with(super::history::HISTORY_PREFIX) {
+            Ok(super::history::NamespaceHistory::decode(bytes)?.tenant)
+        } else if key.key.starts_with(b"ns-v1\0") {
+            Ok(NamespaceRecord::decode(bytes)?.tenant)
+        } else {
+            Ok(NamespaceOperationReceipt::decode(bytes)?.context.tenant)
+        }
+    }
+
     pub fn inspect(
         &self,
         store: &EmbeddedStore,

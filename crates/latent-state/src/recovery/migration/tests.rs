@@ -15,6 +15,7 @@ use crate::{
 use latent_core::{transaction_contract::Value, StateNamespaceId, TenantId};
 use std::io::Cursor;
 use std::time::Duration;
+mod tenant;
 
 struct Fixture {
     store: EmbeddedStore,
@@ -76,6 +77,10 @@ fn artifacts() -> Vec<RequiredArtifact> {
     ]
 }
 fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+    match crate::tenant::validate_row(view, key, bytes) {
+        Err(StoreError::UnsupportedFormat) => {}
+        other => return other,
+    }
     if key.key.starts_with(PROGRESS_PREFIX) {
         AggregateMigrationProgress::validate_row(key, bytes)
     } else if key.key.starts_with(super::super::resume::RECEIPT_PREFIX) {
@@ -114,8 +119,21 @@ fn fixture() -> Fixture {
     fixture_with_count(u64::MAX.to_le_bytes().to_vec(), NamespaceQuota::default())
 }
 fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
+    fixture_with_tenant(count, quota, None)
+}
+fn fixture_with_tenant(
+    count: Vec<u8>,
+    quota: NamespaceQuota,
+    tenant_quota: Option<crate::tenant::TenantQuota>,
+) -> Fixture {
     let root = tempfile::tempdir().unwrap();
     let store = open(root.path(), true);
+    if let Some(quota) = tenant_quota {
+        let view = store.snapshot().unwrap();
+        let plan = crate::tenant::prepare_install(&view, &[quota]).unwrap();
+        drop(view);
+        plan.publish(&store, || Ok::<_, ()>(())).unwrap();
+    }
     let namespace = NamespaceRecord::create(
         TenantId("tenant".into()),
         StateNamespaceId("aggregate".into()),
@@ -135,15 +153,7 @@ fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
         family: Family::Namespace,
         key: namespace_record_key(&scope.tenant, &scope.namespace).unwrap(),
     };
-    store
-        .apply(AtomicBatch {
-            expectations: vec![],
-            mutations: vec![RowMutation {
-                key: key.clone(),
-                value: Some(namespace.encode().unwrap()),
-            }],
-        })
-        .unwrap();
+    initialize_namespace(&store, &namespace, &key);
     initialize_count(&store, &scope, count);
     let view = store.snapshot().unwrap();
     let before = view.get(&key).unwrap().unwrap();
@@ -151,19 +161,22 @@ fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
     let quiesced = n
         .transition(n.version, &NamespaceTransition::Quiesce, 0)
         .unwrap();
-    drop(view);
-    store
-        .apply(AtomicBatch {
-            expectations: vec![ExpectedRow {
-                key: key.clone(),
-                value: Some(before),
-            }],
-            mutations: vec![RowMutation {
-                key,
-                value: Some(quiesced.encode().unwrap()),
-            }],
-        })
+    let mut quiesce = AtomicBatch {
+        expectations: vec![ExpectedRow {
+            key: key.clone(),
+            value: Some(before),
+        }],
+        mutations: vec![RowMutation {
+            key,
+            value: Some(quiesced.encode().unwrap()),
+        }],
+    };
+    crate::tenant::prepare_update(&view, &scope.tenant, crate::tenant::TenantDelta::default())
+        .unwrap()
+        .rebuild_batch(&mut quiesce)
         .unwrap();
+    drop(view);
+    store.apply(quiesce).unwrap();
     let mut checkpoint = vec![];
     let receipt = export_snapshot(
         &store,
@@ -201,6 +214,31 @@ fn fixture_with_count(count: Vec<u8>, quota: NamespaceQuota) -> Fixture {
         checkpoint,
     }
 }
+fn initialize_namespace(store: &EmbeddedStore, namespace: &NamespaceRecord, key: &RowKey) {
+    let mut initial = AtomicBatch {
+        expectations: vec![],
+        mutations: vec![RowMutation {
+            key: key.clone(),
+            value: Some(namespace.encode().unwrap()),
+        }],
+    };
+    let view = store.snapshot().unwrap();
+    initial.expectations.push(ExpectedRow {
+        key: key.clone(),
+        value: None,
+    });
+    crate::tenant::prepare_update(
+        &view,
+        &namespace.tenant,
+        crate::tenant::TenantDelta::default(),
+    )
+    .unwrap()
+    .rebuild_batch(&mut initial)
+    .unwrap();
+    drop(view);
+    store.apply(initial).unwrap();
+}
+
 fn initialize_count(store: &EmbeddedStore, scope: &StateScope, count: Vec<u8>) {
     let view = store.snapshot().unwrap();
     let mut session =

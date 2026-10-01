@@ -17,6 +17,11 @@ pub(in crate::recovery) struct Fixture {
 }
 
 pub(in crate::recovery) fn fixture() -> Fixture {
+    fixture_with_tenant(None)
+}
+pub(in crate::recovery) fn fixture_with_tenant(
+    tenant_quota: Option<crate::tenant::TenantQuota>,
+) -> Fixture {
     let directory = tempfile::tempdir().unwrap();
     let file = OpenOptions::new()
         .read(true)
@@ -32,6 +37,12 @@ pub(in crate::recovery) fn fixture() -> Fixture {
         },
     )
     .unwrap();
+    if let Some(quota) = tenant_quota {
+        let view = store.snapshot().unwrap();
+        let plan = crate::tenant::prepare_install(&view, &[quota]).unwrap();
+        drop(view);
+        plan.publish(&store, || Ok::<_, ()>(())).unwrap();
+    }
     let schema = SchemaId::from_definition(DEFINITION).unwrap();
     let scope = StateScope {
         tenant: TenantId("tenant".into()),
@@ -52,15 +63,65 @@ pub(in crate::recovery) fn fixture() -> Fixture {
         family: Family::Namespace,
         key: namespace_record_key(&record.tenant, &record.id).unwrap(),
     };
-    store
-        .apply(AtomicBatch {
-            expectations: vec![],
-            mutations: vec![RowMutation {
-                key: key.clone(),
-                value: Some(record.encode().unwrap()),
-            }],
-        })
+    let mut initial = AtomicBatch {
+        expectations: vec![ExpectedRow {
+            key: key.clone(),
+            value: None,
+        }],
+        mutations: vec![RowMutation {
+            key: key.clone(),
+            value: Some(record.encode().unwrap()),
+        }],
+    };
+    let view = store.snapshot().unwrap();
+    crate::tenant::prepare_update(&view, &scope.tenant, crate::tenant::TenantDelta::default())
+        .unwrap()
+        .rebuild_batch(&mut initial)
         .unwrap();
+    drop(view);
+    store.apply(initial).unwrap();
+    initialize_count(&store, scope);
+    let view = store.snapshot().unwrap();
+    let original = view.get(&key).unwrap().unwrap();
+    let record = NamespaceRecord::decode(&original).unwrap();
+    let quiesced = record
+        .transition(record.version, &NamespaceTransition::Quiesce, 0)
+        .unwrap();
+    let mut quiesce = AtomicBatch {
+        expectations: vec![ExpectedRow {
+            key: key.clone(),
+            value: Some(original),
+        }],
+        mutations: vec![RowMutation {
+            key,
+            value: Some(quiesced.encode().unwrap()),
+        }],
+    };
+    crate::tenant::prepare_update(&view, &record.tenant, crate::tenant::TenantDelta::default())
+        .unwrap()
+        .rebuild_batch(&mut quiesce)
+        .unwrap();
+    drop(view);
+    store.apply(quiesce).unwrap();
+    let metadata = SnapshotMetadata {
+        tenant: "tenant".into(),
+        operation_id: "backup-original".into(),
+        operator_id: "operator".into(),
+        runtime_digest: [90; 32],
+        decoder_formats: vec![],
+        required_artifacts: vec![RequiredArtifact {
+            identity: schema.as_str().into(),
+            digest: Sha256::digest(DEFINITION).into(),
+        }],
+    };
+    Fixture {
+        store,
+        metadata,
+        _directory: directory,
+    }
+}
+
+fn initialize_count(store: &EmbeddedStore, scope: StateScope) {
     let view = store.snapshot().unwrap();
     let mut session = StateSession::open(&view, scope, SessionLimits::default(), allow).unwrap();
     session
@@ -81,41 +142,6 @@ pub(in crate::recovery) fn fixture() -> Fixture {
         .unwrap();
     store.apply(batch).unwrap();
     drop(view);
-    let view = store.snapshot().unwrap();
-    let original = view.get(&key).unwrap().unwrap();
-    let record = NamespaceRecord::decode(&original).unwrap();
-    let quiesced = record
-        .transition(record.version, &NamespaceTransition::Quiesce, 0)
-        .unwrap();
-    drop(view);
-    store
-        .apply(AtomicBatch {
-            expectations: vec![ExpectedRow {
-                key: key.clone(),
-                value: Some(original),
-            }],
-            mutations: vec![RowMutation {
-                key,
-                value: Some(quiesced.encode().unwrap()),
-            }],
-        })
-        .unwrap();
-    let metadata = SnapshotMetadata {
-        tenant: "tenant".into(),
-        operation_id: "backup-original".into(),
-        operator_id: "operator".into(),
-        runtime_digest: [90; 32],
-        decoder_formats: vec![],
-        required_artifacts: vec![RequiredArtifact {
-            identity: schema.as_str().into(),
-            digest: Sha256::digest(DEFINITION).into(),
-        }],
-    };
-    Fixture {
-        store,
-        metadata,
-        _directory: directory,
-    }
 }
 
 fn allow(scope: &StateScope, _: StateAccess) -> Result<(), StateError> {
@@ -135,6 +161,10 @@ pub(in crate::recovery) fn validate_row(
     key: &RowKey,
     bytes: &[u8],
 ) -> Result<(), StoreError> {
+    match crate::tenant::validate_row(view, key, bytes) {
+        Err(StoreError::UnsupportedFormat) => {}
+        other => return other,
+    }
     if *key == crate::recovery::guard_key() {
         crate::recovery::RecoveryGuard::validate_row(key, bytes)
     } else if key.family == Family::Namespace {

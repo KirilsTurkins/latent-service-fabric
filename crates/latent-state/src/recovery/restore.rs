@@ -362,7 +362,12 @@ fn publish_histories(
     deadline: Instant,
     fence: &mut impl FnMut() -> Result<(), StoreError>,
 ) -> Result<(), StoreError> {
-    for page in histories.chunks(destination.limits().maximum_batch_rows.min(128)) {
+    let page_size = destination
+        .limits()
+        .maximum_batch_rows
+        .saturating_sub(2)
+        .clamp(1, 128);
+    for page in histories.chunks(page_size) {
         super::snapshot::checkpoint(deadline)?;
         let view = destination.snapshot()?;
         let mut batch = AtomicBatch::default();
@@ -378,6 +383,12 @@ fn publish_histories(
                 value: Some(history.encode().map_err(|_| StoreError::Corrupt)?),
             });
         }
+        let tenant = &page.first().ok_or(StoreError::Invalid)?.tenant;
+        if page.iter().any(|history| history.tenant != *tenant) {
+            return Err(StoreError::Corrupt);
+        }
+        crate::tenant::prepare_update(&view, tenant, crate::tenant::TenantDelta::default())?
+            .rebuild_batch(&mut batch)?;
         drop(view);
         fence()?;
         destination.apply(batch)?;

@@ -363,13 +363,26 @@ impl NamespaceResumePlan {
             mutations: vec![],
         };
         if let Some(receipt) = prior {
-            return Ok(Self {
+            return Self {
                 batch,
                 receipt,
                 replayed: true,
-            });
+            }
+            .with_accounting(view, &request.scope.tenant);
         }
-        Self::activate(batch, namespace, history, fingerprint)
+        Self::activate(batch, namespace, history, fingerprint)?
+            .with_accounting(view, &request.scope.tenant)
+    }
+
+    fn with_accounting(mut self, view: &ReadView, tenant: &TenantId) -> Result<Self, StoreError> {
+        let accounting =
+            crate::tenant::prepare_update(view, tenant, crate::tenant::TenantDelta::default())?;
+        if self.replayed {
+            accounting.append_read_expectations(&mut self.batch)?;
+        } else {
+            accounting.rebuild_batch(&mut self.batch)?;
+        }
+        Ok(self)
     }
 
     fn activate(

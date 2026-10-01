@@ -7,12 +7,18 @@
 //! admission. Business owners compose one guarded counter update into the SAME
 //! state/command/effect transaction; descriptors grant no access or retry.
 
+mod census;
 mod codec;
+mod description;
 mod install;
 mod rows;
 mod update;
 
 use crate::embedded::{Family, ReadView, RowKey, StoreError};
+pub use census::{
+    GlobalMetadataAllowance, TenantCensus, TenantCensusContribution, TenantCensusReport,
+};
+pub use description::census_contribution;
 pub use install::{
     configuration_digest, prepare_install, require_installation, PreparedTenantInstallation,
 };
@@ -207,7 +213,9 @@ pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
         return Err(StoreError::Corrupt);
     }
     let captured = codec::capture(view, &record.quota.tenant)?.ok_or(StoreError::Corrupt)?;
-    if captured.bytes != bytes {
+    // A historical snapshot may carry an older counter generation. The same
+    // immutable reviewed quota must match; census enforces actual current totals.
+    if captured.record.quota != record.quota {
         return Err(StoreError::Corrupt);
     }
     Ok(())

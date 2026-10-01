@@ -94,6 +94,21 @@ pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
     Ok(())
 }
 
+/// The existing full state/usage validator owns the tenant association. This
+/// descriptor neither opens a session nor substitutes the per-namespace view.
+pub fn tenant_for_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<TenantId, StoreError> {
+    validate_row(view, key, bytes)?;
+    let rest = if key.family == Family::State {
+        key.key.strip_prefix(b"state-v1\0")
+    } else {
+        key.key
+            .strip_prefix(b"state-usage-v1\0")
+            .and_then(|rest| rest.strip_prefix(b"ns-v1\0"))
+    }
+    .ok_or(StoreError::UnsupportedFormat)?;
+    Ok(TenantId(KeyInput(rest).text()?))
+}
+
 fn namespace_in(
     view: &ReadView,
     tenant: &TenantId,

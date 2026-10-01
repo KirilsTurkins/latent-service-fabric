@@ -8,6 +8,7 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 static NEXT_FILE: AtomicU64 = AtomicU64::new(1);
+mod census;
 mod domain;
 
 fn quota(name: &str) -> TenantQuota {

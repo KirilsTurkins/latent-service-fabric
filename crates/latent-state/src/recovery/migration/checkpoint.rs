@@ -81,6 +81,10 @@ impl VerifiedMigrationCheckpoint {
         let before_history = prior
             .map(AggregateMigrationProgress::history_expectation)
             .transpose()?;
+        let before_quota = prior
+            .map(AggregateMigrationProgress::source_quota_expectation)
+            .transpose()?
+            .flatten();
         let mut hash = Sha256::new();
         let mut rows = 0u64;
         let mut logical = 0u64;
@@ -88,8 +92,12 @@ impl VerifiedMigrationCheckpoint {
             if prior.is_some() && key == progress_key {
                 return Ok(());
             }
-            let bytes = match &before_history {
-                Some(before) if key == &before.key => match &before.value {
+            let before = [&before_history, &before_quota]
+                .into_iter()
+                .filter_map(|before| before.as_ref())
+                .find(|before| key == &before.key);
+            let bytes = match before {
+                Some(before) => match &before.value {
                     Some(bytes) => bytes.as_slice(),
                     None => return Ok(()),
                 },
