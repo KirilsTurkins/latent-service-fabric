@@ -1,5 +1,6 @@
 //! Activation-scoped native state sessions over the existing protected owner.
 mod authorization;
+pub mod command_completion;
 mod host;
 mod initialization;
 mod io;

@@ -12,7 +12,9 @@ mod tests;
 pub use control::{
     NamespaceControl, NamespaceControlFence, NamespaceControlRequest, PreparedNamespaceControl,
 };
-pub use gate::{AcceptedCommit, CommitCancellation, CommitIoAcceptance};
+pub use gate::{
+    AcceptedCommit, CommitCancellation, CommitCancellationDisposition, CommitIoAcceptance,
+};
 pub use page::ScopedPage;
 pub use scope::{CallerScope, RecoverySelection};
 
@@ -56,7 +58,7 @@ enum Mode {
 /// publication and policy generations; public copied descriptors cannot revive
 /// it after current policy/publication revocation or namespace reincarnation.
 pub struct NamespaceAuthority {
-    initial: OwnedPolicyDecision,
+    initial: Arc<OwnedPolicyDecision>,
     ownership: ResultOwnership,
     publication: String,
     version: NamespaceVersion,
@@ -175,7 +177,7 @@ impl NamespaceAuthority {
         let deadline =
             deadline.min(Instant::now() + Duration::from_millis(ceiling.wall_time_millis));
         Ok(Self {
-            initial,
+            initial: Arc::new(initial),
             ownership,
             publication,
             version: namespace.record().version,
@@ -195,6 +197,11 @@ impl NamespaceAuthority {
         &self.activation
     }
 
+    #[must_use]
+    pub const fn mode(&self) -> Mode {
+        self.mode
+    }
+
     /// Original admitted deadline narrowed by the original policy ceiling.
     /// Reading it never extends timing or creates a new execution reservation.
     #[must_use]
@@ -205,6 +212,46 @@ impl NamespaceAuthority {
     #[must_use]
     pub fn ownership(&self) -> &ResultOwnership {
         &self.ownership
+    }
+
+    /// Reobserve the current row for an originally sealed read-result owner.
+    /// This preserves its actual retained decision, scope and original deadline;
+    /// it cannot acquire command authority or reopen an accepted command gate.
+    pub fn rebind_result_read(
+        &self,
+        store: &PolicyStore,
+        namespace: &NamespaceRead,
+    ) -> Result<Self, PlatformError> {
+        let record = namespace.record();
+        if self.mode != Mode::Inspection
+            || Instant::now() >= self.deadline
+            || record.tenant != self.ownership.tenant
+            || record.id.0 != self.ownership.namespace
+            || record.version.incarnation != self.ownership.incarnation
+            || record.status == NamespaceStatus::Tombstone
+        {
+            return Err(denied());
+        }
+        self.gate.check()?;
+        store.with_retained_decision(&self.initial, &mut |actual, _| {
+            self.check_target(actual, "read-result")?;
+            self.lifecycle
+                .with_current(namespace, false, || Ok(()))
+                .map_err(|_| denied())
+        })?;
+        Ok(Self {
+            initial: Arc::clone(&self.initial),
+            ownership: self.ownership.clone(),
+            publication: self.publication.clone(),
+            version: record.version,
+            activation: self.activation.clone(),
+            mode: Mode::Inspection,
+            ceiling: self.ceiling,
+            deadline: self.deadline,
+            gate: Arc::clone(&self.gate),
+            selection: self.selection.clone(),
+            lifecycle: self.lifecycle.clone(),
+        })
     }
     #[must_use]
     pub fn version(&self) -> NamespaceVersion {
@@ -219,7 +266,7 @@ impl NamespaceAuthority {
     /// The transaction/audit owner must honor this captured requirement and any
     /// stricter fresh operation requirement. This getter allocates no audit slot.
     #[must_use]
-    pub const fn requires_audit(&self) -> bool {
+    pub fn requires_audit(&self) -> bool {
         self.initial.requires_audit()
     }
     #[must_use]

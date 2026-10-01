@@ -303,7 +303,7 @@ where
         reason: &'a str,
     ) -> BoxFuture<'a, Result<CancelDisposition, PlatformError>> {
         Box::pin(async move {
-            match self.cancellations.cancel(activation_id, reason) {
+            match self.cancellations.cancel(activation_id, reason)? {
                 CancelDisposition::Accepted => {
                     let _ = self.inner.cancel(activation_id, reason).await;
                     Ok(CancelDisposition::Accepted)
