@@ -211,6 +211,33 @@ impl ActivationBudget {
         }
         true
     }
+
+    /// Observe original cancellation for already-owned completion/response data.
+    /// Only this ledger's terminal accounting flag is ignored: the original
+    /// deadline, real cancellation probe and every terminal/cancelled ancestor
+    /// still deny use. This grants no spending, allocation or delegation.
+    #[must_use]
+    pub fn retained_authority_is_cancelled_at(&self, now: Instant) -> bool {
+        if self.deadline().is_expired_at(now) {
+            return true;
+        }
+        let mut cursor = self;
+        for depth in 0..=16 {
+            let Some(lineage) = cursor.inner.lineage.get() else {
+                return true;
+            };
+            if (depth != 0 && cursor.inner.closed.load(Ordering::Acquire))
+                || lineage.cancellation.is_cancelled()
+            {
+                return true;
+            }
+            let Some(parent) = &lineage.parent else {
+                return false;
+            };
+            cursor = parent.parent();
+        }
+        true
+    }
     pub fn descendant_snapshot(&self) -> Result<DescendantBudgetSnapshot, PlatformError> {
         let lineage = self.inner.lineage.get().ok_or_else(denied)?;
         let state = self.lock_state();

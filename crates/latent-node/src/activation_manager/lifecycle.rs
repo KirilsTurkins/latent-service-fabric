@@ -169,8 +169,49 @@ impl Lifecycle {
         self.publish(outcome)
     }
 
-    fn publish(&mut self, mut outcome: ActivationOutcome) -> ActivationOutcome {
+    pub(super) async fn complete_transaction(
+        &mut self,
+        mut outcome: ActivationOutcome,
+    ) -> ActivationOutcome {
+        let Some(admission) = self.transaction_admission.clone() else {
+            return outcome;
+        };
+        let Some(budget) = self.budget.clone() else {
+            return outcome;
+        };
+        if !self.execution_started {
+            if let Some(host) = &self.transaction_host {
+                host.finish_guest_access();
+            }
+        }
+        // Observe actual guest consumption before a business result becomes
+        // eligible for commit. Finalization closes spending, while the opaque
+        // completion control retains only the original acceptance fences.
         if let Some(stop) = self.transport_stop.failure() {
+            outcome = failure_for_platform_error(stop, outcome_consumption(&outcome));
+        }
+        let now = self.clock.monotonic_now();
+        let deadline = budget.check_deadline_at(now).err();
+        self.record_deadline_decision(now, budget.deadline().monotonic(), deadline.is_some());
+        let finalized = budget.finalize_at(Some(&outcome_consumption(&outcome)), now);
+        let consumption = finalized.consumption().clone();
+        outcome = if let Some(error) = deadline.or_else(|| finalized.violation().cloned()) {
+            failure_for_platform_error(error.to_platform_error(), consumption)
+        } else {
+            replace_consumption(outcome, consumption)
+        };
+        let control = super::TransactionCommitControl::new(
+            self.registration().handle(),
+            self.transport_stop.clone(),
+            self.clock.clone(),
+            budget,
+        );
+        admission.complete(outcome, control).await
+    }
+
+    fn publish(&mut self, mut outcome: ActivationOutcome) -> ActivationOutcome {
+        let commit_accepted = self.registration().commit_accepted();
+        if let Some(stop) = self.transport_stop.failure().filter(|_| !commit_accepted) {
             // Raw interruption is provisional, not an accepted explicit Cancel.
             // Existing deadline/finalization checks and the registry winner below
             // keep their authority. Cleanup disposition was already observed.
@@ -178,11 +219,17 @@ impl Lifecycle {
         }
         if let Some(budget) = &self.budget {
             let now = self.clock.monotonic_now();
-            let deadline = budget.check_deadline_at(now).err();
+            let deadline = (!commit_accepted)
+                .then(|| budget.check_deadline_at(now).err())
+                .flatten();
             self.record_deadline_decision(now, budget.deadline().monotonic(), deadline.is_some());
             let finalized = budget.finalize_at(Some(&outcome_consumption(&outcome)), now);
             let consumption = finalized.consumption().clone();
-            outcome = if let Some(error) = deadline.or_else(|| finalized.violation().cloned()) {
+            outcome = if let Some(error) = deadline.or_else(|| {
+                (!commit_accepted)
+                    .then(|| finalized.violation().cloned())
+                    .flatten()
+            }) {
                 failure_for_platform_error(error.to_platform_error(), consumption)
             } else {
                 replace_consumption(outcome, consumption)
@@ -274,7 +321,9 @@ impl Drop for Lifecycle {
         // Inner async work (including a Wasmtime store and prepared-use token)
         // has already been dropped. Dispose cell then quota before accounting.
         self.reclaim();
-        let code = if std::thread::panicking() {
+        let code = if self.registration().commit_accepted() {
+            PlatformErrorCode::Unavailable
+        } else if std::thread::panicking() {
             PlatformErrorCode::Internal
         } else if self.transport_stop.cause()
             == Some(ActivationTransportInterruption::DeadlineExceeded)
@@ -283,7 +332,9 @@ impl Drop for Lifecycle {
         } else {
             PlatformErrorCode::Cancelled
         };
-        let message = if code == PlatformErrorCode::DeadlineExceeded {
+        let message = if code == PlatformErrorCode::Unavailable {
+            "transaction completion owner abandoned after commit acceptance"
+        } else if code == PlatformErrorCode::DeadlineExceeded {
             "activation transport deadline exceeded"
         } else {
             "activation handle abandoned before terminal completion"

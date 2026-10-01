@@ -39,8 +39,16 @@ async fn native_admission_persists_pending_before_host_and_success_commits_once(
     ));
     assert_eq!(fixture.rows(Family::Command).await, 1);
     host.finish_guest_access(); // exact native test owns no guest references
-    let completion =
-        CommandCompletion::new(claim, host, fixture.effects.clone(), fixture.time.clone()).unwrap();
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    assert!(budget.reserve_host_memory(1).is_err());
+    let completion = CommandCompletion::new(
+        claim,
+        host,
+        fixture.effects.clone(),
+        fixture.time.clone(),
+        fixture.commit_control(&envelope, &budget),
+    )
+    .unwrap();
     let result = completion.finish(success(b"result")).await;
     let CommandCompletionDisposition::Durable {
         command,
@@ -77,19 +85,26 @@ async fn native_declared_rejection_discards_state_and_preserves_exact_result() {
         .await
         .unwrap();
     host.finish_guest_access();
-    let result = CommandCompletion::new(claim, host, fixture.effects.clone(), fixture.time.clone())
-        .unwrap()
-        .finish(ActivationOutcome::DeclaredError {
-            error: DeclaredError {
-                code: "rejected".into(),
-                message: "business rejection".into(),
-                payload: b"reason".to_vec(),
-                media_type: "application/octet-stream".into(),
-                metadata: Metadata::new(),
-            },
-            consumption: BudgetConsumption::default(),
-        })
-        .await;
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    let result = CommandCompletion::new(
+        claim,
+        host,
+        fixture.effects.clone(),
+        fixture.time.clone(),
+        fixture.commit_control(&envelope, &budget),
+    )
+    .unwrap()
+    .finish(ActivationOutcome::DeclaredError {
+        error: DeclaredError {
+            code: "rejected".into(),
+            message: "business rejection".into(),
+            payload: b"reason".to_vec(),
+            media_type: "application/octet-stream".into(),
+            metadata: Metadata::new(),
+        },
+        consumption: BudgetConsumption::default(),
+    })
+    .await;
     let CommandCompletionDisposition::Durable {
         command,
         result,
@@ -187,4 +202,84 @@ fn success(bytes: &[u8]) -> ActivationOutcome {
         effect_ids: Vec::new(),
         metadata: Metadata::new(),
     })
+}
+
+#[tokio::test]
+async fn native_original_cancellation_before_commit_preserves_pending_without_business_rows() {
+    let fixture = Fixture::new().await;
+    let (admission, envelope, budget) = fixture.invocation(false, "cancel-before-commit");
+    admission.admit(&envelope, &budget).await.unwrap();
+    let TransactionAdmissionResult::Command { claim, host } =
+        admission.take_result().unwrap().unwrap()
+    else {
+        panic!("command absent")
+    };
+    let key = claim.record().key().clone();
+    host.acquire(Mode::Command).unwrap();
+    host.put(b"counter".to_vec(), value(b"never committed"))
+        .await
+        .unwrap();
+    host.finish_guest_access();
+    budget.finalize_at(None, std::time::Instant::now());
+    fixture.cancel_original(&envelope);
+    let completion = CommandCompletion::new(
+        claim,
+        host,
+        fixture.effects.clone(),
+        fixture.time.clone(),
+        fixture.commit_control(&envelope, &budget),
+    )
+    .unwrap();
+    let result = completion.finish(success(b"discarded")).await;
+    assert!(matches!(
+        result,
+        CommandCompletionDisposition::Retired { .. }
+    ));
+    let (command, body) = fixture.inspect(key).await;
+    assert_eq!(command.outcome(), Outcome::Pending);
+    assert!(body.is_none());
+    assert_eq!(fixture.rows(Family::State).await, 0);
+    assert_eq!(fixture.rows(Family::Outbox).await, 0);
+    drop(result);
+    fixture.shutdown().await;
+}
+
+#[tokio::test]
+async fn native_manager_completion_hook_commits_once_and_retains_affine_result() {
+    let fixture = Fixture::new().await;
+    let (admission, envelope, budget) = fixture.invocation(false, "original-hook");
+    let host = admission.admit(&envelope, &budget).await.unwrap();
+    host.acquire(Mode::Command).unwrap();
+    host.put(b"counter".to_vec(), value(b"hook committed"))
+        .await
+        .unwrap();
+    host.finish_guest_access();
+    budget.finalize_at(None, std::time::Instant::now());
+    let observed = admission
+        .complete(
+            success(b"owned result"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    let ActivationOutcome::Succeeded(observed) = observed else {
+        panic!("commit failed")
+    };
+    assert!(observed.output.is_empty());
+    assert!(admission.take_result().unwrap().is_none());
+    let Some(TransactionCompletionResult::Command(CommandCompletionDisposition::Durable {
+        command,
+        result,
+        retained,
+        cleanup_failure,
+    })) = admission.take_completion().unwrap()
+    else {
+        panic!("durable result absent")
+    };
+    assert_eq!(command.outcome(), Outcome::Committed);
+    assert_eq!(result.value().unwrap().bytes, b"owned result");
+    assert!(cleanup_failure.is_none());
+    assert!(admission.take_completion().unwrap().is_none());
+    assert!(budget.reserve_host_memory(1).is_err());
+    drop((result, retained));
+    fixture.shutdown().await;
 }

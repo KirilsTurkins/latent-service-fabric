@@ -1,12 +1,13 @@
 //! Once-only completion driven by the node owner after real activation cleanup.
 //! The RPC waiter never owns this future. Keep it in a bounded node work slot.
 use super::{CommandTimeSource, StateTransactionHost};
+use crate::TransactionCommitControl;
 use latent_activation::ActivationOutcome;
 use latent_commit::atomic::{
     AdmittedCommand, AtomicError, AttemptRetirement, CommandRecord, CompleteEnvelope,
     DurableResult, PreparedDisposition, RetiredAttempt,
 };
-use latent_core::{transaction_contract::Value, HostMemoryReservation};
+use latent_core::{transaction_contract::Value, ActivationTerminalState, HostMemoryReservation};
 use latent_effects::authority::{EffectAuthorityOwner, EffectTime};
 use latent_executor::transaction::StateFailure;
 use latent_state::{
@@ -44,6 +45,7 @@ pub struct CommandCompletion {
     host: Arc<StateTransactionHost>,
     effects: EffectAuthorityOwner,
     time: Arc<dyn CommandTimeSource>,
+    control: TransactionCommitControl,
 }
 impl CommandCompletion {
     pub fn new(
@@ -51,6 +53,7 @@ impl CommandCompletion {
         host: Arc<StateTransactionHost>,
         effects: EffectAuthorityOwner,
         time: Arc<dyn CommandTimeSource>,
+        control: TransactionCommitControl,
     ) -> Result<Self, AtomicError> {
         let command = host.command.as_ref().ok_or(AtomicError::PermissionDenied)?;
         let role = host
@@ -62,6 +65,7 @@ impl CommandCompletion {
             || command.attempt_id != claim.record().attempt().to_string()
             || host.authority().publication() != claim.record().source().publication
             || role.epoch() != claim.record().owner_epoch()
+            || !control.matches(&host.activation, &host.authorization.budget)
         {
             return Err(AtomicError::PermissionDenied);
         }
@@ -70,6 +74,7 @@ impl CommandCompletion {
             host,
             effects,
             time,
+            control,
         })
     }
 
@@ -101,8 +106,8 @@ impl CommandCompletion {
             }
         };
         match prepared {
-            Ok((host, effects, time, envelope)) => {
-                publish(host, effects, time, envelope, identity, retirement).await
+            Ok((host, effects, time, control, envelope)) => {
+                publish(host, effects, time, control, envelope, identity, retirement).await
             }
             Err((host, reason)) => retired(&host, identity, retirement, reason).await,
         }
@@ -139,7 +144,9 @@ impl CommandCompletion {
                 Ok((view, result)) => {
                     view.retire().await;
                     match result {
-                        Ok(Ok(envelope)) => Ok((self.host, self.effects, self.time, envelope)),
+                        Ok(Ok(envelope)) => {
+                            Ok((self.host, self.effects, self.time, self.control, envelope))
+                        }
                         Ok(Err(error)) => Err((self.host, error)),
                         Err(_) => Err((self.host, AtomicError::RecoveryRequired)),
                     }
@@ -169,7 +176,9 @@ impl CommandCompletion {
                 });
         match result {
             Ok(job) => match job.await {
-                Ok(Ok(Ok(envelope))) => Ok((self.host, self.effects, self.time, envelope)),
+                Ok(Ok(Ok(envelope))) => {
+                    Ok((self.host, self.effects, self.time, self.control, envelope))
+                }
                 Ok(Ok(Err(error))) => Err((self.host, error)),
                 _ => Err((self.host, AtomicError::RecoveryRequired)),
             },
@@ -182,6 +191,7 @@ type Prepared = Result<
         Arc<StateTransactionHost>,
         EffectAuthorityOwner,
         Arc<dyn CommandTimeSource>,
+        TransactionCommitControl,
         CompleteEnvelope,
     ),
     (Arc<StateTransactionHost>, AtomicError),
@@ -191,6 +201,7 @@ async fn publish(
     host: Arc<StateTransactionHost>,
     effects: EffectAuthorityOwner,
     time: Arc<dyn CommandTimeSource>,
+    control: TransactionCommitControl,
     envelope: CompleteEnvelope,
     identity: CommandRecord,
     retirement: AttemptRetirement,
@@ -204,6 +215,7 @@ async fn publish(
                 &authorization,
                 &effects,
                 time.as_ref(),
+                &control,
                 envelope,
             ))
         });
@@ -240,8 +252,18 @@ fn publish_fenced(
     authorization: &super::StateAuthorization,
     effects: &EffectAuthorityOwner,
     _time: &dyn CommandTimeSource,
+    control: &TransactionCommitControl,
     envelope: CompleteEnvelope,
 ) -> PreparedDisposition {
+    let proposed = match envelope.command().outcome() {
+        latent_commit::atomic::Outcome::Committed => ActivationTerminalState::Completed,
+        latent_commit::atomic::Outcome::Rejected => ActivationTerminalState::Rejected,
+        _ => {
+            return PreparedDisposition::RecoveryRequired {
+                identity: envelope.command().clone(),
+            }
+        }
+    };
     // Copy only the already-owned namespace expectation, never the potentially
     // multi-megabyte batch. It is selected from the actual immutable envelope.
     let expected = authorization.namespace.expectation();
@@ -262,7 +284,7 @@ fn publish_fenced(
             .ok_or(AtomicError::PermissionDenied)?;
         role.with_current(|sample| {
             authorization
-                .with_decision("commit", 0, 0, |decision| {
+                .with_completion_decision(|decision| {
                     let acceptance = authorization.authority.prepare_commit_io(
                         authorization.policy(),
                         decision,
@@ -270,17 +292,25 @@ fn publish_fenced(
                         &namespace_batch,
                     )?;
                     acceptance
-                        .accept_with(|| {
-                            effects
-                                .commit_fence(
-                                    authorities,
-                                    EffectTime {
-                                        unix_millis: sample.unix_millis,
-                                        continuity_proven: sample.continuity_proven,
-                                    },
-                                )
-                                .map_err(|_| NamespaceError::PermissionDenied)
-                        })
+                        .accept_with_final(
+                            || {
+                                effects
+                                    .commit_fence(
+                                        authorities,
+                                        EffectTime {
+                                            unix_millis: sample.unix_millis,
+                                            continuity_proven: sample.continuity_proven,
+                                        },
+                                    )
+                                    .map_err(|_| NamespaceError::PermissionDenied)
+                            },
+                            || {
+                                control
+                                    .accept(proposed)
+                                    .then_some(())
+                                    .ok_or(NamespaceError::PermissionDenied)
+                            },
+                        )
                         .map_err(|_| super::authorization::denied())
                 })
                 .map_err(|_| AtomicError::PermissionDenied)

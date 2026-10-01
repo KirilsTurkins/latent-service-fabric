@@ -53,6 +53,17 @@ physical retirement. Replays require current result-read authority and never
 open a second command host. Fresh queries open a frozen read-only snapshot and
 create no Command, Attempt, Result or Outbox rows.
 
+The original activation handle invokes native completion after actual guest
+cleanup and accounting observation, before publishing its terminal journal
+entry or removing its cancellation registration. Accounting stays frozen; a
+narrow retained-authority check permits no further execution or spending.
+The final namespace/effect fence retains the original cancellation CAS through
+acceptance. Cancellation that wins first denies the business envelope; a late
+deadline, disconnect or cancellation cannot rewrite a known durable outcome.
+Acceptance without a known physical result remains recovery-required. Large
+result bodies stay in a once-only native completion owner, rather than being
+duplicated into the bounded activation journal.
+
 `CommandCompletion` publishes a successful state/result/intent envelope under
 the original role, current policy, namespace lifecycle, effect authority and
 cancellation fences. Declared rejection first retires the discarded business
@@ -70,3 +81,11 @@ and current-authorized transport response release around the actual activation
 manager. The six-language signed component campaign, RPC/HTTP delivery and
 crash/restart qualification remain required; this page does not record them as
 passing.
+
+Four additional original-cancellation and affine-completion cases are
+registered (86 total Linux node cases), with 110 core cases including the
+retained-authority boundaries. The integrated library and test targets compile
+on Windows, and all ten portable cancellation tests passed, including the
+original cancellation/commit acceptance race and accepted-but-unknown result.
+The new native completion cases still require the pinned Linux
+run; the earlier 82-case result does not qualify these new paths.

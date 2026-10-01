@@ -29,6 +29,25 @@ impl latent_core::BudgetCancellationProbe for Cancellation {
 }
 
 impl Fixture {
+    pub fn cancel_original(&self, envelope: &ActivationEnvelope) {
+        assert_eq!(
+            self.cancellations
+                .cancel(&envelope.activation_id, "before commit"),
+            latent_core::CancelDisposition::Accepted
+        );
+    }
+    pub fn commit_control(
+        &self,
+        envelope: &ActivationEnvelope,
+        budget: &ActivationBudget,
+    ) -> crate::TransactionCommitControl {
+        let registrations = self.registrations.lock().unwrap();
+        let registration = registrations
+            .iter()
+            .find(|entry| entry.activation_id() == &envelope.activation_id)
+            .unwrap();
+        crate::TransactionCommitControl::for_native_test(registration, budget)
+    }
     pub fn invocation(
         &self,
         query: bool,

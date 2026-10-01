@@ -13,7 +13,7 @@ pub use command_role::PendingCommandAdmission;
 pub use completion::{CommandCompletion, CommandCompletionDisposition};
 pub use factory::{
     NativeTransactionAdmission, TransactionAdmissionOwners, TransactionAdmissionResult,
-    TransactionInstallation, TransactionSelection,
+    TransactionCompletionResult, TransactionInstallation, TransactionSelection,
 };
 
 use latent_commit::atomic::{
@@ -185,7 +185,7 @@ impl StateTransactionHost {
             return Err(StateFailure::WrongMode);
         }
         self.authorization
-            .authorize("commit", 0, 0, || Ok(()))
+            .authorize_completion(|| Ok(()))
             .map_err(|_| StateFailure::PermissionDenied)?;
         let owned = self
             .session
@@ -199,7 +199,7 @@ impl StateTransactionHost {
             .store
             .with_view(owned.view, self.retained_bytes, move |view| {
                 let plan = payload.session.seal(view, |_, _| {
-                    auth.authorize("commit", 0, 0, || Ok(()))
+                    auth.authorize_completion(|| Ok(()))
                         .map_err(|_| latent_state::session::StateError::PermissionDenied)
                 });
                 if let Err(error) = &plan {

@@ -33,6 +33,14 @@ impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
     ) -> BoxFuture<'a, Result<Arc<dyn TransactionHost>, PlatformError>> {
         Box::pin(async move { self.admit_native(envelope, budget).await })
     }
+
+    fn complete(
+        &self,
+        outcome: latent_activation::ActivationOutcome,
+        control: crate::TransactionCommitControl,
+    ) -> BoxFuture<'_, latent_activation::ActivationOutcome> {
+        Box::pin(self.complete_native(outcome, control))
+    }
 }
 impl NativeTransactionAdmission {
     async fn admit_native(

@@ -132,6 +132,38 @@ impl StateAuthorization {
         output_bytes: usize,
         action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
     ) -> Result<T, PlatformError> {
+        self.evaluate(operation, input_bytes, output_bytes, false, action)
+    }
+
+    pub(super) fn authorize_completion(
+        &self,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        self.with_completion_decision(|decision| {
+            self.authority
+                .with_operation(&self.policy, decision, &self.namespace, "commit", action)
+        })
+    }
+
+    pub(super) fn with_completion_decision<T>(
+        &self,
+        action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
+    ) -> Result<T, PlatformError> {
+        self.evaluate("commit", 0, 0, true, action)
+    }
+
+    pub(super) fn authorize_query_completion(&self) -> Result<(), PlatformError> {
+        self.evaluate("query-info", 0, 0, true, |_| Ok(()))
+    }
+
+    fn evaluate<T>(
+        &self,
+        operation: &str,
+        input_bytes: usize,
+        output_bytes: usize,
+        completion: bool,
+        action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
+    ) -> Result<T, PlatformError> {
         let intent = operation == "stage";
         let binding = if intent {
             self.intents.as_ref().ok_or_else(denied)?
@@ -139,7 +171,12 @@ impl StateAuthorization {
             &self.state
         };
         let now = Instant::now();
-        if self.budget.deadline().is_expired_at(now) || self.budget.descendant_is_cancelled() {
+        let cancelled = if completion {
+            self.budget.retained_authority_is_cancelled_at(now)
+        } else {
+            self.budget.deadline().is_expired_at(now) || self.budget.descendant_is_cancelled()
+        };
+        if cancelled {
             return Err(denied());
         }
         // Current data permission also fences already-owned terminal buffers

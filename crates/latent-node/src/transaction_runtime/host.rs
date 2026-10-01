@@ -31,7 +31,7 @@ impl StateTransactionHost {
         }
         Ok(())
     }
-    fn identity(&self) -> ViewIdentity {
+    pub(super) fn identity(&self) -> ViewIdentity {
         let version = self.authorization.namespace.record().version;
         let mut bytes = Vec::with_capacity(16);
         bytes.extend_from_slice(&version.incarnation.to_le_bytes());

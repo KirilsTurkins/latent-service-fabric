@@ -1,5 +1,6 @@
 //! Trusted installed bindings meet the real pinned activation admission seam.
 mod admission;
+mod completion;
 mod policy;
 mod selection;
 pub use selection::{TransactionInstallation, TransactionSelection};
@@ -57,6 +58,22 @@ pub enum TransactionAdmissionResult {
     /// affine claim still owns cleanup/recovery; no second guest is admitted.
     Pending(super::PendingCommandAdmission),
 }
+
+/// Affine native completion retained by the fixed driver. Large guest/result
+/// bodies live here, rather than being copied into the activation journal.
+pub enum TransactionCompletionResult {
+    Command(super::CommandCompletionDisposition),
+    Query {
+        outcome: latent_activation::ActivationOutcome,
+        view: latent_executor::transaction::ViewIdentity,
+        retained: Arc<latent_core::HostMemoryReservation>,
+    },
+    Existing(CommandRecord),
+    PendingRetired {
+        command: CommandRecord,
+        proof: Result<Box<latent_commit::atomic::RetiredAttempt>, AtomicError>,
+    },
+}
 enum State {
     Fresh(Option<TransactionSelection>),
     Pending {
@@ -70,6 +87,7 @@ pub struct NativeTransactionAdmission {
     owners: Arc<TransactionAdmissionOwners>,
     installation: Arc<TransactionInstallation>,
     state: Mutex<State>,
+    completion: Mutex<Option<TransactionCompletionResult>>,
 }
 impl NativeTransactionAdmission {
     pub fn new(
@@ -82,6 +100,7 @@ impl NativeTransactionAdmission {
             owners,
             installation,
             state: Mutex::new(State::Fresh(Some(selection))),
+            completion: Mutex::new(None),
         })
     }
 
@@ -102,6 +121,14 @@ impl NativeTransactionAdmission {
             }),
             State::Fresh(_) | State::Failed => None,
         })
+    }
+
+    pub fn take_completion(&self) -> Result<Option<TransactionCompletionResult>, PlatformError> {
+        Ok(self
+            .completion
+            .lock()
+            .map_err(|_| authorization::denied())?
+            .take())
     }
 }
 
