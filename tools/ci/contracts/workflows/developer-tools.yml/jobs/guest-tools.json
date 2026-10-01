@@ -4,7 +4,6 @@
   "coverage": {},
   "definition": {
     "env": {
-      "LSF_DEV_COMPILER_CACHE": "${{ runner.temp }}/compiler-archives",
       "LSF_DEV_LANGUAGE": "${{ matrix.language }}"
     },
     "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
@@ -39,6 +38,10 @@
         "with": {
           "version": "1.254.0"
         }
+      },
+      {
+        "name": "Select the runner-owned compiler archive cache",
+        "run": "printf 'LSF_DEV_COMPILER_CACHE=%s\\n' \"$RUNNER_TEMP/compiler-archives\" >> \"$GITHUB_ENV\""
       },
       {
         "id": "compiler-cache",
@@ -289,7 +292,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Add pinned digest-reverified archive restore/save via explicit cache env; preserve every historical run block unchanged and all six languages/application checks.",
+  "reviewReason": "Resolve runner-owned compiler cache at step execution after GitHub allocates the runner; job env has no runner context",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

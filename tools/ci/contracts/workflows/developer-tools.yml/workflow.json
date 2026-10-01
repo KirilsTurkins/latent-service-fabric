@@ -133,7 +133,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Issue #732: preserve existing developer-tool qualification exclusions for the ownership-local contract directory.",
+  "reviewReason": "Resolve compiler cache through runner environment without an invalid job-level runner context",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
