@@ -12,10 +12,11 @@ if __package__ in {None, ""}:
 
 from tools.java_capsule_project import create as author
 from tools.rust_capsule_project import ROOT, digest, read_file, read_json
-from tools.transaction_guest_project import TEMPLATE
+from tools.transaction_guest_project import HTTP_BODY, HTTP_REQUIREMENTS, TEMPLATE, put_once_requirements
 from tools.transaction_guest_variants import replace_once
 
 VARIANTS = ("legacy-v1", "compatible-v2", "writer-v2")
+EFFECTS = ("event", "put-once")
 DEFINITIONS = {
     "v1": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
     "v2": "sha256:5465983620116dc20476955ea815d665e2868421f6bed705760f12225bada6eb",
@@ -61,18 +62,28 @@ def source_variant(original: str, variant: str) -> str:
         "            byte[] bytes = AggregateCodec.encode(next, WRITE_V2);")
 
 
-def create(directory: Path, variant: str, name: str = "transaction-java-aggregate") -> Path:
+def create(directory: Path, variant: str, name: str = "transaction-java-aggregate", *, effect: str = "event") -> Path:
     if variant not in VARIANTS:
         raise ValueError("unknown Java transaction schema variant")
+    if effect not in EFFECTS:
+        raise ValueError("unknown Java transaction effect variant")
     schema = definitions()
     original = read_file(ROOT / "sdk/java-guest/templates/transactional-aggregate.java")
     source = source_variant(original.decode(), variant).encode()
+    if effect == "put-once":
+        source = replace_once(source.decode(),
+            '            new Intent("approved-event", "event", payload).stage(command).value();',
+            '            var effectPayload = new Bindings.LatentStateKeyValueValue(\n'
+            '                new byte[]{' + ','.join(str(value) for value in HTTP_BODY) + '}, "application/octet-stream", List.of());\n'
+            '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();').encode()
     project = author(directory, TEMPLATE, name)
     (project / SOURCE).write_bytes(source)
     if variant != "legacy-v1":
         (project / CODEC).write_bytes(read_file(ROOT / "examples/java-transaction-schema/AggregateCodec.java"))
     owner = read_json(project / "capsule-project.json")
     owner["version"] = {"legacy-v1": "1.0.0", "compatible-v2": "1.1.0", "writer-v2": "2.0.0"}[variant]
+    if effect == "put-once":
+        owner["limits"]["effectCount"] = 1
     (project / "capsule-project.json").write_bytes(json.dumps(owner, indent=2).encode() + b"\n")
     lock = read_json(project / "sdk-lock.json")
     lock["template"]["sourceDigest"] = digest(source)
@@ -81,12 +92,15 @@ def create(directory: Path, variant: str, name: str = "transaction-java-aggregat
     binding = read_json(project / "transaction-binding.json")
     binding["stateSchema"] = DEFINITIONS[writer]
     (project / "transaction-binding.json").write_bytes(json.dumps(binding, indent=2).encode() + b"\n")
+    if effect == "put-once":
+        requirements = put_once_requirements(owner, read_file(project / "transaction-binding.json"))
+        (project / HTTP_REQUIREMENTS).write_bytes(json.dumps(requirements, indent=2).encode() + b"\n")
     (project / "state-schema.json").write_bytes(schema[writer])
     captured = project / "schemas"
     captured.mkdir()
     for version, raw in schema.items():
         (captured / ("application-aggregate-" + version + ".schema.json")).write_bytes(raw)
-    inputs = {"schemaVersion": "latent.java.application-schema-inputs.v1", "variant": variant,
+    inputs = {"schemaVersion": "latent.java.application-schema-inputs.v1", "variant": variant, "effect": effect,
         "readers": sorted([DEFINITIONS["v1"]] if variant == "legacy-v1" else DEFINITIONS.values()),
         "writers": [DEFINITIONS[writer]], "sourceDigest": digest(source),
         "publicationReviewGranted": False, "componentCompiled": False, "stateExecutionQualified": False}
@@ -99,8 +113,9 @@ def main() -> None:
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--variant", choices=VARIANTS, required=True)
     parser.add_argument("--name", default="transaction-java-aggregate")
+    parser.add_argument("--effect", choices=EFFECTS, default="event")
     args = parser.parse_args()
-    print(create(args.project, args.variant, args.name))
+    print(create(args.project, args.variant, args.name, effect=args.effect))
 
 
 if __name__ == "__main__":

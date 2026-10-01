@@ -17,6 +17,18 @@ python tools/java_transaction_schema.py --variant compatible-v2 --project "$Fres
 python tools/java_transaction_schema.py --variant writer-v2 --project "$FreshWriterV2"
 ```
 
+Add `--effect put-once` to each command for the deferred HTTP qualification
+variant. It stages one `qualified-http` / `put-once` intent with the same fixed
+27-byte synthetic body, octet-stream media and empty metadata. Its immediate
+HTTP and child-call budgets remain zero. The finite original host ceiling
+governs lifetime; the guest supplies no URL, credential or retry loop.
+
+The captured `deferred-http-requirements.json` is included as an ordinary signed
+package Asset beside the byte-identical transaction companion. It records the
+required native contract and limits, with installation, rule and execution
+claims explicitly false. The [installation inputs](../../docs/testing/java-transaction-http-intent.md)
+describe the common native owners and their current authority checks.
+
 The original writer stores an eight-byte unsigned little-endian count with v1
 media. The compatible v2 reader accepts that format and the exact tagged twelve
 bytes with v2 media, while continuing to write v1 during canary. The v2 writer

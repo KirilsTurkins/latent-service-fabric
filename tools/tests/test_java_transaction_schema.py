@@ -10,6 +10,80 @@ from tools.rust_capsule_project import ROOT, digest, snapshot
 
 
 class JavaTransactionSchemaTests(unittest.TestCase):
+    def test_put_once_variants_capture_exact_payload_and_package_requirements_without_changing_companion(self):
+        from tools.rust_capsule_build import package_inputs
+        from tools.transaction_guest_project import HTTP_BODY, HTTP_REQUIREMENTS
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for variant in VARIANTS:
+                with self.subTest(variant=variant):
+                    original = snapshot(create(root / (variant + "-event"), variant))
+                    files = snapshot(create(root / (variant + "-http"), variant, effect="put-once"))
+                    project, lock, _pins = validate(files)
+                    self.assertEqual(files["transaction-binding.json"], original["transaction-binding.json"])
+                    self.assertEqual(files["wit/world.wit"], original["wit/world.wit"])
+                    self.assertEqual(files["state-schema.json"], original["state-schema.json"])
+                    self.assertEqual(project["limits"]["effectCount"], 1)
+                    self.assertEqual(project["limits"]["outboundRequests"], 0)
+                    self.assertEqual(project["limits"]["childCalls"], 0)
+                    self.assertEqual(lock["template"]["sourceDigest"], digest(files[SOURCE]))
+                    requirements = json.loads(files[HTTP_REQUIREMENTS])
+                    self.assertEqual(len(HTTP_BODY), 27)
+                    self.assertEqual(requirements["scope"]["companionDigest"], digest(files["transaction-binding.json"]))
+                    self.assertEqual(requirements["intent"], {"binding": "qualified-http", "operation": "put-once", "count": 1,
+                        "requestedExpiryUnixMillis": None,
+                        "payload": {"bytes": "amF2YS1hZ2dyZWdhdGUtcHV0LW9uY2UtdjEA", "mediaType": "application/octet-stream", "metadata": []}})
+                    self.assertTrue(all(value is False for value in requirements["authority"].values()))
+                    output = root / (variant + "-packaged-inputs")
+                    output.mkdir()
+                    # This unit test checks real source packaging, never signing
+                    # or execution of these explicit noncomponent fixture bytes.
+                    package_inputs(output, project, {"imports": {}, "exports": {}}, files, b"unit-test-not-a-component")
+                    layers = json.loads((output / "package-source.json").read_bytes())["layers"]
+                    asset = [row for row in layers if row["path"] == HTTP_REQUIREMENTS]
+                    self.assertEqual(asset, [{"path": HTTP_REQUIREMENTS, "source": HTTP_REQUIREMENTS,
+                                             "role": "asset", "mediaType": "application/json"}])
+                    self.assertEqual((output / HTTP_REQUIREMENTS).read_bytes(), files[HTTP_REQUIREMENTS])
+                    self.assertEqual((output / "transaction-binding.json").read_bytes(), original["transaction-binding.json"])
+
+    def test_requirements_reject_payload_authority_type_and_original_companion_drift(self):
+        from tools.transaction_guest_project import HTTP_REQUIREMENTS, package_effect_requirements
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            files = snapshot(create(root / "source", "legacy-v1", effect="put-once"))
+            project, _lock, _pins = validate(files)
+            requirements = json.loads(files[HTTP_REQUIREMENTS])
+            changed = [dict(requirements, url="https://unapproved.invalid"),
+                       dict(requirements, protectedCredential="guest-selected"),
+                       dict(requirements, authority={"installed": True, "ruleGranted": False, "executionQualified": False}),
+                       dict(requirements, intent={**requirements["intent"], "count": True}),
+                       dict(requirements, intent={**requirements["intent"], "requestedExpiryUnixMillis": "18446744073709551615"}),
+                       dict(requirements, ceiling={**requirements["ceiling"], "maximumAttempts": 4}),
+                       dict(requirements, intent={**requirements["intent"], "payload": {**requirements["intent"]["payload"], "bytes": ""}})]
+            for value in changed:
+                with self.subTest(value=value), self.assertRaises(ValueError):
+                    package_effect_requirements(root, project, {**files, HTTP_REQUIREMENTS: json.dumps(value).encode()})
+            for raw in (b" " * 8193, b'{"schemaVersion":"one","schemaVersion":"two"}'):
+                with self.assertRaises(ValueError):
+                    package_effect_requirements(root, project, {**files, HTTP_REQUIREMENTS: raw})
+            with self.assertRaises(ValueError):
+                package_effect_requirements(root, project, {**files, "transaction-binding.json": files["transaction-binding.json"] + b" "})
+            with self.assertRaises(ValueError):
+                package_effect_requirements(root, project, {key: value for key, value in files.items() if key != "transaction-binding.json"})
+            self.assertIsNone(package_effect_requirements(root, project, {key: value for key, value in files.items() if key != HTTP_REQUIREMENTS}))
+
+    def test_unknown_effect_and_existing_capture_cannot_replace_original_project(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "source"
+            with self.assertRaisesRegex(ValueError, "unknown Java transaction effect variant"):
+                create(source, "legacy-v1", effect="immediate-http")
+            self.assertFalse(source.exists())
+            create(source, "legacy-v1")
+            original = snapshot(source)
+            with self.assertRaisesRegex(ValueError, "fresh output"):
+                create(source, "legacy-v1", effect="put-once")
+            self.assertEqual(snapshot(source), original)
+
     def test_schema_variants_preserve_resources_business_identity_and_exact_definitions(self):
         with tempfile.TemporaryDirectory() as temporary:
             projects = {variant: snapshot(create(Path(temporary) / variant, variant)) for variant in VARIANTS}

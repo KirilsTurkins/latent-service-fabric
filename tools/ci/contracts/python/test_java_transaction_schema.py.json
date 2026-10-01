@@ -1,10 +1,49 @@
 {
   "cases": [
+    "JavaTransactionSchemaTests.test_put_once_variants_capture_exact_payload_and_package_requirements_without_changing_companion",
+    "JavaTransactionSchemaTests.test_requirements_reject_payload_authority_type_and_original_companion_drift",
     "JavaTransactionSchemaTests.test_schema_variants_preserve_resources_business_identity_and_exact_definitions",
+    "JavaTransactionSchemaTests.test_unknown_effect_and_existing_capture_cannot_replace_original_project",
     "JavaTransactionSchemaTests.test_unknown_profile_existing_capture_and_reader_drift_cannot_create_a_replacement"
   ],
   "guards": {
+    "JavaTransactionSchemaTests.test_put_once_variants_capture_exact_payload_and_package_requirements_without_changing_companion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4dfa6f35bc5f76f04f581afa9edcb97e689c3341c446267f7de7b30add53de19",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaTransactionSchemaTests.test_requirements_reject_payload_authority_type_and_original_companion_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4dfa6f35bc5f76f04f581afa9edcb97e689c3341c446267f7de7b30add53de19",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "JavaTransactionSchemaTests.test_schema_variants_preserve_resources_business_identity_and_exact_definitions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4dfa6f35bc5f76f04f581afa9edcb97e689c3341c446267f7de7b30add53de19",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaTransactionSchemaTests.test_unknown_effect_and_existing_capture_cannot_replace_original_project": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -31,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_schema.py",
-  "reviewReason": "Add source capture, schema identity and no implicit migration replacement cases; guest execution remains separately qualified",
+  "reviewReason": "Preserve both schema cases and all original guards; add three actual captured put-once asset, authority-drift and original-source preservation regressions",
   "schemaVersion": "latent.ci.contracts.v1"
 }
