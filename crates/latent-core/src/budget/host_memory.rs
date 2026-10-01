@@ -40,14 +40,13 @@ impl ActivationBudget {
                 requested: bytes,
             });
         }
-        let count = state.outstanding_reservations.checked_add(1).ok_or(
-            BudgetError::ArithmeticOverflow {
-                dimension: BudgetDimension::MemoryBytes,
-            },
-        )?;
-        state.host_reserved_memory += bytes;
-        state.outstanding_reservations = count;
         if transaction {
+            let count = state.outstanding_reservations.checked_add(1).ok_or(
+                BudgetError::ArithmeticOverflow {
+                    dimension: BudgetDimension::MemoryBytes,
+                },
+            )?;
+            state.outstanding_reservations = count;
             // The transaction host prepays its finite native working set.
             // Preserve that original Phase 4 observation while Phase 3 runtime
             // allocations remain explicitly confirmed after allocation.
@@ -56,6 +55,10 @@ impl ActivationBudget {
                 state.own_memory_peak + state.host_observed_memory + state.child_observed_memory;
             state.consumption.peak_memory_bytes = state.consumption.peak_memory_bytes.max(observed);
         }
+        // Phase 3 physical host ownership is separate from unfinished guest
+        // operations. It must not turn successful stateless completion into an
+        // accounting failure while an actual native owner is still retained.
+        state.host_reserved_memory += bytes;
         Ok(HostMemoryReservation {
             budget: self.clone(),
             bytes,
@@ -90,7 +93,9 @@ impl Drop for HostMemoryReservation {
     fn drop(&mut self) {
         let mut state = self.budget.lock_state();
         state.host_reserved_memory -= self.bytes;
-        state.outstanding_reservations -= 1;
+        if self.budget.profile() == BudgetProfile::Phase4 {
+            state.outstanding_reservations -= 1;
+        }
         if self.confirmed {
             state.host_observed_memory -= self.bytes;
             self.budget.propagate_memory(self.bytes, false);
@@ -150,8 +155,10 @@ mod tests {
         let mut owner = budget.reserve_host_memory(250).unwrap();
         owner.confirm();
         owner.confirm();
+        assert_eq!(budget.outstanding_reservations(), 0);
         budget.observe_peak_memory(600).unwrap();
         let terminal = budget.finalize_at(None, Instant::now());
+        assert!(terminal.violation().is_none());
         assert_eq!(terminal.consumption().peak_memory_bytes, 850);
         assert_eq!(budget.host_memory_bytes(), 250);
         assert!(budget.reserve_host_memory(1).is_err());
