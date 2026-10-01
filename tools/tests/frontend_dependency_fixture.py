@@ -11,7 +11,7 @@ from tools.tests.test_dev_contracts import descriptor
 
 
 class FrontendFixture:
-    def __init__(self, test, language, creator):
+    def __init__(self, test, language, creator, *, native_inputs=None):
         temporary = tempfile.TemporaryDirectory(prefix='lsf-frontend-consumer-')
         test.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
@@ -22,7 +22,9 @@ class FrontendFixture:
         self.language = language
         self.sdk_lock = (self.app / 'sdk-lock.json').read_bytes()
         self.native = b'exact reviewed native input'
-        (self.app / 'native.lock').write_bytes(self.native)
+        selected_native = {'native.lock': self.native, **(native_inputs or {})}
+        for name, raw in selected_native.items():
+            (self.app / name).write_bytes(raw)
         self.tools = self.root / 'tools'; self.tools.mkdir()
         self.tool = self.tools / 'boundary-only-tool'
         self.tool.write_bytes(b'never executed; constructor boundary control only')
@@ -35,7 +37,7 @@ class FrontendFixture:
         (self.library / 'library.txt').write_bytes(b'real captured outside library')
         manifest = {'formatVersion': 1, 'language': language,
             'selection': {'profile': 'selected-construction-boundary-v1'},
-            'nativeLocks': ['app/native.lock'], 'artifacts': [{
+            'nativeLocks': ['app/' + name for name in selected_native], 'artifacts': [{
                 'id': 'outside/unlisted/1.0', 'role': 'application', 'format': 'directory',
                 'mount': 'dependencies/selected', 'source': {'path': str(self.library)},
                 'dependencies': [], 'metadata': {'license': 'MIT'}}], 'transformations': []}
