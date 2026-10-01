@@ -11,6 +11,9 @@ mod component;
 mod fixture;
 #[path = "local_service/load.rs"]
 mod load;
+#[cfg(target_os = "linux")]
+#[path = "local_service/outbound.rs"]
+mod outbound;
 #[path = "local_service/packages.rs"]
 mod packages;
 #[path = "local_service/runtime.rs"]

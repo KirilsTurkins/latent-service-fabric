@@ -20,6 +20,7 @@ application credentials or host key paths.
 | Existing broker behavior | Existing `latent-capabilities` library suite | 125 passing cases, including HTTP/provider audit, cancellation, fair finite queues, delayed physical retirement and exact authority bookkeeping contention |
 | Bounded DNS | `latent-network` real UDP/TCP resolver peers | 3 passing cases: truncated UDP to same explicit TCP resolver, preallocation TCP length rejection and exact special-address policy |
 | Canonical component | Maintained encoded Component Model guest, package/WIT evidence, ordinary Wasmtime backend and actual TCP peer | 6 passing cases: partial owned chunks/EOF, three fresh activations on the same execution cell, oversized byte-list rejection before send, terminal trap/wrong kind/stale resources, root cancellation and policy revocation while a canonical read waits, 256 dormant deployments with zero Stores and socket owners |
+| Signed node execution | Real signatures, SBOM/provenance, enforced package catalog, compiled deployment binding, normal local node admission/manager and actual TCP peers | 4 passing cases: three fresh activations on one execution cell; missing/stale provider binding denied before Store or contact; cancellation acknowledgement retaining original owners followed by actual physical retirement and fresh work; policy revocation at a pending peer barrier before the deadline |
 | Protected node configuration | Normal Linux node configuration loading and derivation, explicit development feature | 3 passing cases: closed input without credential/key-path reflection, exact installed binding scope, protected input and finite exact-address policy before storage or network work |
 | Normal node lifecycle | Protected configuration, ordinary standalone node startup and shutdown | 32 restarts in one maintained case: installation never dials the controlled peer, one prepaid maintenance owner is joined, and physical stream/maintenance owners are zero on each clean shutdown |
 | Authenticated management | Existing capability RPC transport, original broker and actual maintained control future | 45 passing management cases, including additive operator-only stream counters, tenant/caller/spoofed-role denial, actual maintenance join and explicit unavailable status after its weakly observed owner is destroyed |
@@ -52,6 +53,17 @@ future also closes inactive sockets at DNS or idle expiry without another guest
 call. The peer observes actual FIN, a subsequent write retains the typed timeout,
 and the retained facade keeps its original charges until real Drop. Stop handles
 retain maintenance metadata through acknowledgement and actual future destruction.
+
+The signed node cases bind their observed component digest, frozen network WIT,
+binary builders, package source and exact provider configuration before signing.
+They use the existing node composition, admission quotas, cancellation registry,
+provider pools, IoRuntime and Wasmtime engine. Cancellation acknowledgement still
+shows one active activation and retained stream owner. Completion requires the
+peer's FIN/reset, zero actual Stores/instance reservations, cancellation probes,
+broker session/call/result owners and stream I/O/pool owners. Missing or stale
+provider bindings return permission denied before the first Store or peer
+connection. These internal node tests do not replace packaged standalone-node
+operator workflow qualification or ordinary language clients.
 
 Open delivery gates include #737's explicit review, protected node/operator
 end-to-end qualification and live rotation workflow (#739), full adversarial

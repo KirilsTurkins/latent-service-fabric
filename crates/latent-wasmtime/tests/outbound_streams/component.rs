@@ -15,11 +15,14 @@ pub const OPS: [&str; 8] = [
     "close",
     "chunk-bytes",
 ];
+pub fn bytes(port: u16) -> Vec<u8> {
+    bytes_with_contract(port, CONTRACT)
+}
 #[expect(
     clippy::too_many_lines,
     reason = "Finite encoded guest instructions remain in canonical ABI execution order."
 )]
-pub fn bytes(port: u16) -> Vec<u8> {
+pub fn bytes_with_contract(port: u16, contract: &str) -> Vec<u8> {
     let mut component = Component::new();
     let spec = latent_core::PHASE3_HOST_ABI_V5.interface(CAP).unwrap();
     let mut types = ComponentTypeSection::new();
@@ -120,7 +123,7 @@ pub fn bytes(port: u16) -> Vec<u8> {
     instances.export_items([("run", ComponentExportKind::Func, 8)]);
     component.section(&instances);
     let mut exports = ComponentExportSection::new();
-    exports.export(CONTRACT, ComponentExportKind::Instance, 1, None);
+    exports.export(contract, ComponentExportKind::Instance, 1, None);
     component.section(&exports);
     let bytes = component.finish();
     wasmparser::Validator::new_with_features(wasmparser::WasmFeatures::all())
