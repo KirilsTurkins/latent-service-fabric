@@ -168,15 +168,17 @@ impl CommandCompletion {
             return Err((self.host, failure(error)));
         }
         let time = self.time.sample();
-        let result =
-            self.host
-                .store
-                .with_store(StoreIoKind::Read, self.host.retained_bytes, move |store| {
-                    let view = store.snapshot()?;
-                    Ok(CompleteEnvelope::rejection(
-                        &view, self.claim, code, value, time,
-                    ))
-                });
+        let result = self.host.store.with_store_retaining(
+            StoreIoKind::Read,
+            self.host.retained_bytes,
+            Arc::clone(&self.host) as Arc<dyn std::any::Any + Send + Sync>,
+            move |store| {
+                let view = store.snapshot()?;
+                Ok(CompleteEnvelope::rejection(
+                    &view, self.claim, code, value, time,
+                ))
+            },
+        );
         match result {
             Ok(job) => match job.await {
                 Ok(Ok(Ok(envelope))) => {
@@ -210,9 +212,11 @@ async fn publish(
     retirement: AttemptRetirement,
 ) -> CommandCompletionDisposition {
     let authorization = Arc::clone(&host.authorization);
-    let result = host
-        .store
-        .with_store(StoreIoKind::Write, host.retained_bytes, move |store| {
+    let result = host.store.with_store_retaining(
+        StoreIoKind::Write,
+        host.retained_bytes,
+        Arc::clone(&host) as Arc<dyn std::any::Any + Send + Sync>,
+        move |store| {
             Ok(publish_fenced(
                 store,
                 &authorization,
@@ -221,7 +225,8 @@ async fn publish(
                 &control,
                 envelope,
             ))
-        });
+        },
+    );
     let disposition = match result {
         Ok(job) => match job.await {
             Ok(Ok(result)) => result,

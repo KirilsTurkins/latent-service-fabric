@@ -227,8 +227,7 @@ impl NativeTransactionAdmission {
         let result = self
             .owners
             .store
-            .with_store(StoreIoKind::Read, 8192, move |store| {
-                let _retention = retention;
+            .with_store_retaining(StoreIoKind::Read, 8192, retention, move |store| {
                 let view = store.snapshot()?;
                 match latent_state::recovery::require_ready(&view) {
                     Ok(()) => {}
@@ -312,10 +311,13 @@ impl NativeTransactionAdmission {
     ) -> Result<(), PlatformError> {
         let retained_role = Arc::clone(&role);
         let time = role.captured_time();
-        let job = self
-            .owners
-            .store
-            .with_store(StoreIoKind::Write, bytes, move |store| {
+        let keeper: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((Arc::clone(&authorization), Arc::clone(&role)));
+        let job = self.owners.store.with_store_retaining(
+            StoreIoKind::Write,
+            bytes,
+            keeper,
+            move |store| {
                 let view = store.snapshot()?;
                 let authorize = |access: CommandAccess, previous: Option<&CommandRecord>| {
                     let operation = if access == CommandAccess::Replay {
@@ -364,7 +366,8 @@ impl NativeTransactionAdmission {
                     }
                     Err(error) => Err(error),
                 })
-            });
+            },
+        );
         let Ok(job) = job else {
             // No native operation was accepted; the copied input is gone.
             role.retire().map_err(atomic)?;
@@ -375,6 +378,14 @@ impl NativeTransactionAdmission {
             .await
             .map_err(|_| atomic(AtomicError::RecoveryRequired))?
             .map_err(|_| atomic(AtomicError::RecoveryRequired))?;
+        self.record_pending_publication(role, result)
+    }
+
+    fn record_pending_publication(
+        &self,
+        role: Arc<CommandRole>,
+        result: Result<PendingPublication, AtomicError>,
+    ) -> Result<(), PlatformError> {
         let mut state = self.state.lock().map_err(|_| authorization::denied())?;
         match result {
             Ok(PendingPublication::New(claim)) => {
