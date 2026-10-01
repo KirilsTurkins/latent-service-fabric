@@ -1,6 +1,7 @@
 {
   "cases": [
     "AotRecipeHandoffTests.test_missing_preparation_is_not_a_valid_merge",
+    "AotRecipeHandoffTests.test_missing_tests_lane_or_a_foreign_producer_is_rejected",
     "AotRecipeHandoffTests.test_only_aot_selectors_are_exported_from_the_prepared_manifest",
     "AotRecipeHandoffTests.test_preparation_after_tests_is_not_a_valid_merge",
     "AotRecipeHandoffTests.test_same_inventory_reaches_authenticated_preparation_before_tests",
@@ -14,7 +15,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:8548e6fc8e080212fd78b3157952b0edbd11b8ae3f9cbcbf1125ae68abce791a",
+        "module:setup-sha256:b39cb20a94da8322355521d4a9d4d15c3d62dc9ff2e8de056bdd411cc4cb7336",
+        "class:setup-sha256:d1269843a5eb6a4faab14ad640a4716af24800c53ce5787d7cbcea968e4014d8"
+      ],
+      "skipSites": []
+    },
+    "AotRecipeHandoffTests.test_missing_tests_lane_or_a_foreign_producer_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b39cb20a94da8322355521d4a9d4d15c3d62dc9ff2e8de056bdd411cc4cb7336",
         "class:setup-sha256:d1269843a5eb6a4faab14ad640a4716af24800c53ce5787d7cbcea968e4014d8"
       ],
       "skipSites": []
@@ -26,7 +39,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:8548e6fc8e080212fd78b3157952b0edbd11b8ae3f9cbcbf1125ae68abce791a",
+        "module:setup-sha256:b39cb20a94da8322355521d4a9d4d15c3d62dc9ff2e8de056bdd411cc4cb7336",
         "class:setup-sha256:d1269843a5eb6a4faab14ad640a4716af24800c53ce5787d7cbcea968e4014d8"
       ],
       "skipSites": []
@@ -38,7 +51,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:8548e6fc8e080212fd78b3157952b0edbd11b8ae3f9cbcbf1125ae68abce791a",
+        "module:setup-sha256:b39cb20a94da8322355521d4a9d4d15c3d62dc9ff2e8de056bdd411cc4cb7336",
         "class:setup-sha256:d1269843a5eb6a4faab14ad640a4716af24800c53ce5787d7cbcea968e4014d8"
       ],
       "skipSites": []
@@ -50,7 +63,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:8548e6fc8e080212fd78b3157952b0edbd11b8ae3f9cbcbf1125ae68abce791a",
+        "module:setup-sha256:b39cb20a94da8322355521d4a9d4d15c3d62dc9ff2e8de056bdd411cc4cb7336",
         "class:setup-sha256:d1269843a5eb6a4faab14ad640a4716af24800c53ce5787d7cbcea968e4014d8"
       ],
       "skipSites": []
@@ -62,7 +75,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:8548e6fc8e080212fd78b3157952b0edbd11b8ae3f9cbcbf1125ae68abce791a",
+        "module:setup-sha256:b39cb20a94da8322355521d4a9d4d15c3d62dc9ff2e8de056bdd411cc4cb7336",
         "class:setup-sha256:d1269843a5eb6a4faab14ad640a4716af24800c53ce5787d7cbcea968e4014d8"
       ],
       "skipSites": []
@@ -70,6 +83,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_ci_cargo_aot_handoff.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain the historical case floor and add matrix omission, case-parity and current-job AOT producer rejection checks; no skipped coverage is introduced.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
