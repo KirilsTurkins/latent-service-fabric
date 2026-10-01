@@ -201,6 +201,8 @@ impl Fixture {
                 artifacts: catalog.clone(),
                 authorization: Arc::new(crate::management::LocalManagementPolicy),
                 admission: admission.clone(),
+                maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
+                maintenance_clock: Arc::new(FixtureMaintenanceClock),
                 clock: Arc::new(SystemActivationClock),
                 audit: audit.as_ref().map(|(handle, _)| handle.clone()),
             },
@@ -304,7 +306,18 @@ impl Fixture {
         assert_eq!(self.admission.budget.outstanding_reservations(), 0);
     }
 }
-fn binding(publication: PublicationRef, component: ReleaseDigest) -> StateManagementBinding {
+
+struct FixtureMaintenanceClock;
+impl super::super::StateMaintenanceClock for FixtureMaintenanceClock {
+    fn sample(&self) -> Result<latent_commit::atomic::MaintenanceClock, PlatformError> {
+        // Namespace-only fixture cases never manufacture maintenance continuity.
+        Err(unsupported())
+    }
+}
+pub(super) fn binding(
+    publication: PublicationRef,
+    component: ReleaseDigest,
+) -> StateManagementBinding {
     StateManagementBinding {
         publication,
         component,

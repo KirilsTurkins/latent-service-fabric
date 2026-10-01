@@ -87,6 +87,7 @@ enumeration!(AuditControlAction {
     NamespaceDestroy,
     NamespaceRecreate,
     NamespaceInspect,
+    CommandFloorRelease,
     DispatcherInspect,
     DispatcherPause,
     DispatcherResume,

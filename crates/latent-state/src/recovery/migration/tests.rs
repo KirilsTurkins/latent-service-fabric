@@ -588,3 +588,46 @@ fn fixed_migration_refuses_oversized_cell_and_quota_before_durable_stage() {
         assert_eq!(after.guard, before.guard);
     }
 }
+
+#[test]
+fn migration_row_dispatch_preserves_foreign_bytes_and_rejects_malformed_owned_progress() {
+    let f = fixture();
+    let progress = prepare(&f).progress().encode().unwrap();
+    let key = f.request.progress_key().unwrap();
+    AggregateMigrationProgress::validate_row(&key, &progress).unwrap();
+
+    let foreign = RowKey {
+        family: Family::Maintenance,
+        key: b"dispatch-owner-v1\0".to_vec(),
+    };
+    for bytes in [b"LDO\0\x01".as_slice(), b"{}", &progress] {
+        assert_eq!(
+            AggregateMigrationProgress::validate_row(&foreign, bytes),
+            Err(StoreError::UnsupportedFormat)
+        );
+    }
+    let wrong_family = RowKey {
+        family: Family::State,
+        key: key.key.clone(),
+    };
+    assert_eq!(
+        AggregateMigrationProgress::validate_row(&wrong_family, &progress),
+        Err(StoreError::UnsupportedFormat)
+    );
+    for bytes in [
+        b"LDO\0\x01".as_slice(),
+        b"{}",
+        &progress[..progress.len() - 1],
+    ] {
+        assert_eq!(
+            AggregateMigrationProgress::validate_row(&key, bytes),
+            Err(StoreError::Corrupt)
+        );
+    }
+    let mut wrong_identity = key;
+    *wrong_identity.key.last_mut().unwrap() ^= 1;
+    assert_eq!(
+        AggregateMigrationProgress::validate_row(&wrong_identity, &progress),
+        Err(StoreError::Corrupt)
+    );
+}

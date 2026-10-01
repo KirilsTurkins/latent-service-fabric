@@ -103,7 +103,7 @@
       {
         "service": "latent.transaction.v1.TransactionService",
         "source": "api/proto/latent/transaction/v1/transaction.proto",
-        "sourceSha256": "sha256:bd84dd30f70d9281d3ef067b61eece0a56d65f6494d3e6fcb599b79cf0011db3",
+        "sourceSha256": "sha256:4d081ee697fe46ffd2f3f1a89cbf04482a9dc130ac97b6c435309e65b6d1f5fa",
         "operations": [
           {
             "name": "InvokeCommand",
@@ -181,7 +181,7 @@
       {
         "service": "latent.control.v1.StateService",
         "source": "api/proto/latent/control/v1/state.proto",
-        "sourceSha256": "sha256:ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
+        "sourceSha256": "sha256:5883988df1394276ee155ec34ffe946d70326e34b259879f4b714391cd2f9d7c",
         "operations": [
           {
             "name": "MutateNamespace",
@@ -280,7 +280,7 @@
       },
       {
         "source": "api/proto/latent/control/v1/audit.proto",
-        "sourceSha256": "sha256:eb6088943b012ded2e90fe699019d208dbe29feb554d59b4db3281ac2dd0991f"
+        "sourceSha256": "sha256:397c1951f6d92df72389b3321c9c353443bb1e2d64a93d5168c99b407a661c57"
       }
     ],
     "requiredHttpEnvelopes": [

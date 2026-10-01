@@ -39,6 +39,17 @@ pub struct OwnedPolicyDecision {
     require_audit: bool,
 }
 impl OwnedPolicyDecision {
+    /// Original bounded document identities. Observing these revisions cannot
+    /// renew a replaced policy or bypass the retained currentness fence.
+    pub fn policy_revisions(&self) -> impl Iterator<Item = super::CapabilityPolicyRevision<'_>> {
+        self.snapshot.policy_revisions()
+    }
+
+    #[must_use]
+    pub fn binding_revision(&self) -> super::CapabilityPolicyRevision<'_> {
+        self.snapshot.binding_revision()
+    }
+
     #[must_use]
     pub const fn requires_audit(&self) -> bool {
         self.require_audit

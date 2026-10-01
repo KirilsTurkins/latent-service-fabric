@@ -14,6 +14,7 @@ pub(super) struct Access {
     pub caller: CallerScope,
     pub inspect: OwnedPolicyDecision,
     pub mutation: Option<OwnedPolicyDecision>,
+    pub policy_digest: String,
 }
 pub(super) fn validate_binding(value: &StateManagementBinding) -> Result<(), PlatformError> {
     if value.publication.scope.tenant().is_none()
@@ -97,6 +98,11 @@ pub(super) async fn authorize(
         contract::Request::MutateNamespace(value) => {
             Some(original.seal(mutation_operation(value.mutation)?, binding.incarnation)?)
         }
+        contract::Request::MutateState(value)
+            if value.mutation == c::StateMutationKind::ReleaseExpiredCommandFloor as i32 =>
+        {
+            Some(original.seal("namespace-destroy", binding.incarnation)?)
+        }
         _ => None,
     };
     let response_incarnation = if matches!(request, contract::Request::MutateNamespace(value) if value.mutation == c::NamespaceMutationKind::Recreate as i32)
@@ -106,6 +112,15 @@ pub(super) async fn authorize(
         binding.incarnation
     };
     let inspect = original.seal("namespace-inspect", response_incarnation)?;
+    let policy_digest = captured_policy_digest(&inspect);
+    if let contract::Request::MutateState(value) = request {
+        if value.expected_policy_digest != policy_digest {
+            return Err(error(
+                PlatformErrorCode::StateConflict,
+                "state-policy-precondition-changed",
+            ));
+        }
+    }
     if (inspect.requires_audit()
         || mutation
             .as_ref()
@@ -122,7 +137,26 @@ pub(super) async fn authorize(
         caller,
         inspect,
         mutation,
+        policy_digest,
     })
+}
+fn captured_policy_digest(decision: &OwnedPolicyDecision) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hash = Sha256::new();
+    hash.update(b"lsf-state-management-policy-v1\0");
+    let binding = decision.binding_revision();
+    let mut policies: Vec<_> = decision.policy_revisions().collect();
+    policies.sort_by(|left, right| left.id.cmp(right.id));
+    for (kind, row) in
+        std::iter::once((0u8, binding)).chain(policies.into_iter().map(|row| (1u8, row)))
+    {
+        hash.update([kind]);
+        hash.update((row.id.len() as u64).to_le_bytes());
+        hash.update(row.id.as_bytes());
+        hash.update(row.revision.to_le_bytes());
+        hash.update(row.digest.as_bytes());
+    }
+    format!("sha256:{}", super::response::hex(&hash.finalize()))
 }
 struct OriginalAccess<'a> {
     services: &'a StateManagementServices,

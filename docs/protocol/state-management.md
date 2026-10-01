@@ -31,7 +31,8 @@ publication, provider, delegation and result policy after transport preflight.
 ## Explicit namespace operations and recovery
 
 The CLI exposes `state inspect`, `create`, `quiesce`, `retire`, `destroy`,
-`recreate`, `operation` and `entities`. Every command requires `--namespace`,
+`recreate`, `operation`, `entities` and `release-expired-command-floor`.
+Every command requires `--namespace`,
 canonical positive `--incarnation`, and `--authorization-publication`.
 Mutations additionally require the original `--operation-id` and
 `--expected-generation`. Create supplies generation zero and incarnation one;
@@ -60,6 +61,30 @@ disposition and audit acknowledgement independently. A lost response is
 recovered with `state operation --operation-id ORIGINAL` and the original
 namespace selector. The CLI does not generate a replacement operation ID,
 refresh a generation, repeat a mutation or poll silently.
+
+`state release-expired-command-floor` removes one minimal command identity
+after its reviewed result/effect/inbox purge is complete and the namespace is
+retired. It requires the original lowercase 64-digit `--command-id`, original
+`--operation-id`, exact canonical padded base64 `--expected-version` from
+`state inspect`, its `--expected-policy-digest`, and a bounded `--reason`.
+The NV2 view includes the original namespace scope, incarnation, generation,
+schema epoch and recovery epoch. The host checks those exact bytes and both
+current namespace-destroy and namespace-inspect grants at durable acceptance.
+Knowing these fields grants no destructive permission.
+
+The operation runs on the existing reserved recovery writer. Physically live
+readers and namespace handles, stale policy/history, incomplete purge, pending
+work or uncertain storage prevent reclamation. The command floor, its quota
+charge, namespace generation and immutable bounded operation receipt change
+in the same physical batch. Replaying the exact original request returns that
+receipt; substituting a record, reason, view, policy or operation ID cannot
+replace it. This one-floor cleanup does not report namespace destruction.
+
+Recover a lost response with `state operation --operation-id ORIGINAL` and
+the original namespace selector and current authorization publication. The
+lookup seals current inspection permission and preserves the original receipt,
+operator, policy digest, timestamps and before/after versions. Rebinding current
+read permission cannot refresh the original caller's revoked response owner.
 
 ## Command, commit and effect inspection
 

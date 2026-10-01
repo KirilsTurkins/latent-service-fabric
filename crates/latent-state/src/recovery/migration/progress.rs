@@ -1,4 +1,6 @@
-use super::{progress_prefix, schema_ids, AggregateMigrationRequest, PROGRESS_BYTES, RECIPE};
+use super::{
+    progress_prefix, schema_ids, AggregateMigrationRequest, PROGRESS_BYTES, PROGRESS_PREFIX, RECIPE,
+};
 use crate::embedded::{Family, RowKey};
 use crate::{
     embedded::{ExpectedRow, ReadView, StoreError},
@@ -168,6 +170,9 @@ impl AggregateMigrationProgress {
         Ok(progress)
     }
     pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        if key.family != Family::Maintenance || !key.key.starts_with(PROGRESS_PREFIX) {
+            return Err(StoreError::UnsupportedFormat);
+        }
         let p = Self::decode(bytes)?;
         let n = p.source_namespace()?;
         let prefix = progress_prefix(&n.tenant, &n.id, n.version.incarnation)?;

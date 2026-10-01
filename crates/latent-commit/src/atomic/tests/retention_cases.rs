@@ -2,6 +2,7 @@ use super::*;
 use crate::atomic::record::result_row_key;
 
 mod clocks;
+mod compaction;
 mod ownership;
 mod review;
 

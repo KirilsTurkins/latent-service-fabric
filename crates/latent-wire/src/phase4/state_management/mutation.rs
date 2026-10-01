@@ -115,6 +115,22 @@ fn write(
         return Ok(Err(error));
     }
     let decision = access.mutation.as_ref().ok_or(StoreError::Invalid)?;
+    let context = latent_state::namespace::catalog::NamespaceOperationContext {
+        tenant: access
+            .binding
+            .publication
+            .scope
+            .tenant()
+            .ok_or(StoreError::Invalid)?
+            .clone(),
+        actor: format!("{}:{}", access.caller.owner_kind, access.caller.scope),
+        operation_id: request.operation_id.clone(),
+    };
+    let view = engine.snapshot()?;
+    if super::state_receipt::read(&view, &context)?.is_some() {
+        return Ok(Err(namespace_error(NamespaceError::Conflict)));
+    }
+    drop(view);
     let prepared = NamespaceControl::prepare_retained(
         &inner.services.policy,
         decision,
@@ -131,7 +147,13 @@ fn write(
         Ok(value) => value,
         Err(error) => return Ok(Err(error)),
     };
-    let (batch, receipt, replayed, fence) = prepared.into_parts();
+    let (mut batch, receipt, replayed, fence) = prepared.into_parts();
+    batch
+        .expectations
+        .push(latent_state::embedded::ExpectedRow {
+            key: super::state_receipt::key(&context),
+            value: None,
+        });
     if let Err(error) = pending.started() {
         return Ok(Err(error));
     }
