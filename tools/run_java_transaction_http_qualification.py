@@ -76,14 +76,21 @@ def prepare_environment(client, args, work, signed):
     client.evidence.record("fresh-native-clock", clock)
     credential_root = work / "credentials"
     credential_root.mkdir(mode=0o700)
-    credential = credential_root / "put-once-token"
+    token = os.urandom(32).hex().encode()
+    credential = credential_root / "put-once-header"
     with credential.open("xb") as output:
-        output.write(os.urandom(32).hex().encode())
+        # The shared native credential owner injects this exact header value;
+        # it does not invent an authentication scheme from a secret file.
+        output.write(b"Bearer " + token)
     credential.chmod(0o600)
+    peer_token = work / "recipient-token"
+    with peer_token.open("xb") as output:
+        output.write(token)
+    peer_token.chmod(0o600)
     recipient_root, node_root = work / "recipient", work / "node"
     recipient_root.mkdir(mode=0o700)
     node_root.mkdir(mode=0o700)
-    peer = lifecycle.Peer(client, recipient_root, work / "tls", credential, os.urandom(32).hex())
+    peer = lifecycle.Peer(client, recipient_root, work / "tls", peer_token, os.urandom(32).hex())
     try:
         configuration = cfg.configure(node_root, signed, args.aot_compiler, work / "tls", checkpoint,
                                       peer.port, credential)
