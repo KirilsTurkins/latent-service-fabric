@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import os
 import tempfile
+import tarfile
 import unittest
 
 from tools.build_snapshot import SnapshotError, canonical, digest
@@ -39,6 +40,51 @@ def fixture(root: Path, *, package: bool) -> Path:
 
 
 class ResetValidationEchoTests(unittest.TestCase):
+    def test_empty_package_requires_authenticated_retained_legacy_cache_owner(self):
+        for legacy_state in ("absent", "empty", "complete"):
+            with self.subTest(legacy_state=legacy_state), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                if legacy_state == "empty":
+                    (root / "capsules/echo/interface/deps").mkdir(parents=True)
+                elif legacy_state == "complete":
+                    fixture(root, package=False)
+                package = root / "capsules/echo-provenance/wit"
+                package.mkdir(parents=True)
+                dependency = root / "debug/deps/keep.rlib"
+                dependency.parent.mkdir(parents=True)
+                dependency.write_bytes(b"compiled dependency")
+                with self.assertRaises(SnapshotError):
+                    reset_validation_echo(root)
+                self.assertTrue(package.is_dir())
+                self.assertEqual(dependency.read_bytes(), b"compiled dependency")
+                if legacy_state != "absent":
+                    self.assertTrue((root / "capsules/echo").is_dir())
+
+    def test_cache_archive_after_validated_reset_restores_dependencies_without_incomplete_echo_trees(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "target"
+            skeleton = root / "capsules/echo/interface/deps"
+            skeleton.mkdir(parents=True)
+            with self.assertRaises(SnapshotError):
+                reset_validation_echo(root)
+            self.assertTrue(skeleton.is_dir())
+            fixture(root, package=False)
+            fixture(root, package=True)
+            dependency = root / "debug/deps/libthird_party.rlib"
+            dependency.parent.mkdir(parents=True)
+            dependency.write_bytes(b"compiled dependency")
+            self.assertEqual(reset_validation_echo(root), 2)
+            archive = Path(temporary) / "dependency-cache.tar"
+            with tarfile.open(archive, "w") as saved:
+                saved.add(root, arcname="target")
+            restored = Path(temporary) / "restored"
+            with tarfile.open(archive) as saved:
+                saved.extractall(restored, filter="data")
+            self.assertEqual(reset_validation_echo(restored / "target"), 0)
+            self.assertEqual((restored / "target/debug/deps/libthird_party.rlib").read_bytes(), dependency.read_bytes())
+            for name in ("echo", "echo-provenance"):
+                self.assertFalse((restored / "target/capsules" / name).exists())
+
 
     def test_exact_pinned_cache_profile_dependencies_reset_without_touching_other_outputs(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -103,12 +149,18 @@ class ResetValidationEchoTests(unittest.TestCase):
             dependency.parent.mkdir(parents=True)
             dependency.write_bytes(b"compiled dependency")
             owners = [fixture(root, package=package) for package in (False, True)]
-            # Swatinem/rust-cache@6323deb cleanTargetDir recursively removes
-            # regular files outside Cargo profiles, retaining their directories.
+            # The actual pinned cleaner retains exact legacy WIT dependencies;
+            # that verified sibling authenticates the empty package skeleton.
+            from tools.reset_validation_echo import LEGACY_CACHE_WIT
+            originals = Path(__file__).parent / "fixtures/validation_echo_cache"
             for owner in owners:
                 for path in owner.rglob("*"):
                     if path.is_file():
-                        path.unlink()
+                        name = path.relative_to(owner).as_posix()
+                        if owner == owners[0] and name in LEGACY_CACHE_WIT:
+                            path.write_bytes((originals / path.name).read_bytes())
+                        else:
+                            path.unlink()
             self.assertTrue((owners[0] / "interface/deps").is_dir())
             self.assertTrue((owners[1] / "wit").is_dir())
             self.assertEqual(reset_validation_echo(root), 2)
