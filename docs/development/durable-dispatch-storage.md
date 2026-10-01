@@ -71,6 +71,15 @@ cannot overwrite an active or terminal disposition. Qualified retries alone add
 another due row under the same stable effect/payload/provider identity. Unsafe
 retry proofs preserve the actual uncertain receipt.
 
+The fixed provider worker retains its affine `DispatchContext` through actual
+provider cleanup. `accept_with` rechecks the current rule under its short no-I/O
+fence and passes a sealed owned `DispatchGrant` to synchronous reviewed adapter
+admission. It refreshes the credential reference/epoch, narrows ceilings and
+preserves the original deadline. The adapter returns an owned accepted operation
+that starts I/O only when driven after its durable send marker; policy locks are
+released before storage/network I/O. Revocation before admission prevents the
+adapter callback and does not refund the existing physical owner.
+
 Claim also reserves 70 KiB of logical capacity and installs the future history
 row. Every engine writer counts that reserved capacity. Completion replaces the
 actual history placeholder and releases the reservation in the same transaction;
@@ -94,8 +103,8 @@ send/claim restart boundaries, qualified retry, bounded history, policy/expiry,
 clock regression and older-checkpoint rejection. Fixed provider workers and
 standalone node lifecycle remain the ongoing #391 implementation.
 
-Measured on 2026-10-01: all 38 effect tests passed on Windows and the pinned
+Measured on 2026-10-01: all 40 effect tests passed on Windows and the pinned
 Linux Rust 1.97.1 image, with strict all-target/all-feature Clippy on both hosts.
-All 71 state tests and strict Clippy also passed on Linux. This includes the
+All 73 state tests and strict Clippy also passed on Linux. This includes the
 native full-store receipt pressure schedule and the shared engine reservation
 port from `fbe2c8e2`. Exact Linux discovery is registered in the workspace suite.

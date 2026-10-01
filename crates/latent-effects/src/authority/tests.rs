@@ -1,5 +1,61 @@
 use super::*;
 
+#[test]
+fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_under_fence() {
+    let (owner, mut rule, authority) = setup();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    let deadline = context.deadline();
+    rule.policy_revision = 2;
+    rule.credential_epoch = 2;
+    rule.protected_credential_reference = "rotated-secret".into();
+    rule.ceiling.maximum_response_bytes = 128;
+    rule.ceiling.attempt_timeout_millis = 50;
+    owner.publish(rule).unwrap();
+    context
+        .accept_with(&authority, 1, time(102), |grant| {
+            assert_eq!(grant.effect(), authority.link().effect);
+            assert_eq!(grant.attempt(), 1);
+            assert_eq!(grant.scope(), authority.scope());
+            assert_eq!(grant.profile(), authority.profile());
+            assert_eq!(grant.credential_epoch(), 2);
+            assert_eq!(grant.protected_credential_reference(), "rotated-secret");
+            assert_eq!(grant.ceiling().maximum_response_bytes, 128);
+            assert!(grant.deadline() <= deadline);
+            assert!(matches!(
+                owner.0.state.try_lock(),
+                Err(std::sync::TryLockError::WouldBlock)
+            ));
+        })
+        .unwrap();
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    context.retire().unwrap();
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
+#[test]
+fn revocation_between_claim_and_adapter_acceptance_prevents_io_without_refunding_physical_owner() {
+    let (owner, mut rule, authority) = setup();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    assert_eq!(
+        context.accept_with(&authority, 2, time(102), |_| panic!(
+            "wrong attempt accepted"
+        )),
+        Err(AuthorityError::Invalid)
+    );
+    rule.policy_revision = 2;
+    rule.enabled = false;
+    owner.publish(rule).unwrap();
+    assert_eq!(
+        context.accept_with(&authority, 1, time(103), |_| panic!(
+            "revoked adapter accepted"
+        )),
+        Err(AuthorityError::PolicyBlocked)
+    );
+    assert_eq!(owner.owners().unwrap().physical, 1);
+    context.retire().unwrap();
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
 fn rule() -> EffectRule {
     EffectRule {
         scope: EffectScope {
