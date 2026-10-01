@@ -10,7 +10,7 @@ import tomllib
 
 from tools import c_capsule_build, c_capsule_project, java_capsule_build, java_capsule_project, rust_capsule_build, rust_capsule_project
 from tools.dotnet_guest import build as dotnet_build, project as dotnet_project
-from tools import go_capsule_build, go_capsule_project, guest_compatibility_build
+from tools import go_capsule_build, go_capsule_project
 from tools.typescript_guest import build as typescript_build, project as typescript_project
 from tools.dev_distribution import file_digest
 from tools.dev_workflow import paths, project, scenarios, snapshot, tool_inventory
@@ -116,7 +116,6 @@ def recipe(payload: Path, language: str) -> None:
     names = {*owner.RECIPE, "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
              "tools/dev_workflow/__init__.py", "tools/dev_workflow/common.py", "tools/dev_workflow/paths.py",
              "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"}
-    names.add(guest_compatibility_build.HOST_MANIFESTS[HOST_ABI])
     if language in {"java", "dotnet", "go", "typescript"}:
         names.add("tools/dev_managed_tools.py")
     for name in sorted(names):
