@@ -241,6 +241,10 @@ async fn committed_presend_restart_advances_physical_epoch_without_changing_requ
             .await
             .unwrap(),
     );
+    fixture
+        .store
+        .bind_native_capacity(&fixture.native_capacity)
+        .unwrap();
     fixture.start(false, Some((1, 100))).await;
     let record = fixture
         .settled(&effect, Disposition::ProviderAcknowledged)

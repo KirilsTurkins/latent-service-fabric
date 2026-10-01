@@ -3,6 +3,7 @@ use super::{
     client::ClientCore, Arc, AtomicBool, AtomicUsize, Charge, Inner, Instant, Kind, Ordering,
     PlatformError, ProviderClient, ProviderPools,
 };
+use std::future::Future;
 use std::time::Duration;
 
 pub struct ProviderMaintenance {
@@ -25,6 +26,8 @@ pub struct MaintenanceRequest {
 }
 struct Request {
     maintenance: Arc<Maintenance>,
+    remaining_operations: AtomicUsize,
+    _memory: Option<Charge>,
 }
 impl Drop for Request {
     fn drop(&mut self) {
@@ -79,13 +82,40 @@ impl ProviderPools {
 }
 impl ProviderMaintenance {
     pub fn begin_request(&self) -> Result<MaintenanceRequest, PlatformError> {
+        self.begin_owned_request(1, None)
+    }
+
+    pub(super) fn begin_deferred_request(
+        &self,
+        maximum_operations: usize,
+        memory_bytes: usize,
+    ) -> Result<MaintenanceRequest, PlatformError> {
+        if !(1..=16).contains(&maximum_operations) || !(4096..=1024 * 1024).contains(&memory_bytes)
+        {
+            return Err(super::denied());
+        }
+        self.begin_owned_request(maximum_operations, Some(memory_bytes))
+    }
+
+    fn begin_owned_request(
+        &self,
+        maximum_operations: usize,
+        memory_bytes: Option<usize>,
+    ) -> Result<MaintenanceRequest, PlatformError> {
         self.inner.check()?;
+        // The actual request and every physical connection clone retain this
+        // prepaid buffer charge. Dropping a response cannot refund a live socket.
+        let memory = memory_bytes
+            .map(|bytes| self.inner.owner.quotas.acquire(Kind::Metadata, bytes))
+            .transpose()?;
         self.inner
             .active
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .map_err(|_| super::busy())?;
         let request = Request {
             maintenance: self.inner.clone(),
+            remaining_operations: AtomicUsize::new(maximum_operations),
+            _memory: memory,
         };
         self.inner
             .remaining
@@ -118,6 +148,31 @@ impl MaintenanceRequest {
     #[must_use]
     pub fn deadline(&self) -> Instant {
         self.inner.maintenance.deadline
+    }
+
+    pub(super) fn begin_operation(&self) -> Result<(), PlatformError> {
+        self.checkpoint()?;
+        self.inner
+            .remaining_operations
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| n.checked_sub(1))
+            .map_err(|_| super::capacity())?;
+        Ok(())
+    }
+
+    pub(super) async fn wait_for<F: Future>(&self, future: F) -> Result<F::Output, PlatformError> {
+        tokio::pin!(future);
+        loop {
+            let changed = self.inner.maintenance.owner.changed.notified();
+            tokio::pin!(changed);
+            changed.as_mut().enable();
+            self.checkpoint()?;
+            tokio::select! {
+                biased;
+                () = &mut changed => {},
+                () = tokio::time::sleep_until(tokio::time::Instant::from_std(self.deadline())) => self.checkpoint()?,
+                result = &mut future => { self.checkpoint()?; return Ok(result); }
+            }
+        }
     }
     pub(super) fn check_client(&self, client: &Arc<ClientCore>) -> Result<(), PlatformError> {
         if !Arc::ptr_eq(client, &self.inner.maintenance.client) {

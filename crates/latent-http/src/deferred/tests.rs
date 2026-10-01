@@ -4,6 +4,7 @@ mod campaign;
 mod endpoint;
 mod fixture;
 mod locks;
+mod lookup;
 mod namespace;
 mod proxy;
 

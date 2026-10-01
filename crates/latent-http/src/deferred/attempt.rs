@@ -6,7 +6,7 @@ use crate::{HttpError, HttpProvider};
 use latent_capabilities::broker::pools::DeferredRequest;
 use latent_core::transaction_contract::Value;
 use latent_effects::{
-    authority::AuthorityError,
+    authority::{AuthorityError, DispatchPurpose},
     dispatch::{AttemptIdentity, AttemptReceipt, Disposition, RetryProof},
     runtime::{
         AdapterOutcome, EffectTimeSource, ProviderConfirmation, ProviderReconciliationOutcome,
@@ -63,7 +63,9 @@ impl AcceptedOperation {
         let reason = match outcome.receipt.reason.as_str() {
             "http-lookup-absent" => ProviderReconciliationReason::NotFound,
             "http-idempotency-conflict" => ProviderReconciliationReason::Conflict,
-            "http-lookup-expired" => ProviderReconciliationReason::Expired,
+            "http-lookup-expired" | "http-original-deadline-expired" => {
+                ProviderReconciliationReason::Expired
+            }
             _ => ProviderReconciliationReason::Ambiguous,
         };
         ProviderReconciliationOutcome::Uncertain(reason)
@@ -154,10 +156,11 @@ impl AcceptedOperation {
             return Err(HttpError::PermissionDenied);
         }
         if time.unix_millis >= self.horizon
-            || self
-                .attempt
-                .retry_horizon_millis()
-                .is_some_and(|horizon| time.unix_millis >= horizon)
+            || (self.request.grant().purpose() == DispatchPurpose::Execute
+                && self
+                    .attempt
+                    .retry_horizon_millis()
+                    .is_some_and(|horizon| time.unix_millis >= horizon))
         {
             return Err(HttpError::DeadlineExceeded);
         }
@@ -197,6 +200,11 @@ impl AcceptedOperation {
             Ok(Answer::Absent) => (Disposition::Uncertain, "http-lookup-absent", None),
             Ok(Answer::Conflict) => (Disposition::Uncertain, "http-idempotency-conflict", None),
             Ok(Answer::Expired) => (Disposition::Uncertain, "http-lookup-expired", None),
+            Err(HttpError::DeadlineExceeded)
+                if self.request.grant().purpose() == DispatchPurpose::ReconcileOnly =>
+            {
+                (Disposition::Uncertain, "http-lookup-expired", None)
+            }
             Err(_) if possible => (Disposition::Uncertain, "http-reply-unknown", None),
             Err(HttpError::PermissionDenied) => (
                 Disposition::PolicyBlocked,
