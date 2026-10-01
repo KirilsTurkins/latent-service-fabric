@@ -237,6 +237,52 @@ class ManagedCompilerInputs(unittest.TestCase):
                 pack({"compiler": inputs}, other)
 
 
+class DotnetRuntimeDistribution(unittest.TestCase):
+    def installed(self, root):
+        from tools.dotnet_guest.runtime import ADAPTERS
+
+        source = root / "installed"
+        source.mkdir()
+        for name in ("packages", "package-hash", "package-hash-source"):
+            (source / name).mkdir()
+            (source / name / "input").write_bytes(name.encode())
+        for name in ("runtime-inputs.json", "wasi-sdk.json", *(binary for _example, binary in ADAPTERS.values())):
+            (source / name).write_bytes(name.encode())
+        return source
+
+    def test_all_three_adapters_survive_actual_distribution_pack_and_private_unpack(self):
+        from tools.dev_managed_distribution import pack, retain_dotnet_support
+        from tools.dev_managed_tools import unpack
+        from tools.dotnet_guest.runtime import ADAPTERS
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = self.installed(root)
+            retained, sdk = root / "retained", root / "sdk"
+            retain_dotnet_support(source, retained)
+            sdk.mkdir()
+            record = pack({"tools": retained}, sdk)
+            target = unpack(sdk, root / "attempt", lambda: None)
+            for _example, filename in ADAPTERS.values():
+                path = "tools/" + filename
+                self.assertIn(path, {row["path"] for row in record["files"]})
+                self.assertEqual((target / path).read_bytes(), filename.encode())
+                self.assertEqual((source / filename).read_bytes(), filename.encode())
+            self.assertEqual(len(ADAPTERS), 3)
+
+    def test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published(self):
+        from tools.dev_managed_distribution import retain_dotnet_support
+
+        for filename in ("activation-runtime.wasm", "http-runtime.wasm"):
+            with self.subTest(filename=filename), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = self.installed(root)
+                (source / filename).unlink()
+                with self.assertRaises(FileNotFoundError):
+                    retain_dotnet_support(source, root / "retained")
+                self.assertFalse((root / "managed.zip").exists())
+
+
 class NativeDifferential(unittest.TestCase):
     def report(self, operating_system):
         applications = {}

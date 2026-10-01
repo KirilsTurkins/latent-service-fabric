@@ -145,6 +145,17 @@ def pack(roots: dict[str, Path], sdk: Path) -> dict:
     return value
 
 
+def retain_dotnet_support(installed: Path, retained: Path) -> None:
+    """Retain every source-bound adapter used by the isolated compiler recipe."""
+    from tools.dotnet_guest.runtime import ADAPTERS
+
+    retained.mkdir(mode=0o700)
+    for name in ("packages", "package-hash", "package-hash-source"):
+        shutil.copytree(installed / name, retained / name)
+    for name in ("runtime-inputs.json", "wasi-sdk.json", *(binary for _example, binary in ADAPTERS.values())):
+        shutil.copyfile(installed / name, retained / name)
+
+
 def prepare(payload: Path, output: Path, language: str, download) -> dict:
     require(language in {"java", "dotnet"}, "managed-distribution-language")
     stage = output / "managed-source"
@@ -171,11 +182,7 @@ def prepare(payload: Path, output: Path, language: str, download) -> dict:
             os.environ["PATH"] = str(roots["dotnet"]) + os.pathsep + os.environ["PATH"]
             installed = install(output / "managed-dependencies", roots["wasi-sdk"])
             retained = stage / "tools"
-            retained.mkdir(mode=0o700)
-            for name in ("packages", "package-hash", "package-hash-source"):
-                shutil.copytree(installed / name, retained / name)
-            for name in ("runtime.wasm", "runtime-inputs.json", "wasi-sdk.json"):
-                shutil.copyfile(installed / name, retained / name)
+            retain_dotnet_support(installed, retained)
             roots["tools"] = retained
         value = pack(roots, payload / "sdk")
         # Full upstream notices, NuGet archives and Maven dependency metadata

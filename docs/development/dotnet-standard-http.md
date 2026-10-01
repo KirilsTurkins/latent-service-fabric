@@ -5,7 +5,7 @@ identities to the existing typed LSF streaming HTTP capability. It is developmen
 work for [#693](https://github.com/KirilsTurkins/latent-service-fabric/issues/693)
 and the shared runtime work in
 [#680](https://github.com/KirilsTurkins/latent-service-fabric/issues/680).
-Actual component compilation, ordinary default-client execution and complete
+Actual NativeAOT composition, ordinary default-client execution and complete
 acceptance qualification remain pending. The source does not establish a
 supported `HttpClient` or default ThreadPool release profile.
 
@@ -105,6 +105,18 @@ authority/version/capture controls. The pinned WIT generator parses all adapter
 worlds and emits their exact traits. Rust formatting and source checks establish
 source validity only. No local heavy NativeAOT, Wasm Rust or node qualification
 was run for these new adapter bytes during the shared disk-capacity pause.
-CI installation now requests all three actual `wasm32-unknown-unknown` builds;
-those results and exact-head component/node evidence must be reviewed before
-delivery or issue closure.
+The first remote installation for source `950f371a15dbbdee882a840c3bab6d104a7fbbfd`
+tested merge `f828493a114343584a541c8155d572cf39b45de6` and compiled all three
+actual `wasm32-unknown-unknown` adapters with the pinned locked recipe. The
+retained `INSTALL-COMPLETE.json` records successful Rust compilation and
+`wasm-tools component new` for `closed`, `runtime` and `http`. The
+[actual job and retained build artifact](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36816029612/job/110221158396)
+then failed before application compilation because the developer distribution
+copied only the original adapter. That failed attempt remains evidence; it is
+not a default-client or successful composition receipt.
+
+The distribution now retains every adapter named by the same profile table,
+alongside its runtime source inventory. Two actual pack/private-unpack and
+missing-adapter controls pass without changing any existing execution/skip
+guard or compiler budget. Fresh exact-source NativeAOT, composition and node
+results still require review before delivery or issue closure.
