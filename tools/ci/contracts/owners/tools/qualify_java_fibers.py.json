@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all four reference-JDK modes and existing locked Throwable/TimeUnit controls; verify the native owner frames through actual locked plugin ordering and maintained async lowering, including platform-first rejection",
+  "reviewReason": "Retain all prior native pair and ordering obligations; require actual pinned coroutine lowering with original entry-layout negatives for owned waits, join and monitor acquisitions",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dc9f23750ffd5ccf8afc973e27b53845c6720f181658f7e74d67a94bb33694eb"
+  "sha256": "b77d041e7c358eb195e5a660ac7ad5450d020ba1ea3075a458345fd7dae42b2d"
 }

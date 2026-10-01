@@ -99,7 +99,7 @@ final class WaitContinuations {
             var nanos = program.createVariable();
             var call = invoke(SUPPORT, "ownedWait", OBJECT_TYPE, ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
             call.setArguments(object, millis, nanos);
-            var block = program.createBasicBlock();
+            var block = ContinuationProgram.body(program);
             block.add(call);
             block.add(new ExitInstruction());
             waiting.getModifiers().remove(ElementModifier.NATIVE);
@@ -116,7 +116,7 @@ final class WaitContinuations {
             var call = invoke(OBJECT, "lsfOwnedWait", ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
             call.setInstance(object);
             call.setArguments(millis, nanos);
-            var block = program.createBasicBlock();
+            var block = ContinuationProgram.body(program);
             block.add(call);
             block.add(new ExitInstruction());
             method.setProgram(program);

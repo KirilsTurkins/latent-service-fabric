@@ -165,11 +165,15 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
                 "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
                 "actual-platform-order;async-lowered-owned-pairs;platform-first-negative;"
-                "shape-and-repeat-negatives;application-identity\n")]
+                "shape-and-repeat-negatives;application-identity;"
+                "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative\n")]
             report = fibers.wait_frame_model_control(compiler, root / "model")
             self.assertEqual(report["nativeCallbackPairs"], 2)
             self.assertEqual(report["pluginOrder"], ["runtime", "platform"])
             self.assertEqual(report["asyncLoweredOwnedPairs"], 2)
+            self.assertEqual(report["coroutineWrappers"], 6)
+            self.assertEqual(report["coroutineMonitors"], 2)
+            self.assertEqual(report["coroutineNativePairs"], 2)
             self.assertEqual(len(report["jarDigests"]), 10)
             compile_call, model_call = compiler.run.call_args_list
             self.assertEqual(compile_call.args[:3], ("wait-frame-model-compile", "javac", "-proc:none"))
@@ -179,6 +183,8 @@ class WaitFrameModelIntegrity(unittest.TestCase):
                 "fibers/conformance/compiler/WaitFramePluginOrder.java",
                 "fibers/conformance/compiler/WaitFrameModelControl.java")))
             self.assertIn(compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+                          compile_call.args)
+            self.assertIn(compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java",
                           compile_call.args)
             self.assertEqual(model_call.args[-1], "dev.latent.guest.runtime.compiler.WaitFrameModelControl")
 
@@ -198,6 +204,18 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
             compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
                 "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "shape-and-repeat-negatives;application-identity\n")]
+            with self.assertRaisesRegex(ValueError, "wait frame model control did not complete"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+    def test_async_pair_receipt_without_actual_coroutine_lowering_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
+                "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "actual-platform-order;async-lowered-owned-pairs;platform-first-negative;"
                 "shape-and-repeat-negatives;application-identity\n")]
             with self.assertRaisesRegex(ValueError, "wait frame model control did not complete"):
                 fibers.wait_frame_model_control(compiler, root / "model")

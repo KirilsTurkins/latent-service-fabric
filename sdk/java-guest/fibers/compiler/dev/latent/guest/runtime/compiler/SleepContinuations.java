@@ -36,7 +36,7 @@ final class SleepContinuations {
         call.setType(InvocationType.SPECIAL);
         call.setMethod(new MethodReference(cls, name, signature));
         call.setArguments(arguments);
-        var block = program.createBasicBlock();
+        var block = ContinuationProgram.body(program);
         block.add(call);
         block.add(new ExitInstruction());
         method.setProgram(program);

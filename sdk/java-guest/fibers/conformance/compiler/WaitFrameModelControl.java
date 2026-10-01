@@ -3,17 +3,27 @@ package dev.latent.guest.runtime.compiler;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
 import org.teavm.classlib.impl.ClasslibSubstitutionPolicy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
+import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.util.ModelUtils;
+import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.parsing.ClasspathResourceProvider;
 import org.teavm.parsing.substitution.DefaultSubstituteClassNameMapping;
@@ -25,6 +35,8 @@ public final class WaitFrameModelControl {
     private static final String ASYNC = "org.teavm.interop.Async";
     private static final ValueType CALLBACK = ValueType.object("org.teavm.interop.AsyncCallback");
     private static final String SUPPORT = "dev.latent.guest.runtime.Monitors";
+    private static final MethodReference SUSPEND = new MethodReference("org.teavm.runtime.Fiber", "suspend",
+        ValueType.object("org.teavm.runtime.Fiber$AsyncCall"), ValueType.object("java.lang.Object"));
 
     private static void require(boolean value, String reason) {
         if (!value) throw new AssertionError(reason);
@@ -76,7 +88,8 @@ public final class WaitFrameModelControl {
         return generated;
     }
 
-    private static void loweredPair(ClassHolder cls, MethodDescriptor original, String rawName, String hook,
+    private static void loweredPair(ClassReaderSource source, ClassHolder cls, MethodDescriptor original,
+                                    String rawName, String hook,
                                     ValueType... wrapperArguments) {
         var nativeEntry = cls.getMethod(new MethodDescriptor(rawName, original.getSignature()));
         var generated = lowerAsync(cls);
@@ -104,6 +117,107 @@ public final class WaitFrameModelControl {
         }
         require(callbacks == 1, "actual-generated-owned-callback-target");
         call(cls.getMethod(original), new MethodReference(SUPPORT, hook, wrapperArguments));
+        coroutine(source, nativeEntry, SUSPEND, false);
+    }
+
+    private static Program withoutEntry(Program program) {
+        var original = ProgramUtils.copy(program);
+        var entry = original.basicBlockAt(0);
+        var body = original.basicBlockAt(1);
+        require(entry.instructionCount() == 1 && entry.getFirstInstruction() instanceof JumpInstruction jump
+                && jump.getTarget() == body, "empty-coroutine-entry");
+        entry.removeAllInstructions();
+        entry.addAll(ProgramUtils.copyInstructions(body.getFirstInstruction(), body.getLastInstruction(), original));
+        original.deleteBasicBlock(1);
+        original.pack();
+        return original;
+    }
+
+    private static Program coroutine(ClassReaderSource source, MethodHolder method, MethodReference target,
+                                     boolean originalNegative) {
+        var program = method.getProgram();
+        require(program != null && program.basicBlockCount() >= 2, "resumable-body-beyond-entry");
+        var entry = program.basicBlockAt(0);
+        require(entry.instructionCount() == 1 && entry.getFirstInstruction() instanceof JumpInstruction jump
+                && jump.getTarget() == program.basicBlockAt(1), "maintained-coroutine-entry-convention");
+        var targets = target == null ? Set.<MethodReference>of() : Set.of(target);
+        if (originalNegative) {
+            var original = withoutEntry(program);
+            try {
+                new CoroutineTransformation(source, targets, true).apply(original, method.getReference());
+                throw new AssertionError("original-first-block-suspension-accepted");
+            } catch (ArrayIndexOutOfBoundsException expected) {
+                require(expected.getStackTrace()[0].getClassName().equals("org.teavm.model.util.LivenessAnalyzer"),
+                        "exact-original-coroutine-liveness-failure");
+            }
+        }
+        var lowered = ProgramUtils.copy(program);
+        new CoroutineTransformation(source, targets, true).apply(lowered, method.getReference());
+        require(lowered.basicBlockCount() > program.basicBlockCount(), "actual-coroutine-split");
+        int resumptions = 0;
+        int calls = 0;
+        for (var block : lowered.getBasicBlocks()) for (var instruction : block) {
+            if (instruction instanceof SwitchInstruction states) resumptions += states.getEntries().size();
+            if (instruction instanceof InvokeInstruction invoke && invoke.getMethod().equals(target)) calls++;
+        }
+        require(resumptions == 1 && (target == null || calls == 1), "one-original-resumable-operation");
+        return lowered;
+    }
+
+    private static void continuationWrappers(ClassReaderSource source, ClassHolder thread, ClassHolder object) {
+        var hooks = new ClassHolder(SUPPORT);
+        var rawSleep = new MethodHolder("rawSleep", ValueType.LONG, ValueType.VOID);
+        var rawWait = new MethodHolder("rawWait", ValueType.object("java.lang.Object"),
+            ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
+        rawSleep.getModifiers().add(ElementModifier.STATIC);
+        rawWait.getModifiers().add(ElementModifier.STATIC);
+        hooks.addMethod(rawSleep);
+        hooks.addMethod(rawWait);
+        SleepContinuations.transform(hooks);
+        WaitContinuations.transform(hooks);
+        var join = thread.getMethod(new MethodDescriptor("join", ValueType.LONG, ValueType.INTEGER, ValueType.VOID));
+        require(join != null && join.getProgram() != null, "actual-standard-join-method");
+        RuntimePlugin.threadMethod(join, join.getProgram());
+        var methods = List.of(thread.getMethod(new MethodDescriptor("sleep", ValueType.LONG, ValueType.VOID)),
+            thread.getMethod(new MethodDescriptor("sleep", ValueType.LONG, ValueType.INTEGER, ValueType.VOID)),
+            object.getMethod(new MethodDescriptor("waitImpl", ValueType.LONG, ValueType.INTEGER, ValueType.VOID)),
+            rawSleep, rawWait, join);
+        for (var method : methods) {
+            require(method.getProgram().basicBlockCount() == 2, "two-block-owned-wrapper");
+            MethodReference target = null;
+            for (var instruction : method.getProgram().basicBlockAt(1)) {
+                if (instruction instanceof InvokeInstruction invoke) {
+                    require(target == null, "one-wrapper-operation");
+                    target = invoke.getMethod();
+                }
+            }
+            require(target != null, "resumable-wrapper-operation-retained");
+            coroutine(source, method, target, true);
+        }
+    }
+
+    private static void synchronizedContinuations(ClassReaderSource source) {
+        for (boolean isStatic : List.of(false, true)) {
+            var cls = new ClassHolder("outside.application.MonitorEntry");
+            var method = new MethodHolder("run", ValueType.VOID);
+            cls.addMethod(method);
+            method.getModifiers().add(ElementModifier.SYNCHRONIZED);
+            if (isStatic) method.getModifiers().add(ElementModifier.STATIC);
+            var program = new Program();
+            program.createVariable();
+            program.createBasicBlock().add(new ExitInstruction());
+            method.setProgram(program);
+            SynchronizedMethods.lower(cls.getName(), method);
+            require(method.getProgram().basicBlockCount() == 4, "monitor-acquisition-outside-protected-body");
+            var lowered = coroutine(source, method, null, true);
+            int acquisitions = 0;
+            int releases = 0;
+            for (var block : lowered.getBasicBlocks()) for (var instruction : block) {
+                if (instruction instanceof MonitorEnterInstruction) acquisitions++;
+                if (instruction instanceof MonitorExitInstruction) releases++;
+            }
+            require(acquisitions == 1 && releases == 2, "original-normal-and-exception-monitor-release");
+        }
     }
 
     public static void main(String[] arguments) {
@@ -155,8 +269,10 @@ public final class WaitFrameModelControl {
         catch (IllegalStateException expected) {
             require(expected.getMessage().equals("unreviewed-maintained-monitor-handler"), "closed-repeated-shape");
         }
-        loweredPair(thread, sleep, "lsfOwnedSleep", "ownedSleep", ValueType.LONG, ValueType.VOID);
-        loweredPair(object, wait, "lsfOwnedWait", "ownedWait", ValueType.object("java.lang.Object"),
+        continuationWrappers(source, thread, object);
+        synchronizedContinuations(source);
+        loweredPair(source, thread, sleep, "lsfOwnedSleep", "ownedSleep", ValueType.LONG, ValueType.VOID);
+        loweredPair(source, object, wait, "lsfOwnedWait", "ownedWait", ValueType.object("java.lang.Object"),
                     ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
         var unrelated = new ClassHolder("outside.application.Thread");
         SleepContinuations.transform(unrelated);
@@ -164,6 +280,7 @@ public final class WaitFrameModelControl {
         require(unrelated.getMethods().isEmpty(), "application-identity-preserved");
         System.out.println("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;real-native-callback-pairs;"
             + "resumed-java-frame-owners;throws-and-standard-owners;actual-platform-order;"
-            + "async-lowered-owned-pairs;platform-first-negative;shape-and-repeat-negatives;application-identity");
+            + "async-lowered-owned-pairs;platform-first-negative;shape-and-repeat-negatives;application-identity;"
+            + "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative");
     }
 }

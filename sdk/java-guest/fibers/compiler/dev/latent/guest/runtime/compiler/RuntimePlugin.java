@@ -124,7 +124,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
         if (normalized != cls) throw new IllegalStateException("unexpected-owned-runtime-class-alias");
     }
 
-    private static void threadMethod(MethodHolder method, Program program) {
+    static void threadMethod(MethodHolder method, Program program) {
         if (method.getName().equals("start") && method.parameterCount() == 0) {
             var admission = call("starting", ValueType.object("java.lang.Thread"), ValueType.VOID);
             admission.setArguments(program.variableAt(0));
@@ -155,7 +155,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
             var self = replacement.createVariable();
             var millis = replacement.createVariable();
             var nanos = replacement.createVariable();
-            var block = replacement.createBasicBlock();
+            var block = ContinuationProgram.body(replacement);
             var join = call("join", ValueType.object("java.lang.Thread"), ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
             join.setArguments(self, millis, nanos);
             block.add(join);

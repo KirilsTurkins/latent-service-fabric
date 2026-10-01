@@ -96,6 +96,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
                "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
@@ -109,10 +110,12 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
                           "dev.latent.guest.runtime.compiler.WaitFrameModelControl").strip()
     expected = ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;real-native-callback-pairs;"
                 "resumed-java-frame-owners;throws-and-standard-owners;actual-platform-order;"
-                "async-lowered-owned-pairs;platform-first-negative;shape-and-repeat-negatives;application-identity")
+                "async-lowered-owned-pairs;platform-first-negative;shape-and-repeat-negatives;application-identity;"
+                "coroutine-wrappers=6;coroutine-monitors=2;coroutine-native-pairs=2;entry-layout-negative")
     if result != expected: raise ValueError("Java wait frame model control did not complete")
     return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2,
-            "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2, "jarDigests": identities}
+            "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2,
+            "coroutineWrappers": 6, "coroutineMonitors": 2, "coroutineNativePairs": 2, "jarDigests": identities}
 
 
 def recipe_inputs() -> dict[str, str]:

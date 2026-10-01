@@ -167,6 +167,22 @@ method retains the Java frame that closes its leases. This control passed on
 host JDK 25.0.3. Pinned component compilation and the twelve normal signed
 invocations remain pending after this ordering repair.
 
+The next pinned rebuild from source `897695ae` passed all 72 SDK helpers and
+all twelve original reference-JDK results, then failed in the maintained
+coroutine transform while reading its liveness table. Its stack trace and failed
+compiler project are retained. The actual locked transform reproduces the same
+indexing failure when an SDK wrapper or generated monitor acquisition can
+suspend in basic block zero. The SDK now follows the maintained async processor's
+empty-entry jump convention: the operation stays in a separate body block,
+while monitor acquisition remains outside the protected user body. The model
+control runs the unchanged pinned coroutine transform on all six sleep, wait,
+raw-hook and join wrappers, both instance/static monitor entries, and both
+maintained native async pairs. It verifies one resumption and one original
+operation, retains both normal and exceptional monitor releases, and reproduces
+the rejected former layout. This metadata control passed on host JDK 25.0.3;
+fresh pinned component compilation and all twelve normal signed invocations
+remain required for the ownership repair.
+
 The last attempted expanded executor component passed its thread-only mode but
 failed in its signed executor mode with a closed host `resource-exhausted` cause
 ([retained CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36811904043)).
