@@ -380,5 +380,54 @@ class CompilerDownloadBounds(unittest.TestCase):
             self.assertEqual(opened.call_count, 1)
 
 
+class SelectedRecipeImports(unittest.TestCase):
+    def stage(self, language):
+        from tools.dev_tool_distribution import recipe
+        owned = tempfile.TemporaryDirectory()
+        self.addCleanup(owned.cleanup)
+        payload = Path(owned.name) / "payload"
+        payload.mkdir()
+        recipe(payload, language)
+        return payload / "recipe"
+
+    def load(self, staged, module):
+        import subprocess
+        script = """import importlib, pathlib, sys
+root = pathlib.Path(sys.argv[1]).resolve()
+sys.path.insert(0, str(root))
+adapter = importlib.import_module('tools.dev_guest_recipe')
+owner = importlib.import_module(sys.argv[2])
+shared = importlib.import_module('tools.rust_capsule_build')
+assert owner.package_inputs is shared.package_inputs
+assert callable(adapter.compile_managed) and callable(owner.build)
+for name, loaded in tuple(sys.modules.items()):
+    if name.startswith('tools.') and getattr(loaded, '__file__', None):
+        assert pathlib.Path(loaded.__file__).resolve().is_relative_to(root), name
+print('selected-recipe-imports-owned')
+"""
+        return subprocess.run([sys.executable, "-I", "-B", "-c", script, str(staged), module],
+                              cwd=staged.parent, stdin=subprocess.DEVNULL, capture_output=True,
+                              timeout=30, check=False)
+
+    def test_all_six_actual_selected_recipes_import_without_checkout_fallback(self):
+        modules = {"rust": "tools.rust_capsule_build", "c": "tools.c_capsule_build",
+                   "java": "tools.java_capsule_build", "dotnet": "tools.dotnet_guest.build",
+                   "go": "tools.go_capsule_build", "typescript": "tools.typescript_guest.build"}
+        for language, module in modules.items():
+            with self.subTest(language=language):
+                result = self.load(self.stage(language), module)
+                self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace")[:4096])
+                self.assertEqual(result.stdout.decode("ascii").splitlines(), ["selected-recipe-imports-owned"])
+                self.assertEqual(result.stderr, b"")
+
+    def test_missing_captured_shared_helper_cannot_import_from_checkout(self):
+        staged = self.stage("go")
+        (staged / "tools/guest_compatibility_build.py").unlink()
+        result = self.load(staged, "tools.go_capsule_build")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b"guest_compatibility_build", result.stderr)
+        self.assertNotIn(b"selected-recipe-imports-owned", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

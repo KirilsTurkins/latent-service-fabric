@@ -1,0 +1,259 @@
+{
+  "cases": [
+    "DependencyWorkflow.test_automatic_patch_identity_requires_new_trust",
+    "DependencyWorkflow.test_cas_link_is_rejected",
+    "DependencyWorkflow.test_controller_input_count_remains_an_explicit_limit",
+    "DependencyWorkflow.test_dependency_bytes_are_in_immutable_snapshot_without_originals_or_network",
+    "DependencyWorkflow.test_excluded_native_lock_cannot_disappear_from_snapshot",
+    "DependencyWorkflow.test_invalid_snapshot_does_not_advance_last_good_project",
+    "DependencyWorkflow.test_native_lock_or_profile_change_requires_new_trust",
+    "DependencyWorkflow.test_omitted_dependency_trust_binding_cannot_reuse_build",
+    "DependencyWorkflow.test_orphan_lock_is_rejected",
+    "DependencyWorkflow.test_other_language_capture_is_rejected",
+    "DependencyWorkflow.test_packaged_helper_imports_dependency_verification_outside_checkout",
+    "DependencyWorkflow.test_selection_and_closed_inputs_are_derived_without_descriptor_rewrite",
+    "DependencyWorkflow.test_selection_credentials_and_invalid_executables_are_rejected",
+    "DependencyWorkflow.test_source_edit_reuses_trust_but_changes_watch_snapshot",
+    "DependencyWorkflow.test_source_only_project_keeps_existing_trust",
+    "DependencyWorkflow.test_stale_declared_binding_cannot_be_overwritten_implicitly",
+    "DependencyWorkflow.test_tampered_object_or_native_lock_rejected_before_build_reuse",
+    "DependencyWorkflow.test_valid_offline_snapshot_is_accepted_with_bound_selection"
+  ],
+  "guards": {
+    "DependencyWorkflow.test_automatic_patch_identity_requires_new_trust": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_cas_link_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'symlink creation requires platform privilege')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": [
+        "skip-control-sha256:55d27cf20e4b0961178d7801b9866271576861a415cd8cda9ee6de515c3a93d7",
+        "unittest.skipUnless(sys.platform == 'linux', 'symlink creation requires platform privilege')"
+      ]
+    },
+    "DependencyWorkflow.test_controller_input_count_remains_an_explicit_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_dependency_bytes_are_in_immutable_snapshot_without_originals_or_network": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_excluded_native_lock_cannot_disappear_from_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_invalid_snapshot_does_not_advance_last_good_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux helper imports pwd and owns backend state')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": [
+        "skip-control-sha256:8f12893c5cf76c4af8d13f1520c26a9f3845c86b66bdf0cb3e7cf6969190188d",
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux helper imports pwd and owns backend state')"
+      ]
+    },
+    "DependencyWorkflow.test_native_lock_or_profile_change_requires_new_trust": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_omitted_dependency_trust_binding_cannot_reuse_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_orphan_lock_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_other_language_capture_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_packaged_helper_imports_dependency_verification_outside_checkout": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_selection_and_closed_inputs_are_derived_without_descriptor_rewrite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_selection_credentials_and_invalid_executables_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_source_edit_reuses_trust_but_changes_watch_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_source_only_project_keeps_existing_trust": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_stale_declared_binding_cannot_be_overwritten_implicitly": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_tampered_object_or_native_lock_rejected_before_build_reuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": []
+    },
+    "DependencyWorkflow.test_valid_offline_snapshot_is_accepted_with_bound_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux helper owns backend state')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:2a3b071308b8841ee573c532184425901bff5946d47b06553e1aa24e93444794",
+        "class:setup-sha256:732eed875826570f7d96ca875bf8267fd9057bb65e5e850a484b54d392aeb7da"
+      ],
+      "skipSites": [
+        "skip-control-sha256:d673d7a5ff4c2b05ebe32c2c61d508d3561a3a0d4f3d0d0a6cdbc2c7870e5a8c",
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux helper owns backend state')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_dependencies.py",
+  "reviewReason": "Review dependency trust invalidation, offline immutable snapshots and fail-before-association acceptance tests",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

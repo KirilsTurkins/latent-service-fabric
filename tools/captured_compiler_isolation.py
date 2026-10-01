@@ -79,14 +79,20 @@ def distribution(root: Path) -> list[dict]:
 
 
 class Isolation:
+    @staticmethod
+    def observe_distribution(root: Path):
+        return distribution(root)
+
     def __init__(self, workspace: Path, tools: dict[str, Path], distributions: dict[str, Path]):
         if sys.platform != "linux" or not (sandbox := shutil.which("bwrap")) or not (loader_probe := shutil.which("ldd")):
             raise DependencyError("captured-compiler-isolation-requires-linux-bubblewrap")
         self.workspace = regular_path(workspace).resolve(strict=True)
+        self.read_only_inputs: list[Path] = []
+        self.child_path: Path | None = None
         self.sandbox = regular_path(Path(sandbox)).resolve(strict=True)
         self.tools = {name: regular_path(path).resolve(strict=True) for name, path in tools.items()}
         self.distributions = {name: regular_path(path).resolve(strict=True) for name, path in distributions.items()}
-        self.before = {name: distribution(root) for name, root in self.distributions.items()}
+        self.before = {name: self.observe_distribution(root) for name, root in self.distributions.items()}
         self.tool_before = {name: file_identity(path, name) for name, path in self.tools.items()}
         self.sandbox_before = file_identity(self.sandbox, "build-sandbox")
         self.shared: dict[str, dict] = {}
@@ -99,6 +105,8 @@ class Isolation:
             if "not found" in text:
                 raise DependencyError("compiler-runtime-library-missing")
             for name in re.findall(r"(?:=>\s*)?(/[^\s()]+)", text):
+                if any(Path(name).resolve(strict=True).is_relative_to(root) for root in self.distributions.values()):
+                    continue  # Already bound by the complete selected distribution.
                 if not name.startswith(("/lib/", "/lib64/", "/usr/lib/")):
                     raise DependencyError("compiler-runtime-library-outside-system-root")
                 path = Path(name).resolve(strict=True)
@@ -117,11 +125,11 @@ class Isolation:
             raise DependencyError("compiler-working-directory-outside-captured-workspace")
         command = [str(self.sandbox), "--unshare-all", "--die-with-parent", "--new-session", "--clearenv",
                    "--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp", "--dir", "/home",
-                   "--setenv", "HOME", "/home", "--setenv", "PATH", "/nonexistent",
+                   "--setenv", "HOME", "/home", "--setenv", "PATH", str(self.child_path) if self.child_path else "/nonexistent",
                    "--bind", str(self.workspace), str(self.workspace)]
         for root in self.distributions.values():
-            if root == self.workspace or self.workspace in root.parents:
-                continue  # Captured private tool staging already belongs here.
+            command += ["--ro-bind", str(root), str(root)]
+        for root in self.read_only_inputs:
             command += ["--ro-bind", str(root), str(root)]
         for selected in self.tools.values():
             if any(selected.is_relative_to(root) for root in self.distributions.values()):
@@ -129,10 +137,44 @@ class Isolation:
             command += ["--ro-bind", str(selected), str(selected)]
         for name in self.shared:
             command += ["--ro-bind", str(Path(name).resolve(strict=True)), name]
-        for key in ("LC_ALL", "LANG", "TZ", "ZIG_GLOBAL_CACHE_DIR", "ZIG_LOCAL_CACHE_DIR"):
+        for key in ("LC_ALL", "LANG", "TZ", "ZIG_GLOBAL_CACHE_DIR", "ZIG_LOCAL_CACHE_DIR",
+                    "CARGO_HOME", "CARGO_NET_OFFLINE", "CARGO_TARGET_DIR", "CARGO_INCREMENTAL", "CARGO_BUILD_JOBS",
+                    "RUSTC", "RUSTDOC", "RUSTUP_AUTO_INSTALL", "RUSTUP_TOOLCHAIN",
+                    "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER", "LSF_CAPTURED_ZIG"):
+            if key in environment:
+                command += ["--setenv", key, environment[key]]
+        go_fixed = {"GOTOOLCHAIN": "local", "GOWORK": "off", "GOENV": "off", "CGO_ENABLED": "0",
+                    "GOPROXY": "off", "GOSUMDB": "off", "GOOS": "wasip1", "GOARCH": "wasm"}
+        for key, expected in go_fixed.items():
+            if key in environment:
+                if environment[key] != expected:
+                    raise DependencyError("captured-go-compiler-policy-invalid:" + key)
+                command += ["--setenv", key, expected]
+        for key in ("GOROOT", "GOCACHE", "GOMODCACHE", "GOFLAGS"):
             if key in environment:
                 command += ["--setenv", key, environment[key]]
         return [*command, "--chdir", str(cwd), "--", str(tool), *arguments]
+
+    def enable_children(self, directory: Path):
+        """Expose only an explicitly captured SDK executable directory."""
+        directory = regular_path(directory).resolve(strict=True)
+        if not any(directory.is_relative_to(root) for root in self.distributions.values()):
+            raise DependencyError("compiler-child-directory-outside-captured-distribution")
+        entries = [regular_path(path).resolve(strict=True) for path in directory.iterdir()]
+        if not entries or any(not path.is_file() or path not in self.tools.values() for path in entries):
+            raise DependencyError("compiler-child-executable-not-captured")
+        self.child_path = directory
+        owner = next(name for name, root in self.distributions.items() if directory.is_relative_to(root))
+        self.receipt["childExecutables"] = {"distribution": owner, "directory": directory.relative_to(self.distributions[owner]).as_posix(), "tools": {
+            name: self.tool_before[name] for name, path in self.tools.items() if path in entries}}
+
+    def protect_inputs(self, *roots: Path):
+        for root in roots:
+            root = regular_path(root).resolve(strict=True)
+            if not root.is_relative_to(self.workspace) or root == self.workspace:
+                raise DependencyError("compiler-read-only-inputs-outside-owned-workspace")
+            if root not in self.read_only_inputs:
+                self.read_only_inputs.append(root)
 
     def observe_inputs(self, depfile: Path) -> list[dict]:
         rows = []
@@ -155,7 +197,7 @@ class Isolation:
         return rows
 
     def check_unchanged(self):
-        if self.before != {name: distribution(root) for name, root in self.distributions.items()}:
+        if self.before != {name: self.observe_distribution(root) for name, root in self.distributions.items()}:
             raise DependencyError("compiler-distribution-or-sysroot-mutated")
         if self.tool_before != {name: file_identity(path, name) for name, path in self.tools.items()}:
             raise DependencyError("compiler-executable-mutated")

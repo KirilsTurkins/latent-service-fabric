@@ -20,6 +20,16 @@ pub struct ProtectedRoot {
     gid: u32,
 }
 
+/// Named mutable file identity owned by the same protected root. The engine
+/// takes the descriptor; its control owner retains this fence and checks it on
+/// every storage job. This value never permits opening a different root/name.
+pub struct ProtectedMutableFile {
+    name: String,
+    root_identity: (u64, u64),
+    file_identity: (u64, u64),
+    maximum_bytes: u64,
+}
+
 impl ProtectedRoot {
     pub fn open(path: &Path) -> Result<Self, PlatformError> {
         if !path.is_absolute() {
@@ -70,6 +80,84 @@ impl ProtectedRoot {
     #[must_use]
     pub fn identity(&self) -> (u64, u64) {
         self.chain.last().expect("root anchor").identity
+    }
+
+    /// Open an explicitly configured engine file without truncation, following
+    /// links or creating parent directories. Initialization is create-new only;
+    /// an existing failed database is never replaced by an empty descriptor.
+    /// Runs on the fixed storage control worker, not an async/guest poller.
+    pub fn open_mutable_file(
+        &self,
+        name: &str,
+        maximum_bytes: u64,
+        create: bool,
+    ) -> Result<(File, ProtectedMutableFile), PlatformError> {
+        if !valid_leaf(name) || maximum_bytes == 0 || maximum_bytes > 1_073_741_824 {
+            return Err(state_failure());
+        }
+        self.check().map_err(|_| state_failure())?;
+        let directory = &self.chain.last().expect("root anchor").file;
+        let flags = OFlags::RDWR | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK;
+        let file = match fs::openat(directory, name, flags, Mode::empty()) {
+            Ok(descriptor) => File::from(descriptor),
+            Err(rustix::io::Errno::NOENT) if create => {
+                let descriptor = fs::openat(
+                    directory,
+                    name,
+                    flags | OFlags::CREATE | OFlags::EXCL,
+                    Mode::RUSR | Mode::WUSR,
+                )
+                .map_err(|_| state_failure())?;
+                let file = File::from(descriptor);
+                file.sync_all().map_err(|_| state_failure())?;
+                directory.sync_all().map_err(|_| state_failure())?;
+                file
+            }
+            Err(_) => return Err(state_failure()),
+        };
+        platform::require_mode_only_permissions(&file).map_err(|()| state_failure())?;
+        let metadata = file.metadata().map_err(|_| state_failure())?;
+        mutable_metadata(&metadata, self.uid, maximum_bytes)?;
+        let fence = ProtectedMutableFile {
+            name: name.into(),
+            root_identity: self.identity(),
+            file_identity: (metadata.dev(), metadata.ino()),
+            maximum_bytes,
+        };
+        self.check_mutable_file(&fence)?;
+        Ok((file, fence))
+    }
+
+    /// Validate permissions, type, bounded file length and the current named
+    /// inode/ancestor chain before accepting a storage operation. Engine locking
+    /// and qualified filesystem/durability selection belong to the store owner.
+    pub fn check_mutable_file(&self, fence: &ProtectedMutableFile) -> Result<(), PlatformError> {
+        self.check().map_err(|_| state_failure())?;
+        if fence.root_identity != self.identity() {
+            return Err(state_failure());
+        }
+        let directory = &self.chain.last().expect("root anchor").file;
+        let file = File::from(
+            fs::openat(
+                directory,
+                &fence.name,
+                OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK,
+                Mode::empty(),
+            )
+            .map_err(|_| state_failure())?,
+        );
+        platform::require_mode_only_permissions(&file).map_err(|()| state_failure())?;
+        let metadata = file.metadata().map_err(|_| state_failure())?;
+        mutable_metadata(&metadata, self.uid, fence.maximum_bytes)?;
+        if (metadata.dev(), metadata.ino()) != fence.file_identity {
+            return Err(state_failure());
+        }
+        let named = fs::statat(directory, &fence.name, AtFlags::SYMLINK_NOFOLLOW)
+            .map_err(|_| state_failure())?;
+        if (named.st_dev, named.st_ino) != fence.file_identity {
+            return Err(state_failure());
+        }
+        self.check().map_err(|_| state_failure())
     }
 
     fn check(&self) -> Result<(), PlatformError> {
@@ -185,6 +273,41 @@ impl ProtectedRoot {
         }
         bytes.truncate(length);
         Ok(bytes)
+    }
+}
+
+fn valid_leaf(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 255
+        && name != "."
+        && name != ".."
+        && name
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
+}
+
+fn mutable_metadata(
+    metadata: &std::fs::Metadata,
+    uid: u32,
+    maximum_bytes: u64,
+) -> Result<(), PlatformError> {
+    if !metadata.is_file()
+        || metadata.nlink() != 1
+        || metadata.uid() != uid
+        || metadata.mode() & 0o7777 != 0o600
+        || metadata.len() > maximum_bytes
+    {
+        return Err(state_failure());
+    }
+    Ok(())
+}
+
+fn state_failure() -> PlatformError {
+    PlatformError {
+        code: PlatformErrorCode::PermissionDenied,
+        message: "protected-state-root".into(),
+        retryable: false,
+        details: Vec::new(),
     }
 }
 

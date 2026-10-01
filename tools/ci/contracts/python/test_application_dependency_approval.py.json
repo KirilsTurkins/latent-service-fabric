@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "ExecutionApproval.test_exact_approval_allows_materialization_only_in_selected_isolated_stage",
+    "ExecutionApproval.test_namespace_outside_the_owned_build_cannot_consume_approval",
+    "ExecutionApproval.test_stale_compiler_profile_recipe_or_approval_digest_fails"
+  ],
+  "guards": {
+    "ExecutionApproval.test_exact_approval_allows_materialization_only_in_selected_isolated_stage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9830d552e41ba51d2b9f26bbc42db0545c250d15a6edd1f2a45685838b7cc88a",
+        "class:setup-sha256:2e7556f5aa21fdb642b060baaf78d06d68598512319ca41bae3082b91af99ed4"
+      ],
+      "skipSites": []
+    },
+    "ExecutionApproval.test_namespace_outside_the_owned_build_cannot_consume_approval": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9830d552e41ba51d2b9f26bbc42db0545c250d15a6edd1f2a45685838b7cc88a",
+        "class:setup-sha256:2e7556f5aa21fdb642b060baaf78d06d68598512319ca41bae3082b91af99ed4"
+      ],
+      "skipSites": []
+    },
+    "ExecutionApproval.test_stale_compiler_profile_recipe_or_approval_digest_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9830d552e41ba51d2b9f26bbc42db0545c250d15a6edd1f2a45685838b7cc88a",
+        "class:setup-sha256:2e7556f5aa21fdb642b060baaf78d06d68598512319ca41bae3082b91af99ed4"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_application_dependency_approval.py",
+  "reviewReason": "Add exact executable closure/compiler/profile trust binding and deny stale or outside namespaces",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -97,6 +97,49 @@ class CompilerNamespace(unittest.TestCase):
         marker.write_bytes(b'fresh-build')
         self.assertEqual(self.execute(self.cat, str(marker)).stdout, b'fresh-build')
 
+    def test_selected_sources_are_read_only_and_owned_outputs_remain_writable(self):
+        source = self.workspace / 'source'
+        source.mkdir()
+        (source / 'selected.bin').write_bytes(b'original')
+        self.isolation.protect_inputs(source)
+        self.assertEqual(self.execute(self.cat, str(source / 'selected.bin')).stdout, b'original')
+        script = 'printf changed > source/selected.bin'
+        self.assertNotEqual(self.execute(self.shell, '-c', script).returncode, 0)
+        self.assertEqual((source / 'selected.bin').read_bytes(), b'original')
+        self.assertEqual(self.execute(self.shell, '-c', 'printf generated > output.bin').returncode, 0)
+        self.assertEqual((self.workspace / 'output.bin').read_bytes(), b'generated')
+
+    def test_captured_sdk_child_path_cannot_expose_unregistered_executables(self):
+        distribution_root = self.root / 'compiler'
+        executables = distribution_root / 'bin'
+        executables.mkdir(parents=True)
+        child = executables / 'captured-cat'
+        shutil.copyfile(self.cat, child)
+        child.chmod(0o755)
+        boundary = Isolation(self.workspace, {'child': child, 'shell': self.shell}, {'compiler': distribution_root})
+        boundary.enable_children(executables)
+        (self.workspace / 'input.bin').write_bytes(b'captured-child')
+        result = run_bounded_result(boundary.wrap(self.shell, ['-c', 'captured-cat input.bin'], self.workspace, self.environment),
+                                    self.workspace, self.environment, 5, 16384)
+        self.assertEqual(result.stdout, b'captured-child')
+        boundary.check_unchanged()
+        with self.assertRaisesRegex(DependencyError, 'outside-captured-distribution'):
+            boundary.enable_children(self.workspace)
+        (executables / 'unregistered').write_bytes(b'host tool')
+        with self.assertRaisesRegex(DependencyError, 'not-captured'):
+            boundary.enable_children(executables)
+
+    def test_go_compiler_policy_cannot_enable_network_cgo_or_an_ambient_toolchain(self):
+        for key, value in (('GOPROXY', 'https://example.invalid'), ('GOTOOLCHAIN', 'auto'), ('CGO_ENABLED', '1'),
+                           ('GOWORK', '/ambient/go.work'), ('GOENV', '/ambient/go.env'), ('GOOS', 'linux')):
+            with self.subTest(key=key), self.assertRaisesRegex(DependencyError, 'go-compiler-policy-invalid'):
+                self.isolation.wrap(self.cat, [], self.workspace, {**self.environment, key: value})
+        environment = {**self.environment, 'GOPROXY': 'off', 'GOTOOLCHAIN': 'local', 'CGO_ENABLED': '0'}
+        command = self.isolation.wrap(self.shell, ['-c', 'printf "%s|%s|%s" "$GOPROXY" "$GOTOOLCHAIN" "$CGO_ENABLED"'],
+                                      self.workspace, environment)
+        result = run_bounded_result(command, self.workspace, environment, 5, 16384)
+        self.assertEqual(result.stdout, b'off|local|0')
+
 
 if __name__ == '__main__':
     unittest.main()

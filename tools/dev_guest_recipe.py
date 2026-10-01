@@ -15,7 +15,7 @@ if __package__ in {None, ""}:
 from tools.build_process import BuildProcessError, run_bounded
 from tools.build_process_signals import owned_cancellation
 from tools.dev_guest_tools import ZIG_VERSION, linker, stage_registry, unpack_zig
-from tools.dev_workflow.common import encode, require
+from tools.dev_workflow.common import encode, require, sha
 
 
 def diagnostics(output: Path, language: str) -> None:
@@ -65,7 +65,7 @@ def c_diagnostics(output: Path) -> None:
             sys.stderr.buffer.write(raw)
 
 
-def compile_rust(payload: Path, project: Path, output: Path, check) -> None:
+def compile_rust(payload: Path, project: Path, output: Path, check, *, executable_approval: str | None = None) -> None:
     from tools.rust_capsule_build import build
     require(sys.platform == "linux" and platform.machine() == "x86_64", "rust-adapter-requires-linux-x86-64")
     cache = project.parent / "build-cache"
@@ -80,7 +80,7 @@ def compile_rust(payload: Path, project: Path, output: Path, check) -> None:
     check()
     build(project, output, sdk / "bin/capsule-contracts", None,
           "https://github.com/KirilsTurkins/latent-service-fabric", offline=True,
-          host_linker=linker(zig, cache), rust_bin=sdk / "rust/bin")
+          host_linker=linker(zig, cache), rust_bin=sdk / "rust/bin", executable_approval=executable_approval)
     check()
 
 
@@ -135,6 +135,7 @@ def main() -> int:
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--language", choices=("rust", "c", "go", "typescript", "java", "dotnet"), required=True)
+    parser.add_argument("--executable-approval", help="Exact retained isolated executable-input request identity")
     args = parser.parse_args()
     project, output = Path(os.path.abspath(args.project)), Path(os.path.abspath(args.output))
     # Distribution layout: <payload>/recipe/tools/dev_guest_recipe.py.
@@ -144,7 +145,11 @@ def main() -> int:
               "cleanup": "reaped", "code": "success"}
     try:
         with owned_cancellation() as cancellation:
-            if args.language in {"java", "dotnet", "go", "typescript"}:
+            if args.executable_approval is not None:
+                require(args.language == "rust", "selected-frontend-adapter-has-no-executable-approval-consumer")
+                sha(args.executable_approval)
+                compile_rust(payload, project, output, cancellation.check, executable_approval=args.executable_approval)
+            elif args.language in {"java", "dotnet", "go", "typescript"}:
                 compile_managed(payload, project, output, cancellation.check, args.language)
             else:
                 {"rust": compile_rust, "c": compile_c}[args.language](payload, project, output, cancellation.check)
