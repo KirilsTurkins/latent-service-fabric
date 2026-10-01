@@ -23,41 +23,11 @@ fn operator(subject: &str) -> AuthenticatedInvocationContext {
 
 #[tokio::test]
 async fn accepted_namespace_close_invalidates_original_provider_grant_before_more_io() {
-    use latent_effects::authority::{
-        CommitLink, DispatchCeiling, DispatchProfile, EffectRule, EffectScope,
-    };
+    use latent_effects::authority::CommitLink;
     let mut fixture = Fixture::new(true).await;
     drop(fixture.create().await);
     let authority = EffectAuthorityOwner::new(16, 4, 100).unwrap();
-    let rule = EffectRule {
-        scope: EffectScope {
-            tenant: "a".into(),
-            namespace: "orders".into(),
-            incarnation: 1,
-            publication: fixture.target().authorization_publication.unwrap().id,
-            binding: "events".into(),
-            operation: "http".into(),
-        },
-        profile: DispatchProfile {
-            provider: "http".into(),
-            destination: "orders".into(),
-            adapter: "http.atomic.v1".into(),
-            intent_format: 1,
-            payload_format: "value.v1".into(),
-            idempotency_profile: "lookup.v1".into(),
-        },
-        policy_revision: 1,
-        credential_epoch: 1,
-        protected_credential_reference: "http-secret".into(),
-        ceiling: DispatchCeiling {
-            maximum_payload_bytes: 1024,
-            maximum_response_bytes: 1024,
-            maximum_attempts: 3,
-            maximum_age_millis: 60_000,
-            attempt_timeout_millis: 30_000,
-        },
-        enabled: true,
-    };
+    let rule = original_http_rule(&fixture);
     authority.publish(rule.clone()).unwrap();
     let now = EffectTime {
         unix_millis: 100,
@@ -129,6 +99,39 @@ async fn accepted_namespace_close_invalidates_original_provider_grant_before_mor
             .clean
     );
     fixture.finish().await;
+}
+
+fn original_http_rule(fixture: &Fixture) -> latent_effects::authority::EffectRule {
+    use latent_effects::authority::{DispatchCeiling, DispatchProfile, EffectRule, EffectScope};
+    EffectRule {
+        scope: EffectScope {
+            tenant: "a".into(),
+            namespace: "orders".into(),
+            incarnation: 1,
+            publication: fixture.target().authorization_publication.unwrap().id,
+            binding: "events".into(),
+            operation: "http".into(),
+        },
+        profile: DispatchProfile {
+            provider: "http".into(),
+            destination: "orders".into(),
+            adapter: "http.atomic.v1".into(),
+            intent_format: 1,
+            payload_format: "value.v1".into(),
+            idempotency_profile: "lookup.v1".into(),
+        },
+        policy_revision: 1,
+        credential_epoch: 1,
+        protected_credential_reference: "http-secret".into(),
+        ceiling: DispatchCeiling {
+            maximum_payload_bytes: 1024,
+            maximum_response_bytes: 1024,
+            maximum_attempts: 3,
+            maximum_age_millis: 60_000,
+            attempt_timeout_millis: 30_000,
+        },
+        enabled: true,
+    }
 }
 async fn install(fixture: &mut Fixture) -> (DispatcherOwner, NativeCapacityOwner) {
     let capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
