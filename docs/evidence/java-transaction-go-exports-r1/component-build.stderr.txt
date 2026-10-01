@@ -1,0 +1,13 @@
+Error: 'go build' command failed: # wit_component/export_examples_transactional_aggregate_api
+export_examples_transactional_aggregate_api/main.go:19:21: undefined: UpdateRequest
+export_examples_transactional_aggregate_api/main.go:19:47: undefined: Aggregate
+export_examples_transactional_aggregate_api/main.go:19:58: undefined: BusinessError
+export_examples_transactional_aggregate_api/main.go:23:32: undefined: Aggregate
+export_examples_transactional_aggregate_api/main.go:23:43: undefined: BusinessError
+export_examples_transactional_aggregate_api/main.go:23:58: undefined: BusinessErrorMalformedState
+export_examples_transactional_aggregate_api/main.go:36:25: undefined: Aggregate
+export_examples_transactional_aggregate_api/main.go:36:36: undefined: BusinessError
+export_examples_transactional_aggregate_api/main.go:45:78: undefined: ScanResult
+export_examples_transactional_aggregate_api/main.go:45:90: undefined: BusinessError
+export_examples_transactional_aggregate_api/main.go:23:58: too many errors
+
