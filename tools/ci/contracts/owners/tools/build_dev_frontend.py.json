@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain all build obligations and three real native structural preflight smokes; the context capsule smoke now includes its original positive deployment generation.",
+  "reviewReason": "Preserve all native frontend smoke obligations and package both browser ownership and captured dependency verifier import closures.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "591b59f4235b885584f677504d743eac2acf56ec6c616e906bcb2d5e394faed0"
+  "sha256": "1315cd581836b8bf967eb8c25a73326e2b9824999d4b4f4b138370a02c1624a5"
 }
