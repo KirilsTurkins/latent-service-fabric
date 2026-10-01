@@ -84,6 +84,22 @@ impl PreparationContext {
         Ok(component_digest)
     }
 
+    fn install_transaction_imports(
+        &self,
+        linker: &mut Linker<HostState>,
+    ) -> Result<(), PlatformError> {
+        if self.config.transactional_state {
+            crate::host::transaction::install(linker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind scoped transaction imports",
+                    false,
+                )
+            })?;
+        }
+        Ok(())
+    }
+
     pub(super) fn link_component(
         &self,
         component: &Component,
@@ -96,15 +112,7 @@ impl PreparationContext {
                 false,
             )
         })?;
-        if self.config.transactional_state {
-            crate::host::transaction::install(&mut linker).map_err(|_| {
-                platform_error(
-                    PlatformErrorCode::Internal,
-                    "failed to bind scoped transaction imports",
-                    false,
-                )
-            })?;
-        }
+        self.install_transaction_imports(&mut linker)?;
         if let Some(invoker) = self.local_services() {
             crate::host::service::install(&mut linker, invoker).map_err(|error| {
                 platform_error(

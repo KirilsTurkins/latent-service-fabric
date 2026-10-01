@@ -33,9 +33,20 @@ allocation against the same memory ceiling as guest growth. Final observation
 freezes consumption while retaining reservations until their actual buffers
 are destroyed. Unqualified descendant host-buffer delegation is rejected.
 
+`StateTransactionHost` owns an affine `StateSession` and native snapshot on the
+same protected store's fixed workers. It validates the actual Pending claim,
+original activation ledger, sealed policy/publication and snapshot generation.
+Read and staging costs are charged before exposing values. A detached storage
+response retains the native view; retirement requires its issued destruction
+witness before releasing the operation and attempt pins. Intent staging
+captures the original effect grant immediately, then final envelope preparation
+intersects it with current authority without extending its original lifetime.
+A narrower rule after preparation prevents writer acceptance. Audit-required
+profiles currently fail closed until a real audit reservation owner is installed.
+
 These ports are an intermediate implementation of issue #388. The complete
-state runtime must still supply authenticated companion and namespace
-selection, fixed-worker sessions, durable command admission, final envelope
-acceptance, physical cleanup and current-authorized response release. The
+state runtime must still supply authenticated companion selection, original
+durable command admission, final envelope acceptance, physical cleanup and
+current-authorized response release across the existing activation manager. The
 six-language signed component campaign, RPC/HTTP delivery and crash/restart
 qualification remain required; this page does not record them as passing.

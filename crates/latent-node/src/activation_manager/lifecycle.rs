@@ -137,6 +137,13 @@ impl Lifecycle {
     }
 
     fn reclaim(&mut self) {
+        if !self.execution_started {
+            if let Some(host) = &self.transaction_host {
+                // No guest Store or accepted continuation entered the backend.
+                // Native I/O still needs its independent retirement witness.
+                host.finish_guest_access();
+            }
+        }
         // An unfilled inbound reservation has never received an execution cell.
         drop(self.inbound_permit.take());
         self.observe_cancellation();

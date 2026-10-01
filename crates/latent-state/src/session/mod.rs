@@ -279,6 +279,13 @@ impl StateSession {
     pub fn view_version(&self) -> NamespaceVersion {
         self.namespace.version
     }
+    /// Actual cumulative native read/staging costs, including repeated reads
+    /// and failed attempts. The runtime charges their deltas on the original
+    /// activation ledger before releasing any guest-visible response.
+    #[must_use]
+    pub fn charged_bytes(&self) -> (usize, usize) {
+        (self.read_charge, self.stage_charge)
+    }
     fn access(
         &mut self,
         view: &ReadView,
