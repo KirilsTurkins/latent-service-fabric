@@ -4,13 +4,16 @@
 
 mod accounting;
 mod captured;
+mod census;
 mod codec;
 mod ownership;
 mod record;
 pub mod retention;
+mod retry_receipt;
 mod validation;
 mod writer;
 pub use captured::{CapturedIntent, IntentCaptureContext};
+pub use census::tenant_census_contribution;
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
 pub use record::{
     attempt_row_key, command_row_key, result_row_key, CommandRecord, DurableResult, InboxIdentity,
@@ -21,7 +24,7 @@ pub use retention::{
     PreparedFloorRelease, ResultMaintenanceOwner, RetentionAction, RetentionProgress,
     RetentionRequest, RetiredCommand,
 };
-pub use validation::{validate_linked_row, validate_row, validate_view};
+pub use validation::{validate_linked_row, validate_row, validate_view, validate_view_observed};
 pub use writer::{
     inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
     PreparedAdmission, PreparedDisposition, RetryRequest, StagedIntent,

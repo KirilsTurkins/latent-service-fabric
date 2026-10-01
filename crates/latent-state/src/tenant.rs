@@ -10,6 +10,7 @@
 mod census;
 mod codec;
 mod description;
+mod global;
 mod install;
 mod rows;
 mod update;
@@ -19,6 +20,7 @@ pub use census::{
     GlobalMetadataAllowance, TenantCensus, TenantCensusContribution, TenantCensusReport,
 };
 pub use description::census_contribution;
+pub use global::{prepare_global_metadata_update, INSTALLED_GLOBAL_ALLOWANCE};
 pub use install::{
     configuration_digest, prepare_install, require_installation, PreparedTenantInstallation,
 };

@@ -1292,14 +1292,19 @@
         "model::tests::snapshot_reads_and_read_your_writes_are_consistent_and_bounded",
         "model::tests::stable_caller_identity_survives_grant_rotation_and_shared_scope_needs_explicit_grant",
         "model::tests::stale_edit_precondition_is_distinct_from_occ_and_is_not_silently_refreshed",
-        "model::tests::unresolved_effect_outlives_result_payload_and_protects_linked_identity"
+        "model::tests::unresolved_effect_outlives_result_payload_and_protects_linked_identity",
+        "atomic::tests::census::explicit_legacy_retry_keeps_original_lct1_bytes_and_requires_review_before_installed_census",
+        "atomic::tests::census::installed_retry_receipt_replays_reopens_and_purges_with_exact_original_tenant_ownership",
+        "atomic::tests::census::original_upper_census_covers_real_state_inbox_effect_and_uncertain_history_after_reopen",
+        "atomic::tests::census::original_upper_census_refuses_validly_encoded_ledger_drift_without_upgrading_counters",
+        "atomic::tests::census::installed_retry_startup_refuses_a_valid_receipt_rebound_to_another_tenant"
       ],
       "expectedIgnored": [],
       "id": "latent-commit.lib.latent-commit",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-commit/Cargo.toml",
-      "minimumCases": 76,
+      "minimumCases": 81,
       "mode": "libtest",
       "package": "latent-commit",
       "platforms": [
@@ -1886,14 +1891,17 @@
         "runtime::tests::scheduling::compatible_retained_decoders_dispatch_old_and_new_publications_without_reinterpreting_payloads",
         "runtime::tests::scheduling::exact_retained_profile_inventory_blocks_missing_decoder_without_redirecting",
         "runtime::tests::scheduling::indexed_hot_tenant_backlog_does_not_starve_cold_tenant_or_allocate_backlog_workers",
-        "runtime::tests::scheduling::pause_and_current_revocation_prevent_claim_without_refunding_unrelated_live_work"
+        "runtime::tests::scheduling::pause_and_current_revocation_prevent_claim_without_refunding_unrelated_live_work",
+        "dispatch_store::control::tests::control_original_cas_refuses_concurrent_write_and_legacy_plan_after_installation",
+        "dispatch_store::control::tests::installed_control_capacity_scan_requires_actual_closed_receipt_codec_and_key",
+        "dispatch_store::control::tests::installed_global_control_limit_keeps_recovery_slots_replays_read_only_and_reopens"
       ],
       "expectedIgnored": [],
       "id": "latent-effects.lib.latent-effects",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 72,
+      "minimumCases": 75,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [

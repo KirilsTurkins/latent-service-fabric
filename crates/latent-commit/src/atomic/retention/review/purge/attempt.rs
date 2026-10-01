@@ -127,15 +127,9 @@ fn delete_attempt(
         }
         let retry_key = index.retry_key();
         let retry = view.get(&retry_key)?.ok_or(AtomicError::Corrupt)?;
-        let mut input = Decoder::new(&retry, b"LCT\0\x01", 77)?;
-        if input.number()? != generation {
-            return Err(AtomicError::Corrupt);
-        }
-        input.identity()?;
-        if input.identity()? != record.fingerprint {
-            return Err(AtomicError::Corrupt);
-        }
-        input.finish()?;
+        let receipt = crate::atomic::retry_receipt::RetryReceipt::decode(&retry)?;
+        receipt.validate_key(&retry_key)?;
+        receipt.verify(&record, &index)?;
         let removed_index = delete(captured, usage, key, bytes)?;
         let removed_retry = delete(captured, usage, retry_key, retry)?;
         reclaimed = reclaimed

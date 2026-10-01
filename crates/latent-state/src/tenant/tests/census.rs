@@ -212,7 +212,7 @@ fn census_refuses_unconfigured_ownership_duplicate_rows_and_unbounded_global_exc
         TenantCensus::capture(
             &view,
             &quotas,
-            GlobalMetadataAllowance { rows: 6, bytes: 1 },
+            GlobalMetadataAllowance { rows: 65, bytes: 1 },
             Instant::now() + Duration::from_secs(20)
         ),
         Err(StoreError::Invalid)

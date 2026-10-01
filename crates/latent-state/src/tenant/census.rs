@@ -6,7 +6,8 @@ use latent_core::TenantId;
 use std::time::{Duration, Instant};
 
 /// Reviewed node metadata capacity, separate from every explicit tenant quota.
-/// Only the five closed singleton control keys can consume this allowance.
+/// Only five closed singleton controls and producer-validated immutable
+/// dispatcher control receipts can consume this allowance.
 #[derive(Clone, Copy, Debug)]
 pub struct GlobalMetadataAllowance {
     pub rows: u64,
@@ -64,7 +65,7 @@ impl TenantCensus {
         if remaining.is_zero()
             || remaining > Duration::from_mins(1)
             || allowance.rows == 0
-            || allowance.rows > 5
+            || allowance.rows > super::INSTALLED_GLOBAL_ALLOWANCE.rows
             || allowance.bytes == 0
             || allowance.bytes > 256 * 1024
         {
@@ -188,7 +189,7 @@ impl TenantCensus {
     }
     fn global(&mut self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         if key.family != Family::Maintenance
-            || ![
+            || (![
                 super::GUARD_PREFIX,
                 crate::recovery::GUARD_KEY,
                 b"result-retention-v1\0",
@@ -196,6 +197,7 @@ impl TenantCensus {
                 b"dispatch-control-v1\0",
             ]
             .contains(&key.key.as_slice())
+                && !key.key.starts_with(super::global::CONTROL_RECEIPT_PREFIX))
         {
             return Err(StoreError::UnsupportedFormat);
         }

@@ -18,6 +18,7 @@ use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
 mod accounted;
 mod captured;
+mod census;
 mod view_tokens;
 
 mod retention_cases;
