@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Package immutable resource verification inside developer helper",
+  "reviewReason": "Compose captured dependency approval and packaged resources in the Linux helper; retain merged source changes from both feature branches",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "e55a28df1fdcd5211cc6b874502425ec0e8c6ead55a39181d887312a0ece86ad"
 }
