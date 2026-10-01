@@ -16,6 +16,8 @@ latent-state = { path = "../latent-state" }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
+tokio.workspace = true
 
 [dev-dependencies]
+latent-core = { path = "../latent-core", features = ["test-support"] }
 tempfile.workspace = true

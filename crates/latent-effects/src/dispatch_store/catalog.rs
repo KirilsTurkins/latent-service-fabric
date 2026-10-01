@@ -50,7 +50,7 @@ pub struct HistoryPage {
     pub resume: Option<Vec<u8>>,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
 pub struct DispatchCounts {
     pub pending: u64,
     pub active: u64,
