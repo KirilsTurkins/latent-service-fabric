@@ -6,6 +6,70 @@ import {writeFile} from 'node:fs/promises';
 const [toolchain, chrome, origin, home, wrongMime, receipt, mode = 'assets-only'] = process.argv.slice(2);
 assert.ok(['assets-only', 'public-application'].includes(mode));
 const {chromium} = createRequire(path.join(path.resolve(toolchain), 'package.json'))('playwright-core');
+
+async function observeOpaqueOrigin(context, target) {
+  const opaque = await context.newPage();
+  const network = await context.newCDPSession(opaque);
+  const ids = new Set();
+  let policyBlocked = false;
+  await network.send('Network.enable');
+  network.on('Network.requestWillBeSent', event => {
+    if (event.request.url === target) {
+      assert.ok(ids.has(event.requestId) || ids.size < 4);
+      ids.add(event.requestId);
+    }
+  });
+  network.on('Network.loadingFailed', event => {
+    if (ids.has(event.requestId) && (event.corsErrorStatus ||
+      ['corp-not-same-origin', 'coep-frame-resource-needs-coep-header'].includes(event.blockedReason))) {
+      policyBlocked = true;
+    }
+  });
+  const timeoutAbsent = error => {
+    if (error.name !== 'TimeoutError') throw error;
+    return null;
+  };
+  try {
+    await opaque.goto('data:text/html,<title>Opaque origin fixture</title>', {timeout: 5000});
+    assert.equal(await opaque.evaluate(() => location.origin), 'null');
+    const [request, response, result] = await Promise.all([
+      opaque.waitForRequest(request => request.url() === target, {timeout: 5000}).catch(timeoutAbsent),
+      opaque.waitForResponse(response => response.url() === target, {timeout: 5000}).catch(timeoutAbsent),
+      opaque.evaluate(async target => {
+        const abort = new AbortController();
+        const timer = setTimeout(() => abort.abort(), 5000);
+        try {
+          const response = await fetch(target, {method: 'POST', mode: 'cors', credentials: 'omit',
+            referrerPolicy: 'no-referrer', body: '{"name":"Browser"}', signal: abort.signal});
+          return {kind: 'response', status: response.status};
+        } catch (error) {
+          return {kind: error.name === 'TypeError' ? 'network-error' : 'unexpected-error'};
+        } finally {
+          clearTimeout(timer);
+        }
+      }, target),
+    ]);
+    const requestHeaders = request === null ? {} : await request.allHeaders();
+    const requestMethod = request === null ? 'not-observed' : request.method();
+    assert.ok(['not-observed', 'POST', 'OPTIONS'].includes(requestMethod));
+    assert.equal(requestHeaders.referer, undefined);
+    assert.ok(requestHeaders.origin === undefined || requestHeaders.origin === 'null');
+    if (response !== null) {
+      assert.equal(requestHeaders.origin, 'null');
+      assert.equal(response.status(), 403);
+      assert.equal(response.headers()['cache-control'], 'no-store');
+      return {outcome: 'node-denied', documentOrigin: 'null', requestOrigin: 'null', requestMethod, status: 403};
+    }
+    assert.equal(policyBlocked, true, 'no unobserved response is accepted without a browser policy failure');
+    assert.equal(result.kind, 'network-error');
+    return {outcome: 'browser-policy-blocked', documentOrigin: 'null',
+      requestOrigin: requestHeaders.origin === 'null' ? 'null' : 'not-observed', requestMethod, status: null};
+  } finally {
+    await network.detach();
+    await opaque.close();
+  }
+}
+
 const browser = await chromium.launch({executablePath: chrome, headless: true,
   args: process.platform === 'linux' && process.getuid() === 0 ? ['--no-sandbox'] : []});
 const watchdog = setTimeout(() => { process.exitCode = 1; browser.close(); }, 60000);
@@ -17,6 +81,8 @@ try {
   const syntheticToken = 'browser-policy-synthetic-token';
   let noReferrerPostOrigin = 'not-exercised';
   let noReferrerPostStatus = null;
+  let opaqueOrigin = {outcome: 'not-exercised', documentOrigin: null,
+    requestOrigin: 'not-observed', requestMethod: 'not-observed', status: null};
   context.on('request', request => {
     if (request.resourceType() === 'script' && initialScripts.length < 32) initialScripts.push(request);
   });
@@ -156,6 +222,7 @@ try {
       assert.ok(response.activation);
     }
     assert.notEqual(cacheResponses[0].activation, cacheResponses[1].activation);
+    opaqueOrigin = await observeOpaqueOrigin(context, origin + '/api/greeting?opaque-origin=synthetic');
   }
   await page.evaluate(async wrongMime => {
     globalThis.violations = [];
@@ -209,6 +276,7 @@ try {
     consumedTokenRemovedBeforeApplicationFetch: mode === 'public-application',
     noReferrerSameOriginPostQualified: mode === 'public-application',
     noReferrerPostOrigin, noReferrerPostStatus,
+    opaqueOrigin,
     applicationCacheInputQualified: mode === 'public-application',
     reservedHeadersRejectedAndRecoveryQualified: mode === 'public-application',
     navigationHydrated: true, escapedDataRoundTrip: true, inlineAndRemoteScriptsBlocked: true,
