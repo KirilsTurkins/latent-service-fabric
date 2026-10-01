@@ -145,3 +145,69 @@ fn ordinary_unconfigured_node_allocates_no_reload_owner_and_input_cannot_forge_m
     assert!(NodeConfig::load_with_stream_reload(&path).is_err());
     assert!(!directory.path().join("data").exists());
 }
+
+#[test]
+fn runtime_and_stream_installations_cannot_share_an_identity_or_service_owner() {
+    let (directory, path, original, _guard) = owner();
+    for identity in [
+        json!({"id":"streams","tenant":"examples","service":"other-host","epoch":1}),
+        json!({"id":"activation","tenant":"examples","service":"stream-host","epoch":1}),
+    ] {
+        let mut value = original.clone();
+        value["providers"]["activationRuntime"] = json!({"identity":identity,
+            "limits":{"tasks":8,"executors":2,"queuedWork":8,"waits":16,
+                "timers":8,"results":8,"nativeOwners":8}});
+        write(&path, &value);
+        assert!(NodeConfig::load(&path).unwrap().derive().is_err());
+        assert!(!directory.path().join("data").exists());
+    }
+}
+
+#[test]
+fn stream_reload_keeps_runtime_identity_epoch_and_all_seven_limits_immutable() {
+    let (directory, path, mut original, _first_guard) = owner();
+    original["providers"]["activationRuntime"] = json!({
+        "identity":{"id":"activation","tenant":"examples","service":"runtime-host","epoch":7},
+        "limits":{"tasks":8,"executors":2,"queuedWork":8,"waits":16,
+            "timers":8,"results":8,"nativeOwners":8}});
+    write(&path, &original);
+    let (config, guard) = NodeConfig::load_with_stream_reload(&path).unwrap();
+    let settings = config.derive().unwrap();
+    let guard = guard.unwrap();
+    assert!(guard.belongs_to(settings.stream_reload_binding));
+    let mut compatible = original.clone();
+    compatible["providers"]["outboundStreams"]["identity"]["epoch"] = json!(2);
+    compatible["providers"]["outboundStreams"]["configuration"]["limits"]["maximumTransferBytes"] =
+        json!(32768);
+    write(&path, &compatible);
+    assert_eq!(guard.replacement().unwrap().identity.epoch, 2);
+    for (field, changed) in [
+        ("id", json!("other-runtime")),
+        ("tenant", json!("other")),
+        ("service", json!("other-host")),
+        ("epoch", json!(8)),
+    ] {
+        let mut value = compatible.clone();
+        value["providers"]["activationRuntime"]["identity"][field] = changed;
+        write(&path, &value);
+        assert!(guard.replacement().is_err());
+    }
+    for category in [
+        "tasks",
+        "executors",
+        "queuedWork",
+        "waits",
+        "timers",
+        "results",
+        "nativeOwners",
+    ] {
+        let mut value = compatible.clone();
+        let limit = value["providers"]["activationRuntime"]["limits"][category]
+            .as_u64()
+            .unwrap();
+        value["providers"]["activationRuntime"]["limits"][category] = json!(limit + 1);
+        write(&path, &value);
+        assert!(guard.replacement().is_err(), "{category}");
+    }
+    assert!(!directory.path().join("data").exists());
+}
