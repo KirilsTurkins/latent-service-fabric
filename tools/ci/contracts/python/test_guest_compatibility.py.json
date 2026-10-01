@@ -13,8 +13,12 @@
     "CompatibilityReport.test_reports_do_not_accept_private_source_or_exception_payloads",
     "CompatibilityReport.test_unknown_and_extension_are_not_success",
     "FinalComponentInspection.test_catalogue_absence_and_renaming_do_not_change_import_classification",
+    "FinalComponentInspection.test_failure_before_packaging_retains_original_report_path",
     "FinalComponentInspection.test_final_graph_tables_and_indices_are_checked",
+    "FinalComponentInspection.test_packaged_report_is_preserved_when_later_packaging_fails",
+    "FinalComponentInspection.test_raw_diagnostic_retains_shared_failure_and_raw_component_identity",
     "FinalComponentInspection.test_reporting_stale_input_preserves_original_build_failure",
+    "FinalComponentInspection.test_stale_inspection_still_fails_closed_and_preserves_packaged_report",
     "FinalComponentInspection.test_surface_mismatch_fails_before_packaging_and_retains_inspection",
     "FinalComponentInspection.test_unknown_native_outcome_is_never_presented_as_guest_execution",
     "FinalComponentInspection.test_unknown_world_items_and_ambiguous_worlds_are_not_guessed",
@@ -177,6 +181,18 @@
       ],
       "skipSites": []
     },
+    "FinalComponentInspection.test_failure_before_packaging_retains_original_report_path": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9aa7f1cf0c5f343afc9db040861be9f19bd247187ff086ec72fa0faefeb3dc7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "FinalComponentInspection.test_final_graph_tables_and_indices_are_checked": {
       "bases": [
         "unittest.TestCase"
@@ -189,7 +205,43 @@
       ],
       "skipSites": []
     },
+    "FinalComponentInspection.test_packaged_report_is_preserved_when_later_packaging_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9aa7f1cf0c5f343afc9db040861be9f19bd247187ff086ec72fa0faefeb3dc7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FinalComponentInspection.test_raw_diagnostic_retains_shared_failure_and_raw_component_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9aa7f1cf0c5f343afc9db040861be9f19bd247187ff086ec72fa0faefeb3dc7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "FinalComponentInspection.test_reporting_stale_input_preserves_original_build_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9aa7f1cf0c5f343afc9db040861be9f19bd247187ff086ec72fa0faefeb3dc7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FinalComponentInspection.test_stale_inspection_still_fails_closed_and_preserves_packaged_report": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -252,6 +304,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_guest_compatibility.py",
-  "reviewReason": "Extend compatibility coverage with stale and unwritable report fallbacks; preserve existing discovery guards",
+  "reviewReason": "Retain immutable packaged reports and source-bound failure/raw sibling diagnostics with four additive execution controls",
   "schemaVersion": "latent.ci.contracts.v1"
 }
