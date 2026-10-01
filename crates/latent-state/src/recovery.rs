@@ -11,6 +11,8 @@ use crate::{
 };
 use latent_core::{StateNamespaceId, TenantId};
 
+pub mod snapshot;
+
 pub const GUARD_KEY: &[u8] = b"recovery-control-v1\0";
 pub const GUARD_BYTES: usize = 133;
 const MAGIC: &[u8] = b"RCV\x01";
