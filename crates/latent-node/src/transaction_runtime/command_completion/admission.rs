@@ -67,6 +67,7 @@ pub struct CommandAdmissionSelection {
     result_read: Arc<StateAuthorization>,
     codec: Arc<dyn CommandResultCodec>,
     retry: Option<CommandRetry>,
+    original: Option<latent_state::embedded::ExpectedRow>,
 }
 impl CommandAdmissionSelection {
     pub fn new(
@@ -121,6 +122,7 @@ impl CommandAdmissionSelection {
             result_read,
             codec,
             retry: None,
+            original: None,
         })
     }
 
@@ -129,6 +131,46 @@ impl CommandAdmissionSelection {
             return Err(errors::atomic(AtomicError::Invalid));
         }
         self.retry = Some(retry);
+        Ok(self)
+    }
+
+    /// Replace only result-read authority with the actual original source
+    /// selected from authorized same-store metadata. Execution retains the
+    /// current installed publication and cannot adopt the retained old source.
+    pub fn with_original_result_read(
+        mut self,
+        original: super::OriginalCommandMetadata,
+        read: Arc<StateAuthorization>,
+    ) -> Result<Self, PlatformError> {
+        let record = original.original_command();
+        if original.current.publication() != self.execution.publication()
+            || original.current.authority.ownership() != self.execution.authority.ownership()
+            || !super::original::same_expected(
+                &original.expected,
+                &self.execution.namespace.expectation(),
+            )
+            || !super::original::same_expected(&original.expected, &read.namespace.expectation())
+            || read.authority_mode() != latent_capabilities::namespace::Mode::Inspection
+            || read.activation_id() != self.execution.activation_id()
+            || !read.budget.is_same_instance(&self.execution.budget)
+            || record.key() != &self.input.key
+            || record.source().contract_digest != self.input.source.contract_digest
+            || record.source().input_format != self.input.source.input_format
+            || record.source().result_format != self.codec.format()
+            || record.source().state_schema != self.input.source.state_schema
+            || record.fingerprint()
+                != latent_commit::atomic::fingerprint(
+                    &self.input.fingerprint,
+                    self.input.inbox.as_ref(),
+                )
+                .map_err(errors::atomic)?
+        {
+            return Err(errors::atomic(AtomicError::PermissionDenied));
+        }
+        read.accepts_record(record)?;
+        read.authorize("read-result", 0, 0, || Ok(()))?;
+        self.result_read = read;
+        self.original = Some(original.command_expected);
         Ok(self)
     }
 }
@@ -248,12 +290,14 @@ impl CommandAdmission {
             result_read,
             codec,
             retry,
+            original,
         } = selected;
         let key = input.key.clone();
         let (decision, operation) = self
             .publish_claim(
                 input,
                 retry,
+                original,
                 Arc::clone(&execution),
                 Arc::clone(&result_read),
                 Arc::clone(&memory),
@@ -295,6 +339,7 @@ impl CommandAdmission {
         &self,
         input: AdmissionInput,
         retry: Option<CommandRetry>,
+        original: Option<latent_state::embedded::ExpectedRow>,
         auth: Arc<StateAuthorization>,
         read: Arc<StateAuthorization>,
         memory: Arc<HostMemoryReservation>,
@@ -314,6 +359,11 @@ impl CommandAdmission {
                     native.enter();
                     let decision = (|| {
                         let view = store.snapshot()?;
+                        if let Some(original) = &original {
+                            if view.get(&original.key)? != original.value {
+                                return Ok(Err(AtomicError::Conflict));
+                            }
+                        }
                         let ownership = auth.authority.ownership();
                         latent_state::recovery::require_namespace_ready(
                             &view,
@@ -328,6 +378,8 @@ impl CommandAdmission {
                         let authorize = |access, record: Option<&CommandRecord>| {
                             if access == CommandAccess::Replay {
                                 if let Some(record) = record {
+                                    super::history::require_record(&view, record)
+                                        .map_err(super::history::atomic_error)?;
                                     read.accepts_record(record)
                                         .map_err(|_| AtomicError::PermissionDenied)?;
                                 }
@@ -374,26 +426,21 @@ impl CommandAdmission {
                     let operation = native
                         .into_operation()
                         .map_err(|_| StoreError::Unavailable)?;
-                    Ok((decision, operation))
+                    Ok((decision, operation, time))
                 })
                 .map_err(errors::protected)?;
-        let (decision, operation) = job
+        let (decision, operation, _time) = job
             .await
             .map_err(|_| errors::atomic(AtomicError::RecoveryRequired))?
             .map_err(errors::protected)?;
-        match decision {
-            Ok(Ok(value)) => Ok((value, operation)),
-            Ok(Err(error)) => {
-                operation.retire().await;
-                self.coordinator.time.retire_without_claim();
-                Err(errors::atomic(error))
-            }
-            Err(error) => {
-                operation.retire().await;
-                self.coordinator.time.retire_without_claim();
-                Err(errors::atomic(error.into()))
-            }
-        }
+        let error = match decision {
+            Ok(Ok(value)) => return Ok((value, operation)),
+            Ok(Err(error)) => errors::atomic(error),
+            Err(error) => errors::store(error),
+        };
+        operation.retire().await;
+        self.coordinator.time.retire_without_claim();
+        Err(error)
     }
 
     async fn open_claim(

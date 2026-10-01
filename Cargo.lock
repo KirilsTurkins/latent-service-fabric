@@ -2302,6 +2302,7 @@ dependencies = [
  "latent-blobs",
  "latent-capabilities",
  "latent-control-store",
+ "latent-commit",
  "latent-core",
  "latent-effects",
  "latent-executor",

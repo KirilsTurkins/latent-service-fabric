@@ -8,14 +8,17 @@ mod admission;
 mod delivery;
 mod driver;
 mod errors;
+mod history;
 mod lookup;
 mod native;
+mod original;
 mod output;
 mod retry;
 pub use admission::{
     CommandAdmission, CommandAdmissionFactory, CommandAdmissionSelection, CommandCoordinator,
 };
 pub use delivery::ResultDeliveryFence;
+pub use original::OriginalCommandMetadata;
 pub use output::{CanonicalCommandResult, CommandOutput, CommandResultCodec};
 pub use retry::CommandRetry;
 

@@ -38,7 +38,19 @@ impl Transport {
         clock: Arc<dyn ActivationClock>,
         control_runtime: Handle,
     ) -> Result<Self, PlatformError> {
-        let routes = tonic::service::Routes::new(invocation.into_server())
+        Self::start_with_state(config, invocation, management, None, clock, control_runtime).await
+    }
+
+    pub(crate) async fn start_with_state(
+        config: TransportConfig,
+        invocation: InvocationServiceAdapter<LocalInvocationRuntime>,
+        management: ManagementServiceAdapter,
+        state: Option<latent_wire::phase4::StateManagementBackend>,
+        clock: Arc<dyn ActivationClock>,
+        control_runtime: Handle,
+    ) -> Result<Self, PlatformError> {
+        let phase4 = state.map(|runtime| management.phase4_adapter(Arc::new(runtime)));
+        let mut routes = tonic::service::Routes::new(invocation.into_server())
             .add_service(management.clone().release_server())
             .add_service(management.clone().deployment_server())
             .add_service(management.clone().trigger_server())
@@ -47,9 +59,13 @@ impl Transport {
             .add_service(management.clone().rollout_server())
             .add_service(management.clone().policy_server())
             .add_service(management.clone().capability_server())
-            .add_service(management.node_server())
-            .prepare();
-        Self::start_routes(config, routes, clock, control_runtime).await
+            .add_service(management.node_server());
+        if let Some(adapter) = phase4 {
+            routes = routes
+                .add_service(adapter.clone().state_server())
+                .add_service(adapter.transaction_server());
+        }
+        Self::start_routes(config, routes.prepare(), clock, control_runtime).await
     }
 
     async fn start_routes(
