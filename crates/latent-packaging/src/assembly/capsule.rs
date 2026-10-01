@@ -10,6 +10,7 @@ use latent_artifacts::{
 use latent_core::PlatformError;
 use latent_manifest::{
     JsonManifestCodec, ManifestCodec, ManifestLimits, ManifestValidator, Phase1ManifestValidator,
+    Phase4TransactionManifestValidator,
 };
 
 use crate::{CheckedSurface, LayerInput, PackagingLimits};
@@ -63,7 +64,13 @@ pub(crate) fn inspect_capsule(
     let manifest = manifest_codec(limits)
         .decode_capsule(content(LayerRole::CapsuleManifest)?)
         .map_err(|_| crate::invalid("invalid-package-capsule-manifest"))?;
-    Phase1ManifestValidator
+    let host_profile = host_profile(config, blobs, &manifest)?;
+    let validator: &dyn ManifestValidator = if host_profile == latent_core::PHASE4_HOST_ABI_V1 {
+        &Phase4TransactionManifestValidator
+    } else {
+        &Phase1ManifestValidator
+    };
+    validator
         .validate_capsule(&manifest)
         .map_err(|_| crate::invalid("unsupported-package-capsule-manifest"))?;
     if manifest.semantic_version != config.version {
@@ -85,7 +92,6 @@ pub(crate) fn inspect_capsule(
             (package.source_path.clone(), blobs[index].1.as_slice())
         })
         .collect::<BTreeMap<_, _>>();
-    let host_profile = host_profile(config, blobs, &manifest)?;
     crate::semantics::validate_capsule_for_profile(
         content(LayerRole::Component)?,
         &manifest,

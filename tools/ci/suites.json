@@ -2427,6 +2427,36 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "deployment_document_accepts_both_shapes_without_selecting_artifact_authority",
+        "fresh_query_ceiling_allows_zero_mutation_and_intent_capacity",
+        "transaction_bounds_reject_immediate_operations_children_and_overflowing_ceilings",
+        "transaction_ceilings_require_explicit_phase4_validation_and_preserve_unsigned_width",
+        "transaction_validation_preserves_guest_scope_identity_and_deployment_fences"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-manifest.test.phase4-validation",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-manifest/Cargo.toml",
+      "minimumCases": 5,
+      "mode": "libtest",
+      "package": "latent-manifest",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "host-bounded",
+      "source": "tests/phase4_validation.rs",
+      "target": "phase4_validation",
+      "timeoutSeconds": 180
+    },
+    {
+      "boundary": "host",
+      "expectedCases": [
         "explicit_publication_roundtrips_without_reinterpreting_component_identity",
         "present_publication_requires_exact_typed_identity"
       ],
@@ -3743,6 +3773,34 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/sbom_association.rs",
       "target": "sbom_association",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [
+        "exact_companion_selects_transaction_manifest_validation_before_inspection",
+        "missing_or_forged_companion_never_adopts_transaction_budget_hints",
+        "transaction_profile_keeps_wit_component_and_resource_checks_authoritative"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-packaging.test.transaction-profile",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "manifest": "crates/latent-packaging/Cargo.toml",
+      "minimumCases": 3,
+      "mode": "libtest",
+      "package": "latent-packaging",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "tests/transaction_profile.rs",
+      "target": "transaction_profile",
       "timeoutSeconds": 900
     },
     {

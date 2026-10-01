@@ -27,7 +27,10 @@ pub use transaction_binding::{
     phase4_host_abi_digest, TransactionBinding, TransactionBindingError, TransactionOperation,
     TransactionOperationMode,
 };
-pub use validation::{Phase1ManifestValidator, MANIFEST_API_VERSION, PHASE1_FABRIC_VERSION};
+pub use validation::{
+    validate_deployment_document, Phase1ManifestValidator, Phase4TransactionManifestValidator,
+    MANIFEST_API_VERSION, PHASE1_FABRIC_VERSION,
+};
 pub use wire_codec::{ManifestDocument, ManifestKind};
 
 #[doc(hidden)]
