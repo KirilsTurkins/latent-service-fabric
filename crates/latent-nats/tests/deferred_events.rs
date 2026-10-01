@@ -7,5 +7,7 @@ mod campaign;
 mod locks;
 #[path = "deferred_events/proxy.rs"]
 mod proxy;
+#[path = "deferred_events/redrive.rs"]
+mod redrive;
 #[path = "deferred_events/support.rs"]
 mod support;

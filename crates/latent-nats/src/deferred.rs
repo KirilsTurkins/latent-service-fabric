@@ -3,6 +3,7 @@
 
 mod attempt;
 mod qualification;
+mod redrive;
 pub use qualification::JetStreamQualification;
 
 use crate::{network::Connection, request, EventError, NatsPublisher};
@@ -15,9 +16,11 @@ use latent_effects::{
     authority::{
         AuthorityError, DispatchCeiling, DispatchGrant, DispatchProfile, EffectRule, EffectScope,
     },
-    dispatch::AttemptIdentity,
+    dispatch::{AttemptIdentity, RetryProof},
     payload::PayloadRecord,
-    runtime::{AdapterOutcome, DeferredEffectAdapter, EffectTimeSource},
+    runtime::{
+        AdapterOutcome, DeferredEffectAdapter, EffectTimeSource, ProviderReconciliationRequest,
+    },
 };
 use sha2::{Digest, Sha256};
 use std::{io, sync::Arc};
@@ -138,6 +141,14 @@ impl DeferredEffectAdapter for JetStreamEffectAdapter {
             horizon,
         };
         Ok(Box::pin(accepted.run()))
+    }
+
+    fn qualify_redrive(
+        &self,
+        request: &ProviderReconciliationRequest,
+        time: latent_effects::authority::EffectTime,
+    ) -> Result<RetryProof, AuthorityError> {
+        self.redrive_qualification(request, time)
     }
 }
 

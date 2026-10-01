@@ -17,7 +17,9 @@ promising a predecessor or global order.
 
 Each attempt retains the shared tenant/provider/running request reservation,
 input capacity and finite protocol scratch until the actual socket future and
-buffers retire. Successful acknowledgement may transfer a verified socket to
+buffers retire. The original request is the last attempt field destroyed, after
+the payload and attempt identity, so its retained grant owner outlives them.
+Successful acknowledgement may transfer a verified socket to
 the charged shared idle pool. There is no detached protocol driver. The sealed
 original expiry/deadline limits the query and publish together, with at most two
 network operations. Provider rotation and protected secret currentness are
@@ -45,6 +47,18 @@ creation identity, uses checked 100/200/400/800 ms delay, the original finite
 attempt ceiling and the earlier of expiry or duplicate horizon. The dispatcher
 persists each explicit retry. Unproven/backward time, expiry, profile change or a
 retry outside that horizon stops publication for reconciliation.
+
+The trusted management `qualify_redrive` port describes only the installed
+profile's finite equal-ID duplicate contract. It verifies the original canonical
+payload, exact profile (including stream creation/configuration), tenant/event
+scope and attempt ceiling. Its horizon is the earlier of original commit plus
+duplicate window, original expiry and any already narrower attempt horizon.
+Discontinuous/backward time, an exhausted ceiling or an elapsed horizon rejects
+qualification. It performs no clock observation or I/O and grants no send.
+The management writer separately checks current operator authority, original
+history/row version and actual prior physical retirement. Every later publication
+still probes the actual broker incarnation/configuration before writing. Missing
+broker status cannot manufacture known nonexecution or permanent deduplication.
 
 NATS documents message-ID deduplication and expected-stream checks in its
 [JetStream reference](https://docs.nats.io/reference/2.12/jetstream). The
@@ -79,9 +93,10 @@ all 88 historical obligations and observed 221 current run blocks with 132
 reviewed delegated owners.
 
 The maintained provider CI lane selects `deferred_events` through
-`tools/run_nats_deferred_tests.py`. Its eight registered native schedules all
-passed against the actual controlled broker in 7.57 seconds, with zero ignored
-or filtered cases. The earlier seven-schedule campaign passed in 5.33 seconds.
+`tools/run_nats_deferred_tests.py`. Its nine registered native schedules all
+passed against the actual controlled broker in 6.15 seconds, with zero ignored
+or filtered cases. The earlier seven-schedule campaign passed in 5.33 seconds,
+and the eight-schedule lock-order campaign passed in 7.57 seconds.
 Each schedule uses the protected shared store, native
 captured-intent atomic writer, fixed dispatcher, protected credential references
 and the original installed provider pools. An acknowledgement fault proxy
@@ -106,6 +121,15 @@ trigger campaigns
 and their required CI owners. The earlier selected ownership, runner and
 inventory regressions passed all 58 Python cases.
 
+The ninth schedule reads the actual lost-acknowledgement attempt, payload and row
+version from one coherent protected-store view. Qualification keeps the original
+finite horizon and rejects discontinuity, expiry, exhausted attempts, changed
+payload and an actual recreated-stream profile. Deliberately narrowed metadata
+candidates cannot widen that horizon or authorize a send. The shared effect
+library passed all 88 cases after integrating the bounded original management
+catalog; its detached control fixture now positively observes metadata
+publication separately from an earlier durable receipt.
+
 The measured identities are:
 
 | Input | Exact identity |
@@ -119,9 +143,14 @@ The measured identities are:
 | `campaign.rs` fixture blob | `38df1a6af23f56e0c5393c8b3a950cf91c071cd1` |
 | `proxy.rs` fixture blob | `b2baf2c21d156fadb2a11da35cd74e50e8eaec5a` |
 | Earlier seven-case harness SHA-256 | `4460495f3504db1cdc33f0c939e72e1e70b56ef2b3f4c27a2ec92fa876665298` |
-| Current `deferred.rs` blob | `dbc3fce8d8ccb3c2f64de6ab6273cf02f7447fa4` |
+| Lock-order `deferred.rs` blob | `dbc3fce8d8ccb3c2f64de6ab6273cf02f7447fa4` |
 | `locks.rs` fixture blob | `cbf12bec8cd0ee1f2565b279a1c298e1a5f7022d` |
 | Eight-case harness SHA-256 | `8ab4cf91a967557a1249b588a82a0adeb3687142aadd2ee0e00c8e5794620ae5` |
+| `redrive.rs` adapter blob | `6f9be5d9e0f2af15f8768fd7ea46e9b0c49deeb3` |
+| `redrive.rs` fixture blob | `1a32c47bd578cd909e3d99c7f94e6964c7ad0546` |
+| Nine-case horizon harness SHA-256 | `c46cca0bff42baaa45c0df70fb6db86814466614661e7a00687df58127ec5679` |
+| Last-request `attempt.rs` blob | `f018aa1178ddd061aa3af968198f93d2bd6bd4f3` |
+| Nine-case retirement-order harness SHA-256 | `e25ed98d6b8893f849a393743900e51154783054ef64f0e9b43ea8b1fd18626a` |
 
 The fixture stream has file storage, one replica, 64 messages/1 MiB, discard-new,
 a 30-second duplicate window, and delete/purge denied. The runner owns one
