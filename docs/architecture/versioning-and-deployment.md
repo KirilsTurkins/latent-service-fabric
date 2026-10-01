@@ -171,6 +171,33 @@ contract/function selection, exact host/provider bindings and
 isolated local service calls; it does not migrate a consumer's contract ID
 implicitly. See [contracts and bindings](contracts-and-bindings.md).
 
+## Phase 4 retained state and outcome compatibility
+
+[ADR-0062](../../adr/0062-host-own-serializable-transactions-and-durable-outcomes.md)
+decides the application-transaction handoff. The current catalog formats above
+remain management formats, not application state/outbox qualification. Phase 4
+#398/#405 must version application state schema independently of durable intent,
+result, inbox, ordering, checkpoint and payload-reference formats. Compatibility
+checks include every retained decoder, pending record and required binding/schema/
+publication association. Compatible upgrades preserve them; decoder removal or
+retirement that would strand work refuses before a route transition.
+
+Stable namespace/incarnation and caller-scoped command identity survive compatible
+revision switches. Exact source/revision pins remain historical receipt/audit
+data and never grant current result-read or dispatch authority. Full result replay
+preserves approved current business visibility checks. A rollback publishes new
+code/routes without rewinding state, command history or externally visible work.
+Migration is explicit, bounded, authorized and restart-safe.
+
+#399's consistent backup covers the complete state/outbox/outcome/inbox and linked
+payload/format graph. Restoring older history creates a new namespace incarnation,
+discards historical grants and starts command/effect/inbox processing paused for
+explicit reconciliation of work that may already have escaped the backup. It
+cannot turn an unknown outcome into abort proof or preserve a stale query's
+read-after-acknowledgement promise across that discontinuity. Ordinary restart
+preserves incarnation and acknowledged history. #397/#400 keep conservative time
+anchors and physically usable finite recovery capacity under declared saturation.
+
 ## Derived artifacts
 
 AOT images are cache derivatives. Their authenticated identity binds the exact

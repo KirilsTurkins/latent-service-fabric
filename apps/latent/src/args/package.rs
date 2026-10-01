@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 pub enum PackageCommand {
     /// Print the exact installed Angular renderer compatibility identity for builders.
     RendererProfile,
+    /// Canonicalize approved public trust inputs with the runtime's exact rules.
+    CanonicalPolicy(PackageCanonicalPolicyArgs),
     /// Package explicitly supplied bytes; does not compile source or create provenance.
     Build(PackageBuildArgs),
     /// Inspect exact package identities and semantics without granting trust.
@@ -15,6 +17,14 @@ pub enum PackageCommand {
     Push(PackagePushArgs),
     /// Resolve a reference once and export its exact package and detached evidence.
     Pull(PackagePullArgs),
+}
+
+#[derive(Args)]
+pub struct PackageCanonicalPolicyArgs {
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
+    pub publisher_policy: PathBuf,
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
+    pub builder_policy: PathBuf,
 }
 
 #[derive(Args)]
@@ -82,6 +92,7 @@ impl PackageCommand {
     pub fn name(&self) -> &'static str {
         match self {
             Self::RendererProfile => "package renderer-profile",
+            Self::CanonicalPolicy(_) => "package canonical-policy",
             Self::Build(_) => "package build",
             Self::Inspect(_) => "package inspect",
             Self::Verify(_) => "package verify",
@@ -94,6 +105,11 @@ impl PackageCommand {
         let path = |p: &Path| path_argument(p);
         match self {
             Self::RendererProfile => (),
+            Self::CanonicalPolicy(a) => {
+                path(&a.publisher_policy)?;
+                path(&a.builder_policy)?;
+                crate::input::single_stdin(&[&a.publisher_policy, &a.builder_policy])?;
+            }
             Self::Build(a) => {
                 for p in [&a.source, &a.input_root, &a.output_dir] {
                     path(p)?;
