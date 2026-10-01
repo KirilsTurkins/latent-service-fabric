@@ -8,8 +8,7 @@ from tools.dev_workflow.common import decode, encode, digest, require
 from tools.rust_capsule_project import ROOT, inventory, read_file, read_json, write_json
 
 RECIPE = ("tools/guest_compatibility.py", "tools/guest_compatibility_build.py",
-          "tools/dev_workflow/common.py", "wit/host-abi-phase3-v4.json",
-          "wit/host-abi-phase3-v5.json")
+          "tools/dev_workflow/common.py", "wit/host-abi-phase3-v4.json")
 
 DEFAULT_PROFILE = "lsf-host-abi-phase3-v4"
 HOST_MANIFESTS = {
@@ -41,6 +40,28 @@ def host_manifest(profile: str) -> dict:
     host = read_json(ROOT / HOST_MANIFESTS[profile])
     require(host.get("id") == profile, "compatibility-host-profile-identity")
     return host
+
+
+def capture_host_recipe(output: Path, files: dict[str, bytes], recorded: bytes, surface: dict) -> bytes:
+    """Capture a declared profile before its first use without extending V4 inputs.
+
+    Some adapters derive authoritative staged WIT after compilation. The host
+    manifest observes that surface; it does not influence guest compilation.
+    An added manifest cannot hide changes to any originally captured recipe.
+    """
+    selected = HOST_MANIFESTS[declared_host_abi(surface)]
+    if selected in files:
+        return recorded
+    require(inventory({name: read_file(ROOT / name) for name in files}) == recorded,
+            "compatibility-stale-recipe")
+    raw = read_file(ROOT / selected)
+    host = decode(raw, 8 * 1024 * 1024)
+    require(isinstance(host, dict) and host.get("id") == declared_host_abi(surface),
+            "compatibility-host-profile-identity")
+    updated = inventory({**files, selected: raw})
+    (output / "recipe-inputs.json").write_bytes(updated)
+    files[selected] = raw
+    return updated
 
 
 def inspection_manifest(output: Path, inspection: dict | None) -> dict:

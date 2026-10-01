@@ -16,6 +16,15 @@ packaging and failure reporting recheck that digest. Existing V4 inspection
 records retain their original shape. Provider installation, exact grants,
 runtime support and normal node admission still require their own evidence.
 
+V4 recipes require only their existing V4 manifest. A declared V5 surface adds
+the exact V5 manifest to the retained recipe inventory before its first use;
+the final recipe recheck includes that input. .NET and TypeScript derive the
+surface before compilation. Adapters that derive staged WIT afterward capture
+the additional observation input before inspecting and packaging the result.
+Adding that input cannot hide a changed original recipe. A missing or changed
+V5 manifest fails the build. A compiler bundle retains the manifest for its
+explicitly advertised ABI profile, while V4 bundles need no V5 material.
+
 Each package contains `compatibility-report.json`, a source-bound observation
 using `lsf.guest.compatibility.v1`. Its identity binds the source inventory,
 component, selected host ABI and SDK lock. The report does not install providers,
