@@ -49,8 +49,14 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                     self.assertEqual(companion["profile"], "lsf-transaction-v1")
                     self.assertEqual([item["operation"] for item in companion["operations"]], ["update", "query", "scan"])
                     self.assertEqual(companion["capsule"], project["service"])
-                    self.assertEqual(files["wit/deps/forbidden-http/package.wit"],
+                    self.assertEqual(files["wit/deps/http-v2/package.wit"],
                                      files["vendor/lsf/wit/platform/http-v2/package.wit"])
+                    from tools.stage_runtime_wit import copy_wit_tree, dependencies, PACKAGE, source_text
+                    staged = Path(temporary) / (language + "-compiler-wit")
+                    copy_wit_tree(source / "wit", staged)
+                    for package in dependencies(source / "wit", source / "vendor/lsf/wit/platform"):
+                        copy_wit_tree(package, staged / "deps" / package.name)
+                    self.assertEqual(PACKAGE.findall(source_text(staged)).count("latent:http@0.2.0"), 1)
                     self.assertEqual(files["wit/world.wit"].decode().count("import " + HTTP + ";"), 1)
                     code = files[SOURCES[language]].decode()
                     self.assertIn(call, code)
