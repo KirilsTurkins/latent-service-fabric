@@ -12,7 +12,9 @@ mod role;
 mod runtime;
 mod selection;
 mod validation;
-pub use inspection::{NativeDeferredEffectHostInspection, NativeTransactionHostInspection};
+pub use inspection::{
+    NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,
+};
 pub use lifecycle::StateShutdownReport;
 pub use request::StateRequest;
 pub use runtime::StateRuntime;
