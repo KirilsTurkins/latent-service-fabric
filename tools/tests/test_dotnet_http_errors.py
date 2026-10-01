@@ -234,6 +234,43 @@ class HttpErrorPortTests(unittest.TestCase):
                         [runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION], self.project, output, self.evidence, malformed)
         self.assertFalse((self.evidence / "derived-System.Net.Http.dll").exists())
 
+    def test_real_framework_reference_cardinality_keeps_full_rsp_and_bounded_http_receipt(self):
+        port = self.prepare()
+        observed = json.loads(read_file(ROOT / "tools/tests/fixtures/dotnet-http-framework-references.json"))
+        self.assertEqual(len(observed["references"]), 345)
+        self.assertEqual(observed["originalReferenceBytes"], 65726)
+        self.assertEqual(observed["originalLimitBytes"], http_errors.MAX_RECEIPT)
+        references = [str(port.assembly) if row["scope"] == "derived" else str(
+            self.tools / "captured-complete-framework-inputs" / observed["scopes"][row["scope"]] / row["name"])
+            for row in observed["references"]]
+        complete = "\n".join(references) + "\n"
+        self.assertGreater(len(complete.encode()), http_errors.MAX_RECEIPT)
+        response = self.reference_files(port, references=[str(port.assembly)],
+                                        response="\n".join("-r:" + path for path in references) + "\n")
+        evidence = port.finish(self.project, self.evidence)["nativeAotReferenceBinding"]
+        self.assertEqual(evidence["referenceListDigest"], digest(port.reference_receipt.read_bytes()))
+        self.assertEqual(evidence["responseFiles"], [{"digest": digest(response.read_bytes()),
+                                                      "size": response.stat().st_size}])
+        self.assertGreater(evidence["responseFiles"][0]["size"], http_errors.MAX_RECEIPT)
+        port.reference_receipt.write_text(complete, encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "bounded regular file"):
+            port.finish(self.project, self.evidence)
+
+    def test_narrow_receipt_never_authorizes_unknown_missing_or_duplicate_native_http_edges(self):
+        port = self.prepare()
+        response = self.reference_files(port, references=[str(port.assembly)])
+        for actual, reason in (([str(self.root / "unknown/System.Net.Http.dll")], "reference-drift"),
+                               ([], "reference-not-observed"),
+                               ([str(port.assembly), str(port.assembly)], "reference-drift")):
+            response.write_text("\n".join("-r:" + path for path in actual) + "\n", encoding="utf-8")
+            with self.subTest(actual=actual), self.assertRaisesRegex(ValueError, reason):
+                port.finish(self.project, self.evidence)
+        response.write_text("-r:" + str(port.assembly) + "\n", encoding="utf-8")
+        for actual in ([], [str(port.assembly), str(port.assembly)], [str(port.originals[0])]):
+            port.reference_receipt.write_text("\n".join(actual) + "\n", encoding="utf-8")
+            with self.subTest(receipt=actual), self.assertRaisesRegex(ValueError, "reference-binding"):
+                port.finish(self.project, self.evidence)
+
 
 class RawCompilerRetentionTests(unittest.TestCase):
     @staticmethod

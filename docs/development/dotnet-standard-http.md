@@ -38,7 +38,7 @@ and the frozen host-ABI compatibility checks.
 
 The installer builds each adapter from pinned Rust dependencies. Runtime source
 capture includes the complete `sdk/dotnet-guest/runtime` tree, the smoke manifest,
-all three example entrypoints and the workspace manifest and lockfile. Independent
+all five example entrypoints and the workspace manifest and lockfile. Independent
 project capture includes those same sources. Installed bytes and compiler inputs
 are checked again after compilation. `runtime-profile.json` binds the selected
 profile, declared/emitted imports, raw component and actual adapter identities;
@@ -277,8 +277,25 @@ interface; all other duplicate exports remain rejected.
 The closed primary adapters still deny wall-clock calls, and the historical
 direct SDK HTTP path retains its independent selection. Compiler capture,
 managed distribution and private staging retain the fifth adapter and its
-source. The selector and composition controls are source evidence. Actual
-adapter compilation, a fresh normally signed invocation and a missing-wall
-zero-work denial remain required. This clock mapping does not qualify genuine
+source. At frozen source `dbd1038d57f3514c2df3e6304d42efdac72f2d43`, all five
+adapters were actually compiled and encoded, including the 21,215-byte wall
+facet. The five normal node/CLI/signing/packaging tools passed their managed
+native build with all 7,397 source inputs unchanged. A fresh normally signed
+invocation and a missing-wall zero-work denial remain required. This clock mapping
+does not qualify genuine
 CLR Task, timer callback or ThreadPool progress under #746, or the remaining
 default-client and common HTTP criteria under #693 and #680.
+
+The subsequent unchanged-application build emitted a 6,042,098-byte NativeAOT
+component, then failed before composition or signing because its HTTP reference
+assertion receipt was 65,726 bytes. A private observation confirmed 345 framework
+references and exactly one derived HTTP edge; the original 65,536-byte guard
+still denied the receipt. The complete compiler-input capture and actual native
+response file remain bound separately. The target now records the HTTP
+replacement edges in this assertion receipt and retains the original preimage,
+unknown-edge, duplicate-edge and full native-response validation. Six actual
+pinned MSBuild controls reproduce the original overflow, accept the same full
+345-reference graph with a 68-byte assertion receipt, and reject missing,
+unknown and excess HTTP inputs. The [reference-receipt evidence](../testing/evidence/dotnet-http-reference-receipt-2026-10-02.json)
+retains these distinct failed-build and target-control boundaries. It does not
+qualify the repaired full build or default-client execution.

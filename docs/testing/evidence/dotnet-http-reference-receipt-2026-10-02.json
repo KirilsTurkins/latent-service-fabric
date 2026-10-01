@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "latent.dotnet.http-reference-receipt-evidence.v1",
+  "status": "exact overflow reproduced and assertion receipt narrowed",
+  "sourceRevision": "dbd1038d57f3514c2df3e6304d42efdac72f2d43",
+  "normalFailedBuild": {
+    "rawNativeAotComponentBytes": 6042098,
+    "rawWitGraphBytes": 58080,
+    "stage": "HTTP BCL reference receipt finalization before profile selection/signing/node",
+    "nodeDispatched": false
+  },
+  "privateObservation": {
+    "originalReceiptBytes": 65726,
+    "originalReceiptSha256": "eeda66fa4701b3123354cbd648810ed1a70ad06d1a1284db6bcfff0731d1d6b8",
+    "maximumProductReceiptBytes": 65536,
+    "referenceCount": 345,
+    "derivedHttpEdges": 1,
+    "nativeResponseBytes": 71479,
+    "nativeResponseSha256": "3f6adc67f0eb8a42cd3b08a9822c2b7c5fdb00eaacc26cf68beeafc79993ccc0",
+    "completeCompilerInputsBytes": 3551899,
+    "completeCompilerInputsSha256": "19fc5abcea6c538f1d540af960dbeffe824a3ab731974e3df41d23be52e4cc6c",
+    "observer": "bounded stat/reference/RSP capture before calling the unchanged original finish guard; always stops before signing or node"
+  },
+  "actualMsbuildControls": {
+    "kind": "actual-pinned-msbuild-original-and-repaired-reference-target-controls",
+    "status": "passed",
+    "sourceRevision": "dbd1038d57f3514c2df3e6304d42efdac72f2d43",
+    "originalTargetSha256": "5bd732ddfa67329d6ff7a63d18f3337a3f1308f820531f3de41644a2e0995a2b",
+    "repairedTargetSha256": "264e0037f4f0aaffadbc6fc2e4c7d1f46eb7a877ff042223addcbca55ec90949",
+    "originalReceiptCapBytes": 65536,
+    "records": [
+      {
+        "case": "original-real-framework-list",
+        "variant": "normal",
+        "exitCode": 0,
+        "fullFrameworkInputs": 345,
+        "receiptBytes": 65713,
+        "unchangedBoundDenied": true
+      },
+      {
+        "case": "repaired-real-framework-list",
+        "variant": "normal",
+        "exitCode": 0,
+        "fullFrameworkInputs": 345,
+        "receiptBytes": 68,
+        "digest": "1ecb07c355f149bb29a76b13548eb8b1e6dc0d0d3f2e17b0b1a8191eebf0ad05",
+        "onlyDerivedHttpEdge": true
+      },
+      {
+        "case": "repaired-missing-edge",
+        "variant": "missing",
+        "exitCode": 1,
+        "fullFrameworkInputs": 345,
+        "receiptBytes": null,
+        "denial": "http-error-port-framework-reference-count"
+      },
+      {
+        "case": "repaired-unknown-edge",
+        "variant": "unknown",
+        "exitCode": 1,
+        "fullFrameworkInputs": 345,
+        "receiptBytes": null,
+        "denial": "http-error-port-unknown-framework-reference"
+      },
+      {
+        "case": "repaired-duplicate-unknown-edge",
+        "variant": "duplicate-unknown",
+        "exitCode": 1,
+        "fullFrameworkInputs": 345,
+        "receiptBytes": null,
+        "denial": "http-error-port-unknown-framework-reference"
+      },
+      {
+        "case": "repaired-excess-edges",
+        "variant": "excess-candidates",
+        "exitCode": 1,
+        "fullFrameworkInputs": 345,
+        "receiptBytes": null,
+        "denial": "http-error-port-framework-reference-count"
+      }
+    ],
+    "elapsedSeconds": 8.732200985999953,
+    "normalNativeAotOrNodeQualified": false
+  },
+  "preserved": {
+    "receiptBytes": 65536,
+    "nativeRspBytes": 1048576,
+    "nativeRspTotalBytes": 4194304,
+    "nativeRspFiles": 64,
+    "frameworkPreimages": "exact original public/private System.Net.Http inputs",
+    "unknownAndDuplicateNativeHttpEdges": "denied",
+    "completeFrameworkCapture": "compiler-inputs.json retains all selected framework bytes; full actual ILC response hashed and HTTP edges verified"
+  },
+  "ordinaryDefaultClientQualified": false,
+  "schedulerTaskThreadPoolQualified": false,
+  "fullIssue693Qualified": false,
+  "fullIssue680Qualified": false
+}
