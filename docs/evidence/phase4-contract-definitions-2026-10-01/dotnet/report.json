@@ -1,0 +1,236 @@
+{
+  "schemaVersion": "latent.transaction-contract.compiler.v1",
+  "language": "dotnet",
+  "evidenceKind": "compiler-definition",
+  "compilerDefinitionQualified": true,
+  "runtimeExecutionQualified": false,
+  "externalClientExecutionQualified": false,
+  "status": "compiler-definition-qualified",
+  "world": "tests:transaction-contract/service@1.0.0",
+  "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "preparationProfileDigest": "sha256:6acd7a248633dd01c9cdcbf8a1ed33fc5e6aa1d2edb09b7d89e53fda594b5507",
+  "source": {
+    "c/probe.c": {
+      "digest": "sha256:b644908162d3099dd7be0a972e110521ec369a9f59919dd5a6290600442483ba",
+      "size": 7639
+    },
+    "dotnet/Main.cs": {
+      "digest": "sha256:2115191f18b6b87cf116100d579c03126a6a33f62b430aa29052f5d43be55b86",
+      "size": 1796
+    },
+    "go/main.go": {
+      "digest": "sha256:ada4a963063afb1541cb696adca981403a906529a5b1f19e12600c3d098f3f41",
+      "size": 1804
+    },
+    "java/dev/latent/app/Capsule.java": {
+      "digest": "sha256:60b03b8ee3e866a8fd6a5db64337ed5f826cdbfba62dbd4083efc3f7e72c96b5",
+      "size": 2459
+    },
+    "rust/component.rs": {
+      "digest": "sha256:f2660d280e0c7b009da5f6443f29a0dd83ea4fa1c3321f3ce64e9e27fccaed5f",
+      "size": 2960
+    },
+    "typescript/main.ts": {
+      "digest": "sha256:4dfe19c5a0f3bfa3ac528a04bcc041c2b4ebf7913635eef7c76ed67357c49526",
+      "size": 1937
+    },
+    "wit/world.wit": {
+      "digest": "sha256:d24899947439855d4529d7b2da6819160f632f29c8ea69b8bbe4e36264f93981",
+      "size": 437
+    }
+  },
+  "sourceRevision": "29771c51dfbb83181a083f7bcc78bd99266c724d",
+  "workingTreeChanged": false,
+  "sourceArchiveDigest": "sha256:af80fff1466f574c388b83868687c792a976fc8722191b6f9bcfb34877b34f35",
+  "componentDigest": "sha256:b1ebaac9ad16f96b6597c1a9a98d49396e2aaf363dd08205f939f64ed101cc49",
+  "componentBytes": 2613507,
+  "semanticSurfaceDigest": "sha256:50e0f628f99462a4200248f8dcacb797d813af4e139f535917f42a8d79a4d3b9",
+  "details": {
+    "bindings": {
+      "bindings": {
+        "authoritativeWitSha256": "a28b9ea705c67320e794e3d79b659f348ec2e360effa5eb6386238f368bcc16d",
+        "canonicalAbi": "stackful",
+        "generator": "wit-bindgen-cli 0.62.0",
+        "outputs": {
+          "Service.cs": "e17fdd04a991f737b6cbc171f3827997c566a002c1b339f7f647d2fd8a25e531",
+          "ServiceWorld.wit.Exports.tests.transactionContract.ApiExportsInterop.cs": "ab60d155e1a3a03935a5c6bb010ef54fd34d3fb33887a5b22ab73ea3a8defa44",
+          "ServiceWorld.wit.Exports.tests.transactionContract.IApiExports.cs": "ae8127daa34f6f310ad42507703c41aea9a72a8e291a344f34139afed692ac25",
+          "ServiceWorld.wit.Imports.latent.clock.IMonotonicImports.cs": "ec57bc4a0c360b41c61d2aa30b863b7910c7700ce5bc24a676358e9371ca3432",
+          "ServiceWorld.wit.Imports.latent.clock.IWallImports.cs": "efe8ded95b6f8633863b15dad3eae83f7408c77c79d6587ef915816c18a187d8",
+          "ServiceWorld.wit.Imports.latent.clock.MonotonicImportsInterop.cs": "9f99c65f739eb1c749c8c81309fc0241bbcfe8e72ab4ccb0f10f38aff0ae170b",
+          "ServiceWorld.wit.Imports.latent.clock.WallImportsInterop.cs": "0c1e18732df7eb1dd98d014cc6c8b5730bb6375fed09827fa4ee204a48dc4b6e",
+          "ServiceWorld.wit.Imports.latent.intents.IStagingImports.cs": "1df43b8c859e47492aa8de8173df17d9c10db178f72a9787295cfcdb7e256370",
+          "ServiceWorld.wit.Imports.latent.intents.StagingImportsInterop.cs": "8aec935503fa7778e551e0f8efad9819de92babe8d5d870f034c85f4f4d8cea2",
+          "ServiceWorld.wit.Imports.latent.random.IRandomImports.cs": "50cd9ee942f38d45546cd0a06a2802884ee87fb134b61b6c66498330b9d22fd0",
+          "ServiceWorld.wit.Imports.latent.random.RandomImportsInterop.cs": "4280d01e4d15b3a03fd92df00b01768c65926cd4fe35b3babfa5bdd3ecebfe87",
+          "ServiceWorld.wit.Imports.latent.state.IKeyValueImports.cs": "607a551d6e145f6b27d2e3a46b4f08cc97d5974faeb91f4ab055552b09c7b67f",
+          "ServiceWorld.wit.Imports.latent.state.KeyValueImportsInterop.cs": "bf8fd8cfc2d332ba52b8496f8106de3e8114a87ba6f17faeb9225d1a8e485214",
+          "ServiceWorld_component_type.wit": "588c7e03afc95eeeff4c776bf92b4a14b8b2976efbeb70cad13c4925a2d51975",
+          "ServiceWorld_wasm_import_linkage_attribute.cs": "dfdfb9754adc8bdeb9d8b68834e0555af8668b03ad4648a2efee5a7dd0a5dea5"
+        },
+        "schemaVersion": "latent.dotnet.bindings.v1",
+        "world": "tests:transaction-contract/service@1.0.0"
+      },
+      "capabilities": {
+        "latent:random/random@0.1.0": "ServiceWorld.wit.Imports.latent.random.IRandomImports"
+      },
+      "filesDigest": "sha256:7ee87a8cb1739cfc58e3a61c6508f7f138274e528b5f614c942c980c2dc0152e"
+    },
+    "tools": [
+      {
+        "name": "dotnet",
+        "digest": "sha256:7dda7a639bc35fba05c40d308b0296450aa4e628d109245a6312c385da9b0931",
+        "size": 68424
+      },
+      {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      },
+      {
+        "name": "wit-bindgen",
+        "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+        "size": 19856344
+      },
+      {
+        "name": "closed-runtime",
+        "digest": "sha256:c36c6ab7b94470101f22b445e7910088a6d9790d7c680a50b65710bbb79e390c",
+        "size": 46711
+      }
+    ],
+    "compilerClosureDigest": "sha256:4e1f1e10b40b03a5a23d8718119940ba308ee82c9989e83788c3b43b7d91085e"
+  },
+  "seconds": 22.715386,
+  "commands": [
+    {
+      "stage": "source-revision",
+      "exitCode": 0,
+      "seconds": 0.016951
+    },
+    {
+      "stage": "source-status",
+      "exitCode": 0,
+      "seconds": 0.399261
+    },
+    {
+      "stage": "retained-shared-source",
+      "exitCode": 0,
+      "seconds": 0.02531
+    },
+    {
+      "stage": "dotnet-version",
+      "exitCode": 0,
+      "seconds": 0.12651
+    },
+    {
+      "stage": "wasm-tools-version",
+      "exitCode": 0,
+      "seconds": 0.015099
+    },
+    {
+      "stage": "wit-bindgen-version",
+      "exitCode": 0,
+      "seconds": 0.014986
+    },
+    {
+      "stage": "dotnet-sdks",
+      "exitCode": 0,
+      "seconds": 0.025057
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.29858
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.338488
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.086553
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.126685
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.11666
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.076272
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.136897
+    },
+    {
+      "stage": "bindings",
+      "exitCode": 0,
+      "seconds": 0.257872
+    },
+    {
+      "stage": "bindings-drift",
+      "exitCode": 0,
+      "seconds": 0.257602
+    },
+    {
+      "stage": "canonical-wit",
+      "exitCode": 0,
+      "seconds": 0.015014
+    },
+    {
+      "stage": "locked-restore",
+      "exitCode": 0,
+      "seconds": 1.136923
+    },
+    {
+      "stage": "native-aot",
+      "exitCode": 0,
+      "seconds": 12.644304
+    },
+    {
+      "stage": "closed-runtime-composition",
+      "exitCode": 0,
+      "seconds": 0.025671
+    },
+    {
+      "stage": "validate",
+      "exitCode": 0,
+      "seconds": 0.015236
+    },
+    {
+      "stage": "surface",
+      "exitCode": 0,
+      "seconds": 0.015145
+    },
+    {
+      "stage": "validate-authoritative-component",
+      "exitCode": 0,
+      "seconds": 0.015603
+    },
+    {
+      "stage": "authoritative-surface",
+      "exitCode": 0,
+      "seconds": 0.015051
+    },
+    {
+      "stage": "compiled-surface",
+      "exitCode": 0,
+      "seconds": 0.014972
+    },
+    {
+      "stage": "retained-surface",
+      "exitCode": 0,
+      "seconds": 0.014942
+    }
+  ]
+}

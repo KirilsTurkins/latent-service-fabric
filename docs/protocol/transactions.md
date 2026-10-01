@@ -224,5 +224,7 @@ vocabulary across guest models, external client models, HTTP and actual executio
 Every result must name its actual boundary and source/compiler/engine/profile
 identity. The vocabulary and digest vectors claim no execution qualification.
 Reproduce definitions with `python tools/generate_transaction_contracts.py --check`.
-Six compiler/preparation receipts and the later real integration gates remain
-required evidence; generated stubs do not complete them.
+The [observed six-language compiler and HTTP preparation receipts](../evidence/phase4-contract-definitions-2026-10-01/README.md)
+qualify the definition at the exact recorded source and profile. The later real
+guest, external-client, runtime and HTTP integration gates retain independent
+execution evidence; generated stubs do not complete them.
