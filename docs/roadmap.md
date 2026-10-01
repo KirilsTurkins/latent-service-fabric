@@ -198,9 +198,57 @@ These boundaries remain explicit in the alpha.5 release description and guides.
 
 ## Phase 4: state and effects
 
-Transactional keyed state, optimistic concurrency, durable outbox, effect
-dispatcher, idempotency and entity-key routing. Phase 3 external HTTP/event
-operations do not claim an atomic guest-state transaction or exactly-once effects.
+**Status: implementation in progress; architectural decision and model evidence
+are distinct from enabled runtime/storage qualification.** Phase 3 gate #240,
+the six maintained guest SDKs (#544–#549) and packaged developer workflow #559 are
+completed foundations. [Epic #379](https://github.com/KirilsTurkins/latent-service-fabric/issues/379)
+and [gate #407](https://github.com/KirilsTurkins/latent-service-fabric/issues/407)
+own the finite implementation and collective acceptance. The
+[host-owned contract](../adr/0062-host-own-serializable-transactions-and-durable-outcomes.md)
+defines one tenant/namespace transaction, conservative serializable OCC, atomic
+state/outbox/outcome/inbox persistence, current caller-scoped recovery and
+independent bounded fresh queries. The
+[state/effect architecture](architecture/state-and-effects.md) records its boundary.
+
+| Wave | Required tickets and delivery |
+| --- | --- |
+| Contracts and storage | [#380](https://github.com/KirilsTurkins/latent-service-fabric/issues/380) host-owned decision/model; [#381](https://github.com/KirilsTurkins/latent-service-fabric/issues/381) one qualified embedded engine/durability profile; [#382](https://github.com/KirilsTurkins/latent-service-fabric/issues/382) exact WIT/RPC/host contracts and six-compiler shape checks. |
+| Core commands and queries | [#383](https://github.com/KirilsTurkins/latent-service-fabric/issues/383) shared protected store; [#384](https://github.com/KirilsTurkins/latent-service-fabric/issues/384) namespace authority/lifecycle; [#385](https://github.com/KirilsTurkins/latent-service-fabric/issues/385) bounded serializable OCC/scans; [#386](https://github.com/KirilsTurkins/latent-service-fabric/issues/386) atomic envelope; [#387](https://github.com/KirilsTurkins/latent-service-fabric/issues/387) deduplication/result/rejection/explicit-abort recovery; [#388](https://github.com/KirilsTurkins/latent-service-fabric/issues/388) shared activation/commit/cancellation/cleanup; [#408](https://github.com/KirilsTurkins/latent-service-fabric/issues/408) read-only fresh queries and stale-edit preconditions. |
+| Guest authoring | [#389](https://github.com/KirilsTurkins/latent-service-fabric/issues/389) Rust, C, TypeScript, Go, Java and C#/.NET guest SDKs/templates/actual components, with Java implementation slice [#718](https://github.com/KirilsTurkins/latent-service-fabric/issues/718). One shared host path; all six are required. |
+| Effects, entities and application HTTP | [#390](https://github.com/KirilsTurkins/latent-service-fabric/issues/390) durable dispatch authority/independent lifetime; [#391](https://github.com/KirilsTurkins/latent-service-fabric/issues/391) bounded dispatcher/claims/uncertainty; [#392](https://github.com/KirilsTurkins/latent-service-fabric/issues/392) real JetStream; [#393](https://github.com/KirilsTurkins/latent-service-fabric/issues/393) qualified idempotent HTTP; [#394](https://github.com/KirilsTurkins/latent-service-fabric/issues/394) active-only entity lanes; [#395](https://github.com/KirilsTurkins/latent-service-fabric/issues/395) transactional incoming messages/post-commit acknowledgements; [#409](https://github.com/KirilsTurkins/latent-service-fabric/issues/409) shared application HTTP command/query/authorized recovery. |
+| Durable lifecycle and operators | [#396](https://github.com/KirilsTurkins/latent-service-fabric/issues/396) immutable durable payload references; [#397](https://github.com/KirilsTurkins/latent-service-fabric/issues/397) linked quotas/retention/GC and physically reserved recovery capacity; [#398](https://github.com/KirilsTurkins/latent-service-fabric/issues/398) independent retained-format/schema compatibility and migration/rollback; [#399](https://github.com/KirilsTurkins/latent-service-fabric/issues/399) consistent backup/guarded paused restore; [#400](https://github.com/KirilsTurkins/latent-service-fabric/issues/400) scoped CLI/management/audit/recovery, including the early public slice. |
+| Integrated delivery | [#401](https://github.com/KirilsTurkins/latent-service-fabric/issues/401) the six existing external transports, separately from guest SDKs; [#402](https://github.com/KirilsTurkins/latent-service-fabric/issues/402) one maintained stateful/browser application with six-language backend examples; [#403](https://github.com/KirilsTurkins/latent-service-fabric/issues/403) crash/adversarial matrix and distinct six-guest/six-client maps; [#404](https://github.com/KirilsTurkins/latent-service-fabric/issues/404) stateful density/active cost/latency/backlog/recovery measurements; [#405](https://github.com/KirilsTurkins/latent-service-fabric/issues/405) native/developer distribution and qualified persistent-state upgrades/platform workflows; [#406](https://github.com/KirilsTurkins/latent-service-fabric/issues/406) versioned six-guest/six-client learning paths and actual Pages publication; [#407](https://github.com/KirilsTurkins/latent-service-fabric/issues/407) collective decision. |
+
+Waves express dependency order, not mandatory serialization. Implementation does
+not wait for the aggregate evidence/gate or every SDK port. Deliver namespace
+setup → command → deliberately lost response → original-result recovery → effect
+inspection incrementally through #400/#401. One real capsule must atomically
+update state and stage a JetStream intent, restart after commit before send,
+recover the same result and prove duplicate submission changes neither state nor
+effects. Add shared fresh-query/HTTP paths and all six guest/client schedules;
+this early proof does not replace HTTP effects, entities, inbox, operations,
+browser or language-specific acceptance.
+
+Required scope is one embedded store and one-node host-owned transactions,
+explicitly unordered deferred effects and finite recovery. Immediate Phase 3
+HTTP/event operations do not claim atomic guest-state commitment or universal
+exactly-once effects. Queries have no mandatory durable business-command rows.
+Terminal business rejection is durable recovery metadata without business
+mutations; explicit technical-abort retries need no-commit/retired-owner proof
+and a fenced attempt. Unresolved work protects linked identity/payload/format
+metadata even after result bytes expire. Compatible upgrades preserve pending
+formats; older-history restore changes incarnation and starts paused for
+reconciliation. Code rollback does not rewind state or external actions.
+
+The separate SDK Libraries #677/#736/#741–#746 and outbound research work do not
+block core Phase 4. Any newly installed runtime/transaction composition must
+settle required accepted work/continuations and seal staging before host commit,
+with #388's focused evidence. Standard clients gain no immediate mutation
+authority. Internal dispatcher retries and invocation-local timers do not supply
+Phase 6 durable schedules. Clustering remains Phase 5. No Mac/ARM64 expansion,
+production Windows node, general SQL product, external database or six replacement
+runtimes/clients is introduced. Supported stateless APIs and immutable historical
+evidence remain; final public release requires separate authorization.
 
 ## Phase 5: cluster
 
