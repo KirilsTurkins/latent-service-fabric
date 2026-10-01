@@ -45,12 +45,20 @@ The site does not display last-update metadata, so eager Git history scans stay
 disabled. Windows retains the existing HTML minifier because its native SWC
 cache can reject host ACLs; Linux CI uses the accelerated native HTML minifier.
 
-The full Rust job has seven required matrix lanes: checks, workspace tests,
+The full Rust job has eight required matrix lanes: checks, workspace tests,
+metadata/security qualification,
 providers, public renderer, actual Angular, publication workflows and Angular T1.
 Each runtime lane runs the unchanged all-target/all-feature Cargo producer on its
 own checkout and verifies its fresh inventory. Complete workspace discovery,
 ordinary tests, doctests and signing compatibility remain in the tests lane.
 Physical qualification owns a separate runner from renderer/provider execution.
+Metadata and security qualification also run independently from the ordinary
+workspace tests, retaining their complete command vectors and fresh inventory.
+
+The website runs in the official Playwright Noble image, pinned by digest and
+matched to its locked browser version. The image supplies system libraries and
+fonts, avoiding a repeated network-dependent apt installation. The project still
+installs its exact headless browser and executes every build and browser suite.
 
 Repository contracts use seven required variants: the complete Python suite,
 bindings, runtime components, standalone workflows, six-language SDK providers,
