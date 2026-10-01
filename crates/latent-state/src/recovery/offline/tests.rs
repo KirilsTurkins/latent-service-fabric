@@ -883,11 +883,11 @@ fn protected_review_requires_explicit_reconciliation_and_namespace_resume_and_re
     assert_normal_resumed_namespace(destination.path(), &receipt, request.clone(), old_token);
     assert_recovery_replay(
         destination.path(),
-        decoder,
+        &decoder,
         request,
-        original_receipt,
+        &original_receipt,
         review,
-        accepted,
+        &accepted,
     );
 }
 
@@ -941,11 +941,11 @@ fn assert_normal_resumed_namespace(
 
 fn assert_recovery_replay(
     path: &Path,
-    decoder: Arc<Codecs>,
+    decoder: &Arc<Codecs>,
     request: NamespaceResumeRequest,
-    original_receipt: Vec<u8>,
+    original_receipt: &[u8],
     review: RecoveryReviewRequest,
-    accepted: RecoveryGuard,
+    accepted: &RecoveryGuard,
 ) {
     let source = review_source(path, decoder.clone());
     let mut replay = request;
@@ -968,7 +968,7 @@ fn assert_recovery_replay(
                 .unwrap()
         )
         .unwrap(),
-        accepted
+        *accepted
     );
     decoder.denied.store(true, Ordering::Release);
     assert_eq!(
