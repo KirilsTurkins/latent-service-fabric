@@ -35,7 +35,22 @@ const commonDocs = {
 };
 
 const config: Config = {
-  future: {v4: {removeLegacyPostBuildHeadAttribute: true}, faster: true},
+  future: {
+    v4: {removeLegacyPostBuildHeadAttribute: true},
+    faster: {
+      swcJsLoader: true,
+      swcJsMinimizer: true,
+      // Preserve the existing HTML minifier on Windows with native cache ACLs.
+      swcHtmlMinimizer: process.platform !== 'win32',
+      lightningCssMinimizer: true,
+      mdxCrossCompilerCache: true,
+      rspackBundler: true,
+      rspackPersistentCache: true,
+      ssgWorkerThreads: true,
+      // Last-update metadata is disabled; an eager history scan adds no output.
+      gitEagerVcs: false,
+    },
+  },
   title: 'Latent Service Fabric',
   tagline: 'Create a node, build capsules and connect your applications',
   url: process.env.LSF_SITE_URL ?? 'https://kirilsturkins.github.io',

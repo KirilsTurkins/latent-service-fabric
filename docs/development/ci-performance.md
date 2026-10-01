@@ -36,6 +36,9 @@ journeys with at most two suites active. Source-path validation still checks
 every component for symlinks, final containment, size and case; Linux's exact-case
 lookup avoids repeatedly enumerating entire directories for each document/link.
 Windows retains explicit casing checks. No validation result is cached.
+The site does not display last-update metadata, so eager Git history scans stay
+disabled. Windows retains the existing HTML minifier because its native SWC
+cache can reject host ACLs; Linux CI uses the accelerated native HTML minifier.
 
 The complete Python contract suite overlaps the independent native contract
 build, and its failure propagates through the final join even if a build fails.
