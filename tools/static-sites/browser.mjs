@@ -3,6 +3,8 @@ import path from 'node:path';
 import {readFile, writeFile, rename} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {publicNavigation} from './public-navigation.mjs';
+import {emptyErrorNavigation} from './empty-error-navigation.mjs';
+import {qualifyEmptyErrorOracle} from './empty-error-oracle.mjs';
 
 const [toolchain, chrome, origin, generator, version, receipt, mode = 'navigation', ready, resume] = process.argv.slice(2);
 assert.ok(['navigation', 'cutover', 'error-configured', 'error-unconfigured', 'error-denied'].includes(mode));
@@ -43,19 +45,13 @@ try {
   if (mode.startsWith('error-')) {
     const target = generator + '/guide/missing';
     const expected = mode === 'error-denied' ? 403 : 404;
-    const received = page.waitForResponse(response => response.url() === target, {timeout: 15000});
-    const [response] = await Promise.all([received,
-      page.goto(target, {waitUntil: 'networkidle', timeout: 15000}).catch(error => {
-        assert.notEqual(mode, 'error-configured');
-        assert.match(error.message, /net::ERR_HTTP_RESPONSE_CODE_FAILURE/);
-      })]);
-    assert.equal(response.status(), expected);
     if (mode === 'error-configured') {
+      const response = await page.goto(target, {waitUntil: 'networkidle', timeout: 15000});
+      assert.equal(response.status(), expected);
       headers(response, true);
       assert.equal(await page.locator('#view').textContent(), 'Page not found');
     } else {
-      assert.equal((await response.body()).length, 0);
-      assert.match(response.headers()['cache-control'], /no-store/);
+      result.emptyErrorNavigation = await emptyErrorNavigation(page, target, expected);
     }
     result.errorDocument = {mode, status: expected, html: mode === 'error-configured'};
   } else if (mode === 'cutover') {
@@ -87,6 +83,7 @@ try {
     result.freshNavigationSelectedB = true;
     result.retainedContentHashedAssetsServedByB = true;
   } else {
+    result.emptyErrorOracle = await qualifyEmptyErrorOracle(browser);
     result.stage = 'csr-navigation';
     let documents = 0;
     page.on('request', request => { if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documents++; });
@@ -178,14 +175,7 @@ try {
       }
       // The unconfigured mounted publication retains its empty 404. Chromium
       // may commit its own error document, so this navigation is last.
-      const missingDocument = site.waitForResponse(response => response.url() === missingUrl, {timeout: 15000});
-      const [notFound] = await Promise.all([missingDocument,
-        site.goto(missingUrl, {timeout: 15000}).catch(error => {
-          // Chromium reports an empty error document as a failed navigation.
-          assert.match(error.message, /net::ERR_HTTP_RESPONSE_CODE_FAILURE/);
-        })]);
-      assert.equal(notFound.status(), 404);
-      assert.equal((await notFound.body()).length, 0);
+      result.emptyMountedErrorNavigation = await emptyErrorNavigation(site, missingUrl, 404);
       result.unconfigured404RemainsEmpty = true;
       await site.close();
     }
