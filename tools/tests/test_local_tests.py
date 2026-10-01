@@ -387,7 +387,8 @@ class CompletionRegressionTests(unittest.TestCase):
             self.assertFalse(inventory.exists())
 
     def test_missing_fixture_tool_is_reported_before_any_cargo_build(self):
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.dict(local.os.environ, {"CARGO_TARGET_DIR": str(Path(directory) / "target")}):
             plan = local.plan_suite(ROOT, ECHO,
                 "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary")
             with patch.object(local.shutil, "which", side_effect=lambda tool: None if tool == "wasm-tools" else tool), \
