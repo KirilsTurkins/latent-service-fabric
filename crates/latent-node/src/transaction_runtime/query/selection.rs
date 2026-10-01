@@ -21,7 +21,7 @@ pub struct QuerySelection {
     pub(super) result_policy: String,
     pub(super) binding: String,
     pub(super) input_media_type: String,
-    pub(super) minimum_generation: Option<u64>,
+    pub(super) minimum_view_token: Option<Vec<u8>>,
 }
 
 pub struct QueryScope {
@@ -29,7 +29,7 @@ pub struct QueryScope {
     pub entity: Option<String>,
     pub recovery: RecoverySelection,
     pub result_policy: String,
-    pub minimum_generation: Option<u64>,
+    pub minimum_view_token: Option<Vec<u8>>,
 }
 
 impl QuerySelection {
@@ -51,7 +51,12 @@ impl QuerySelection {
         if let Some(entity) = &scope.entity {
             identity(entity).map_err(|_| denied())?;
         }
-        if scope.incarnation == 0 || publication.tenant() != Some(&target.tenant) {
+        if scope.incarnation == 0
+            || publication.tenant() != Some(&target.tenant)
+            || scope.minimum_view_token.as_ref().is_some_and(|token| {
+                token.len() != latent_state::session::version::VIEW_TOKEN_BYTES
+            })
+        {
             return Err(denied());
         }
         let operation = companion
@@ -78,7 +83,7 @@ impl QuerySelection {
             result_policy: scope.result_policy,
             binding: companion.binding.clone(),
             input_media_type: "application/vnd.latent.wit-values.v1+json".into(),
-            minimum_generation: scope.minimum_generation,
+            minimum_view_token: scope.minimum_view_token,
         })
     }
 

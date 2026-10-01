@@ -80,6 +80,7 @@ pub struct StateTransactionHost {
     activation: ActivationId,
     mode: Mode,
     scope: StateScope,
+    view_identity: latent_state::session::version::ViewIdentity,
     authorization: Arc<StateAuthorization>,
     store: Arc<ProtectedStoreOwner>,
     session: Mutex<Option<OwnedSession>>,
@@ -105,6 +106,13 @@ pub struct StateHandoff {
     pub memory: Arc<HostMemoryReservation>,
 }
 impl StateTransactionHost {
+    /// Descriptive identity captured from this session's actual native view.
+    /// It grants no read permission and never refreshes during the activation.
+    #[must_use]
+    pub fn retained_view_identity(&self) -> latent_state::session::version::ViewIdentity {
+        self.view_identity
+    }
+
     #[must_use]
     pub fn authority(&self) -> &StateAuthorization {
         &self.authorization

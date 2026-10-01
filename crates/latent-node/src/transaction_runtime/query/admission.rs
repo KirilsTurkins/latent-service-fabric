@@ -157,15 +157,6 @@ impl QueryAdmission {
         view.retire().await;
         let (namespace, result_memory) = namespace.map_err(store_error)?;
         let namespace = namespace.ok_or_else(denied)?;
-        if self
-            .selection
-            .minimum_generation
-            .is_some_and(|minimum| namespace.record().version.generation < minimum)
-        {
-            return Err(super::failure(
-                latent_executor::transaction::StateFailure::Conflict,
-            ));
-        }
         Ok((namespace, result_memory))
     }
 
@@ -240,6 +231,18 @@ impl QueryAdmission {
         .await
         .map_err(super::failure)?;
         drop(memory);
+        if let Some(token) = &self.selection.minimum_view_token {
+            if let Err(error) = host
+                .retained_view_identity()
+                .require_minimum(&host.scope, token)
+            {
+                // This factory has not supplied a guest or scheduled execution.
+                // Retire the actual opened native view before rejecting the token.
+                latent_executor::transaction::TransactionHost::finish_guest_access(host.as_ref());
+                host.retire().await.map_err(super::failure)?;
+                return Err(super::failure(super::super::io::state_error(error, false)));
+            }
+        }
         let completion = Arc::new(QueryCompletion::new(Arc::clone(&host)));
         TransactionExecution::query(host, completion)
     }
