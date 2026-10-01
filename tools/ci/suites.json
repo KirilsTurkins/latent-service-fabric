@@ -4951,6 +4951,7 @@
         "recovery::migration::tests::fixed_migration_checkpoint_detects_changed_linked_rows_and_final_revocation_without_upgrading_data",
         "recovery::migration::tests::fixed_migration_refuses_oversized_cell_and_quota_before_durable_stage",
         "recovery::migration::tests::fixed_migration_rejects_corrupt_checkpoint_wrong_scope_package_and_changed_operation_inputs",
+        "recovery::migration::tests::migration_row_dispatch_preserves_foreign_bytes_and_rejects_malformed_owned_progress",
         "recovery::offline::tests::lost_backup_waiter_keeps_actual_worker_bytes_and_exclusive_root_until_physical_retirement",
         "recovery::offline::tests::migration::protected_fixed_recipe_final_revocation_preserves_staged_progress_and_old_schema",
         "recovery::offline::tests::migration::protected_fixed_recipe_survives_staged_engine_retirement_and_requires_separate_reviewed_resume",
@@ -5036,7 +5037,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 162,
+      "minimumCases": 163,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
@@ -8752,6 +8753,7 @@
         "standalone::state::clock::tests::cumulative_small_wall_jumps_refuse_without_refreshing_original_anchor",
         "standalone::state::clock::tests::observed_regression_overflow_and_checkpoint_floor_refuse",
         "standalone::state::clock::tests::poisoned_clock_observation_cannot_certify_continuity",
+        "standalone::state::validation::tests::linked_registry_reopens_real_dispatch_owner_and_rejects_malformed_migration",
         "standalone::state::effect_requirements::tests::claims_crossed_companions_ambiguous_payloads_and_unsigned_overflow_never_install",
         "standalone::state::effect_requirements::tests::original_signed_requirements_preserve_nul_payload_and_finite_native_ceilings",
         "standalone::state::request::tests::command_ids_and_business_metadata_exclude_credentials_and_duplicates",
@@ -8842,7 +8844,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 257,
+      "minimumCases": 258,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
