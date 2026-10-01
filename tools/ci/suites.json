@@ -3646,6 +3646,8 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "authoring::inputs::tests::diagnostic_asset_inventory_cannot_cover_replaced_bytes",
+        "authoring::inputs::tests::diagnostic_assets_preserve_checked_component_and_wit_inventory",
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
         "authoring::policy::tests::demo_publisher_and_builder_proof_age_ceilings_remain_independent",
         "authoring::policy::tests::separated_builders_verify_only_their_exact_source_under_permuted_policy",
@@ -3656,7 +3658,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 4,
+      "minimumCases": 6,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -3853,6 +3855,10 @@
       "boundary": "runtime",
       "expectedCases": [
         "rooted::tests::content_or_permission_change_after_open_is_rejected",
+        "rooted::tests::mutable_engine_file_creation_and_reopen_never_truncate_existing_bytes",
+        "rooted::tests::mutable_engine_files_reject_unsafe_names_types_links_permissions_and_lengths",
+        "rooted::tests::mutable_file_fence_detects_permission_growth_and_ancestor_substitution",
+        "rooted::tests::mutable_file_fence_detects_same_name_replacement_and_wrong_root",
         "rooted::tests::replacement_and_removal_during_read_never_return_old_bytes",
         "rooted::tests::retained_root_rejects_ancestor_replacement_and_permission_changes",
         "rooted::tests::rooted_reads_reject_unbounded_names_types_links_and_sizes",
@@ -3865,11 +3871,7 @@
         "tests::secret_policy_accepts_owner_service_group_and_private_directory_reads",
         "tests::secret_policy_rejects_public_reads_on_traversable_paths_and_writable_group_access",
         "tests::symlinks_hardlinks_and_untrusted_ancestor_writes_fail_closed",
-        "tests::unexpected_file_and_directory_owners_are_rejected",
-        "rooted::tests::mutable_engine_file_creation_and_reopen_never_truncate_existing_bytes",
-        "rooted::tests::mutable_engine_files_reject_unsafe_names_types_links_permissions_and_lengths",
-        "rooted::tests::mutable_file_fence_detects_permission_growth_and_ancestor_substitution",
-        "rooted::tests::mutable_file_fence_detects_same_name_replacement_and_wrong_root"
+        "tests::unexpected_file_and_directory_owners_are_rejected"
       ],
       "expectedIgnored": [
         "tests::unexpected_file_and_directory_owners_are_rejected"

@@ -7,6 +7,7 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
+from tools import guest_compatibility_build
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.application_dependencies import prepare
@@ -26,6 +27,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
           "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py", "tools/java_guest/sdk.py",
           "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
+RECIPE += guest_compatibility_build.RECIPE
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -111,7 +113,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     (output / name).write_bytes(read_file(derived / name))
                 package_files = dict(files)
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
-                package_inputs(output, project, read_json(derived / "surface.json"), package_files, component)
+                surface = read_json(derived / "surface.json")
+                stage = "compatibility"
+                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+                package_inputs(output, project, surface, package_files, component)
                 if packager is not None:
                     stage = "package"
                     commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
@@ -168,4 +173,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": (compiler.records if compiler else []) + (commands.records if commands else [])})
+        guest_compatibility_build.failure_report(output, "java", stage)
         raise
