@@ -4840,6 +4840,7 @@
         "store_io::tests::retirement::excessive_worker_and_queue_configuration_rejects_before_any_thread_owner",
         "store_io::tests::retirement::native_retirement_remains_charged_and_on_worker_through_paused_destructor",
         "store_io::tests::retirement::original_capacity_keeper_survives_detached_native_retirement_until_actual_destruction",
+        "store_io::tests::retirement::original_job_capacity_survives_callback_completion_and_detached_buffer_destruction",
         "store_io::tests::shutdown::completed_before_deadline_is_clean_even_if_waiter_polls_later",
         "store_io::tests::shutdown::deadline_quarantine_retains_live_io_and_late_retirement_is_distinct",
         "store_io::tests::shutdown::failed_finalization_is_quarantined_after_physical_engine_close",
@@ -4851,7 +4852,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 116,
+      "minimumCases": 117,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

@@ -174,6 +174,31 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         retained_bytes: u64,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
+        self.submit_inner(kind, retained_bytes, None, operation)
+    }
+
+    /// Retain the original request owner through native callback completion and
+    /// unclaimed result destruction, including errors or waiter loss. A claimed
+    /// response must retain its original owner independently through delivery.
+    #[allow(clippy::result_large_err)]
+    pub fn submit_retaining<T: Send + 'static, F: FnOnce(&S) -> T + Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_bytes: u64,
+        keeper: Arc<dyn std::any::Any + Send + Sync>,
+        operation: F,
+    ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
+        self.submit_inner(kind, retained_bytes, Some(keeper), operation)
+    }
+
+    #[allow(clippy::result_large_err)]
+    fn submit_inner<T: Send + 'static, F: FnOnce(&S) -> T + Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_bytes: u64,
+        keeper: Option<Arc<dyn std::any::Any + Send + Sync>>,
+        operation: F,
+    ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
         let control = &self.inner.control;
         let Ok(mut state) = control.state.lock() else {
             return Err(StoreIoAdmissionError {
@@ -209,6 +234,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             control: Arc::clone(control),
             bytes: charge,
             recovery: kind.is_recovery(),
+            keeper,
         };
         let work = TypedWork {
             operation,

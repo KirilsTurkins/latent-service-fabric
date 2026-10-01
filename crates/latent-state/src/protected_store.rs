@@ -112,6 +112,26 @@ impl ProtectedStoreOwner {
             .map_err(ProtectedStoreError::Io)
     }
 
+    /// Retain an original global request owner through protected native file
+    /// checks and unclaimed result destruction. Claimed responses keep that same
+    /// owner in their typed delivery/frame guard. This installs no new capacity.
+    pub fn with_store_retaining<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_payload_bytes: u64,
+        keeper: Arc<dyn std::any::Any + Send + Sync>,
+        operation: impl FnOnce(&crate::embedded::EmbeddedStore) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit_retaining(kind, retained_payload_bytes, keeper, move |store| {
+                store.with_store(kind, operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
     /// Reserve captured batch bytes and intermediate encoded rows before queue
     /// allocation. The immutable owned batch executes once if accepted.
     pub fn apply(
