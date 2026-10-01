@@ -57,7 +57,7 @@ class NativeFrontend:
                     for name, raw in preflight_resources()]
         inventory = {row["path"]: row for row in manifest["files"]}
         for row in expected:
-            embedded = "bin/_internal/tools/dev_workflow/data/" + Path(row["path"]).name
+            embedded = "bin/_internal/tools/dev_workflow/data/" + row["path"]
             require(embedded in inventory
                 and inventory[embedded]["sha256"] == row["sha256"]
                 and inventory[embedded]["size"] == row["size"],
