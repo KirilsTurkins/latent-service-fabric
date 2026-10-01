@@ -124,3 +124,22 @@ Product failure bytes, value bounds and CSP/CORS/private-network policy were not
 changed to make those checks pass. The existing test-authority and root-browser
 sandbox limitations above still apply; current-head required CI and the typed
 codec producer followup remain separate gates.
+
+The producer followup subsequently passed the maintained `http-response-policy`
+selection at clean source `47d9f8b7da59205154b60eccf662391bb64697a3`, with all 15
+negative vectors. The 16385-byte vector remains `GuestTrap` and now retains its
+producer-owned terminal `Execution / ValueAllocationLimit` observation; profile
+and numeric measurements remain absent. The 65-header vector remains completed
+execution with the nonterminal HTTP rejection observation. Both are verified
+through the actual authorized root/tree journal, with no debug-string inference,
+HTTP relabeling or changed codec limit. The new pass log SHA-256 is
+`e9ba8142a0fc58e3933d88638b151980d537b42b7641be3eb53c09b9c895c739`.
+
+The same source-matched all-feature native target passed the exact registered
+static routing/cutover case after using the real returned root GET/HEAD trigger
+generations. Its Cargo pass log SHA-256 is
+`7ad3e8998f18461c9fb08413112d08104d64b0d5b04dfa056996d83ae93b556d`.
+A preceding generic `tools/test.py` invocation refused that runtime owner and is
+retained as `not-run`; it supplies no pass evidence. The registered response
+policy selection used its required maintained artifact runner. Current-head
+required CI and parent review remain delivery gates.
