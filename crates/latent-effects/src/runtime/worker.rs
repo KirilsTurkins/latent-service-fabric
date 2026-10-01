@@ -18,6 +18,7 @@ pub(super) struct Services {
     pub epoch: DispatchEpoch,
     pub runtime: tokio::runtime::Handle,
     pub shared: Arc<Shared>,
+    pub native_capacity: Mutex<super::admission::NativeCapacityBinding>,
     pub receipts: tokio::sync::mpsc::Sender<ReceiptWork>,
 }
 
