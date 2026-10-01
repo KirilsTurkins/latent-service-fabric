@@ -80,10 +80,24 @@
     }
   },
   "definition": {
-    "if": "needs.profile.outputs.profile == 'full'",
     "name": "Repository contracts (${{ matrix.lane }})",
     "needs": "profile",
+    "if": "needs.profile.outputs.profile == 'full'",
     "runs-on": "ubuntu-24.04",
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "lane": [
+          "python",
+          "bindings",
+          "runtime",
+          "standalone",
+          "sdk-provider",
+          "measurements",
+          "optimization"
+        ]
+      }
+    },
     "steps": [
       {
         "uses": "actions/checkout",
@@ -94,9 +108,9 @@
       {
         "uses": "actions/setup-python",
         "with": {
+          "python-version": "3.13.5",
           "cache": "pip",
-          "cache-dependency-path": "tools/requirements.lock",
-          "python-version": "3.13.5"
+          "cache-dependency-path": "tools/requirements.lock"
         }
       },
       {
@@ -113,15 +127,16 @@
         "name": "Restore compiled Rust dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
+          "shared-key": "${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}",
           "key": "ubuntu-24.04",
-          "prefix-key": "${{ (matrix.lane == 'bindings' || matrix.lane == 'optimization') && 'lsf-ci-dependencies-v2' || 'lsf-ci-dependencies-v3' }}",
-          "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements' || matrix.lane == 'optimization') }}",
-          "shared-key": "${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}"
+          "cache-targets": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements' || matrix.lane == 'optimization') }}"
         }
       },
       {
@@ -133,8 +148,8 @@
       {
         "uses": "bufbuild/buf-setup-action",
         "with": {
-          "github_token": "${{ github.token }}",
-          "version": "1.72.0"
+          "version": "1.72.0",
+          "github_token": "${{ github.token }}"
         }
       },
       {
@@ -151,17 +166,17 @@
         "name": "Set up the Node SDK provider participant",
         "uses": "actions/setup-node",
         "with": {
+          "node-version": "24.19.0",
           "cache": "npm",
-          "cache-dependency-path": "sdk/typescript-client/package-lock.json",
-          "node-version": "24.19.0"
+          "cache-dependency-path": "sdk/typescript-client/package-lock.json"
         }
       },
       {
         "name": "Set up the Go SDK provider participant",
         "uses": "actions/setup-go",
         "with": {
-          "cache-dependency-path": "sdk/go/go.sum",
-          "go-version": "1.27.1"
+          "go-version": "1.27.1",
+          "cache-dependency-path": "sdk/go/go.sum"
         }
       },
       {
@@ -180,118 +195,104 @@
         }
       },
       {
+        "name": "Validate contracts, echo component, and generated bindings",
+        "if": "matrix.lane != 'optimization'",
         "env": {
           "CI_CONTRACT_LANE": "${{ matrix.lane }}"
         },
-        "if": "matrix.lane != 'optimization'",
-        "name": "Validate contracts, echo component, and generated bindings",
         "run": "tools/validate_contracts.sh \"$CI_CONTRACT_LANE\""
       },
       {
-        "if": "matrix.lane == 'runtime'",
         "name": "Pass bounded observed build inputs to registry verification",
+        "if": "matrix.lane == 'runtime'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "phase-2-observed-echo-${{ github.sha }}",
           "path": "target/capsules/echo-provenance/",
+          "if-no-files-found": "error",
           "retention-days": 1
         }
       },
       {
-        "if": "matrix.lane == 'runtime'",
         "name": "Pass the bounded public web component to registry verification",
+        "if": "matrix.lane == 'runtime'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "phase-3-web-contract-${{ github.sha }}",
           "path": "target/capsules/web-contract/component.wasm",
+          "if-no-files-found": "error",
           "retention-days": 1
         }
       },
       {
-        "if": "always() && (matrix.lane == 'standalone' || matrix.lane == 'sdk-provider')",
         "name": "Retain bounded conformance and provider diagnostics",
+        "if": "always() && (matrix.lane == 'standalone' || matrix.lane == 'sdk-provider')",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "phase-1-bounded-conformance-${{ github.sha }}-${{ matrix.lane }}",
           "path": "target/phase1-conformance/\ntarget/phase3-management/provider-receipt.json\ntarget/phase3-sdk/\n",
+          "if-no-files-found": "warn",
           "retention-days": 14
         }
       },
       {
-        "if": "always() && matrix.lane == 'measurements'",
         "name": "Retain Phase 1 measurement collector smoke diagnostics",
+        "if": "always() && matrix.lane == 'measurements'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "phase-1-measurement-smoke-${{ github.sha }}",
           "path": "target/phase1-measurements/",
+          "if-no-files-found": "warn",
           "retention-days": 14
         }
       },
       {
-        "if": "matrix.lane == 'optimization'",
         "name": "Validate standalone optimization benchmark smoke",
+        "if": "matrix.lane == 'optimization'",
         "run": "unset CARGO_INCREMENTAL CARGO_BUILD_JOBS CARGO_PROFILE_DEV_DEBUG CARGO_PROFILE_TEST_DEBUG\nunset CARGO_PROFILE_DEV_DEBUG_ASSERTIONS CARGO_PROFILE_TEST_DEBUG_ASSERTIONS\nunset CARGO_PROFILE_DEV_OVERFLOW_CHECKS CARGO_PROFILE_TEST_OVERFLOW_CHECKS\npython3 tools/run_optimization_benchmarks.py --profile smoke\n"
       },
       {
-        "if": "always() && matrix.lane == 'optimization'",
         "name": "Retain optimization benchmark smoke evidence",
+        "if": "always() && matrix.lane == 'optimization'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "phase-1-optimization-smoke-${{ github.sha }}",
           "path": "target/optimization-benchmarks/",
+          "if-no-files-found": "warn",
           "retention-days": 14
         }
       },
       {
-        "if": "matrix.lane == 'runtime'",
         "name": "Record echo capsule build evidence",
+        "if": "matrix.lane == 'runtime'",
         "run": "cat target/capsules/echo/build.json\ncat target/capsules/echo/sha256.txt\n"
       },
       {
-        "if": "matrix.lane == 'runtime'",
         "name": "Upload echo capsule build evidence",
+        "if": "matrix.lane == 'runtime'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "phase-0-echo-capsule-${{ github.sha }}",
           "path": "target/capsules/echo/echo-capsule.wasm\ntarget/capsules/echo/capsule.json\ntarget/capsules/echo/build.json\ntarget/capsules/echo/interface.json\ntarget/capsules/echo/interface/\ntarget/capsules/echo/sha256.txt\n",
+          "if-no-files-found": "error",
           "retention-days": 14
         }
       },
       {
-        "if": "github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'standalone'",
         "name": "Seed the minimal runtime dependency graph in the complete native cache writer",
+        "if": "github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'standalone'",
         "run": "python3 tools/test.py prepare --suite selection.echo-runtime --inventory \"$RUNNER_TEMP/lsf-cache-echo-runtime.jsonl\" --context ci"
       },
       {
-        "if": "github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements')",
         "name": "Remove validated echo fixtures before dependency cache pruning",
+        "if": "github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements')",
         "run": "python3 tools/reset_validation_echo.py --target-root target"
       }
-    ],
-    "strategy": {
-      "fail-fast": false,
-      "matrix": {
-        "lane": [
-          "python",
-          "bindings",
-          "runtime",
-          "standalone",
-          "sdk-provider",
-          "measurements",
-          "optimization"
-        ]
-      }
-    }
+    ]
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Preserve every required lane and artifact; validate and remove the two generated echo owners after successful tests/evidence before dependency-cache pruning, retiring immutable caches containing incomplete empty fixture trees.",
+  "reviewReason": "Preserve every optimizer lane, command, artifact and historical obligation. Exclude generated fixture owners from dependency caches with a new namespace and four actual Cargo profiles; retain the current complete writer preparation and strict fixture cleanup after evidence.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
