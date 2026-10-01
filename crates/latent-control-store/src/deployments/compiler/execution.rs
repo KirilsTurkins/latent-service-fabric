@@ -80,6 +80,7 @@ pub(super) async fn load(
     recovery: bool,
     profile: Option<&RuntimeCompatibilityProfile>,
     lifecycle: Option<&LifecycleAuthorityHandle>,
+    control: bool,
 ) -> Result<(VerifiedArtifactMetadata, Execution), PlatformError> {
     let Some(owner) = lifecycle else {
         let metadata =
@@ -96,10 +97,21 @@ pub(super) async fn load(
     };
     let retry = recovery_admission::Retry::new(recovery);
     let snapshot = loop {
-        match artifacts
-            .historical_execution_snapshot_selected(release, publication)
-            .await
-        {
+        let read = if control && !recovery {
+            match artifacts.preparation_source() {
+                Some(source) => source.control_historical_snapshot_selected(release, publication),
+                None => {
+                    artifacts
+                        .historical_execution_snapshot_selected(release, publication)
+                        .await
+                }
+            }
+        } else {
+            artifacts
+                .historical_execution_snapshot_selected(release, publication)
+                .await
+        };
+        match read {
             Err(failure) if retry.pause(&failure).await => {}
             value => break value?,
         }
