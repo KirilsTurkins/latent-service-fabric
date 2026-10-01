@@ -12,7 +12,10 @@ pub use grant::DispatchGrant;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex, MutexGuard},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex, MutexGuard,
+    },
     time::{Duration, Instant},
 };
 
@@ -599,6 +602,7 @@ impl EffectAuthorityOwner {
         state.physical += 1;
         Ok(DispatchContext {
             owner: Arc::clone(&self.0),
+            live: Arc::new(AtomicBool::new(true)),
             profile: authority.profile.clone(),
             scope: authority.scope.clone(),
             effect: authority.link.effect.clone(),
@@ -672,6 +676,7 @@ fn current_ceiling(
 /// capacity. `retire` belongs to physical completion/cleanup, not RPC completion.
 pub struct DispatchContext {
     owner: Arc<Owner>,
+    live: Arc<AtomicBool>,
     scope: EffectScope,
     profile: DispatchProfile,
     effect: String,
@@ -730,6 +735,7 @@ impl DispatchContext {
             .physical
             .checked_sub(1)
             .ok_or(AuthorityError::Unavailable)?;
+        self.live.store(false, Ordering::Release);
         self.retired = true;
         Ok(())
     }
@@ -738,6 +744,7 @@ impl DispatchContext {
 impl Drop for DispatchContext {
     fn drop(&mut self) {
         if !self.retired {
+            self.live.store(false, Ordering::Release);
             if let Ok(mut state) = self.owner.state.lock() {
                 // Keep the physical permit occupied. No timeout/lease path may
                 // turn this diagnostic owner into an automatic retry.
