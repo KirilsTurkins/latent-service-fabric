@@ -44,3 +44,10 @@ recipient PUTs. The fuel case must retain its actual producer diagnostic. A
 cancelled activation that never reached staging remains a failed qualification
 attempt. No write is retried, no result is inferred from a timeout, and no
 provider, credential, effect rule or namespace grant is installed by this helper.
+
+The separate actual diagnostic TeaVM/C/WASI compilation is recorded in
+[compiler R1](../evidence/java-transaction-diagnostic-compiler-r1/README.md).
+Its original process succeeded, but a subsequent Docker engine provisioning
+failure left the original component export unavailable. The retained measured
+identity is distinct from artifact availability and from the still-required
+signed runtime campaign.
