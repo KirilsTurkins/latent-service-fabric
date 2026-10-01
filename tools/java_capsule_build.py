@@ -7,7 +7,7 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_resources
+from tools import guest_compatibility_build, guest_resources, guest_dependency_inputs
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.application_dependencies import prepare
@@ -30,6 +30,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "examples/echo-contract/deployment.json")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
+RECIPE += guest_dependency_inputs.RECIPE
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -48,7 +49,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
           offline_cache: Path | None = None) -> Path:
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
-    project_path, output = checked_path(project_path), checked_path(output)
+    project_path = guest_dependency_inputs.application_root(checked_path(project_path), 'java')
+    output = checked_path(output)
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
         raise ValueError("build output must be outside source or beneath its target directory")
@@ -57,7 +59,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     commands, compiler, stage = None, None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
-        files = snapshot(project_path)
+        observed = guest_dependency_inputs.capture_source(project_path, 'java')
+        files = observed.files
         project, _lock, pins = validate(files)
         source_inputs = inventory(files)
         recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
@@ -74,7 +77,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands = Commands(work, output, build_environment(temporary))
                 commands.deadline = start + timeout
                 stage = "application-dependencies"
-                closure = prepare(project_path, work, output, "java")
+                closure = prepare(observed.dependency_root, work, output, "java")
                 if closure is not None and offline_cache is None:
                     raise ValueError("captured Java builds require the verified offline compiler cache")
                 application_jars, application_inventory = classpath(closure, temporary / "selected-application-jars")
@@ -127,7 +130,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                     commands.run("inspect", paths["packager"], "inspect", output / "package")
                 stage = "recheck"
-                if snapshot(project_path) != files or snapshot(work, exclude=("dependencies", "application-vendor")) != files:
+                observed.check_unchanged()
+                if snapshot(work, exclude=("dependencies", "application-vendor")) != files:
                     raise ValueError("project changed during the observed Java build")
                 if closure is not None:
                     closure.check_unchanged()
