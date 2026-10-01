@@ -149,6 +149,24 @@ class CacheIdentityTests(unittest.TestCase):
         for option in ("cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
             self.assertIs(native["with"][option], False)
 
+    def test_native_cache_writers_remove_owned_fixtures_after_evidence_and_retire_empty_directory_caches(self):
+        from tools.ci_lane_inventory import workflow_model
+        root = Path(__file__).resolve().parents[2]
+        steps = workflow_model((root / ".github/workflows/ci.yml").read_text())["jobs"]["contracts"]["steps"]
+        native = next(step for step in steps if step.get("name") == "Restore compiled Rust dependencies")
+        self.assertEqual(native["with"]["prefix-key"],
+            "${{ (matrix.lane == 'bindings' || matrix.lane == 'optimization') && 'lsf-ci-dependencies-v2' || 'lsf-ci-dependencies-v3' }}")
+        cleanup = next(step for step in steps if step.get("name") == "Remove validated echo fixtures before dependency cache pruning")
+        self.assertEqual(cleanup["if"],
+            "github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements')")
+        self.assertEqual(cleanup["run"], "python3 tools/reset_validation_echo.py --target-root target")
+        self.assertIs(steps[-1], cleanup)
+        producer = next(step for step in steps if step.get("name") == "Seed the minimal runtime dependency graph in the complete native cache writer")
+        self.assertEqual(producer["if"], "github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'standalone'")
+        self.assertEqual(producer["run"], 'python3 tools/test.py prepare --suite selection.echo-runtime --inventory "$RUNNER_TEMP/lsf-cache-echo-runtime.jsonl" --context ci')
+        self.assertLess(steps.index(producer), steps.index(cleanup))
+        self.assertLess(next(index for index, step in enumerate(steps) if step.get("name") == "Upload echo capsule build evidence"), steps.index(cleanup))
+
     def test_ci_symbols_are_removed_without_disabling_correctness_guards(self):
         from tools.ci_lane_inventory import workflow_model
         root = Path(__file__).resolve().parents[2]
