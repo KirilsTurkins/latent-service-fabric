@@ -55,6 +55,9 @@ class BrowserArtifactTests(unittest.TestCase):
         self.assertEqual(browser["run"], "npm run browser:install")
         self.assertNotIn("if", browser)
         self.assertNotIn("continue-on-error", browser)
+        trust = next(step for step in website["steps"] if step.get("name") == "Trust only the checked-out repository inside the owned container")
+        self.assertEqual(trust["run"], 'git config --system --add safe.directory "$GITHUB_WORKSPACE"')
+        self.assertLess(website["steps"].index(trust), website["steps"].index(browser))
 
     def setUp(self) -> None:
         self.workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))

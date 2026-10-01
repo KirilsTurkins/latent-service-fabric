@@ -17,6 +17,10 @@
         }
       },
       {
+        "name": "Trust only the checked-out repository inside the owned container",
+        "run": "git config --system --add safe.directory \"$GITHUB_WORKSPACE\""
+      },
+      {
         "uses": "actions/setup-node",
         "with": {
           "node-version": "24.19.0"
@@ -73,7 +77,7 @@
   },
   "jobId": "website",
   "kind": "job",
-  "reviewReason": "Preserve complete workspace tests and every metadata/security qualification command, separating qualification onto a required fresh-inventory lane. Preserve both website builds and all five browser suites while using the digest-pinned official matching Noble image for preinstalled system libraries and fonts; exact project browser installation remains mandatory.",
+  "reviewReason": "Preserve complete workspace tests and every metadata/security qualification command, separating qualification onto a required fresh-inventory lane. Preserve both website builds and all five browser suites while using the digest-pinned official matching Noble image for preinstalled system libraries and fonts; exact project browser installation remains mandatory. Trust only the checkout workspace in this ephemeral container so Git operations work across the runner/container UID boundary; preserve repository path validation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-site.yml"
 }
