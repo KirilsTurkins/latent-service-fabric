@@ -1595,6 +1595,7 @@ dependencies = [
  "latent-artifacts",
  "latent-audit",
  "latent-core",
+ "latent-effects",
  "latent-executor",
  "latent-manifest",
  "latent-policy",
