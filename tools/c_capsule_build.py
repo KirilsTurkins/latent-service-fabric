@@ -21,7 +21,7 @@ from tools import guest_compatibility_build
 BUILD_TYPE = "https://latent.dev/build/c-guest/v1"
 RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
-          "tools/c_application_dependencies.py",
+          "tools/c_application_dependencies.py", "tools/c_static_symbols.py", "tools/c_static_archive_build.py",
           "tools/captured_compiler_isolation.py",
           "tools/c_guest/compiler.py", "tools/c_guest/bindings.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",

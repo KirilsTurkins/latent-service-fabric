@@ -41,7 +41,8 @@ def inputs(language="rust"):
         helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
-                    "c_application_dependencies.py", "captured_compiler_isolation.py", "c_dependency_fixture.py")
+                    "c_application_dependencies.py", "c_static_symbols.py", "c_static_archive_build.py",
+                    "captured_compiler_isolation.py", "c_dependency_fixture.py")
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
@@ -97,9 +98,11 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
 
 
 def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None, dotnet_tools=None,
-            application_dependencies=False):
+            application_dependencies=False, static_application_dependencies=False):
     if language not in {"rust", "c", "go", "typescript", "dotnet"}:
         raise ValueError("unsupported authoring qualification language")
+    if static_application_dependencies and (language != "c" or not application_dependencies):
+        raise ValueError("static application qualification requires captured C source qualification")
     if language == "typescript" and typescript_tools is None:
         raise ValueError("explicit pinned TypeScript compiler installation required")
     creator, builder = create, build
@@ -244,6 +247,29 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language=language)
+        if static_application_dependencies:
+            from tools.c_static_archive_build import build as build_archive
+            from tools.c_dependency_fixture import use_static_archive
+            project = output / "projects/greeting"
+            stage = "static-library-source-build"
+            archive_output = build_archive(project, output / "static-library", "https://github.com/KirilsTurkins/latent-service-fabric")
+            result["staticArchive"] = read_json(archive_output / "STATIC-ARCHIVE-COMPLETE.json")
+            stage = "static-library-explicit-capture"
+            result["staticApplicationDependencies"] = use_static_archive(project, archive_output / "library.a",
+                read_json(archive_output / "archive-profile.json"), output / "outside-static-library-inputs",
+                library_identity="outside-c-catalogue/library/2026.10")
+            write_json(output / "static-application-dependency-fixture.json", result["staticApplicationDependencies"])
+            stage = "static-library-component-build"
+            static_artifact = builder(project, output / "builds/greeting-static", binaries["examples/capsule_contracts"],
+                binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric")
+            result["builds"]["greeting-static"] = read_json(static_artifact / "BUILD-COMPLETE.json")
+            stage = "static-library-sign-demo"
+            source_greeting = output / "builds/greeting"
+            static_builds = [static_artifact if path == source_greeting else path for path in built]
+            commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases-static", *static_builds)
+            stage = "static-library-enforced-node"
+            static_node = node_workflow(binaries["latent"], binaries["latentd"], output / "releases-static", output / "node-static", language="c")
+            result["staticNode"] = {"status": static_node["status"], "receiptDigest": file_identity(output / "node-static/workflow.json")["sha256"]}
         stage = "printed-guide"
         result["guide"] = guide(output / "guide", environment, language)
         stage = "final-integrity"

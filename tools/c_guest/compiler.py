@@ -86,6 +86,65 @@ class Compiler:
         self.isolation = Isolation(workspace, self.paths, {"zig-compiler-and-sysroot": self.paths["zig"].parent})
         return self.isolation.receipt
 
+    def validate_static_libraries(self, libraries: tuple[Path, ...], destination: Path) -> None:
+        """Validate every core object, including members the linker will not extract."""
+        from tools.application_dependency_store import read_bytes
+        from tools.c_application_dependencies import archive_members
+        if len(libraries) > 32:
+            raise ValueError("C static archive count exceeds 32")
+        receipts = []
+        for ordinal, library in enumerate(libraries):
+            owned = destination / f"archive-{ordinal:04}"
+            owned.mkdir(mode=0o700)
+            def validate_member(name, payload):
+                path = owned / name
+                with path.open("xb") as output:
+                    output.write(payload)
+                self.run("wasm-tools", "validate", "--features=-threads,-memory64", str(path))
+            members = archive_members(read_bytes(library), validator=validate_member)
+            receipts.append({"digest": digest(read_bytes(library)), "members": members,
+                             "validator": self.materials["wasm-tools"], "threads": False, "memory64": False})
+        if self.isolation is not None:
+            self.isolation.receipt["staticArchiveValidation"] = receipts
+
+    def compile_static_archive(self, sources: tuple[Path, ...], destination: Path, *,
+                               include_directories: tuple[Path, ...] = (), defines: tuple[str, ...] = ()) -> tuple[Path, dict]:
+        """The finite captured source recipe; this does not execute or qualify a guest."""
+        from tools.c_application_dependencies import archive_members
+        from tools.application_dependency_store import read_bytes
+        from tools.rust_capsule_project import inventory, snapshot
+        if self.isolation is None:
+            raise ValueError("C static source recipe requires captured compiler isolation")
+        if not 1 <= len(sources) <= 64 or len(include_directories) > 64 or len(defines) > 64:
+            raise ValueError("C static source recipe exceeds maintained limits")
+        if any(path.is_symlink() or not path.is_file() or path.stat().st_size > 262144 for path in sources):
+            raise ValueError("invalid or oversized C source")
+        destination.mkdir(mode=0o700)
+        options = ["cc", "-std=c11", "-target", "wasm32-wasi", "-O2", "-Wall", "-Wextra", "-Werror",
+                   "-I", str(self.sdk / "include")]
+        for directory in include_directories:
+            options.extend(["-I", str(directory)])
+        options.extend("-D" + value for value in defines)
+        objects, observed = [], []
+        for ordinal, source in enumerate(sources):
+            target, depfile = destination / f"source-{ordinal:04}.o", destination / f"inputs-{ordinal:04}.d"
+            self.run("zig", *options, "-M", "-MT", "lsf-inputs", "-MF", str(depfile), str(source))
+            observed.extend(self.isolation.observe_inputs(depfile))
+            self.run("zig", *options, "-c", str(source), "-o", str(target))
+            self.run("wasm-tools", "validate", "--features=-threads,-memory64", str(target))
+            objects.append(target)
+        self.isolation.receipt["preprocessorInputs"] = sorted(
+            {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
+        archive = destination / "library.a"
+        self.run("zig", "ar", "rcs", str(archive), *map(str, objects))
+        profile = {"formatVersion": 1, "target": "wasm32-wasi", "compilerDigest": self.materials["zig"]["digest"],
+            "compilerDistributionDigest": digest(json.dumps(self.isolation.receipt["distributions"],
+                sort_keys=True, separators=(",", ":")).encode()),
+            "runtimeDigest": digest(inventory(snapshot(self.sdk))), "checkpointProfile": "closed-synchronous-v1",
+            "members": archive_members(read_bytes(archive))}
+        self.check_unchanged()
+        return archive, profile
+
     def compile(self, sources: list[Path], wit_source: Path, world: str,
                 destination: Path, *, memory_bytes: int = 16 * 1024 * 1024,
                 trap: bool = True, include_directories: tuple[Path, ...] = (),
@@ -97,6 +156,7 @@ class Compiler:
         if isinstance(memory_bytes, bool) or memory_bytes < 2 * 1024 * 1024 or memory_bytes > 64 * 1024 * 1024 or memory_bytes % 65536:
             raise ValueError("C memory ceiling must be page-aligned and between 2 and 64 MiB")
         generated, lock = generate(self.run, wit_source, world, destination, self.platform)
+        self.validate_static_libraries(static_libraries, destination)
         core, component = destination / "core.wasm", destination / "component.wasm"
         command = ["cc", "-std=c11", "-target", "wasm32-wasi", "-O2",
                    "-Wall", "-Wextra", "-Werror", "-mexec-model=reactor",

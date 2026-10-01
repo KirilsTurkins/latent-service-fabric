@@ -81,8 +81,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_captured_compiler_isolation
-          python3 tools/qualify_c_capsules.py --application-dependencies --output "$RUNNER_TEMP/c-application-library"
+          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_c_static_symbols tools.tests.test_captured_compiler_isolation
+          python3 tools/qualify_c_capsules.py --application-dependencies --static-application-dependencies --output "$RUNNER_TEMP/c-application-library"
       - name: Retain compiler and ownership results including failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

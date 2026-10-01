@@ -17,6 +17,8 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--offline", action="store_true")
     parser.add_argument("--application-dependencies", action="store_true")
+    parser.add_argument("--static-application-dependencies", action="store_true")
     arguments = parser.parse_args()
     print(json.dumps(qualify(arguments.output, offline=arguments.offline, language="c",
-                             application_dependencies=arguments.application_dependencies)))
+                             application_dependencies=arguments.application_dependencies,
+                             static_application_dependencies=arguments.static_application_dependencies)))

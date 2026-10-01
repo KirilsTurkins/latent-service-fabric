@@ -31,6 +31,10 @@ def main() -> int:
     packaging = compile_.add_mutually_exclusive_group()
     packaging.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
     packaging.add_argument("--package-inputs-only", action="store_true", help="Leave package assembly to the calling controller")
+    archive = commands.add_parser("archive", help="Compile declared captured library sources into an observed Wasm archive")
+    archive.add_argument("project", type=Path)
+    archive.add_argument("--output", type=Path, required=True)
+    archive.add_argument("--repository", required=True, help="Public operator-asserted source label")
     args = parser.parse_args()
     try:
         if args.command == "new":
@@ -54,6 +58,9 @@ def main() -> int:
                         output.write(canonical({"formatVersion": 1, "stage": "c-resolution-capture", "status": "failed", "reason": reason}) + b"\n")
                 raise DependencyError(reason) from None
             result = args.candidate
+        elif args.command == "archive":
+            from tools.c_static_archive_build import build as build_archive
+            result = build_archive(args.project, args.output, args.repository)
         else:
             result = build(args.project, args.output, args.contracts_tool, None if args.package_inputs_only else args.packager, args.repository)
         print(result)

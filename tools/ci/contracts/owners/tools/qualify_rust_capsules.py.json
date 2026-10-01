@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add the captured C library fixture while retaining all five existing signed components and direct SDK regressions",
+  "reviewReason": "Review finite isolated source/static C archive production, validation of all core members and strong definitions, direct third-party and developer calls, immutable resource recapture and separate signed node qualification; retain all historical commands/cases/guards.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9bcca87f8f920d59b9825f227ef1d3d94d6387b42d6199a436d5fd9bdeb87170"
+  "sha256": "aac198796d794a59cc11c9b033acb8c815d7692b3aacc05a1dd8b80181b70638"
 }
