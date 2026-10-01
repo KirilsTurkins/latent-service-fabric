@@ -79,3 +79,5 @@ revocation, corrupt payload links, clock/boot holds, durable page restart,
 overlap refusal, native snapshot pinning and saturation of the protected store.
 These tests qualify this finite profile. Public node/Java/HTTP execution evidence
 is supplied by the consuming runtime and application integration tickets.
+
+The [source-matched Linux evidence](../evidence/transaction-retention-foundation-397.json) records all 109 state and 45 commit cases and strict owner Clippy. The same native schedule first reproduced the old cumulative-clock failure, then passed the fixed source after a real database reopen. Original qualified source and failed attempts remain preserved. This evidence covers the linked retention and physical reserve foundations, while the consuming Java/HTTP qualification and the remaining #397 operations stay separate.
