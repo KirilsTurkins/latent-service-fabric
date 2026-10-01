@@ -12,7 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PLATFORM_WIT = ROOT / "wit" / "platform"
 DEFAULT_SOURCE = PLATFORM_WIT / "runtime"
 PACKAGE = re.compile(r"\bpackage\s+([^\s;]+)\s*;")
-REFERENCE = re.compile(r"\b([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/[a-z][a-z0-9-]*@([0-9][a-zA-Z0-9.+-]*)")
+# A type-use selector starts with `.{...}` after the version. Its dot is not
+# part of the package version; require the version token to end in an alnum.
+REFERENCE = re.compile(r"\b([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/[a-z][a-z0-9-]*@([0-9](?:[a-zA-Z0-9.+-]*[a-zA-Z0-9])?)")
 
 
 def source_text(source: Path) -> str:
