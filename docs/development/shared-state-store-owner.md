@@ -176,3 +176,12 @@ The shared owner is implemented here; standalone activation readiness, complete
 command envelopes, retention/restore and six-language runtime conformance remain
 their Phase 4 integration tickets. This document makes no packaged-node or
 power-loss qualification claim.
+
+The current-development CI follow-up preserves the SDK dependency and compiler
+cache gates. The real concurrent child-import acceptance case that failed in
+the remote Rust job passed on pinned Linux after the reviewed session
+currentness fix. All nine signed clock/session-currentness cases also passed,
+with no ignored or filtered cases. That fix waits only before admission on the
+original currentness fence; it preserves cancellation and the original lease
+and creates the guest once. Existing child-failure diagnostics remain bounded
+and are reported only if the unchanged acceptance assertion fails.

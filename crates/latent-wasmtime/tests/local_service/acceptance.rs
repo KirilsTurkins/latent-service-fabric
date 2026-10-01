@@ -134,7 +134,12 @@ async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_c
     assert_eq!(success.consumption.child_calls, 2);
     assert!(success.consumption.cpu_fuel < super::packages::budget().cpu_fuel);
     assert!(success.consumption.peak_memory_bytes <= super::packages::budget().memory_bytes);
-    assert_eq!(value(receipt), ANSWER);
+    assert_eq!(
+        value(receipt),
+        ANSWER,
+        "bounded child failure observations: {:?}",
+        f.observations.child_failures.snapshot()
+    );
     assert_eq!(f.observations.starts.lock().unwrap().len(), 3);
     f.idle().await;
     let mut request = f.request("one-child-grant", 3);
