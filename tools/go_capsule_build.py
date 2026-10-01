@@ -8,7 +8,7 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build
+from tools import guest_compatibility_build, guest_resources
 from tools.go_guest.compiler import Compiler
 from tools.go_capsule_project import validate
 from tools.rust_capsule_build import Commands, package_inputs
@@ -23,6 +23,7 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
           "examples/echo-contract/deployment.json")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_resources.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
