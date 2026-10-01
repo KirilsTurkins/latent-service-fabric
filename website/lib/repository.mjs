@@ -57,7 +57,8 @@ export function safeFile(root, relative, limit = maxSourceBytes) {
     // Other hosts retain the check for potentially case-insensitive volumes.
     if (process.platform !== 'linux') requireValue(fs.readdirSync(current).includes(segment), `Missing or incorrectly cased path: ${relative}`);
     current = path.join(current, segment);
-    const metadata = fs.lstatSync(current);
+    const metadata = fs.lstatSync(current, {throwIfNoEntry: false});
+    requireValue(metadata !== undefined, `Missing or incorrectly cased path: ${relative}`);
     requireValue(!metadata.isSymbolicLink(), `Linked input is not allowed: ${relative}`);
   }
   const resolved = path.relative(actualRoot, fs.realpathSync(current));
