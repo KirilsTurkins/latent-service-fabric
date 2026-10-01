@@ -208,5 +208,92 @@ class NugetDependencies(unittest.TestCase):
             isolated.check_unchanged()
 
 
+class NativeAotRuntimeCoverage(unittest.TestCase):
+    def graph(self, *, export=False):
+        interfaces = [{'name': 'streams', 'package': 0, 'types': {'input-stream': 0},
+                       'functions': {'[method]input-stream.read': {'name': '[method]input-stream.read'}}}]
+        return {'worlds': [{'name': 'root', 'package': 1,
+                           'imports': {} if export else {'streams': {'interface': {'id': 0}}},
+                           'exports': {'streams': {'interface': {'id': 0}}} if export else {}}],
+                'interfaces': interfaces, 'types': [{'kind': 'resource', 'name': 'input-stream'}],
+                'packages': [{'name': 'wasi:io@0.2.6'}, {'name': 'test:component'}]}
+
+    def test_partial_resource_exports_report_exact_missing_members(self):
+        from tools.dotnet_guest.compatibility import coverage, findings
+        raw, adapter = self.graph(), self.graph(export=True)
+        adapter['interfaces'][0]['functions'] = {}
+        adapter['interfaces'][0]['types'] = {}
+        result = coverage(raw, adapter)
+        self.assertEqual(result['gaps'], [
+            {'interface': 'wasi:io/streams@0.2.6', 'kind': 'types', 'symbol': 'input-stream'},
+            {'interface': 'wasi:io/streams@0.2.6', 'kind': 'functions', 'symbol': '[method]input-stream.read'}])
+        self.assertEqual({row['classification'] for row in findings(result)}, {'missing-runtime-port'})
+        self.assertEqual(result['authority'], 'none')
+
+    def test_missing_http_is_not_a_clock_grant_or_catalogue_decision(self):
+        from tools.dotnet_guest.compatibility import coverage, findings
+        raw = self.graph()
+        raw['packages'][0]['name'] = 'wasi:http@0.2.0'
+        raw['interfaces'][0]['name'] = 'types'
+        result = coverage(raw, self.graph(export=True))
+        self.assertEqual(result['gaps'], [{'interface': 'wasi:http/types@0.2.0', 'kind': 'interface'}])
+        self.assertEqual(findings(result)[0]['ownerIssue'], 693)
+
+    def test_present_names_do_not_claim_signature_or_runtime_qualification(self):
+        from tools.dotnet_guest.compatibility import coverage
+        raw, adapter = self.graph(), self.graph(export=True)
+        adapter['interfaces'][0]['functions']['[method]input-stream.read']['params'] = [{'name': 'changed', 'type': 'string'}]
+        result = coverage(raw, adapter)
+        self.assertEqual(result['gaps'], [])
+        self.assertEqual(result['analysisCompleteness'], 'required-member-names')
+        self.assertEqual(result['authority'], 'none')
+
+    def test_malformed_world_tables_type_indices_and_function_names_fail(self):
+        from tools.dotnet_guest.compatibility import coverage
+        for mutation in ('index', 'type', 'function', 'table', 'worlds'):
+            raw = self.graph()
+            if mutation == 'index':
+                raw['worlds'][0]['imports']['streams']['interface']['id'] = 99
+            elif mutation == 'type':
+                raw['interfaces'][0]['types']['input-stream'] = True
+            elif mutation == 'function':
+                raw['interfaces'][0]['functions']['[method]input-stream.read']['name'] = 'other'
+            elif mutation == 'table':
+                raw['interfaces'][0]['functions'] = []
+            else:
+                raw['worlds'].append(raw['worlds'][0])
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                coverage(raw, self.graph(export=True))
+
+    def test_failure_report_rechecks_raw_bytes_and_does_not_invent_source_identity(self):
+        from tools.build_snapshot import canonical, digest
+        from tools.dotnet_guest.compatibility import coverage, retain_failure, PROFILE
+        from tools.guest_compatibility import read as read_report
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            raw, adapter = self.graph(), self.graph(export=True)
+            adapter['interfaces'][0]['functions'] = {}
+            raw_graph, adapter_graph = canonical(raw), canonical(adapter)
+            (output / 'native-aot-raw.wit.json').write_bytes(raw_graph)
+            (output / 'closed-runtime-adapter.wit.json').write_bytes(adapter_graph)
+            (output / 'native-aot-raw.wasm').write_bytes(b'retained-compiler-input')
+            receipt = coverage(raw, adapter)
+            receipt.update(schemaVersion='lsf.dotnet.runtime.coverage.v1', runtimeProfile=PROFILE,
+                rawComponentDigest=digest(b'retained-compiler-input'), runtimeAdapterDigest=digest(b'adapter'),
+                rawWitDigest=digest(raw_graph), runtimeWitDigest=digest(adapter_graph))
+            (output / 'closed-runtime-coverage.json').write_bytes(canonical(receipt))
+            retain_failure(output)
+            self.assertFalse((output / 'compatibility-report.json').exists())
+            (output / 'source-inputs.json').write_bytes(b'reviewed-source-inventory')
+            retain_failure(output)
+            report = read_report((output / 'compatibility-report.json').read_bytes())
+            self.assertEqual(report['status'], 'blocked')
+            self.assertEqual(report['sourceDigest'], digest(b'reviewed-source-inventory'))
+            self.assertEqual(report['componentDigest'], digest(b'retained-compiler-input'))
+            (output / 'native-aot-raw.wasm').write_bytes(b'tampered')
+            with self.assertRaisesRegex(ValueError, 'stale-receipt'):
+                retain_failure(output)
+
+
 if __name__ == '__main__':
     unittest.main()

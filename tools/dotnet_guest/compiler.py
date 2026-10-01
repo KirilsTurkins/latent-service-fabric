@@ -247,6 +247,8 @@ class Compiler:
             raise ValueError("actual NativeAOT binding inputs differ from independent drift generation")
         raw = project / "bin/Release/net10.0/wasi-wasm/publish/Capsule.wasm"
         component = output / "component.wasm"
+        from tools.dotnet_guest.compatibility import inspect as inspect_runtime
+        inspect_runtime(self, raw)
         self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", self.runtime, "-o", component)
         self.run("validate", self.wasm, "validate", component)
         surface = self.run("surface", self.wasm, "component", "wit", component).decode()

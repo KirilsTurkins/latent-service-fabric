@@ -32,7 +32,8 @@ HELPERS = ("rust_capsule.py", "rust_capsule_project.py", "rust_capsule_build.py"
     "build_observation.py", "build_process.py", "build_process_linux.py", "build_process_windows.py", "build_process_signals.py",
     "phase2_operator_process.py", "phase2_operator_scenario.py", "phase3_management_scenario.py",
     "phase3_resource_os.py", "phase3_resource_identity.py", "phase3_resource_profile.py", "sdk_provider_scenario.py",
-    "sdk_provider_http_fixture.py", "stage_runtime_wit.py", "build_guest_capsules.py", "wait_capsule_audit_idle.py")
+    "sdk_provider_http_fixture.py", "stage_runtime_wit.py", "build_guest_capsules.py", "wait_capsule_audit_idle.py",
+    "guest_compatibility.py", "guest_compatibility_build.py", "dev_workflow/common.py")
 
 
 def inputs(language="rust"):
@@ -60,7 +61,7 @@ def inputs(language="rust"):
                     "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
-                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/sdk.py",
+                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/compatibility.py", "dotnet_guest/sdk.py",
                     "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     'application_dependencies.py', 'application_dependency_store.py', 'application_dependency_tools.py',
                     'application_dependency_approval.py', 'captured_compiler_isolation.py', 'dotnet_compiler_isolation.py',

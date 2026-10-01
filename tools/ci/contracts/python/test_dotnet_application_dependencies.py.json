@@ -1,5 +1,10 @@
 {
   "cases": [
+    "NativeAotRuntimeCoverage.test_failure_report_rechecks_raw_bytes_and_does_not_invent_source_identity",
+    "NativeAotRuntimeCoverage.test_malformed_world_tables_type_indices_and_function_names_fail",
+    "NativeAotRuntimeCoverage.test_missing_http_is_not_a_clock_grant_or_catalogue_decision",
+    "NativeAotRuntimeCoverage.test_partial_resource_exports_report_exact_missing_members",
+    "NativeAotRuntimeCoverage.test_present_names_do_not_claim_signature_or_runtime_qualification",
     "NugetDependencies.test_analyzer_and_build_assets_are_executable_inputs",
     "NugetDependencies.test_application_import_task_and_property_functions_never_evaluate",
     "NugetDependencies.test_composer_profile_rejects_stale_selection_and_changed_binary",
@@ -17,6 +22,66 @@
     "NugetDependencies.test_unsafe_native_asset_paths_and_wrong_profiles_fail"
   ],
   "guards": {
+    "NativeAotRuntimeCoverage.test_failure_report_rechecks_raw_bytes_and_does_not_invent_source_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_malformed_world_tables_type_indices_and_function_names_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_missing_http_is_not_a_clock_grant_or_catalogue_decision": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_partial_resource_exports_report_exact_missing_members": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_present_names_do_not_claim_signature_or_runtime_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
     "NugetDependencies.test_analyzer_and_build_assets_are_executable_inputs": {
       "bases": [
         "unittest.TestCase"
@@ -203,6 +268,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_application_dependencies.py",
-  "reviewReason": "Add native declaration/graph/asset, executable resource, private credential redaction, safe archives, stale composer preimage and real namespace argument transport controls.",
+  "reviewReason": "Add missing IO/resource/HTTP member, bounded malformed graph, non-authoritative presence and stale raw-component receipt controls; preserve all existing NuGet and namespace checks.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

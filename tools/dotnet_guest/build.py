@@ -18,7 +18,7 @@ from tools.build_snapshot import canonical
 
 BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
-    "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/composer.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/composer.py", "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
@@ -139,6 +139,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
                 ("source-snapshot", source_inputs), ("build-recipe", recipe), ("package-inputs", package_inventory),
                 ("compiler-inputs", read_file(output / "compiler-inputs.json", 32 * 1024 * 1024)),
+                ("closed-runtime-coverage", read_file(output / "closed-runtime-coverage.json", 4 * 1024 * 1024)),
                 ("dependency-lock", files["vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json"]),
                 ("toolchain-config", files["global.json"])))
             finished = int(time.time())
@@ -163,4 +164,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": commands.records if commands else []})
         guest_compatibility_build.failure_report(output, "dotnet", stage)
+        try:
+            from tools.dotnet_guest.compatibility import retain_failure
+            retain_failure(output)
+        except Exception:
+            pass  # A failed diagnostic must preserve the original compiler error.
         raise

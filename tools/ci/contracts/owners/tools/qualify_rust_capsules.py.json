@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review outside NuGet/transitive embedded-resource fixture integration while preserving all six language qualification paths.",
+  "reviewReason": "Retain all language qualification paths and inventory shared diagnostics plus the NativeAOT member coverage helper.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fc688c47876b7ad1a1141a44f222d3d20f2983e535cf742c670800dc216b8c96"
+  "sha256": "917343bb355f71a9d84697d3b2c130e02cb97121acc5c3e40ebac1a370bc1b18"
 }
