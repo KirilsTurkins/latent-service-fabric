@@ -9,6 +9,12 @@ from tools.java_http_generation.project import generate, check
 from tools.java_http_generation.probes import qualify as qualify_generation
 from tools.rust_capsule_project import ROOT, digest, read_json, write_json
 
+# Keep the real spin child alive across the bounded promotion/rollback calls.
+# The earlier 1B parent allowance exhausted its half-sized child in under a
+# second. This fixture ceiling stays within its existing node's 10B ceiling;
+# cancellation, the original deadline and physical-release checks still apply.
+SPIN_CPU_FUEL = 10_000_000_000
+
 
 def projects(output: Path) -> dict[str, Path]:
     result = {}
@@ -21,6 +27,8 @@ def projects(output: Path) -> dict[str, Path]:
         descriptor["world"] = "examples:java-http-" + name + "/service@1.0.0"
         descriptor["limits"].update(childCalls=4 if name == "adapter" else 0,
                                     memoryBytes=134217728 if name == "adapter" else 67108864)
+        if name == "domain":
+            descriptor["limits"]["cpuFuel"] = SPIN_CPU_FUEL
         (project / "capsule-project.json").write_text(json.dumps(descriptor, indent=2) + "\n", encoding="utf-8")
         lock = read_json(project / "sdk-lock.json")
         lock["template"] = {"name": "java-http-" + name,

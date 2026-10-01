@@ -60,6 +60,7 @@ def rendered(domain: Path, selection_path: Path) -> tuple[dict, dict[str, bytes]
         if sum(map(len, outputs.values())) > 1024 * 1024:
             raise ValueError("generated-code: finite one MiB output limit exceeded")
         observation = {"profile": PROFILE, "domainWorld": project["world"],
+            "domainCpuFuel": project["limits"]["cpuFuel"],
             "domainSourceDigest": digest(inventory(captured)), "domainWit": json.loads(inventory(snapshot(wit))),
             "domainBindings": generated, "selectionDigest": digest(selection_bytes),
             "recipeDigest": digest(recipe), "outputs": json.loads(inventory(outputs)),
@@ -82,7 +83,7 @@ def generate(domain: Path, selection_path: Path, output: Path) -> Path:
         target.write_bytes(data)
     descriptor = read_json(output / "capsule-project.json")
     descriptor["world"] = "examples:" + selection["adapterName"] + "/service@1.0.0"
-    descriptor["limits"].update(childCalls=4, memoryBytes=134217728)
+    descriptor["limits"].update(cpuFuel=observation["domainCpuFuel"], childCalls=4, memoryBytes=134217728)
     (output / "capsule-project.json").write_bytes(canonical(descriptor) + b"\n")
     lock = read_json(output / "sdk-lock.json")
     lock["template"] = {"name": PROFILE, "sourceDigest": digest(outputs["src/dev/latent/app/Capsule.java"]),
