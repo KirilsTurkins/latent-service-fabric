@@ -84,6 +84,8 @@ class Compiler:
     def enable_captured_isolation(self, workspace: Path) -> dict:
         from tools.captured_compiler_isolation import Isolation
         self.isolation = Isolation(workspace, self.paths, {"zig-compiler-and-sysroot": self.paths["zig"].parent})
+        if self.commands is not None:
+            self.isolation.protect_inputs(self.commands.root)
         return self.isolation.receipt
 
     def compile(self, sources: list[Path], wit_source: Path, world: str,
