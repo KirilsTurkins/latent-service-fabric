@@ -38,7 +38,7 @@
       },
       {
         "if": "needs.profile.outputs.profile == 'full'",
-        "name": "Qualify the bounded reverse-dependent host subset",
+        "name": "Qualify the genuinely narrow reverse-dependent fixture",
         "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-state/src/lib.rs'])\nfrom tools import ci_suite_inventory as registry\nassert selection.profile == 'full'\nassert selection.fast_packages\nassert set(selection.fast_packages) < set(registry.load()['fastPackages'])\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
       },
       {

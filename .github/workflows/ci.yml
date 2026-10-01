@@ -125,7 +125,7 @@ jobs:
         env:
           CI_FAST_PACKAGES: ${{ needs.profile.outputs.fast_packages }}
         run: python3 tools/ci_fast.py --packages-json "$CI_FAST_PACKAGES" --output "$RUNNER_TEMP/ci-fast/affected"
-      - name: Qualify the bounded reverse-dependent host subset
+      - name: Qualify the genuinely narrow reverse-dependent fixture
         if: needs.profile.outputs.profile == 'full'
         run: |
           packages="$(python3 - <<'PYCODE'
