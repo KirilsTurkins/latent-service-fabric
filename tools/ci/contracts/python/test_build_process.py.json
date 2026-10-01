@@ -6,6 +6,7 @@
     "BuildProcessTests.test_deadline_cleans_descendant_and_preserves_unrelated_process",
     "BuildProcessTests.test_failed_job_assignment_never_runs_recipe",
     "BuildProcessTests.test_flood_is_bounded_and_creates_no_reader_threads",
+    "BuildProcessTests.test_ignored_sigint_during_constructor_preserves_success_and_handler",
     "BuildProcessTests.test_limits_reject_before_spawning",
     "BuildProcessTests.test_nonzero_output_and_spawn_error_are_redacted",
     "BuildProcessTests.test_opt_in_diagnostics_do_not_disable_process_output_limits",
@@ -105,6 +106,20 @@
       ]
     },
     "BuildProcessTests.test_flood_is_bounded_and_creates_no_reader_threads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_ignored_sigint_during_constructor_preserves_success_and_handler": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -335,6 +350,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_build_process.py",
-  "reviewReason": "Distinguish original Windows command deadline expiry from unchanged thread snapshot capacity and prevent late ResumeThread; five additive snapshot boundary controls retain all accepted process cleanup and cancellation guards.",
+  "reviewReason": "Own the deliverable constructor interrupt explicitly when CI backgrounds the complete suite; add real ignored-SIGINT preservation without changing process ownership, skips or deadlines",
   "schemaVersion": "latent.ci.contracts.v1"
 }
