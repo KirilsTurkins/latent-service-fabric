@@ -133,7 +133,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Resolve compiler cache through runner environment without an invalid job-level runner context",
+  "reviewReason": "Resolve compiler cache through runner environment without an invalid job-level runner context CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
