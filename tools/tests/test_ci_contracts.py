@@ -665,6 +665,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
         reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
+        reviewed_deferred_owners = ".github/workflows/ci.yml:rust:integration_lanes"
         for key, value in legacy["after"].items():
             self.assertIn(key, data["after"])
             if key == reviewed_narrow_fixture:
@@ -675,6 +676,16 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(data["after"][key]["run"].rstrip("\n"),
                                  value["run"].replace("crates/latent-state/src/lib.rs",
                                                       "crates/latent-workflows/src/lib.rs"))
+            elif key == reviewed_deferred_owners:
+                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
+                                 {k: v for k, v in value.items() if k != "run"})
+                # Register only the new owned deferred broker runner. Every
+                # existing command, flag, owner and execution fence is exact.
+                extended = value["run"].replace(
+                    "# tools/build_angular_package.py",
+                    "# tools/run_nats_deferred_tests.py tools/nats_deferred_support.py\n"
+                    "# tools/build_angular_package.py")
+                self.assertIn(data["after"][key]["run"].rstrip("\n"), (value["run"], extended))
             elif key != reviewed_extension:
                 self.assertEqual(data["after"][key], value, key)
             else:
