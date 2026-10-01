@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "QualificationOracle.test_abort_requires_original_server_issued_proof_and_same_identities",
+    "QualificationOracle.test_duplicate_and_nonfinite_input_documents_refuse",
+    "QualificationOracle.test_expired_receipt_never_reconstitutes_application_result",
+    "QualificationOracle.test_fresh_query_has_no_durable_command_and_reports_same_view",
+    "QualificationOracle.test_host_headers_and_closed_result_fields_refuse_historical_sessions",
+    "QualificationOracle.test_network_campaign_is_bounded_by_original_deadline_and_loopback_authority",
+    "QualificationOracle.test_numeric_or_overflowing_unsigned_values_never_qualify",
+    "QualificationOracle.test_opaque_token_requires_exact_canonical_format_and_positive_epochs",
+    "QualificationOracle.test_original_unsigned_maximum_and_absence_survive_decoding",
+    "QualificationOracle.test_present_key_version_is_distinct_from_absent_and_zero",
+    "QualificationOracle.test_query_cannot_adopt_effects_or_original_command_identity",
+    "QualificationOracle.test_replay_preserves_original_bytes_identity_and_horizons"
+  ],
+  "guards": {
+    "QualificationOracle.test_abort_requires_original_server_issued_proof_and_same_identities": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_duplicate_and_nonfinite_input_documents_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_expired_receipt_never_reconstitutes_application_result": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_fresh_query_has_no_durable_command_and_reports_same_view": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_host_headers_and_closed_result_fields_refuse_historical_sessions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_network_campaign_is_bounded_by_original_deadline_and_loopback_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_numeric_or_overflowing_unsigned_values_never_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_opaque_token_requires_exact_canonical_format_and_positive_epochs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_original_unsigned_maximum_and_absence_survive_decoding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_present_key_version_is_distinct_from_absent_and_zero": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_query_cannot_adopt_effects_or_original_command_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "QualificationOracle.test_replay_preserves_original_bytes_identity_and_horizons": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:810e814e85536715cc01e86504ac3e2417fcd261eaa365a3bf360f66bafcafa3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_qualification.py",
+  "reviewReason": "Retain original Java718 component provenance and bounded actual HTTP command/query/replay receipt checks",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

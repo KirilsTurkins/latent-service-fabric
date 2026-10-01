@@ -2,6 +2,8 @@
 //! This is never production trust and is not a compiler or a provenance oracle.
 #[path = "capsule_authoring/mod.rs"]
 mod authoring;
+#[path = "capsule_authoring/fixture_clock.rs"]
+mod fixture_clock;
 #[path = "capsule_authoring/fixture_tls.rs"]
 mod fixture_tls;
 
@@ -23,6 +25,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     if args.len() == 2 && args[0] == "fixture-tls" {
         return fixture_tls::create(std::path::Path::new(&args[1]));
+    }
+    if args.len() == 3 && args[0] == "fixture-state-clock" {
+        return fixture_clock::create(
+            std::path::Path::new(&args[1]),
+            args[2].to_str().ok_or("UTF-8 node identity required")?,
+        );
+    }
+    if (3..=7).contains(&args.len()) && args[0] == "fixture-sign-java-inputs" {
+        return authoring::sign_java_fixtures(std::path::Path::new(&args[1]), &args[2..]);
     }
     if args.len() < 3
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))
