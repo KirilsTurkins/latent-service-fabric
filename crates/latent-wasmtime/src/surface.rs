@@ -219,8 +219,7 @@ fn validate_imports(
     let transaction_resource = transaction::command_resource(component_type, engine);
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
-        let specification = profile
-            .interface(name)
+        let specification = preparation_interface(profile, name, transactional)
             .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
         if specification.binding == latent_core::HostInterfaceBinding::Provider
             && !(transactional && (name == transaction::STATE || name == transaction::INTENTS))
@@ -305,6 +304,23 @@ fn validate_imports(
     }
 
     Ok(imports)
+}
+
+fn preparation_interface(
+    profile: latent_core::HostAbiProfile,
+    name: &str,
+    transactional: bool,
+) -> Option<&'static latent_core::HostInterfaceSpec> {
+    // Generic preparation captures both frozen ordinary and transaction ABI
+    // identities. Provider installation and the original strict runtime gate
+    // remain mandatory when composing this exact HTTP client surface.
+    profile.interface(name).or_else(|| {
+        if transactional && name == latent_capabilities::broker::http::HTTP_CAPABILITY {
+            latent_core::PHASE3_HOST_ABI_CURRENT.interface(name)
+        } else {
+            None
+        }
+    })
 }
 
 fn register_functions(
