@@ -8,7 +8,7 @@ use std::{
     fs::File,
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
-        Arc,
+        Arc, RwLock, RwLockReadGuard, TryLockError,
     },
     time::{Duration, Instant},
 };
@@ -21,6 +21,8 @@ static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
 
 mod bounded_file;
 pub use bounded_file::StoreFileStatus;
+mod compaction;
+pub use compaction::{CompactionLimits, CompactionReport, CompactionStop};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StoreError {
@@ -148,7 +150,8 @@ pub struct AtomicBatch {
 }
 
 pub struct EmbeddedStore {
-    db: Database,
+    db: RwLock<Database>,
+    file_status: Option<StoreFileStatus>,
     limits: StoreLimits,
     views: Arc<AtomicUsize>,
     quarantined: AtomicBool,
@@ -166,7 +169,7 @@ impl EmbeddedStore {
         let mut builder = Database::builder();
         builder.set_cache_size(limits.cache_bytes);
         let db = builder.create_file(file).map_err(|_| StoreError::Corrupt)?;
-        Self::open_database(db, limits, was_empty)
+        Self::open_database(db, limits, was_empty, None)
     }
 
     /// The production owner additionally caps every physical growth/write.
@@ -184,13 +187,17 @@ impl EmbeddedStore {
         let db = builder
             .create_with_backend(backend)
             .map_err(|_| StoreError::Corrupt)?;
-        Ok((Self::open_database(db, limits, was_empty)?, status))
+        Ok((
+            Self::open_database(db, limits, was_empty, Some(status.clone()))?,
+            status,
+        ))
     }
 
     fn open_database(
         db: Database,
         limits: StoreLimits,
         was_empty: bool,
+        file_status: Option<StoreFileStatus>,
     ) -> Result<Self, StoreError> {
         if was_empty {
             let mut tx = db.begin_write().map_err(|_| StoreError::Unavailable)?;
@@ -207,7 +214,8 @@ impl EmbeddedStore {
             tx.commit().map_err(|_| StoreError::CommitUncertain)?;
         }
         let store = Self {
-            db,
+            db: RwLock::new(db),
+            file_status,
             limits,
             views: Arc::new(AtomicUsize::new(0)),
             quarantined: AtomicBool::new(false),
@@ -217,7 +225,8 @@ impl EmbeddedStore {
         Ok(store)
     }
     fn verify(&self) -> Result<(), StoreError> {
-        let tx = self.db.begin_read().map_err(|_| StoreError::Unavailable)?;
+        let database = self.database()?;
+        let tx = database.begin_read().map_err(|_| StoreError::Unavailable)?;
         let meta = tx
             .open_table(META)
             .map_err(|_| StoreError::UnsupportedFormat)?;
@@ -232,6 +241,19 @@ impl EmbeddedStore {
         }
         let table = tx.open_table(ROWS).map_err(|_| StoreError::Corrupt)?;
         self.charge_table(&table)?;
+        drop(table);
+        drop(meta);
+        drop(tx);
+        // Validate the selected 4096-byte page profile through the public
+        // engine API, rather than assuming an imported file's private layout.
+        let check = database
+            .begin_write()
+            .map_err(|_| StoreError::Unavailable)?;
+        let page_size = check.stats().map_err(|_| StoreError::Corrupt)?.page_size();
+        check.abort().map_err(|_| StoreError::Unavailable)?;
+        if page_size != 4096 {
+            return Err(StoreError::UnsupportedFormat);
+        }
         Ok(())
     }
     fn charge_table(
@@ -289,17 +311,21 @@ impl EmbeddedStore {
             self.views.fetch_sub(1, Ordering::AcqRel);
             return Err(StoreError::Capacity);
         }
-        if let Ok(tx) = self.db.begin_read() {
-            Ok(ReadView {
+        let opened = self
+            .database()
+            .and_then(|database| database.begin_read().map_err(|_| StoreError::Unavailable));
+        match opened {
+            Ok(tx) => Ok(ReadView {
                 tx: Some(tx),
                 limits: self.limits,
                 views: Arc::clone(&self.views),
                 opened: Instant::now(),
                 identity,
-            })
-        } else {
-            self.views.fetch_sub(1, Ordering::AcqRel);
-            Err(StoreError::Unavailable)
+            }),
+            Err(error) => {
+                self.views.fetch_sub(1, Ordering::AcqRel);
+                Err(error)
+            }
         }
     }
     /// Checks and every family mutation commit together. Pre-commit failures
@@ -385,7 +411,10 @@ impl EmbeddedStore {
                 &mut bytes,
             )?;
         }
-        let mut tx = self.db.begin_write().map_err(|_| StoreError::Unavailable)?;
+        let database = self.database()?;
+        let mut tx = database
+            .begin_write()
+            .map_err(|_| StoreError::Unavailable)?;
         tx.set_durability(Durability::Immediate)
             .map_err(|_| StoreError::Unavailable)?;
         {
@@ -448,13 +477,31 @@ impl EmbeddedStore {
         self.views.load(Ordering::Acquire)
     }
     pub fn compact(&mut self) -> Result<bool, StoreError> {
+        // The bare qualification engine retains its historical helper. The
+        // protected bounded backend requires explicit physical/scratch limits
+        // and the host fence, including when it is not yet installed in a worker.
+        if self.file_status.is_some() {
+            return Err(StoreError::Invalid);
+        }
         if self.quarantined.load(Ordering::Acquire) {
             return Err(StoreError::Unavailable);
         }
         if self.live_views() != 0 {
             return Err(StoreError::Capacity);
         }
-        self.db.compact().map_err(|_| StoreError::Unavailable)
+        self.db
+            .get_mut()
+            .map_err(|_| StoreError::Unavailable)?
+            .compact()
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    fn database(&self) -> Result<RwLockReadGuard<'_, Database>, StoreError> {
+        match self.db.try_read() {
+            Ok(database) => Ok(database),
+            Err(TryLockError::WouldBlock) => Err(StoreError::Capacity),
+            Err(TryLockError::Poisoned(_)) => Err(StoreError::Unavailable),
+        }
     }
 }
 

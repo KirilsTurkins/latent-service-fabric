@@ -2,12 +2,14 @@
 //! physical store worker; this module creates no thread, timer or authority.
 
 mod clock;
+mod compaction;
 mod expired;
 mod review;
 mod step;
 
 pub(super) use clock::PROGRESS_KEY;
 pub use clock::{MaintenanceClock, MaintenanceProgress};
+pub use compaction::MaintenanceCompactionScope;
 pub(super) use expired::ExpiredResult;
 pub(super) use review::RetentionAudit;
 pub use review::{

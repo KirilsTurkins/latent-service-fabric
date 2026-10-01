@@ -16,8 +16,9 @@ pub use record::{
     SourceIdentity,
 };
 pub use retention::{
-    FloorReleaseRequest, MaintenanceClock, MaintenanceProgress, PreparedFloorRelease,
-    ResultMaintenanceOwner, RetentionAction, RetentionProgress, RetentionRequest, RetiredCommand,
+    FloorReleaseRequest, MaintenanceClock, MaintenanceCompactionScope, MaintenanceProgress,
+    PreparedFloorRelease, ResultMaintenanceOwner, RetentionAction, RetentionProgress,
+    RetentionRequest, RetiredCommand,
 };
 pub use validation::{validate_linked_row, validate_row, validate_view};
 pub use writer::{

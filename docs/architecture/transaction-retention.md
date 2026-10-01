@@ -133,6 +133,54 @@ command/attempt clock floor, preventing a regressed clock from making a removed
 body appear current. Clock holds are domain results and must remain distinct
 from engine corruption or uncertain commitment in the physical-owner wrapper.
 
+## Bounded physical compaction
+
+`ResultMaintenanceOwner::compact` uses that same maintenance guard and the
+original recovery writer. The host reserves the declared scratch allowance and
+bounded request/response buffers before queueing. The physical callback retains
+its permit until it actually returns. Namespace, ready history/restore and the
+explicitly approved clock anchor are checked from the same engine and fenced
+again with current maintenance permission. Compaction changes physical layout;
+original business records, source/schema references, protective floors and
+version tokens retain their exact bytes.
+
+`EmbeddedStore::compact_fenced` refuses native views and active writer work,
+including readers whose public lifetime expired. It uses the original view
+counter and a short exclusive engine gate. The bounded file backend charges the
+final cold-page format/row checks and actual compaction reads, writes and syncs.
+Compiled ceilings are 256 MiB for each read/write allowance, 8192 native I/O
+operations, 64 MiB additional space in the same file, 64 MiB declared scratch
+and a deadline at most five seconds away. These are ceilings; the installed
+worker profile may require narrower values. The physical file high-water limit
+still applies. There is no scratch file, new worker, timer or durability change.
+
+The scratch model is tied to redb 4.3.0 and its 4096-byte page profile, checked
+through the engine's public stats API when opening. It conservatively charges
+8192 bytes per possible physical page across the initial file plus permitted
+growth, capped by the actual file ceiling, plus 256 KiB for fixed checks and
+metadata. This covers transient relocation data, paths, relocation/freed-page
+collections and the bounded final row checks; the engine cache remains separately
+reserved. If this requirement exceeds the declared scratch allowance, compaction
+refuses before host acceptance. An ordinary 8 MiB maintenance reservation cannot
+silently authorize larger-file compaction. The host must select compatible fixed
+file, scratch and recovery-job limits.
+
+A fixed last observation distinguishes preflight refusal, byte/operation/growth
+exhaustion, deadline and physical failure. Attempted I/O is charged even if a
+device fails; transferred bytes remain unknown after such a failure. Interrupted
+compaction reports unknown physical change and quarantines the original engine.
+A late native return also requires recovery. An elapsed deadline cannot stop a
+native call, retire its permit or publish clean completion. The unbounded bare
+engine qualification helper refuses the protected bounded backend.
+
+Engine fixtures retain all original compaction/crash cases and add successful
+bounded compaction, stale/revoked acceptance, real writer/reader refusal, physical
+growth/byte caps, an exhausted I/O lease, failed sync and a late native return.
+They reopen the original file and verify durable business bytes. The linked
+maintenance fixture also preserves original command/result/effect/payload/clock
+rows and proves another retention callback cannot overlap the compaction guard.
+These lower engine tests do not qualify an operator endpoint or a packaged node.
+
 ## Physical recovery reserve
 
 The startup configuration selects a finite reserve within the storage owner's

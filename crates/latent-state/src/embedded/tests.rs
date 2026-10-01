@@ -1,6 +1,7 @@
 use super::*;
 use std::fs::OpenOptions;
 
+mod compaction;
 mod measurement;
 mod reclamation;
 mod writers;
