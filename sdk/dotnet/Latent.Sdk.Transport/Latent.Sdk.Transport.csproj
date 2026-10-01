@@ -19,5 +19,8 @@
     <Protobuf Include="../../../api/proto/latent/control/v1/policy.proto" ProtoRoot="../../../api/proto" GrpcServices="Client" Access="Internal" />
     <Protobuf Include="../../../api/proto/latent/control/v1/capability.proto" ProtoRoot="../../../api/proto" GrpcServices="Client" Access="Internal" />
     <Protobuf Include="../../../api/proto/latent/invocation/v1/invocation.proto" ProtoRoot="../../../api/proto" GrpcServices="Client" Access="Internal" />
+    <Protobuf Include="../../../api/proto/latent/control/v1/release.proto" ProtoRoot="../../../api/proto" GrpcServices="None" Access="Internal" />
+    <Protobuf Include="../../../api/proto/latent/control/v1/state.proto" ProtoRoot="../../../api/proto" GrpcServices="Client" Access="Internal" />
+    <Protobuf Include="../../../api/proto/latent/transaction/v1/transaction.proto" ProtoRoot="../../../api/proto" GrpcServices="Client" Access="Internal" />
   </ItemGroup>
 </Project>

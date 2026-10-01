@@ -1,5 +1,20 @@
 # .NET transport qualification
 
+The Phase 4 source milestone on 2026-10-01 adds twelve core methods to the same
+bounded HTTP/2 owner. Local Windows checks used the pinned SDK 8.0.425 and
+runtime 8.0.31 with locked cached NuGet packages: compilation passed with zero
+warnings/errors, 49 shared protobuf cases and 561 native assertions passed.
+Six new real HTTP/2 serialization scenarios cover all twelve methods, independent
+durable rejection through audit failure, transport ABORTED versus explicit
+proven-abort attempts, retained old result formats/payload expiry, full-width
+generations and original preconditions, bounded predecode, cancellation and
+predispatch profile/deadline rejection. All existing transport scenarios passed.
+Twelve generated C# owners include the original seven unchanged output hashes;
+the exact Linux generator binary hashes remain verified and unchanged.
+These local source checks do not qualify the new APIs on the maintained Linux
+profile, a real signed node, Windows as a supported transport, or a browser.
+The historical qualification below remains specific to its original profile.
+
 The [native client](README.md) and its example are separate from the portable
 contract model and from guest-language bindings. On 2026-09-19, Linux x86-64
 validation used .NET SDK 8.0.425 and Microsoft.NETCore.App 8.0.31.

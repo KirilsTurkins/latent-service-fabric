@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/dotnet/validate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Qualify the five additive transaction/state/release C# generated owners with the same exact pinned native compiler and unchanged stateless outputs",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "f16d1917e58fb7f0e9239e3d8ca43ba3bc0a415b650f30dcb6f54d4c52d77c64"
+  "sha256": "a664526e35c40ceb5151d6fe443440710b768b56cf487aa38fd887eb5ffb2876"
 }

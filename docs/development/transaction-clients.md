@@ -9,7 +9,11 @@ remain supported.
 Rust exposes `latent_sdk::transaction::TransactionClient` on the existing
 `network::RpcClient`. TypeScript exposes the same twelve core operations on
 `RpcClient` from `@latent/sdk/node`, with types under the pure `transaction` and
-`transactionClient` exports. The profile helpers construct the exact wire, host ABI and
+`transactionClient` exports. .NET exposes `Latent.Sdk.Transactions.ITransactionClient`
+on the maintained `Latent.Sdk.Transport.BoundedClient`, returning owned
+`TransactionResponse<T>` values or native cancellation/exception types with
+independent `TransactionFailure` recovery metadata.
+The profile helpers construct the exact wire, host ABI and
 preparation descriptor. These strings describe a request and confer no authority.
 Every namespace/recovery request still needs its explicit current publication
 selector, and the node checks the authenticated caller's current rights.
@@ -22,7 +26,7 @@ and cancellation never supply a durable abort fence. Callers retain the original
 application request; lookup/inspection and any explicit new attempt are separate
 calls. The SDK never resubmits a command or refreshes a generation/version.
 
-Rust retains a validated durable observation through a later transport, audit or
+Rust, Node and .NET retain a validated durable observation through a later transport, audit or
 cleanup failure. Failure recovery metadata excludes the application payload;
 the caller can explicitly recover the original result using its preserved
 identity. Effects retain their separate dispatch disposition; a provider
@@ -45,6 +49,18 @@ its optional `observedTransaction` contains bounded receipt data without copying
 the application body. An `AbortSignal` stops the local wait; explicit recovery
 uses a fresh signal and the original identity.
 
+.NET uses that same physical connection and reserved recovery admission, with
+a 2 MiB wire ceiling, 8 MiB graph and 4096-node ceiling, bounded repeated fields
+and metadata maps checked before native allocation. Its transaction deadline
+is the minimum of the configured timeout, call timeout and original embedded
+wall deadline. The canonical request and independent recovery data are copied
+before the first asynchronous admission wait, so subsequent caller mutations
+cannot replace a client key, attempt fence or stale-edit precondition. A later
+audit failure retains validated bounded receipt data in `TransactionFailure`;
+`CancellationToken` remains a local wait scope. Explicit recovery uses a new
+live token and the original identity. C# `ulong` values and optional fields
+retain their full width and presence.
+
 The TypeScript package root exposes the pure `transaction` models, including
 `bigint` uint64 values. Privileged RPC transport remains under the Node export.
 Browser command/query/recovery execution must use the purpose-built authenticated
@@ -58,8 +74,8 @@ python3 tools/transaction_client_conversions.py --check
 python3 tools/transaction_client_rust_shapes.py --check
 ```
 
-This source milestone includes six model sets and the Rust and Node transport facades.
-The other four maintained transport facades, dispatcher/backup/migration full
+This source milestone includes six model sets and the Rust, Node and .NET transport facades.
+The other three maintained transport facades, dispatcher/backup/migration full
 profile operations, separate-node six-client scenario matrix and browser HTTP
 execution remain outstanding. Generated model checks, codec tests and compiler
 checks do not qualify signed guest execution or real external-client execution.

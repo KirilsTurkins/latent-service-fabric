@@ -7,6 +7,14 @@ obsolete `ILatentClient`, root-namespace DTOs and `client.Legacy` adapter have
 been removed during alpha. This is a host client, not
 a .NET Wasm guest binding or a browser transport.
 
+The additive `Latent.Sdk.Transactions.ITransactionClient` exposes all twelve
+core transaction/query/recovery and state-management operations on that same
+`BoundedClient`. It uses exact generated StateService/TransactionService
+owners and `Latent.Sdk.Transactions` models. See the shared
+[transaction client guide](../../docs/development/transaction-clients.md)
+for original identity, bounded receipt ownership, explicit proven-abort retry,
+independent audit facts and remaining execution qualification.
+
 ## Qualified profile
 
 | Surface | Contract |
@@ -49,6 +57,17 @@ invocation deadline and guest wall-time budget remain separate wire values.
 Unrepresentable local clock conversions are rejected, never wrapped. A caller
 token cancels local waiting; it is not an explicit server Cancel disposition.
 Use a fresh live token for subsequent Cancel/GetActivation recovery.
+
+Transaction calls apply the minimum of the configured timeout, per-call timeout
+and original invocation wall deadline. Their wire ceiling is 2 MiB, graph
+ceiling 8 MiB/4096 nodes, page/collection ceiling 128 (linked retention IDs 256)
+and metadata ceiling 32 entries. Lower configured limits still apply. Before
+the first asynchronous wait, the client owns a canonical request snapshot and
+bounded recovery fields. It never refreshes a generation, version or attempt.
+`TransactionException` and `TransactionCancellationException` carry the original
+identity and any validated durable receipt through a later audit/transport
+failure. A gRPC `ABORTED` response and local cancellation never prove a durable
+abort; explicit recovery needs a fresh token and the original identity.
 
 Await each returned `ValueTask` only once, or call `AsTask()` once and retain
 that Task. Request `ReadOnlyMemory<byte>`, dictionary backing storage and nested
