@@ -64,9 +64,12 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("incomplete Java capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
     required = {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
-    if (not isinstance(project, dict) or not required <= project.keys() <= required | {"server"}
+    if (not isinstance(project, dict) or not required <= project.keys() <= required | {"server", "httpClient"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported Java capsule project format")
+    if "httpClient" in project:
+        from tools.java_http_client import selection
+        selection(project["httpClient"])
     if "server" in project:
         from tools.java_server_source import selection
         selected = selection(project["server"])

@@ -49,6 +49,8 @@ def sdk_snapshot(root: Path) -> dict:
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
     if (root / "server").exists():
         files.update({"server/" + name: data for name, data in snapshot(root / "server").items()})
+    if (root / "client").exists():
+        files.update({"client/" + name: data for name, data in snapshot(root / "client").items()})
     return dict(sorted(files.items()))
 
 
@@ -162,9 +164,12 @@ class Compiler:
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
-                server_profile: bool = False, server_bridge: bytes | None = None) -> tuple[Path, dict]:
+                server_profile: bool = False, server_bridge: bytes | None = None,
+                http_client_profile: bool = False) -> tuple[Path, dict]:
         if type(server_profile) is not bool or server_bridge is not None and not server_profile:
             raise ValueError("automatic server bridge requires an explicitly selected profile")
+        if type(http_client_profile) is not bool:
+            raise ValueError("Java standard HTTP requires an explicitly selected profile")
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
@@ -209,6 +214,26 @@ class Compiler:
             shutil.copytree(self.sdk / "server/services", project / "src/main/resources")
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
+        if http_client_profile:
+            for folder in ("client/dev", "client/compiler/dev"):
+                for relative, data in snapshot(self.sdk / folder).items():
+                    target = java_root / "dev" / relative
+                    if target.exists(): raise ValueError("standard HTTP SDK overrides runtime source")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
+            # The same selected project can contain both server and client
+            # profiles. Append distinct SDK providers rather than replacing
+            # either service list or accepting an application-owned plugin.
+            for relative, data in snapshot(self.sdk / "client/services").items():
+                target = project / "src/main/resources" / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                previous = target.read_bytes() if target.exists() else b""
+                rows = previous.splitlines() + data.splitlines()
+                if len(rows) != len(set(rows)): raise ValueError("duplicate SDK compiler provider")
+                target.write_bytes(b"\n".join(rows) + b"\n")
+            if not server_profile:
+                with (project / "build.gradle").open("a", encoding="utf-8") as build:
+                    build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")
             target = java_root / path.relative_to(sources)
