@@ -295,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain all compiler, signed-node, native resource and cleanup checks; combine reviewed runner-owned step cache selection with the explicit build-step environment and permitted cache action inputs, keeping runner context out of job env",
+  "reviewReason": "Retain all compiler, signed-node and cleanup checks; combine the original build-step runner-owned cache selection with independently reverified cache action inputs, keeping runner context out of job env.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
