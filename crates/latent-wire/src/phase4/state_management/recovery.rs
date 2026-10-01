@@ -21,6 +21,9 @@ struct Reservation {
     response_bytes: usize,
 }
 impl StateManagementAdmission for StateManagementRecoveryAdmission {
+    fn native_capacity(&self) -> NativeCapacityOwner {
+        self.owner.clone()
+    }
     fn reserve_recovery(
         &self,
         request_bytes: usize,
@@ -44,6 +47,9 @@ impl StateManagementAdmission for StateManagementRecoveryAdmission {
     }
 }
 impl StateManagementReservation for Reservation {
+    fn uses_native_capacity(&self, owner: &NativeCapacityOwner) -> bool {
+        self.native.is_from_owner(owner)
+    }
     fn reserved_response_bytes(&self) -> usize {
         // The total also includes request/work capacities and metadata. Only
         // the exact prepaid response capacity can authorize a response frame.

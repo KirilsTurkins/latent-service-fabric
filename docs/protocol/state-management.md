@@ -212,3 +212,16 @@ plan decoding, malformed CAS/unknown fields and expired historical recovery.
 CLI library Clippy completed without CLI warnings; dependencies retain their
 existing warnings. This does not qualify an end-to-end standalone manual
 provider action before that domain adapter is installed.
+
+
+The native management backend requires its recovery admission port to project
+the actual installed `NativeCapacityOwner`. Construction checks that the protected
+store and optional dispatcher share that exact owner; matching limits or paths
+cannot replace the identity. Each returned affine request reservation must also
+belong to that owner before any native lookup is submitted. An unbound or foreign
+owner is refused before readiness, without creating another pool. The native
+namespace/control fixtures retain their existing original memory-budget checks
+and now bind real recovery reservations before the first published store job.
+The Linux Wire library passes all 150 cases, including three explicit owner
+mismatch schedules. Existing unrelated Wire/dependency lint diagnostics remain
+separate from the warning-free owned management modules.

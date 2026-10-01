@@ -20,10 +20,11 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-/// This fixture exercises real retained memory accounting, not the production
-/// #397 recovery lane. The backend constructor requires the installed node port.
+/// The fixture retains both its original host-memory budget assertions and
+/// actual affine reservations on the one installed global recovery owner.
 pub(super) struct Admission {
     pub budget: ActivationBudget,
+    pub native: latent_core::native_capacity::NativeCapacityOwner,
     pub calls: AtomicUsize,
     pub fences: Arc<AtomicUsize>,
     pub reject_after: Arc<AtomicUsize>,
@@ -33,8 +34,15 @@ struct Reservation {
     response_bytes: usize,
     fences: Arc<AtomicUsize>,
     reject_after: Arc<AtomicUsize>,
+    native: latent_core::native_capacity::NativeReservation,
 }
 impl StateManagementReservation for Reservation {
+    fn uses_native_capacity(
+        &self,
+        owner: &latent_core::native_capacity::NativeCapacityOwner,
+    ) -> bool {
+        self.native.is_from_owner(owner)
+    }
     fn reserved_response_bytes(&self) -> usize {
         self.response_bytes
     }
@@ -43,17 +51,19 @@ impl StateManagementReservation for Reservation {
         if previous >= self.reject_after.load(Ordering::Relaxed) {
             return Err(expired());
         }
-        action();
-        Ok(())
+        self.native.with_live(action).map_err(|_| expired())
     }
 }
 impl StateManagementAdmission for Admission {
+    fn native_capacity(&self) -> latent_core::native_capacity::NativeCapacityOwner {
+        self.native.clone()
+    }
     fn reserve_recovery(
         &self,
         request_bytes: usize,
         work_bytes: usize,
         response_bytes: usize,
-        _deadline: Instant,
+        deadline: Instant,
     ) -> Result<Arc<dyn StateManagementReservation>, PlatformError> {
         self.calls.fetch_add(1, Ordering::Relaxed);
         let bytes = request_bytes
@@ -64,7 +74,20 @@ impl StateManagementAdmission for Admission {
             .budget
             .reserve_host_memory(u64::try_from(bytes).unwrap())
             .map_err(|error| error.to_platform_error())?;
+        let native = self
+            .native
+            .reserve(
+                latent_core::native_capacity::NativeAdmissionClass::Recovery,
+                latent_core::native_capacity::NativeReservationRequest {
+                    request_bytes: request_bytes as u64,
+                    work_bytes: work_bytes as u64,
+                    response_bytes: response_bytes as u64,
+                },
+                deadline,
+            )
+            .map_err(|_| capacity())?;
         Ok(Arc::new(Reservation {
+            native,
             _memory: memory,
             response_bytes,
             fences: Arc::clone(&self.fences),
@@ -73,7 +96,7 @@ impl StateManagementAdmission for Admission {
     }
 }
 impl Admission {
-    fn new() -> Self {
+    fn new(native: latent_core::native_capacity::NativeCapacityOwner) -> Self {
         let request = ResourceBudget {
             cpu_fuel: 1,
             memory_bytes: 64 * 1024 * 1024,
@@ -98,6 +121,7 @@ impl Admission {
         .unwrap();
         Self {
             budget: ActivationBudget::with_profile(grant, BudgetProfile::Phase4).unwrap(),
+            native,
             calls: AtomicUsize::new(0),
             fences: Arc::new(AtomicUsize::new(0)),
             reject_after: Arc::new(AtomicUsize::new(usize::MAX)),
@@ -120,6 +144,18 @@ impl Fixture {
         Self::with_io(audited, None).await
     }
     pub async fn with_io(audited: bool, io: Option<latent_state::store_io::StoreIoLimits>) -> Self {
+        let mut limits = latent_core::native_capacity::NativeCapacityLimits::default();
+        // Existing memory schedules deliberately retain several independent
+        // responses; this finite fixture partition matches their 64 MiB budget.
+        limits.recovery.bytes = 64 * 1024 * 1024;
+        let owner = latent_core::native_capacity::NativeCapacityOwner::new(limits).unwrap();
+        Self::with_io_and_native(audited, io, owner).await
+    }
+    pub async fn with_io_and_native(
+        audited: bool,
+        io: Option<latent_state::store_io::StoreIoLimits>,
+        native: latent_core::native_capacity::NativeCapacityOwner,
+    ) -> Self {
         let directory = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let directory = tempfile::tempdir_in(directory).unwrap();
@@ -184,14 +220,9 @@ impl Fixture {
         fs::set_permissions(&config.root, fs::Permissions::from_mode(0o700)).unwrap();
         config.create_if_missing = true;
         let store = Arc::new(start(config.clone()).await);
-        let admission = Arc::new(Admission::new());
-        let audit = audited.then(|| {
-            latent_audit::DirectoryPhase2AuditJournal::open(
-                directory.path().join("audit"),
-                latent_audit::AuditLimits::default(),
-            )
-            .unwrap()
-        });
+        store.bind_native_capacity(&native).unwrap();
+        let admission = Arc::new(Admission::new(native));
+        let audit = audited.then(|| open_audit(directory.path()));
         let binding = binding(publication, component);
         let backend = StateManagementBackend::new(
             StateManagementServices {
@@ -304,7 +335,17 @@ impl Fixture {
         assert_eq!(self.admission.budget.outstanding_reservations(), 0);
     }
 }
-fn binding(publication: PublicationRef, component: ReleaseDigest) -> StateManagementBinding {
+fn open_audit(path: &std::path::Path) -> (latent_audit::AuditHandle, latent_audit::AuditWorker) {
+    latent_audit::DirectoryPhase2AuditJournal::open(
+        path.join("audit"),
+        latent_audit::AuditLimits::default(),
+    )
+    .unwrap()
+}
+pub(super) fn binding(
+    publication: PublicationRef,
+    component: ReleaseDigest,
+) -> StateManagementBinding {
     StateManagementBinding {
         publication,
         component,

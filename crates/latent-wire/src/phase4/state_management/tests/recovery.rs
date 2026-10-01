@@ -33,6 +33,7 @@ const ORDINARY_WORK_BYTES: u64 = 3 * ORDINARY_BUFFER_BYTES as u64;
 const ORDINARY_RESERVATION_BYTES: u64 = ORDINARY_WORK_BYTES + 2_048;
 
 pub(super) fn install(fixture: &mut Fixture, owner: NativeCapacityOwner) {
+    assert!(fixture.store.uses_native_capacity(&owner));
     Arc::get_mut(&mut fixture.backend.0)
         .unwrap()
         .services
@@ -135,8 +136,9 @@ async fn authenticated_recovery_and_retained_rpc_frame_progress_under_real_ordin
         StoreIoError::AcceptedFull,
         StoreIoError::ByteBudget,
     ] {
-        let mut fixture = Fixture::with_io(false, Some(io_limits(pressure))).await;
         let owner = capacity_owner();
+        let mut fixture =
+            Fixture::with_io_and_native(false, Some(io_limits(pressure)), owner.clone()).await;
         install(&mut fixture, owner.clone());
         drop(fixture.create().await);
         let ordinary = owner
@@ -227,11 +229,11 @@ async fn authenticated_recovery_and_retained_rpc_frame_progress_under_real_ordin
 
 #[tokio::test]
 async fn detached_recovery_write_keeps_global_capacity_until_original_expiry_and_real_retirement() {
-    let mut fixture = Fixture::new(false).await;
     let clock = TestClock::new(100, Instant::now(), 1);
     let owner =
         NativeCapacityOwner::with_clock(NativeCapacityLimits::default(), Arc::new(clock.clone()))
             .unwrap();
+    let mut fixture = Fixture::with_io_and_native(false, None, owner.clone()).await;
     install(&mut fixture, owner.clone());
     Arc::get_mut(&mut fixture.backend.0).unwrap().services.clock = Arc::new(clock.clone());
     drop(fixture.create().await);
