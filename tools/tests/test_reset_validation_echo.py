@@ -39,6 +39,63 @@ def fixture(root: Path, *, package: bool) -> Path:
 
 
 class ResetValidationEchoTests(unittest.TestCase):
+
+    def test_exact_pinned_cache_profile_dependencies_reset_without_touching_other_outputs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            from tools.reset_validation_echo import LEGACY_CACHE_WIT
+            legacy = root / "capsules/echo"
+            originals = Path(__file__).parent / "fixtures/validation_echo_cache"
+            for name, expected in LEGACY_CACHE_WIT.items():
+                raw = (originals / Path(name).name).read_bytes()
+                self.assertEqual(digest(raw), expected)
+                destination = legacy / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(raw)
+            package = root / "capsules/echo-provenance/wit"
+            package.mkdir(parents=True)
+            unrelated = root / "debug/deps/retained.rlib"
+            unrelated.parent.mkdir(parents=True)
+            unrelated.write_bytes(b"compiled dependency")
+            self.assertEqual(reset_validation_echo(root), 2)
+            self.assertFalse(legacy.exists())
+            self.assertFalse(package.parent.exists())
+            self.assertEqual(unrelated.read_bytes(), b"compiled dependency")
+
+    def test_cache_profile_changed_missing_extra_partial_or_linked_dependencies_preserve_both_owners(self):
+        for change in ("changed", "missing", "extra", "metadata", "link"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                from tools.reset_validation_echo import LEGACY_CACHE_WIT
+                legacy = root / "capsules/echo"
+                originals = Path(__file__).parent / "fixtures/validation_echo_cache"
+                for name, expected in LEGACY_CACHE_WIT.items():
+                    raw = (originals / Path(name).name).read_bytes()
+                    self.assertEqual(digest(raw), expected)
+                    destination = legacy / name
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_bytes(raw)
+                package = fixture(root, package=True)
+                selected = legacy / "interface/deps/context.wit"
+                outside = root / "outside.wit"
+                outside.write_bytes(selected.read_bytes())
+                if change == "changed":
+                    selected.write_bytes(selected.read_bytes() + b"\n")
+                elif change == "missing":
+                    selected.unlink()
+                elif change == "extra":
+                    (legacy / "interface/deps/user.wit").write_bytes(b"user source")
+                elif change == "metadata":
+                    (legacy / "build.json").write_bytes(b"{}")
+                else:
+                    selected.unlink()
+                    selected.symlink_to(outside)
+                with self.assertRaises(SnapshotError):
+                    reset_validation_echo(root)
+                self.assertTrue(legacy.exists())
+                self.assertTrue(package.exists())
+                self.assertTrue(outside.is_file())
+
     def test_cache_pruned_known_empty_skeletons_are_removed_without_touching_dependencies(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
