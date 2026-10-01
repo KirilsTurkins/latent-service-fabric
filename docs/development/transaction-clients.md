@@ -18,6 +18,11 @@ methods and independent `transaction.ClientFailure` recovery metadata. Java
 implements `dev.latent.sdk.TransactionClient` on the existing transport
 `RpcClient`, returning typed `CompletableFuture` responses or transaction
 exceptions that preserve the original identity and any validated observation.
+C exposes `latent_transport_transaction(owner)` and
+`latent_transport_transaction_vtable()` from `<latent/transaction_client.h>`.
+It uses the existing numeric-loopback HTTP/2 owner, explicit poll loop and
+local call handles. Typed response, failure and recovery pointers are borrowed
+through the completion callback; copy needed fields before returning.
 The profile helpers construct the exact wire, host ABI and
 preparation descriptor. These strings describe a request and confer no authority.
 Every namespace/recovery request still needs its explicit current publication
@@ -31,7 +36,7 @@ and cancellation never supply a durable abort fence. Callers retain the original
 application request; lookup/inspection and any explicit new attempt are separate
 calls. The SDK never resubmits a command or refreshes a generation/version.
 
-Rust, Node, Go, Java and .NET retain a validated durable observation through a later transport, audit or
+All six clients retain a validated durable observation through a later transport, audit or
 cleanup failure. Failure recovery metadata excludes the application payload;
 the caller can explicitly recover the original result using its preserved
 identity. Effects retain their separate dispatch disposition; a provider
@@ -75,6 +80,14 @@ duplicate fields/maps and strict UTF-8. The call uses the existing physical
 owner, connection and finite executor/shutdown path. A cancelled future leaves
 durable recovery explicit and uses a new live call for lookup.
 
+C preserves unsigned generations and times in `uint64_t`. Its charged call arena
+contains the original request snapshot and decoded response, with an 8 MiB
+configured maximum. An exact descriptor walk checks wire fields before nanopb
+allocation. Configured wire ceilings can be lower than the 2 MiB Phase 4 maximum;
+the existing stateless method limits remain in force. Cancellation or stop closes
+the shared physical connection before callbacks, and dispatched unfinished calls
+remain unknown. Recovery stays explicit on a live owner.
+
 The TypeScript package root exposes the pure `transaction` models, including
 `bigint` uint64 values. Privileged RPC transport remains under the Node export.
 Browser command/query/recovery execution must use the purpose-built authenticated
@@ -88,8 +101,8 @@ python3 tools/transaction_client_conversions.py --check
 python3 tools/transaction_client_rust_shapes.py --check
 ```
 
-This source milestone includes six model sets and the Rust, Node, Go, Java and .NET transport facades.
-The C transport facade, backup/migration full
+This source milestone includes six model sets and all six current transport facades.
+Backup/migration and the complete management
 profile operations, separate-node six-client scenario matrix and browser HTTP
 execution remain outstanding. Generated model checks, codec tests and compiler
 checks do not qualify signed guest execution or real external-client execution.

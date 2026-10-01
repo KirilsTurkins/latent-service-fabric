@@ -42,6 +42,27 @@ def main():
         if peer.poll() is None:
             peer.kill()
             peer.communicate(timeout=5)
+    transaction_peer = subprocess.Popen([sys.executable, str(SDK / "tests/transaction_peer.py")], env=environment,
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        with selectors.DefaultSelector() as selector:
+            selector.register(transaction_peer.stdout, selectors.EVENT_READ)
+            if not selector.select(10):
+                raise RuntimeError("transaction peer startup deadline")
+        ready = json.loads(transaction_peer.stdout.readline(1024))
+        endpoint = f"http://127.0.0.1:{ready['port']}"
+        subprocess.run([str(build / "transaction-tests"), endpoint], env=environment, check=True, timeout=90)
+        output, errors = transaction_peer.communicate(b"stop\n", timeout=10)
+        if transaction_peer.returncode or errors or len(output) > 8192:
+            raise RuntimeError(f"transaction peer failure: {errors[:2048]!r}")
+        summary = json.loads(output)
+        if summary["methods"] != 15 or summary["connections"] != summary["closed"]:
+            raise RuntimeError("transaction peer execution or physical retirement incomplete")
+        print("C controlled transaction TCP peer: " + json.dumps(summary, sort_keys=True))
+    finally:
+        if transaction_peer.poll() is None:
+            transaction_peer.kill()
+            transaction_peer.communicate(timeout=5)
 
 
 if __name__ == "__main__":

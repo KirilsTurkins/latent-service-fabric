@@ -6,7 +6,8 @@ The owner uses the native nghttp2 C HTTP/2 library with nanopb C protobuf
 descriptors/runtime. It sends unary gRPC frames on one nonblocking TCP socket.
 There is no automatic retry, library retry layer, DNS lookup, proxy, redirect,
 HTTP/1 fallback, subprocess, background thread or connection per deployment.
-Generated paths select exactly the eight common RPCs. A new explicit request
+Generated paths select the eight common RPCs and the fifteen current Phase 4
+transaction, query, recovery, namespace and dispatcher RPCs. A new explicit request
 may open a replacement connection after failure; failed calls are never replayed.
 
 Configuration requires `http://` followed by a numeric IPv4 address in 127/8 or
@@ -29,8 +30,11 @@ The implementation adds neither a remote node listener nor mTLS/cluster routing.
 `latent_transport_create` returns an owner plus optional structured construction
 failure. It copies retained configuration and does not connect. All eight methods
 in `latent_transport_profile_vtable()` accept their existing DTO, optional local
-call options, completion callback and user data. This is the only public client
-interface; it preserves the complete profile error and recovery/audit metadata.
+call options, completion callback and user data. The additive
+`latent_transport_transaction(owner)` view and
+`latent_transport_transaction_vtable()` use the same owner and call handles,
+with declarations in `<latent/transaction_client.h>`. Each preserves its typed
+response, original recovery identity, bounded observation and independent audit.
 
 | Object | Lifetime |
 | --- | --- |
@@ -38,6 +42,7 @@ interface; it preserves the complete profile error and recovery/audit metadata.
 | Request/options, nested strings/bytes/maps | Borrowed through the initiating method only; retained request is encoded/copied before return |
 | Callback and user data | Borrowed until completion returns; the SDK does not copy or own the pointed-to user data |
 | Profile result/failure and all nested pointers | Borrowed only during the callback; copy what must outlive it |
+| Transaction result/failure, recovery identity and observation pointers | Borrowed only during the callback; copy original identity and receipt fields needed for a later explicit call |
 | Non-NULL `latent_profile_call*` | Local handle retained through completion and until explicit `release_call` after callback return |
 | NULL profile handle | Failure callback ran inline; nothing to release |
 | Profile client view | Borrowed from the owner, valid until owner destruction |
@@ -66,7 +71,8 @@ event loop; they do not assert thread-safe simultaneous API access.
 An absolute monotonic deadline starts before validation/encoding. The owner
 default and supplied relative call option select the smaller timeout. Explicit
 zero expires inline; an unrepresentable value above 300000 ms fails explicitly
-without wrapping. An Invoke wall-clock deadline can only shorten that budget.
+without wrapping. An Invoke or embedded command/query wall-clock deadline can
+only shorten that budget.
 Relative activation wall-time budgets remain independent protobuf request fields.
 Queueing, connection establishment, stream admission, send, receive, decode and
 callback admission all spend the original deadline. gRPC timeout headers contain
@@ -113,8 +119,8 @@ gRPC NotFound (5), or a missing operation receipt, remains OutcomeUnknown.
 | `maximum_in_flight` | 4 | 32, positive |
 | `maximum_queued` | 4 | 128, zero allowed |
 | `maximum_retained_calls` | 16 | 256, includes completed unreleased handles |
-| `maximum_request_bytes` | 128 KiB | 1 MiB; policy <=128 KiB, capabilities <=8 KiB |
-| `maximum_response_bytes` | 1 MiB | 1 MiB; capabilities <=128 KiB |
+| `maximum_request_bytes` | 128 KiB | 2 MiB for Phase 4; common Invoke <=1 MiB, policy <=128 KiB, capabilities <=8 KiB |
+| `maximum_response_bytes` | 1 MiB | 2 MiB for Phase 4; common <=1 MiB, capabilities <=128 KiB |
 | `maximum_decoded_bytes` | 2 MiB | 8 MiB per call, including arena block storage |
 | `maximum_owned_bytes` | 16 MiB | 128 MiB aggregate, at least the fixed owner size |
 
@@ -132,7 +138,7 @@ during bounded growth. `owned_bytes` never exceeds the configured aggregate.
 Releasing a completed handle returns its retained reservation; stopping alone
 does not refund unreleased handles.
 
-The exercised x86-64 layout is **1032 bytes per owner and 14960 bytes per call**,
+The exercised x86-64 layout is **1032 bytes per owner and 18872 bytes per call**,
 before dynamic buffers/accounting headers. nghttp2's public option/callback
 constructors use two fixed libc allocations, **152 + 232 bytes**, outside the
 custom allocator. They exist only while initializing one session, are freed
@@ -146,6 +152,8 @@ There is at most one socket/session per owner and zero SDK-created threads.
 Each socket requests 64 KiB send and receive buffers; Linux normally doubles
 these accounting sizes and owns additional TCP bookkeeping. Fixed decoder scratch
 is 2048 bytes per nesting level, bounded to 16 levels; receive scratch is 16 KiB.
+The Phase 4 wire walk additionally uses fixed per-level arrays for 64 fields
+and at most four maps of 32 borrowed key views; these are bounded stack storage.
 The codec caps field visits/repeated growth at 4096, bounds all length arithmetic
 and checks deadlines throughout. Unused growth blocks stay charged until callback
 completion. HTTP headers are limited to two blocks, 32 fields, 64-byte names and
@@ -181,3 +189,33 @@ yields zero call/queue/callback counters. The fixed owner lives until destructio
   pre-dispatch rejection is NotDispatched; loss after stream submission is
   conservatively Unknown. There is no automatic Invoke/mutation retry, inferred
   rollback, generated identity or fabricated durable attempt.
+
+## Transaction semantics
+
+Phase 4 uses the existing nanopb codec with exact descriptor ownership. Before
+asynchronous admission returns, the owner validates and encodes the request,
+then decodes its original identity and preconditions into the call's charged
+arena. Mutating caller buffers later cannot change the transmitted input, a
+stale-edit version, command key or explicit abort fence. The configured decoded
+ceiling includes both this snapshot and the response.
+
+Before native response allocation, the descriptor walk rejects malformed UTF-8,
+integer overflow, duplicate singular/oneof/map fields and excessive graphs.
+Limits include 4096 field/message visits, depth 16, 128 page entries, 256 linked
+retention IDs and 32 metadata entries. Page responses also obey the caller's
+original limit, a 1 MiB aggregate bound and explicit cursor progression.
+
+Namespace incarnation, caller command scope and current publication selectors
+remain distinct. A profile digest, receipt, provider status or supplied identity
+does not grant authority. Queries create no client-side durable command identity.
+Business rejection, affirmative technical abort, an unknown outcome and an
+expired application payload remain separate states. Neither gRPC `ABORTED` nor
+physical local cancellation supplies a proven-abort fence.
+
+A validated command or management receipt remains available when a later
+independent audit acknowledgement fails. The callback's observation excludes
+command application payloads. Dispatcher control/recovery retain the original
+action and exact unsigned owner epoch/revision; there is no automatic mutation
+retry, lookup polling or precondition refresh. Releasing a handle never issues
+a remote cancellation. Recover explicitly on a live owner with the caller's
+copied original identity and current authorization selector.

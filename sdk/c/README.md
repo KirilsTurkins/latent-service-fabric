@@ -4,6 +4,9 @@ The C11 client implements the eight-operation
 [common profile](../profile/README.md) over one reusable, bounded, numeric-loopback
 HTTP/2/protobuf connection per owner. All RPCs use `latent_profile_client_vtable`;
 the obsolete invocation-only vtable and compatibility header have been removed.
+The additive `latent_transaction_client_vtable` exposes the fifteen current
+Phase 4 transaction, query, recovery, namespace and dispatcher operations on
+that same connection and bounded owner.
 
 ## Support matrix
 
@@ -12,6 +15,7 @@ the obsolete invocation-only vtable and compatibility header have been removed.
 | `<latent/profile.h>` | Existing complete eight-operation DTOs and callback interface; unchanged by this transport |
 | `<latent/types.h>` | Shared length-delimited strings, bytes and key/value pairs |
 | `<latent/transport.h>` | Constructor, explicit configuration, event-loop polling, usage and physical stop/shutdown |
+| `<latent/transaction.h>` / `<latent/transaction_client.h>` | Descriptor-derived Phase 4 models, fifteen typed callbacks, original recovery identity and bounded durable observations |
 | Invoke / Cancel / GetActivation | HTTP/2 unary RPCs, three invocation outcomes, three cancellation dispositions and original-ID recovery |
 | GetPolicy / ListPolicies / ListCapabilities | Policy and redacted provider inspection; bounded single-page requests |
 | ApplyPolicy / GetPolicyOperation | Explicit generation and operation identity, observed receipt and manual replay recovery |
@@ -91,9 +95,11 @@ anonymous-authentication or provider-credential fallback.
 1. Call `latent_transport_create(&config, &owner, &failure)`; it copies endpoint,
    tenant and token before returning and opens no socket yet.
 2. Obtain `latent_transport_profile(owner)` and
-   `latent_transport_profile_vtable()`. Zero-initialize request/result records;
+   `latent_transport_profile_vtable()`, or the additive
+   `latent_transport_transaction(owner)` and
+   `latent_transport_transaction_vtable()`. Zero-initialize request/result records;
    populate every required `has_*` flag explicitly.
-3. Call any of the eight methods with a valid callback and live user data. Inputs
+3. Call a method with a valid callback and live user data. Inputs
    and nested data are copied/encoded before return. A NULL handle means its
    failure callback has already run; otherwise retain the local handle.
 4. Drive `latent_transport_poll(owner, wait_millis)` from the same serialized
@@ -110,6 +116,23 @@ must return promptly. Getters return borrowed views of one owner, not separately
 owned clients. Every returned call handle requires explicit release after its
 callback returns. [Transport contracts](TRANSPORT.md) describe reentrancy, exact bounds,
 deadlines, collateral connection retirement and all lifetime preconditions.
+
+For Phase 4, include `<latent/transaction_client.h>` and populate the exact
+`latent_transaction_current_profile()` descriptor plus the requested namespace
+and current authorization publication. Descriptors supply no permission.
+`invoke_command`, `query`, `lookup_command`, `lookup_commit`, `get_effect` and
+the remaining management methods follow the same callback/poll/release flow.
+Set the owner's wire limits to 2097152 bytes and decoded limit to 8388608 bytes
+when admitting the full protocol ceiling; lower configured limits remain valid.
+Copy any needed recovery identity and observation inside the callback, since
+all nested pointers expire on callback return. A transport failure never
+resubmits a command or supplies a technical-abort proof.
+
+The native `transaction-tests` program exercises all fifteen methods against an
+independent authenticated HTTP/2 peer during `validate.py`, including immutable
+caller input, UINT64_MAX generations, paired large results, lost-response
+recovery, audit failure, wire limits and physical shutdown. This focused source
+evidence remains separate from the pending real-node Phase 4 client matrix.
 
 ## Clean-checkout authorized HTTP/blob example
 
