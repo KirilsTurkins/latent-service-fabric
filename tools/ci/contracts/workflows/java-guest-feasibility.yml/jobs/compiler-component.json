@@ -3,15 +3,12 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0,
-      "CARGO_PROFILE_TEST_DEBUG": 0,
-      "PYTHONDONTWRITEBYTECODE": 1
-    },
     "name": "Actual Java sources, SDK ownership and enforced node",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 55,
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": 1
+    },
     "steps": [
       {
         "uses": "actions/checkout",
@@ -26,9 +23,9 @@
       {
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "java-feasibility-source-${{ github.sha }}",
           "path": "${{ runner.temp }}/java-feasibility-source.tar.gz",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
@@ -53,6 +50,21 @@
         "uses": "dtolnay/rust-toolchain"
       },
       {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
+        }
+      },
+      {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
@@ -60,8 +72,8 @@
       },
       {
         "name": "Install pinned compiler tools",
-        "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -euo pipefail\ncurl --fail --location --retry 3 --max-time 180 \\\n  https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \\\n  -o \"$RUNNER_TEMP/gradle.zip\"\necho \"a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/gradle.zip\" | sha256sum --check\nunzip -q \"$RUNNER_TEMP/gradle.zip\" -d \"$RUNNER_TEMP\"\necho \"$RUNNER_TEMP/gradle-9.1.0/bin\" >> \"$GITHUB_PATH\"\ncurl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  -o \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\necho \"87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/java-bindgen\"\necho \"$RUNNER_TEMP/java-bindgen\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Qualify proposed transaction shapes and shared imported owners with the maintained Java compiler",
@@ -88,22 +100,21 @@
         "run": "set -o pipefail\npython3 tools/qualify_java_capsules.py --output \"$RUNNER_TEMP/java-capsule-authoring\" --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" 2>&1 | tee \"$RUNNER_TEMP/java-capsule-authoring.log\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain diagnostics, generated source and component candidates",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "java-guest-feasibility-${{ github.sha }}",
           "path": "${{ runner.temp }}/transaction-contract-java/report.json\n${{ runner.temp }}/transaction-contract-java/source.tar.gz\n${{ runner.temp }}/transaction-contract-java/component.wit\n${{ runner.temp }}/transaction-contract-java/preparation.json\n${{ runner.temp }}/transaction-contract-java/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-java/logs/**\n${{ runner.temp }}/transaction-contract-java/compiler/*.log\n${{ runner.temp }}/transaction-contract-java/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-java/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-java/compiled/component.wit\n${{ runner.temp }}/transaction-contract-java/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-java/compiled/generated/**\n${{ runner.temp }}/transaction-contract-java/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-java/bindings/**\n${{ runner.temp }}/transaction-contract-java/component.wasm\n${{ runner.temp }}/java-guest-feasibility/report.json\n${{ runner.temp }}/java-guest-feasibility/*.candidate.json\n${{ runner.temp }}/java-guest-feasibility/*.candidate.xml\n${{ runner.temp }}/java-guest-feasibility/*.observed.json\n${{ runner.temp }}/java-guest-feasibility/*.log\n${{ runner.temp }}/java-guest-feasibility/*.exit.json\n${{ runner.temp }}/java-guest-feasibility/*.failure.txt\n${{ runner.temp }}/java-guest-feasibility/project/build/teavm-c/\n${{ runner.temp }}/java-guest-feasibility/bindings/\n${{ runner.temp }}/java-guest-feasibility/*.wasm\n${{ runner.temp }}/java-guest-bindings/report.json\n${{ runner.temp }}/java-guest-bindings/compiler/*.log\n${{ runner.temp }}/java-guest-bindings/compiler/*.command.json\n${{ runner.temp }}/java-guest-bindings/compiler-inputs.json\n${{ runner.temp }}/java-guest-bindings/runtime-probe.log\n${{ runner.temp }}/java-guest-bindings/compiled/bindings/\n${{ runner.temp }}/java-guest-bindings/compiled/component.wasm\n${{ runner.temp }}/java-capsule-authoring.log\n${{ runner.temp }}/java-capsule-authoring/*.json\n${{ runner.temp }}/java-capsule-authoring/logs/**\n${{ runner.temp }}/java-capsule-authoring/builds/**\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/*.json\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/logs/**\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/*.json\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/component.wasm\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/compiler-logs/**\n${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/logs/**\n${{ runner.temp }}/java-capsule-authoring/node/**\n${{ runner.temp }}/java-capsule-authoring/releases/**\n${{ runner.temp }}/java-capsule-authoring/guide/guide.json\n${{ runner.temp }}/java-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/java-capsule-authoring/guide/logs/**\n${{ runner.temp }}/java-capsule-authoring/guide/projects/results/**\n",
+          "if-no-files-found": "warn",
           "retention-days": 14
         }
       }
-    ],
-    "timeout-minutes": 55
+    ]
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
+  "reviewReason": "Preserve the historical narrow dependency fixture and every Phase4 compiler/guest qualification while retaining incoming dependency-cache, native website, and interrupt correctness checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

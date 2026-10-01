@@ -3,14 +3,12 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0,
-      "PYTHONDONTWRITEBYTECODE": "1"
-    },
     "name": "NativeAOT component qualification",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 75,
+    "env": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
     "steps": [
       {
         "uses": "actions/checkout",
@@ -20,16 +18,16 @@
       },
       {
         "name": "Capture immutable qualification source inputs",
-        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/dotnet-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/dotnet-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/dotnet-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/dotnet-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/dotnet-guest-source.sha\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/dotnet-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/dotnet-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/dotnet-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/dotnet-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/dotnet-guest-source.sha\"\n"
       },
       {
         "name": "Retain the exact reviewed command contract input",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "dotnet-guest-command-contract-${{ github.sha }}",
           "path": "tools/ci/contracts/\n${{ runner.temp }}/dotnet-guest-source.tar.gz\n${{ runner.temp }}/dotnet-guest-source.sha\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
@@ -52,21 +50,21 @@
       {
         "uses": "dtolnay/rust-toolchain",
         "with": {
-          "components": "rustfmt",
-          "targets": "wasm32-unknown-unknown"
+          "targets": "wasm32-unknown-unknown",
+          "components": "rustfmt"
         }
       },
       {
         "uses": "Swatinem/rust-cache",
         "with": {
-          "cache-all-crates": false,
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
           "cache-bin": false,
-          "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
-          "cache-on-failure": false,
-          "cache-targets": false,
           "cache-workspace-crates": false,
-          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
-          "prefix-key": "lsf-ci-dependencies-v1",
+          "cache-all-crates": false,
+          "cache-on-failure": false,
           "save-if": false
         }
       },
@@ -82,8 +80,8 @@
       },
       {
         "name": "Install the pinned native compiler and closed runtime",
-        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "curl --fail --location --max-time 180 \\\n  https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \\\n  --output \"$RUNNER_TEMP/wasi-sdk.tar.gz\"\nprintf '%s  %s\\n' 87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171 \"$RUNNER_TEMP/wasi-sdk.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/wasi-sdk.tar.gz\" -C \"$RUNNER_TEMP\"\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/dotnet-authoring-bindgen\"\nexport PATH=\"$RUNNER_TEMP/dotnet-authoring-bindgen:$PATH\"\nprintf '%s\\n' \"$RUNNER_TEMP/dotnet-authoring-bindgen\" >> \"$GITHUB_PATH\"\npython3 tools/dotnet_capsule.py install-tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\"\n"
       },
       {
         "name": "Qualify proposed transaction shapes with the maintained NativeAOT compiler",
@@ -99,44 +97,43 @@
       },
       {
         "name": "Compile the actual C# probe and measure build costs",
-        "run": "set -o pipefail\nprobe=\"$RUNNER_TEMP/dotnet-probe-source\"\nmkdir \"$probe\"\ncp probes/smoke/Smoke.csproj probes/smoke/Operations.cs \\\n  probes/smoke/component.wit probes/smoke/packages.lock.json \\\n  global.json nuget.config \"$probe/\"\ncd \"$probe\"\ndotnet --info > \"$RUNNER_TEMP/dotnet-guest/dotnet-info.txt\"\ndotnet restore Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/restore.log\"\nexport LSF_WIT_BINDGEN=\"$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen\" LSF_WASM_TOOLS=wasm-tools\n/usr/bin/time -f '{\"wallSeconds\":%e,\"maxRssKiB\":%M,\"exitCode\":%x}' -o \"$RUNNER_TEMP/dotnet-guest/compilation-cost.json\" dotnet build Smoke.csproj -c Release --no-restore -p:WasiSdkRoot=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" -p:WitBindgenExe=\"python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py\" 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/build.log\"\ncp packages.lock.json \"$RUNNER_TEMP/dotnet-guest/packages.lock.json\"\n",
+        "working-directory": "sdk/dotnet-guest",
         "shell": "bash",
-        "working-directory": "sdk/dotnet-guest"
+        "run": "set -o pipefail\nprobe=\"$RUNNER_TEMP/dotnet-probe-source\"\nmkdir \"$probe\"\ncp probes/smoke/Smoke.csproj probes/smoke/Operations.cs \\\n  probes/smoke/component.wit probes/smoke/packages.lock.json \\\n  global.json nuget.config \"$probe/\"\ncd \"$probe\"\ndotnet --info > \"$RUNNER_TEMP/dotnet-guest/dotnet-info.txt\"\ndotnet restore Smoke.csproj --configfile nuget.config --locked-mode 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/restore.log\"\nexport LSF_WIT_BINDGEN=\"$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen\" LSF_WASM_TOOLS=wasm-tools\n/usr/bin/time -f '{\"wallSeconds\":%e,\"maxRssKiB\":%M,\"exitCode\":%x}' -o \"$RUNNER_TEMP/dotnet-guest/compilation-cost.json\" dotnet build Smoke.csproj -c Release --no-restore -p:WasiSdkRoot=\"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" -p:WitBindgenExe=\"python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py\" 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/build.log\"\ncp packages.lock.json \"$RUNNER_TEMP/dotnet-guest/packages.lock.json\"\n"
       },
       {
         "name": "Compose capability-constrained compiler support",
-        "run": "set -o pipefail\ncargo build --quiet --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\"\ntools=\"$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64\"\ncp \"$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm\" \"$RUNNER_TEMP/dotnet-guest/raw.wasm\"\n\"$tools/wac\" plug \"$RUNNER_TEMP/dotnet-guest/raw.wasm\" --plug \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\" -o \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools component wit \"$RUNNER_TEMP/dotnet-guest/component.wasm\" | tee \"$RUNNER_TEMP/dotnet-guest/admitted.wit\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -o pipefail\ncargo build --quiet --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\"\ntools=\"$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64\"\ncp \"$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm\" \"$RUNNER_TEMP/dotnet-guest/raw.wasm\"\n\"$tools/wac\" plug \"$RUNNER_TEMP/dotnet-guest/raw.wasm\" --plug \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\" -o \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools component wit \"$RUNNER_TEMP/dotnet-guest/component.wasm\" | tee \"$RUNNER_TEMP/dotnet-guest/admitted.wit\"\n"
       },
       {
+        "name": "Execute LSF authority and fresh-heap qualification",
         "env": {
           "LSF_DOTNET_PROBE": "${{ runner.temp }}/dotnet-guest"
         },
-        "name": "Execute LSF authority and fresh-heap qualification",
-        "run": "set -o pipefail\ncargo test --quiet -p latent-wasmtime --test dotnet_guest --locked -- --ignored --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/execution.log\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -o pipefail\ncargo test --quiet -p latent-wasmtime --test dotnet_guest --locked -- --ignored --nocapture --test-threads=1 2>&1 | tee \"$RUNNER_TEMP/dotnet-guest/execution.log\"\n"
       },
       {
         "name": "Qualify captured projects, all SDK owners, enforced node and printed guide",
         "run": "python3 tools/qualify_dotnet_capsules.py --output \"$RUNNER_TEMP/dotnet-capsule-authoring\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\""
       },
       {
-        "if": "always()",
         "name": "Retain output and failed attempts",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "dotnet-guest-qualification-${{ github.sha }}",
           "path": "${{ runner.temp }}/transaction-contract-dotnet/report.json\n${{ runner.temp }}/transaction-contract-dotnet/source.tar.gz\n${{ runner.temp }}/transaction-contract-dotnet/component.wit\n${{ runner.temp }}/transaction-contract-dotnet/preparation.json\n${{ runner.temp }}/transaction-contract-dotnet/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-dotnet/logs/**\n${{ runner.temp }}/transaction-contract-dotnet/compiler/*.log\n${{ runner.temp }}/transaction-contract-dotnet/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-dotnet/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-dotnet/compiled/component.wit\n${{ runner.temp }}/transaction-contract-dotnet/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-dotnet/compiled/generated/**\n${{ runner.temp }}/transaction-contract-dotnet/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-dotnet/bindings/**\n${{ runner.temp }}/transaction-contract-dotnet/component.wasm\n${{ runner.temp }}/dotnet-guest/\n${{ runner.temp }}/dotnet-capsule-authoring/\n${{ runner.temp }}/dotnet-authoring-tools/logs/\n${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json\n${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json\n${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 75
+    ]
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
+  "reviewReason": "Preserve the historical narrow dependency fixture and every Phase4 compiler/guest qualification while retaining incoming dependency-cache, native website, and interrupt correctness checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

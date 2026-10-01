@@ -29,8 +29,8 @@ const integrationGuides = [
   ['container-handover', 'Replace a container with exclusive state ownership', 'container-operations', ['operator'], [],
     ['operations/container-handover']],
 ];
-export default function discovery() {
-  const {index} = prepare();
+export default function discovery(_context, _options, prepared = prepare()) {
+  const {index} = prepared;
   const coverage = JSON.parse(readSource(repositoryRoot, 'website/content/coverage.json').toString());
   const pageFor = (sourcePath, role) => {
     const source = index.pages.find(item => item.source === sourcePath);
