@@ -209,3 +209,13 @@ The shared owner is implemented here; standalone activation readiness, complete
 command envelopes, retention/restore and six-language runtime conformance remain
 their Phase 4 integration tickets. This document makes no packaged-node or
 power-loss qualification claim.
+
+The dispatcher obtains one `ProtectedStoreDispatcher` registration from this
+same physical store. Cloned readiness handles cannot advance a new dispatch
+epoch while that registration remains live. Its bounded physical slot and
+protected root pin retire on a fixed storage worker only after provider work
+and attempt pins have actually retired. An unexpected registration drop gates
+the store and preserves its pin for recovery. This protects against overlapping
+dispatcher startup without introducing another engine or process registry.
+The actual Linux registration lifecycle test and all 74 state cases passed,
+along with strict all-target/all-feature Clippy on the pinned image above.

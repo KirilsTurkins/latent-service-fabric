@@ -4675,6 +4675,7 @@
         "namespace::tests::namespace_record_round_trip_is_bounded_and_independent_of_revision",
         "namespace::tests::tenant_actor_and_operation_key_framing_cannot_alias_or_leak_cross_scope",
         "namespace::tests::wrong_format_truncation_unknown_status_and_trailing_bytes_fail_closed",
+        "protected_store::tests::lifecycle::dispatcher_registration_is_exclusive_across_ready_aliases_until_actual_retirement",
         "protected_store::tests::lifecycle::foreign_views_and_native_view_caps_reject_without_cross_store_reads",
         "protected_store::tests::lifecycle::lost_protected_fence_after_flush_reports_commit_uncertain_and_never_business_abort",
         "protected_store::tests::lifecycle::native_read_view_survives_deadline_and_retires_only_on_fixed_worker",
@@ -4734,7 +4735,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 105,
+      "minimumCases": 106,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
