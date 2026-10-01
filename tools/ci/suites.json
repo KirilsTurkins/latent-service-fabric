@@ -1209,6 +1209,12 @@
       "boundary": "host",
       "expectedCases": [
         "atomic::tests::actual_engine_success_reopens_with_state_result_inbox_and_exact_effect_linkage",
+        "atomic::tests::captured::captured_intent_cannot_be_rebound_to_a_different_original_pending_claim",
+        "atomic::tests::captured::final_rule_narrowing_rejects_writer_acceptance_and_preserves_pending_owner",
+        "atomic::tests::captured::revoked_staged_effect_prevents_any_business_envelope_or_outbox_row",
+        "atomic::tests::captured::stage_grant_narrowing_before_prepare_is_frozen_in_the_complete_engine_envelope",
+        "atomic::tests::captured::stage_grant_widening_and_credential_rotation_never_expand_durable_commit_authority",
+        "atomic::tests::captured::staged_expiry_and_unproven_time_cannot_gain_a_new_lifetime_during_commit",
         "atomic::tests::coherent_startup_validates_pending_terminal_and_cross_family_links",
         "atomic::tests::compatible_rollout_replays_original_source_and_clock_rollback_is_closed",
         "atomic::tests::dropped_physical_guard_and_unknown_clock_never_authorize_a_retry",
@@ -1252,7 +1258,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-commit/Cargo.toml",
-      "minimumCases": 38,
+      "minimumCases": 44,
       "mode": "libtest",
       "package": "latent-commit",
       "platforms": [

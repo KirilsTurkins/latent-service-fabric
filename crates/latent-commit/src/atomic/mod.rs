@@ -2,11 +2,13 @@
 //! ports contain no executor, native view owner, guest heap, network dispatch or
 //! application retry. The host supplies current sealed authority at acceptance.
 
+mod captured;
 mod codec;
 mod ownership;
 mod record;
 mod validation;
 mod writer;
+pub use captured::{CapturedIntent, IntentCaptureContext};
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
 pub use record::{CommandRecord, DurableResult, InboxIdentity, SourceIdentity};
 pub use validation::{validate_linked_row, validate_row, validate_view};

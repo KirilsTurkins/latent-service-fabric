@@ -614,7 +614,7 @@ impl CompleteEnvelope {
         clippy::too_many_lines,
         reason = "The complete owned envelope is validated as one physical transaction, never piecemeal"
     )]
-    fn prepare(
+    pub(super) fn prepare(
         view: &ReadView,
         claim: AdmittedCommand,
         state: Option<StatePlan>,
