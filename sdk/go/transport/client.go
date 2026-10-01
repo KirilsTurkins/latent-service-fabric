@@ -14,6 +14,7 @@ import (
 
 	"latent.dev/sdk/go/internal/rpc/controlv1"
 	"latent.dev/sdk/go/internal/rpc/invocationv1"
+	"latent.dev/sdk/go/internal/rpc/transactionv1"
 	"latent.dev/sdk/go/profile"
 )
 
@@ -26,6 +27,8 @@ type Client struct {
 	invocation invocationv1.InvocationServiceClient
 	policy     controlv1.PolicyServiceClient
 	capability controlv1.CapabilityServiceClient
+	stateService controlv1.StateServiceClient
+	transactionService transactionv1.TransactionServiceClient
 	lifetime   context.Context
 	stop       context.CancelFunc
 	mutex      sync.Mutex
@@ -177,6 +180,8 @@ func newClient(ctx context.Context, config Config, supplied *net.TCPConn, adopt 
 	client.invocation = invocationv1.NewInvocationServiceClient(wire)
 	client.policy = controlv1.NewPolicyServiceClient(wire)
 	client.capability = controlv1.NewCapabilityServiceClient(wire)
+	client.stateService = controlv1.NewStateServiceClient(wire)
+	client.transactionService = transactionv1.NewTransactionServiceClient(wire)
 	success = true
 	go func() {
 		defer close(client.watchDone)

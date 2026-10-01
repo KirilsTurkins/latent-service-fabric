@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/go/generate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Generate additive StateService TransactionService and required publication descriptors with the existing exact pinned Go plugins and preserve all stateless owners",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3262f4be99e860716c4cda7e4e9182ea68991ecd5643c14e0b25f8c3da8ab5fe"
+  "sha256": "040746b6a920ebf110231fae3f98bba1cb33ff9e342d182d0315b7b85103c7c4"
 }

@@ -16,6 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"latent.dev/sdk/go/internal/rpc/controlv1"
 	"latent.dev/sdk/go/profile"
+	tx "latent.dev/sdk/go/transaction"
 )
 
 type callKey struct{}
@@ -28,6 +29,10 @@ type callState struct {
 	responseLimit int
 	grpcStatus    *int32
 	attempted     atomic.Bool
+	transactional bool
+	transactionIdentity tx.RecoveryIdentity
+	transactionObserved *tx.ObservedOutcome
+	transactionResponse func(proto.Message) error
 }
 
 func (state *callState) fail(category profile.FailureCategory, message string) *profile.ClientFailure {
@@ -90,8 +95,8 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, input, out
 			state.grpcStatus = &status
 		}
 	}
-	if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil {
-		return failure
+	if !state.transactional {
+		if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil { return failure }
 	}
 	if bodyFailure != nil {
 		if errors.Is(bodyFailure, errBound) {
@@ -114,6 +119,9 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, input, out
 		return state.fail(profile.FailureCategoryDecode, "response compression is not supported")
 	}
 	if *state.grpcStatus != 0 {
+		if state.transactional {
+			if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil { return failure }
+		}
 		category := profile.FailureCategoryRpc
 		if *state.grpcStatus == 4 {
 			category = profile.FailureCategoryDeadline
@@ -127,18 +135,28 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, input, out
 	if !hasMessage {
 		return state.fail(profile.FailureCategoryDecode, "unary response message is missing")
 	}
-	nodes := channel.client.config.MaxGraphNodes
-	if failure = validateWire(ctx, data, output.ProtoReflect().Descriptor(), &nodes, 0); failure != nil {
+	maximumNodes := channel.client.config.MaxGraphNodes
+	maximumBytes := channel.client.config.MaxGraphBytes
+	if state.transactional { maximumNodes = min(maximumNodes,4096); maximumBytes = min(maximumBytes,8*1024*1024) }
+	nodes := maximumNodes
+	if state.transactional { failure = validateTransactionWire(ctx, data, output.ProtoReflect().Descriptor(), &nodes, 0) } else {
+		failure = validateWire(ctx, data, output.ProtoReflect().Descriptor(), &nodes, 0)
+	}
+	if failure != nil {
 		if errors.Is(failure, errBound) {
 			return state.fail(profile.FailureCategoryLimit, "response graph exceeds client limit")
 		}
 		return state.fail(profile.FailureCategoryDecode, "invalid protobuf response")
 	}
-	if len(data)*3+(channel.client.config.MaxGraphNodes-nodes)*256 > channel.client.config.MaxGraphBytes {
+	if len(data)*3+(maximumNodes-nodes)*256 > maximumBytes {
 		return state.fail(profile.FailureCategoryLimit, "decoded response allocation exceeds client limit")
 	}
 	if failure = (proto.UnmarshalOptions{RecursionLimit: 16}).Unmarshal(data, output); failure != nil {
 		return state.fail(profile.FailureCategoryDecode, "invalid protobuf response")
+	}
+	if state.transactional {
+		if failure = state.transactionResponse(output); failure != nil { return failure }
+		if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil { return failure }
 	}
 	return nil
 }
