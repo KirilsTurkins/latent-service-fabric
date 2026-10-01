@@ -12,7 +12,7 @@ pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
 pub use operation::ProtectedStoreOperation;
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
-pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
+pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewOpenJob, ProtectedViewResult};
 
 use std::future::Future;
 use std::sync::Arc;

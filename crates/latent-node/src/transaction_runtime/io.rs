@@ -2,13 +2,16 @@ use super::{
     authorization::StateAuthorization, CommandHostSelection, CommandTimeSource, OwnedSession,
     Physical, StateTransactionHost,
 };
-use latent_core::{transaction_contract::Precondition, ActivationId, BudgetDimension};
+use latent_core::{
+    transaction_contract::Precondition, ActivationId, BudgetDimension, HostMemoryReservation,
+};
 use latent_effects::authority::EffectAuthorityOwner;
-use latent_executor::transaction::StateFailure;
+use latent_executor::transaction::{Mode, StateFailure};
 use latent_state::{
     embedded::ReadView,
-    protected_store::{ProtectedStoreError, ProtectedStoreOwner},
-    session::{StateError, StateScope, StateSession},
+    protected_store::{ProtectedStoreError, ProtectedStoreOperation, ProtectedStoreOwner},
+    session::{SessionLimits, StateError, StateScope, StateSession},
+    store_io::StoreIoRetirementWitness,
 };
 use std::sync::{
     atomic::{AtomicBool, AtomicU8, Ordering},
@@ -25,73 +28,46 @@ impl StateTransactionHost {
         authorization: Arc<StateAuthorization>,
         activation: ActivationId,
         scope: StateScope,
-        command: Option<CommandHostSelection>,
+        mut command: Option<CommandHostSelection>,
         effects: Option<EffectAuthorityOwner>,
         time: Arc<dyn CommandTimeSource>,
         conditions: Vec<Precondition>,
     ) -> Result<Arc<Self>, StateFailure> {
-        let (mode, limits, retained_bytes) = super::initialization::configuration(
-            &authorization,
-            &activation,
-            &scope,
-            command.as_ref(),
-            &conditions,
+        let (mode, limits, retained_bytes) = never_started(
+            super::initialization::configuration(
+                &authorization,
+                &activation,
+                &scope,
+                command.as_ref(),
+                &conditions,
+            ),
+            &mut command,
         )?;
         let budget = &authorization.budget;
-        let memory = Arc::new(
+        let memory = Arc::new(never_started(
             budget
                 .reserve_host_memory(retained_bytes)
-                .map_err(|_| StateFailure::ReadBudgetExhausted)?,
-        );
-        let operation = store.reserve_operation().map_err(protected_error)?;
-        let opened = store
-            .open_view()
-            .map_err(protected_error)?
-            .await
-            .map_err(|_| StateFailure::Unavailable)?
-            .map_err(protected_error);
-        let mut view = match opened {
-            Ok(view) => view,
-            Err(error) => {
-                operation.retire().await;
-                return Err(error);
-            }
-        };
-        let witness = view.retirement_witness().ok_or(StateFailure::Unavailable)?;
-        let auth = Arc::clone(&authorization);
-        let selected = scope.clone();
-        let job = store.with_view(view, retained_bytes, move |view| {
-            super::initialization::initialize(
-                view,
-                selected,
+                .map_err(|_| StateFailure::ReadBudgetExhausted),
+            &mut command,
+        )?);
+        let OpenedSession {
+            owned,
+            witness,
+            operation,
+        } = open_session(
+            &store,
+            SessionSetup {
+                auth: Arc::clone(&authorization),
+                selected: scope.clone(),
                 limits,
                 mode,
-                &conditions,
-                &auth,
+                conditions,
                 memory,
-            )
-        });
-        let result = match job {
-            Ok(job) => job.await.map_err(|_| StateFailure::Unavailable),
-            Err(error) => Err(protected_error(error)),
-        };
-        let owned = match result {
-            Ok((view, Ok(Ok(payload)))) => OwnedSession { view, payload },
-            Ok((view, Ok(Err(error)))) => {
-                view.retire().await;
-                operation.retire().await;
-                return Err(error);
-            }
-            Ok((view, Err(error))) => {
-                view.retire().await;
-                operation.retire().await;
-                return Err(protected_error(error));
-            }
-            Err(error) => {
-                operation.retire().await;
-                return Err(error);
-            }
-        };
+                retained_bytes,
+            },
+            &mut command,
+        )
+        .await?;
         let view_identity = owned.payload.session.view_identity();
         let token = match view_identity.token(&scope) {
             Ok(token) => token,
@@ -99,6 +75,9 @@ impl StateTransactionHost {
                 drop(owned.payload);
                 owned.view.retire().await;
                 operation.retire().await;
+                if witness.has_retired() {
+                    retire_opening_command(&mut command);
+                }
                 return Err(state_error(error, false));
             }
         };
@@ -264,4 +243,113 @@ pub(super) fn state_error(error: StateError, write: bool) -> StateFailure {
             StateFailure::Unavailable
         }
     }
+}
+
+/// Before accepting any native opening or guest scheduling, this function's
+/// owned work has positively never started. A dropped async caller skips it.
+fn never_started<T>(
+    result: Result<T, StateFailure>,
+    command: &mut Option<CommandHostSelection>,
+) -> Result<T, StateFailure> {
+    if result.is_err() {
+        retire_opening_command(command);
+    }
+    result
+}
+fn retire_opening_command(command: &mut Option<CommandHostSelection>) {
+    if let Some(command) = command.take() {
+        command.work.retire();
+    }
+}
+
+struct SessionSetup {
+    auth: Arc<StateAuthorization>,
+    selected: StateScope,
+    limits: SessionLimits,
+    mode: Mode,
+    conditions: Vec<Precondition>,
+    memory: Arc<HostMemoryReservation>,
+    retained_bytes: u64,
+}
+struct OpenedSession {
+    owned: OwnedSession,
+    witness: StoreIoRetirementWitness,
+    operation: ProtectedStoreOperation,
+}
+async fn open_session(
+    store: &ProtectedStoreOwner,
+    setup: SessionSetup,
+    command: &mut Option<CommandHostSelection>,
+) -> Result<OpenedSession, StateFailure> {
+    let operation = never_started(store.reserve_operation().map_err(protected_error), command)?;
+    let (opening, witness) = match store.open_view_observed() {
+        Ok(accepted) => accepted,
+        Err(error) => {
+            operation.retire().await;
+            retire_opening_command(command);
+            return Err(protected_error(error));
+        }
+    };
+    let view = match opening.await {
+        Ok(Ok(view)) => view,
+        Ok(Err(error)) => {
+            operation.retire().await;
+            if witness.has_retired() {
+                retire_opening_command(command);
+            }
+            return Err(protected_error(error));
+        }
+        Err(_) => {
+            // Accepted native opening has no positive completion receipt.
+            // Preserve/quarantine both original owners; never claim abort.
+            return Err(StateFailure::Unavailable);
+        }
+    };
+    let SessionSetup {
+        auth,
+        selected,
+        limits,
+        mode,
+        conditions,
+        memory,
+        retained_bytes,
+    } = setup;
+    let job = store.with_view(view, retained_bytes, move |view| {
+        super::initialization::initialize(view, selected, limits, mode, &conditions, &auth, memory)
+    });
+    let result = match job {
+        Ok(job) => job.await.map_err(|_| StateFailure::Unavailable),
+        Err(error) => Err(protected_error(error)),
+    };
+    let owned = match result {
+        Ok((view, Ok(Ok(payload)))) => OwnedSession { view, payload },
+        Ok((view, Ok(Err(error)))) => {
+            view.retire().await;
+            operation.retire().await;
+            if witness.has_retired() {
+                retire_opening_command(command);
+            }
+            return Err(error);
+        }
+        Ok((view, Err(error))) => {
+            view.retire().await;
+            operation.retire().await;
+            if witness.has_retired() {
+                retire_opening_command(command);
+            }
+            return Err(protected_error(error));
+        }
+        Err(error) => {
+            operation.retire().await;
+            if witness.has_retired() {
+                retire_opening_command(command);
+            }
+            return Err(error);
+        }
+    };
+    Ok(OpenedSession {
+        owned,
+        witness,
+        operation,
+    })
 }

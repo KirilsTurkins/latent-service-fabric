@@ -31,22 +31,44 @@ impl ProtectedStoreView {
 pub type ProtectedViewResult<T> = (ProtectedStoreView, Result<T, ProtectedStoreError>);
 pub type ProtectedViewJob<T> = StoreIoJob<ProtectedViewResult<T>>;
 
+pub type ProtectedViewOpenJob = StoreIoJob<Result<ProtectedStoreView, ProtectedStoreError>>;
+type ViewOpening = (ProtectedViewOpenJob, Option<StoreIoRetirementWitness>);
+
 impl ProtectedStoreOwner {
-    pub fn open_view(
+    pub fn open_view(&self) -> Result<ProtectedViewOpenJob, ProtectedStoreError> {
+        self.open_view_inner(false).map(|(job, _)| job)
+    }
+
+    /// Issue the single native retirement observer before accepting an open.
+    /// The host keeps it across failed opening, response detachment and every
+    /// move of the view. No elapsed deadline can complete this observer.
+    pub fn open_view_observed(
         &self,
-    ) -> Result<StoreIoJob<Result<ProtectedStoreView, ProtectedStoreError>>, ProtectedStoreError>
-    {
+    ) -> Result<(ProtectedViewOpenJob, StoreIoRetirementWitness), ProtectedStoreError> {
+        self.open_view_inner(true).map(|(job, witness)| {
+            (
+                job,
+                witness.expect("fresh affine view issues its first observer"),
+            )
+        })
+    }
+
+    fn open_view_inner(&self, observed: bool) -> Result<ViewOpening, ProtectedStoreError> {
         self.available()?;
         let mut retained = self
             .ready
             .reserve_retained::<ReadView>(8192)
             .map_err(ProtectedStoreError::Io)?;
-        self.ready
+        let witness = if observed {
+            retained.retirement_witness()
+        } else {
+            None
+        };
+        let job = self
+            .ready
             .submit(StoreIoKind::Read, 0, move |store| {
                 store.check()?;
                 let view = store.classify(store.engine().snapshot())?;
-                // This affine reserved slot was created empty. On every failure it
-                // schedules retirement, including detachment before publication.
                 if let Err(view) = retained.attach(view) {
                     drop(view); // already on the native worker
                     return Err(ProtectedStoreError::Io(
@@ -56,7 +78,8 @@ impl ProtectedStoreOwner {
                 store.check()?;
                 Ok(ProtectedStoreView { retained })
             })
-            .map_err(ProtectedStoreError::Io)
+            .map_err(ProtectedStoreError::Io)?;
+        Ok((job, witness))
     }
 
     /// Move the complete host transaction payload into `operation`, declaring
