@@ -16,9 +16,13 @@ def ordinary_import(client, targets, releases, publications, host):
     descriptor["spec"]["grants"] = targets["domain"]["grants"]
     source = client.directory / "context-required-deployment.json"
     write_json(source, descriptor)
+    state = client.call("deployment", "get", descriptor["metadata"]["name"], "--operation-snapshot", codes=(6,))["data"]
     applied = client.call("deployment", "apply", source, "--operation-id", "java-context-required-deploy",
-                          "--expected-generation", 0, codes=(0, 4))
+                          "--expected-generation", 0, "--expected-state-version", state["stateVersion"], codes=(0, 4))
+    require(applied["requestDispatched"], "java-context-required-deployment-must-reach-node")
     result = {"publication": publications["context-required"], "deployment": applied,
+              "expectedStateVersion": state["stateVersion"],
+              "originalDeploymentOperation": client.call("deployment", "operation", "java-context-required-deploy", codes=(0, 6)),
               "contextInstallationProfile": "ordinary-installed-clocks-and-local-service-v1"}
     if applied["category"] == "success":
         invocation_targets = {**targets, "context-required": {
