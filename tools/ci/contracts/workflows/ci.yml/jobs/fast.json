@@ -39,7 +39,7 @@
       {
         "if": "needs.profile.outputs.profile == 'full'",
         "name": "Qualify the genuinely narrow reverse-dependent fixture",
-        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-state/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
+        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-workflows/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
       },
       {
         "if": "always()",

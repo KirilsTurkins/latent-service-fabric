@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Stage exact referenced package versions including Phase 4 type-use selectors, preserving isolated WIT dependency closure",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8097876fe3f036044a55d7a80a89a939acf7be2d162dca447e3b5cdb68aff520"
+  "sha256": "2e8ca07135a012ba0dba207895428add35de5c52cc39501f40d3892bba96113a"
 }
