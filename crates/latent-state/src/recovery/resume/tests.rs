@@ -329,3 +329,46 @@ fn namespace_resume_receipt_rejects_truncation_trailing_bytes_and_wrong_physical
         Err(StoreError::Corrupt)
     );
 }
+
+#[test]
+fn namespace_resume_row_dispatch_preserves_foreign_bytes_and_rejects_malformed_owned_receipts() {
+    let fixture = fixture(false);
+    let view = fixture.store.snapshot().unwrap();
+    let plan = NamespaceResumePlan::prepare(&view, &fixture.request, |_, _, _| Ok(())).unwrap();
+    let bytes = plan.receipt().encode().unwrap();
+    let key = fixture.request.receipt_key().unwrap();
+    NamespaceResumeReceipt::validate_row(&key, &bytes).unwrap();
+
+    let foreign = RowKey {
+        family: Family::Maintenance,
+        key: b"dispatch-owner-v1\0".to_vec(),
+    };
+    for foreign_bytes in [b"LDO\0\x01".as_slice(), b"{}", &bytes] {
+        assert_eq!(
+            NamespaceResumeReceipt::validate_row(&foreign, foreign_bytes),
+            Err(StoreError::UnsupportedFormat)
+        );
+    }
+    let wrong_family = RowKey {
+        family: Family::Namespace,
+        key: key.key.clone(),
+    };
+    assert_eq!(
+        NamespaceResumeReceipt::validate_row(&wrong_family, &bytes),
+        Err(StoreError::UnsupportedFormat)
+    );
+    for malformed in [b"LDO\0\x01".as_slice(), b"{}", &bytes[..bytes.len() - 1]] {
+        assert_eq!(
+            NamespaceResumeReceipt::validate_row(&key, malformed),
+            Err(StoreError::Corrupt)
+        );
+    }
+    let truncated_key = RowKey {
+        family: Family::Maintenance,
+        key: RECEIPT_PREFIX.to_vec(),
+    };
+    assert_eq!(
+        NamespaceResumeReceipt::validate_row(&truncated_key, &bytes),
+        Err(StoreError::Corrupt)
+    );
+}
