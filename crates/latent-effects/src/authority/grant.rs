@@ -10,6 +10,10 @@ pub struct DispatchGrant {
     scope: EffectScope,
     profile: DispatchProfile,
     effect: String,
+    payload_digest: String,
+    payload_bytes: u64,
+    committed_at_millis: u64,
+    expires_at_millis: u64,
     attempt: u32,
     ceiling: DispatchCeiling,
     credential_epoch: u64,
@@ -31,6 +35,26 @@ impl DispatchGrant {
     #[must_use]
     pub fn effect(&self) -> &str {
         &self.effect
+    }
+
+    #[must_use]
+    pub fn payload_digest(&self) -> &str {
+        &self.payload_digest
+    }
+
+    #[must_use]
+    pub const fn payload_bytes(&self) -> u64 {
+        self.payload_bytes
+    }
+
+    #[must_use]
+    pub const fn committed_at_millis(&self) -> u64 {
+        self.committed_at_millis
+    }
+
+    #[must_use]
+    pub const fn expires_at_millis(&self) -> u64 {
+        self.expires_at_millis
     }
 
     #[must_use]
@@ -118,6 +142,10 @@ impl DispatchContext {
             scope: self.scope.clone(),
             profile: self.profile.clone(),
             effect: self.effect.clone(),
+            payload_digest: authority.payload_digest.clone(),
+            payload_bytes: authority.payload_bytes,
+            committed_at_millis: authority.committed_at_millis,
+            expires_at_millis: authority.expires_at_millis,
             attempt,
             ceiling,
             credential_epoch: self.credential_epoch,

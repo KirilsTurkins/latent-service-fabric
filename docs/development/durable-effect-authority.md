@@ -32,6 +32,16 @@ this conflict. The metadata-only fence remains held through namespace and
 cancellation acceptance and is released before engine I/O. Neither refresh nor
 this final fence allocates a dispatch permit.
 
+Final adapter delegation also seals the exact payload digest, byte count and
+durable lifetime. `PayloadRecord::verify_grant` checks the retained payload
+against that delegation before transport admission, including media and sorted
+metadata. `into_value` transfers the verified request buffer into the transport
+owner without allocating a second body. The focused ownership schedule rejects
+changed effect identity, media, metadata and bytes and verifies the transferred
+buffer keeps its allocation. Windows library validation passes all 44 portable
+cases and strict all-target Clippy; the eight Linux runtime schedules retain
+their separate platform requirement.
+
 Durable expiry, bounded per-attempt timeout and originating activation lifetime
 are separate. A persisted clock floor and an affirmative continuity witness are
 required after restart. Regression or unknown continuity blocks dispatch for
