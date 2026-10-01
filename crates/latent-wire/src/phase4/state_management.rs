@@ -5,8 +5,10 @@ mod dispatcher;
 mod inspection;
 mod mutation;
 mod recovery;
+mod recovery_bindings;
 mod response;
 pub use recovery::StateManagementRecoveryAdmission;
+pub use recovery_bindings::StateManagementRecoveryBinding;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
 
@@ -87,6 +89,7 @@ struct Inner {
     services: StateManagementServices,
     bindings: Vec<Arc<StateManagementBinding>>,
     dispatcher: Option<latent_effects::runtime::DispatcherManagementPort>,
+    recovery_bindings: Option<Vec<StateManagementRecoveryBinding>>,
 }
 struct AdmittedRequest {
     context: AuthenticatedInvocationContext,
@@ -129,6 +132,7 @@ impl StateManagementBackend {
             services,
             bindings: bindings.into_iter().map(Arc::new).collect(),
             dispatcher: None,
+            recovery_bindings: None,
         })))
     }
 
@@ -144,6 +148,21 @@ impl StateManagementBackend {
             return Err(invalid());
         }
         Arc::get_mut(&mut self.0).ok_or_else(invalid)?.dispatcher = Some(dispatcher);
+        Ok(self)
+    }
+
+    /// Immutable trusted configuration. A request selector describes a choice;
+    /// actual caller/data-read policy still seals the derived scope.
+    pub fn with_recovery_bindings(
+        mut self,
+        bindings: Vec<StateManagementRecoveryBinding>,
+    ) -> Result<Self, PlatformError> {
+        recovery_bindings::validate(&bindings)?;
+        let inner = Arc::get_mut(&mut self.0).ok_or_else(invalid)?;
+        if inner.recovery_bindings.is_some() {
+            return Err(invalid());
+        }
+        inner.recovery_bindings = Some(bindings);
         Ok(self)
     }
 
@@ -230,6 +249,12 @@ impl StateManagementBackend {
             _ => invalid(),
         })?;
         let binding = self.binding(&context, &request)?;
+        if let Some(command) = recovery_bindings::command(&request)? {
+            // Requested names are resolved through immutable installation data
+            // before reservation or native lookup. The derived scope is data;
+            // current publication/data-read policy must still authorize it.
+            recovery_bindings::scope(&self.0, &context, command.shared_recovery_scope.as_deref())?;
+        }
         let node = request.is_node_management();
         // Capture the original operator decision before returning the future.
         // Polling later must not replace a revoked decision with a new grant.
@@ -295,7 +320,7 @@ impl StateManagementBackend {
             return Ok(None);
         }
         let target = target(request)?;
-        let selector = target.namespace.as_ref().ok_or_else(invalid)?;
+        let selector = target.namespace;
         let principal = context.principal();
         if principal
             .tenant
@@ -308,10 +333,7 @@ impl StateManagementBackend {
             .services
             .authorization
             .authorize(principal, ManagementOperation::Tenant)?;
-        let publication = target
-            .authorization_publication
-            .as_ref()
-            .ok_or_else(invalid)?;
+        let publication = target.publication;
         let binding = self
             .0
             .bindings
@@ -340,15 +362,45 @@ impl Phase4Runtime for StateManagementBackend {
         self.execute_state(context, request)
     }
 }
-fn target(request: &contract::Request) -> Result<&c::InspectNamespaceRequest, PlatformError> {
-    match request {
-        contract::Request::InspectNamespace(value) => Ok(value),
-        contract::Request::MutateNamespace(value) => value.namespace.as_ref().ok_or_else(invalid),
-        contract::Request::GetStateOperationReceipt(value) => {
-            value.namespace.as_ref().ok_or_else(invalid)
-        }
-        _ => Err(unsupported()),
+struct RequestedTarget<'a> {
+    namespace: &'a latent_rpc::transaction::v1::NamespaceSelector,
+    publication: &'a c::PublicationRef,
+}
+fn target(request: &contract::Request) -> Result<RequestedTarget<'_>, PlatformError> {
+    if let contract::Request::PlanEffectMutation(value) = request {
+        let effect = value.effect.as_ref().ok_or_else(invalid)?;
+        return Ok(RequestedTarget {
+            namespace: effect
+                .command
+                .as_ref()
+                .ok_or_else(invalid)?
+                .namespace
+                .as_ref()
+                .ok_or_else(invalid)?,
+            publication: effect
+                .authorization_publication
+                .as_ref()
+                .ok_or_else(invalid)?,
+        });
     }
+    let namespace = match request {
+        contract::Request::InspectNamespace(value) => value,
+        contract::Request::MutateNamespace(value) => {
+            value.namespace.as_ref().ok_or_else(invalid)?
+        }
+        contract::Request::MutateState(value) => value.namespace.as_ref().ok_or_else(invalid)?,
+        contract::Request::GetStateOperationReceipt(value) => {
+            value.namespace.as_ref().ok_or_else(invalid)?
+        }
+        _ => return Err(unsupported()),
+    };
+    Ok(RequestedTarget {
+        namespace: namespace.namespace.as_ref().ok_or_else(invalid)?,
+        publication: namespace
+            .authorization_publication
+            .as_ref()
+            .ok_or_else(invalid)?,
+    })
 }
 fn error(code: PlatformErrorCode, message: &'static str) -> PlatformError {
     PlatformError {
