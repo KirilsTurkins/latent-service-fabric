@@ -171,7 +171,10 @@ pub fn require_composition(
 }
 
 /// Retained work is never decoded implicitly by an application state schema.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename_all = "kebab-case")]
 #[repr(u8)]
 pub enum RetainedKind {
     EffectEnvelope = 1,
@@ -186,13 +189,15 @@ pub enum RetainedKind {
     MigrationCheckpoint = 10,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RetainedFormat {
     pub kind: RetainedKind,
     pub identity: String,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RetainedCount {
     pub rows: u64,
     pub bytes: u64,

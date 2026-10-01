@@ -373,7 +373,7 @@ pub fn namespace_operation_key(
     Ok(key)
 }
 
-fn identity(value: &str) -> Result<(), NamespaceError> {
+pub(crate) fn identity(value: &str) -> Result<(), NamespaceError> {
     if value.is_empty() || value.len() > IDENTITY_BYTES || value.chars().any(char::is_control) {
         return Err(NamespaceError::Invalid);
     }
