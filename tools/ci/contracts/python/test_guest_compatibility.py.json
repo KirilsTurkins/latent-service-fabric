@@ -23,7 +23,9 @@
     "FinalComponentInspection.test_type_named_callable_and_recognized_host_interfaces_do_not_bypass_host_checks",
     "FinalComponentInspection.test_unknown_native_outcome_is_never_presented_as_guest_execution",
     "FinalComponentInspection.test_unknown_world_items_and_ambiguous_worlds_are_not_guessed",
-    "FinalComponentInspection.test_unwritable_failure_report_cannot_mask_compiler_exception"
+    "FinalComponentInspection.test_unwritable_failure_report_cannot_mask_compiler_exception",
+    "SharedPackageAssembly.test_all_six_builders_execute_shared_package_assembly_with_final_inspection",
+    "SharedPackageAssembly.test_changed_component_after_inspection_cannot_produce_package_source"
   ],
   "guards": {
     "CompatibilityReport.test_all_languages_share_classifications_without_package_eligibility": {
@@ -313,10 +315,34 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "SharedPackageAssembly.test_all_six_builders_execute_shared_package_assembly_with_final_inspection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9aa7f1cf0c5f343afc9db040861be9f19bd247187ff086ec72fa0faefeb3dc7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedPackageAssembly.test_changed_component_after_inspection_cannot_produce_package_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9aa7f1cf0c5f343afc9db040861be9f19bd247187ff086ec72fa0faefeb3dc7c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_guest_compatibility.py",
-  "reviewReason": "Retain 19 original compatibility cases and guards; add five bounded actual Java structural-type import regressions without provider or grant authority",
+  "reviewReason": "Retain all original compatibility cases and guards, the five actual Java structural-import cases, and the two shared six-language package assembly/stale-component cases.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
