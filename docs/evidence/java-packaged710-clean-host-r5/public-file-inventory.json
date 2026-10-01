@@ -1,0 +1,52 @@
+[
+  {
+    "bytes": 19064,
+    "path": "build-identities.json",
+    "sha256": "sha256:681bd647072d016ccb4b5b5f395b55610c28c6bd336659d6b0188098166455d7"
+  },
+  {
+    "bytes": 1164,
+    "path": "environment.json",
+    "sha256": "sha256:cae75bc310a4c77847071dc3eb59e3ce8d816455f63d7b8f77dd60ee4373d468"
+  },
+  {
+    "bytes": 22787,
+    "path": "original-compiler-file-inventory.json",
+    "sha256": "sha256:781745f0ffea94256fc8b82babbaf569b59d6835acf6f1a3219dea02c4f4d11e"
+  },
+  {
+    "bytes": 73167,
+    "path": "original-runtime-manifest.json",
+    "sha256": "sha256:6f44cabf387eeec285019b94cba40fe3f6a525193d79d00be7b6524b7127cc4c"
+  },
+  {
+    "bytes": 232229,
+    "path": "preflight-observations.json",
+    "sha256": "sha256:a68c3b8450959a553a203117213c10b7a051e67d4533b0ee15bd971fbe2b6b30"
+  },
+  {
+    "bytes": 46,
+    "path": "process.json",
+    "sha256": "sha256:b068897215825a9791b9d31c0245ea49351b782fe0b43083036a02e01fad2712"
+  },
+  {
+    "bytes": 0,
+    "path": "qualification.stderr.txt",
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "bytes": 1061,
+    "path": "qualification.stdout.txt",
+    "sha256": "sha256:46626c39f859cf722a792e42fc1af1ce4f1581c1235688a3d29609543ec51db4"
+  },
+  {
+    "bytes": 37078,
+    "path": "receipt.json",
+    "sha256": "sha256:5c82956e4823446ea0f952df20a2d3518d94a9991a436b0b564a9a213955d7cb"
+  },
+  {
+    "bytes": 78605,
+    "path": "runtime-observations.json",
+    "sha256": "sha256:ee468b42a685df0c393cff88f0d9d063f8645a42021dab1b0d93bc1259f015cf"
+  }
+]
