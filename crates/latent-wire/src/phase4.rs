@@ -159,6 +159,24 @@ impl Phase4ServiceAdapter {
                 .max_encoding_message_size(output),
         )
     }
+    #[must_use]
+    pub fn dispatcher_server(
+        self,
+    ) -> Phase4ResponseService<c::dispatcher_service_server::DispatcherServiceServer<Self>> {
+        let input = self
+            .limits
+            .max_request_bytes
+            .min(contract::MAX_REQUEST_BYTES);
+        let output = self
+            .limits
+            .max_response_bytes
+            .min(contract::MAX_RESPONSE_BYTES);
+        Phase4ResponseService::new(
+            c::dispatcher_service_server::DispatcherServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
+    }
     fn context<T>(
         &self,
         request: &mut Request<T>,
@@ -178,20 +196,27 @@ impl Phase4ServiceAdapter {
         if request.encoded_len() > self.limits.max_request_bytes {
             return Err(validation_status(contract::ValidationError::Capacity));
         }
-        self.services
-            .principals
-            .authorize_target(
-                context.principal(),
-                request
-                    .tenant()
-                    .ok_or_else(|| validation_status(contract::ValidationError::Shape))?,
-            )
-            .map_err(crate::invocation::platform_status)?;
-        if request.is_management() {
+        if request.is_node_management() {
             self.services
                 .management
-                .authorize(context.principal(), ManagementOperation::Tenant)
+                .authorize(context.principal(), ManagementOperation::NodeControl)
                 .map_err(crate::invocation::platform_status)?;
+        } else {
+            self.services
+                .principals
+                .authorize_target(
+                    context.principal(),
+                    request
+                        .tenant()
+                        .ok_or_else(|| validation_status(contract::ValidationError::Shape))?,
+                )
+                .map_err(crate::invocation::platform_status)?;
+            if request.is_management() {
+                self.services
+                    .management
+                    .authorize(context.principal(), ManagementOperation::Tenant)
+                    .map_err(crate::invocation::platform_status)?;
+            }
         }
         if context
             .transport_expires_at()
@@ -278,6 +303,10 @@ service!(c::state_service_server::StateService;
     (select_entity,c::SelectEntityRequest,c::SelectEntityResponse,SelectEntity),
     (mutate_state,c::MutateStateRequest,c::MutateStateResponse,MutateState),
     (get_state_operation_receipt,c::GetStateOperationReceiptRequest,c::GetStateOperationReceiptResponse,GetStateOperationReceipt));
+service!(c::dispatcher_service_server::DispatcherService;
+    (inspect_dispatcher,c::InspectDispatcherRequest,c::InspectDispatcherResponse,InspectDispatcher),
+    (control_dispatcher,c::ControlDispatcherRequest,c::ControlDispatcherResponse,ControlDispatcher),
+    (get_dispatcher_operation,c::GetDispatcherOperationRequest,c::GetDispatcherOperationResponse,GetDispatcherOperation));
 service!(t::transaction_service_server::TransactionService;
     (invoke_command,t::InvokeCommandRequest,t::InvokeCommandResponse,InvokeCommand),
     (query,t::QueryRequest,t::QueryResponse,Query),

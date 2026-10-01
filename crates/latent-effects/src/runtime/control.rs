@@ -143,6 +143,9 @@ pub enum DispatcherControlError {
     RestoreReviewRequired,
     ClockDiscontinuity,
     RecoveryRequired,
+    PermissionDenied,
+    DeadlineExceeded,
+    AuthorityUnavailable,
     InvalidAuthorizationFence,
     Store(StoreError),
     PhysicalOwner(ProtectedStoreError),
@@ -215,20 +218,7 @@ impl DispatcherOwner {
         &self,
         request: DispatcherControlRequest,
     ) -> Result<PreparedDispatcherControl, DispatcherControlError> {
-        request.validate()?;
-        let state = self
-            .services
-            .shared
-            .state
-            .lock()
-            .map_err(|_| DispatcherControlError::RecoveryRequired)?;
-        check_request(&state, &request, self.services.time.observe())?;
-        Ok(PreparedDispatcherControl {
-            shared: Arc::clone(&self.services.shared),
-            time: Arc::clone(&self.services.time),
-            request,
-            restore_review: state.restore_review.is_required(),
-        })
+        prepare(&self.services, request)
     }
 
     /// The authorizer holds the current trusted node-operator policy fence
@@ -294,10 +284,41 @@ impl DispatcherOwner {
     }
 }
 
+pub(super) fn prepare(
+    services: &super::worker::Services,
+    request: DispatcherControlRequest,
+) -> Result<PreparedDispatcherControl, DispatcherControlError> {
+    request.validate()?;
+    let state = services
+        .shared
+        .state
+        .lock()
+        .map_err(|_| DispatcherControlError::RecoveryRequired)?;
+    check_request(&state, &request, services.time.observe())?;
+    Ok(PreparedDispatcherControl {
+        shared: Arc::clone(&services.shared),
+        time: Arc::clone(&services.time),
+        request,
+        restore_review: state.restore_review.is_required(),
+    })
+}
+
 fn execute(
     store: &latent_state::embedded::EmbeddedStore,
     prepared: &PreparedDispatcherControl,
     authorize: impl FnOnce(
+        &mut dyn FnMut() -> Result<(), DispatcherControlError>,
+    ) -> Result<(), DispatcherControlError>,
+) -> Result<DispatcherControlOutcome, DispatcherControlError> {
+    execute_guarded(store, prepared, authorize, |accept| accept())
+}
+pub(super) fn execute_guarded(
+    store: &latent_state::embedded::EmbeddedStore,
+    prepared: &PreparedDispatcherControl,
+    authorize: impl FnOnce(
+        &mut dyn FnMut() -> Result<(), DispatcherControlError>,
+    ) -> Result<(), DispatcherControlError>,
+    live: impl FnOnce(
         &mut dyn FnMut() -> Result<(), DispatcherControlError>,
     ) -> Result<(), DispatcherControlError>,
 ) -> Result<DispatcherControlOutcome, DispatcherControlError> {
@@ -307,6 +328,7 @@ fn execute(
         prepared.restore_review,
         prepared.time.observe(),
     )?;
+    let mut live = Some(live);
     let PlannedControl::Write { batch, receipt } = planned else {
         // A replay is historical observation; it never republishes a resume.
         let PlannedControl::Replay(receipt) = planned else {
@@ -320,7 +342,10 @@ fn execute(
             if calls != 1 {
                 return Err(DispatcherControlError::InvalidAuthorizationFence);
             }
-            Ok(())
+            live.take()
+                .ok_or(DispatcherControlError::InvalidAuthorizationFence)?(&mut || {
+                Ok(())
+            })
         })?;
         if calls != 1 {
             return Err(DispatcherControlError::InvalidAuthorizationFence);
@@ -347,7 +372,11 @@ fn execute(
                 if calls != 1 {
                     return Err(DispatcherControlError::InvalidAuthorizationFence);
                 }
-                prepared.accept(&receipt)
+                prepared.accept_guarded(
+                    &receipt,
+                    live.take()
+                        .ok_or(DispatcherControlError::InvalidAuthorizationFence)?,
+                )
             };
             authorize(&mut accept)?;
             if calls != 1 {
@@ -363,7 +392,22 @@ fn execute(
 }
 
 impl PreparedDispatcherControl {
-    fn accept(&self, receipt: &DispatcherControlReceipt) -> Result<(), DispatcherControlError> {
+    pub(super) fn uses_services(&self, services: &super::worker::Services) -> bool {
+        Arc::ptr_eq(&self.shared, &services.shared)
+    }
+    fn accept_guarded(
+        &self,
+        receipt: &DispatcherControlReceipt,
+        live: impl FnOnce(
+            &mut dyn FnMut() -> Result<(), DispatcherControlError>,
+        ) -> Result<(), DispatcherControlError>,
+    ) -> Result<(), DispatcherControlError> {
+        // Allocate bounded immutable request metadata before acquiring the
+        // acceptance locks. The final gated assignments cannot allocate.
+        let mut pending = Some(PendingControl {
+            request: self.request.clone(),
+            generation: receipt.generation(),
+        });
         let mut state = self
             .shared
             .state
@@ -381,13 +425,23 @@ impl PreparedDispatcherControl {
         {
             return Err(DispatcherControlError::Conflict);
         }
-        state.control_generation = receipt.generation();
-        state.pending_control = Some(PendingControl {
-            request: self.request.clone(),
-            generation: receipt.generation(),
-        });
-        // Both pause and resume remain paused until the actual flush succeeds.
-        state.paused = true;
+        let mut calls = 0_u8;
+        live(&mut || {
+            calls = calls
+                .checked_add(1)
+                .ok_or(DispatcherControlError::InvalidAuthorizationFence)?;
+            if calls != 1 {
+                return Err(DispatcherControlError::InvalidAuthorizationFence);
+            }
+            state.control_generation = receipt.generation();
+            state.pending_control = pending.take();
+            // Both pause and resume remain paused until the actual flush succeeds.
+            state.paused = true;
+            Ok(())
+        })?;
+        if calls != 1 {
+            return Err(DispatcherControlError::InvalidAuthorizationFence);
+        }
         drop(state);
         self.shared.notify.notify_one();
         Ok(())

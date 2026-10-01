@@ -1,5 +1,6 @@
 use super::*;
 use crate::{control::v1 as c, invocation::v1 as i, transaction::v1 as t};
+mod dispatcher;
 
 fn namespace() -> t::NamespaceSelector {
     t::NamespaceSelector {
