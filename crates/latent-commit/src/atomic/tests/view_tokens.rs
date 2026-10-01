@@ -184,3 +184,91 @@ fn no_state_rejection_and_abort_cas_exact_absent_or_present_history() {
         );
     }
 }
+
+#[test]
+fn no_state_rejection_and_abort_cas_exact_absent_or_reviewed_recovery_guard() {
+    use latent_state::recovery::{guard_key, RecoveryGuard};
+
+    for present in [false, true] {
+        for abort in [false, true] {
+            let (_directory, store, _effects) = setup();
+            if present {
+                let staging = RecoveryGuard::staging([1; 32], [2; 32], [3; 32]).unwrap();
+                store.apply(staging.prepare_staging().unwrap()).unwrap();
+                store.apply(staging.prepare_completed().unwrap()).unwrap();
+                let view = store.snapshot().unwrap();
+                let paused = RecoveryGuard::capture(&view).unwrap().unwrap();
+                let reviewed = paused
+                    .prepare_reviewed(&view, [4; 32], |_, _, _| Ok(()))
+                    .unwrap();
+                drop(view);
+                store.apply(reviewed).unwrap();
+            }
+            let request = input(if abort {
+                "guard-abort"
+            } else {
+                "guard-rejection"
+            });
+            let key = request.key.clone();
+            let admitted = claim(&store, request);
+            let view = store.snapshot().unwrap();
+            let envelope = if abort {
+                let retirement = admitted.retirement();
+                drop(admitted);
+                CompleteEnvelope::technical_abort(
+                    &view,
+                    retirement.proven_noncommit().unwrap(),
+                    "guest-trap".into(),
+                    time(101),
+                )
+                .unwrap()
+            } else {
+                CompleteEnvelope::rejection(
+                    &view,
+                    admitted,
+                    "business-rejected".into(),
+                    value(b"no-state"),
+                    time(101),
+                )
+                .unwrap()
+            };
+            let original = view.get(&guard_key()).unwrap();
+            drop(view);
+
+            // Controlled offline-row replacement proves exact CAS. It does not
+            // authorize an online restore or grant command/result permission.
+            let replacement = RecoveryGuard::staging([5; 32], [6; 32], [7; 32]).unwrap();
+            store
+                .apply(AtomicBatch {
+                    expectations: vec![ExpectedRow {
+                        key: guard_key(),
+                        value: original,
+                    }],
+                    mutations: vec![RowMutation {
+                        key: guard_key(),
+                        value: Some(replacement.encode().unwrap()),
+                    }],
+                })
+                .unwrap();
+            let accepted = std::sync::atomic::AtomicBool::new(false);
+            match envelope.publish(&store, |_| {
+                accepted.store(true, std::sync::atomic::Ordering::Release);
+                Ok(())
+            }) {
+                PreparedDisposition::KnownNotCommitted {
+                    command,
+                    reason: AtomicError::Conflict,
+                } => drop(command),
+                _ => panic!("changed recovery guard must refuse before acceptance"),
+            }
+            assert!(!accepted.load(std::sync::atomic::Ordering::Acquire));
+            assert_eq!(
+                inspect(&store.snapshot().unwrap(), &key, time(102), permission)
+                    .unwrap()
+                    .0
+                    .outcome(),
+                Outcome::Pending
+            );
+        }
+    }
+}

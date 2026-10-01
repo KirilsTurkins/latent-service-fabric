@@ -43,6 +43,12 @@ impl CommandCoordinator {
             .with_store(StoreIoKind::Read, 8192, move |store| {
                 let view = store.snapshot()?;
                 let ownership = auth.authority.ownership();
+                latent_state::recovery::require_namespace_ready(
+                    &view,
+                    &ownership.tenant,
+                    &latent_core::StateNamespaceId(ownership.namespace.clone()),
+                    ownership.incarnation,
+                )?;
                 match NamespaceCatalog::read_in(
                     &view,
                     &ownership.tenant,

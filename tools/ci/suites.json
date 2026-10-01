@@ -1262,14 +1262,15 @@
         "model::tests::stale_edit_precondition_is_distinct_from_occ_and_is_not_silently_refreshed",
         "model::tests::unresolved_effect_outlives_result_payload_and_protects_linked_identity",
         "atomic::tests::view_tokens::actual_original_view_token_survives_history_change_later_commit_and_reopen",
-        "atomic::tests::view_tokens::no_state_rejection_and_abort_cas_exact_absent_or_present_history"
+        "atomic::tests::view_tokens::no_state_rejection_and_abort_cas_exact_absent_or_present_history",
+        "atomic::tests::view_tokens::no_state_rejection_and_abort_cas_exact_absent_or_reviewed_recovery_guard"
       ],
       "expectedIgnored": [],
       "id": "latent-commit.lib.latent-commit",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-commit/Cargo.toml",
-      "minimumCases": 48,
+      "minimumCases": 49,
       "mode": "libtest",
       "package": "latent-commit",
       "platforms": [
