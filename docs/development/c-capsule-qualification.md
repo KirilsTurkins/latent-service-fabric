@@ -103,3 +103,60 @@ observations are operator assertions, not authenticated source, hermetic
 builds or complete transitive SBOMs. Broad PR CI and qualification at the final
 head must pass before merge; historical measurements do not approve later
 source. All six language tickets, #345 and the release gates remain separate.
+
+## Captured library observation on October 1, 2026
+
+The [machine-readable observation](c-library-dependency-observation-2026-10-01.json)
+records a later experiment for #684. Component builds used frontend
+`abe3edaf7a71b58007f52d2cb1244b73e4c60b79`; the maintained negative-control CLI
+and native SDK ownership checks used
+`ee00033be6eea7e89c0ff3201a8de433f10a8c14`. Normal node and packaging binaries
+were built from `907e8fa0791e85d764d7b06a716f4f238a84e05d`; their native source
+inputs were independently checked equal to both frontend/control sources.
+The observation retains compiler, image, binary, component, archive, profile
+and raw-receipt digests. It does not attribute these results to later source.
+
+Five C projects and a sixth greeting built offline through the pinned Zig,
+Wasm validation, component composition and package recipes in 311.157 seconds.
+The greeting calls both the unchanged jsmn 1.1.0 parser and an outside-project
+library directly. That library calls the parser transitively and reads an
+immutable included resource. Original library sources were removed after
+capture. The sixth build uses a source-built static archive, separately
+captured headers/resource and a different application-selected library
+identity. No LSF catalogue entry selects either library.
+
+Two fresh normal signed nodes ran separately using only signed release inputs;
+compiler distributions, original libraries and source/CAS directories were
+absent. Each made 111 control calls and completed 27 invocations: 18 successes,
+four declared errors and five platform failures for trap, memory, fuel,
+deadline and cancellation. Both retained 24 samples and six provider-idle
+checks, successful recovery after failure/disconnection, clean shutdown,
+joined epoch helpers and zero recorded live owner counters. Each also retained
+844 flushed telemetry entries; those history entries are recorded separately
+from live owners. The two node workflows completed together in 95.751 seconds
+with the original 180-second workflow, 5,000-ms invocation and 15,000-ms control
+limits.
+
+The actual maintained CLI passed all 21 compiler/generator controls in 58.183
+seconds with network disabled. They exercise malformed unused objects,
+duplicate strong symbols, wrong targets, archive bounds, closure/profile
+changes, denied ambient inputs, generator approval and descendant cleanup,
+then a fresh successful generator stage. The deadline receipt confirms
+`reaped`; actual Linux regressions also confirm descendant termination after
+output overflow and preserve `unconfirmed` for failed cleanup/ownership.
+The unchanged C SDK native ownership fixture compiled and ran with the pinned
+Zig compiler. These checks add evidence for library inputs and process cleanup;
+they do not replace the full guest SDK capability qualification.
+
+Earlier failed attempts are retained: the ordinary argument bound rejected a
+single 1,025-member archiver command, and the pinned archiver itself rejected a
+malformed object before member validation. Later controls used bounded batches
+and explicit adversarial archive framing without changing those limits. The
+first maintained replay passed its controls but retained an unconfirmed
+deadline receipt; the corrected receipt classification and final replay remain
+separate observations.
+
+This local experiment did not execute the full maintained SDK gate or all six
+printed guide steps. Those stages remain required at the delivery source,
+together with current remote CI and complete #684 acceptance reconciliation.
+No release was published.

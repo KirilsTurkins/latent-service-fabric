@@ -117,3 +117,18 @@ workflow. `node/workflow.json` and `node-static/workflow.json` retain their own
 invocation, fault, resource and shutdown evidence. A passing retained
 qualification receipt is required before treating either component case as
 observed; it does not qualify POSIX resource lookup or thread scheduling.
+
+The maintained workflow also runs `tools/c_dependency_controls.py` against the
+captured static-library project. Its 21 compiler and generator controls use the
+pinned tools and real namespace isolation. They reject unused duplicate or
+invalid members, host-native and memory64 objects, member-count overflow, stale
+profiles, changed or missing inputs, ambient headers and credentials, and stale
+generator approvals. Deadline and output-limit failure receipts report `reaped`
+only after the ordinary process owner has physically retired; cleanup and
+ownership failures retain `unconfirmed`. A later independent generator stage
+must still succeed after the deadline case.
+
+The [October 1 observation](../development/c-capsule-qualification.md#captured-library-observation-on-october-1-2026)
+records actual source and static-archive component runs and these controls at
+their exact inputs. Full maintained SDK, printed-guide and final-source CI
+qualification remain separate requirements.

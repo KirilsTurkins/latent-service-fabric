@@ -1,0 +1,746 @@
+{
+  "schemaVersion": "latent.c-library-dependency-observation.v1",
+  "dateUtc": "2026-10-01",
+  "status": "passed-at-recorded-inputs",
+  "componentFrontendSource": "abe3edaf7a71b58007f52d2cb1244b73e4c60b79",
+  "controlSource": "ee00033be6eea7e89c0ff3201a8de433f10a8c14",
+  "nativeSource": "907e8fa0791e85d764d7b06a716f4f238a84e05d",
+  "nativeInputsEqualComponentFrontend": true,
+  "compilerImage": {
+    "name": "latent-sdk-dotnet-diagnostic:20261001",
+    "indexDigest": "sha256:7cc3f5d034635d35c328591dbd993fb355816fc8124f6a6a9948f83cca74cbf0"
+  },
+  "capture": {
+    "receipt": {
+      "sha256": "sha256:f0de5f3196b1c5226c874a27b717fab0298ae8d51e1c24d06eb5810ff4b4d97c",
+      "bytes": 978
+    },
+    "fixture": {
+      "formatVersion": 1,
+      "thirdParty": "zserge/jsmn/1.1.0",
+      "thirdPartyDigest": "sha256:1ed6154dedf009212a08a397e9c4ed50a0ce31d5a8301bb294e137ae3188c13b",
+      "developerOwned": "developer-owned/qualification/1",
+      "directApplicationCalls": [
+        "zserge/jsmn/1.1.0",
+        "developer-owned/qualification/1"
+      ],
+      "transitiveCalls": [
+        "developer-owned/qualification/1 -> zserge/jsmn/1.1.0"
+      ],
+      "resourceDigest": "sha256:fc9519a8958152b8d82a052b717393ab625fafa402213920ef6d1fbf6f4f9a68",
+      "offlineOriginals": "unavailable-after-capture",
+      "sourceDigest": "sha256:7255cfd5f1c44aca47828ea9fe2f987b5afa33c9afca00a025fe728733675dc6"
+    }
+  },
+  "componentBuilds": {
+    "receipt": {
+      "sha256": "sha256:a90cdabe4010bfa31c7aa680b17ea6249433917860cb4170e7a7274cf8f7d432",
+      "bytes": 17402
+    },
+    "seconds": 311.157452,
+    "network": "none",
+    "limits": {
+      "overallSeconds": 900,
+      "perCommandSeconds": 600
+    },
+    "components": {
+      "greeting": {
+        "componentDigest": "sha256:50ac897a47a738a1780f949f43030a2ebcf440394c2822dfc31422beb170c204",
+        "buildSeconds": 53.855705,
+        "packageAssembled": true
+      },
+      "word-count": {
+        "componentDigest": "sha256:294d6951e5d054298870787510086844d1a74f6eff937d32b36323e97e161ea6",
+        "buildSeconds": 39.714928,
+        "packageAssembled": true
+      },
+      "shipping": {
+        "componentDigest": "sha256:4cd2a9936d9a82066c70bc472499e84668c934b3bacd9d93603668225ab013e1",
+        "buildSeconds": 38.172126,
+        "packageAssembled": true
+      },
+      "http-status": {
+        "componentDigest": "sha256:0cc41819bcd203c3dc832e793444653155937bcee4b6aa77561f1c72185384e3",
+        "buildSeconds": 41.035941,
+        "packageAssembled": true
+      },
+      "recovery": {
+        "componentDigest": "sha256:e50cba54764b330db10556a894fe69edcfa1ecb509064db786997648621ee3aa",
+        "buildSeconds": 43.362412,
+        "packageAssembled": true
+      },
+      "greeting-static": {
+        "componentDigest": "sha256:839676d6a9657a5f41f2b82f96e41e07f8b217e8fa8bef4285c77b05fc49c58e",
+        "buildSeconds": 65.160454,
+        "packageAssembled": true
+      }
+    },
+    "tools": {
+      "zig": {
+        "sha256": "sha256:2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c",
+        "bytes": 172641672
+      },
+      "wasm-tools": {
+        "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "bytes": 20231696
+      },
+      "wit-bindgen": {
+        "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+        "bytes": 19856344
+      }
+    },
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:bbe8498b4044b34d814e69112eaf92e7f793612f414b576d2836492b04753b58",
+        "bytes": 58553768
+      },
+      "latentd": {
+        "sha256": "sha256:69e1481c0aa9dd587cfba255c89e0c1329518607a0da0beed6efb58193e9dd00",
+        "bytes": 143909072
+      },
+      "package": {
+        "sha256": "sha256:f71dacff4d07d9589eb3fe778a748e0e2aca471a41a60fa4b3fda8b6795fbb18",
+        "bytes": 14119016
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:ac890bf161d41d713ce889a84faaf5a09384a0a72736d4be62609676d4890385",
+        "bytes": 7077424
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:56fc9db0bb9b0d2fa7cdfbac99385d711a092585cfee5e48cc8115322b1e0731",
+        "bytes": 19321248
+      }
+    }
+  },
+  "staticArchive": {
+    "archiveDigest": "sha256:4146a420775cc64bc5eb1bac6715e97b3f2d7b9e539dc9d6e9d1d68648945800",
+    "archiveSize": 9338,
+    "profileDigest": "sha256:9fe59a7261a407e5d22b9d4f76dcf7b5b4d61fa21016793eaf843acea7c9dfb9",
+    "fixture": {
+      "formatVersion": 1,
+      "archiveProfileDigest": "sha256:54db8dba7d8d5475ff75b71760ae0e7af8db359dd89ad0d467a64a610cf88c1b",
+      "sourceLibraryInventoryDigest": "sha256:868e92dbf4f39fa93b4e41f7464b9989bd9ecb5119a7027626ae0d4e46f4b344",
+      "libraryIdentity": "outside-c-catalogue/library/2026.10",
+      "archiveDigest": "sha256:4146a420775cc64bc5eb1bac6715e97b3f2d7b9e539dc9d6e9d1d68648945800",
+      "lockDigest": "sha256:50f06316aa67d1b90ea14e3eccea137dfbc63253588667025d4ec104831673a5",
+      "originalHeaderAndResource": "unavailable-after-capture",
+      "directApplicationCalls": [
+        "zserge/jsmn/1.1.0",
+        "outside-c-catalogue/library/2026.10"
+      ]
+    }
+  },
+  "signedNodes": {
+    "receipt": {
+      "sha256": "sha256:26fdec9332e9b74af4c08e7a61aab916c31e67074cf83f34d7acb05a834f1926",
+      "bytes": 1662
+    },
+    "seconds": 95.750986,
+    "nodes": {
+      "source": {
+        "status": "passed",
+        "invocations": 27,
+        "receiptDigest": "sha256:247ab74237608310f564f60ac9a2cc50e427a0bd56c69720bb7d0562b67511cb",
+        "limits": {
+          "overallSeconds": 180,
+          "invocationMillis": 5000,
+          "controlMillis": 15000,
+          "controlProcessSeconds": 25,
+          "peerSeconds": 180
+        },
+        "cliCalls": 111,
+        "providerIdle": 6,
+        "samples": 24,
+        "categories": {
+          "success": 18,
+          "declared-error": 4,
+          "platform-failure:guest-trap": 1,
+          "platform-failure:resource-exhausted": 2,
+          "platform-failure:deadline-exceeded": 1,
+          "platform-failure:cancelled": 1
+        },
+        "cleanShutdown": true,
+        "liveOwnerCounters": {
+          "activeConnections": 0,
+          "activeRpcs": 0,
+          "activeControlJobs": 0,
+          "activeActivations": 0,
+          "cancellationRegistrations": 0,
+          "observerCorrelations": 0,
+          "quotaReservations": 0,
+          "queuedReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "activeLeases": 0,
+          "queuedActivations": 0,
+          "quarantinedCells": 0,
+          "activeBackendInvocations": 0,
+          "instanceReservations": 0,
+          "preparingComponents": 0,
+          "preparingSourceBytes": 0,
+          "preparingMetadataBytes": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveTemporaryBuffers": 0,
+          "liveCancellationProbes": 0
+        },
+        "shutdownReport": {
+          "audit": {
+            "workerJoined": true,
+            "queuedOperations": 0,
+            "queryOwners": 0,
+            "queryBytes": 0,
+            "pendingAttempts": 0,
+            "reservedRecords": 0,
+            "stageBytes": 0,
+            "recoveryPending": false,
+            "unknownOutcomes": 0,
+            "previousSessionLossUnknown": false
+          },
+          "rollouts": {
+            "workerJoined": true,
+            "workerLive": false,
+            "queuedCommands": 0,
+            "activeCommands": 0,
+            "retainedRequestBytes": 0,
+            "responseOwners": 0,
+            "responseBytes": 0,
+            "failed": false,
+            "canary": {
+              "retainedWindows": 0,
+              "retainedSamples": 0,
+              "liveSamples": 0,
+              "snapshotOwners": 0
+            }
+          },
+          "policies": {
+            "workCompleted": true,
+            "activeJobs": 0,
+            "retainedReadOwners": 0
+          },
+          "providers": {
+            "clean": true,
+            "controlOwners": 0,
+            "connections": 0,
+            "pendingRequests": 0,
+            "runningRequests": 0,
+            "workers": 0,
+            "cleanupJobs": 0,
+            "failedCleanup": 0,
+            "sessions": 0,
+            "handles": 0,
+            "calls": 0,
+            "results": 0,
+            "ioCalls": 0,
+            "ioRetainedBytes": 0,
+            "blobStages": 0,
+            "blobHandles": 0,
+            "blobWork": 0,
+            "secretGenerations": 0,
+            "secretReferences": 0
+          },
+          "clean": true,
+          "activeConnections": 0,
+          "activeRpcs": 0,
+          "activeControlJobs": 0,
+          "activeActivations": 0,
+          "cancellationRegistrations": 0,
+          "observerCorrelations": 0,
+          "quotaReservations": 0,
+          "queuedReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "activeLeases": 0,
+          "queuedActivations": 0,
+          "quarantinedCells": 0,
+          "activeBackendInvocations": 0,
+          "instanceReservations": 0,
+          "preparingComponents": 0,
+          "preparingSourceBytes": 0,
+          "preparingMetadataBytes": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveTemporaryBuffers": 0,
+          "liveCancellationProbes": 0,
+          "telemetryRetainedEntries": 844,
+          "telemetryFlushed": true,
+          "epochHelperJoined": true,
+          "compiler": {
+            "maximum_jobs": 1,
+            "maximum_workers": 1,
+            "maximum_queued_jobs": 0,
+            "maximum_waiters": 3,
+            "maximum_waiters_per_job": 3,
+            "maximum_ready_preparations": 3,
+            "maximum_document_bytes": 5308416,
+            "assigned_jobs": 0,
+            "running_jobs": 0,
+            "queued_jobs": 0,
+            "waiting_callers": 0,
+            "ready_preparations": 0,
+            "ready_metadata_bytes": 0,
+            "ready_compiled_image_bytes": 0,
+            "reserved_document_bytes": 0,
+            "workers_live": 0,
+            "workers_quiescent": 1,
+            "workers_joined": 1,
+            "accepting": false,
+            "failed": false,
+            "jobs_started": 5,
+            "jobs_completed": 5,
+            "jobs_failed": 0,
+            "jobs_abandoned": 0,
+            "coalesced_waiters": 0,
+            "queue_rejected": 0,
+            "waiter_rejected": 0,
+            "ready_rejected": 0,
+            "cancelled_waiters": 0,
+            "discarded_results": 0
+          },
+          "cleanup": {
+            "capacity": 3,
+            "accepting": false,
+            "driverAlive": false,
+            "driverJoined": true,
+            "reserved": 0,
+            "queued": 0,
+            "running": 0,
+            "handoffs": 1,
+            "completed": 1,
+            "timedOut": 0,
+            "panicked": 0,
+            "fallbacks": 0,
+            "failed": false
+          }
+        },
+        "telemetryHistory": {
+          "retainedEntries": 844,
+          "flushed": true
+        },
+        "epochHelperJoined": true,
+        "receipt": {
+          "sha256": "sha256:247ab74237608310f564f60ac9a2cc50e427a0bd56c69720bb7d0562b67511cb",
+          "bytes": 248657
+        }
+      },
+      "static": {
+        "status": "passed",
+        "invocations": 27,
+        "receiptDigest": "sha256:94ef359fd757ece1fd3abfadd01d2b4ee4b6883e4d351b051c68b5ef1dcac375",
+        "limits": {
+          "overallSeconds": 180,
+          "invocationMillis": 5000,
+          "controlMillis": 15000,
+          "controlProcessSeconds": 25,
+          "peerSeconds": 180
+        },
+        "cliCalls": 111,
+        "providerIdle": 6,
+        "samples": 24,
+        "categories": {
+          "success": 18,
+          "declared-error": 4,
+          "platform-failure:guest-trap": 1,
+          "platform-failure:resource-exhausted": 2,
+          "platform-failure:deadline-exceeded": 1,
+          "platform-failure:cancelled": 1
+        },
+        "cleanShutdown": true,
+        "liveOwnerCounters": {
+          "activeConnections": 0,
+          "activeRpcs": 0,
+          "activeControlJobs": 0,
+          "activeActivations": 0,
+          "cancellationRegistrations": 0,
+          "observerCorrelations": 0,
+          "quotaReservations": 0,
+          "queuedReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "activeLeases": 0,
+          "queuedActivations": 0,
+          "quarantinedCells": 0,
+          "activeBackendInvocations": 0,
+          "instanceReservations": 0,
+          "preparingComponents": 0,
+          "preparingSourceBytes": 0,
+          "preparingMetadataBytes": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveTemporaryBuffers": 0,
+          "liveCancellationProbes": 0
+        },
+        "shutdownReport": {
+          "audit": {
+            "workerJoined": true,
+            "queuedOperations": 0,
+            "queryOwners": 0,
+            "queryBytes": 0,
+            "pendingAttempts": 0,
+            "reservedRecords": 0,
+            "stageBytes": 0,
+            "recoveryPending": false,
+            "unknownOutcomes": 0,
+            "previousSessionLossUnknown": false
+          },
+          "rollouts": {
+            "workerJoined": true,
+            "workerLive": false,
+            "queuedCommands": 0,
+            "activeCommands": 0,
+            "retainedRequestBytes": 0,
+            "responseOwners": 0,
+            "responseBytes": 0,
+            "failed": false,
+            "canary": {
+              "retainedWindows": 0,
+              "retainedSamples": 0,
+              "liveSamples": 0,
+              "snapshotOwners": 0
+            }
+          },
+          "policies": {
+            "workCompleted": true,
+            "activeJobs": 0,
+            "retainedReadOwners": 0
+          },
+          "providers": {
+            "clean": true,
+            "controlOwners": 0,
+            "connections": 0,
+            "pendingRequests": 0,
+            "runningRequests": 0,
+            "workers": 0,
+            "cleanupJobs": 0,
+            "failedCleanup": 0,
+            "sessions": 0,
+            "handles": 0,
+            "calls": 0,
+            "results": 0,
+            "ioCalls": 0,
+            "ioRetainedBytes": 0,
+            "blobStages": 0,
+            "blobHandles": 0,
+            "blobWork": 0,
+            "secretGenerations": 0,
+            "secretReferences": 0
+          },
+          "clean": true,
+          "activeConnections": 0,
+          "activeRpcs": 0,
+          "activeControlJobs": 0,
+          "activeActivations": 0,
+          "cancellationRegistrations": 0,
+          "observerCorrelations": 0,
+          "quotaReservations": 0,
+          "queuedReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "activeLeases": 0,
+          "queuedActivations": 0,
+          "quarantinedCells": 0,
+          "activeBackendInvocations": 0,
+          "instanceReservations": 0,
+          "preparingComponents": 0,
+          "preparingSourceBytes": 0,
+          "preparingMetadataBytes": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveTemporaryBuffers": 0,
+          "liveCancellationProbes": 0,
+          "telemetryRetainedEntries": 844,
+          "telemetryFlushed": true,
+          "epochHelperJoined": true,
+          "compiler": {
+            "maximum_jobs": 1,
+            "maximum_workers": 1,
+            "maximum_queued_jobs": 0,
+            "maximum_waiters": 3,
+            "maximum_waiters_per_job": 3,
+            "maximum_ready_preparations": 3,
+            "maximum_document_bytes": 5308416,
+            "assigned_jobs": 0,
+            "running_jobs": 0,
+            "queued_jobs": 0,
+            "waiting_callers": 0,
+            "ready_preparations": 0,
+            "ready_metadata_bytes": 0,
+            "ready_compiled_image_bytes": 0,
+            "reserved_document_bytes": 0,
+            "workers_live": 0,
+            "workers_quiescent": 1,
+            "workers_joined": 1,
+            "accepting": false,
+            "failed": false,
+            "jobs_started": 5,
+            "jobs_completed": 5,
+            "jobs_failed": 0,
+            "jobs_abandoned": 0,
+            "coalesced_waiters": 0,
+            "queue_rejected": 0,
+            "waiter_rejected": 0,
+            "ready_rejected": 0,
+            "cancelled_waiters": 0,
+            "discarded_results": 0
+          },
+          "cleanup": {
+            "capacity": 3,
+            "accepting": false,
+            "driverAlive": false,
+            "driverJoined": true,
+            "reserved": 0,
+            "queued": 0,
+            "running": 0,
+            "handoffs": 1,
+            "completed": 1,
+            "timedOut": 0,
+            "panicked": 0,
+            "fallbacks": 0,
+            "failed": false
+          }
+        },
+        "telemetryHistory": {
+          "retainedEntries": 844,
+          "flushed": true
+        },
+        "epochHelperJoined": true,
+        "receipt": {
+          "sha256": "sha256:94ef359fd757ece1fd3abfadd01d2b4ee4b6883e4d351b051c68b5ef1dcac375",
+          "bytes": 248752
+        }
+      }
+    },
+    "compilerDistributionsMounted": false,
+    "applicationSourcesOrCASMounted": false,
+    "originalLibrariesMounted": false
+  },
+  "actualControlDriver": {
+    "receipt": {
+      "sha256": "sha256:d3e37ee7f44ef15928c543c00ba64e0a65c0d8ea90c68246da2554cc92f1abd7",
+      "bytes": 4040007
+    },
+    "driver": {
+      "sha256": "sha256:6035d9f396f48bdb624155ce29457b24641048133216d80d05d0827bbdeaa926",
+      "bytes": 24307
+    },
+    "seconds": 58.183008,
+    "controls": [
+      {
+        "id": "actual-unused-duplicate-strong-member",
+        "status": "passed",
+        "expectedDenial": "c-static-archive-duplicate-strong-symbol"
+      },
+      {
+        "id": "actual-host-native-member",
+        "status": "passed",
+        "expectedDenial": "c-static-archive-host-native-member"
+      },
+      {
+        "id": "actual-wasm64-target-member",
+        "status": "passed",
+        "expectedDenial": "c-wasm-object-requires-unqualified-runtime-profile"
+      },
+      {
+        "id": "actual-1025-member-archive-overflow",
+        "status": "passed",
+        "expectedDenial": "c-static-archive-member-collision-or-limit"
+      },
+      {
+        "id": "actual-unused-invalid-core-validation",
+        "status": "passed",
+        "expectedDenial": "wasm-tools failed"
+      },
+      {
+        "id": "actual-duplicate-across-captured-archives",
+        "status": "passed",
+        "expectedDenial": "c-static-archive-duplicate-strong-symbol",
+        "failureStage": "captured-compiler-isolation",
+        "commandCount": 3,
+        "failureReceiptDigest": "sha256:fda012d2d0913391dd4576720ceb9fcdf1354fd34986f3582fe21d5bbdcf33b2"
+      },
+      {
+        "id": "actual-stale-runtime-checkpoint-profile",
+        "status": "passed",
+        "expectedDenial": "c-static-archive-needs-current-observed-abi-profile-or-source-rebuild",
+        "failureStage": "captured-compiler-isolation",
+        "commandCount": 3,
+        "failureReceiptDigest": "sha256:95bbcab386d730faf279dc5f5a5a0fa0f1a66dc7dff50af5b44b2386dfca8636"
+      },
+      {
+        "id": "actual-missing-transitive",
+        "status": "passed",
+        "expectedDenial": "dependency-artifact-missing-resolve-explicitly",
+        "failureStage": "application-dependencies",
+        "commandCount": 0,
+        "failureReceiptDigest": "sha256:5ce54e04d2bd29c90db8c8df15a3b337d5005f09c7c565b0382c67aeb3e81f33"
+      },
+      {
+        "id": "actual-tampered-transitive",
+        "status": "passed",
+        "expectedDenial": "dependency-artifact-integrity",
+        "failureStage": "application-dependencies",
+        "commandCount": 0,
+        "failureReceiptDigest": "sha256:b95de19433c65e40ee9fb50e61e36bdb31a04a99ce36bbe036619b97ba3f1bd8"
+      },
+      {
+        "id": "generator-incorrect-approval-before-execution",
+        "status": "passed",
+        "expectedDenial": "dependency-generator-approval-mismatch"
+      },
+      {
+        "id": "actual-approved-isolated-header-and-private-credential-absence",
+        "status": "passed",
+        "identity": "sha256:09fd3a3d60748cbb054903836e7f3c0d6a2f73876bafa191b310e30f142ca5b4",
+        "receiptDigest": "sha256:65486ee18139f2f5cfb49a8de4079fbe90856e1ca5ab964abfac8ffe42689707",
+        "headerDigest": "sha256:7341d6e496deb87f24da51be6cb40c584417560b033a4f8488eef1bac4c94dc7",
+        "cleanup": "reaped"
+      },
+      {
+        "id": "generator-changed-input-invalidates-original-approval",
+        "status": "passed",
+        "expectedDenial": "dependency-generator-approval-mismatch"
+      },
+      {
+        "id": "generator-private-environment-declaration-denied",
+        "status": "passed",
+        "expectedDenial": "dependency-generator-environment-denied"
+      },
+      {
+        "id": "actual-generated-header-offline-c-archive-and-public-closure-redaction",
+        "status": "passed",
+        "archiveDigest": "sha256:8aa402439b5afbdb0df99bfbad315f69acc1ccb4052997d315878c5349dca10b",
+        "profileDigest": "sha256:a7cb4b94d16527739727aedd51f9a3160f3efeb42542e5a3f7e70add6fbe0175",
+        "receiptDigest": "sha256:7a9c48a26860ba9a4cc00772b41cea9fd6287cafab3569a48f9a77a531500e02",
+        "originalSourcesAvailable": false
+      },
+      {
+        "id": "actual-captured-generated-header-tamper",
+        "status": "passed",
+        "expectedDenial": "dependency-artifact-integrity",
+        "failureStage": "application-dependencies",
+        "commandCount": 0,
+        "failureReceiptDigest": "sha256:b95de19433c65e40ee9fb50e61e36bdb31a04a99ce36bbe036619b97ba3f1bd8"
+      },
+      {
+        "id": "actual-changed-generator-selection-lock-denial",
+        "status": "passed",
+        "expectedDenial": "dependency-lock-drift",
+        "failureStage": "application-dependencies",
+        "commandCount": 0,
+        "failureReceiptDigest": "sha256:c0b4d1f1ea0923b757a253eff0cc1ced69cae2e8f7a5ac7013df6678560b3b19"
+      },
+      {
+        "id": "actual-absolute-include-outside-captured-namespace",
+        "status": "passed",
+        "expectedDenial": "zig failed",
+        "failureStage": "compile-static-archive",
+        "commandCount": 4,
+        "failureReceiptDigest": "sha256:cab6d96bc5bb12809140d77f4bf44bfd0d9285a78700ad55bbdab88f333425c2"
+      },
+      {
+        "id": "actual-c-cli-private-credential-rejection-and-redaction",
+        "status": "passed",
+        "exitCode": 1,
+        "receiptDigest": "sha256:57ed46657fbf334c92f05ffc539f02d62473e7f4c192c57d0dfcd6aafc621eea",
+        "diagnosticsDigest": "sha256:6e232df02e660ca424c29e07789a28024fb0b36985f8f951c36a22ab218cc5a5"
+      },
+      {
+        "id": "actual-capture-unclosed-transitive-graph",
+        "status": "passed",
+        "expectedDenial": "dependency-graph-not-closed"
+      },
+      {
+        "id": "actual-generator-deadline-terminates-descendants",
+        "status": "passed",
+        "expectedDenial": "command-deadline",
+        "progressStable": true,
+        "receiptDigest": "sha256:94ffb70d1bbe67e69ee68ec533c6f5493d01b5aca5eec93f144ac7d2972f5eba",
+        "retainedCleanupClaim": "reaped"
+      },
+      {
+        "id": "actual-fresh-generated-header-stage-after-deadline",
+        "status": "passed",
+        "cleanup": "reaped",
+        "receiptDigest": "sha256:14e712fc206b1a40711b06c7ff676fe5f59ede9719ccdb0d722b1dcb197ff625"
+      }
+    ],
+    "guestExecution": false
+  },
+  "nativeSdkOwnership": {
+    "receipt": {
+      "sha256": "sha256:95ebab312eab78d602329c0da966056632db2adda6e3c51d55239c5c52d97a8e",
+      "bytes": 642
+    },
+    "source": {
+      "name": "ownership-source",
+      "digest": "sha256:0174f295c82e9cb1d3760606e7c4137a43910ce07669e65836bcda40374b67ce",
+      "size": 1668
+    },
+    "compiler": {
+      "name": "zig",
+      "digest": "sha256:2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c",
+      "size": 172641672
+    },
+    "commands": [
+      {
+        "stage": "native-c-scope-compile",
+        "exitCode": 0,
+        "seconds": 31.631324
+      },
+      {
+        "stage": "native-c-scope-runtime",
+        "exitCode": 0,
+        "seconds": 0.011638
+      }
+    ]
+  },
+  "regressions": {
+    "focusedCControls": 29,
+    "captureIsolationAndProcessTests": 40,
+    "captureIsolationAndProcessWindowsOnlySkips": 1,
+    "generatorFailureTestsLinux": 3,
+    "ciInventory": {
+      "historicalCommands": 88,
+      "currentCommands": 215,
+      "delegatedOwners": 129
+    }
+  },
+  "retainedEarlierAttempts": [
+    {
+      "stage": "negative-controls-attempt1",
+      "outcome": "ordinary-command-argument-bound-rejected-1025-member-single-invocation",
+      "boundsChanged": false,
+      "receipt": {
+        "sha256": "sha256:96134527627c90de9de00417dd835bd59c715e120d0db623241d4503afd9c486",
+        "bytes": 4034074
+      }
+    },
+    {
+      "stage": "negative-controls-attempt2",
+      "outcome": "pinned-archiver-rejected-invalid-core-object-before-member-validation",
+      "boundsChanged": false,
+      "receipt": {
+        "sha256": "sha256:d1bec7b7d84bd002be77e8415c5e7ddd65d84f9e77ebfac5db76b10f4ba12929",
+        "bytes": 4035325
+      }
+    },
+    {
+      "stage": "maintained-controls-first-replay",
+      "outcome": "21-controls-passed-with-earlier-unconfirmed-generator-deadline-receipt",
+      "receipt": {
+        "sha256": "sha256:5dbb8a7b10e7fe24ff22fd818abb267b2c6e0762a386e755fe6e0a56637342aa",
+        "bytes": 4040013
+      }
+    }
+  ],
+  "remainingAcceptance": [
+    "full-maintained-SDK-and-printed-guide-qualification-at-delivery-source",
+    "all-current-remote-CI",
+    "parent-issue-acceptance-reconciliation"
+  ],
+  "releasePublication": "not-performed"
+}
