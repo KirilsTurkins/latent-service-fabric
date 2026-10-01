@@ -5,6 +5,12 @@ namespace, State/Intent resources, WIT exports and opaque version/view tokens.
 They use the maintained Java → TeaVM C → component recipe. `AggregateCodec` is
 application encoding code and supplies no persistence or migration authority.
 
+All three variants return the Aggregate's original `view-version` (NV2) and
+optional original `key-version` (SV2) from the same key read. An update returns
+its pre-write observations alongside the new count; it does not return a
+committed token. The [shared guide](../../docs/component-development/transactional-authoring.md)
+explains query and HTTP precondition use without decoding either opaque token.
+
 ```sh
 python tools/java_transaction_schema.py --variant legacy-v1 --project "$FreshV1"
 python tools/java_transaction_schema.py --variant compatible-v2 --project "$FreshCompatibleV2"

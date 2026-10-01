@@ -17,9 +17,17 @@ python tools/dotnet_capsule.py new ../aggregate-dotnet --template transactional-
 
 Build the resulting project with that language's existing `build` command and pinned toolchain. The [Rust](rust-authoring.md), [C](c-authoring.md), [TypeScript](typescript-authoring.md), [Go](go-authoring.md), [Java](java-authoring.md) and [.NET](dotnet-authoring.md) authoring guides describe the compiler installation and captured-source packaging flow. Package and admit the component through the authorized node workflow. Compilation, a package digest and signature each describe their own boundary; executed transaction evidence requires the actual Linux node.
 
-`update` reads the unsigned aggregate, checks overflow, stages its new value and an `approved-event` intent, and returns the staged version. The host commits the writes, intent and original result together after successful validated guest completion. With `reject` set, the same guest returns the declared `rejected` business error after staging; the host preserves that terminal rejection while discarding the business writes and intent. Host failures remain platform failures.
+`update` reads the unsigned aggregate, checks overflow, stages its new value and an `approved-event` intent, and returns the new count with its original observations. `view-version` is the original namespace view (NV2); optional `key-version` is the original key version (SV2) returned by that same read, absent when the key was absent. These fields describe the pre-write snapshot, never a committed token. The host commits the writes, intent and original result together after successful validated guest completion. With `reject` set, the same guest returns the declared `rejected` business error after staging; the host preserves that terminal rejection while discarding the business writes and intent. Host failures remain platform failures.
 
 `query` acquires a fresh read-only view. `scan` opens a bounded page and pulls entries while retaining its original view; it returns the page view identity and optional continuation cursor. No query has a command key or a mutation API. Caller command identity, stale-edit preconditions and minimum read-after-commit version belong to ingress admission, and helpers never refresh them or repeat a guest invocation.
+
+An Aggregate query returns `view-version` from that retained view and optional
+`key-version` from its single `get(aggregate/count)` observation. Keep both tokens
+opaque and distinct. Use the returned original key version for HTTP `If-Match`
+and its absence for the explicit absent-key precondition; the namespace view is
+not a key precondition. A successful update does not make its original key token
+current. Obtain a new authorized query before choosing a new edit, and preserve
+the original command and preconditions when recovering an existing operation.
 
 The shared representation uses namespace `transactional-aggregate`, key bytes `aggregate/count`, an eight-byte little-endian unsigned count, media type `application/vnd.lsf.aggregate-v1`, and empty metadata. An absent value means zero; malformed stored bytes are a declared `malformed-state` result. Opaque versions remain byte arrays, and optional values retain presence in every language.
 

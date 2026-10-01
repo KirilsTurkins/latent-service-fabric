@@ -18,23 +18,29 @@ func count(value wit.Option[state.VersionedValue]) (uint64, bool) {
 }
 func Update(request UpdateRequest) wit.Result[Aggregate, BusinessError] {
     command := state.AcquireCommand().Ok(); defer command.Close()
-    old, valid := count(command.Get(key).Ok())
+    stored := command.Get(key).Ok()
+    old, valid := count(stored)
     if !valid { return wit.Err[Aggregate, BusinessError](BusinessErrorMalformedState) }
     next := old + uint64(request.Delta)
     if next < old { return wit.Err[Aggregate, BusinessError](BusinessErrorOverflow) }
+    viewVersion := command.Info().Ok().View.Version
+    keyVersion := wit.None[[]byte]()
+    if stored.IsSome() { keyVersion = wit.Some(stored.Some().Version) }
     bytes := make([]byte, 8); binary.LittleEndian.PutUint64(bytes, next)
     payload := state.Value{Bytes: bytes, MediaType: media, Metadata: nil}
     command.Put(key, payload).Ok()
     intents.New("approved-event", "event", payload).Stage(command).Ok()
     if request.Reject { return wit.Err[Aggregate, BusinessError](BusinessErrorRejected) }
-    staged := command.Get(key).Ok().Some()
-    return wit.Ok[Aggregate, BusinessError](Aggregate{Count: next, Version: staged.Version})
+    return wit.Ok[Aggregate, BusinessError](Aggregate{Count: next, ViewVersion: viewVersion, KeyVersion: keyVersion})
 }
 func Query() wit.Result[Aggregate, BusinessError] {
     query := state.AcquireQuery().Ok(); defer query.Close()
-    count, valid := count(query.Get(key).Ok())
+    stored := query.Get(key).Ok()
+    count, valid := count(stored)
     if !valid { return wit.Err[Aggregate, BusinessError](BusinessErrorMalformedState) }
-    return wit.Ok[Aggregate, BusinessError](Aggregate{Count: count, Version: query.Info().Ok().Version})
+    keyVersion := wit.None[[]byte]()
+    if stored.IsSome() { keyVersion = wit.Some(stored.Some().Version) }
+    return wit.Ok[Aggregate, BusinessError](Aggregate{Count: count, ViewVersion: query.Info().Ok().Version, KeyVersion: keyVersion})
 }
 func Scan(prefix []byte, limit uint32, cursor wit.Option[[]byte]) wit.Result[ScanResult, BusinessError] {
     query := state.AcquireQuery().Ok(); defer query.Close()

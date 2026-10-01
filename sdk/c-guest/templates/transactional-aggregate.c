@@ -3,7 +3,7 @@
 #include <string.h>
 
 enum operation { UPDATE, QUERY, SCAN };
-enum phase { READ_OLD, WRITE_VALUE, STAGE_EVENT, READ_STAGED, OPEN_PAGE, NEXT_ENTRY };
+enum phase { READ_OLD, WRITE_VALUE, STAGE_EVENT, OPEN_PAGE, NEXT_ENTRY };
 struct frame {
     lsf_scope_t scope;
     lsf_async_t async;
@@ -20,6 +20,8 @@ struct frame {
     uint8_t bytes[8];
     probe_list_u8_t prefix;
     probe_option_list_u8_t cursor;
+    probe_list_u8_t view_version;
+    probe_option_list_u8_t key_version;
     latent_state_key_value_value_t value;
     latent_state_key_value_result_option_versioned_value_state_error_t read;
     latent_state_key_value_result_void_state_error_t write;
@@ -38,6 +40,8 @@ static void cleanup(struct frame *frame) {
     lsf_state_get_result_close(&frame->read);
     lsf_state_entry_result_close(&frame->entry);
     latent_state_key_value_page_info_free(&frame->page_info);
+    if (frame->view_version.len) free(frame->view_version.ptr);
+    if (frame->key_version.is_some && frame->key_version.val.len) free(frame->key_version.val.ptr);
     if (frame->prefix.len) free(frame->prefix.ptr);
     if (frame->cursor.is_some && frame->cursor.val.len) free(frame->cursor.val.ptr);
     lsf_scope_close(&frame->scope); /* Reverse order: pages before original view. */
@@ -46,16 +50,24 @@ static void cleanup(struct frame *frame) {
     free(frame);
 }
 static probe_callback_code_t aggregate_return(struct frame *frame, bool is_error,
-    exports_examples_transactional_aggregate_api_business_error_t error, probe_list_u8_t version) {
+    exports_examples_transactional_aggregate_api_business_error_t error) {
     enum operation operation = frame->operation;
     exports_examples_transactional_aggregate_api_result_aggregate_business_error_t result = {.is_err = is_error};
     if (is_error) result.val.err = error;
-    else result.val.ok = (exports_examples_transactional_aggregate_api_aggregate_t){frame->count, version};
+    else {
+        result.val.ok = (exports_examples_transactional_aggregate_api_aggregate_t){
+            .count = frame->count, .view_version = frame->view_version, .key_version = frame->key_version};
+        frame->view_version = (probe_list_u8_t){0};
+        frame->key_version = (probe_option_list_u8_t){0};
+    }
     cleanup(frame);
     if (operation == UPDATE) exports_examples_transactional_aggregate_api_update_return(result);
     else exports_examples_transactional_aggregate_api_query_return(result);
     /* The pinned generator's aggregate result-free skips reused list types. */
-    if (!is_error && result.val.ok.version.len) free(result.val.ok.version.ptr);
+    if (!is_error) {
+        if (result.val.ok.view_version.len) free(result.val.ok.view_version.ptr);
+        if (result.val.ok.key_version.is_some && result.val.ok.key_version.val.len) free(result.val.ok.key_version.val.ptr);
+    }
     return PROBE_CALLBACK_CODE_EXIT;
 }
 static bool decode(struct frame *frame) {
@@ -85,18 +97,32 @@ static probe_callback_code_t pump(struct frame *frame, lsf_async_result_t state)
         case READ_OLD:
             lsf_require(!frame->read.is_err); /* Denials remain platform failures, never absence. */
             if (!decode(frame)) return aggregate_return(frame, true,
-                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_MALFORMED_STATE, (probe_list_u8_t){0});
+                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_MALFORMED_STATE);
+            if (frame->read.val.ok.is_some) {
+                /* Retain the original key observation across staging; never read a replacement token. */
+                frame->key_version = (probe_option_list_u8_t){true,
+                    {frame->read.val.ok.val.version.ptr, frame->read.val.ok.val.version.len}};
+                frame->read.val.ok.val.version = (latent_state_key_value_version_t){0};
+            }
             if (frame->operation == QUERY) {
                 latent_state_key_value_view_identity_t info = {0};
                 latent_state_key_value_state_error_t error;
                 lsf_require(lsf_state_query_info(&frame->query, &info, &error));
-                probe_list_u8_t version = {info.version.ptr, info.version.len};
+                frame->view_version = (probe_list_u8_t){info.version.ptr, info.version.len};
                 info.version = (latent_state_key_value_version_t){0};
                 latent_state_key_value_view_identity_free(&info);
-                return aggregate_return(frame, false, 0, version);
+                return aggregate_return(frame, false, 0);
             }
             if (UINT64_MAX - frame->count < frame->delta) return aggregate_return(frame, true,
-                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_OVERFLOW, (probe_list_u8_t){0});
+                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_OVERFLOW);
+            {
+                latent_state_key_value_command_info_t info = {0};
+                latent_state_key_value_state_error_t error;
+                lsf_require(lsf_state_command_info(&frame->command, &info, &error));
+                frame->view_version = (probe_list_u8_t){info.view.version.ptr, info.view.version.len};
+                info.view.version = (latent_state_key_value_version_t){0};
+                latent_state_key_value_command_info_free(&info);
+            }
             frame->count += frame->delta;
             lsf_state_get_result_close(&frame->read);
             for (size_t i = 0; i < 8; i++) frame->bytes[i] = (uint8_t)(frame->count >> (8 * i));
@@ -114,16 +140,8 @@ static probe_callback_code_t pump(struct frame *frame, lsf_async_result_t state)
         case STAGE_EVENT:
             lsf_require(!frame->staged.is_err);
             if (frame->reject) return aggregate_return(frame, true,
-                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_REJECTED, (probe_list_u8_t){0});
-            frame->phase = READ_STAGED;
-            status = lsf_state_get(&frame->call, &frame->command, key(), &frame->read);
-            break;
-        case READ_STAGED: {
-            lsf_require(!frame->read.is_err && frame->read.val.ok.is_some);
-            probe_list_u8_t version = {frame->read.val.ok.val.version.ptr, frame->read.val.ok.val.version.len};
-            frame->read.val.ok.val.version = (latent_state_key_value_version_t){0};
-            return aggregate_return(frame, false, 0, version);
-        }
+                EXPORTS_EXAMPLES_TRANSACTIONAL_AGGREGATE_API_BUSINESS_ERROR_REJECTED);
+            return aggregate_return(frame, false, 0);
         case OPEN_PAGE: {
             lsf_require(!frame->scan.is_err);
             frame->page = lsf_state_adopt_page(frame->query.cell, frame->scan.val.ok);
