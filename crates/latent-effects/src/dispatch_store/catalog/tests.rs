@@ -103,11 +103,19 @@ fn empty_bare_engine_and_missing_owner_never_certify_fresh_checkpoint_initializa
     let store = fixture.store();
     assert!(store.snapshot().unwrap().is_empty().unwrap());
     assert_eq!(
+        DispatchCatalog::owner_checkpoint(&store.snapshot().unwrap()).unwrap(),
+        None
+    );
+    assert_eq!(
         DispatchCatalog::begin_initializing_epoch(store, time(100), Some((1, 100)), None),
         Err(DispatchStoreError::StaleEpoch),
     );
     let epoch = DispatchCatalog::begin_exclusive_epoch(store, time(100), None).unwrap();
     assert_eq!(epoch.generation(), 1);
+    assert_eq!(
+        DispatchCatalog::owner_checkpoint(&store.snapshot().unwrap()).unwrap(),
+        Some((1, 100))
+    );
     assert_eq!(
         DispatchCatalog::begin_exclusive_epoch(store, time(100), Some((2, 100))),
         Err(DispatchStoreError::StaleEpoch),
