@@ -39,6 +39,50 @@ def fixture(root: Path, *, package: bool) -> Path:
 
 
 class ResetValidationEchoTests(unittest.TestCase):
+    def test_cache_pruned_known_empty_skeletons_are_removed_without_touching_dependencies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            dependency = root / "debug/deps/keep.rlib"
+            dependency.parent.mkdir(parents=True)
+            dependency.write_bytes(b"compiled dependency")
+            owners = [fixture(root, package=package) for package in (False, True)]
+            # Swatinem/rust-cache@6323deb cleanTargetDir recursively removes
+            # regular files outside Cargo profiles, retaining their directories.
+            for owner in owners:
+                for path in owner.rglob("*"):
+                    if path.is_file():
+                        path.unlink()
+            self.assertTrue((owners[0] / "interface/deps").is_dir())
+            self.assertTrue((owners[1] / "wit").is_dir())
+            self.assertEqual(reset_validation_echo(root), 2)
+            self.assertTrue(all(not owner.exists() for owner in owners))
+            self.assertEqual(dependency.read_bytes(), b"compiled dependency")
+
+    def test_empty_skeleton_keeps_unknown_partial_and_linked_content_fail_closed(self):
+        for change in ("unknown-directory", "unknown-file", "partial-fixture", "link"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                legacy = root / "capsules/echo"
+                (legacy / "interface/deps").mkdir(parents=True)
+                package = root / "capsules/echo-provenance"
+                (package / "wit").mkdir(parents=True)
+                outside = root / "outside"
+                outside.mkdir()
+                (outside / "keep").write_bytes(b"user output")
+                if change == "unknown-directory":
+                    (package / "user-directory").mkdir()
+                elif change == "unknown-file":
+                    (package / "user-notes.txt").write_bytes(b"user output")
+                elif change == "partial-fixture":
+                    (package / "capsule.json").write_bytes(b"{}")
+                else:
+                    (package / "wit/link").symlink_to(outside, target_is_directory=True)
+                with self.assertRaises(SnapshotError):
+                    reset_validation_echo(root)
+                self.assertTrue(legacy.exists())
+                self.assertTrue(package.exists())
+                self.assertEqual((outside / "keep").read_bytes(), b"user output")
+
     def test_new_dependency_inventory_requires_exact_observation_association(self):
         for tamper in (False, True):
             with self.subTest(tamper=tamper), tempfile.TemporaryDirectory() as temporary:
