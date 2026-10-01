@@ -1,4 +1,4 @@
-use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 
 use super::state::{Bootstrap, Control, Finalizer, QueuedWork, Retirement};
@@ -26,10 +26,13 @@ fn next<S>(control: &Control<S>, recovery: bool) -> Action<S> {
             continue;
         }
         state.check_shutdown_deadline(control.clock.monotonic_now());
-        if !recovery {
-            if let Some(retirement) = state.retirements.pop_front() {
-                return Action::Retire(retirement);
-            }
+        let retirements = if recovery {
+            &mut state.recovery_retirements
+        } else {
+            &mut state.retirements
+        };
+        if let Some(retirement) = retirements.pop_front() {
+            return Action::Retire(retirement);
         }
         if state.quarantined {
             let queue = if recovery {
