@@ -273,3 +273,34 @@ with 102 core and 70 effect cases, passed on the pinned Linux image with no
 ignored or filtered cases. Combined strict all-target/all-feature Clippy passed
 for all three crates. This admission port does not by itself
 complete #397's durable quota, linked retention or compaction requirements.
+
+## Original capacity retained by a native view
+
+`open_view_retaining(Arc<dyn Any + Send + Sync>)` binds one original request or
+global capacity keeper into the already reserved affine native slot before
+worker submission and snapshot opening. `open_view` remains available for
+callers that have no additional keeper. The generic slot also exposes
+`retain_owner`; it rejects a second keeper or installation after native attach,
+returning the refused owner unchanged. The keeper must already own its finite
+metadata and capacity reservation; this port adds no task, queue or worker.
+
+Actual fixed-worker retirement destroys the native value first, drops its
+keeper next, releases the physical storage reservation, and only then completes
+the existing retirement witness and receipt. Dropping an opening/read response
+or a retirement receipt cannot release that keeper early. The original
+reservation lifetime is independent of a terminal ledger or waiter deadline.
+
+The portable schedule
+`original_capacity_keeper_survives_detached_native_retirement_until_actual_destruction`
+passed on Windows with Rust 1.97.1. It binds a real `NativeReservation` before
+allocation, drops the returned owner, pauses the actual native destructor on
+the existing storage worker, and proves the global slot, storage bytes, engine
+and witness remain owned until explicit physical release. The keeper observes
+native destruction while the physical storage slot is still charged, and only
+then can a new ordinary global reservation be admitted. The exact Linux state
+inventory includes this new case; its Linux execution still requires the
+qualified native environment.
+
+The same exact source also passed all 95 portable Windows state library cases
+with zero ignored or filtered cases, plus strict all-target/all-feature state
+Clippy. UTF8 CI coverage and all seven suite inventory cases passed.
