@@ -6,6 +6,9 @@ import {repositoryUrl, sha256, websiteRoot} from './lib/repository.mjs';
 import {remarkRepositoryLinks, rehypeRepositoryLinks} from './plugins/repository-links.mjs';
 import {remarkExamples} from './plugins/examples/remark.mjs';
 import {mermaidOptions, preparePalette, prismTheme} from './lib/palette.mjs';
+import repositoryContent from './plugins/repository-content.mjs';
+import examplesPlugin from './plugins/examples/index.mjs';
+import discoveryPlugin from './plugins/discovery.mjs';
 
 const prepared = prepare();
 type Snapshot = {index: typeof prepared.index & {documentPrefix: string}; assets: typeof prepared.assets;
@@ -35,6 +38,22 @@ const commonDocs = {
 };
 
 const config: Config = {
+  future: {
+    v4: {removeLegacyPostBuildHeadAttribute: true},
+    faster: {
+      swcJsLoader: true,
+      swcJsMinimizer: true,
+      // Preserve the existing HTML minifier on Windows with native cache ACLs.
+      swcHtmlMinimizer: process.platform !== 'win32',
+      lightningCssMinimizer: true,
+      mdxCrossCompilerCache: true,
+      rspackBundler: true,
+      rspackPersistentCache: true,
+      ssgWorkerThreads: true,
+      // Last-update metadata is disabled; an eager history scan adds no output.
+      gitEagerVcs: false,
+    },
+  },
   title: 'Latent Service Fabric',
   tagline: 'Create a node, build capsules and connect your applications',
   url: process.env.LSF_SITE_URL ?? 'https://kirilsturkins.github.io',
@@ -70,9 +89,11 @@ const config: Config = {
       routeBasePath: 'decisions',
       editUrl: ({docPath}: {docPath: string}) => `${repositoryUrl}/edit/${prepared.index.revision}/adr/${docPath}`,
     }],
-    './plugins/repository-content.mjs',
-    './plugins/examples/index.mjs',
-    './plugins/discovery.mjs',
+    // Fresh module loading otherwise repeats the entire corpus validation for
+    // each plugin. Share this configuration's preparation, never a prior build.
+    context => repositoryContent(context, {}, prepared),
+    context => examplesPlugin(context, {}, prepared),
+    context => discoveryPlugin(context, {}, prepared),
   ],
   themes: ['@docusaurus/theme-mermaid'],
   themeConfig: {

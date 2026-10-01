@@ -65,6 +65,10 @@ internal static partial class Program
         {
             await using Peer peer = await Peer.Start(async context =>
             {
+                // Complete the finite request before returning deliberately
+                // malformed response bytes. An unread HTTP/2 request permits
+                // Kestrel to reset the stream, which tests transport loss instead.
+                await context.Request.Body.CopyToAsync(Stream.Null, context.RequestAborted);
                 context.Response.ContentType = scenario.Name == "wrong-media" ? "application/json" : "application/grpc+proto";
                 if (scenario.Name != "missing-status") context.Response.Headers["grpc-status"] = "0";
                 if (scenario.Name == "duplicate-status") context.Response.Headers.Append("grpc-status", "0");
@@ -73,7 +77,8 @@ internal static partial class Program
                 await context.Response.Body.WriteAsync(scenario.Packet, context.RequestAborted);
             });
             await using BoundedClient client = await BoundedClient.ConnectAsync(Options(peer.Endpoint));
-            await Failure(client.InvokeAsync(Invoke(), Defaults).AsTask(), scenario.Category, true);
+            try { await Failure(client.InvokeAsync(Invoke(), Defaults).AsTask(), scenario.Category, true); }
+            catch (Exception failure) { throw new InvalidOperationException("malformed response case: " + scenario.Name, failure); }
             Check(peer.Requests.Values.Sum() == 1, "malformed response caused replay: " + scenario.Name);
         }
         await using Peer limits = await Peer.Start(context =>
