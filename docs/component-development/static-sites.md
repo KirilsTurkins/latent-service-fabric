@@ -360,6 +360,15 @@ adapter's adversarial tests and the real HTTP tests additionally cover path
 aliases, private outputs, symlinks, saturation, corrupt assets, revocation
 between selection and delivery and blocking-read ownership during shutdown.
 
+For an unconfigured or denied navigation, the node sends an empty, uncached
+403 or 404. Chromium can replace that response with its own privileged error
+document. The browser oracle checks the origin status, zero content length and
+cache policy separately from that document's identity; the bounded HTTP client
+checks the actual origin body. The same required lane runs controlled Chromium
+vectors that reject nonempty origin errors, incorrect status, cacheable errors
+and missing zero-length framing. These vectors validate the oracle; the signed
+publication workflow supplies the real-node evidence.
+
 ## Apply a static publication and recover an operation
 
 After verifying and publishing your signed package, put the returned exact
