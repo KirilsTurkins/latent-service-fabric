@@ -156,7 +156,10 @@ class TransactionReceiptTests(unittest.TestCase):
         self.assertFalse(value["guest"]["executionQualified"])
         self.assertFalse(value["externalClient"]["transportExecutionQualified"])
         self.assertEqual(sum(len(item["operations"]) for item in value["guest"]["requiredInterfaces"]), 13)
-        self.assertEqual(sum(len(item["operations"]) for item in value["externalClient"]["requiredServices"]), 11)
+        self.assertEqual(sum(len(item["operations"]) for item in value["externalClient"]["requiredServices"]), 12)
+        operations = {operation["name"] for item in value["externalClient"]["requiredServices"] for operation in item["operations"]}
+        self.assertIn("MutateNamespace", operations)
+        self.assertIn("GetStateOperationReceipt", operations)
         self.assertNotEqual(value["guest"]["profile"], value["externalClient"]["profile"])
 
     def test_raw_http_decoder_rejects_duplicate_fields_and_deep_json_before_lifting(self):

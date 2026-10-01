@@ -6,6 +6,7 @@ pub(crate) mod capabilities;
 mod execute;
 mod node;
 pub(crate) mod phase2;
+pub(crate) mod phase4;
 pub(crate) mod policies;
 mod prepare;
 mod response;
