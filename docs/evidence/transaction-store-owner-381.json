@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "latent.storage.integrated-owner-evidence.v1",
+  "issue": 381,
+  "sourceRevision": "1d8784c21f840e9ec76ee7c4a3cc9108f1b7929a",
+  "sourceTree": "fab1abacc3a738dbe9728d6006c8afbc743ceda1",
+  "sourceArchiveDigest": "sha256:e6b6f18d9cc0d8f847b4b794662ed4d30ab97232c9883ad3d4a4c8a67ddc50f2",
+  "containerImage": "sha256:deaabf916534ac836c9b7032733576b81cc4c66463917814f5648a04d03a62a1",
+  "containerBase": "rust:1.97.1-bookworm",
+  "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+  "engine": "redb",
+  "engineVersion": "4.3.0",
+  "storage": "owned Docker local ext4 volume on WSL2 6.18.33.2",
+  "commands": [
+    "cargo test -p latent-state -p latent-protected-files --lib --locked --offline -- --nocapture",
+    "cargo clippy -p latent-state -p latent-protected-files --all-targets --locked --offline -- -D warnings",
+    "cargo test -p latent-protected-files --lib --locked --offline tests::unexpected_file_and_directory_owners_are_rejected -- --ignored --exact --nocapture"
+  ],
+  "regularCases": {
+    "latent-state": {
+      "passed": 66,
+      "failed": 0,
+      "ignored": 0
+    },
+    "latent-protected-files": {
+      "passed": 17,
+      "failed": 0,
+      "ignored": 1
+    }
+  },
+  "explicitPrivilegedCases": {
+    "passed": 1,
+    "failed": 0,
+    "case": "tests::unexpected_file_and_directory_owners_are_rejected",
+    "scope": "private disposable container /tmp fixture; no host paths",
+    "logDigest": "sha256:8457a301df086ef767946aa2ea6ebf8a2b827d50bbfa14666c2db9ca447a59d0"
+  },
+  "strictClippyPassed": true,
+  "testsDigest": "sha256:984ee62d8feedb77fcffa7f12e77f0793170f279ca1268c4bf351dac0b0e7bcc",
+  "clippyDigest": "sha256:0d471ddfad08839a155389425300a312a7b01288cbcc2a30f1765804aaab7b26",
+  "qualification": {
+    "backupBytes": 40960,
+    "cacheBytes": 8388608,
+    "closedBackupMicros": 1871,
+    "compactionMicros": 15627,
+    "conflictMicros": 39,
+    "durability": "immediate",
+    "engine": "redb",
+    "engineVersion": "4.3.0",
+    "initializeMicros": 9234,
+    "networkFilesystemQualified": false,
+    "powerLossQualified": false,
+    "processCrashTests": 2,
+    "productionStoreOwnerQualified": false,
+    "reopenMicros": 1576,
+    "resources": {
+      "openFileDescriptors": "8",
+      "processId": 869,
+      "residentMemoryBytes": "9523200",
+      "socketCount": "2",
+      "threadCount": "3"
+    },
+    "schemaVersion": "latent.storage.qualification.v1",
+    "sequentialCommits": 32,
+    "sequentialMicros": 62657,
+    "snapshotAgeBoundMillis": 20,
+    "writerWithReadViewMicros": 1483
+  },
+  "concurrentWriters": {
+    "conflicts": 1,
+    "elapsedMicros": 7701,
+    "independentCommits": 2,
+    "winningCommits": 1,
+    "workers": 2
+  },
+  "protectedStorageBoundaryExercised": true,
+  "completeNodeQualified": false,
+  "nativePackageQualified": false,
+  "powerLossQualified": false,
+  "networkFilesystemQualified": false,
+  "failedAttempts": [
+    {
+      "name": "r1",
+      "stage": "toolchain setup",
+      "testsStarted": false,
+      "reason": "named toolchain unavailable offline"
+    },
+    {
+      "name": "r2",
+      "stage": "toolchain setup",
+      "testsStarted": false,
+      "reason": "stable alias unavailable offline"
+    }
+  ],
+  "notes": [
+    "The prior nine-case measurements remain unchanged in transaction-store-engine-381.json.",
+    "The regular protected-file suite retains its historical ignored guard; that case passed explicitly in the required fixture.",
+    "Finite single-host observations under shared virtualized load; no throughput target or broad benchmark.",
+    "Physical worker/view/flush/retirement ownership is exercised independently of later guest, command, retention and distribution integration."
+  ]
+}

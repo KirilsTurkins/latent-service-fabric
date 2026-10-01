@@ -5,6 +5,31 @@ It qualifies the bounded storage prototype, not the complete Phase 4 node.
 The [recorded result](../evidence/transaction-store-engine-381.json) preserves
 the actual source snapshot, engine/tool/configuration and host observations.
 
+The later [integrated owner result](../evidence/transaction-store-owner-381.json)
+records the selected engine behind the protected fixed-worker owner at source
+`1d8784c21f840e9ec76ee7c4a3cc9108f1b7929a`. All 66 state cases, the 17 ordinary
+protected-file cases and the explicitly selected privileged ownership case
+passed on the same Linux local-volume profile. Strict Clippy passed for both
+crates. The historical privileged test remains ignored in an ordinary run;
+its separate disposable fixture supplies the required ownership-change check.
+Earlier measurements and failed toolchain setup attempts remain separate.
+
+Run the integrated boundary and, in a privileged disposable Linux container,
+its existing ownership case:
+
+```sh
+cargo test -p latent-state -p latent-protected-files --lib --locked -- --nocapture
+cargo clippy -p latent-state -p latent-protected-files --all-targets --locked -- -D warnings
+cargo test -p latent-protected-files --lib --locked tests::unexpected_file_and_directory_owners_are_rejected -- --ignored --exact --nocapture
+```
+
+The [shared store owner](../development/shared-state-store-owner.md) now provides
+the protected root, physical file ceiling, fixed read/write workers, bounded
+queue and retained bytes, startup record validation, affine native views and
+physical retirement after cancellation. This storage-boundary evidence does not
+qualify the later complete node, guest transactions, linked retention/restore,
+engine-bearing packages or power loss.
+
 Run the existing Rust owner, on the supported Linux local-volume profile:
 
 ```sh
