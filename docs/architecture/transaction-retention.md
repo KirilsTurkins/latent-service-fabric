@@ -70,10 +70,33 @@ deadline capped at one minute. It requires exact installation and counter
 originals and strict family/key order. Missing, duplicate, unconfigured or
 inconsistent ownership refuses; it never repairs counters. Upper owners supply
 their original reserved ownership and covered linked rows. Only the installation,
-recovery, retention and two dispatcher singleton controls can use a separately
-reviewed global allowance of at most five rows and 256 KiB. Unknown metadata
-cannot become an exclusion. The accumulator retains no business bytes or native
-view and creates no second store, worker or scan.
+recovery, retention and two dispatcher singleton controls, plus closed immutable
+dispatcher control receipts, can use `INSTALLED_GLOBAL_ALLOWANCE`: 64 total rows
+and 256 KiB. Unknown metadata cannot become an exclusion. The accumulator retains
+no business bytes or native view and creates no second store, worker or scan.
+
+`validate_view_observed` calls the installed census observer during the same
+original finite command/startup walk. The lower, command and dispatcher codec
+owners describe each row. Original `LCU2` ledgers supply promised result, effect,
+payload and recovery charges; their linked physical rows are covered once rather
+than charged a second time. The observer must default-deny every unowned row.
+Management operation rows require the original management producer's description.
+
+Installed retries write the same bounded receipt and backpointer as `LCT2`, with
+its original tenant, namespace, incarnation, command and retry identities. The
+receipt's exact encoded charge joins the original tenant CAS and reserved result
+ledger. These fields are verified against the actual attempt and retry index;
+they supply no authority. The explicit absent-guard legacy profile keeps the
+original 77-byte `LCT1` encoding and cannot become installed census evidence.
+
+The original dispatcher control plan uses that same fixed global allowance. It
+reserves five worst-case singleton row/byte slots, leaving at most 59 immutable
+receipts. The existing recovery writer scans receipts in pages of at most three
+rows and 16 KiB, validates every original codec/key, and checks actual encoded
+key/value/index charges. The original 64 KiB job reservation remains sufficient;
+no larger page, worker or capacity is created. Original owner/control and tenant
+installation-guard compare-and-swap expectations serialize the accepted plan.
+An exact historical replay performs no mutation or counter generation change.
 
 The fixed migration and explicit resume compose actual state, usage, history and
 progress/receipt changes with that same tenant CAS. Migration checks transformed
@@ -87,9 +110,12 @@ business identities and immutable quota limits remain unchanged.
 Portable engine fixtures cover real catalog/state writes, independent tenants,
 live-to-tombstone changes, command/effect refusal, response expiry and bounded
 floor/management append. Census cases reject validly encoded drift and orphaned
-state after reopen. Migration/resume and restore cases verify actual changed
-bytes, capacity refusal, replay and paused history. Complete upper startup
-observation, the installed protected-worker profile and operator endpoint
+state after reopen. Upper cases exercise actual inbox, pending delivery reserve,
+uncertain effect history, installed retry/replay/purge, ledger drift and reopen.
+Global control cases verify saturation with singleton headroom, stale writes,
+installation races and malformed original receipt refusal. Migration/resume and
+restore cases verify actual changed bytes, capacity refusal, replay and paused
+history. Installed runtime composition, protected-worker and operator endpoint
 qualification remain consuming requirements before enabling mandatory startup.
 
 ## Linked response expiry

@@ -16,6 +16,83 @@ use crate::payload::PayloadRecord;
 use super::DispatchCatalog;
 
 impl DispatchCatalog {
+    /// Original dispatcher codec/link ownership for the shared tenant census.
+    /// Delivery/history/payload rows remain covered by the command owner's
+    /// original LCU2 reserve. Only closed global control metadata is excluded.
+    pub fn tenant_census_contribution(
+        view: &ReadView,
+        key: &RowKey,
+        bytes: &[u8],
+    ) -> Result<latent_state::tenant::TenantCensusContribution, StoreError> {
+        use latent_state::tenant::TenantCensusContribution;
+        validate_row(key, bytes)?;
+        if *key == OwnerRecord::key()
+            || (key.family == Family::Maintenance
+                && (key.key.as_slice() == crate::dispatch_store::control::CONTROL_STATE_KEY
+                    || key
+                        .key
+                        .starts_with(crate::dispatch_store::control::CONTROL_RECEIPT_PREFIX)))
+        {
+            return Ok(TenantCensusContribution::Global);
+        }
+        let effect = match key.family {
+            Family::Outbox => {
+                let owner = view
+                    .get(&OwnerRecord::key())?
+                    .as_deref()
+                    .map(OwnerRecord::decode)
+                    .transpose()?;
+                validate_effect(view, owner, key, bytes)?;
+                effect_from_key(key, EFFECT_PREFIX)?
+            }
+            Family::PayloadReference => {
+                let payload = PayloadRecord::decode(bytes).map_err(storage_error)?;
+                let record = load(view, payload.effect())?;
+                payload
+                    .verify(&record.authority().map_err(storage_error)?)
+                    .map_err(storage_error)?;
+                payload.effect().to_owned()
+            }
+            Family::Attempt => {
+                validate_history(view, key, bytes)?;
+                effect_identity::render(
+                    &key.key[HISTORY_PREFIX.len()..HISTORY_PREFIX.len() + 32]
+                        .try_into()
+                        .map_err(|_| StoreError::Corrupt)?,
+                )
+            }
+            Family::Maintenance if key.key.starts_with(DUE_PREFIX) => {
+                let due = DueRecord::decode(key, bytes)?;
+                if expected_due(&load(view, &due.effect)?)? != Some(due.clone()) {
+                    return Err(StoreError::Corrupt);
+                }
+                due.effect
+            }
+            Family::Maintenance if key.key.starts_with(RESERVATION_PREFIX) => {
+                let mut prefix = RESERVATION_PREFIX.to_vec();
+                prefix.extend_from_slice(ATTEMPT_RESERVATION_PREFIX);
+                let effect = effect_from_key(key, &prefix)?;
+                let record = load(view, &effect)?;
+                if record.disposition() != Disposition::Dispatching
+                    || LogicalReservation::decode(bytes)?
+                        != (LogicalReservation {
+                            generation: record.claim_generation(),
+                            bytes: DISPOSITION_RESERVED_BYTES,
+                        })
+                {
+                    return Err(StoreError::Corrupt);
+                }
+                effect
+            }
+            _ => return Err(StoreError::UnsupportedFormat),
+        };
+        let record = load(view, &effect)?;
+        let authority = record.authority().map_err(storage_error)?;
+        Ok(TenantCensusContribution::Covered {
+            tenant: latent_core::TenantId(authority.scope().tenant.clone()),
+        })
+    }
+
     /// Capture one effect's installed inline payload/history/index closure.
     /// No active physical claim can be reclaimed. Missing or corrupt links
     /// refuse, including extra history slots; metadata never authorizes GC.

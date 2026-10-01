@@ -78,14 +78,7 @@ fn validate_local(key: &RowKey, bytes: &[u8]) -> Result<(), AtomicError> {
             super::writer::Usage::decode(bytes)?;
         }
         Family::Maintenance if key.key.starts_with(RETRY) => {
-            identity(key, RETRY)?;
-            let mut input = Decoder::new(bytes, b"LCT\0\x01", 77)?;
-            if !(2..=16).contains(&input.number()?) {
-                return Err(AtomicError::Corrupt);
-            }
-            input.identity()?;
-            input.identity()?;
-            input.finish()?;
+            super::retry_receipt::RetryReceipt::decode(bytes)?.validate_key(key)?;
         }
         Family::Maintenance if key.key.starts_with(super::retention::RETRY_INDEX_PREFIX) => {
             let index = super::retention::RetryIndex::decode(bytes)?;
@@ -175,15 +168,15 @@ fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), At
                 return Err(AtomicError::Corrupt);
             }
             let receipt = required(view, &index.retry_key())?;
-            let mut input = Decoder::new(&receipt, b"LCT\0\x01", 77)?;
-            if input.number()? != record.attempt {
-                return Err(AtomicError::Corrupt);
+            let receipt = super::retry_receipt::RetryReceipt::decode(&receipt)?;
+            receipt.validate_key(&index.retry_key())?;
+            receipt.verify(&record, &index)?;
+        }
+        Family::Maintenance if key.key.starts_with(RETRY) => {
+            let receipt = super::retry_receipt::RetryReceipt::decode(bytes)?;
+            if receipt.is_accounted() {
+                receipt.linked_tenant(view, key)?;
             }
-            input.identity()?;
-            if input.identity()? != record.fingerprint {
-                return Err(AtomicError::Corrupt);
-            }
-            input.finish()?;
         }
         _ => {}
     }
@@ -396,7 +389,17 @@ fn verify_result(bytes: &[u8], record: &CommandRecord) -> Result<(), AtomicError
 /// it must reject uninstalled formats rather than accepting opaque records.
 pub fn validate_view(
     view: &ReadView,
+    foreign: impl FnMut(&ReadView, &RowKey, &[u8]) -> Result<(), StoreError>,
+) -> Result<(), StoreError> {
+    validate_view_observed(view, foreign, |_, _, _| Ok(()))
+}
+
+/// Observe each row after the original closed codec/link validation, during
+/// that same finite walk. The observer owns no view and cannot publish state.
+pub fn validate_view_observed(
+    view: &ReadView,
     mut foreign: impl FnMut(&ReadView, &RowKey, &[u8]) -> Result<(), StoreError>,
+    mut observer: impl FnMut(&ReadView, &RowKey, &[u8]) -> Result<(), StoreError>,
 ) -> Result<(), StoreError> {
     let mut total = 0usize;
     for family in [
@@ -436,6 +439,7 @@ pub fn validate_view(
                 {
                     validate_effect_link(view, key, bytes).map_err(storage_error)?;
                 }
+                observer(view, key, bytes)?;
             }
             match page.resume {
                 Some(next) => resume = Some(next),
@@ -444,6 +448,52 @@ pub fn validate_view(
         }
     }
     Ok(())
+}
+
+pub(super) fn tenant_for_linked_row(
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+) -> Result<latent_core::TenantId, AtomicError> {
+    validate_linked(view, key, bytes)?;
+    let record = match key.family {
+        Family::Command if super::RetiredCommand::is_present(bytes) => {
+            return Ok(latent_core::TenantId(
+                super::RetiredCommand::decode(bytes)?.tenant,
+            ))
+        }
+        Family::Command | Family::Attempt => CommandRecord::decode(bytes)?,
+        Family::Result => {
+            let (command, attempt) = identity_attempt(key, RESULT)?;
+            CommandRecord::decode(&required(view, &attempt_row_key(command, attempt))?)?
+        }
+        Family::Inbox => {
+            let marker = inbox(bytes)?;
+            CommandRecord::decode(&required(
+                view,
+                &attempt_row_key(marker.command, marker.attempt),
+            )?)?
+        }
+        Family::Maintenance if key.key.starts_with(KEY_PREFIX) => {
+            let command = identity(key, KEY_PREFIX)?;
+            CommandRecord::decode(&required(view, &command_row_key(command))?)?
+        }
+        Family::Maintenance if key.key.starts_with(RETRY) => {
+            return super::retry_receipt::RetryReceipt::decode(bytes)?.linked_tenant(view, key)
+        }
+        Family::Maintenance if key.key.starts_with(super::retention::RETRY_INDEX_PREFIX) => {
+            let index = super::retention::RetryIndex::decode(bytes)?;
+            CommandRecord::decode(&required(
+                view,
+                &attempt_row_key(index.command, index.attempt),
+            )?)?
+        }
+        _ => return Err(AtomicError::UnsupportedFormat),
+    };
+    if !record.accounted {
+        return Err(AtomicError::UnsupportedFormat);
+    }
+    Ok(latent_core::TenantId(record.key.tenant))
 }
 
 fn validate_effect_link(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), AtomicError> {

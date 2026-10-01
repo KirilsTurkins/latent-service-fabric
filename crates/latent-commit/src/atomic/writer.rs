@@ -300,7 +300,8 @@ impl PreparedAdmission {
         mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
     ) -> Result<AdmissionDecision, AtomicError> {
         authorize(CommandAccess::Admit, None)?;
-        latent_state::tenant::inspect(view, &TenantId(input.key.tenant.clone()))?;
+        let installed_tenant =
+            latent_state::tenant::inspect(view, &TenantId(input.key.tenant.clone()))?.is_some();
         time.check(0)?;
         id(&request.request_id)?;
         let identity = command_identity(&input.key)?;
@@ -328,18 +329,24 @@ impl PreparedAdmission {
         let retry_key =
             super::record::row_key(Family::Maintenance, b"command-retry-v1\0", retry_id, None);
         if let Some(bytes) = view.get(&retry_key)? {
-            let mut input = Decoder::new(&bytes, b"LCT\0\x01", 77)?;
-            let generation = input.number()?;
-            let proof = input.identity()?;
-            let captured = input.identity()?;
-            input.finish()?;
-            if proof != request.expected_abort || captured != fingerprint {
+            let receipt = super::retry_receipt::RetryReceipt::decode(&bytes)?;
+            receipt.validate_key(&retry_key)?;
+            if receipt.abort_proof != request.expected_abort || receipt.fingerprint != fingerprint {
                 return Err(AtomicError::Conflict);
             }
             let bytes = view
-                .get(&attempt_row_key(identity, generation))?
+                .get(&attempt_row_key(identity, receipt.attempt))?
                 .ok_or(AtomicError::Corrupt)?;
-            return Ok(AdmissionDecision::Existing(CommandRecord::decode(&bytes)?));
+            let record = CommandRecord::decode(&bytes)?;
+            let index_key = super::retention::RetryIndex::row_key(identity, receipt.attempt);
+            let index = super::retention::RetryIndex::decode(
+                &view.get(&index_key)?.ok_or(AtomicError::Corrupt)?,
+            )?;
+            if index.key() != index_key || index.retry != retry_id {
+                return Err(AtomicError::Corrupt);
+            }
+            receipt.verify(&record, &index)?;
+            return Ok(AdmissionDecision::Existing(record));
         }
         if old.outcome != Outcome::Aborted || old.abort_proof != Some(request.expected_abort) {
             return Err(AtomicError::RecoveryRequired);
@@ -418,11 +425,12 @@ impl PreparedAdmission {
         let attempt = attempt_row_key(identity, record.attempt);
         let reservation = reservation_key(&identity.0)?;
         let result_key = result_row_key(identity, record.attempt);
-        let mut retry = Encoder::new(b"LCT\0\x01");
-        retry.number(record.attempt);
-        retry.identity(request.expected_abort);
-        retry.identity(fingerprint);
-        let retry_bytes = retry.finish(77)?;
+        let retry_bytes = super::retry_receipt::RetryReceipt::create(
+            &record,
+            retry_id,
+            request.expected_abort,
+            installed_tenant,
+        )?;
         let retry_index = super::retention::RetryIndex::new(identity, record.attempt, retry_id)?;
         let index_bytes = retry_index.encode()?;
         if record.accounted {
