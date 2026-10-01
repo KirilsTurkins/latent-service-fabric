@@ -24,6 +24,7 @@ use super::{
 use crate::config::NodeSettings;
 
 mod control;
+mod inspection;
 mod recovery;
 #[cfg(test)]
 mod tests;

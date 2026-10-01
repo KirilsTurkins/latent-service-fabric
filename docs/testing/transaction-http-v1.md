@@ -29,6 +29,22 @@ a change of host profile remains an explicit incompatible comparison.
 
 ## Requests
 
+Before provisioning provider bindings and capability policies, run
+`latentd inspect-transaction-hosts --config <protected-node.json>`. It loads the
+actual admitted signed transaction companions and prepares each qualified HTTP
+adapter through the ordinary provider/credential constructors. The bounded JSON
+observation contains the native state and HTTP profiles, configuration digests
+and epochs, configured clock/provider descriptors, and the actual retained
+source service's dispatch subject and recovery scope. Use these observations in
+the reviewed policy tuples; the description itself grants no authority.
+
+The command opens and shuts down the ordinary protected configuration/catalog
+and provider owners. It starts no listener, guest activation, state store,
+namespace or dispatcher. The state digest describes the validated selected
+configuration using the same calculation as the actual state owner; it is no
+physical filesystem or qualification receipt. Normal startup still requires
+current staging and independent source-service dispatch policies.
+
 | Route mode | Method and input | Command identity and state conditions |
 | --- | --- | --- |
 | `command` | POST, PUT, PATCH or DELETE; a nonempty bounded canonical WIT body with `application/vnd.latent.wit-values.v1+json`; no URL query | Exactly one `Idempotency-Key`. Optional `If-Match` is a quoted canonical standard-base64 67-byte `SV2` key token for the route's fixed `preconditionKey`. |

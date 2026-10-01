@@ -20,7 +20,7 @@ mod unsupported;
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 pub(super) use unsupported::ProviderRuntime;
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderDescriptor {
     id: String,

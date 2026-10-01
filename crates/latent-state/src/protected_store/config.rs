@@ -24,6 +24,14 @@ pub struct ProtectedStoreConfig {
 }
 
 impl ProtectedStoreConfig {
+    /// Describes the validated selected engine configuration before opening it.
+    /// This uses the same format and limits as the actual owner's observation;
+    /// it establishes no physical owner, filesystem admission or authority.
+    pub fn inspection_profile(&self) -> Result<(&'static str, [u8; 32]), ProtectedStoreError> {
+        self.validate()?;
+        Ok(inspection_profile(self.engine))
+    }
+
     #[must_use]
     pub fn bounded_linux(root: PathBuf) -> Self {
         Self {
@@ -136,4 +144,24 @@ impl ProtectedStoreConfig {
         }
         Ok(bytes)
     }
+}
+
+pub(super) fn inspection_profile(limits: StoreLimits) -> (&'static str, [u8; 32]) {
+    use sha2::{Digest, Sha256};
+    let mut digest = Sha256::new();
+    digest.update(b"lsf-protected-redb-4.3.0-immediate-ext4-v1\0");
+    digest.update(b"latent.transaction-store.v1\0");
+    for value in [
+        limits.cache_bytes,
+        limits.maximum_rows,
+        limits.maximum_logical_bytes,
+        limits.maximum_key_bytes,
+        limits.maximum_value_bytes,
+        limits.maximum_batch_rows,
+        limits.maximum_read_views,
+    ] {
+        digest.update((value as u64).to_le_bytes());
+    }
+    digest.update(limits.maximum_view_age.as_nanos().to_le_bytes());
+    ("protected-redb-immediate-ext4-v1", digest.finalize().into())
 }

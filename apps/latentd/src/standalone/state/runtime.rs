@@ -54,6 +54,13 @@ pub(super) struct Inner {
 #[derive(Clone)]
 pub struct StateRuntime(pub(super) Arc<Inner>);
 impl StateRuntime {
+    /// Actual opened state owner's immutable profile. This observation grants no
+    /// namespace, result, staging or dispatch authority.
+    #[must_use]
+    pub fn inspection_profile(&self) -> (&str, &str, u64) {
+        (&self.0.profile, &self.0.configuration_digest, self.0.epoch)
+    }
+
     pub(in crate::standalone) async fn open(
         settings: &NodeSettings,
         artifacts: Arc<DirectoryArtifactRepository>,

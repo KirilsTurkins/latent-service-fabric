@@ -33,6 +33,30 @@ struct AuthorizedHttp {
     policies: Vec<DispatchPolicy>,
 }
 
+pub(in crate::standalone) fn observe(
+    settings: &NodeSettings,
+    installed: &[Arc<InstalledTransactionOperation>],
+    providers: Option<&ProviderRuntime>,
+    policy: &Arc<PolicyStore>,
+    time: &Arc<dyn EffectTimeSource>,
+) -> Result<Vec<super::NativeDeferredEffectHostInspection>, PlatformError> {
+    let mut observations = Vec::new();
+    for operation in installed
+        .iter()
+        .filter(|operation| operation.deferred_http.is_some())
+    {
+        let (_, _, dispatch) = prepare_operation(
+            settings,
+            operation,
+            providers.ok_or_else(super::denied)?,
+            policy,
+            time,
+        )?;
+        observations.push(dispatch.observation()?);
+    }
+    Ok(observations)
+}
+
 pub(super) fn install(
     settings: &NodeSettings,
     installed: &[Arc<InstalledTransactionOperation>],
