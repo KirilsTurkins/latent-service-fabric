@@ -134,6 +134,10 @@ async fn real_deferred_committed_presend_restart_uses_same_payload_and_advanced_
             .await
             .unwrap(),
     );
+    fixture
+        .store
+        .bind_native_capacity(&fixture.native_capacity)
+        .unwrap();
     fixture.start(false, Some((1, 100))).await;
     let record = fixture
         .settled(&effect, Disposition::ProviderAcknowledged)

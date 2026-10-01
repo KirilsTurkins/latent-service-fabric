@@ -130,7 +130,44 @@ library passed all 88 cases after integrating the bounded original management
 catalog; its detached control fixture now positively observes metadata
 publication separately from an earlier durable receipt.
 
-The measured identities are:
+The current campaign also binds the protected store and dispatcher to the same
+original global native-capacity owner before the first job or command admission.
+Normal adapter acceptance requires the sealed `Execute` purpose before event
+framing, payload transfer or provider admission. The ninth schedule constructs a
+fresh `ReconcileOnly` grant from the actual persisted original attempt, payload
+and row version. Its original recovery reservation remains held until positive
+physical context retirement. Normal JetStream acceptance rejects that grant;
+actual publish counters and the broker's single stored message remain unchanged.
+The controlled current-authorization callback in this fixture does not establish
+authenticated management qualification. JetStream status absence supplies no
+positive lookup or known-nonexecution proof.
+
+After this change, pinned Linux Rust 1.97.1 passed all nine native schedules in
+5.86 seconds, with zero ignored or filtered cases. All 372 selected library cases
+also passed: capabilities 143, NATS 8, effects 103 and state 118. Strict all-target,
+all-feature Clippy passed for these four crates, and actual binary discovery
+matched every required case and minimum. The 12 maintained runner/inventory
+regressions passed. The checked development merge retained all 88 historical CI
+obligations and passed documentation and repository contracts.
+
+One earlier attempt at this campaign failed before credential reload acceptance
+while a prior control-admission slot still belonged to its physical request.
+The fixture now uses the existing bounded `reload_before` API with the original
+watchdog deadline. The failed attempt remains recorded; accepted credential or
+network operations are never retried by this fixture repair.
+
+The current purpose/global campaign used these measured identities:
+
+| Input | Exact identity |
+| --- | --- |
+| Checked development source base | `779e3a04c3a921d8ecd1e245197e932aedcda955` |
+| Execute-purpose `deferred.rs` blob | `ff868427add3dca1c5fec2617d0866560cda77f2` |
+| `support.rs` fixture blob | `14baa1400aedf7f3b6e3230173ba7ac411771319` |
+| `campaign.rs` fixture blob | `83eb58f831e9ad7e0c9b2df007ee4daaaffd15b2` |
+| `redrive.rs` fixture blob | `48a587738d439fe79311dc8e14cbeef57b9bf1da` |
+| Nine-case purpose/global harness SHA-256 | `d8dd602250b49188af4932d417bd018681a265f7c6c57308be9885734cb7dd3d` |
+
+The prior campaigns used these measured identities:
 
 | Input | Exact identity |
 | --- | --- |

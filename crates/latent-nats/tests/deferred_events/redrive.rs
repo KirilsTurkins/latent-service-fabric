@@ -1,6 +1,9 @@
 use super::{proxy, support::*};
+use latent_core::native_capacity::{
+    NativeAdmissionClass, NativeReservation, NativeReservationRequest,
+};
 use latent_effects::{
-    authority::{AuthorityError, DurableEffectAuthority, EffectTime},
+    authority::{AuthorityError, DurableEffectAuthority, EffectTime, ProviderLookupAuthorization},
     dispatch::{Disposition, RetryProof},
     dispatch_store::{effect_payload_key, effect_row_key, DispatchCatalog},
     payload::PayloadRecord,
@@ -9,6 +12,10 @@ use latent_effects::{
 use latent_nats::deferred::JetStreamQualification;
 use latent_state::store_io::StoreIoKind;
 use std::sync::atomic::Ordering;
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires tools/run_nats_deferred_tests.py owned pinned real JetStream"]
@@ -40,6 +47,7 @@ async fn real_deferred_redrive_qualification_keeps_original_payload_profile_and_
     .expect("actual original attempt did not physically retire");
     assert_eq!(control("info")["state"]["messages"], 1);
     let request = original_request(&fixture, &effect).await;
+    reject_lookup_as_execution(&fixture, &request);
     assert_eq!(request.attempt().attempt(), 1);
     assert_horizon(
         fixture
@@ -87,6 +95,88 @@ async fn real_deferred_redrive_qualification_keeps_original_payload_profile_and_
     drop(narrower);
     fixture.finish().await;
     proxy.close().await;
+}
+
+struct LookupGate(NativeReservation);
+impl ProviderLookupAuthorization for LookupGate {
+    fn with_current(
+        &self,
+        action: &mut dyn FnMut() -> Result<(), AuthorityError>,
+    ) -> Result<(), AuthorityError> {
+        // Controlled current permission for this provider-purpose schedule;
+        // authenticated management decisions are qualified by the Wire owner.
+        action()
+    }
+    fn with_live(
+        &self,
+        action: &mut dyn FnMut() -> Result<(), AuthorityError>,
+    ) -> Result<(), AuthorityError> {
+        self.0
+            .with_live(action)
+            .map_err(|_| AuthorityError::Expired)?
+    }
+}
+
+fn reject_lookup_as_execution(fixture: &Fixture, request: &ProviderReconciliationRequest) {
+    let gate = Arc::new(LookupGate(
+        fixture
+            .native_capacity
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    work_bytes: 1024 * 1024,
+                    ..NativeReservationRequest::default()
+                },
+                Instant::now() + Duration::from_secs(2),
+            )
+            .unwrap(),
+    ));
+    let mut context = fixture
+        .authority
+        .accept_lookup(
+            request.authority(),
+            request.attempt().attempt(),
+            time(100, true),
+            gate.0.original_deadline(),
+            gate.clone(),
+        )
+        .unwrap();
+    context
+        .retain_owner(gate.clone())
+        .unwrap_or_else(|_| panic!("original recovery keeper"));
+    let snapshot = fixture.publisher.snapshot();
+    let rejected = context
+        .accept_with(
+            request.authority(),
+            request.attempt().attempt(),
+            time(100, true),
+            |grant| {
+                fixture
+                    .adapter
+                    .accept(grant, request.payload().clone(), request.attempt().clone())
+            },
+        )
+        .unwrap();
+    assert!(matches!(rejected, Err(AuthorityError::PolicyBlocked)));
+    let unchanged = fixture.publisher.snapshot();
+    assert_eq!(unchanged.connection_attempts, snapshot.connection_attempts);
+    assert_eq!(unchanged.active_publishes, snapshot.active_publishes);
+    assert_eq!(
+        unchanged.acknowledged_publishes,
+        snapshot.acknowledged_publishes
+    );
+    assert_eq!(unchanged.uncertain_publishes, snapshot.uncertain_publishes);
+    assert_eq!(control("info")["state"]["messages"], 1);
+    assert_eq!(
+        fixture.native_capacity.snapshot().unwrap().recovery.slots,
+        1
+    );
+    context.retire().unwrap();
+    drop(gate);
+    assert_eq!(
+        fixture.native_capacity.snapshot().unwrap().recovery.slots,
+        0
+    );
 }
 
 fn original_bounds(fixture: &Fixture, request: &ProviderReconciliationRequest) {

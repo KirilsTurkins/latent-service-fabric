@@ -11,6 +11,7 @@ use latent_commit::atomic::{
     StagedIntent,
 };
 use latent_core::{
+    native_capacity::{NativeCapacityLimits, NativeCapacityOwner},
     transaction_contract::{CommandFingerprint, CommandKey, Value},
     StateNamespaceId, SystemActivationClock, TenantId,
 };
@@ -293,7 +294,7 @@ async fn install_protected_credentials(
     .await
     .unwrap();
     secrets
-        .reload(
+        .reload_before(
             0,
             vec![SecretSpec {
                 tenant: TenantId("tests".into()),
@@ -309,6 +310,7 @@ async fn install_protected_credentials(
                 version: "1".into(),
                 expires_at_unix_millis: None,
             }],
+            Instant::now() + WATCHDOG,
         )
         .unwrap()
         .await
@@ -316,7 +318,10 @@ async fn install_protected_credentials(
     secrets
 }
 
-async fn initialized_store(root: &Path) -> (ProtectedStoreConfig, Arc<ProtectedStoreOwner>) {
+async fn initialized_store(
+    root: &Path,
+    capacity: &NativeCapacityOwner,
+) -> (ProtectedStoreConfig, Arc<ProtectedStoreOwner>) {
     let store_root = root.join("state");
     fs::create_dir(&store_root).unwrap();
     fs::set_permissions(&store_root, fs::Permissions::from_mode(0o700)).unwrap();
@@ -328,6 +333,7 @@ async fn initialized_store(root: &Path) -> (ProtectedStoreConfig, Arc<ProtectedS
             .await
             .unwrap(),
     );
+    store.bind_native_capacity(capacity).unwrap();
     call(&store, StoreIoKind::Write, |db| {
         let namespace = NamespaceRecord {
             tenant: TenantId("tests".into()),
@@ -362,6 +368,7 @@ pub struct Fixture {
     pub store: Arc<ProtectedStoreOwner>,
     pub store_config: ProtectedStoreConfig,
     pub pools: Arc<ProviderPools>,
+    pub native_capacity: NativeCapacityOwner,
     pub secrets: LocalSecretStore,
     pub publisher: NatsPublisher,
     pub authority: EffectAuthorityOwner,
@@ -432,12 +439,14 @@ impl Fixture {
             )
             .unwrap();
         authority.publish(rule.clone()).unwrap();
-        let (store_config, store) = initialized_store(root.path()).await;
+        let native_capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+        let (store_config, store) = initialized_store(root.path(), &native_capacity).await;
         let mut fixture = Self {
             _root: root,
             store,
             store_config,
             pools,
+            native_capacity,
             secrets,
             publisher,
             authority,
@@ -468,6 +477,11 @@ impl Fixture {
             .await
             .unwrap(),
         );
+        self.owner
+            .as_ref()
+            .unwrap()
+            .bind_native_capacity(&self.native_capacity)
+            .unwrap();
     }
     pub async fn commit(&self, key: &str) -> DurableEffectAuthority {
         let role = self.owner.as_ref().unwrap().command_admission().unwrap();
