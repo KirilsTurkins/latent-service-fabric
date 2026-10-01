@@ -27,7 +27,7 @@ PACKAGE_OPTIONAL = frozenset({"sbom-inputs.json"})
 
 
 def _inventory(directory: Path, required: frozenset[str], optional: frozenset[str],
-               allowed_directories: set[str]) -> None:
+               allowed_directories: set[str]) -> bool:
     pending = [directory]
     files = set()
     entries = 0
@@ -54,8 +54,15 @@ def _inventory(directory: Path, required: frozenset[str], optional: frozenset[st
                     files.add(name)
                 else:
                     raise SnapshotError("validator fixture contains an unknown file or directory")
+    # The pinned dependency-cache cleaner removes regular files from non-Cargo
+    # directories while retaining the known directory skeleton. A tree with no
+    # files has no fixture metadata or payload to authenticate. Unknown paths,
+    # links, special files and entry limits were still checked above.
+    if not files:
+        return False
     if not required <= files:
         raise SnapshotError("validator fixture is incomplete")
+    return True
 
 
 def _pairs(items):
@@ -80,7 +87,8 @@ def _metadata(directory: Path, name: str) -> dict:
 
 def _recognized(directory: Path, package: bool) -> None:
     if package:
-        _inventory(directory, PACKAGE_REQUIRED, PACKAGE_OPTIONAL, {"wit"})
+        if not _inventory(directory, PACKAGE_REQUIRED, PACKAGE_OPTIONAL, {"wit"}):
+            return
         marker = _metadata(directory, "observation.json")
         recipe = _metadata(directory, "package-source.json")
         if (type(marker.get("formatVersion")) is not int or marker["formatVersion"] != 1
@@ -102,7 +110,8 @@ def _recognized(directory: Path, package: bool) -> None:
                         and row.get("name") == "dependency-inventory"] != [identity]):
                 raise SnapshotError("validator fixture dependency inventory association has changed")
     else:
-        _inventory(directory, LEGACY_REQUIRED, LEGACY_OPTIONAL, {"interface", "interface/deps"})
+        if not _inventory(directory, LEGACY_REQUIRED, LEGACY_OPTIONAL, {"interface", "interface/deps"}):
+            return
         marker = _metadata(directory, "build.json")
         if (type(marker.get("schemaVersion")) is not int or marker["schemaVersion"] != 1
                 or marker.get("artifact") != "echo-capsule.wasm"
