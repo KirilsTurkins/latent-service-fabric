@@ -264,6 +264,8 @@ def run_node(binaries, releases, output, *, http, former_profile=False, frontend
                     result["generatedClient"] = json.loads(generated_client.stdout)
                     result["context"] = context.qualify(client, targets, releases, publications, host, evidence)
                     result["ordinaryContextImport"] = context.ordinary_import(client, targets, releases, publications, host)
+                    adapter_inspection = inspection.selected(client, releases, publications, "adapter")
+                    result["targetInspection"]["beforeServicePolicyChange"] = adapter_inspection
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
                     result["targetInspection"]["triggerOnlyOldPlan"] = inspection.stale_policy(client, "adapter", adapter_inspection)
@@ -278,7 +280,8 @@ def run_node(binaries, releases, output, *, http, former_profile=False, frontend
                     require(len(impersonation_nodes) == 1 and impersonation_nodes[0]["principalKind"] == "administrator"
                         and impersonation_nodes[0]["callerService"] is None, "java-context-operator-cannot-inherit-ingress-trigger")
                     service_generation = service_grant(client, node, publications, generation=service_generation)
-                    result["targetInspection"]["restoredPolicyOldPlan"] = inspection.observe(client, "adapter", expected=1, preparation=False)
+                    result["targetInspection"]["restoredPolicyOldPlan"] = inspection.observe(client, "adapter", expected=1,
+                        preparation=False, state_name="stale")
                     require(not result["targetInspection"]["restoredPolicyOldPlan"]["candidates"][0]["eligible"],
                         "java-target-restored-policy-silently-refreshed-frozen-plan")
                     result["restoredGrantRebinding"] = rebind(client, targets, releases, publications)

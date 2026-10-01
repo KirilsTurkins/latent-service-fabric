@@ -33,7 +33,7 @@ def owners(client):
                       for row in inventory["cellCapacity"]], "quotas": inventory["quotas"]["usage"]}
 
 
-def observe(client, name, *, expected=None, guard=True, **selectors):
+def observe(client, name, *, expected=None, guard=True, state_name="coherent", **selectors):
     count = getattr(client, "java_inspections", 0)
     require(count < 32, "java-target-inspection-count")
     client.java_inspections = count + 1
@@ -41,7 +41,7 @@ def observe(client, name, *, expected=None, guard=True, **selectors):
     response = client.call(*arguments(name, **selectors), timeout=35)
     value = response["data"]
     require(value["schemaVersion"] == 1 and value["tenant"] == TENANT
-        and value["liveGrantsChecked"] is False and value["stateName"] == "coherent"
+        and value["liveGrantsChecked"] is False and value["stateName"] == state_name
         and (selectors.get("routing_key") or value["selectedRevisionId"] is None),
         "java-target-coherent-descriptive-observation")
     require(len(value["candidates"]) <= 32 and "receipt" not in value and "operation" not in value,
@@ -114,7 +114,7 @@ def authority(client):
 
 
 def stale_policy(client, name, original):
-    observed = observe(client, name, expected=1, preparation=False)
+    observed = observe(client, name, expected=1, preparation=False, state_name="stale")
     before, after = original["candidates"][0], observed["candidates"][0]
     require(not after["eligible"] and "policy-changed-or-revoked" in after["reasonNames"],
         "java-target-revoked-policy-not-current")
