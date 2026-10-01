@@ -23,6 +23,10 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
           "tools/stage_runtime_wit.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
+RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
+           "tools/dev_workflow/common.py", "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
+           "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
+           "tools/dev_workflow/windows.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
@@ -210,14 +214,16 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     from tools.application_dependency_approval import approve as approve_execution, request as execution_request
     from tools.rust_application_dependencies import configure as configure_application
     from tools.captured_compiler_isolation import Isolation
+    from tools.guest_dependency_inputs import application_root, capture_source
 
-    project_path, output = checked_path(project_path), checked_path(output)
+    project_path, output = application_root(checked_path(project_path), 'rust'), checked_path(output)
     if output == project_path or output in project_path.parents:
         raise ValueError("build output overlaps source")
     if project_path in output.parents and project_path / "target" not in output.parents:
         raise ValueError("in-project build outputs must be inside target/")
     public_repository(repository)
-    files = snapshot(project_path)
+    observed = capture_source(project_path, 'rust')
+    files = observed.files
     project, pins = validate_project(files)
     source_inputs = inventory(files)
     recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
@@ -261,7 +267,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                CARGO_INCREMENTAL="0", CARGO_TARGET_DIR=str(temporary / "target"))
             commands = Commands(work, output, environment)
             stage = "application-dependencies"
-            verified = verify_inputs(project_path, "rust")
+            verified = verify_inputs(observed.dependency_root, "rust")
             closure, approval = None, None
             isolation, adapted_manifest = None, None
             if verified is not None:
@@ -295,7 +301,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     if executable_approval is None:
                         raise ValueError("captured Cargo build scripts/macros require the exact retained executable-input approval identity")
                     approval = approve_execution(verified, isolation, executable_recipe, executable_approval)
-                closure = prepare(project_path, work, output, "rust", execution_approval=approval)
+                closure = prepare(observed.dependency_root, work, output, "rust", execution_approval=approval)
                 adapted_manifest, cargo_inputs = configure_application(closure, work, Path(environment["CARGO_HOME"]))
                 isolation.protect_inputs(work)
                 write_json(output / "cargo-inputs.json", cargo_inputs)
@@ -365,7 +371,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 captured_files["Cargo.toml"] = files["Cargo.toml"]
                 closure.check_unchanged()
                 isolation.check_unchanged()
-            if snapshot(project_path) != files or captured_files != files:
+            observed.check_unchanged()
+            if captured_files != files:
                 raise ValueError("project changed during the observed build")
             if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe_inputs:
                 raise ValueError("authoring recipe changed during the build")

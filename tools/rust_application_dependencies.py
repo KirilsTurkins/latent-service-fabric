@@ -254,9 +254,10 @@ def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, select
 
 
 def configure(closure, work: Path, home: Path) -> tuple[bytes, dict]:
+    from tools.guest_dependency_inputs import read_native
     if closure is None:
         raise DependencyError('cargo-closure-required')
-    graph = json.loads(read_bytes(closure.project / 'cargo-resolved.lock.json'))
+    graph = json.loads(read_native(closure, 'cargo-resolved.lock.json'))
     root = next((row for row in closure.lock['artifacts'] if row['metadata'].get('rootManifest')), None)
     if root is None:
         raise DependencyError('cargo-selected-root-manifest-missing')
