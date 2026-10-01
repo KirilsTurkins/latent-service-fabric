@@ -68,7 +68,7 @@ pub struct NamespaceAuthority {
     deadline: Instant,
     gate: Arc<gate::Gate>,
     selection: RecoverySelection,
-    lifecycle: latent_state::namespace::lifecycle::NamespaceLifecycleHandle,
+    lifecycle: Arc<latent_state::namespace::lifecycle::NamespaceLifecycleHandle>,
 }
 
 /// Trusted activation/binding facts, without permission or storage ownership.
@@ -187,7 +187,7 @@ impl NamespaceAuthority {
             deadline,
             gate: gate::Gate::new(),
             selection: selection.clone(),
-            lifecycle,
+            lifecycle: Arc::new(lifecycle),
         })
     }
 
@@ -250,7 +250,7 @@ impl NamespaceAuthority {
             deadline: self.deadline,
             gate: Arc::clone(&self.gate),
             selection: self.selection.clone(),
-            lifecycle: self.lifecycle.clone(),
+            lifecycle: Arc::clone(&self.lifecycle),
         })
     }
     #[must_use]
