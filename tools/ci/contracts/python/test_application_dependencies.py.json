@@ -1,0 +1,231 @@
+{
+  "cases": [
+    "Archives.test_entry_and_decompression_bounds",
+    "Archives.test_tar_hardlinks_and_symlinks_denied",
+    "Archives.test_zip_link_denied",
+    "Archives.test_zip_paths_and_case_prefix_collisions",
+    "Dependencies.test_after_compile_rechecks_materialized_and_original_inputs",
+    "Dependencies.test_automatic_transform_separates_preimage_and_selected_bytes",
+    "Dependencies.test_build_tools_require_separate_approved_isolation",
+    "Dependencies.test_concurrent_writers_verify_all_objects",
+    "Dependencies.test_generator_approval_denied_and_windows_isolation_fail_closed",
+    "Dependencies.test_graph_must_include_transitive_edges",
+    "Dependencies.test_missing_or_same_name_changed_bytes_fails",
+    "Dependencies.test_native_resolution_changed",
+    "Dependencies.test_private_registry_tokens_or_query_not_in_lock",
+    "Dependencies.test_selected_feature_runtime_or_lock_change_invalidates",
+    "Dependencies.test_source_only_projects_unchanged",
+    "Dependencies.test_unknown_private_local_library_offline_without_original",
+    "Dependencies.test_wrong_patch_preimage_does_not_apply"
+  ],
+  "guards": {
+    "Archives.test_entry_and_decompression_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:98417da8bfa38e61d7e62896fa9ba207f05fa2e8d8f42afd15f0d395862773ec"
+      ],
+      "skipSites": []
+    },
+    "Archives.test_tar_hardlinks_and_symlinks_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:98417da8bfa38e61d7e62896fa9ba207f05fa2e8d8f42afd15f0d395862773ec"
+      ],
+      "skipSites": []
+    },
+    "Archives.test_zip_link_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:98417da8bfa38e61d7e62896fa9ba207f05fa2e8d8f42afd15f0d395862773ec"
+      ],
+      "skipSites": []
+    },
+    "Archives.test_zip_paths_and_case_prefix_collisions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:98417da8bfa38e61d7e62896fa9ba207f05fa2e8d8f42afd15f0d395862773ec"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_after_compile_rechecks_materialized_and_original_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_automatic_transform_separates_preimage_and_selected_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_build_tools_require_separate_approved_isolation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_concurrent_writers_verify_all_objects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_generator_approval_denied_and_windows_isolation_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_graph_must_include_transitive_edges": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_missing_or_same_name_changed_bytes_fails": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_native_resolution_changed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_private_registry_tokens_or_query_not_in_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_selected_feature_runtime_or_lock_change_invalidates": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_source_only_projects_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_unknown_private_local_library_offline_without_original": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    },
+    "Dependencies.test_wrong_patch_preimage_does_not_apply": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0f1b8e3db9ad16d0c1cd654f48203387d884d4f1b159e38600618a37dc28e0b4",
+        "class:setup-sha256:76c6ac375ffeac1db6160675e20c2029f2d7d5e65bf980b5f2e6f0d431c9ce85"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_application_dependencies.py",
+  "reviewReason": "Review verified selected dependency graphs, offline materialization, original patch preimages, archive safety, executable denial and concurrent content-addressed writes",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
