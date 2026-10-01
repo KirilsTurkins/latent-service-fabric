@@ -46,6 +46,7 @@ impl EventInstallation {
         }
         for identity in [
             providers.http.as_ref().map(|v| &v.identity),
+            providers.http_streaming.as_ref().map(|v| &v.identity),
             providers.blob.as_ref().map(|v| &v.identity),
             providers.secrets.as_ref().map(|v| &v.identity),
             providers.metrics.as_ref().map(|v| &v.identity),
