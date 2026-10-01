@@ -88,10 +88,9 @@ impl DispatcherManagementPort {
     ) -> Result<PreparedDispatcherControl, DispatcherControlError> {
         control::prepare(&self.services, request)
     }
-    /// `authorize` retains original node policy through final acceptance. `live`
-    /// is called inside the actual dispatcher lock, after lifecycle validation,
-    /// and encloses the bounded acceptance action under the original capacity/
-    /// deadline gate. Neither callback may perform I/O, audit flush or await.
+    /// The final order is actual dispatcher role -> original node policy ->
+    /// original capacity/deadline. Both callbacks run inside the role fence;
+    /// neither may perform I/O, clock observation, audit flush or await.
     pub fn submit_control_retained<R: Send + 'static>(
         &self,
         prepared: PreparedDispatcherControl,

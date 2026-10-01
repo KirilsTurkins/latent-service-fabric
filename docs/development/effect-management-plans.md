@@ -7,6 +7,14 @@ physical-attempt history. Their data never supplies a grant. The authenticated
 gateway must retain its original current operator, publication, namespace and
 data-read decisions and apply the prepared batch under the actual writer fence.
 
+Dispatcher pause/resume and manual effect writes share the acceptance order:
+dispatcher role, original operator policy, state policy and namespace lifecycle
+when applicable, original effect rules, then the original native request gate.
+Protected-clock observations and bounded metadata cloning happen before the
+role lock. No callback performs disk/network I/O, audit flush or an async wait
+inside these fences. Native control tests also observe pending resume inside the
+actual writer before durability, after the short acceptance locks have retired.
+
 A plan binds the exact supported effect-row bytes, immutable command/caller and
 namespace incarnation, original operation ID, action, policy precondition, reason
 and full original request digest. It retains the last completed physical attempt
