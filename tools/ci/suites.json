@@ -1857,6 +1857,8 @@
         "runtime::control::tests::concurrent_stale_control_does_not_advance_generation_or_rewrite_receipt",
         "runtime::control::tests::denied_or_missing_authorization_callback_prevents_receipt_and_acceptance",
         "runtime::control::tests::discontinuous_clock_still_allows_pause_but_never_authorizes_resume",
+        "runtime::control::tests::fences::original_operator_policy_fence_is_inside_the_same_role_order_as_effect_management",
+        "runtime::control::tests::fences::protected_clock_observation_never_enters_locked_control_acceptance_or_publication",
         "runtime::control::tests::lost_response_lookup_and_historical_replay_do_not_reapply_resume",
         "runtime::control::tests::malformed_double_acceptance_leaves_conservative_pending_pause_without_a_receipt",
         "runtime::control::tests::original_live_gate_denial_prevents_receipt_and_logical_acceptance_after_native_plan",
@@ -1909,7 +1911,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 122,
+      "minimumCases": 124,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [
