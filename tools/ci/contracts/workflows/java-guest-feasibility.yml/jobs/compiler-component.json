@@ -4,10 +4,6 @@
   "coverage": {},
   "definition": {
     "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0,
-      "CARGO_PROFILE_TEST_DEBUG": 0,
       "PYTHONDONTWRITEBYTECODE": 1
     },
     "name": "Actual Java sources, SDK ownership and enforced node",
@@ -51,6 +47,21 @@
       },
       {
         "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
       },
       {
         "uses": "bytecodealliance/actions/wasm-tools/setup",
@@ -113,7 +124,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Retain the complete direct Java SDK gate and add actual fiber compilation, reference JDK controls and the explicit signed physical retirement case",
+  "reviewReason": "Preserve every direct Java SDK and signed activation-fiber command and artifact; integrate the reviewed dependency cache with explicit host correctness guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
