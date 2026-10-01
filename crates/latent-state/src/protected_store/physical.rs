@@ -184,7 +184,7 @@ impl PhysicalStore {
         self.check()?;
         let result = self.classify(operation(self.engine()));
         if self.check_root().is_err() {
-            let error = if kind == StoreIoKind::Write && result.is_ok() {
+            let error = if kind.is_write() && result.is_ok() {
                 ProtectedStoreError::CommitUncertain
             } else {
                 ProtectedStoreError::UnsafeRoot

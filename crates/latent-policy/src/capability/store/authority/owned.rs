@@ -118,6 +118,25 @@ impl PolicyStore {
     ) -> Result<(), PlatformError> {
         self.with_current(&captured.borrowed(), action)
     }
+
+    /// Recheck several original retained decisions under one policy/publication
+    /// fence. This preserves the same lock order as `with_current_decisions`;
+    /// callbacks must be short and must not perform I/O or enter another fence.
+    pub fn with_retained_decisions(
+        &self,
+        captured: &[&OwnedPolicyDecision],
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if captured.is_empty() || captured.len() > 8 {
+            return Err(denied());
+        }
+        let borrowed: Vec<_> = captured
+            .iter()
+            .map(|decision| decision.borrowed())
+            .collect();
+        let references: Vec<_> = borrowed.iter().collect();
+        self.with_current_decisions(&references, action)
+    }
 }
 
 fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {

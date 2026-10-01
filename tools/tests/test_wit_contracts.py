@@ -173,6 +173,26 @@ class WitContractTests(unittest.TestCase):
                 self.assertEqual("http-v3" in deps, world in {"runtime-phase3-streaming", "runtime-phase3-blobs"})
                 self.assertEqual("blob-v2" in deps, world == "runtime-phase3-blobs")
 
+    def test_versioned_type_uses_stage_exact_transitive_state_dependency(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "intents"
+            stager.stage(destination, ROOT / "wit/platform/intents")
+            self.assertEqual(
+                (destination / "deps/state/package.wit").read_bytes(),
+                (ROOT / "wit/platform/state/package.wit").read_bytes(),
+            )
+            self.assertEqual({path.name for path in (destination / "deps").iterdir()}, {"state"})
+            source = Path(temporary) / "consumer"
+            source.mkdir()
+            (source / "package.wit").write_text(
+                "package fixture:uses@1.0.0;\ninterface api {\n"
+                "use latent:intents/staging@0.1.0.{intent};\n}\n",
+                encoding="utf-8",
+            )
+            stager.stage(Path(temporary) / "transitive", source)
+            deps = Path(temporary) / "transitive/deps"
+            self.assertEqual({path.name for path in deps.iterdir()}, {"intents", "state"})
+
 
 if __name__ == "__main__":
     unittest.main()

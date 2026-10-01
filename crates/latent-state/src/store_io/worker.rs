@@ -12,7 +12,7 @@ enum Action<S> {
     Exit,
 }
 
-fn next<S>(control: &Control<S>) -> Action<S> {
+fn next<S>(control: &Control<S>, recovery: bool) -> Action<S> {
     let mut state = control
         .state
         .lock()
@@ -26,26 +26,42 @@ fn next<S>(control: &Control<S>) -> Action<S> {
             continue;
         }
         state.check_shutdown_deadline(control.clock.monotonic_now());
-        if let Some(retirement) = state.retirements.pop_front() {
-            return Action::Retire(retirement);
+        if !recovery {
+            if let Some(retirement) = state.retirements.pop_front() {
+                return Action::Retire(retirement);
+            }
         }
         if state.quarantined {
-            if let Some(queued) = state.queue.pop_front() {
+            let queue = if recovery {
+                &mut state.recovery_queue
+            } else {
+                &mut state.queue
+            };
+            if let Some(queued) = queue.pop_front() {
                 return Action::Reject(queued);
             }
-        } else if let Some(index) = state
-            .queue
-            .iter()
-            .position(|queued| state.can_run(queued.kind))
-        {
-            let queued = state
-                .queue
-                .remove(index)
-                .expect("selected bounded queue index");
+        } else if let Some(index) = {
+            let queue = if recovery {
+                &state.recovery_queue
+            } else {
+                &state.queue
+            };
+            queue.iter().position(|queued| state.can_run(queued.kind))
+        } {
+            let queue = if recovery {
+                &mut state.recovery_queue
+            } else {
+                &mut state.queue
+            };
+            let queued = queue.remove(index).expect("selected bounded queue index");
             state.running(queued.kind, true);
             return Action::Run(queued);
         }
-        if state.closed && state.queue.is_empty() && state.physical_owners == 0 {
+        if state.closed
+            && state.queue.is_empty()
+            && state.recovery_queue.is_empty()
+            && state.physical_owners == 0
+        {
             // Reserve exit under the same lock. Concurrent idle workers cannot
             // all believe another worker will perform the finalization.
             let last = state.live_workers - state.exiting_workers == 1;
@@ -75,9 +91,13 @@ fn finished_job<S>(control: &Control<S>, kind: StoreIoKind) {
     control.notify();
 }
 
-pub(super) fn run<S: Send + Sync + 'static>(control: Arc<Control<S>>, store: Arc<S>) {
+pub(super) fn run<S: Send + Sync + 'static>(
+    control: Arc<Control<S>>,
+    store: Arc<S>,
+    recovery: bool,
+) {
     loop {
-        match next(&control) {
+        match next(&control, recovery) {
             Action::Run(queued) => {
                 queued.work.run(&store);
                 finished_job(&control, queued.kind);
@@ -127,6 +147,7 @@ pub(super) fn run<S: Send + Sync + 'static>(control: Arc<Control<S>>, store: Arc
                 state.retired_at = Some(retired_at);
             }
             state.queue = std::collections::VecDeque::new();
+            state.recovery_queue = std::collections::VecDeque::new();
         }
     }
     control.notify();

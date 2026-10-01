@@ -4,10 +4,38 @@ use std::fmt;
 pub enum StoreIoKind {
     Read,
     Write,
+    /// Reserved recovery queue and fixed worker; never admitted as ordinary work.
+    RecoveryRead,
+    /// Same reserved lane, sharing the existing physical single-writer fence.
+    RecoveryWrite,
+}
+
+impl StoreIoKind {
+    #[must_use]
+    pub const fn is_recovery(self) -> bool {
+        matches!(self, Self::RecoveryRead | Self::RecoveryWrite)
+    }
+
+    #[must_use]
+    pub const fn is_write(self) -> bool {
+        matches!(self, Self::Write | Self::RecoveryWrite)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct StoreIoRecoveryLimits {
+    /// Included in total fixed workers; ordinary jobs cannot occupy these workers.
+    pub workers: usize,
+    pub queued_jobs: usize,
+    pub accepted_jobs: usize,
+    /// A disjoint partition of the owner's total retained-byte limit.
+    pub retained_bytes: u64,
+    pub job_bytes: u64,
 }
 
 #[derive(Clone, Debug)]
 pub struct StoreIoLimits {
+    pub recovery: Option<StoreIoRecoveryLimits>,
     pub workers: usize,
     pub queued_jobs: usize,
     pub accepted_jobs: usize,
@@ -43,6 +71,24 @@ impl StoreIoLimits {
         {
             return Err(StoreIoError::InvalidLimits);
         }
+        if let Some(recovery) = self.recovery {
+            if recovery.workers == 0
+                || recovery.workers >= self.workers
+                || recovery.queued_jobs == 0
+                || recovery.queued_jobs > 256
+                || recovery.accepted_jobs < recovery.queued_jobs
+                || recovery.accepted_jobs > 512
+                || recovery.retained_bytes == 0
+                || recovery.retained_bytes >= self.retained_bytes
+                || recovery.job_bytes == 0
+                || recovery.job_bytes > recovery.retained_bytes
+                || self.resident_bytes >= self.retained_bytes - recovery.retained_bytes
+                || self.active_reads > self.workers - recovery.workers
+                || self.active_writes > self.workers - recovery.workers
+            {
+                return Err(StoreIoError::InvalidLimits);
+            }
+        }
         Ok(())
     }
 }
@@ -51,6 +97,7 @@ impl StoreIoLimits {
 pub enum StoreIoError {
     InvalidLimits,
     AdmissionClosed,
+    RecoveryUnavailable,
     QueueFull,
     AcceptedFull,
     ByteBudget,
@@ -107,6 +154,11 @@ pub enum StoreIoEnginePhase {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct StoreIoSnapshot {
     pub queued: usize,
+    pub recovery_queued: usize,
+    pub recovery_accepted: usize,
+    pub recovery_retained_bytes: u64,
+    pub active_recovery_reads: usize,
+    pub active_recovery_writes: usize,
     pub active_reads: usize,
     pub active_writes: usize,
     pub accepted: usize,

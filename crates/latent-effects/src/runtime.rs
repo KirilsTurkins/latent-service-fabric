@@ -2,6 +2,7 @@
 //! accepted provider work and buffers remain owned until actual cleanup.
 
 mod adapter;
+mod admission;
 mod config;
 pub mod control;
 mod driver;
@@ -11,6 +12,7 @@ mod store;
 mod worker;
 
 pub use adapter::{AdapterOutcome, DeferredEffectAdapter, EffectTimeSource};
+pub use admission::{CommandAdmission, CommandAdmissionSource};
 pub use config::{DispatchOrdering, DispatcherConfig};
 pub use control::{
     DispatcherControlAction, DispatcherControlError, DispatcherControlGeneration,
