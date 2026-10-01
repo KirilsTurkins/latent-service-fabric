@@ -371,6 +371,42 @@ class CDependencyAuthoring(unittest.TestCase):
         with self.assertRaisesRegex(DependencyError, 'concurrent-edit'):
             authoring.check_authority(self.project, sdk)
 
+    def test_inner_descriptor_cannot_redirect_cli_component_or_archive_inputs(self):
+        from tools import c_capsule_build, c_static_archive_build
+        value = self.descriptor()
+        self.review()
+        app = self.project / 'app'
+        sdk = (app / 'sdk-lock.json').read_bytes()
+        native_before = {name: (self.project / name).read_bytes() for name in (inputs.MANIFEST, inputs.LOCK)}
+        value['build']['workingDirectory'] = 'nested-unapproved-application'
+        (app / value['build']['workingDirectory']).mkdir()
+        (app / 'latent.project.json').write_bytes(common.encode(value))
+        for ordinal, entry in enumerate((self.project, app)):
+            with self.subTest(entry=entry):
+                with self.assertRaisesRegex(DependencyError, 'ambiguous-project-descriptor'):
+                    authoring.layout(entry)
+                with self.assertRaisesRegex(DependencyError, 'ambiguous-project-descriptor'):
+                    authoring.application_root(entry)
+                with self.assertRaisesRegex(DependencyError, 'ambiguous-project-descriptor'):
+                    authoring.build_inputs(entry)
+                code, _out, err = self.call('dependencies', entry)
+                self.assertEqual(code, 1)
+                self.assertIn('ambiguous-project-descriptor', err)
+                for label, builder in (('component', c_capsule_build), ('archive', c_static_archive_build)):
+                    output = self.root / ('shadow-' + label + '-' + str(ordinal))
+                    with patch.object(builder, 'Compiler') as compiler:
+                        with self.assertRaisesRegex(DependencyError, 'ambiguous-project-descriptor'):
+                            if label == 'component':
+                                builder.build(entry, output, self.root / 'never-executed-contracts', None,
+                                              'https://example.invalid/repository')
+                            else:
+                                builder.build(entry, output, 'https://example.invalid/repository')
+                    compiler.assert_not_called()
+                    self.assertFalse((output / 'BUILD-COMPLETE.json').exists())
+                    self.assertFalse((output / 'STATIC-ARCHIVE-COMPLETE.json').exists())
+        self.assertEqual((app / 'sdk-lock.json').read_bytes(), sdk)
+        self.assertEqual({name: (self.project / name).read_bytes() for name in native_before}, native_before)
+
     def test_receipt_io_failure_cannot_reclassify_uncertain_frontend_result(self):
         self.review(); self.descriptor()
         with patch.object(cli, 'dispatch', side_effect=common.DevError('operation-outcome-unknown', uncertain=True)), \
