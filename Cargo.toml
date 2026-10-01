@@ -68,7 +68,7 @@ description = "Single-node stateless execution fabric for WebAssembly components
 base64 = "=0.23.1"
 blake3 = "=1.8.7"
 clap = { version = "=4.6.7", features = ["derive"] }
-clap_complete = { version = "=4.6.4", default-features = false }
+clap_complete = { version = "=4.6.11", default-features = false }
 prost = "=0.14.4"
 protoc-bin-vendored = "=3.2.0"
 serde = { version = "=1.0.229", features = ["derive"] }
@@ -99,3 +99,15 @@ pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
+
+# Tests retain unoptimized workspace code, debug assertions and overflow checks.
+# Optimize the third-party compiler/validator used by real component fixtures;
+# otherwise compiling the same Angular guest dominates correctness execution.
+[profile.dev.package.cranelift-codegen]
+opt-level = 3
+
+[profile.dev.package.regalloc2]
+opt-level = 3
+
+[profile.dev.package.wasmparser]
+opt-level = 3
