@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/validate_contracts.sh",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Join every Python case and scope out only the new correctness-build environment for the frozen measurement collector; preserve its inherited-override rejection policy.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3353506c9a30d1c429bc8e9d4f581e03d6757767a8a771e2c8f1376f4ac62381"
+  "sha256": "6785eb07fa34437e3fb450d8a5a81de9ec339de03f73c2c742acbe2d6fb228ad"
 }

@@ -234,4 +234,11 @@ LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \
 python3 tools/run_phase1_conformance.py --target-root "${TARGET_ROOT}"
 
 # Separate tiny collector validation. Full100k profiles remain explicit opt-ins.
-python3 tools/run_phase1_measurements.py --profile smoke --target-root "${TARGET_ROOT}"
+(
+    # Frozen collectors reject inherited build overrides. Scope out only the
+    # workflow's correctness settings while retaining that rejection policy.
+    unset CARGO_INCREMENTAL CARGO_BUILD_JOBS CARGO_PROFILE_DEV_DEBUG CARGO_PROFILE_TEST_DEBUG
+    unset CARGO_PROFILE_DEV_DEBUG_ASSERTIONS CARGO_PROFILE_TEST_DEBUG_ASSERTIONS
+    unset CARGO_PROFILE_DEV_OVERFLOW_CHECKS CARGO_PROFILE_TEST_OVERFLOW_CHECKS
+    python3 tools/run_phase1_measurements.py --profile smoke --target-root "${TARGET_ROOT}"
+)

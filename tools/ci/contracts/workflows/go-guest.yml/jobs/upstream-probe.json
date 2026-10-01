@@ -59,7 +59,7 @@
       },
       {
         "name": "Install the locked compiler and generator",
-        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Retain pinned reproduction tools",

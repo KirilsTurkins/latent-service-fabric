@@ -70,7 +70,7 @@
       },
       {
         "name": "Install pinned component validator",
-        "run": "test \"$(wasm-tools --version)\" = 'wasm-tools 1.254.0'"
+        "run": "test \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'"
       },
       {
         "name": "Compile the real async-boundary diagnostic",

@@ -128,7 +128,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
-          test "$(wasm-tools --version)" = 'wasm-tools 1.254.0'
+          test "$(wasm-tools --version | cut -d ' ' -f 1,2)" = 'wasm-tools 1.254.0'
           mkdir -p "$RUNNER_TEMP/go-guest-tools"
           curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tbz" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz
           echo "4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz" | sha256sum --check --strict

@@ -119,7 +119,7 @@ jobs:
         with:
           version: 1.254.0
       - name: Install pinned component validator
-        run: test "$(wasm-tools --version)" = 'wasm-tools 1.254.0'
+        run: test "$(wasm-tools --version | cut -d ' ' -f 1,2)" = 'wasm-tools 1.254.0'
       - name: Compile the real async-boundary diagnostic
         run: python3 tools/typescript_guest/probe.py --output "$RUNNER_TEMP/typescript-guest-probe" --node "$(command -v node)" --wasm-tools "$(command -v wasm-tools)" --compiler "$RUNNER_TEMP/typescript-guest-tools/node_modules/@bytecodealliance/componentize-js/src/componentize.js"
       - name: Execute the compiled async-boundary diagnostic
