@@ -6,12 +6,6 @@
     "name": "Admitted C capability ownership",
     "runs-on": "ubuntu-24.04",
     "timeout-minutes": 35,
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0,
-      "CARGO_PROFILE_TEST_DEBUG": 0
-    },
     "steps": [
       {
         "uses": "actions/checkout",
@@ -29,6 +23,21 @@
         "uses": "dtolnay/rust-toolchain",
         "with": {
           "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -81,7 +90,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Merge source-bound transaction shape compiler evidence with every current captured C library/isolation gate and retain both complete artifact sets; preserve historical commands exactly.",
+  "reviewReason": "Merge source-bound transaction shape compiler evidence with every current captured C library/isolation gate and retain both complete artifact sets; preserve historical commands exactly. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

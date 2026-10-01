@@ -44,13 +44,13 @@
         "with": {
           "cache-all-crates": false,
           "cache-bin": false,
-          "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
           "cache-on-failure": false,
-          "cache-targets": false,
+          "cache-targets": true,
           "cache-workspace-crates": false,
-          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
-          "prefix-key": "lsf-ci-dependencies-v1",
-          "save-if": "${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||\n    (github.event_name == 'workflow_dispatch' &&\n     (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}"
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}",
+          "shared-key": "msrv-correctness"
         }
       },
       {
@@ -81,7 +81,7 @@
   },
   "jobId": "msrv",
   "kind": "job",
-  "reviewReason": "Preserve historical command coverage and incoming explicit MSRV installation; check the updated dependency graph with declared Rust 1.95.0.",
+  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
