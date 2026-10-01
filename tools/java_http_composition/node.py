@@ -173,12 +173,15 @@ def invoke(client, targets, name, function, arguments, activation, *, route_name
         completed = process.complete(min(client.deadline, time.monotonic() + 123))
     finally:
         process.close()
+    for stream in ("stdout", "stderr"):
+        with (client.evidence / (activation + "." + stream + ".log")).open("xb") as file:
+            file.write(getattr(completed, stream))
     result = json.loads(completed.stdout)
-    require(result["schemaVersion"] == "latent.cli.result.v1" and completed.returncode in codes,
-        "java-http-invocation-outcome")
     write_json(client.evidence / (activation + ".json"), {"response": result,
         "rpcTimeoutMillis": 120000, "processTimeoutMillis": 123000,
         "elapsedNanos": str(time.monotonic_ns() - began), "processReaped": process.owner.finished})
+    require(result["schemaVersion"] == "latent.cli.result.v1" and completed.returncode in codes,
+        "java-http-invocation-outcome")
     return result
 
 
