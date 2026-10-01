@@ -15,6 +15,7 @@ impl Guest for Capsule {
                 Some("header-policy=header-case") => Some("/browser-header-case"),
                 Some("header-policy=crlf") => Some("/browser-crlf"),
                 Some("header-policy=header-bound") => Some("/browser-header-bound"),
+                Some("header-policy=header-count") => Some("/browser-header-count"),
                 _ => None,
             };
             if let Some(path) = rejected {

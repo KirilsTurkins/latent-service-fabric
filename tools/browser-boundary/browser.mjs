@@ -116,7 +116,7 @@ try {
     assert.equal((await noReferrerPost.allHeaders()).referer, undefined);
     assert.deepEqual(rejectedOrigin, {status: 403, body: '', cache: 'no-store'});
     for (const policy of ['referrer', 'casing', 'duplicate-location', 'duplicate-encoding',
-      'header-case', 'crlf', 'header-bound']) {
+      'header-case', 'crlf', 'header-bound', 'header-count']) {
       const rejected = await page.evaluate(async policy => {
         const response = await fetch('/api/greeting?header-policy=' + policy, {
           method: 'POST', mode: 'same-origin', credentials: 'omit', referrerPolicy: 'same-origin',
@@ -175,7 +175,7 @@ try {
   null, {timeout: 5000});
   assert.equal(await page.evaluate(() => globalThis.inlineExecuted), undefined);
   assert.equal(await page.evaluate(() => globalThis.mimeExecuted), undefined);
-  assert.equal(await page.evaluate(() => document.baseURI), origin + home);
+  assert.equal(await page.evaluate(() => document.baseURI), page.url());
   await page.evaluate(token => {
     history.replaceState(null, '', location.pathname + '?synthetic-token=' + token);
   }, syntheticToken);

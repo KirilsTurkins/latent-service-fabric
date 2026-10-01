@@ -23,6 +23,11 @@ pub(super) fn response(path: &str) -> Option<Response> {
         "/browser-header-bound" => response
             .headers
             .push(header("x-reflected", &vec![b'x'; 16_385])),
+        "/browser-header-count" => {
+            response.headers = (0..65)
+                .map(|index| header(&format!("x-bounded-{index:02}"), b"bounded"))
+                .collect();
+        }
         "/browser-csp" => response
             .headers
             .push(header("content-security-policy", b"default-src *")),

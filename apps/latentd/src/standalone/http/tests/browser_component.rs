@@ -21,7 +21,7 @@ async fn actual_http_component_browser_policy_rejects_unsafe_output_without_refl
     assert_eq!(safe.0, 303);
     assert!(safe.1.contains("location: /next?from=fixture\r\n"));
     fixture.idle().await;
-    assert_output_observation(&fixture, false);
+    assert_output_observation(&fixture, OutputObservation::Accepted);
     fixture.shutdown().await;
     let root = TempDir::new().unwrap();
     let mut value = config(&root);
@@ -68,6 +68,7 @@ async fn assert_rejected_outputs(fixture: &Fixture) {
     for path in [
         "/browser-crlf",
         "/browser-header-bound",
+        "/browser-header-count",
         "/browser-csp",
         "/browser-referrer",
         "/browser-security-case",
@@ -105,11 +106,27 @@ async fn assert_rejected_outputs(fixture: &Fixture) {
         }
         fixture.idle().await;
         assert_eq!(fixture.node.manager.journal().snapshot().begun, before + 1);
-        assert_output_observation(fixture, true);
+        assert_output_observation(
+            fixture,
+            if path == "/browser-header-bound" {
+                OutputObservation::CodecLimit
+            } else {
+                OutputObservation::HeaderRejected
+            },
+        );
     }
 }
 
-fn assert_output_observation(fixture: &Fixture, rejected: bool) {
+#[derive(Debug, Clone, Copy)]
+enum OutputObservation {
+    Accepted,
+    HeaderRejected,
+    // The unchanged 4096-item WIT codec ceiling rejects this byte-list before
+    // HTTP validation. Its guest trap must not gain a false HTTP observation.
+    CodecLimit,
+}
+
+fn assert_output_observation(fixture: &Fixture, observation: OutputObservation) {
     let journal = fixture.node.manager.journal();
     let tenant = TenantId("tests".into());
     let service = ServiceId("web".into());
@@ -120,7 +137,13 @@ fn assert_output_observation(fixture: &Fixture, rejected: bool) {
     let node = page.nodes.last().unwrap();
     assert_eq!(
         node.terminal_state,
-        Some(ActivationTerminalState::Completed)
+        Some(match observation {
+            OutputObservation::CodecLimit => ActivationTerminalState::GuestTrap,
+            OutputObservation::Accepted | OutputObservation::HeaderRejected => {
+                ActivationTerminalState::Completed
+            }
+        }),
+        "{observation:?}"
     );
     assert!(
         !node.diagnostic_is_terminal,
@@ -128,10 +151,13 @@ fn assert_output_observation(fixture: &Fixture, rejected: bool) {
     );
     assert_eq!(
         node.diagnostic,
-        rejected.then(|| ActivationDiagnostic::new(
-            DiagnosticStage::OutputValidation,
-            DiagnosticReason::HttpResponseRejected
-        ))
+        matches!(observation, OutputObservation::HeaderRejected).then(|| {
+            ActivationDiagnostic::new(
+                DiagnosticStage::OutputValidation,
+                DiagnosticReason::HttpResponseRejected,
+            )
+        }),
+        "{observation:?}"
     );
     assert_eq!(
         journal
