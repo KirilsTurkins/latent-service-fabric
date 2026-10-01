@@ -4,9 +4,6 @@
   "coverage": {},
   "definition": {
     "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0,
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "name": "NativeAOT component qualification",
@@ -61,13 +58,13 @@
         "with": {
           "cache-all-crates": false,
           "cache-bin": false,
-          "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
           "cache-on-failure": false,
-          "cache-targets": false,
+          "cache-targets": true,
           "cache-workspace-crates": false,
-          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
-          "prefix-key": "lsf-ci-dependencies-v1",
-          "save-if": false
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -140,7 +137,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution; CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Integration preserves both required command sets.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
