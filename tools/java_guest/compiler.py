@@ -253,12 +253,31 @@ class Compiler:
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
         if activation_profile:
             from tools.java_guest.class_origin import checkpoint_index
+            origins = json.loads(self.run("java-source-origins", "java",
+                self.sdk / "fibers/analysis/SourceOrigins.java", sources))
+            if (not isinstance(origins, dict) or set(origins) != {"schemaVersion", "sources"}
+                    or origins["schemaVersion"] != "lsf.java.source-origins.v1"
+                    or not isinstance(origins["sources"], list)):
+                raise ValueError("invalid Java source origin analysis")
+            source_packages = {}
+            for row in origins["sources"]:
+                if (not isinstance(row, dict) or set(row) != {"source", "package"}
+                        or not isinstance(row["source"], str)
+                        or row["source"] not in application_source_names or row["source"] in source_packages
+                        or not isinstance(row["package"], str)
+                        or any(char in row["package"] for char in "/\\\x00\r\n")):
+                    raise ValueError("invalid Java captured source origin")
+                source_packages[row["source"]] = row["package"]
+            if set(source_packages) != application_source_names:
+                raise ValueError("incomplete Java captured source origins")
+            write_json(destination / "source-origins.json", origins)
             self.run("java-owned-classes", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "classes", cwd=project)
-            index = checkpoint_index(project / "build/classes/java/main", application_source_names, application_classpath)
+            index = checkpoint_index(project / "build/classes/java/main", source_packages, application_classpath)
             target = project / "src/main/resources/META-INF/latent/runtime-checkpoints.classes"
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(index)
             write_json(destination / "runtime-profile.json", {
                 "profile": "teavm-activation-fibers-v1", "qualification": "pending",
+                "sourceOriginDigest": digest(canonical(origins)),
                 "checkpointClassIndexDigest": digest(index), "checkpointClasses": index.decode("utf-8").splitlines(),
             })
         self.run("java-to-c", "gradle", "--no-daemon", *(["--offline"] if self.offline else []), "generateC", cwd=project)

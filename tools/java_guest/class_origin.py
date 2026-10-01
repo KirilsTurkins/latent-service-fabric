@@ -61,12 +61,20 @@ def source_file(data: bytes) -> str | None:
     return source
 
 
-def checkpoint_index(classes: Path, application_sources: set[str], application_classpath: tuple[Path, ...]) -> bytes:
+def checkpoint_index(classes: Path, application_sources: dict[str, str], application_classpath: tuple[Path, ...]) -> bytes:
+    # The owned javac parser supplies declared packages. A source directory is
+    # not a package identity: a flat captured Main.java can declare any package.
+    origins = set()
+    for name, package in application_sources.items():
+        identity = (package.replace(".", "/"), Path(name).name)
+        if identity in origins: raise ValueError("ambiguous-java-class-origin")
+        origins.add(identity)
     selected = set()
     for path in sorted(classes.rglob("*.class")):
         logical = path.relative_to(classes)
         source = source_file(path.read_bytes())
-        if source is not None and (logical.parent / source).as_posix() in application_sources:
+        package = "" if logical.parent == Path(".") else logical.parent.as_posix()
+        if source is not None and (package, source) in origins:
             selected.add(logical.with_suffix("").as_posix().replace("/", "."))
     for jar in application_classpath:
         with zipfile.ZipFile(jar) as archive:

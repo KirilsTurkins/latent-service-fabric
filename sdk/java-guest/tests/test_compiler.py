@@ -104,10 +104,13 @@ class ClassOrigin(unittest.TestCase):
                 archive.writestr("other/library/Worker.class", self.class_bytes())
                 archive.writestr("META-INF/versions/25/other/library/Worker.class", self.class_bytes())
                 archive.writestr("ordinary-resource.txt", b"preserved resource")
-            self.assertEqual(checkpoint_index(classes, {"dev/app/App.java"}, (jar,)).splitlines(),
-                             [b"dev.app.App", b"dev.app.App$Worker", b"other.library.Worker"])
+            expected = [b"dev.app.App", b"dev.app.App$Worker", b"other.library.Worker"]
+            for source in ("dev/app/App.java", "App.java", "unrelated/tree/App.java"):
+                self.assertEqual(checkpoint_index(classes, {source: "dev.app"}, (jar,)).splitlines(), expected)
             with self.assertRaisesRegex(ValueError, "unresolved-java-class-origin"):
-                checkpoint_index(classes, {"unknown/App.java"}, ())
+                checkpoint_index(classes, {"App.java": "unknown"}, ())
+            with self.assertRaisesRegex(ValueError, "ambiguous-java-class-origin"):
+                checkpoint_index(classes, {"one/App.java": "dev.app", "two/App.java": "dev.app"}, ())
 
     def test_captured_jar_class_paths_cannot_escape(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -116,7 +119,7 @@ class ClassOrigin(unittest.TestCase):
             with zipfile.ZipFile(jar, "w") as archive:
                 archive.writestr("../Worker.class", b"opaque captured bytes")
             with self.assertRaisesRegex(ValueError, "invalid-java-class-origin-path"):
-                checkpoint_index(root / "classes", set(), (jar,))
+                checkpoint_index(root / "classes", {}, (jar,))
 
 
 if __name__ == "__main__": unittest.main()
