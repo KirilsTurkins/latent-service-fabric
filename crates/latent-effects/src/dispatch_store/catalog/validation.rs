@@ -21,6 +21,7 @@ impl DispatchCatalog {
     /// native view, engine owner or materialized backlog escapes this callback.
     pub fn validate_view(view: &ReadView) -> Result<(), StoreError> {
         crate::dispatch_store::control::ControlCatalog::validate_view(view)?;
+        crate::dispatch_store::effect_management::EffectManagementCatalog::validate_view(view)?;
         let owner = view
             .get(&OwnerRecord::key())?
             .as_deref()
@@ -93,6 +94,9 @@ fn validate_effect(
     validate_row(key, bytes)?;
     let effect = effect_from_key(key, EFFECT_PREFIX)?;
     let record = EffectRecord::decode(bytes).map_err(storage_error)?;
+    crate::dispatch_store::effect_management::EffectManagementCatalog::validate_effect(
+        view, &record,
+    )?;
     let authority = record.authority().map_err(storage_error)?;
     if record.attempts() != 0
         && owner.is_none_or(|owner| {
