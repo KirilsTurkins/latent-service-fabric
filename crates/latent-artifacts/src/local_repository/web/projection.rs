@@ -134,6 +134,7 @@ impl DirectoryArtifactRepository {
     pub(in crate::local_repository) fn web_historical_execution(
         &self,
         reference: &PublicationRef,
+        control: bool,
     ) -> Result<HistoricalExecutionSnapshot, PlatformError> {
         let state = self.web.state.try_read().map_err(|_| busy())?;
         let entry = state.entry(reference)?;
@@ -186,6 +187,14 @@ impl DirectoryArtifactRepository {
             projection.descriptor.release_digest.clone(),
         )
         .with_web_execution_projection();
+        #[cfg(test)]
+        super::super::integrity::faults::after_metadata_scan(reference);
+        if control {
+            // The renderer scan supplied no executable authority. The explicit
+            // catalog mutation renews this web publication's original owner
+            // before its first eligibility read, with the same finite lease.
+            self.web_authority()?.authority.renew_control_lease()?;
+        }
         HistoricalExecutionSnapshot::directory_web(
             metadata,
             reference.clone(),
