@@ -1,0 +1,26 @@
+<Project>
+  <!-- Only a trusted private compiler project imports this captured target.
+       It replaces the exact original WASI framework reference, never an
+       application assembly or the shared NuGet installation. -->
+  <Target Name="LsfBindBoundedHttpErrors"
+          AfterTargets="ComputeIlcCompileInputs"
+          BeforeTargets="WriteIlcRspFileForCompilation"
+          Condition="'$(RuntimeIdentifier)' == 'wasi-wasm'">
+    <ItemGroup>
+      <_LsfHttpCandidates Include="@(IlcReference)"
+          Condition="'%(IlcReference.Filename)' == 'System.Net.Http' And '%(IlcReference.Extension)' == '.dll'" />
+      <_LsfHttpExpected Include="$(LsfHttpErrorOriginalPublic);$(LsfHttpErrorOriginalPrivate)" />
+      <_LsfHttpUnknown Include="@(_LsfHttpCandidates)" Exclude="@(_LsfHttpExpected)" />
+    </ItemGroup>
+    <Error Condition="'@(_LsfHttpCandidates->Count())' == '0' Or '@(_LsfHttpCandidates->Count())' &gt; '2'"
+        Text="http-error-port-framework-reference-count" />
+    <Error Condition="'@(_LsfHttpUnknown)' != ''" Text="http-error-port-unknown-framework-reference" />
+    <Error Condition="!Exists('$(LsfHttpErrorAssembly)')" Text="http-error-port-missing-derived-assembly" />
+    <ItemGroup>
+      <IlcReference Remove="@(_LsfHttpCandidates)" />
+      <IlcReference Include="$(LsfHttpErrorAssembly)" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(LsfHttpErrorReferenceReceipt)"
+        Lines="@(IlcReference->'%(FullPath)')" Overwrite="false" Encoding="UTF-8" />
+  </Target>
+</Project>

@@ -13,6 +13,8 @@ on:
       - 'tools/guest_runtime_grants.py'
       - 'tools/wait_capsule_audit_idle.py'
       - 'tools/tests/test_dotnet_capsule_authoring.py'
+      - 'tools/tests/test_dotnet_http_errors.py'
+      - 'tools/probe_dotnet_http_errors.py'
       - 'docs/component-development/dotnet-authoring.md'
       - 'crates/latent-signing/**'
       - 'crates/latent-packaging/**'
@@ -115,6 +117,12 @@ jobs:
         run: |
           python3 -m pip install -r tools/requirements.lock
           python3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas
+      - name: Preserve bounded errors in the actual captured WASI BCL
+        run: |
+          python3 -m unittest tools.tests.test_dotnet_http_errors
+          python3 tools/probe_dotnet_http_errors.py \
+            --tools "$RUNNER_TEMP/dotnet-authoring-tools" \
+            --output "$RUNNER_TEMP/dotnet-http-error-port"
       - name: Generate and independently check current typed guest bindings
         run: |
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-guest/tools"
@@ -170,5 +178,6 @@ jobs:
             ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
             ${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json
             ${{ runner.temp }}/dotnet-authoring-tools/wasi-sdk.json
+            ${{ runner.temp }}/dotnet-http-error-port/
           if-no-files-found: error
           retention-days: 7

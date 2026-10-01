@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain the pinned NativeAOT installation and explicitly compile all three source-bound finite runtime adapters",
+  "reviewReason": "Install the source-bound bounded BCL error tool using the already locked ILLink assembly",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c05d015d374981842cbd92baa61c54fc781f891eb99fc11fcc37e334ddee4e03"
+  "sha256": "a4e89b96728c9e780a92b0015689143fad7c381f0644b396bbbd4582d12c54b4"
 }

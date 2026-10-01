@@ -243,7 +243,7 @@ class DotnetRuntimeDistribution(unittest.TestCase):
 
         source = root / "installed"
         source.mkdir()
-        for name in ("packages", "package-hash", "package-hash-source"):
+        for name in ("packages", "package-hash", "package-hash-source", "http-errors", "http-errors-source"):
             (source / name).mkdir()
             (source / name / "input").write_bytes(name.encode())
         for name in ("runtime-inputs.json", "wasi-sdk.json", *(binary for _example, binary in ADAPTERS.values())):
@@ -269,6 +269,37 @@ class DotnetRuntimeDistribution(unittest.TestCase):
                 self.assertEqual((target / path).read_bytes(), filename.encode())
                 self.assertEqual((source / filename).read_bytes(), filename.encode())
             self.assertEqual(len(ADAPTERS), 3)
+
+    def test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack(self):
+        from tools.dev_managed_distribution import pack, retain_dotnet_support
+        from tools.dev_managed_tools import unpack
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = self.installed(root)
+            retained, sdk = root / "retained", root / "sdk"
+            retain_dotnet_support(source, retained)
+            sdk.mkdir()
+            record = pack({"tools": retained}, sdk)
+            target = unpack(sdk, root / "attempt", lambda: None)
+            for name in ("http-errors", "http-errors-source"):
+                path = "tools/" + name + "/input"
+                self.assertIn(path, {row["path"] for row in record["files"]})
+                self.assertEqual((target / path).read_bytes(), name.encode())
+                self.assertEqual((source / name / "input").read_bytes(), name.encode())
+
+    def test_missing_bcl_patch_tool_or_source_fails_before_publication(self):
+        from tools.dev_managed_distribution import retain_dotnet_support
+
+        for name in ("http-errors", "http-errors-source"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = self.installed(root)
+                (source / name / "input").unlink()
+                (source / name).rmdir()
+                with self.assertRaises(FileNotFoundError):
+                    retain_dotnet_support(source, root / "retained")
+                self.assertFalse((root / "sdk/managed-inputs.json").exists())
 
     def test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published(self):
         from tools.dev_managed_distribution import retain_dotnet_support

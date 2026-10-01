@@ -19,6 +19,8 @@
           "tools/guest_runtime_grants.py",
           "tools/wait_capsule_audit_idle.py",
           "tools/tests/test_dotnet_capsule_authoring.py",
+          "tools/tests/test_dotnet_http_errors.py",
+          "tools/probe_dotnet_http_errors.py",
           "docs/component-development/dotnet-authoring.md",
           "crates/latent-signing/**",
           "crates/latent-packaging/**",
@@ -40,7 +42,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Select the existing required .NET job for the new exact BCL probe and ownership tests",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

@@ -81,12 +81,33 @@ protocol faults after a started import keep conservative uncertainty and abort
 that exact owner. The WASI error
 enum distinguishes denied requests, DNS failure and incomplete response and
 carries `latent-http-*` markers in `internal-error` for the remaining typed
-categories, including uncertainty. The pinned BCL's `ErrorCodeToString` discards
-that payload in the
-[pinned handler source](https://github.com/dotnet/runtime/blob/v10.0.0/src/libraries/System.Net.Http/src/System/Net/Http/WasiHttpHandler/WasiHttpHandler.cs).
-A source-bound BCL change and actual ordinary
-`HttpRequestException` evidence are required before claiming end-to-end
-uncertainty preservation. Guest enum markers alone do not meet that criterion.
+categories, including uncertainty. The original pinned BCL's `ErrorCodeToString`
+discards that payload. The captured compiler now derives a private copy of its
+exact WASI `System.Net.Http.dll` using the already locked ILLink Mono.Cecil
+assembly. The tool preserves only ten finite adapter-owned categories as
+`INTERNAL_ERROR:latent-http-*`; arbitrary, malformed or sensitive payloads retain
+`INTERNAL_ERROR`. All other variants keep their original conversion.
+
+The original conversion is described by the
+[upstream WASI interop source](https://github.com/dotnet/runtime/blob/v10.0.0/src/libraries/System.Net.Http/src/System/Net/Http/WasiHttpHandler/WasiHttpInterop.cs);
+the rewriter also requires the exact captured RC assembly preimage rather than
+assuming the release-tag source matches it.
+The source capture includes the rewriter and trusted MSBuild target. The
+installation retains and rechecks their source, compiler binary and Cecil
+identity. Only the explicitly declared clock/activation/typed-HTTP candidate
+imports that target into its private compiler project. The target accepts only
+the two exact framework reference locations and replaces them with the private
+derived assembly. The compiler requires its actual NativeAOT response-file
+reference before recording a successful binding. Shared NuGet inputs stay
+unchanged. Unknown preimages, changed tool/source/target/derived bytes or
+ambiguous references deny the build.
+
+`http-error-port-preparation.json` retains original framework, tool, source,
+target and derived identities even if later compilation fails.
+`http-error-port.json` adds observed reference binding after successful
+compilation. Build materials include the derived assembly. These receipts are
+compiler evidence; actual default-client uncertainty still requires the signed
+component, genuinely pending runtime and lost-response POST controls.
 
 The selected BCL emits an opaque `future-trailers` resource without observation
 methods. The bridge retains its original body through that resource and never
@@ -105,6 +126,29 @@ replay. These controls must use actual default-client components. Source review
 fixes alone do not establish their successful execution.
 
 ## Evidence available for this slice
+
+The maintained `tools/probe_dotnet_http_errors.py` executed 79 assertions against
+the actual original and derived captured BCL assemblies using .NET SDK
+10.0.100. All 38 non-internal variants and an unknown tag stayed unchanged; ten
+finite categories reached the actual captured `HttpRequestException.Message`;
+null, arbitrary, oversized, mismatched and non-string payloads stayed redacted.
+Repeated rewriting produced the same derived bytes. Five actual CLI controls
+rejected a changed preimage, a derived input presented as an original, existing
+outputs/receipts and an in-place rewrite without changing those inputs. The
+original assembly remains
+`sha256:3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587`;
+the derived assembly is
+`sha256:645ffa33c7062b94511f4394f27e4ae3a5c3631e0abd51937abc00f277808d52`.
+These are host assembly controls. Actual NativeAOT reference binding,
+default-client execution, CoreLib/task integration and sibling progress remain
+pending. No quota or grant changed.
+
+Four controlled executions of the actual trusted MSBuild target also pass:
+known reference replacement, literal paths with spaces/Unicode/property/item
+metacharacters, explicit unknown-reference rejection and no rewrite outside
+`wasi-wasm`. Those small projects isolate MSBuild ordering and escaping. Their
+response files are controlled fixture outputs and are not actual NativeAOT or
+guest qualification receipts.
 
 The focused authoring suite passes 27 Python cases, including seven added
 authority/version/capture controls. The pinned WIT generator parses all adapter

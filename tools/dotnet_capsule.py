@@ -17,6 +17,7 @@ from tools.dotnet_guest.project import create
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
 from tools.dotnet_guest.runtime import ADAPTERS
+from tools.dotnet_guest import http_errors
 
 
 def install(directory: Path, wasi_sdk: Path):
@@ -54,6 +55,7 @@ def install(directory: Path, wasi_sdk: Path):
     command.run("package-hash-build", dotnet, "build", directory / "package-hash-source/PackageHash.csproj",
         "-c", "Release", "--output", directory / "package-hash", "--artifacts-path", directory / "package-hash-artifacts",
         "-p:NuGetAudit=false", "-nodeReuse:false")
+    http_errors.install(sdk, directory, Path(dotnet), command.run)
     command.run("closed-runtime-compile", "cargo", "build", "--quiet", "--locked",
         "--manifest-path", ROOT / "tools/toolchain-smoke/Cargo.toml", "-p", "latent-toolchain-smoke",
         *(argument for example, _binary in ADAPTERS.values() for argument in ("--example", example)),

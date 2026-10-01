@@ -18,6 +18,8 @@
     "CompilerDownloadBounds.test_small_default_transfer_accepts_only_pinned_bytes",
     "CompilerDownloadBounds.test_truncated_changed_and_empty_archives_still_fail_digest",
     "DotnetRuntimeDistribution.test_all_three_adapters_survive_actual_distribution_pack_and_private_unpack",
+    "DotnetRuntimeDistribution.test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack",
+    "DotnetRuntimeDistribution.test_missing_bcl_patch_tool_or_source_fails_before_publication",
     "DotnetRuntimeDistribution.test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published",
     "FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly",
     "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound",
@@ -245,7 +247,31 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
-        "class:setup-sha256:c0fe3d641f5e8d88792b17ecb793504389904b450120495fb3941f9f6efffef5"
+        "class:setup-sha256:d4f97c51a8dcd7a13f550aa8f9bc3d7581641ea09971ffc4925ec89f5354c36f"
+      ],
+      "skipSites": []
+    },
+    "DotnetRuntimeDistribution.test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:d4f97c51a8dcd7a13f550aa8f9bc3d7581641ea09971ffc4925ec89f5354c36f"
+      ],
+      "skipSites": []
+    },
+    "DotnetRuntimeDistribution.test_missing_bcl_patch_tool_or_source_fails_before_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:d4f97c51a8dcd7a13f550aa8f9bc3d7581641ea09971ffc4925ec89f5354c36f"
       ],
       "skipSites": []
     },
@@ -257,7 +283,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
-        "class:setup-sha256:c0fe3d641f5e8d88792b17ecb793504389904b450120495fb3941f9f6efffef5"
+        "class:setup-sha256:d4f97c51a8dcd7a13f550aa8f9bc3d7581641ea09971ffc4925ec89f5354c36f"
       ],
       "skipSites": []
     },
@@ -358,6 +384,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_tools.py",
-  "reviewReason": "Add actual three-adapter distribution pack/unpack and missing-adapter rejection while preserving every existing execution and skip guard",
+  "reviewReason": "Retain all original test bodies and skip/execution guards. Extend only the existing installed-tools fixture with the two now-required captured BCL tool/source directories; add separate positive distribution and missing-input controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -150,7 +150,7 @@ def retain_dotnet_support(installed: Path, retained: Path) -> None:
     from tools.dotnet_guest.runtime import ADAPTERS
 
     retained.mkdir(mode=0o700)
-    for name in ("packages", "package-hash", "package-hash-source"):
+    for name in ("packages", "package-hash", "package-hash-source", "http-errors", "http-errors-source"):
         shutil.copytree(installed / name, retained / name)
     for name in ("runtime-inputs.json", "wasi-sdk.json", *(binary for _example, binary in ADAPTERS.values())):
         shutil.copyfile(installed / name, retained / name)
