@@ -22,6 +22,9 @@ pub struct DispatchGrant {
     credential_epoch: u64,
     reference: String,
     deadline: Instant,
+    // Drop after every grant description. Actual provider cleanup retains this
+    // same original owner through DeferredRequest; this creates no admission.
+    _retained_owner: Option<Arc<dyn std::any::Any + Send + Sync>>,
 }
 
 impl DispatchGrant {
@@ -186,6 +189,7 @@ impl DispatchContext {
         self.credential_epoch = rule.credential_epoch;
         self.reference
             .clone_from(&rule.protected_credential_reference);
+        self.grant_issued = true;
         let result = accept(DispatchGrant {
             owner: Arc::clone(&self.owner),
             live: Arc::clone(&self.live),
@@ -201,6 +205,7 @@ impl DispatchContext {
             credential_epoch: self.credential_epoch,
             reference: self.reference.clone(),
             deadline,
+            _retained_owner: self.retained_owner.as_ref().map(Arc::clone),
         });
         drop(state);
         Ok(result)

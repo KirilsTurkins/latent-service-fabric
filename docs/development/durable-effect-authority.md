@@ -138,3 +138,22 @@ accepted provider grant, commits authenticated quiescence, and proves its
 original grant is denied while the physical permit remains charged. These
 checks establish the metadata/engine bridge; the provider's held-TLS schedule
 separately establishes transport behavior.
+
+`DispatchContext::retain_owner` binds one already reserved original request or
+global owner before any grant is issued. Refused replacement or late retention
+returns the exact owner unchanged. Every issued grant retains the same opaque
+keeper as its last field, so the existing provider request carries it through
+actual payload, socket and response cleanup. Returned management confirmations
+and transport responses retain it independently. This adds no reservation,
+worker, retry authority or renewed deadline.
+
+Explicit context retirement releases its own keeper after positive physical
+cleanup. Unexpected context drop instead preserves the exact keeper with the
+already quarantined physical permit, bounded by the existing physical/global
+capacity limits. Dropping all grants or response waiters cannot refund that
+unresolved capacity; process loss remains the conservative recovery boundary.
+
+All 97 effect library cases and strict all-target/all-feature Clippy passed on
+the pinned Linux Rust 1.97.1 image. The two new cases use real shared native
+reservations to check replacement refusal, retained grant capacity after
+positive context retirement, and exact owner quarantine after unexpected drop.
