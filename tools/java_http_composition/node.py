@@ -84,7 +84,7 @@ def configure(directory: Path, releases: Path, *, http=True, former_profile=Fals
     return config, host
 
 
-def grant(client, node, releases, publications, *, child_trigger=False):
+def grant(client, node, releases, publications, *, child_trigger=False, domain_grants=()):
     grants = []
     for name, (contract, profile, operation, kind) in profiles("java").items():
         installed = next(row for row in node.startup_record["providers"] if row["id"] == name)
@@ -100,7 +100,8 @@ def grant(client, node, releases, publications, *, child_trigger=False):
             "operations": [operation], "resources": {"kind": kind},
             "ceiling": {"operations": 4096, "inputBytes": 0, "outputBytes": 32768, "wallTimeMillis": 5000}}]})
         grants.append({"capability": contract, "policy": name + "-allow"})
-    return {name: deploy(client, releases / ("java-http-" + name) / "deployment.json", publications[name], grants=grants)
+    return {name: deploy(client, releases / ("java-http-" + name) / "deployment.json", publications[name],
+                        grants=grants + list(domain_grants) if name == "domain" else grants)
             for name in ("domain", "adapter")}
 
 

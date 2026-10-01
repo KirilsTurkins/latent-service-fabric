@@ -15,8 +15,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inputs", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--diagnostic-campaign", action="store_true",
+                        help="Build distinct provider-capable Java fixtures and observe typed failures")
     selected = parser.parse_args()
-    qualify(read_json(selected.inputs), selected.output.absolute())
+    qualify(read_json(selected.inputs), selected.output.absolute(), diagnostics=selected.diagnostic_campaign)
 
 
 if __name__ == "__main__":

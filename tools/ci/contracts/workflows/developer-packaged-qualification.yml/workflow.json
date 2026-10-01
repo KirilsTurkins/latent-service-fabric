@@ -22,6 +22,12 @@
             "required": true,
             "type": "string"
           },
+          "java_diagnostics": {
+            "default": false,
+            "description": "Build fresh provider-capable Java fixtures for the finite diagnostic campaign",
+            "required": false,
+            "type": "boolean"
+          },
           "platform": {
             "default": "all",
             "description": "Fresh platform schedule to execute with the approved candidates",
@@ -66,7 +72,7 @@
     "support",
     "windows"
   ],
-  "reviewReason": "Add explicit approved Java composition platform while preserving every existing packaged schedule and gate",
+  "reviewReason": "Add explicit optional fresh Java diagnostic campaign without changing historical platform schedules",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-packaged-qualification.yml"
 }

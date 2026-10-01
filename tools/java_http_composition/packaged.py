@@ -22,7 +22,7 @@ from tools.dev_packaged_process import write_json as replace_public
 from tools.dev_packaged_windows import Frontend, acquire, inputs
 from tools.dev_workflow import build, project, state, tool_inventory
 from tools.dev_workflow.common import digest, encode, require
-from tools.java_http_composition import context, inspection
+from tools.java_http_composition import context, inspection, provider_timeout
 from tools.java_http_composition.build import projects
 from tools.java_http_composition.node import (
     SERVICE_CAPABILITY, TENANT, configure, grant, idle, invoke, rebind, route, service_grant,
@@ -36,6 +36,7 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_node import RecordingClient, deploy
 from tools.rust_capsule_project import ROOT, fresh
 from tools.run_security_profile_workflow import replace_config
+from tools.sdk_provider_scenario import close_failed_provider, start_provider
 
 
 def _sources(output):
@@ -94,7 +95,7 @@ def _install(api, configuration, workspace, index):
     api.call("install", "--workspace", workspace, "--runtime-inputs", selected, timeout=1200)
 
 
-def _build(api, configuration, workspace, root, output, observation):
+def _build(api, configuration, workspace, root, output, observation, *, diagnostics=False):
     tools = api.root / "java-tools.json"
     installed = api.call("install-tools", "--workspace", workspace, "--tool-inputs", tools, timeout=1800)
     require(installed["publisherAuthenticated"] is True
@@ -108,6 +109,12 @@ def _build(api, configuration, workspace, root, output, observation):
         "templateIdentity": template_identity, "buildReceipts": {}, "runtimeRebuilt": False}
     relative = Path(template["path"]).relative_to("templates").as_posix()
     authored = projects(output / "source-projects")
+    if diagnostics:
+        # These are new inputs to the actual compiler. Never relabel them as
+        # the original C4 component or the unadapted hosted campaign.
+        report["diagnosticFixtureAdaptations"] = {
+            "domain": provider_timeout.adapt_domain(authored["domain"]),
+            **{name: provider_timeout.adapt_adapter(authored[name]) for name in ("adapter", "adapter-next")}}
     selected, receipts = {}, {}
     (output / "projects").mkdir(mode=0o700)
     (output / "builds").mkdir(mode=0o700)
@@ -160,7 +167,7 @@ def _build(api, configuration, workspace, root, output, observation):
     return report
 
 
-def _configure(root, releases, output, *, former):
+def _configure(root, releases, output, *, former, provider_port=None):
     original = read_json(root / "runtime/config/node.json")
     output.mkdir(mode=0o700)
     prototype, host = configure(output, releases, http=not former, former_profile=former)
@@ -171,6 +178,10 @@ def _configure(root, releases, output, *, former):
     selected["supplyChain"]["policyFile"] = str(releases / "policy.json")
     config = root / "runtime/config/node.json"
     require(not (root / "control.sock").exists(), "packaged-java-configure-only-stopped-node")
+    if provider_port is not None:
+        # Protected credential paths resolve relative to the real installed
+        # config directory, not the conductor's observation directory.
+        selected = provider_timeout.configure(config.parent, selected, provider_port)
     replace_config(config, selected)
     return config, host, {"originalConfigurationDigest": digest(encode(original)),
         "selectedConfigurationDigest": digest(encode(selected)), "nodeId": original["nodeId"],
@@ -178,12 +189,12 @@ def _configure(root, releases, output, *, former):
         "bounds": {key: selected[key] for key in ("cells", "execution", "limits", "budgetProfile")}}
 
 
-def _client(root, ready, directory, cancellation):
+def _client(root, ready, directory, cancellation, deadline):
     from tools.dev_workflow.helper import installation
     _layout, current = installation(root)
     directory.mkdir(mode=0o700)
     config = read_json(root / "runtime/config/node.json")
-    client = RecordingClient(current / "bin/latent", directory, cancellation, time.monotonic() + 900,
+    client = RecordingClient(current / "bin/latent", directory, cancellation, min(deadline, time.monotonic() + 900),
                              evidence=directory / "controls", invocation_timeout_millis=120000)
     client.node_id = config["nodeId"]
     settings = directory / "operator.json"
@@ -212,12 +223,14 @@ def _schedules(frontend, api, workspace, client, releases, output, snapshots, co
     return results
 
 
-def _former(frontend, api, workspace, root, output, releases, cancellation):
-    config, _host, configuration = _configure(root, releases, output / "configuration", former=True)
+def _former(frontend, api, workspace, root, output, releases, cancellation, *, provider_port=None):
+    config, _host, configuration = _configure(root, releases, output / "configuration", former=True,
+                                             provider_port=provider_port)
     ready = api.start(workspace)
-    client, node = _client(root, ready, output / "client", cancellation)
+    client, node = _client(root, ready, output / "client", cancellation, api.deadline)
     publications = publish(client, releases)
-    targets = grant(client, node, releases, publications)
+    extra = () if provider_port is None else (provider_timeout.grant(client, node, publications["domain"], provider_port),)
+    targets = grant(client, node, releases, publications, domain_grants=extra)
     failure = invoke(client, targets, "domain", "status", [], "java-former-http-profile", codes=(4,))
     require(failure["error"]["code"] == "resource-exhausted", "packaged-java-former-profile-original-failure")
     tree = context.tree(client, "java-former-http-profile")
@@ -229,17 +242,22 @@ def _former(frontend, api, workspace, root, output, releases, cancellation):
             "packaged-java-former-profile-real-preparation-rejected")
     schedules = _schedules(frontend, api, workspace, client, releases, output,
                           {"domain": original}, config, former=True)
-    return {"configuration": configuration, "failure": failure, "authorizedTree": tree,
+    result = {"configuration": configuration, "failure": failure, "authorizedTree": tree,
             "targetInspection": original, "preflight": {mode: result for mode, (_schedule, result) in schedules.items()},
             "idle": idle(client), "down": api.down(workspace)}
+    if provider_port is not None:
+        result["providerPhysicalShutdown"] = provider_timeout.verify_managed_shutdown(result["down"])
+    return result
 
 
-def _current(frontend, api, workspace, root, output, releases, cancellation):
-    config, host, configuration = _configure(root, releases, output / "configuration", former=False)
+def _current(frontend, api, workspace, root, output, releases, cancellation, *, provider_port=None, provider_control=None):
+    config, host, configuration = _configure(root, releases, output / "configuration", former=False,
+                                            provider_port=provider_port)
     ready = api.start(workspace)
-    client, node = _client(root, ready, output / "client", cancellation)
+    client, node = _client(root, ready, output / "client", cancellation, api.deadline)
     publications = publish(client, releases)
-    targets = grant(client, node, releases, publications)
+    extra = () if provider_port is None else (provider_timeout.grant(client, node, publications["domain"], provider_port),)
+    targets = grant(client, node, releases, publications, domain_grants=extra)
     route(client, host, publications["adapter"])
     missing = context.capture_http(client, host, expected=(403,))
     generation = service_grant(client, node, publications)
@@ -251,10 +269,18 @@ def _current(frontend, api, workspace, root, output, releases, cancellation):
     authority = inspection.authority(client)
     ordinary = inspection.ordinary_http_binding(client, host, snapshots["domain"])
     schedules = _schedules(frontend, api, workspace, client, releases, output, snapshots, config, former=False)
+    # The ordinary context capsule retains only its actual installed clocks and
+    # original signed resource declaration. The domain's new HTTP capability
+    # is not a grant for this independent publication.
+    context_targets = targets if provider_port is None else {**targets, "domain": {**targets["domain"],
+        "grants": [row for row in targets["domain"]["grants"] if row["capability"] != provider_timeout.CAPABILITY],
+        "budget": read_json(releases / "java-http-context-required/deployment.json")["spec"]["resources"]}}
     result = {"configuration": configuration, "missingGrant": missing, "targetInspection": snapshots,
         "authority": authority, "ordinaryHttpBinding": ordinary,
         "freshComposedExecution": fresh_status(client, targets, host, "java-packaged-fresh-success"),
-        "ordinaryContext": context.ordinary_import(client, targets, releases, publications, host)}
+        "ordinaryContext": context.ordinary_import(client, context_targets, releases, publications, host)}
+    if provider_port is not None:
+        result["providerTimeout"] = provider_timeout.qualify(client, host, provider_control, provider_port)
     # A reviewed policy revision invalidates the original binding plan even
     # after restoration. Retain that intent, then explicitly redeploy/rebind.
     from tools.static_api.node import policy
@@ -271,10 +297,13 @@ def _current(frontend, api, workspace, root, output, releases, cancellation):
     result["preflight"] = {mode: receipt for mode, (_schedule, receipt) in schedules.items()}
     result["idle"] = idle(client)
     result["down"] = api.down(workspace)
+    if provider_port is not None:
+        result["providerPhysicalShutdown"] = provider_timeout.verify_managed_shutdown(result["down"])
     return result
 
 
-def qualify(configuration, output):
+def qualify(configuration, output, *, diagnostics=False):
+    require(type(diagnostics) is bool, "packaged-java-explicit-diagnostic-campaign")
     require(sys.platform == "linux" and os.geteuid() != 0 and sys.version_info[:3] == (3, 13, 5),
             "packaged-java-unprivileged-pinned-linux-conductor-required")
     require(configuration["independentPolicyApproved"] is True
@@ -283,9 +312,11 @@ def qualify(configuration, output):
     report = {"schemaVersion": "latent.dev.packaged-java-composition.v1", "passed": False,
         "approvedProducerSource": configuration["sourceCommit"], "conductorSource": _sources(output),
         "freshJavaBuild": True, "retainedC4ArtifactsReused": False, "nativeRuntimeRebuilt": False,
+        "diagnosticCampaignRequested": diagnostics, "diagnosticCampaignPassed": False,
         "commands": [], "cleanup": {}, "bounds": {"commands": 360, "componentBuilds": 4,
         "liveNodes": 1, "nodeCampaignSeconds": 900, "conductorSeconds": 7200}}
     api = None
+    peer = None
     workspaces = {}
     try:
         frontend = NativeFrontend.authenticate_release(configuration, output / "authenticated-frontend")
@@ -297,17 +328,29 @@ def qualify(configuration, output):
         root = _connect(api, frontend, baseline)
         workspaces[baseline] = root
         _install(api, configuration, baseline, 10)
-        _build(api, configuration, baseline, root, output, report)
+        _build(api, configuration, baseline, root, output, report, diagnostics=diagnostics)
         releases = output / "releases"
         former = "test-java-former-profile-710"
         former_root = _connect(api, frontend, former)
         workspaces[former] = former_root
         _install(api, configuration, former, 11)
         with owned_cancellation() as cancellation:
+            provider_control, provider_port = None, None
+            if diagnostics:
+                provider_control = output / "provider-peer"
+                provider_control.mkdir(mode=0o700)
+                owner = SimpleNamespace(deadline=api.deadline, environment=api.env, cancellation=cancellation)
+                peer, provider_port = start_provider(owner, provider_control, maximum_seconds=1200)
+                report["providerPeer"] = {"port": provider_port, "maximumSeconds": 1200}
             report["formerProfile"] = _former(frontend, api, former, former_root,
-                fresh(output / "former-profile"), releases, cancellation)
+                fresh(output / "former-profile"), releases, cancellation, provider_port=provider_port)
             report["currentProfile"] = _current(frontend, api, baseline, root,
-                fresh(output / "current-profile"), releases, cancellation)
+                fresh(output / "current-profile"), releases, cancellation,
+                provider_port=provider_port, provider_control=provider_control)
+            if peer is not None:
+                report["providerPeer"]["shutdown"] = provider_timeout.stop_peer(peer)
+                peer = None
+                report["diagnosticCampaignPassed"] = report["currentProfile"]["providerTimeout"]["status"] == "passed"
         frontend.unchanged()
         require(report["conductorSource"] == _sources(output), "packaged-java-conductor-source-changed")
         report["passed"] = True
@@ -327,6 +370,9 @@ def qualify(configuration, output):
                 except BaseException as error:
                     report["cleanup"][workspace] = {"failure": type(error).__name__, "terminationConfirmed": False}
                     report["passed"] = False
+        if peer is not None:
+            report["cleanup"]["providerPeer"] = close_failed_provider(peer)
+            report["passed"] = False
         replace_public(output / "observation.json", report)
     require(report["passed"], "packaged-java-qualification-or-cleanup-failed")
     return report

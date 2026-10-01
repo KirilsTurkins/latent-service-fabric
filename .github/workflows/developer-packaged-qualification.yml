@@ -26,6 +26,11 @@ on:
         options: [all, windows, windows-recovery, linux, java-composition]
         default: all
         required: true
+      java_diagnostics:
+        description: Build fresh provider-capable Java fixtures for the finite diagnostic campaign
+        type: boolean
+        default: false
+        required: false
   push:
     branches: [feat/559-packaged-qualification]
     paths:
@@ -293,10 +298,15 @@ jobs:
         env:
           PYTHONUTF8: '1'
           PYTHONDONTWRITEBYTECODE: '1'
+          LSF_JAVA_DIAGNOSTICS: ${{ inputs.java_diagnostics }}
         run: |
+          diagnostic_args=()
+          if [ "$LSF_JAVA_DIAGNOSTICS" = 'true' ]; then
+            diagnostic_args+=(--diagnostic-campaign)
+          fi
           python3 -B tools/qualify_packaged_java_composition.py \
             --inputs "$RUNNER_TEMP/packaged-support/java-inputs.json" \
-            --output "$RUNNER_TEMP/packaged-java-composition"
+            --output "$RUNNER_TEMP/packaged-java-composition" "${diagnostic_args[@]}"
       - name: Preserve bounded original success or failure evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -312,5 +322,6 @@ jobs:
             ${{ runner.temp }}/packaged-java-composition/releases/
             ${{ runner.temp }}/packaged-java-composition/*-profile/preflight-*/
             ${{ runner.temp }}/packaged-java-composition/*-profile/client/controls/
+            ${{ runner.temp }}/packaged-java-composition/provider-peer/
           if-no-files-found: error
           retention-days: 7

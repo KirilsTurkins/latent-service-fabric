@@ -42,12 +42,13 @@
       },
       {
         "env": {
+          "LSF_JAVA_DIAGNOSTICS": "${{ inputs.java_diagnostics }}",
           "PYTHONDONTWRITEBYTECODE": "1",
           "PYTHONUTF8": "1"
         },
         "id": "live-java-composition",
         "name": "Exercise authenticated frontend workspaces and explicit standalone operator",
-        "run": "python3 -B tools/qualify_packaged_java_composition.py \\\n  --inputs \"$RUNNER_TEMP/packaged-support/java-inputs.json\" \\\n  --output \"$RUNNER_TEMP/packaged-java-composition\"\n"
+        "run": "diagnostic_args=()\nif [ \"$LSF_JAVA_DIAGNOSTICS\" = 'true' ]; then\n  diagnostic_args+=(--diagnostic-campaign)\nfi\npython3 -B tools/qualify_packaged_java_composition.py \\\n  --inputs \"$RUNNER_TEMP/packaged-support/java-inputs.json\" \\\n  --output \"$RUNNER_TEMP/packaged-java-composition\" \"${diagnostic_args[@]}\"\n"
       },
       {
         "if": "always()",
@@ -56,7 +57,7 @@
         "with": {
           "if-no-files-found": "error",
           "name": "packaged-java-composition-${{ github.run_id }}-${{ github.run_attempt }}",
-          "path": "${{ runner.temp }}/packaged-support/selection.json\n${{ runner.temp }}/packaged-support/java-inputs.json\n${{ runner.temp }}/packaged-java-composition/observation.json\n${{ runner.temp }}/packaged-java-composition/authenticated-frontend/authenticated-frontend.json\n${{ runner.temp }}/packaged-java-composition/builds/\n${{ runner.temp }}/packaged-java-composition/compiler-logs/\n${{ runner.temp }}/packaged-java-composition/releases/\n${{ runner.temp }}/packaged-java-composition/*-profile/preflight-*/\n${{ runner.temp }}/packaged-java-composition/*-profile/client/controls/\n",
+          "path": "${{ runner.temp }}/packaged-support/selection.json\n${{ runner.temp }}/packaged-support/java-inputs.json\n${{ runner.temp }}/packaged-java-composition/observation.json\n${{ runner.temp }}/packaged-java-composition/authenticated-frontend/authenticated-frontend.json\n${{ runner.temp }}/packaged-java-composition/builds/\n${{ runner.temp }}/packaged-java-composition/compiler-logs/\n${{ runner.temp }}/packaged-java-composition/releases/\n${{ runner.temp }}/packaged-java-composition/*-profile/preflight-*/\n${{ runner.temp }}/packaged-java-composition/*-profile/client/controls/\n${{ runner.temp }}/packaged-java-composition/provider-peer/\n",
           "retention-days": 7
         }
       }
@@ -65,7 +66,7 @@
   },
   "jobId": "java-composition",
   "kind": "job",
-  "reviewReason": "Retain bounded original compiler logs from genuine owned build attempts alongside the new Java composition job evidence",
+  "reviewReason": "Wire optional provider timeout into new Java job with original commands controls bounds and raw receipts retained",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-packaged-qualification.yml"
 }
