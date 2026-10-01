@@ -58,6 +58,11 @@ fn ordinary_slot_and_bytes_pressure_preserve_actual_reserved_recovery_capacity()
         let first = owner
             .reserve(NativeAdmissionClass::Ordinary, request(), deadline)
             .unwrap();
+        let alias = owner.clone();
+        let foreign = NativeCapacityOwner::with_clock(limits(), Arc::new(clock.clone())).unwrap();
+        assert!(first.is_from_owner(&owner));
+        assert!(first.is_from_owner(&alias));
+        assert!(!first.is_from_owner(&foreign));
         let second = if pressure == NativeCapacityError::SlotsFull {
             Some(
                 owner
@@ -81,6 +86,8 @@ fn ordinary_slot_and_bytes_pressure_preserve_actual_reserved_recovery_capacity()
         let recovery = owner
             .reserve(NativeAdmissionClass::Recovery, request(), deadline)
             .unwrap();
+        assert!(recovery.is_from_owner(&alias));
+        assert!(!recovery.is_from_owner(&foreign));
         assert_eq!(recovery.response_bytes(), 1_024);
         assert_eq!(
             recovery.reserved_bytes(),
