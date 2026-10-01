@@ -2,6 +2,13 @@
 
 #![forbid(unsafe_code)]
 
+pub mod authority;
+pub mod dispatch;
+pub mod dispatch_store;
+mod effect_identity;
+pub mod payload;
+pub mod runtime;
+
 use latent_core::{
     ActivationId, BoxFuture, CapabilityId, EffectId, IdempotencyKey, Metadata, Payload,
     PlatformError, ProviderId,
@@ -67,8 +74,7 @@ pub struct EffectReceipt {
 }
 
 pub trait EffectStore: Send + Sync {
-    fn append<'a>(&'a self, intents: Vec<EffectIntent>)
-        -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn append(&self, intents: Vec<EffectIntent>) -> BoxFuture<'_, Result<(), PlatformError>>;
 
     fn claim<'a>(
         &'a self,
@@ -76,7 +82,7 @@ pub trait EffectStore: Send + Sync {
         limit: u32,
     ) -> BoxFuture<'a, Result<Vec<EffectIntent>, PlatformError>>;
 
-    fn record<'a>(&'a self, receipt: EffectReceipt) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn record(&self, receipt: EffectReceipt) -> BoxFuture<'_, Result<(), PlatformError>>;
 
     fn history<'a>(
         &'a self,
@@ -94,10 +100,8 @@ pub trait EffectProvider: Send + Sync {
 }
 
 pub trait EffectDispatcher: Send + Sync {
-    fn dispatch<'a>(
-        &'a self,
-        intent: EffectIntent,
-    ) -> BoxFuture<'a, Result<EffectReceipt, PlatformError>>;
+    fn dispatch(&self, intent: EffectIntent)
+        -> BoxFuture<'_, Result<EffectReceipt, PlatformError>>;
 
     fn compensate<'a>(
         &'a self,

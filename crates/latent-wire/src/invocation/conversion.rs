@@ -23,6 +23,15 @@ use super::{
 mod public_error;
 mod shape;
 use public_error::public_platform_error;
+
+/// The same closed producer diagnostics used by invocation terminal responses.
+pub(crate) fn sanitize_platform_error(
+    value: proto::PlatformError,
+    limits: &InvocationLimits,
+) -> Result<proto::PlatformError, ()> {
+    let error = value.try_into_domain().map_err(|_| ())?;
+    Ok(public_platform_error(error, limits).into())
+}
 pub(super) use shape::{validate_response_shape, validate_status_shape};
 
 #[cfg(test)]

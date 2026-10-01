@@ -12,3 +12,13 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-protected-files = { path = "../latent-protected-files" }
+redb.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+latent-core = { path = "../latent-core", features = ["test-support"] }
+tempfile.workspace = true
+latent-test-process = { path = "../latent-test-process" }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+serde_json.workspace = true

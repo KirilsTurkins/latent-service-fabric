@@ -7,6 +7,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod phase4;
 pub mod platform_error;
 
 /// Control-plane APIs from the `latent.control.v1` Protobuf package.

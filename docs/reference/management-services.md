@@ -15,6 +15,12 @@ typed audit queries. Commands perform one bounded request without automatic
 mutation retry. The [echo quickstart](../development/standalone-quickstart.md) uses its
 generated package inputs through this RPC boundary.
 
+The opt-in [Phase 4 state and transaction adapters](../protocol/state-management.md)
+reuse these principal, management, clock and transport owners through an explicit
+node-owned `Phase4Runtime`. Their current publication selectors are requested
+targets; the actual domain owner seals namespace/result authority before lookup
+and response publication. No permissive default runtime or new listener exists.
+
 ## Supported calls
 
 | Service | Supported calls | Standalone behavior |

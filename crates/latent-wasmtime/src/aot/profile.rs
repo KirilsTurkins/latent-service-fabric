@@ -49,7 +49,7 @@ impl ValidatedAotProfile {
         let engine = compiler_engine(&settings)?;
         let engine_identity = hash::engine(&engine);
         drop(engine);
-        let capabilities = capabilities();
+        let capabilities = capabilities(config);
         let mut digest = Sha256::new();
         digest.update(b"lsf-validated-aot-profile-v1\0");
         for value in [&policy, &engine_identity, &capabilities, runtime.digest()] {
@@ -180,6 +180,13 @@ fn declared_digest(
     Ok(digest.finalize().into())
 }
 
-fn capabilities() -> [u8; 32] {
-    crate::bindings::host_abi_digest()
+fn capabilities(config: &WasmtimeConfig) -> [u8; 32] {
+    if !config.transactional_state {
+        return crate::bindings::host_abi_digest();
+    }
+    let mut hash = Sha256::new();
+    hash.update(b"lsf-installed-host-abis-v1\0");
+    latent_core::PHASE3_HOST_ABI_CURRENT.visit_identity_bytes(|part| hash.update(part));
+    latent_core::PHASE4_HOST_ABI_V1.visit_identity_bytes(|part| hash.update(part));
+    hash.finalize().into()
 }

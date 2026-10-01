@@ -32,6 +32,8 @@ pub(super) struct Lifecycle {
     pub(super) resolved: Option<ResolvedRevision>,
     pub(super) scheduled: Option<ScheduledActivation>,
     pub(super) child_control: Option<Arc<super::probes::ActivationControl>>,
+    pub(super) transaction_admission: Option<Arc<dyn super::TransactionActivationAdmission>>,
+    pub(super) transaction_host: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
     pub(super) execution_started: bool,
     pub(super) quarantine_reason: Option<String>,
     pub(super) assigned: bool,
@@ -57,6 +59,8 @@ impl Lifecycle {
             resolved: None,
             scheduled: None,
             child_control: None,
+            transaction_admission: None,
+            transaction_host: None,
             execution_started: false,
             quarantine_reason: None,
             assigned: false,
@@ -141,6 +145,13 @@ impl Lifecycle {
     }
 
     fn reclaim(&mut self) {
+        if !self.execution_started {
+            if let Some(host) = &self.transaction_host {
+                // No guest Store or accepted continuation entered the backend.
+                // Native I/O still needs its independent retirement witness.
+                host.finish_guest_access();
+            }
+        }
         // An unfilled inbound reservation has never received an execution cell.
         drop(self.inbound_permit.take());
         self.observe_cancellation();

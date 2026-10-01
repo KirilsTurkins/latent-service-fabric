@@ -101,6 +101,16 @@ impl WasmtimeConfig {
                     latent_core::digest::HexDigest(crate::bindings::host_abi_digest())
                 ),
             );
+            if self.transactional_state {
+                fields.insert(
+                    "transaction-host-profile".into(),
+                    latent_core::PHASE4_HOST_ABI_V1.id.into(),
+                );
+                fields.insert(
+                    "transaction-host-digest".into(),
+                    latent_manifest::phase4_host_abi_digest(),
+                );
+            }
             for (name, value) in [
                 ("compiler-workers", self.effective_compiler_workers()),
                 (

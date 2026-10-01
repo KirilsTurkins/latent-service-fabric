@@ -21,6 +21,12 @@ impl ActivationBudget {
         }
         let mut normalized = [None; 9];
         for &(dimension, amount) in charges {
+            if !self.profile().supports(dimension) {
+                return Err(BudgetError::UnsupportedRequestDimension {
+                    dimension,
+                    value: amount,
+                });
+            }
             let Some(index) = BudgetDimension::CUMULATIVE
                 .iter()
                 .position(|d| *d == dimension)
@@ -101,7 +107,7 @@ impl BudgetReservationGroup {
             }
         }
         let mut state = self.budget.lock_state();
-        debug_assert_eq!(self.budget.profile(), super::BudgetProfile::Phase3);
+        debug_assert!(self.budget.profile().supports_descendants());
         for &(dimension, held) in self.charges.iter().flatten() {
             let actual = used.consumed(dimension);
             let reserved = state.reserved.consumed(dimension);

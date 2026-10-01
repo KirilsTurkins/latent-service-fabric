@@ -1599,6 +1599,7 @@ dependencies = [
  "latent-manifest",
  "latent-policy",
  "latent-routing",
+ "latent-state",
  "latent-telemetry",
  "rustix",
  "serde",
@@ -1616,6 +1617,8 @@ dependencies = [
  "latent-core",
  "latent-effects",
  "latent-state",
+ "sha2 0.11.0",
+ "tempfile",
 ]
 
 [[package]]
@@ -1678,6 +1681,12 @@ name = "latent-effects"
 version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
+ "latent-state",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -1806,11 +1815,15 @@ dependencies = [
  "latent-admission",
  "latent-artifacts",
  "latent-capabilities",
+ "latent-commit",
  "latent-core",
+ "latent-effects",
  "latent-executor",
  "latent-manifest",
+ "latent-policy",
  "latent-routing",
  "latent-scheduler",
+ "latent-state",
  "latent-telemetry",
  "sha2 0.11.0",
  "tokio",
@@ -2072,6 +2085,13 @@ name = "latent-state"
 version = "0.1.0-alpha.5"
 dependencies = [
  "latent-core",
+ "latent-protected-files",
+ "latent-test-process",
+ "redb",
+ "serde_json",
+ "sha2 0.11.0",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -2087,6 +2107,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-test-process"
+version = "0.1.0-alpha.5"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "latent-testkit"
 version = "0.1.0-alpha.5"
 dependencies = [
@@ -2097,6 +2127,7 @@ dependencies = [
  "latent-node",
  "latent-routing",
  "latent-telemetry",
+ "latent-test-process",
  "serde",
  "serde_json",
  "tempfile",
@@ -2264,6 +2295,7 @@ dependencies = [
  "latent-capabilities",
  "latent-control-store",
  "latent-core",
+ "latent-effects",
  "latent-executor",
  "latent-http",
  "latent-ingress",
@@ -2279,6 +2311,7 @@ dependencies = [
  "latent-scheduler",
  "latent-secrets",
  "latent-signing",
+ "latent-state",
  "latent-telemetry",
  "latent-testkit",
  "latent-wasmtime",
@@ -2855,6 +2888,15 @@ dependencies = [
  "time",
  "x509-parser",
  "yasna",
+]
+
+[[package]]
+name = "redb"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb338a6c67830a61bed824b78c2bb034ab1ff401a20616bd7957524f4fdc2f22"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

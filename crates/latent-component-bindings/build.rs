@@ -302,6 +302,22 @@ fn write_blob_bindings(output: &Path, wit: &Path) -> io::Result<()> {
 fn write_transaction_guest_bindings(output: &Path, wit: &Path) -> io::Result<()> {
     let path = format!("{:?}", wit.to_string_lossy());
     fs::write(
+        output.join("transaction_host.rs"),
+        format!(
+            r#"wasmtime::component::bindgen!({{
+            path: {path}, world: "latent:platform/capsule@0.5.0",
+            imports: {{ default: async | trappable }}, exports: {{ default: async }},
+            with: {{
+                "latent:context/context@0.1.0": crate::host::runtime::latent::context::context,
+                "latent:log/log@0.1.0": crate::host::runtime::latent::log::log,
+                "latent:clock/monotonic@0.1.0": crate::host::runtime::latent::clock::monotonic,
+                "latent:clock/wall@0.1.0": crate::host::runtime::latent::clock::wall,
+                "latent:random/random@0.1.0": crate::host::phase3::latent::random::random,
+            }},
+        }});"#
+        ),
+    )?;
+    fs::write(
         output.join("transaction_guest.rs"),
         format!(
             r#"wit_bindgen::generate!({{

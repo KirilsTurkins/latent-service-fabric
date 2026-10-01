@@ -2,6 +2,17 @@
 
 #![forbid(unsafe_code)]
 
+pub mod embedded;
+pub mod entity_lanes;
+/// Versioned namespace records and lifecycle guards; descriptors grant no access.
+pub mod namespace;
+pub mod protected_store;
+/// Logical disposition capacity charged in the same physical atomic store.
+pub mod reservation;
+/// Host-owned read/staging sessions; the complete envelope coordinator commits.
+pub mod session;
+pub mod store_io;
+
 use latent_core::{
     ActivationId, BoxFuture, EntityKey, LeaseId, Metadata, PlatformError, StateNamespaceId,
     StateTransactionId, VersionToken,
@@ -72,10 +83,10 @@ pub struct EntityLease {
 }
 
 pub trait StateBackend: Send + Sync {
-    fn begin<'a>(
-        &'a self,
+    fn begin(
+        &self,
         context: StateContext,
-    ) -> BoxFuture<'a, Result<StateTransaction, PlatformError>>;
+    ) -> BoxFuture<'_, Result<StateTransaction, PlatformError>>;
 
     fn read<'a>(
         &'a self,
@@ -96,15 +107,15 @@ pub trait StateBackend: Send + Sync {
         mutation: StateMutation,
     ) -> BoxFuture<'a, Result<(), PlatformError>>;
 
-    fn commit<'a>(
-        &'a self,
+    #[deprecated(
+        note = "Independent state commit cannot atomically publish Phase 4 commands, results, intents and inbox; use the complete host envelope coordinator"
+    )]
+    fn commit(
+        &self,
         transaction: StateTransaction,
-    ) -> BoxFuture<'a, Result<CommitReceipt, PlatformError>>;
+    ) -> BoxFuture<'_, Result<CommitReceipt, PlatformError>>;
 
-    fn rollback<'a>(
-        &'a self,
-        transaction: StateTransaction,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn rollback(&self, transaction: StateTransaction) -> BoxFuture<'_, Result<(), PlatformError>>;
 }
 
 pub trait EntityLeaseManager: Send + Sync {
@@ -122,5 +133,5 @@ pub trait EntityLeaseManager: Send + Sync {
         ttl_millis: u64,
     ) -> BoxFuture<'a, Result<EntityLease, PlatformError>>;
 
-    fn release<'a>(&'a self, lease: EntityLease) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn release(&self, lease: EntityLease) -> BoxFuture<'_, Result<(), PlatformError>>;
 }
