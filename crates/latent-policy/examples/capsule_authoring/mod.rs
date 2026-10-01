@@ -1,3 +1,4 @@
+mod fixtures;
 mod freshness;
 mod inputs;
 mod policy;
@@ -67,19 +68,58 @@ pub(super) fn sign_demo_separated(output: &Path, paths: &[OsString]) -> Result<(
 }
 
 fn sign(output: &Path, paths: &[OsString], separate_builders: bool) -> Result<()> {
-    if !output.is_absolute() || output.exists() || !(1..=16).contains(&paths.len()) {
+    sign_selected(output, paths, separate_builders, false)
+}
+
+/// Ephemeral native package-test trust only. No compiler runs, and no authored
+/// BUILD-COMPLETE or fresh compiler observation is created by this fixture.
+pub(super) fn sign_java_fixtures(output: &Path, paths: &[OsString]) -> Result<()> {
+    sign_selected(output, paths, false, true)
+}
+
+fn sign_selected(
+    output: &Path,
+    paths: &[OsString],
+    separate_builders: bool,
+    fixture: bool,
+) -> Result<()> {
+    if !output.is_absolute()
+        || output.exists()
+        || !(1..=if fixture { 5 } else { 16 }).contains(&paths.len())
+    {
         return Err("choose a fresh absolute output and one to sixteen completed builds".into());
     }
     let mut builds = Vec::new();
     let mut names = BTreeSet::new();
     for path in paths {
-        let build = inputs::load(Path::new(path))?;
+        let build = if fixture {
+            fixtures::load(Path::new(path))?
+        } else {
+            inputs::load(Path::new(path))?
+        };
         if !names.insert(build.bundle.layout().config().name.clone()) {
             return Err("duplicate demo package name".into());
         }
         builds.push(build);
     }
+    sign_loaded(output, builds, separate_builders, fixture)
+}
+
+fn sign_loaded(
+    output: &Path,
+    mut builds: Vec<inputs::Build>,
+    separate_builders: bool,
+    fixture: bool,
+) -> Result<()> {
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+    if fixture {
+        for build in &mut builds {
+            // These are signing-fixture model times, not compiler execution
+            // times. The separate fixture evidence expressly retains this fact.
+            build.observation.started_at = now;
+            build.observation.finished_at = now;
+        }
+    }
     let validity = SignatureValidity {
         issued_at: now,
         expires_at: now + DEMO_VALIDITY_SECONDS,
@@ -172,9 +212,16 @@ fn sign(output: &Path, paths: &[OsString], separate_builders: bool) -> Result<()
         .map_err(|error| error.message)?;
         write(&destination.join("deployment.json"), &build.deployment)?;
         write(
-            &destination.join("build-observation.json"),
+            &destination.join(if fixture {
+                "fixture-provenance-model.json"
+            } else {
+                "build-observation.json"
+            }),
             &serde_json::to_vec(&build.observation)?,
         )?;
+        if let Some(raw) = &build.fixture_evidence {
+            write(&destination.join("fixture-evidence.json"), raw)?;
+        }
         let mut release = json!({"name": name, "world": build.world, "service": build.service,
             "buildType": build.observation.build_type,
             "packageDigest": digest.to_string(), "componentDigest": build.observation.component_digest,
@@ -187,8 +234,8 @@ fn sign(output: &Path, paths: &[OsString], separate_builders: bool) -> Result<()
         releases.push(release);
     }
     // Written last; failed/partial signing attempts have no success marker.
-    let record = json!({"schemaVersion":"latent.capsule.demo.v1", "tenant":TENANT,
-        "trust":"isolated-short-lived-demo-only", "expiresAtUnixSeconds": validity.expires_at,
+    let record = json!({"schemaVersion":if fixture {"latent.component.signing-fixture.v1"} else {"latent.capsule.demo.v1"}, "tenant":TENANT,
+        "trust":if fixture {"ephemeral-native-package-test-only"} else {"isolated-short-lived-demo-only"}, "expiresAtUnixSeconds": validity.expires_at,
         "policyDigest": artifact_blob_digest(&policy_document).to_string(), "releases": releases});
     write(
         &output.join("release-set.json"),

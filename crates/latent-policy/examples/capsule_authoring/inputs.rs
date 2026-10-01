@@ -21,6 +21,7 @@ pub(super) struct Build {
     pub deployment: Vec<u8>,
     pub service: String,
     pub world: String,
+    pub fixture_evidence: Option<Vec<u8>>,
 }
 
 fn read(root: &Path, name: &str, maximum: u64) -> Result<Vec<u8>> {
@@ -54,22 +55,7 @@ pub(super) fn load(root: &Path) -> Result<Build> {
     let source_bytes = read(root, "package-source.json", 65536)?;
     let source = decode_package_source(&source_bytes, limits).map_err(|error| error.message)?;
     let input = read_package_input(root, &source, limits).map_err(|error| error.message)?;
-    let mut identities =
-        BTreeMap::from([("package-source.json".to_owned(), identity(&source_bytes))]);
-    for layer in &input.layers {
-        identities.insert(layer.path.clone(), identity(&layer.bytes));
-    }
-    let inventory_bytes = serde_json::to_vec(&identities)?;
-    let material = observation
-        .materials
-        .iter()
-        .find(|m| m.name == "package-inputs")
-        .ok_or("missing package input observation")?;
-    if material.digest != artifact_blob_digest(&inventory_bytes).as_str()
-        || material.size != inventory_bytes.len() as u64
-    {
-        return Err("package inputs changed since the observed build".into());
-    }
+    verify_package_inputs(&input, &source_bytes, &observation)?;
     let manifest = input
         .layers
         .iter()
@@ -114,14 +100,39 @@ pub(super) fn load(root: &Path) -> Result<Build> {
         deployment,
         service,
         world,
+        fixture_evidence: None,
     })
+}
+
+pub(super) fn verify_package_inputs(
+    input: &PackageInput,
+    source_bytes: &[u8],
+    observation: &BuildObservation,
+) -> Result<()> {
+    let mut identities =
+        BTreeMap::from([("package-source.json".to_owned(), identity(source_bytes))]);
+    for layer in &input.layers {
+        identities.insert(layer.path.clone(), identity(&layer.bytes));
+    }
+    let inventory_bytes = serde_json::to_vec(&identities)?;
+    let material = observation
+        .materials
+        .iter()
+        .find(|m| m.name == "package-inputs")
+        .ok_or("missing package input observation")?;
+    if material.digest != artifact_blob_digest(&inventory_bytes).as_str()
+        || material.size != inventory_bytes.len() as u64
+    {
+        return Err("package inputs changed since the observed build".into());
+    }
+    Ok(())
 }
 
 fn identity(bytes: &[u8]) -> Value {
     json!({"digest":artifact_blob_digest(bytes).as_str(),"size":bytes.len()})
 }
 
-fn sbom(input: &PackageInput, source_snapshot_digest: &str) -> Result<SbomInventory> {
+pub(super) fn sbom(input: &PackageInput, source_snapshot_digest: &str) -> Result<SbomInventory> {
     let layer = input
         .layers
         .iter()
