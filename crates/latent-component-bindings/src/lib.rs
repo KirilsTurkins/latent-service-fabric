@@ -32,6 +32,11 @@ pub mod host {
         include!(concat!(env!("OUT_DIR"), "/blob_host.rs"));
     }
 
+    /// Phase 4 resource types install no storage or transaction authority.
+    pub mod transaction {
+        include!(concat!(env!("OUT_DIR"), "/transaction_host.rs"));
+    }
+
     /// Host bindings for the maintained echo integration fixture.
     pub mod echo {
         include!(concat!(env!("OUT_DIR"), "/echo_host.rs"));

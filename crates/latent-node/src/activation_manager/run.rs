@@ -28,6 +28,7 @@ use super::Inner;
 struct ExecutionControl {
     probe: Arc<ActivationControl>,
     accounting: ActivationBudget,
+    transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
 }
 
 impl ExecutionCancellation for ExecutionControl {
@@ -36,18 +37,18 @@ impl ExecutionCancellation for ExecutionControl {
     }
     fn is_cancelled(&self) -> bool {
         self.probe.stopped()
-            || (self.accounting.profile() == latent_core::BudgetProfile::Phase3
+            || (self.accounting.profile().supports_descendants()
                 && self.accounting.descendant_is_cancelled())
     }
     fn reason(&self) -> Option<String> {
         self.probe.reason().or_else(|| {
-            (self.accounting.profile() == latent_core::BudgetProfile::Phase3
+            (self.accounting.profile().supports_descendants()
                 && self.accounting.descendant_is_cancelled())
             .then(|| "activation ancestor stopped".to_owned())
         })
     }
     fn probe(&self) -> Option<Arc<dyn ExecutionCancellationProbe>> {
-        if self.accounting.profile() == latent_core::BudgetProfile::Phase3 {
+        if self.accounting.profile().supports_descendants() {
             Some(Arc::new(self.clone()))
         } else {
             Some(self.probe.clone())
@@ -55,6 +56,9 @@ impl ExecutionCancellation for ExecutionControl {
     }
     fn budget_accounting(&self) -> Option<&ActivationBudget> {
         Some(&self.accounting)
+    }
+    fn transaction_host(&self) -> Option<Arc<dyn latent_executor::transaction::TransactionHost>> {
+        self.transaction.clone()
     }
 }
 
@@ -164,6 +168,36 @@ impl Inner {
             )
         };
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
+        if let Some(admission) = &lifecycle.transaction_admission {
+            if budget.profile() != latent_core::BudgetProfile::Phase4
+                || envelope.parent_activation_id.is_some()
+                || budget.granted().child_calls != 0
+                || budget.granted().outbound_requests != 0
+            {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "strict transaction admission required",
+                ));
+            }
+            let host = admission.admit(&envelope, &budget).await?;
+            if host.activation_id() != &envelope.activation_id
+                || !host.budget().is_same_instance(&budget)
+            {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "transaction admission owner mismatch",
+                ));
+            }
+            if host.mode() == latent_executor::transaction::Mode::Query
+                && (budget.granted().state_write_bytes != 0 || budget.granted().effect_count != 0)
+            {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "query write budget denied",
+                ));
+            }
+            lifecycle.transaction_host = Some(host);
+        }
         if permit.is_some() {
             lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;
         }
@@ -177,11 +211,11 @@ impl Inner {
             Arc::new(ActivationControl::new(
                 lifecycle.registration(),
                 transport.clone(),
-                budget.profile() == latent_core::BudgetProfile::Phase3,
+                budget.profile().supports_descendants(),
             ))
         });
         let scheduled = if let Some(permit) = permit {
-            if budget.profile() == latent_core::BudgetProfile::Phase3 {
+            if budget.profile().supports_descendants() {
                 budget.enable_descendants(permit.delegation_limits(), control.clone())?;
             }
             stage(
@@ -272,6 +306,7 @@ impl Inner {
         let cancellation = ExecutionControl {
             probe: control.clone(),
             accounting: budget,
+            transaction: lifecycle.transaction_host.clone(),
         };
         lifecycle.advance(ActivationPhase::Running, Metadata::new())?;
         lifecycle.execution_started = true;
@@ -392,7 +427,7 @@ impl Inner {
         )?;
         let child_owner = child
             .map(|child| {
-                if permit.budget_profile() != latent_core::BudgetProfile::Phase3 {
+                if !permit.budget_profile().supports_descendants() {
                     return Err(error(
                         PlatformErrorCode::PermissionDenied,
                         "local service requires Phase 3 admission",

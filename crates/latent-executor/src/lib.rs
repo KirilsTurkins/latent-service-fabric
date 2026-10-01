@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+pub mod transaction;
+
 use std::sync::Arc;
 
 mod preparation_read_wait;
@@ -145,6 +147,13 @@ pub trait ExecutionCancellation: Send + Sync {
     fn activation_id(&self) -> &ActivationId;
     fn is_cancelled(&self) -> bool;
     fn reason(&self) -> Option<String>;
+
+    /// The node's already admitted activation-scoped transaction access. This
+    /// optional host port cannot be selected or constructed by a guest and is
+    /// never retained by a preparation/cache entry. Stateless owners omit it.
+    fn transaction_host(&self) -> Option<Arc<dyn transaction::TransactionHost>> {
+        None
+    }
 
     /// The activation owner's existing accounting state, when available.
     /// Backends clone this handle instead of admitting or registering a second

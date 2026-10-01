@@ -2,6 +2,159 @@ use super::*;
 use crate::ActivationBudget;
 use std::time::{Duration, Instant};
 
+#[test]
+fn phase4_state_counters_are_explicit_intersected_and_not_invented_by_reports() {
+    let now = Instant::now();
+    let mut requested = request();
+    requested.state_read_bytes = 4096;
+    requested.state_write_bytes = 2048;
+    requested.effect_count = 32;
+    assert!(BudgetProfile::Phase3.validate_request(&requested).is_err());
+    let mut ceiling = requested.clone();
+    ceiling.state_read_bytes = 1024;
+    ceiling.state_write_bytes = 512;
+    ceiling.effect_count = 2;
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase4,
+        &requested,
+        &ceiling,
+        &requested,
+        None,
+        ClockSample::new(1000, now),
+    )
+    .unwrap();
+    let budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase4).unwrap();
+    assert_eq!(
+        (
+            budget.remaining_at(now).state_read_bytes,
+            budget.remaining_at(now).state_write_bytes,
+            budget.remaining_at(now).effect_count
+        ),
+        (1024, 512, 2)
+    );
+    budget
+        .consume(BudgetDimension::StateReadBytes, 100)
+        .unwrap();
+    budget
+        .consume(BudgetDimension::StateWriteBytes, 50)
+        .unwrap();
+    budget.consume(BudgetDimension::EffectCount, 1).unwrap();
+    assert_eq!(
+        (
+            budget.remaining_at(now).state_read_bytes,
+            budget.remaining_at(now).state_write_bytes,
+            budget.remaining_at(now).effect_count
+        ),
+        (924, 462, 1)
+    );
+    let invented = BudgetConsumption {
+        state_read_bytes: 1024,
+        state_write_bytes: 512,
+        effect_count: 2,
+        ..BudgetConsumption::default()
+    };
+    let finalization = budget.finalize_at(Some(&invented), now);
+    assert!(finalization.violation().is_none());
+    assert_eq!(
+        (
+            finalization.consumption().state_read_bytes,
+            finalization.consumption().state_write_bytes,
+            finalization.consumption().effect_count
+        ),
+        (100, 50, 1)
+    );
+    assert_eq!(budget.remaining_at(now).state_read_bytes, 0);
+    assert!(budget.consume(BudgetDimension::StateReadBytes, 1).is_err());
+}
+
+#[test]
+fn phase4_group_failure_is_atomic_and_live_reservations_survive_terminal_reports() {
+    let now = Instant::now();
+    let mut requested = request();
+    requested.state_read_bytes = 10;
+    requested.state_write_bytes = 8;
+    requested.effect_count = 1;
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase4,
+        &requested,
+        &requested,
+        &requested,
+        None,
+        ClockSample::new(1000, now),
+    )
+    .unwrap();
+    let budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase4).unwrap();
+    assert!(budget
+        .reserve_group(&[
+            (BudgetDimension::StateReadBytes, 5),
+            (BudgetDimension::EffectCount, 2)
+        ])
+        .is_err());
+    assert_eq!(budget.remaining_at(now).state_read_bytes, 10);
+    let pending = budget
+        .reserve_group(&[
+            (BudgetDimension::StateWriteBytes, 8),
+            (BudgetDimension::EffectCount, 1),
+        ])
+        .unwrap();
+    let finalized = budget.finalize_at(None, now);
+    assert_eq!(finalized.consumption().state_write_bytes, 8);
+    assert_eq!(budget.outstanding_reservations(), 1);
+    pending.refund().unwrap();
+    assert_eq!(budget.outstanding_reservations(), 0);
+    assert_eq!(budget.finalize_at(None, now), finalized);
+}
+
+#[test]
+fn phase4_retains_original_incoming_deadline_and_real_memory_reservation() {
+    let now = Instant::now();
+    let requested = request();
+    let incoming = IncomingDeadline::new(now + Duration::from_millis(100), 999_999);
+    let grant = EffectiveActivationBudget::admit_profile_with_deadline_at(
+        BudgetProfile::Phase4,
+        &requested,
+        &requested,
+        &requested,
+        &incoming,
+        ClockSample::new(1, now),
+    )
+    .unwrap();
+    let budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase4).unwrap();
+    assert_eq!(budget.deadline().monotonic(), Some(incoming.monotonic()));
+    let memory = budget.reserve_runtime_memory(800).unwrap();
+    assert_eq!(budget.remaining_at(now).memory_bytes, 224);
+    drop(memory);
+    assert_eq!(budget.remaining_at(now).memory_bytes, 1024);
+}
+
+#[test]
+fn phase4_host_buffers_and_guest_growth_share_one_ceiling_through_real_cleanup() {
+    let now = Instant::now();
+    let requested = request();
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase4,
+        &requested,
+        &requested,
+        &requested,
+        None,
+        ClockSample::new(1000, now),
+    )
+    .unwrap();
+    let budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase4).unwrap();
+    let buffer = budget.reserve_host_memory(300).unwrap();
+    assert_eq!(budget.remaining_at(now).memory_bytes, 724);
+    assert!(budget.reserve_runtime_memory(800).is_err());
+    budget.reserve_runtime_memory(700).unwrap().confirm();
+    assert!(budget.reserve_host_memory(25).is_err());
+    let frozen = budget.finalize_at(None, now);
+    assert_eq!(frozen.consumption().peak_memory_bytes, 1000);
+    assert_eq!(budget.outstanding_reservations(), 1);
+    assert!(budget.reserve_host_memory(1).is_err());
+    drop(buffer);
+    assert_eq!(budget.outstanding_reservations(), 0);
+    assert_eq!(budget.finalize_at(None, now), frozen);
+}
+
 fn request() -> ResourceBudget {
     ResourceBudget {
         cpu_fuel: 100,

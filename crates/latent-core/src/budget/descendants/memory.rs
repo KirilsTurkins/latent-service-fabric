@@ -8,7 +8,8 @@ impl ActivationBudget {
         let occupied = state
             .own_memory_peak
             .max(state.pending_runtime_memory.unwrap_or(0))
-            + state.child_reserved_memory;
+            + state.child_reserved_memory
+            + state.host_reserved_memory;
         let limit = self.granted().memory_bytes;
         if bytes > limit - occupied {
             return Err(BudgetError::Exhausted {
@@ -28,12 +29,16 @@ impl ActivationBudget {
     ) -> Result<(), BudgetError> {
         let limit = self.granted().memory_bytes;
         if bytes.max(state.pending_runtime_memory.unwrap_or(0))
-            > limit.saturating_sub(state.child_reserved_memory)
+            > limit
+                .saturating_sub(state.child_reserved_memory)
+                .saturating_sub(state.host_reserved_memory)
         {
             return Err(BudgetError::Exhausted {
                 dimension: BudgetDimension::MemoryBytes,
                 limit,
-                consumed: state.own_memory_peak + state.child_reserved_memory,
+                consumed: state.own_memory_peak
+                    + state.child_reserved_memory
+                    + state.host_reserved_memory,
                 requested: bytes,
             });
         }
@@ -46,7 +51,7 @@ impl ActivationBudget {
         state.consumption.peak_memory_bytes = state
             .consumption
             .peak_memory_bytes
-            .max(peak + state.child_observed_memory);
+            .max(peak + state.child_observed_memory + state.host_reserved_memory);
         if increase != 0 {
             self.propagate_memory(increase, true);
         }
@@ -72,7 +77,8 @@ impl ActivationBudget {
             state.child_observed_memory -= bytes;
         }
         debug_assert!(state.child_observed_memory <= state.child_reserved_memory);
-        let observed = state.own_memory_peak + state.child_observed_memory;
+        let observed =
+            state.own_memory_peak + state.child_observed_memory + state.host_reserved_memory;
         state.consumption.peak_memory_bytes = state.consumption.peak_memory_bytes.max(observed);
         self.propagate_memory(bytes, increase);
     }

@@ -9,6 +9,7 @@ mod observation;
 mod preparation;
 mod probes;
 mod run;
+mod transaction;
 mod transport_stop;
 
 use std::future::Future;
@@ -44,6 +45,7 @@ pub use inbound::InboundActivationReservation;
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
+pub use transaction::TransactionActivationAdmission;
 pub use transport_stop::ActivationTransportInterruption;
 use transport_stop::TransportStop;
 
@@ -283,6 +285,26 @@ impl LocalActivationManager {
         request: ActivationRequest,
         deadline: Option<IncomingDeadline>,
     ) -> Result<ActivationHandle, PlatformError> {
+        self.start_scoped(request, deadline, None)
+    }
+
+    /// Trusted transaction ingress supplies one owned admission, independently
+    /// of guest metadata. It consumes the normal resolver, budget and scheduler.
+    pub fn start_transaction_with_deadline(
+        &self,
+        request: ActivationRequest,
+        deadline: Option<IncomingDeadline>,
+        transaction: Arc<dyn TransactionActivationAdmission>,
+    ) -> Result<ActivationHandle, PlatformError> {
+        self.start_scoped(request, deadline, Some(transaction))
+    }
+
+    fn start_scoped(
+        &self,
+        request: ActivationRequest,
+        deadline: Option<IncomingDeadline>,
+        transaction: Option<Arc<dyn TransactionActivationAdmission>>,
+    ) -> Result<ActivationHandle, PlatformError> {
         let envelope = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             self.inner.requests.build(request)
         }))
@@ -305,6 +327,7 @@ impl LocalActivationManager {
             deadline,
         );
         lifecycle.begin_observation(self.inner.observations.as_ref(), &envelope);
+        lifecycle.transaction_admission = transaction;
         Ok(handle(self.inner.clone(), envelope, lifecycle))
     }
 
