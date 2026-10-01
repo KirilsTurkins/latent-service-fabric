@@ -7994,6 +7994,9 @@
         "phase4::state_management::recovery::tests::recovery_original_deadline_and_closed_owner_deny_without_refunding_retained_capacity",
         "phase4::state_management::recovery::tests::shared_recovery_admission_keeps_exact_capacities_and_does_not_borrow_ordinary_slots",
         "phase4::state_management::tests::actual_authenticated_namespace_create_inspect_and_original_receipt",
+        "phase4::state_management::tests::bindings::foreign_actual_request_reservation_is_refused_before_native_management_submission",
+        "phase4::state_management::tests::bindings::management_construction_rejects_unbound_or_foreign_native_owner_before_lookup",
+        "phase4::state_management::tests::bindings::management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_same_engine",
         "phase4::state_management::tests::dispatcher::accepted_namespace_close_invalidates_original_provider_grant_before_more_io",
         "phase4::state_management::tests::dispatcher::actual_authenticated_dispatcher_receipt_is_historical_and_audit_failure_cannot_mutate",
         "phase4::state_management::tests::dispatcher::dispatcher_original_policy_is_captured_before_poll_and_reallow_cannot_revive_it",
@@ -8020,7 +8023,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 147,
+      "minimumCases": 150,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

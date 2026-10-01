@@ -58,6 +58,20 @@ impl DispatcherManagementPort {
     pub fn uses_store(&self, store: &ProtectedStoreOwner) -> bool {
         self.services.store.is_same_owner(store)
     }
+    /// Identity only. Operator inspection and reconciliation remain possible
+    /// while ordinary execution is paused or restore review is required.
+    #[must_use]
+    pub fn uses_native_capacity(
+        &self,
+        owner: &latent_core::native_capacity::NativeCapacityOwner,
+    ) -> bool {
+        self.services.native_capacity.lock().is_ok_and(|binding| {
+            binding
+                .owner
+                .as_ref()
+                .is_some_and(|installed| installed.is_same_owner(owner))
+        })
+    }
     pub fn snapshot(&self) -> Result<DispatcherSnapshot, DispatcherError> {
         Ok(self
             .services

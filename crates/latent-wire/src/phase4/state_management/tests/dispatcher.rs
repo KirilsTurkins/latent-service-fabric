@@ -1,8 +1,7 @@
 use super::*;
 use crate::management::{LocalManagementPolicy, ManagementDecision, ManagementOperation};
 use latent_core::{
-    native_capacity::{NativeCapacityLimits, NativeCapacityOwner},
-    InvocationPrincipal, Metadata, PrincipalKind, TenantId,
+    native_capacity::NativeCapacityOwner, InvocationPrincipal, Metadata, PrincipalKind, TenantId,
 };
 use latent_effects::{
     authority::{EffectAuthorityOwner, EffectTime},
@@ -27,7 +26,7 @@ async fn accepted_namespace_close_invalidates_original_provider_grant_before_mor
     let mut fixture = Fixture::new(true).await;
     drop(fixture.create().await);
     let authority = EffectAuthorityOwner::new(16, 4, 100).unwrap();
-    let rule = original_http_rule(&fixture);
+    let rule = effect_rule(&fixture);
     authority.publish(rule.clone()).unwrap();
     let now = EffectTime {
         unix_millis: 100,
@@ -66,6 +65,12 @@ async fn accepted_namespace_close_invalidates_original_provider_grant_before_mor
     )
     .await
     .unwrap();
+    owner
+        .bind_native_capacity(&fixture.admission.native)
+        .unwrap();
+    assert!(owner
+        .management_port()
+        .uses_native_capacity(&fixture.admission.native));
     Arc::get_mut(&mut fixture.backend.0).unwrap().dispatcher = Some(owner.management_port());
     let response = fixture
         .backend
@@ -100,8 +105,7 @@ async fn accepted_namespace_close_invalidates_original_provider_grant_before_mor
     );
     fixture.finish().await;
 }
-
-fn original_http_rule(fixture: &Fixture) -> latent_effects::authority::EffectRule {
+fn effect_rule(fixture: &Fixture) -> latent_effects::authority::EffectRule {
     use latent_effects::authority::{DispatchCeiling, DispatchProfile, EffectRule, EffectScope};
     EffectRule {
         scope: EffectScope {
@@ -134,7 +138,7 @@ fn original_http_rule(fixture: &Fixture) -> latent_effects::authority::EffectRul
     }
 }
 async fn install(fixture: &mut Fixture) -> (DispatcherOwner, NativeCapacityOwner) {
-    let capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+    let capacity = fixture.admission.native.clone();
     super::recovery::install(fixture, capacity.clone());
     let owner = DispatcherOwner::start(
         DispatcherConfig {
@@ -152,6 +156,12 @@ async fn install(fixture: &mut Fixture) -> (DispatcherOwner, NativeCapacityOwner
     )
     .await
     .unwrap();
+    owner
+        .bind_native_capacity(&fixture.admission.native)
+        .unwrap();
+    assert!(owner
+        .management_port()
+        .uses_native_capacity(&fixture.admission.native));
     Arc::get_mut(&mut fixture.backend.0).unwrap().dispatcher = Some(owner.management_port());
     (owner, capacity)
 }
