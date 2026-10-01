@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_ci_lanes.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Issue #713: require response-policy selection and receipt case parity in the existing bounded renderer lane.",
+  "reviewReason": "Reconcile #713 with reviewed optimizer v3: keep both parent case sets, skip/authority guards and the exact HTTP policy proof in renderer-public; preserve original renderer-angular obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "68edf0f551be4471fc0edf0f9fb929ee5d9df6fe11a005dcc91f72eb78b7a6b9"
+  "sha256": "d4ea849b4b25293ec035c8a9e6d77f7672c59438060dbe8f739920d72315d842"
 }

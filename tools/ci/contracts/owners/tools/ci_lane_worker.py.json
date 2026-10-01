@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_lane_worker.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Issue #713: required renderer lane executes the exact prepared HTTP response-policy and operator-journal proof without changing historical guards or cases.",
+  "reviewReason": "Reconcile #713 with reviewed optimizer v3: keep both parent case sets, skip/authority guards and the exact HTTP policy proof in renderer-public; preserve original renderer-angular obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "aa908fd3eb93ab36f015fafec68e559d7943ab3432ae0f7292f859fed1e69458"
+  "sha256": "782ae0e5d530514920b42adf4635bd81e4b81beb0481fb31c852d0b0cd68e187"
 }

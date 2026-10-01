@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_lane_inventory.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Issue #713: reject removal, redirection, unignored execution or unbounded configuration of the exact native HTTP response-policy proof.",
+  "reviewReason": "Reconcile #713 with reviewed optimizer v3: keep both parent case sets, skip/authority guards and the exact HTTP policy proof in renderer-public; preserve original renderer-angular obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b783874332eeca79d25d5b2ff7a556ec154a2a988265fa3481d49a152acab615"
+  "sha256": "7c96ed0f66b678e4195f9265e177221c60f3953886a1dda5c70a77ef5b6e1af9"
 }
