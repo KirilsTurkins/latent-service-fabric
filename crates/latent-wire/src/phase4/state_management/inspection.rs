@@ -46,14 +46,15 @@ pub(super) async fn inspect(
                 );
                 // Keep global capacity in the unclaimed native completion as well
                 // as the waiter. Its bytes retire after that completion's values.
-                result.map(|value| (value, access.inspect, finish, retained))
+                Ok((result, access.inspect, finish, retained))
             },
         )
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    let (read, namespace) = result?;
-    read_ack(finish).await?;
+    let acknowledgement = read_ack(finish).await;
+    let (read, namespace) = result.map_err(protected_error)??;
+    acknowledgement?;
     response::owned(
         inner,
         worker_permit,
@@ -211,13 +212,14 @@ pub(super) async fn receipt(
                 None,
                 true,
             );
-            result.map(|value| (value, access.inspect, finish, retained))
+            Ok((result, access.inspect, finish, retained))
         })
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    let (read, receipt, public) = result?;
-    read_ack(finish).await?;
+    let acknowledgement = read_ack(finish).await;
+    let (read, receipt, public) = result.map_err(protected_error)??;
+    acknowledgement?;
     response::owned(
         inner,
         worker_permit,

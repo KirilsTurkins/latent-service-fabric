@@ -70,14 +70,14 @@ pub(super) async fn mutate(
                 ),
             };
             let finish = pending.finish(disposition, reason, digest, replay);
-            result.map(|value| (value, access.inspect, finish, retained))
+            Ok((result, access.inspect, finish, retained))
         })
         .map_err(protected_error)?;
     let (result, inspect, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    let (read, receipt, replayed) = result?;
-    let public = receipt_to_proto(&receipt).map_err(namespace_error)?;
     let ack = audit::ack(finish).await;
+    let (read, receipt, replayed) = result.map_err(protected_error)??;
+    let public = receipt_to_proto(&receipt).map_err(namespace_error)?;
     response::owned(
         inner,
         worker_permit,

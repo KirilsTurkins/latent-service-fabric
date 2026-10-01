@@ -75,14 +75,17 @@ pub(super) async fn mutate(
                     ),
                 };
                 let finish = pending.finish(disposition, reason, digest, replayed);
-                result.map(|value| (value, access.inspect, finish, retained))
+                Ok((result, access.inspect, finish, retained))
             },
         )
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    let (read, receipt, _) = result?;
+    // Retire the durable audit attempt on rejected/native-error paths as well.
+    // Returning early would leave the original critical slot pending when the
+    // caller immediately makes its next authenticated request.
     let ack = audit::ack(finish).await;
+    let (read, receipt, _) = result.map_err(protected_error)??;
     response::owned(
         inner,
         worker_permit,
