@@ -4245,6 +4245,7 @@
         "network::tests::configuration_is_explicit_bounded_redacted_and_does_not_start_io",
         "network::tests::typed_platform_details_require_canonical_codes_and_never_enable_retries",
         "network::transaction::tests::actual_unary_keeps_durable_rejection_through_later_audit_failure_and_never_resubmits",
+        "network::transaction::tests::dispatcher_uses_original_channel_and_keeps_receipt_through_independent_audit_failure",
         "network::transaction::tests::full_width_generation_presence_and_qualified_pages_roundtrip",
         "network::transaction::tests::local_deadline_keeps_original_identity_and_shutdown_retires",
         "network::transaction::tests::model_collections_are_bounded_before_native_conversion",
@@ -4257,7 +4258,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "sdk/rust/Cargo.toml",
-      "minimumCases": 14,
+      "minimumCases": 15,
       "mode": "libtest",
       "package": "latent-sdk",
       "platforms": [

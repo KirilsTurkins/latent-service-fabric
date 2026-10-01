@@ -8,9 +8,9 @@ mod responses;
 mod wire_schemas;
 
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 mod test_peer;
+#[cfg(test)]
+mod tests;
 
 use super::{FailureKind, RpcClient, RpcFailure, channel::CallChannel, profile::response_audit};
 use crate::{management, transaction as model};
@@ -168,6 +168,33 @@ impl model::TransactionClient for RpcClient {
         "/latent.control.v1.StateService",
         LATENT_CONTROL_V1_GETSTATEOPERATIONRECEIPTRESPONSE
     );
+    operation!(
+        inspect_dispatcher,
+        InspectDispatcher,
+        InspectDispatcherRequest,
+        InspectDispatcherResponse,
+        control,
+        "/latent.control.v1.DispatcherService",
+        LATENT_CONTROL_V1_INSPECTDISPATCHERRESPONSE
+    );
+    operation!(
+        control_dispatcher,
+        ControlDispatcher,
+        ControlDispatcherRequest,
+        ControlDispatcherResponse,
+        control,
+        "/latent.control.v1.DispatcherService",
+        LATENT_CONTROL_V1_CONTROLDISPATCHERRESPONSE
+    );
+    operation!(
+        get_dispatcher_operation,
+        GetDispatcherOperation,
+        GetDispatcherOperationRequest,
+        GetDispatcherOperationResponse,
+        control,
+        "/latent.control.v1.DispatcherService",
+        LATENT_CONTROL_V1_GETDISPATCHEROPERATIONRESPONSE
+    );
 }
 
 async fn unary<Input, Wire>(
@@ -212,6 +239,7 @@ impl RpcClient {
     {
         let mut checked = None;
         let mut observed = None;
+        let mut unsupported_audit = None;
         let mut identity = context.identity.clone();
         let reply = self
             .unary_with_reservation(
@@ -237,12 +265,14 @@ impl RpcClient {
                             }
                         })?;
                     let (metadata, value, extensions) = reply.into_parts();
-                    let (value, validation, observation) = value.check(&context.association);
+                    let (value, validation, observation, bad_audit) =
+                        value.check(&context.association);
                     checked = Some(validation);
-                    if validation.is_ok() {
-                        responses::extend_identity(&mut identity, observation.as_ref());
-                        observed = observation;
-                    }
+                    unsupported_audit = bad_audit;
+                    // Observation is produced only after the complete associated
+                    // durable record validates, before its independent audit value.
+                    responses::extend_identity(&mut identity, observation.as_ref());
+                    observed = observation;
                     Ok(Response::from_parts(metadata, value, extensions))
                 },
             )
@@ -264,13 +294,13 @@ impl RpcClient {
             }
         };
         if checked != Some(Ok(())) {
-            let error = RpcFailure::local(FailureKind::InvalidResponse)
-                .received(&context.transport_identity(), reply.audit.as_ref());
-            return Err(model::ClientFailure {
-                transport: Box::new(error.into()),
-                identity: Box::new(identity),
-                observed: None,
-            });
+            return Err(responses::invalid_failure(
+                &context,
+                reply.audit.as_ref(),
+                unsupported_audit,
+                identity,
+                observed,
+            ));
         }
         let (audit_ack, audit_status, audit_attempt_sequence) = response_audit(reply.audit);
         let known = observed.as_ref().is_some_and(responses::known);

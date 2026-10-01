@@ -67,6 +67,9 @@ export class RpcClient implements profile.ClientProfile, transactionClient.Trans
   selectEntity(request: transaction.SelectEntityRequest, options?: profile.CallOptions): Promise<transactionClient.ClientResponse<transaction.SelectEntityResponse>> { return this.transactionCall("selectEntity", request, options); }
   mutateState(request: transaction.MutateStateRequest, options?: profile.CallOptions): Promise<transactionClient.ClientResponse<transaction.MutateStateResponse>> { return this.transactionCall("mutateState", request, options); }
   getStateOperationReceipt(request: transaction.GetStateOperationReceiptRequest, options?: profile.CallOptions): Promise<transactionClient.ClientResponse<transaction.GetStateOperationReceiptResponse>> { return this.transactionCall("getStateOperationReceipt", request, options); }
+  inspectDispatcher(request: transaction.InspectDispatcherRequest, options?: profile.CallOptions): Promise<transactionClient.ClientResponse<transaction.InspectDispatcherResponse>> { return this.transactionCall("inspectDispatcher", request, options); }
+  controlDispatcher(request: transaction.ControlDispatcherRequest, options?: profile.CallOptions): Promise<transactionClient.ClientResponse<transaction.ControlDispatcherResponse>> { return this.transactionCall("controlDispatcher", request, options); }
+  getDispatcherOperation(request: transaction.GetDispatcherOperationRequest, options?: profile.CallOptions): Promise<transactionClient.ClientResponse<transaction.GetDispatcherOperationResponse>> { return this.transactionCall("getDispatcherOperation", request, options); }
 
   private transactionCall<Response>(operation: Operation, request: unknown, options?: profile.CallOptions): Promise<transactionClient.ClientResponse<Response>> {
     return this.call<Response>(operation, request, options).then((response) => response as transactionClient.ClientResponse<Response>)

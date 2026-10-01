@@ -227,6 +227,13 @@ def render(contract: dict, language: str) -> str:
         source = source.replace("use std::future::Future;\n", "").replace("use std::pin::Pin;\n", "")
         if not any(field.get("map") for fields in messages.values() for field in fields):
             source = source.replace("use std::collections::BTreeMap;\n", "")
+        for name, fields in messages.items():
+            if sum(field["type"] == "bool" for field in fields) > 3:
+                # These descriptor fields are independent observed wire facts.
+                # Combining them into a local state enum would change the ABI.
+                source = source.replace(f"pub struct {name} {{",
+                                        "#[allow(clippy::struct_excessive_bools)]\n"
+                                        f"pub struct {name} {{")
     elif language == "go":
         source = old.go_models(profile, messages, enums).split("type ClientResponse[", 1)[0]
         source = source.replace('package profile\n\nimport (\n\t"context"\n\t"strconv"\n)\n',

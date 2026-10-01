@@ -27,13 +27,16 @@ const operations = {
   selectEntity: ["latent.control.v1.StateService", "SelectEntity"],
   mutateState: ["latent.control.v1.StateService", "MutateState"],
   getStateOperationReceipt: ["latent.control.v1.StateService", "GetStateOperationReceipt"],
+  inspectDispatcher: ["latent.control.v1.DispatcherService", "InspectDispatcher"],
+  controlDispatcher: ["latent.control.v1.DispatcherService", "ControlDispatcher"],
+  getDispatcherOperation: ["latent.control.v1.DispatcherService", "GetDispatcherOperation"],
 } as const;
 
 export type Operation = keyof typeof operations;
 
 export function isTransaction(operation: Operation): boolean {
   const service = operations[operation][0];
-  return service === "latent.transaction.v1.TransactionService" || service === "latent.control.v1.StateService";
+  return service === "latent.transaction.v1.TransactionService" || service === "latent.control.v1.StateService" || service === "latent.control.v1.DispatcherService";
 }
 
 export function method(operation: Operation): DescMethod {

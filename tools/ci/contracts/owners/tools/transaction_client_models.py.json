@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/transaction_client_models.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Generate the exact bounded Phase 4 descriptor for the maintained Node codec alongside the six additive models",
+  "reviewReason": "Preserve independent descriptor wire facts in generated Rust snapshots with a struct-scoped lint annotation",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "21454398033e21e88e92cec0e3ea757cd76d18c9d123f8c3285bc3760575a1fa"
+  "sha256": "7ae18f941920fb2b03e95728079e24dc7cff0534a61881fb446cea8254b5ed41"
 }

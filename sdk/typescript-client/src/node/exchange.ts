@@ -146,6 +146,7 @@ export function exchange<Response>(stream: ClientHttp2Stream, frame: Buffer, opt
           transactions.validateResponse(options.operation, options.request, value, options.tenant);
           observed = transactions.observe(options.operation, value);
           transactionIdentity = transactions.extendIdentity(transactionIdentity, observed);
+          transactions.validateIndependentAudit(value);
         } else validateResponse(options.operation, options.request, value, options.tenant);
         if (transactional) acknowledgement = audit(headers);
         const responseIdentity = options.operation === "invoke" && typeof value.activationId === "string" ? { activationId: value.activationId } : options.identity;

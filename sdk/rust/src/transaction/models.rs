@@ -272,6 +272,7 @@ pub struct ControlDispatcherResponse {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct DispatcherSnapshot {
     pub generation: Option<DispatcherGeneration>,
     pub paused: bool,

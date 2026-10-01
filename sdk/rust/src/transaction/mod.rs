@@ -27,6 +27,8 @@ pub struct RecoveryIdentity {
     pub expected_generation: Option<u64>,
     pub expected_version: Option<Vec<u8>>,
     pub expected_policy_digest: Option<String>,
+    pub dispatcher_action: Option<DispatcherAction>,
+    pub dispatcher_expected_generation: Option<DispatcherGeneration>,
 }
 
 /// A validated durable observation survives a later local transport/cleanup error.
@@ -52,6 +54,7 @@ pub enum ObservedOutcome {
     State(Box<StateOperationReceipt>),
     Namespace(Box<NamespaceOperationReceipt>),
     Effect(Box<EffectReceipt>),
+    Dispatcher(Box<DispatcherOperationReceipt>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -115,5 +118,20 @@ pub trait TransactionClient: Send + Sync {
         get_state_operation_receipt,
         GetStateOperationReceiptRequest,
         GetStateOperationReceiptResponse
+    );
+    operation!(
+        inspect_dispatcher,
+        InspectDispatcherRequest,
+        InspectDispatcherResponse
+    );
+    operation!(
+        control_dispatcher,
+        ControlDispatcherRequest,
+        ControlDispatcherResponse
+    );
+    operation!(
+        get_dispatcher_operation,
+        GetDispatcherOperationRequest,
+        GetDispatcherOperationResponse
     );
 }

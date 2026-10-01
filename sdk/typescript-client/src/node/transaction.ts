@@ -115,6 +115,23 @@ function quota(raw: unknown): void {
   if ((value.recoveryBytes as bigint) > (value.resultBytes as bigint)) throw new ShapeError();
 }
 
+function dispatcherGeneration(raw: unknown): RecordValue {
+  const value = object(raw); integer(value.ownerEpoch, maxU64, true); integer(value.revision, maxU64, true); return value;
+}
+function dispatcherControl(raw: unknown): RecordValue {
+  const value = object(raw); selected(value.profile); enumeration(value.scope, 1, "dispatcher.scope");
+  id(value.operationId); enumeration(value.action, 2, "dispatcher.action");
+  if (dispatcherGeneration(value.expectedGeneration).revision === maxU64) throw new ShapeError();
+  return value;
+}
+function dispatcherReceipt(raw: unknown, original: RecordValue): void {
+  const value = object(raw); for (const key of ["operationId", "receiptId", "authenticatedOperator", "actorTenant"]) id(value[key]);
+  enumeration(value.action, 2, "dispatcher.action"); enumeration(value.disposition, 5, "dispatcher.disposition");
+  const before = dispatcherGeneration(value.beforeGeneration), after = dispatcherGeneration(value.afterGeneration);
+  same(value.operationId, original.operationId); same(value.action, original.action); same(before, original.expectedGeneration);
+  same(after.ownerEpoch, before.ownerEpoch); same(after.revision, (before.revision as bigint) + 1n);
+  if (value.disposition !== 1 || (value.action === 2 && (value.clockContinuityProven !== true || value.restoreReviewRequired !== false))) throw new ShapeError();
+}
 export function validateRequest(operation: Operation, raw: unknown, tenant: string): void {
   const value = object(raw);
   switch (operation) {
@@ -160,6 +177,9 @@ export function validateRequest(operation: Operation, raw: unknown, tenant: stri
       else if (value.configuration !== undefined) throw new ShapeError();
       break;
     }
+    case "inspectDispatcher": selected(value.profile); enumeration(value.scope, 1, "dispatcher.scope"); break;
+    case "controlDispatcher": dispatcherControl(value); break;
+    case "getDispatcherOperation": dispatcherControl(value.original); break;
     default: throw new ShapeError();
   }
 }
@@ -259,9 +279,9 @@ function receipt(raw: unknown, original: RecordValue, tenant: string, namespaceR
 function view(raw: unknown, expected: unknown, tenant: string): void {
   const value = object(raw); namespace(value.namespace, tenant); same(value.namespace, expected); bytes(value.version); id(value.stateSchema);
 }
-function linkedInvocation(raw: unknown, captured: unknown, tenant: string): void {
+function linkedInvocation(raw: unknown, captured: unknown, tenant: string, original: unknown): void {
   const value = object(raw), selected = source(captured);
-  validateInvocation("invoke", {}, value, tenant);
+  validateInvocation("invoke", original, value, tenant);
   same(value.publicationId, selected.publicationId); same(value.revisionId, selected.revisionId);
   same(value.releaseDigest, selected.componentDigest); same(value.routeGeneration, selected.routeGeneration);
   for (const kind of ["success", "declaredError", "platformFailure"] as const)
@@ -273,7 +293,7 @@ export function validateResponse(operation: Operation, original: unknown, value:
   switch (operation) {
     case "invokeCommand": {
       const inspected = command(value.command, requested.command, tenant);
-      linkedInvocation(value.invocation, inspected.source, tenant);
+      linkedInvocation(value.invocation, inspected.source, tenant, requested.invocation ?? {});
       const invoked = object(value.invocation);
       for (const [left, right] of [["success", "success"], ["businessRejection", "declaredError"], ["technicalFailure", "platformFailure"]])
         if (inspected[left!] !== undefined) same(inspected[left!], invoked[right!]);
@@ -289,7 +309,7 @@ export function validateResponse(operation: Operation, original: unknown, value:
       if (value.command !== undefined) { const inspected = command(value.command, object(requested.command).command, tenant); if (value.disposition === 2 && inspected.outcome !== 2) throw new ShapeError(); }
       else if (value.disposition !== 4) throw new ShapeError();
       break;
-    case "query": view(value.view, requested.namespace, tenant); linkedInvocation(value.invocation, value.source, tenant); break;
+    case "query": view(value.view, requested.namespace, tenant); linkedInvocation(value.invocation, value.source, tenant, requested.invocation ?? {}); break;
     case "inspectNamespace": {
       const inspected = object(value.namespace); view(inspected.view, requested.namespace, tenant); enumeration(inspected.status, 4, "namespace.status");
       integer(inspected.generation, maxU64, true); quota(inspected.quota); id(inspected.engineProfile); digest(inspected.engineProfileDigest);
@@ -322,8 +342,21 @@ export function validateResponse(operation: Operation, original: unknown, value:
     case "getStateOperationReceipt":
       if ((value.receipt !== undefined) === (value.namespaceReceipt !== undefined)) throw new ShapeError();
       receipt(value.receipt ?? value.namespaceReceipt, requested, tenant, value.namespaceReceipt !== undefined); break;
+    case "inspectDispatcher": {
+      const snapshot = object(value.dispatcher); dispatcherGeneration(snapshot.generation); enumeration(snapshot.failure, 7, "dispatcher.failure");
+      if ((snapshot.pendingControl === true || snapshot.restoreReviewRequired === true) && snapshot.paused !== true) throw new ShapeError();
+      break;
+    }
+    case "controlDispatcher":
+      dispatcherReceipt(value.receipt, requested);
+      if ((value.replayed === true && value.published === true) || (requested.action === 1 && value.published === true && value.paused !== true)) throw new ShapeError();
+      break;
+    case "getDispatcherOperation": dispatcherReceipt(value.receipt, object(requested.original)); break;
     default: throw new ShapeError();
   }
+}
+
+export function validateIndependentAudit(value: RecordValue): void {
   if (value.auditAck !== undefined) enumeration(object(value.auditAck).status, 4, "audit.status");
 }
 
@@ -347,7 +380,7 @@ export function identity(operation: Operation, raw: unknown): RecoveryIdentity {
     if (operation === "listEffectHistory") assign("effectId", object(value.effect).effectId);
     const current = operation === "cancelCommand" ? object(value.command) : operation === "listEffectHistory" ? object(value.effect) : inspected ?? value;
     if (current.authorizationPublication !== undefined) { publication(current.authorizationPublication, object(current.authorizationPublication).tenant as string); assign("authorizationPublication", current.authorizationPublication); }
-    if (value.expectedGeneration !== undefined) { integer(value.expectedGeneration, maxU64); assign("expectedGeneration", value.expectedGeneration); }
+    if (operation === "mutateNamespace" && value.expectedGeneration !== undefined) { integer(value.expectedGeneration, maxU64); assign("expectedGeneration", value.expectedGeneration); }
     if (value.expectedVersion !== undefined) { bytes(value.expectedVersion); assign("expectedVersion", value.expectedVersion); }
     if (value.expectedPolicyDigest !== undefined) { digest(value.expectedPolicyDigest); assign("expectedPolicyDigest", value.expectedPolicyDigest); }
     if (operation === "invokeCommand") {
@@ -356,13 +389,19 @@ export function identity(operation: Operation, raw: unknown): RecoveryIdentity {
       assign("expectedVersions", entries);
       if (value.retryAttempt !== undefined) { const retry = object(value.retryAttempt); id(retry.requestId); fence(retry.expectedAbort); assign("retryRequestId", retry.requestId); assign("expectedAbort", retry.expectedAbort); assign("attemptId", object(retry.expectedAbort).attemptId); }
     }
+    if (operation === "controlDispatcher" || operation === "getDispatcherOperation") {
+      const original = operation === "controlDispatcher" ? value : object(value.original);
+      id(original.operationId); enumeration(original.action, 2, "dispatcher.action"); dispatcherGeneration(original.expectedGeneration);
+      assign("operationId", original.operationId); assign("dispatcherAction", original.action); assign("dispatcherExpectedGeneration", original.expectedGeneration);
+    }
     return result as RecoveryIdentity;
   } catch { return {}; }
 }
 
 export function context(operation: Operation, raw: RecordValue): RecordValue {
-  if (operation === "invokeCommand") return { command: raw.command };
-  if (operation === "query") return { namespace: raw.namespace };
+  const invocationIdentity = raw.invocation === undefined ? {} : { invocation: { activationId: object(raw.invocation).activationId } };
+  if (operation === "invokeCommand") return { command: raw.command, ...invocationIdentity };
+  if (operation === "query") return { namespace: raw.namespace, ...invocationIdentity };
   return raw;
 }
 
@@ -374,12 +413,14 @@ export function observe(operation: Operation, value: RecordValue): ObservedOutco
   if (operation === "getEffect") return { kind: "effect", receipt: value.effect as model.EffectReceipt };
   if (operation === "mutateNamespace" || value.namespaceReceipt !== undefined) return { kind: "namespace", receipt: (value.receipt ?? value.namespaceReceipt) as model.NamespaceOperationReceipt };
   if (operation === "mutateState" || operation === "getStateOperationReceipt") return { kind: "state", receipt: value.receipt as model.StateOperationReceipt };
+  if (operation === "controlDispatcher" || operation === "getDispatcherOperation") return { kind: "dispatcher", receipt: value.receipt as model.DispatcherOperationReceipt };
   return undefined;
 }
 
 export function known(value: ObservedOutcome | undefined): boolean {
   if (!value || value.kind === "effect") return false;
   if (value.kind === "command") return value.command.metadataDurable && [2, 3, 4].includes(value.command.outcome);
+  if (value.kind === "dispatcher") return value.receipt.disposition === 1;
   return [1, 2, 3].includes(value.receipt.disposition);
 }
 

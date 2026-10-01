@@ -40,6 +40,11 @@ pub(super) fn local_failure(
 pub(super) fn identity(request: &phase4::Request) -> model::RecoveryIdentity {
     use phase4::Request;
     let mut result = model::RecoveryIdentity::default();
+    if let Some(value) = dispatcher_original(request) {
+        result.operation_id = Some(value.operation_id.clone());
+        result.dispatcher_action = Some(model::DispatcherAction(value.action));
+        result.dispatcher_expected_generation = value.expected_generation.map(Into::into);
+    }
     let inspect = match request {
         Request::InspectNamespace(value) => Some(&**value),
         Request::MutateNamespace(value) => {
@@ -134,18 +139,48 @@ pub(super) fn identity(request: &phase4::Request) -> model::RecoveryIdentity {
     result
 }
 
+fn dispatcher_original(
+    request: &phase4::Request,
+) -> Option<&super::control::ControlDispatcherRequest> {
+    match request {
+        phase4::Request::ControlDispatcher(value) => Some(value),
+        phase4::Request::GetDispatcherOperation(value) => value.original.as_ref(),
+        _ => None,
+    }
+}
+
 pub(super) fn prepare(
     request: &phase4::Request,
     client: &RpcClient,
     started: Instant,
     options: &management::CallOptions,
 ) -> Result<Context, model::ClientFailure> {
-    request
-        .validate()
-        .map_err(|error| local_failure(error, model::RecoveryIdentity::default()))?;
+    request.validate().map_err(|error| {
+        // A representable original node-control precondition remains available
+        // when its successor cannot be represented. This data grants no rights.
+        let bounded = dispatcher_original(request).filter(|value| {
+            value.operation_id.len() <= 256
+                && !value.operation_id.is_empty()
+                && !value.operation_id.chars().any(char::is_control)
+                && matches!(value.action, 1 | 2)
+                && value
+                    .expected_generation
+                    .as_ref()
+                    .is_some_and(|generation| generation.owner_epoch > 0 && generation.revision > 0)
+        });
+        local_failure(
+            error,
+            if bounded.is_some() {
+                identity(request)
+            } else {
+                model::RecoveryIdentity::default()
+            },
+        )
+    })?;
     let identity = identity(request);
     let operation = || {
-        if request.tenant() != Some(client.inner.tenant.0.as_str()) {
+        if !request.is_node_management() && request.tenant() != Some(client.inner.tenant.0.as_str())
+        {
             return Err(RpcFailure::local(FailureKind::InvalidRequest));
         }
         let limits = client.limits();

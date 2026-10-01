@@ -6,7 +6,82 @@ use crate::network::{ClientConfig, ClientLimits};
 use latent_core::TenantId;
 use latent_rpc::{control::v1 as c, phase4, transaction::v1 as t};
 use prost::Message;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 use tokio::time::Instant;
+use tonic::codegen::tokio_stream::{StreamExt, wrappers::TcpListenerStream};
+
+struct Peer {
+    client: RpcClient,
+    calls: Arc<AtomicUsize>,
+    connections: Arc<AtomicUsize>,
+    stop: tokio::sync::oneshot::Sender<()>,
+    server: tokio::task::JoinHandle<()>,
+}
+
+async fn peer(fail_audit: bool) -> Peer {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = listener.local_addr().unwrap();
+    let calls = Arc::new(AtomicUsize::new(0));
+    let connections = Arc::new(AtomicUsize::new(0));
+    let accepted = Arc::clone(&connections);
+    let incoming = TcpListenerStream::new(listener).map(move |value| {
+        accepted.fetch_add(1, Ordering::AcqRel);
+        value
+    });
+    let transaction = super::test_peer::Service {
+        calls: Arc::clone(&calls),
+        fail_audit,
+    };
+    let dispatcher = super::test_peer::Dispatcher {
+        calls: Arc::clone(&calls),
+    };
+    let (stop, stopped) = tokio::sync::oneshot::channel();
+    let server = tokio::spawn(async move {
+        tonic::transport::Server::builder()
+            .max_concurrent_streams(2)
+            .add_service(t::transaction_service_server::TransactionServiceServer::new(transaction))
+            .add_service(c::dispatcher_service_server::DispatcherServiceServer::new(
+                dispatcher,
+            ))
+            .serve_with_incoming_shutdown(incoming, async {
+                let _ = stopped.await;
+            })
+            .await
+            .unwrap();
+    });
+    let client = RpcClient::new(ClientConfig {
+        endpoint,
+        tenant: TenantId("tests".into()),
+        credential: "LSF-PUBLIC-SDK-TRANSPORT-FIXTURE-ONLY".to_owned().into(),
+        limits: ClientLimits::default(),
+    })
+    .unwrap();
+    Peer {
+        client,
+        calls,
+        connections,
+        stop,
+        server,
+    }
+}
+
+impl Peer {
+    async fn shutdown(self) {
+        self.client
+            .shutdown(Instant::now() + std::time::Duration::from_secs(2))
+            .await
+            .unwrap();
+        assert_eq!(self.client.usage().active_calls, 0);
+        assert_eq!(self.client.usage().reserved_message_bytes, 0);
+        assert_eq!(self.client.usage().sockets, 0);
+        assert_eq!(self.client.usage().executor_tasks, 0);
+        let _ = self.stop.send(());
+        self.server.await.unwrap();
+    }
+}
 
 fn namespace() -> t::NamespaceSelector {
     t::NamespaceSelector {
@@ -139,7 +214,14 @@ fn predecode_rejects_duplicate_oneof_utf8_and_empty_record_expansion() {
     let duplicate = [18, 1, b'a', 18, 1, b'b'];
     assert!(codec::preflight(schema, &duplicate, 1024).is_err());
     let retained_ids: Vec<u8> = [50, 1, b'x'].repeat(256);
-    assert!(codec::preflight(&wire_schemas::LATENT_TRANSACTION_V1_LINKEDRETENTION, &retained_ids, 1024).is_ok());
+    assert!(
+        codec::preflight(
+            &wire_schemas::LATENT_TRANSACTION_V1_LINKEDRETENTION,
+            &retained_ids,
+            1024
+        )
+        .is_ok()
+    );
 }
 
 #[test]
@@ -172,7 +254,7 @@ fn unknown_record_and_transport_abort_never_prove_an_explicit_attempt() {
             ..Default::default()
         }),
     };
-    let (_, checked, observed) = value.check(&association);
+    let (_, checked, observed, _) = value.check(&association);
     assert!(checked.is_ok());
     assert!(!super::responses::known(observed.as_ref().unwrap()));
     assert!(
@@ -221,58 +303,208 @@ async fn local_deadline_keeps_original_identity_and_shutdown_retires() {
 #[tokio::test]
 async fn actual_unary_keeps_durable_rejection_through_later_audit_failure_and_never_resubmits() {
     use model::TransactionClient;
-    use std::sync::{atomic::{AtomicUsize, Ordering}, Arc};
-    use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
     for fail_audit in [false, true] {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let address = listener.local_addr().unwrap();
-        let calls = Arc::new(AtomicUsize::new(0));
-        let service = super::test_peer::Service { calls: Arc::clone(&calls), fail_audit };
-        let (stop, stopped) = tokio::sync::oneshot::channel();
-        let server = tokio::spawn(async move {
-            tonic::transport::Server::builder().max_concurrent_streams(2)
-                .add_service(t::transaction_service_server::TransactionServiceServer::new(service))
-                .serve_with_incoming_shutdown(TcpListenerStream::new(listener), async { let _ = stopped.await; }).await.unwrap();
-        });
-        let client = RpcClient::new(ClientConfig { endpoint: address, tenant: TenantId("tests".into()),
-            credential: "LSF-PUBLIC-SDK-TRANSPORT-FIXTURE-ONLY".to_owned().into(), limits: ClientLimits::default() }).unwrap();
-        let error = client.lookup_command(lookup().into(), model::CallOptions::default()).await.unwrap_err();
-        assert_eq!(calls.load(Ordering::Acquire), 1);
-        assert_eq!(error.identity.command.as_ref().unwrap().client_key, "original-client-key");
+        let peer = peer(fail_audit).await;
+        let error = peer
+            .client
+            .lookup_command(lookup().into(), model::CallOptions::default())
+            .await
+            .unwrap_err();
+        assert_eq!(peer.calls.load(Ordering::Acquire), 1);
+        assert_eq!(
+            error.identity.command.as_ref().unwrap().client_key,
+            "original-client-key"
+        );
         if fail_audit {
-            assert_eq!(error.transport.outcome, crate::management::OutcomeKnowledge::OBSERVED);
-            assert!(matches!(error.observed, Some(model::ObservedOutcome::Command(value)) if
+            assert_eq!(
+                error.transport.outcome,
+                crate::management::OutcomeKnowledge::OBSERVED
+            );
+            assert!(
+                matches!(error.observed, Some(model::ObservedOutcome::Command(value)) if
                 value.outcome == model::CommandOutcome::REJECTED && value.metadata_durable &&
-                !value.application_state_committed && value.proven_abort.is_none()));
+                !value.application_state_committed && value.proven_abort.is_none())
+            );
         } else {
-            assert_eq!(error.transport.outcome, crate::management::OutcomeKnowledge::UNKNOWN);
+            assert_eq!(
+                error.transport.outcome,
+                crate::management::OutcomeKnowledge::UNKNOWN
+            );
             assert!(error.observed.is_none());
             let request = model::InvokeCommandRequest {
-                profile: Some(model::current_profile()), command: lookup().command.map(Into::into),
+                profile: Some(model::current_profile()),
+                command: lookup().command.map(Into::into),
                 invocation: Some(crate::management::InvokeRequest {
                     activation_id: Some("original-activation".into()),
-                    target: Some(crate::management::InvocationTarget { tenant: "tests".into(), service: "aggregate".into(),
-                        contract: "example:aggregate/api@1.0.0".into(), function: "update".into(), route: None }),
-                    payload: vec![1], media_type: "application/octet-stream".into(),
-                    budget: Some(crate::management::ResourceBudget::default()), ..Default::default()
-                }), input_format: "raw-v1".into(),
-                expected_versions: vec![model::ExpectedVersion { key: vec![1], absent: Some(true), version: None }],
+                    target: Some(crate::management::InvocationTarget {
+                        tenant: "tests".into(),
+                        service: "aggregate".into(),
+                        contract: "example:aggregate/api@1.0.0".into(),
+                        function: "update".into(),
+                        route: None,
+                    }),
+                    payload: vec![1],
+                    media_type: "application/octet-stream".into(),
+                    budget: Some(crate::management::ResourceBudget::default()),
+                    ..Default::default()
+                }),
+                input_format: "raw-v1".into(),
+                expected_versions: vec![model::ExpectedVersion {
+                    key: vec![1],
+                    absent: Some(true),
+                    version: None,
+                }],
                 retry_attempt: None,
             };
-            let error = client.invoke_command(request, model::CallOptions::default()).await.unwrap_err();
-            assert_eq!(calls.load(Ordering::Acquire), 2);
+            let error = peer
+                .client
+                .invoke_command(request, model::CallOptions::default())
+                .await
+                .unwrap_err();
+            assert_eq!(peer.calls.load(Ordering::Acquire), 2);
             assert!(error.observed.is_none());
-            assert_eq!(error.transport.outcome, crate::management::OutcomeKnowledge::UNKNOWN);
+            assert_eq!(
+                error.transport.outcome,
+                crate::management::OutcomeKnowledge::UNKNOWN
+            );
             assert_eq!(error.identity.expected_versions[0].absent, Some(true));
             assert!(error.identity.expected_abort.is_none());
             assert!(error.identity.retry_request_id.is_none());
         }
-        client.shutdown(Instant::now() + std::time::Duration::from_secs(2)).await.unwrap();
-        assert_eq!(client.usage().active_calls, 0);
-        assert_eq!(client.usage().reserved_message_bytes, 0);
-        assert_eq!(client.usage().sockets, 0);
-        assert_eq!(client.usage().executor_tasks, 0);
-        let _ = stop.send(());
-        server.await.unwrap();
+        peer.shutdown().await;
     }
+}
+
+#[tokio::test]
+async fn dispatcher_uses_original_channel_and_keeps_receipt_through_independent_audit_failure() {
+    use model::TransactionClient;
+    let peer = peer(false).await;
+    let original = c::ControlDispatcherRequest {
+        profile: Some(phase4::current_profile()),
+        scope: c::DispatcherScope::Node as i32,
+        operation_id: "original-control".into(),
+        action: c::DispatcherAction::Pause as i32,
+        expected_generation: Some(c::DispatcherGeneration {
+            owner_epoch: u64::MAX,
+            revision: u64::MAX - 1,
+        }),
+    };
+    let failure = peer
+        .client
+        .control_dispatcher(original.clone().into(), model::CallOptions::default())
+        .await
+        .unwrap_err();
+    assert_eq!(
+        failure.transport.outcome,
+        crate::management::OutcomeKnowledge::OBSERVED
+    );
+    assert_eq!(
+        failure
+            .transport
+            .unsupported_wire_value
+            .as_ref()
+            .unwrap()
+            .value,
+        "91"
+    );
+    assert_eq!(
+        failure
+            .identity
+            .dispatcher_expected_generation
+            .as_ref()
+            .unwrap()
+            .revision,
+        u64::MAX - 1
+    );
+    assert!(failure.identity.expected_abort.is_none());
+    assert!(
+        matches!(failure.observed, Some(model::ObservedOutcome::Dispatcher(ref receipt)) if receipt.receipt_id == "dispatcher-receipt")
+    );
+    let inspected = peer
+        .client
+        .inspect_dispatcher(
+            c::InspectDispatcherRequest {
+                profile: Some(phase4::current_profile()),
+                scope: c::DispatcherScope::Node as i32,
+            }
+            .into(),
+            model::CallOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        inspected.value.dispatcher.unwrap().physical_owners,
+        u64::MAX
+    );
+    let recovered = peer
+        .client
+        .get_dispatcher_operation(
+            c::GetDispatcherOperationRequest {
+                original: Some(original.clone()),
+            }
+            .into(),
+            model::CallOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        recovered.value.receipt.unwrap().receipt_id,
+        "dispatcher-receipt"
+    );
+    assert_eq!(
+        recovered
+            .metadata
+            .identity
+            .dispatcher_expected_generation
+            .as_ref()
+            .unwrap()
+            .revision,
+        u64::MAX - 1
+    );
+    assert_eq!(peer.calls.load(Ordering::Acquire), 3);
+    assert_eq!(peer.connections.load(Ordering::Acquire), 1);
+    reject_invalid_dispatcher_controls(&peer, &original).await;
+    peer.shutdown().await;
+}
+
+async fn reject_invalid_dispatcher_controls(peer: &Peer, original: &c::ControlDispatcherRequest) {
+    use model::TransactionClient;
+    for (id, action) in [
+        ("replayed", c::DispatcherAction::Pause),
+        ("not-committed", c::DispatcherAction::Pause),
+        ("resume", c::DispatcherAction::Resume),
+    ] {
+        let mut invalid = original.clone();
+        invalid.operation_id = id.into();
+        invalid.action = action as i32;
+        let failure = peer
+            .client
+            .control_dispatcher(invalid.into(), model::CallOptions::default())
+            .await
+            .unwrap_err();
+        assert!(failure.observed.is_none());
+        assert_eq!(
+            failure.transport.outcome,
+            crate::management::OutcomeKnowledge::UNKNOWN
+        );
+    }
+    let before = peer.calls.load(Ordering::Acquire);
+    let mut exhausted = original.clone();
+    exhausted.expected_generation.as_mut().unwrap().revision = u64::MAX;
+    let failure = peer
+        .client
+        .control_dispatcher(exhausted.into(), model::CallOptions::default())
+        .await
+        .unwrap_err();
+    assert!(!failure.transport.dispatched);
+    assert_eq!(
+        failure
+            .identity
+            .dispatcher_expected_generation
+            .as_ref()
+            .unwrap()
+            .revision,
+        u64::MAX
+    );
+    assert_eq!(peer.calls.load(Ordering::Acquire), before);
 }

@@ -29,6 +29,12 @@ const command = { profile: current, command: selector, invocation: invoke, input
 const quota = { stateKeys: 1n, stateBytes: 1024n, resultRows: 1n, resultBytes: 1024n,
   effectRows: 1n, effectBytes: 1024n, payloadBytes: 1024n, recoveryBytes: 1024n };
 const token = "LSF-PUBLIC-NODE-CLIENT-FIXTURE-ONLY";
+const dispatcherControl = { profile: current, scope: 1, operationId: "dispatcher-original", action: 1,
+  expectedGeneration: { ownerEpoch: 18446744073709551615n, revision: 18446744073709551614n } };
+function dispatcherReceipt(original) { return { operationId: original.operationId, receiptId: "dispatcher-receipt", action: original.action,
+  authenticatedOperator: "operator", actorTenant: "operator-tenant", beforeGeneration: original.expectedGeneration,
+  afterGeneration: { ownerEpoch: original.expectedGeneration.ownerEpoch, revision: original.expectedGeneration.revision + 1n },
+  disposition: 1, clockContinuityProven: true }; }
 
 function inspected(committed = false) {
   const result = { key: { namespace, operation: "update", clientKey: "business-key", recoveryScope: "host-caller" },
@@ -71,6 +77,10 @@ function replyFor(operation, request) {
     case "mutateState": case "getStateOperationReceipt": return { receipt: stateReceipt(request) };
     case "mutateNamespace": return { receipt: { operationId: request.operationId, receiptId: "namespace-receipt",
       namespace, mutation: 1, authenticatedOperator: "operator", afterGeneration: 1n, status: 1, stateSchema: "schema", disposition: 1 } };
+    case "inspectDispatcher": return { dispatcher: { generation: { ownerEpoch: 18446744073709551615n, revision: 18446744073709551615n }, paused: true,
+      failure: 1, physicalOwners: 18446744073709551615n } };
+    case "controlDispatcher": return { receipt: dispatcherReceipt(request), published: true, paused: true };
+    case "getDispatcherOperation": return { receipt: dispatcherReceipt(request.original) };
     default: throw new Error("unsupported fixture operation");
   }
 }
@@ -93,6 +103,17 @@ async function peer(mode = "normal") {
         stream.respond({ ":status": 200, "content-type": "application/grpc", "grpc-status": "10" }); stream.end(); return;
       }
       const value = replyFor(operation, request);
+      if (mode === "substituted-activation") value.invocation.activationId = "different-activation";
+      if (mode === "dispatcher-invalid") {
+        if (operation === "controlDispatcher") {
+          if (request.operationId === "dispatcher-original" && request.action === 1) value.auditAck = { status: 91 };
+          if (request.operationId === "replayed") value.replayed = true;
+          if (request.operationId === "not-committed") value.receipt.disposition = 2;
+          if (request.action === 2) value.receipt.clockContinuityProven = false;
+        }
+        if (operation === "inspectDispatcher") { value.dispatcher.pendingControl = true; value.dispatcher.paused = false; }
+        if (operation === "getDispatcherOperation" && request.original.operationId === "mismatch") value.receipt.afterGeneration.revision = 7n;
+      }
       if (value.command !== undefined) value.command = wireInspection(value.command);
       const body = toBinary(descriptor.output, create(descriptor.output, value));
       const response = Buffer.alloc(body.length + 5); response.writeUInt32BE(body.length, 1); response.set(body, 5);
@@ -106,7 +127,7 @@ async function peer(mode = "normal") {
   return { client, state, stop: async () => { await client.shutdown(); for (const session of state.sessions) session.destroy(); await new Promise((resolve) => server.close(resolve)); } };
 }
 
-test("twelve transaction operations share the maintained connection and retain exact receipts/pages", async () => {
+test("fifteen transaction operations share the maintained connection and retain exact receipts/pages", async () => {
   const fixture = await peer();
   try {
     const requests = [ ["invokeCommand", command], ["query", { profile: current, invocation: invoke, namespace }],
@@ -116,18 +137,70 @@ test("twelve transaction operations share the maintained connection and retain e
       ["mutateNamespace", { namespace: inspect, operationId: "create-original", mutation: 1, expectedGeneration: 0n, configuration: { stateSchema: "schema", quota } }],
       ["selectEntity", { namespace: inspect, page: { limit: 8 } }],
       ["mutateState", { namespace: inspect, operationId: "state-original", mutation: 4, expectedVersion: Uint8Array.of(1), expectedPolicyDigest: digest, reason: "checkpoint" }],
-      ["getStateOperationReceipt", { namespace: inspect, operationId: "state-original" }] ];
+      ["getStateOperationReceipt", { namespace: inspect, operationId: "state-original" }],
+      ["inspectDispatcher", { profile: current, scope: 1 }], ["controlDispatcher", dispatcherControl],
+      ["getDispatcherOperation", { original: dispatcherControl }] ];
     for (const [operation, request] of requests) {
       const response = await fixture.client[operation](request);
-      assert.ok(response.metadata.transactionIdentity.namespace);
+      if (!["inspectDispatcher", "controlDispatcher", "getDispatcherOperation"].includes(operation)) assert.ok(response.metadata.transactionIdentity.namespace);
+      else assert.equal(response.metadata.transactionIdentity.namespace, undefined);
       if (operation === "invokeCommand") { assert.equal(response.value.command.outcome, CommandOutcome.Rejected); assert.equal(response.metadata.observedTransaction.command.success, undefined); }
       if (operation === "inspectNamespace") assert.equal(response.value.namespace.generation, 18446744073709551615n);
       if (operation === "selectEntity" || operation === "listEffectHistory") assert.deepEqual(response.value.page.nextCursor, Uint8Array.of(7));
       if (operation === "mutateNamespace") assert.equal(response.metadata.transactionIdentity.expectedGeneration, 0n);
+      if (operation === "inspectDispatcher") assert.equal(response.value.dispatcher.physicalOwners, 18446744073709551615n);
+      if (operation === "controlDispatcher" || operation === "getDispatcherOperation") {
+        assert.equal(response.metadata.transactionIdentity.dispatcherExpectedGeneration.revision, 18446744073709551614n);
+        assert.equal(response.metadata.observedTransaction.kind, "dispatcher");
+      }
     }
-    assert.equal(fixture.state.connections, 1); assert.equal(fixture.state.calls.length, 12);
+    assert.equal(fixture.state.connections, 1); assert.equal(fixture.state.calls.length, 15);
   } finally { await fixture.stop(); }
   assert.deepEqual(fixture.client.usage(), { activeCalls: 0, reservedMessageBytes: 0, sessions: 0, sockets: 0, closed: true });
+});
+
+test("dispatcher recovery preserves original generations and independent durable/audit observations", async () => {
+  const fixture = await peer("dispatcher-invalid");
+  try {
+    await assert.rejects(fixture.client.controlDispatcher(dispatcherControl), error => {
+      assert.equal(error.failure.outcome, OutcomeKnowledge.Observed);
+      assert.equal(error.failure.observedTransaction.kind, "dispatcher");
+      assert.equal(error.failure.observedTransaction.receipt.receiptId, "dispatcher-receipt");
+      assert.equal(error.failure.unsupportedWireValue.value, "91");
+      assert.deepEqual(error.failure.transactionIdentity.dispatcherExpectedGeneration, dispatcherControl.expectedGeneration);
+      assert.equal(error.failure.transactionIdentity.expectedAbort, undefined); return true;
+    });
+    const recovered = await fixture.client.getDispatcherOperation({ original: dispatcherControl });
+    assert.equal(recovered.metadata.observedTransaction.receipt.receiptId, "dispatcher-receipt");
+    assert.equal(fixture.state.calls.length, 2);
+    for (const request of [{ ...dispatcherControl, operationId: "replayed" }, { ...dispatcherControl, operationId: "not-committed" }, { ...dispatcherControl, action: 2 }])
+      await assert.rejects(fixture.client.controlDispatcher(request), error => {
+        assert.equal(error.failure.category, FailureCategory.Decode); assert.equal(error.failure.observedTransaction, undefined); return true;
+      });
+    await assert.rejects(fixture.client.inspectDispatcher({ profile: current, scope: 1 }), error => {
+      assert.equal(error.failure.category, FailureCategory.Decode); return true;
+    });
+    await assert.rejects(fixture.client.getDispatcherOperation({ original: { ...dispatcherControl, operationId: "mismatch" } }), error => {
+      assert.equal(error.failure.observedTransaction, undefined); return true;
+    });
+    const before = fixture.state.calls.length;
+    await assert.rejects(fixture.client.controlDispatcher({ ...dispatcherControl, expectedGeneration: { ownerEpoch: 1n, revision: 18446744073709551615n } }), error => {
+      assert.equal(error.failure.dispatched, false); assert.equal(error.failure.transactionIdentity.dispatcherExpectedGeneration.revision, 18446744073709551615n); return true;
+    });
+    assert.equal(fixture.state.calls.length, before);
+  } finally { await fixture.stop(); }
+});
+
+test("command and query reject a substituted activation identity", async () => {
+  const fixture = await peer("substituted-activation");
+  try {
+    for (const operation of [() => fixture.client.invokeCommand(command), () => fixture.client.query({ profile: current, invocation: invoke, namespace })])
+      await assert.rejects(operation(), error => {
+        assert.equal(error.failure.category, FailureCategory.Decode); assert.equal(error.failure.transactionIdentity.activationId, "activation-original");
+        assert.equal(error.failure.observedTransaction, undefined); return true;
+      });
+    assert.equal(fixture.state.calls.length, 2);
+  } finally { await fixture.stop(); }
 });
 
 test("durable business rejection remains recoverable through later audit failure", async () => {

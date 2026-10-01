@@ -44,6 +44,15 @@ decimal helpers at an external JSON boundary; do not cast these values to
 [transport and recovery contract](../../docs/reference/typescript-client.md)
 before handling invocation, cancellation or mutation failures.
 
+The additive `TransactionClient` interface supplies fifteen StateService,
+TransactionService and DispatcherService methods through this same Node owner.
+The response keeps the original recovery identity and an independent validated
+durable observation. Dispatcher recovery preserves the exact original action
+and owner epoch/revision; it supplies no command-abort proof. Neither transport
+cancellation nor gRPC ABORTED triggers an automatic mutation retry. These source
+methods and their controlled HTTP/2 checks do not complete the Phase 4 signed-node
+or browser qualification required by #401.
+
 ### Maintained guest example
 
 After the operator admits/deploys the maintained Rust HTTP/blob guests with
