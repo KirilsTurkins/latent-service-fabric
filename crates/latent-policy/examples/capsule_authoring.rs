@@ -14,6 +14,13 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args_os().skip(1).collect::<Vec<_>>();
+    if (4..=5).contains(&args.len()) && args[0] == "demo-check-stale-proofs" {
+        return authoring::check_stale_proofs(
+            std::path::Path::new(&args[1]),
+            std::path::Path::new(&args[2]),
+            &args[3..],
+        );
+    }
     if args.len() == 2 && args[0] == "fixture-tls" {
         return fixture_tls::create(std::path::Path::new(&args[1]));
     }
@@ -21,7 +28,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))
         || args.len() > 18
     {
-        return Err("usage: capsule_authoring <demo-sign|demo-sign-separated> <new-private-output> <build-directory>... (at most 16 builds); creates short-lived isolated demo trust only".into());
+        return Err("usage: capsule_authoring <demo-sign|demo-sign-separated> <new-private-output> <build-directory>... (at most 16 builds), or demo-check-stale-proofs <new-private-output> <policy> <signed-package-directory>... (at most 2 packages); development qualification only".into());
     }
     if args[0] == "demo-sign-separated" {
         authoring::sign_demo_separated(std::path::Path::new(&args[1]), &args[2..])

@@ -100,12 +100,22 @@ The `paired-trust` receipts compare actual Rust canonical bytes and digests for
 alternate property, key and requirement orders and verify both original Java
 packages under each equivalent policy. Separate negative copies exercise an
 altered component, altered policy, a raw-input revocation digest, another
-builder's source or key, missing provenance, revoked builder key, stale proof
-and stale trust. Policy digest and expiry failures remain rejected before node
+builder's source or key, missing provenance, revoked builder key and stale
+trust. Policy digest and expiry failures remain rejected before node
 startup; the valid-policy negatives also reach the real package/admission
 boundary. The former construction mistake records the authoritative builder
 digest alongside the incorrect supplied raw-input digest without correcting
 approved trust automatically.
+
+Proof age bounds the lifetime of a captured verification proof from its
+verification time. It does not make a fresh verification fail merely because
+the signed DSSE statement is older. The same qualification checks actual
+`SupplyChainAuthority` grants for both original Java packages under an explicit
+two-second development proof TTL. Each grant first passes its currentness
+checkpoint, then the real host clock reaches its recorded expiry. Reusing that
+grant fails with `signature-stale-proof`, and the admission fence refuses to
+enter its action. The historical receipt supplies no authority and no guest
+executes during this negative check.
 
 The ordinary node stages admit both original components, deploy them with
 explicit grants, and execute direct and composed HTTP operations. Each
