@@ -14,9 +14,9 @@ UPLOAD = "Retain bounded browser boundary observations"
 
 
 def retention_enabled(expression: str, renderer: str, outcome: str | None,
-                      job_status: str = "success") -> bool:
+                      job_status: str = "success", lane: str = "renderer-public") -> bool:
     """Evaluate this guard's conjunctions, comparisons and status checks only."""
-    context = {"needs.profile.outputs.renderer": renderer}
+    context = {"needs.profile.outputs.renderer": renderer, "matrix.lane": lane}
     if outcome is not None:
         context["steps.integration_lanes.outcome"] = outcome
     status_checks = {
@@ -29,6 +29,8 @@ def retention_enabled(expression: str, renderer: str, outcome: str | None,
     # Actions adds success() when the expression has no status check function.
     results = [True if any(c in status_checks for c in clauses) else job_status == "success"]
     for clause in clauses:
+        if clause.startswith("(") and clause.endswith(")"):
+            clause = clause[1:-1].strip()
         if clause in status_checks:
             results.append(status_checks[clause])
             continue
@@ -83,6 +85,14 @@ class BrowserArtifactTests(unittest.TestCase):
             for outcome in (None, "", "skipped", "success", "failure", "cancelled"):
                 with self.subTest(renderer=renderer, outcome=outcome):
                     self.assertFalse(retention_enabled(self.upload["if"], renderer, outcome, "failure"))
+
+    def test_other_matrix_lanes_cannot_upload_browser_evidence(self) -> None:
+        lanes = self.workflow["jobs"]["rust"]["strategy"]["matrix"]["lane"]
+        self.assertIn("renderer-public", lanes)
+        for lane in set(lanes) - {"renderer-public"}:
+            with self.subTest(lane=lane):
+                self.assertFalse(retention_enabled(self.upload["if"], "true", "success", lane=lane))
+        self.assertTrue(self.upload["with"]["name"].endswith("-${{ matrix.lane }}"))
 
     def test_missing_evidence_is_still_fatal_after_execution(self) -> None:
         self.assertEqual(self.upload["with"]["if-no-files-found"], "error")
