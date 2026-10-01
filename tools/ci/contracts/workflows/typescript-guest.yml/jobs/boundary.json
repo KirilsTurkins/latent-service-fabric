@@ -3,11 +3,6 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0
-    },
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -52,7 +47,15 @@
       {
         "uses": "Swatinem/rust-cache",
         "with": {
-          "key": "typescript-guest-runtime-optimized-compiler"
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -60,8 +63,14 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\""
       },
       {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
         "name": "Install pinned component validator",
-        "run": "cargo install --locked wasm-tools --version 1.254.0"
+        "run": "test \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'"
       },
       {
         "name": "Qualify proposed transaction shapes with the maintained stackful TypeScript compiler",
@@ -108,7 +117,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution; retain the accepted CI performance dependency caches, correctness guards and independent execution obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
