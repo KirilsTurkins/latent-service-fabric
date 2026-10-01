@@ -47,6 +47,56 @@ def contract_graph(value):
     return value
 
 
+def selected_world_metadata(original: str, graph: dict, world: str) -> str:
+    """Select the parsed main world for the pinned linker's WIT metadata.
+
+    Componentize.NET forwards World to binding generation, but forwards only
+    the generated .wit filename to clang's --component-type linker argument.
+    That file must have exactly one main world. Other interfaces/packages stay
+    byte-for-byte intact, and generate() compares the actual selected component
+    metadata before installing the output.
+    """
+    package = re.match(r"package ([^\s;{}]+);", original)
+    if package is None or len(original.encode("utf-8")) > MAX_BYTES:
+        raise BindingError("invalid-main-world-metadata")
+    package_name = package[1]
+    base, separator, version = package_name.partition("@")
+    worlds = [item for item in graph["worlds"]
+              if graph["packages"][item["package"]]["name"] == package_name]
+    selected = [item for item in worlds if world in
+                (item["name"], base + "/" + item["name"] + (separator + version if separator else ""))]
+    if len(selected) != 1 or len(worlds) > MAX_FILES:
+        raise BindingError("main-world-selection-required")
+    blocks = list(re.finditer(r"(?m)^world (%?[A-Za-z][A-Za-z0-9-]*) \{", original))
+    names = [block[1].removeprefix("%") for block in blocks]
+    if len(names) != len(set(names)) or set(names) != {item["name"] for item in worlds}:
+        raise BindingError("main-world-metadata-drift")
+    result = original
+    for block in reversed(blocks):
+        depth, end = 0, None
+        for offset in range(block.end() - 1, len(original)):
+            if original[offset] == "{":
+                depth += 1
+            elif original[offset] == "}":
+                depth -= 1
+                if depth == 0:
+                    end = offset + 1
+                    break
+        if end is None:
+            raise BindingError("unbalanced-main-world-metadata")
+        if block[1].removeprefix("%") != selected[0]["name"]:
+            result = result[:block.start()] + result[end:]
+    return result
+
+
+def metadata_graph(source: Path, world: str, core: Path, output: Path, wasm_tools: str) -> dict:
+    # Embedding metadata in an empty module executes no guest. The pinned
+    # encoder keeps exactly the selected world's nominal types and signatures,
+    # allowing comparison independently of unused parser table IDs/worlds.
+    run([wasm_tools, "component", "embed", str(source), str(core), "--world", world, "-o", str(output)])
+    return contract_graph(json.loads(run([wasm_tools, "component", "wit", str(output), "--json"])))
+
+
 def canonical_resource_order(text: str) -> str:
     """Sort only complete, pinned-generator resource class declarations.
 
@@ -238,10 +288,21 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
             raise BindingError("missing-unique-component-type")
         if metadata[0].is_symlink():
             raise BindingError("binding-file-invalid-or-oversized")
-        metadata[0].write_text(original, encoding="utf-8")
-        linked = contract_graph(json.loads(run([wasm_tools, "component", "wit", str(metadata[0]), "--json"])))
-        if linked != graph:
-            raise BindingError("component-type-changed-contract")
+        selected = selected_world_metadata(original, graph, world)
+        metadata[0].write_text(selected, encoding="utf-8")
+        if selected == original:
+            linked = contract_graph(json.loads(run([wasm_tools, "component", "wit", str(metadata[0]), "--json"])))
+            if linked != graph:
+                raise BindingError("component-type-changed-contract")
+        else:
+            authoritative = directory / "authoritative.wit"
+            authoritative.write_text(original, encoding="utf-8")
+            core = directory / "empty.wasm"
+            core.write_bytes(b"\0asm\x01\0\0\0")
+            before = metadata_graph(authoritative, world, core, directory / "authoritative.wasm", wasm_tools)
+            after = metadata_graph(metadata[0], world, core, directory / "selected.wasm", wasm_tools)
+            if after != before:
+                raise BindingError("selected-component-type-changed-contract")
         receipt = {"schemaVersion": SCHEMA, "world": world, "canonicalAbi": "stackful",
                    "generator": GENERATOR,
                    "authoritativeWitSha256": hashlib.sha256(original.encode("utf-8")).hexdigest(),
