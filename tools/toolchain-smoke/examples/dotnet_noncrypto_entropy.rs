@@ -16,13 +16,16 @@ fn bytes(length: u64) -> Vec<u8> {
     }
     let value = latent::random::random::bytes(length as u32)
         .expect("explicit noncryptographic entropy request failed");
-    assert_eq!(value.len() as u64, length, "noncryptographic entropy size mismatch");
+    assert_eq!(
+        value.len() as u64,
+        length,
+        "noncryptographic entropy size mismatch"
+    );
     value
 }
 
 fn value() -> u64 {
-    latent::random::random::u64_value()
-        .expect("explicit noncryptographic entropy request failed")
+    latent::random::random::u64_value().expect("explicit noncryptographic entropy request failed")
 }
 
 impl exports::wasi::random0_2_0::insecure::Guest for NoncryptoEntropy {
