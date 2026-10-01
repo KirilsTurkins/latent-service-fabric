@@ -27,5 +27,8 @@ latent-telemetry = { path = "../latent-telemetry" }
 tokio.workspace = true
 
 [dev-dependencies]
+latent-effects = { path = "../latent-effects" }
 latent-manifest = { path = "../latent-manifest" }
+latent-state = { path = "../latent-state" }
+tempfile.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }
