@@ -10,6 +10,10 @@ use latent_ingress::http::{
 };
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
 fn configuration(mode: &str) -> BTreeMap<String, Value> {
     serde_json::from_value(json!({
@@ -258,4 +262,151 @@ fn transaction_mapping_retains_exchange_until_actual_delivery_or_drop() {
     assert_eq!(pool.snapshot().reserved_bytes, EXCHANGE_RESERVATION_BYTES);
     drop(cancellation);
     assert_eq!(pool.snapshot().reserved_bytes, 0);
+}
+
+struct CurrentDelivery(AtomicBool);
+impl DeliveryFence for CurrentDelivery {
+    fn with_current(
+        &self,
+        action: &mut dyn FnMut() -> Result<(), HttpError>,
+    ) -> Result<(), HttpError> {
+        if !self.0.load(Ordering::Acquire) {
+            return Err(HttpError::Forbidden);
+        }
+        action()
+    }
+}
+
+#[test]
+fn revoked_delivery_refuses_to_poll_an_already_pending_write_again() {
+    let pool = pool();
+    let fence = Arc::new(CurrentDelivery(AtomicBool::new(true)));
+    let delivery = invocation(&pool, "POST")
+        .complete_transaction(200, b"{}".to_vec(), fence.clone())
+        .unwrap();
+    let mut polls = 0;
+    assert_eq!(
+        delivery.with_current(|| {
+            polls += 1;
+            std::task::Poll::<()>::Pending
+        }),
+        Ok(std::task::Poll::Pending)
+    );
+    fence.0.store(false, Ordering::Release);
+    assert_eq!(
+        delivery.with_current(|| {
+            polls += 1;
+            std::task::Poll::Ready(())
+        }),
+        Err(HttpError::Forbidden)
+    );
+    assert_eq!(polls, 1);
+    assert_eq!(delivery.remaining_body(), Err(HttpError::Forbidden));
+    assert_eq!(pool.snapshot().reserved_bytes, EXCHANGE_RESERVATION_BYTES);
+    drop(delivery);
+    assert_eq!(pool.snapshot().reserved_bytes, 0);
+}
+
+#[test]
+fn transaction_delivery_owns_fixed_media_head_length_and_no_historical_headers() {
+    let pool = pool();
+    let fence = Arc::new(CurrentDelivery(AtomicBool::new(true)));
+    let mut delivery = invocation(&pool, "HEAD")
+        .complete_transaction(200, b"{\"result\":null}".to_vec(), fence.clone())
+        .unwrap();
+    delivery.enforce_browser_profile(Scheme::Https).unwrap();
+    assert_eq!(delivery.content_length(), Some(15));
+    assert_eq!(delivery.remaining_body().unwrap(), b"");
+    assert_eq!(
+        delivery.media_type(),
+        Some("application/vnd.latent.transaction-http.v1+json")
+    );
+    let headers: Vec<_> = delivery.headers().collect();
+    assert_eq!(headers.len(), 1);
+    assert_eq!(headers[0].name, "cache-control");
+    assert_eq!(headers[0].value, b"no-store");
+    delivery.mark_headers_written().unwrap();
+    assert_eq!(delivery.finish().unwrap().body_bytes, 0);
+    assert_eq!(pool.snapshot().reserved_bytes, 0);
+    assert!(matches!(
+        invocation(&pool, "POST").complete_transaction(200, vec![0; MAX_RESPONSE_BODY + 1], fence),
+        Err(HttpError::InvalidResponse)
+    ));
+}
+
+#[test]
+fn retry_requires_explicit_complete_original_fence_and_separate_request_identity() {
+    let wire = json!({
+        "command-id": "a".repeat(64),
+        "attempt-id": "b".repeat(64),
+        "transaction-id": "c".repeat(64),
+        "owner-fence": STANDARD.encode([7;32])
+    });
+    let encoded = STANDARD.encode(serde_json::to_vec(&wire).unwrap());
+    let retry = HeaderView {
+        name: "command-retry-key",
+        value: b"retry-request-1",
+    };
+    let fence = HeaderView {
+        name: "command-abort-fence",
+        value: encoded.as_bytes(),
+    };
+    let (_, facts) = map(
+        "command",
+        "POST",
+        "/commands",
+        b"[3,false]",
+        &[ID, retry, fence],
+    )
+    .unwrap();
+    assert_eq!(facts.client_key(), Some("original-request"));
+    assert_eq!(facts.retry().unwrap().request_id(), "retry-request-1");
+    assert_eq!(facts.retry().unwrap().fence().owner_fence, [7; 32]);
+    for headers in [
+        vec![ID, retry],
+        vec![ID, fence],
+        vec![ID, retry, fence, fence],
+    ] {
+        assert!(map("command", "POST", "/commands", b"[]", &headers).is_err());
+    }
+    assert!(map("query", "GET", "/commands", b"", &[retry, fence]).is_err());
+    assert!(map("result", "GET", "/commands", b"", &[ID, retry, fence]).is_err());
+    for replacement in [json!("a".repeat(63)), json!("A".repeat(64))] {
+        let mut changed = wire.clone();
+        changed["command-id"] = replacement;
+        let encoded = STANDARD.encode(serde_json::to_vec(&changed).unwrap());
+        assert!(map(
+            "command",
+            "POST",
+            "/commands",
+            b"[]",
+            &[
+                ID,
+                retry,
+                HeaderView {
+                    name: "command-abort-fence",
+                    value: encoded.as_bytes()
+                }
+            ]
+        )
+        .is_err());
+    }
+    let mut unknown = wire;
+    unknown["permitted"] = json!(true);
+    let encoded = STANDARD.encode(serde_json::to_vec(&unknown).unwrap());
+    assert!(map(
+        "command",
+        "POST",
+        "/commands",
+        b"[]",
+        &[
+            ID,
+            retry,
+            HeaderView {
+                name: "command-abort-fence",
+                value: encoded.as_bytes()
+            }
+        ]
+    )
+    .is_err());
 }

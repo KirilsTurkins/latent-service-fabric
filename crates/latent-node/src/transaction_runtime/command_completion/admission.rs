@@ -40,6 +40,19 @@ use crate::{
 /// Configured admission retains the actual selected publication and distinct
 /// acquire-command/read-result policy owners. The node supplies its real budget.
 pub trait CommandAdmissionFactory: Send + Sync {
+    fn preflight<'a>(
+        &'a self,
+        _envelope: &'a ActivationEnvelope,
+        _budget: &'a ActivationBudget,
+    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+        Box::pin(async {
+            Err(errors::fixed(
+                latent_core::PlatformErrorCode::IncompatibleContract,
+                "command-preflight-unavailable",
+            ))
+        })
+    }
+
     fn select<'a>(
         &'a self,
         envelope: &'a ActivationEnvelope,
@@ -158,6 +171,14 @@ pub struct CommandAdmission {
     admitted: AtomicBool,
 }
 impl TransactionActivationAdmission for CommandAdmission {
+    fn preflight<'a>(
+        &'a self,
+        envelope: &'a ActivationEnvelope,
+        budget: &'a ActivationBudget,
+    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+        self.factory.preflight(envelope, budget)
+    }
+
     fn bind_control(&self, control: TransactionAdmissionControl) -> Result<(), PlatformError> {
         let mut slot = self
             .control

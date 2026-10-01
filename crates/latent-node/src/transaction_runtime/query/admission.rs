@@ -283,6 +283,21 @@ impl QueryAdmission {
 }
 
 impl TransactionActivationAdmission for QueryAdmission {
+    fn preflight<'a>(
+        &'a self,
+        envelope: &'a ActivationEnvelope,
+        budget: &'a ActivationBudget,
+    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+        Box::pin(async move {
+            self.selection.accepts(envelope)?;
+            let memory = budget.reserve_host_memory(65_536).map_err(|_| denied())?;
+            let decision = self.retain_authority(envelope, budget)?;
+            drop(decision);
+            drop(memory);
+            Ok(())
+        })
+    }
+
     fn bind_control(&self, control: TransactionAdmissionControl) -> Result<(), PlatformError> {
         let mut slot = self.control.lock().map_err(|_| denied())?;
         if slot.is_some() {

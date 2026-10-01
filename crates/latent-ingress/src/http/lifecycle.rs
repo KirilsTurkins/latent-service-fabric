@@ -169,6 +169,11 @@ impl Request {
         }
         let expected = transaction::singleton(&self.data.headers, "if-match")?;
         let minimum = transaction::singleton(&self.data.headers, "if-state-view")?;
+        let retry = transaction::command_retry(
+            route.mode(),
+            transaction::singleton(&self.data.headers, "command-retry-key")?,
+            transaction::singleton(&self.data.headers, "command-abort-fence")?,
+        )?;
         let mut preconditions = Vec::new();
         let mut minimum_view = None;
         let client_key = if route.mode() == RouteMode::Query {
@@ -233,6 +238,7 @@ impl Request {
             business_path: self.data.path,
             business_query: None,
             method: self.data.method,
+            retry,
         };
         Ok((
             Invocation {
@@ -256,6 +262,16 @@ pub struct Invocation {
     pub(super) lease: Arc<Lease>,
 }
 impl Invocation {
+    /// Host-owned transaction framing cannot replay arbitrary guest HTTP
+    /// headers, cookies, credentials or cache state from a historical result.
+    pub fn complete_transaction(
+        self,
+        status: u16,
+        body: Vec<u8>,
+        fence: Arc<dyn super::DeliveryFence>,
+    ) -> Result<Delivery, HttpError> {
+        Delivery::transaction(self.lease.clone(), self.method, status, body, fence)
+    }
     #[must_use]
     pub fn input(&self) -> &[u8] {
         &self.bytes

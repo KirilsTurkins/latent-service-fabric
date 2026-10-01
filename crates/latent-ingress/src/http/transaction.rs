@@ -7,7 +7,10 @@ use base64::{
     engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
     Engine,
 };
-use latent_core::transaction_contract::{self as contract, ExpectedVersion, Precondition};
+use latent_core::transaction_contract::{
+    self as contract, AbortFence, ExpectedVersion, Precondition,
+};
+use serde::Deserialize;
 use serde_json::Value;
 
 use super::{HttpError, Method};
@@ -213,6 +216,25 @@ pub struct TransactionRequest {
     pub(super) business_path: String,
     pub(super) business_query: Option<String>,
     pub(super) method: Method,
+    pub(super) retry: Option<CommandRetry>,
+}
+
+/// Explicit original abort evidence and a separate retry-request identity.
+/// The command coordinator must match every field against its actual stored
+/// aborted attempt; decoding a request never creates a retry permit.
+pub struct CommandRetry {
+    request_id: String,
+    fence: AbortFence,
+}
+impl CommandRetry {
+    #[must_use]
+    pub fn request_id(&self) -> &str {
+        &self.request_id
+    }
+    #[must_use]
+    pub fn fence(&self) -> &AbortFence {
+        &self.fence
+    }
 }
 
 impl TransactionRequest {
@@ -240,6 +262,54 @@ impl TransactionRequest {
     pub const fn method(&self) -> Method {
         self.method
     }
+    #[must_use]
+    pub fn retry(&self) -> Option<&CommandRetry> {
+        self.retry.as_ref()
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+struct AbortFenceWire {
+    command_id: String,
+    attempt_id: String,
+    transaction_id: String,
+    owner_fence: String,
+}
+
+pub(super) fn command_retry(
+    mode: RouteMode,
+    request_id: Option<&str>,
+    fence: Option<&str>,
+) -> Result<Option<CommandRetry>, HttpError> {
+    let (request_id, fence) = match (request_id, fence) {
+        (None, None) => return Ok(None),
+        (Some(request_id), Some(fence)) if mode == RouteMode::Command => (request_id, fence),
+        _ => return Err(HttpError::InvalidHeaders),
+    };
+    identifier(request_id).map_err(|_| HttpError::InvalidHeaders)?;
+    let encoded = decode_canonical(fence, 1024, None)?;
+    let wire: AbortFenceWire =
+        serde_json::from_slice(&encoded).map_err(|_| HttpError::InvalidHeaders)?;
+    for identity in [&wire.command_id, &wire.attempt_id, &wire.transaction_id] {
+        if identity.len() != 64
+            || !identity
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(HttpError::InvalidHeaders);
+        }
+    }
+    let proof = decode_canonical(&wire.owner_fence, 32, Some(32))?;
+    Ok(Some(CommandRetry {
+        request_id: request_id.to_owned(),
+        fence: AbortFence {
+            command_id: wire.command_id,
+            attempt_id: wire.attempt_id,
+            transaction_id: wire.transaction_id,
+            owner_fence: proof,
+        },
+    }))
 }
 
 pub(super) fn singleton<'a>(

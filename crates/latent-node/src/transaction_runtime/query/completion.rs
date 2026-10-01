@@ -79,7 +79,24 @@ impl TransactionCompletionHook for QueryCompletion {
                     consumption,
                 },
             };
-            TransactionCompletion::ordinary(outcome)
+            if matches!(outcome, ActivationOutcome::Failed { .. }) {
+                return TransactionCompletion::ordinary(outcome);
+            }
+            // Rebind only after actual guest/view retirement. The one protected
+            // read checks namespace history; subsequent socket polls retain a
+            // synchronous policy/lifecycle fence and open no additional view.
+            match self.host.query_delivery_fence().await {
+                Ok(fence) => TransactionCompletion::ordinary_authorized(outcome, fence),
+                Err(error) => TransactionCompletion::ordinary(ActivationOutcome::Failed {
+                    terminal_state: ActivationTerminalState::Rejected,
+                    error,
+                    consumption: match outcome {
+                        ActivationOutcome::Succeeded(success) => success.consumption,
+                        ActivationOutcome::DeclaredError { consumption, .. }
+                        | ActivationOutcome::Failed { consumption, .. } => consumption,
+                    },
+                }),
+            }
         })
     }
 }

@@ -63,9 +63,22 @@ parameters, body, write precondition or minimum-view token. The runtime performs
 an explicit finite authorized lookup; it does not run the original mutating guest
 or mint application/management authority from knowledge of a command ID.
 
+A retry after a proven abort is explicit. The original `Idempotency-Key` remains
+unchanged, and the request supplies both `Command-Retry-Key` (a separate bounded
+retry request identity) and `Command-Abort-Fence`. The latter is canonical padded
+base64 of a closed JSON object with `command-id`, `attempt-id`, `transaction-id`
+and `owner-fence`, copied from the actual server-issued aborted receipt. The three
+identities are lowercase 64-character hex; `owner-fence` is canonical base64 of
+the actual 32-byte abort proof. The coordinator must match the original stored
+attempt, original fingerprint and current authority before accepting a retry.
+Malformed, incomplete or unsupported pairs fail before claim; queries and result
+lookups reject retry fields. A timeout, unknown result or disconnected socket
+never manufactures an abort proof or triggers a retry.
+
 ## Before a command claim
 
-The existing backend first retains immutable code readiness under the original
+The installed admission first validates current scope and caller without a claim
+or guest-code preparation. The existing backend then retains immutable code readiness under the original
 activation reservation, deadline and cancellation. Wasmtime canonicalizes the
 input with the prepared component's actual parameter types, using the same
 bounded decoder and encoder as invocation. Record order, tagged presence,
@@ -87,3 +100,21 @@ execution or classify an existing durable command as aborted.
 
 Related foundations: [optimistic state sessions](optimistic-state-sessions.md)
 and the [single transaction writer fence](transaction-writer-fence.md).
+
+## Current result delivery
+
+The shared HTTP delivery owner can retain a current-purpose data fence. The
+listener checks it inside every actual socket write and flush future poll,
+including polls after a pending socket wakes. Revocation can stop the remaining
+delivery; it cannot alter an already durable disposition or rerun the command.
+The fence uses the original caller, publication, namespace, policy and deadline.
+These final checks open no additional native view and consume no execution
+ledger after its terminal accounting freezes.
+
+Typed transaction delivery uses a fixed host-owned media type,
+`application/vnd.latent.transaction-http.v1+json`, within the unchanged 256 KiB
+response limit. It supplies `Cache-Control: no-store` and the existing browser
+security headers. Historical guest headers, cookies and session material are
+never copied into this response. HEAD retains the representation length while
+sending no body. Portable tests verify ownership and denial between write polls;
+real signed-node socket qualification remains required.

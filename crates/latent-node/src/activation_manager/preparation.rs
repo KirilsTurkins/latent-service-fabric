@@ -24,9 +24,17 @@ impl Inner {
         budget: &ActivationBudget,
         transport: &TransportStop,
     ) -> Result<Option<(PreparationKey, PreparedReadiness)>, PlatformError> {
-        if lifecycle.transaction_admission.is_none() {
+        let Some(admission) = &lifecycle.transaction_admission else {
             return Ok(None);
-        }
+        };
+        stage(
+            admission.preflight(envelope, budget),
+            token,
+            budget.deadline().monotonic(),
+            &self.clock,
+            transport,
+        )
+        .await?;
         // The original code pin is retained for later materialization. No cell,
         // Store or guest exists while authoritative types certify business input.
         let (key, ready) = self

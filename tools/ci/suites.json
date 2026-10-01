@@ -2094,6 +2094,9 @@
         "transaction::duplicates_and_ambiguous_preconditions_fail_before_invocation",
         "transaction::queries_ignore_valid_command_keys_and_require_full_original_minimum_view",
         "transaction::result_requests_cannot_select_guest_inputs_or_preconditions",
+        "transaction::retry_requires_explicit_complete_original_fence_and_separate_request_identity",
+        "transaction::revoked_delivery_refuses_to_poll_an_already_pending_write_again",
+        "transaction::transaction_delivery_owns_fixed_media_head_length_and_no_historical_headers",
         "transaction::transaction_mapping_retains_exchange_until_actual_delivery_or_drop"
       ],
       "expectedIgnored": [],
@@ -2101,7 +2104,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-ingress/Cargo.toml",
-      "minimumCases": 22,
+      "minimumCases": 25,
       "mode": "libtest",
       "package": "latent-ingress",
       "platforms": [
@@ -2720,6 +2723,7 @@
         "races::concurrent_starts_cannot_replace_the_same_identity_owner",
         "transaction::namespace_admission_runs_on_the_original_ledger_before_any_preparation_or_cell",
         "transaction::ordinary_admission_cannot_install_state_by_selecting_a_transaction_entry_point",
+        "transaction::result_lookup_uses_original_admission_without_component_preparation_or_guest_work",
         "transport_cleanup::acknowledged_disconnects_reuse_the_same_capacity_without_explicit_cancel_events",
         "transport_cleanup::exact_expiry_and_explicit_cancel_keep_priority_over_transport_and_success",
         "transport_cleanup::marking_an_already_completed_handle_cannot_stop_its_reused_id",
@@ -2734,7 +2738,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 64,
+      "minimumCases": 65,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
