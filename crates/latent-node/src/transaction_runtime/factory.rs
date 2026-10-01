@@ -10,7 +10,7 @@ use super::{
 };
 use latent_capabilities::namespace::RecoverySelection;
 use latent_commit::atomic::{AdmittedCommand, AtomicError, CommandRecord, ResultPolicy};
-use latent_core::native_capacity::NativeCapacityOwner;
+use latent_core::native_capacity::{NativeCapacityOwner, NativeReservation};
 use latent_core::PlatformError;
 use latent_effects::authority::EffectAuthorityOwner;
 use latent_effects::runtime::CommandAdmissionSource;
@@ -28,6 +28,17 @@ pub struct TransactionAdmissionOwners {
     native: NativeCapacityOwner,
 }
 impl TransactionAdmissionOwners {
+    /// Prepay the original global slot and finite physical byte envelope before
+    /// transport dispatch returns a future or starts the activation manager.
+    /// The affine reservation must be transferred into the same admission.
+    pub fn reserve_ingress(
+        &self,
+        encoded_request_bytes: usize,
+        deadline: std::time::Instant,
+    ) -> Result<NativeReservation, PlatformError> {
+        super::capacity::reserve_ingress(&self.native, encoded_request_bytes, deadline)
+    }
+
     pub fn new(
         store: Arc<ProtectedStoreOwner>,
         namespaces: Arc<NamespaceCatalog>,
@@ -106,6 +117,7 @@ pub struct NativeTransactionAdmission {
     completion: Mutex<Option<TransactionCompletionResult>>,
     response: Mutex<Option<Arc<super::TransactionResponseAuthority>>>,
     retention: Mutex<Option<Arc<TransactionRetention>>>,
+    ingress: Mutex<Option<NativeReservation>>,
 }
 impl NativeTransactionAdmission {
     pub fn new(
@@ -121,7 +133,40 @@ impl NativeTransactionAdmission {
             completion: Mutex::new(None),
             response: Mutex::new(None),
             retention: Mutex::new(None),
+            ingress: Mutex::new(None),
         })
+    }
+
+    /// Consume the transport's already accepted reservation. No second global
+    /// slot, byte allowance, or original deadline is created at guest admission.
+    pub fn with_ingress_reservation(
+        owners: Arc<TransactionAdmissionOwners>,
+        installation: Arc<TransactionInstallation>,
+        selection: TransactionSelection,
+        native: NativeReservation,
+    ) -> Result<Self, PlatformError> {
+        TransactionRetention::validate_ingress(&owners.native, &native)?;
+        let mut admission = Self::new(owners, installation, selection)?;
+        admission.ingress = Mutex::new(Some(native));
+        Ok(admission)
+    }
+
+    fn reserve_retention(
+        &self,
+        envelope: &latent_activation::ActivationEnvelope,
+        budget: &latent_core::ActivationBudget,
+    ) -> Result<Arc<TransactionRetention>, PlatformError> {
+        let ingress = self
+            .ingress
+            .lock()
+            .map_err(|_| authorization::denied())?
+            .take();
+        match ingress {
+            Some(native) => {
+                TransactionRetention::from_ingress(&self.owners.native, native, envelope, budget)
+            }
+            None => TransactionRetention::reserve(&self.owners.native, envelope, budget),
+        }
     }
 
     /// Called only after the exact activation handle has completed physical

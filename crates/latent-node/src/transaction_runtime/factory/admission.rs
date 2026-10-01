@@ -67,8 +67,7 @@ impl NativeTransactionAdmission {
             envelope,
             budget,
         )?;
-        let retention =
-            super::TransactionRetention::reserve(&self.owners.native, envelope, budget)?;
+        let retention = self.reserve_retention(envelope, budget)?;
         let bytes = retention.request_bytes();
         *self.retention.lock().map_err(|_| authorization::denied())? = Some(Arc::clone(&retention));
         let namespace = self

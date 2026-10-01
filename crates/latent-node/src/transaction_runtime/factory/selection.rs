@@ -19,6 +19,33 @@ pub struct TransactionInstallation {
     pub(super) result_policy: ResultPolicy,
 }
 impl TransactionInstallation {
+    /// Descriptive selection from the trusted installed manifest and companion.
+    /// Actual admission still resolves and seals this publication and policy.
+    #[must_use]
+    pub fn operation_for(
+        &self,
+        target: &latent_routing::InvocationTarget,
+        namespace: &str,
+        mode: TransactionOperationMode,
+    ) -> Option<&latent_manifest::TransactionOperation> {
+        if namespace != self.declaration.namespace
+            || target.service.0 != self.metadata.manifest().metadata.name
+            || Some(&target.tenant) != self.publication.tenant()
+            || !self
+                .metadata
+                .manifest()
+                .exports
+                .iter()
+                .any(|export| export.contract == target.contract)
+        {
+            return None;
+        }
+        self.declaration
+            .operations
+            .iter()
+            .find(|operation| operation.operation == target.function.0 && operation.mode == mode)
+    }
+
     #[allow(
         clippy::too_many_arguments,
         reason = "Independent trusted installation owners are explicit"
@@ -79,29 +106,40 @@ impl TransactionInstallation {
             .resolved_revision
             .as_ref()
             .ok_or_else(super::authorization::denied)?;
+        if resolved.target != envelope.target {
+            return Err(super::authorization::denied());
+        }
+        self.source_for_resolved(resolved)
+    }
+
+    /// Project the already resolved exact source without creating authority.
+    /// A response must separately retain its actual original data-read owner.
+    pub fn source_for_resolved(
+        &self,
+        resolved: &latent_routing::ResolvedRevision,
+    ) -> Result<SourceIdentity, PlatformError> {
         let operation = self
             .declaration
             .operations
             .iter()
-            .find(|operation| operation.operation == envelope.target.function.0)
+            .find(|operation| operation.operation == resolved.target.function.0)
             .ok_or_else(super::authorization::denied)?;
         let contract = self
             .metadata
             .contracts()
             .iter()
-            .find(|contract| contract.id == envelope.target.contract)
+            .find(|contract| contract.id == resolved.target.contract)
             .ok_or_else(super::authorization::denied)?;
-        if resolved.target != envelope.target
-            || resolved.release != *self.publication.release()
+        if resolved.release != *self.publication.release()
             || resolved.publication.as_ref() != Some(self.publication.publication())
-            || envelope.target.service.0 != self.metadata.manifest().metadata.name
-            || Some(&envelope.target.tenant) != self.publication.tenant()
+            || resolved.target.service.0 != self.metadata.manifest().metadata.name
+            || Some(&resolved.target.tenant) != self.publication.tenant()
             || !self
                 .metadata
                 .manifest()
                 .exports
                 .iter()
-                .any(|export| export.contract == envelope.target.contract)
+                .any(|export| export.contract == resolved.target.contract)
         {
             return Err(super::authorization::denied());
         }
