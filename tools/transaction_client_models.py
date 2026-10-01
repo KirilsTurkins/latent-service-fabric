@@ -7,6 +7,7 @@ in particular, transaction paging never aliases control-plane paging.
 from __future__ import annotations
 
 import argparse
+import base64
 from hashlib import sha256
 import importlib.util
 import json
@@ -51,6 +52,26 @@ def descriptor() -> dict:
         if len(raw) > 2 * 1024 * 1024:
             raise ValueError("transaction client descriptor exceeds its bounded input")
         return json.loads(raw)
+
+
+def node_descriptor(requirements: dict) -> str:
+    """Reuse the maintained Node protobuf codec with exact Phase 4 descriptors."""
+    sources = sorted({service["source"] for service in requirements["externalClient"]["requiredServices"]})
+    with tempfile.TemporaryDirectory(prefix="transaction-node-descriptor-", dir=ROOT / "target") as directory:
+        path = Path(directory) / "descriptor.bin"
+        command = ["buf", "--timeout", "30s", "build", str(ROOT / "api/proto"),
+                   "--as-file-descriptor-set", "--exclude-source-info", "-o", str(path)]
+        for source in sources:
+            command.extend(["--path", str(ROOT / source)])
+        subprocess.run(command, check=True, timeout=40, cwd=ROOT)
+        raw = path.read_bytes()
+        if not 0 < len(raw) <= 128 * 1024:
+            raise ValueError("transaction Node descriptor exceeds its bounded input")
+    digest = sha256(raw).hexdigest()
+    return ('// Generated from the exact maintained transaction descriptors.\n'
+            'import { Buffer } from "node:buffer";\n\n'
+            f'export const descriptorDigest = "sha256:{digest}";\n'
+            f'export const descriptorBytes = Buffer.from("{base64.b64encode(raw).decode("ascii")}", "base64");\n')
 
 
 def definitions(image: dict) -> tuple[dict, dict, dict]:
@@ -281,6 +302,8 @@ def generate(languages: list[str]) -> dict[str, str]:
         if formatter:
             source = subprocess.run(formatter, input=source, text=True, capture_output=True, check=True, timeout=30).stdout
         outputs[OUTPUTS[language]] = source
+    if "typescript" in languages:
+        outputs["sdk/typescript-client/src/node/protocol/transaction-generated.ts"] = node_descriptor(requirements)
     return outputs
 
 

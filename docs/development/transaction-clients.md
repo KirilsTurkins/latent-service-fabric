@@ -7,7 +7,9 @@ existing control-plane paging types. Existing stateless models and operations
 remain supported.
 
 Rust exposes `latent_sdk::transaction::TransactionClient` on the existing
-`network::RpcClient`. `current_profile()` constructs the exact wire, host ABI and
+`network::RpcClient`. TypeScript exposes the same twelve core operations on
+`RpcClient` from `@latent/sdk/node`, with types under the pure `transaction` and
+`transactionClient` exports. The profile helpers construct the exact wire, host ABI and
 preparation descriptor. These strings describe a request and confer no authority.
 Every namespace/recovery request still needs its explicit current publication
 selector, and the node checks the authenticated caller's current rights.
@@ -26,7 +28,7 @@ the caller can explicitly recover the original result using its preserved
 identity. Effects retain their separate dispatch disposition; a provider
 acknowledgement does not prove the command's outcome or ordered dispatch.
 
-All Rust transaction calls use the existing connection, credential, monotonically
+Rust and Node transaction calls use the existing connection, credential, monotonically
 decreasing deadline and physical request/response lease. The protocol ceiling is
 2 MiB per request/response; configured client ceilings can be lower. Before native
 conversion, owned model collections are bounded. Before Protobuf decoding, the
@@ -35,7 +37,13 @@ duplicate singular/oneof/map fields and excessive graphs. The original lease
 reserves an additional 8 MiB graph allowance and 384 KiB recovery allowance;
 active calls also share the existing configured byte ceiling. Capacity stays
 charged until the original transport body retires. Shutdown closes admission
-and waits for physical calls, sockets and executor work to retire.
+and waits for physical calls, sockets and executor work to retire. Node settles a
+transaction await after the original HTTP/2 stream closes and returns its lease;
+a later cancellation or audit error retains any validated durable observation.
+Each failure's `transactionIdentity` contains the original key/preconditions and
+its optional `observedTransaction` contains bounded receipt data without copying
+the application body. An `AbortSignal` stops the local wait; explicit recovery
+uses a fresh signal and the original identity.
 
 The TypeScript package root exposes the pure `transaction` models, including
 `bigint` uint64 values. Privileged RPC transport remains under the Node export.
@@ -50,8 +58,8 @@ python3 tools/transaction_client_conversions.py --check
 python3 tools/transaction_client_rust_shapes.py --check
 ```
 
-This source milestone includes six model sets and the Rust transport facade.
-The other five maintained transport facades, dispatcher/backup/migration full
+This source milestone includes six model sets and the Rust and Node transport facades.
+The other four maintained transport facades, dispatcher/backup/migration full
 profile operations, separate-node six-client scenario matrix and browser HTTP
 execution remain outstanding. Generated model checks, codec tests and compiler
 checks do not qualify signed guest execution or real external-client execution.
