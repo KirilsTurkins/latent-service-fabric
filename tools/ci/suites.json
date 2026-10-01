@@ -5060,6 +5060,8 @@
         "protected_store::tests::lifecycle::physical_operation_pins_bound_admission_keep_root_through_deadline_and_retire_after_close",
         "protected_store::tests::lifecycle::protected_initialization_shared_families_snapshots_and_reopen_are_real",
         "protected_store::tests::lifecycle::root_replacement_during_read_gates_after_worker_operation_and_preserves_new_bytes",
+        "protected_store::tests::native_capacity::first_native_admission_seals_unbound_store_and_closed_store_cannot_bind",
+        "protected_store::tests::native_capacity::original_global_capacity_binding_is_same_owner_only_and_survives_native_admission",
         "protected_store::tests::recovery::actual_backend_sync_failure_is_uncertain_gated_and_recovers_one_atomic_bundle",
         "protected_store::tests::recovery::exclusive_root_owner_failure_keeps_first_engine_usable_and_data_intact",
         "protected_store::tests::recovery::malformed_and_unsupported_formats_fail_readiness_without_empty_replacement",
@@ -5119,7 +5121,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 113,
+      "minimumCases": 115,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

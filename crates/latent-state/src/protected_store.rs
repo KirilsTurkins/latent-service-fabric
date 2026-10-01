@@ -3,6 +3,7 @@
 
 mod config;
 mod dispatcher;
+mod native_capacity;
 mod operation;
 mod physical;
 mod startup;
@@ -47,6 +48,7 @@ pub struct ProtectedStoreOwner {
     ready: StoreIoReady<PhysicalStore>,
     failure: Arc<FailureLatch>,
     limits: StoreLimits,
+    native_capacity: Arc<native_capacity::NativeBinding>,
 }
 
 impl Clone for ProtectedStoreOwner {
@@ -55,6 +57,7 @@ impl Clone for ProtectedStoreOwner {
             ready: self.ready.clone(),
             failure: Arc::clone(&self.failure),
             limits: self.limits,
+            native_capacity: Arc::clone(&self.native_capacity),
         }
     }
 }
@@ -154,6 +157,7 @@ impl ProtectedStoreOwner {
     }
 
     fn available(&self) -> Result<(), ProtectedStoreError> {
+        self.native_capacity.seal()?;
         self.failure.get().map_or(Ok(()), Err)
     }
 }

@@ -209,6 +209,7 @@ impl Future for ProtectedStoreStartup {
                     ready,
                     failure: Arc::clone(&this.failure),
                     limits: this.limits,
+                    native_capacity: Arc::new(super::native_capacity::NativeBinding::default()),
                 }))
             }
             Poll::Ready(Err(error)) => Poll::Ready(Err(this
