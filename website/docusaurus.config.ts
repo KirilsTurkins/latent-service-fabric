@@ -35,6 +35,7 @@ const commonDocs = {
 };
 
 const config: Config = {
+  future: {v4: {removeLegacyPostBuildHeadAttribute: true}, faster: true},
   title: 'Latent Service Fabric',
   tagline: 'Create a node, build capsules and connect your applications',
   url: process.env.LSF_SITE_URL ?? 'https://kirilsturkins.github.io',

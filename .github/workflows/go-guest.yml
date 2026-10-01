@@ -67,15 +67,22 @@ concurrency:
   group: go-guest-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Symbols/incremental state cost disk and links; correctness checks stay on.
+  CARGO_BUILD_JOBS: "2"
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_DEV_OVERFLOW_CHECKS: "true"
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
+
 jobs:
   upstream-probe:
     name: Go runtime and complete capsule qualification
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    env:
-      CARGO_BUILD_JOBS: 2
-      CARGO_INCREMENTAL: 0
-      CARGO_PROFILE_DEV_DEBUG: 0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -102,11 +109,26 @@ jobs:
         with:
           python-version: 3.13.5
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
       - name: Install the locked compiler and generator
         run: |
           set -euo pipefail
           cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
-          cargo install --locked wasm-tools --version 1.254.0
+          test "$(wasm-tools --version)" = 'wasm-tools 1.254.0'
           mkdir -p "$RUNNER_TEMP/go-guest-tools"
           curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tbz" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz
           echo "4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz" | sha256sum --check --strict
@@ -116,7 +138,7 @@ jobs:
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/go-guest-tools"
-          cp "$HOME/.cargo/bin/componentize-go" "$HOME/.cargo/bin/wasm-tools" "$out/"
+          cp "$HOME/.cargo/bin/componentize-go" "$(command -v wasm-tools)" "$out/"
           sha256sum "$out/componentize-go" "$out/wasm-tools" > "$out/tools.sha256"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

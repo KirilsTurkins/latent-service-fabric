@@ -35,6 +35,17 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Symbols/incremental state cost disk and links; correctness checks stay on.
+  CARGO_BUILD_JOBS: "2"
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_DEV_OVERFLOW_CHECKS: "true"
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
+
 jobs:
   profile:
     name: Select CI profile
@@ -169,22 +180,15 @@ jobs:
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: ${{ inputs.cargo_dependency_cache == 'recipe' && steps.cargo-cache-identity.outputs.prefix || 'lsf-ci-dependencies-v1' }}
-          shared-key: ${{ inputs.cargo_dependency_cache == 'recipe' && 'host-correctness' || '' }}
-          key: ${{ inputs.cargo_dependency_cache == 'recipe' && 'ubuntu-24.04-recipe' || format('ubuntu-24.04-{0}', hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml')) }}
-          cache-targets: false
+          prefix-key: ${{ inputs.cargo_dependency_cache == 'recipe' && steps.cargo-cache-identity.outputs.prefix || 'lsf-ci-dependencies-v2' }}
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
           cache-bin: false
           cache-workspace-crates: false
           cache-all-crates: false
           cache-on-failure: false
-          cache-directories: |
-            target/debug/.fingerprint
-            target/debug/build
-            target/debug/deps
-          save-if: >-
-            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
-                (github.event_name == 'workflow_dispatch' &&
-                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
@@ -450,6 +454,18 @@ jobs:
           PY
           python3 tools/phase2_gate_resource.py --cli "${resource_bin}/latent" --node "${resource_bin}/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
           python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+      - name: Restore isolated Angular compiler dependencies
+        if: needs.profile.outputs.renderer == 'true'
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: angular-release-compiler
+          key: ubuntu-24.04
+          workspaces: . -> ${{ runner.temp }}/angular-t1-compiler
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-on-failure: false
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}
       - name: Build the optimized isolated Angular compiler
         if: needs.profile.outputs.renderer == 'true'
         timeout-minutes: 25
@@ -565,21 +581,15 @@ jobs:
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: lsf-ci-dependencies-v1
-          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
-          cache-targets: false
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
           cache-bin: false
           cache-workspace-crates: false
           cache-all-crates: false
           cache-on-failure: false
-          cache-directories: |
-            target/debug/.fingerprint
-            target/debug/build
-            target/debug/deps
-          save-if: >-
-            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
-                (github.event_name == 'workflow_dispatch' &&
-                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
+          save-if: false
       - name: Receive bounded observed echo inputs
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -644,21 +654,15 @@ jobs:
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: lsf-ci-dependencies-v1
-          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
-          cache-targets: false
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
           cache-bin: false
           cache-workspace-crates: false
           cache-all-crates: false
           cache-on-failure: false
-          cache-directories: |
-            target/debug/.fingerprint
-            target/debug/build
-            target/debug/deps
-          save-if: >-
-            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
-                (github.event_name == 'workflow_dispatch' &&
-                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
+          save-if: false
       - name: Run catalog recovery, routing, and dormancy regressions
         run: cargo test -p latent-artifacts -p latent-control-store --lib --locked -- --nocapture
       - name: Check catalog probe supervision
@@ -698,21 +702,15 @@ jobs:
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: lsf-ci-dependencies-v1
-          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
-          cache-targets: false
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: msrv-correctness
+          key: ubuntu-24.04
+          cache-targets: true
           cache-bin: false
           cache-workspace-crates: false
           cache-all-crates: false
           cache-on-failure: false
-          cache-directories: |
-            target/debug/.fingerprint
-            target/debug/build
-            target/debug/deps
-          save-if: >-
-            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
-                (github.event_name == 'workflow_dispatch' &&
-                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}
       - name: Check workspace at MSRV
         if: needs.profile.outputs.profile == 'full'
         run: python3 tools/ci_cargo.py run msrv
@@ -753,21 +751,15 @@ jobs:
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: lsf-ci-dependencies-v1
-          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
-          cache-targets: false
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
           cache-bin: false
           cache-workspace-crates: false
           cache-all-crates: false
           cache-on-failure: false
-          cache-directories: |
-            target/debug/.fingerprint
-            target/debug/build
-            target/debug/deps
-          save-if: >-
-            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
-                (github.event_name == 'workflow_dispatch' &&
-                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
+          save-if: false
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
@@ -802,9 +794,7 @@ jobs:
         with:
           dotnet-version: 8.0.425
       - name: Validate contracts, echo component, and generated bindings
-        run: |
-          unset CARGO_INCREMENTAL
-          tools/validate_contracts.sh
+        run: tools/validate_contracts.sh
       - name: Pass bounded observed build inputs to registry verification
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -840,7 +830,9 @@ jobs:
           retention-days: 14
       - name: Validate standalone optimization benchmark smoke
         run: |
-          unset CARGO_INCREMENTAL
+          unset CARGO_INCREMENTAL CARGO_BUILD_JOBS CARGO_PROFILE_DEV_DEBUG CARGO_PROFILE_TEST_DEBUG
+          unset CARGO_PROFILE_DEV_DEBUG_ASSERTIONS CARGO_PROFILE_TEST_DEBUG_ASSERTIONS
+          unset CARGO_PROFILE_DEV_OVERFLOW_CHECKS CARGO_PROFILE_TEST_OVERFLOW_CHECKS
           python3 tools/run_optimization_benchmarks.py --profile smoke
       - name: Retain optimization benchmark smoke evidence
         if: always()

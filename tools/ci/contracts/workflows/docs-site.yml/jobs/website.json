@@ -43,7 +43,7 @@
       },
       {
         "name": "Verify production pages, theme and source-backed controls",
-        "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery\n",
+        "run": "# The isolated two-version build owns separate outputs. Overlap it\n# with the production browser journeys, with at most two suites active.\nnpm run test:versions &\nversions_pid=$!\nstatus=0\nnpm run test:build || status=$?\nnpm run test:theme || status=$?\nnpm run test:examples || status=$?\nnpm run test:discovery || status=$?\nwait \"$versions_pid\" || status=$?\nexit \"$status\"\n",
         "working-directory": "website"
       },
       {
@@ -63,7 +63,7 @@
   },
   "jobId": "website",
   "kind": "job",
-  "reviewReason": "Preserve every website command and its existing finite limit; run 36783140060 job 110142455876 completed the version matrix after 27 minutes and the 30-minute job deadline interrupted the final five-minute discovery journey. Allow 40 minutes for the full bounded matrix and receipt upload/cleanup.",
+  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-site.yml"
 }

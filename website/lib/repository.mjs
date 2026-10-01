@@ -49,15 +49,19 @@ export function canonicalPath(relative) {
 
 export function safeFile(root, relative, limit = maxSourceBytes) {
   canonicalPath(relative);
-  let current = fs.realpathSync(root);
+  const actualRoot = fs.realpathSync(root);
+  let current = actualRoot;
   for (const segment of relative.split('/')) {
-    requireValue(fs.readdirSync(current).includes(segment), `Missing or incorrectly cased path: ${relative}`);
+    // Linux lookups enforce exact case themselves. Enumerating every directory
+    // for every source/link made validation quadratic in directory size.
+    // Other hosts retain the check for potentially case-insensitive volumes.
+    if (process.platform !== 'linux') requireValue(fs.readdirSync(current).includes(segment), `Missing or incorrectly cased path: ${relative}`);
     current = path.join(current, segment);
     const metadata = fs.lstatSync(current);
     requireValue(!metadata.isSymbolicLink(), `Linked input is not allowed: ${relative}`);
-    const resolved = path.relative(fs.realpathSync(root), fs.realpathSync(current));
-    requireValue(resolved !== '..' && !resolved.startsWith(`..${path.sep}`) && !path.isAbsolute(resolved), `Repository escape: ${relative}`);
   }
+  const resolved = path.relative(actualRoot, fs.realpathSync(current));
+  requireValue(resolved !== '..' && !resolved.startsWith(`..${path.sep}`) && !path.isAbsolute(resolved), `Repository escape: ${relative}`);
   const metadata = fs.statSync(current);
   requireValue(metadata.isFile() && metadata.size <= limit, `Nonregular or oversized input: ${relative}`);
   return current;

@@ -53,15 +53,22 @@ concurrency:
   group: typescript-guest-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Symbols/incremental state cost disk and links; correctness checks stay on.
+  CARGO_BUILD_JOBS: "2"
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: "true"
+  CARGO_PROFILE_DEV_OVERFLOW_CHECKS: "true"
+  CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
+
 jobs:
   boundary:
     name: TypeScript guest value and ownership boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 75
-    env:
-      CARGO_BUILD_JOBS: 2
-      CARGO_INCREMENTAL: 0
-      CARGO_PROFILE_DEV_DEBUG: 0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -97,11 +104,22 @@ jobs:
           python-version: 3.13.5
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          key: typescript-guest-runtime-optimized-compiler
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
       - name: Install the reviewed JavaScript compiler inputs
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-guest-tools"
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
       - name: Install pinned component validator
-        run: cargo install --locked wasm-tools --version 1.254.0
+        run: test "$(wasm-tools --version)" = 'wasm-tools 1.254.0'
       - name: Compile the real async-boundary diagnostic
         run: python3 tools/typescript_guest/probe.py --output "$RUNNER_TEMP/typescript-guest-probe" --node "$(command -v node)" --wasm-tools "$(command -v wasm-tools)" --compiler "$RUNNER_TEMP/typescript-guest-tools/node_modules/@bytecodealliance/componentize-js/src/componentize.js"
       - name: Execute the compiled async-boundary diagnostic

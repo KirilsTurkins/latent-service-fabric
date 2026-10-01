@@ -14,7 +14,11 @@ mkdir -p "${OUTPUT}/wit" "${OUTPUT}/proto" "${OUTPUT}/example-wit"
 
 python3 tools/validate_repository.py
 python3 tools/validate_foundation.py
-python3 -m unittest discover -s tools/tests
+# Unit fixtures own temporary inputs; they can overlap the independent native
+# contract build. Always join the complete suite, including on a build failure.
+python3 -m unittest discover -s tools/tests &
+python_suite_pid=$!
+trap 'validation_status=$?; wait "$python_suite_pid" || validation_status=$?; exit "$validation_status"' EXIT
 
 wasm-tools parse crates/latent-wasmtime/src/values/types.wat \
     -o "${OUTPUT}/wit/value-types.wasm"
