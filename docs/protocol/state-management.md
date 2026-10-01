@@ -116,13 +116,27 @@ constraints. Requests cannot install these bindings or derive authority from
 their IDs. The constructor also requires the node's actual retained admission
 port; it supplies no default capacity pool.
 
+`StateManagementRecoveryAdmission` wraps the installed node's existing
+`NativeCapacityOwner`. It reserves the separate recovery partition before
+returning the operation future, charging the original decoded request, an
+8 MiB native work allowance, the exact bounded response allowance and the
+owner's fixed metadata. It preserves the original monotonic deadline and close
+fence. Namespace inspection and receipt recovery use `RecoveryRead`; namespace
+mutation and dispatcher controls use `RecoveryWrite` on the same engine and
+its reserved fixed worker. These classes cannot borrow ordinary admission.
+The real single writer still serializes all writes; a stalled device can cause
+an explicit bounded failure rather than successful recovery.
+
 Before native lookup, the backend checks the actual selected artifact and seals
 current namespace permissions through the existing policy owner. It retains
 those original decisions through the fixed worker and response frame. Native
 mutation preparation does not hold a policy lock over I/O. Its actual writer
 fence checks the original policy and namespace lifecycle in that order, then
 accepts the affine transition before physical commit. A dropped RPC waiter leaves
-the accepted worker and its reservation owned until actual completion. Replays
+the accepted worker and its reservation owned until actual completion. Unclaimed
+native completions retain that same global reservation until their output values
+drop. Published response bodies and byte frames retain it through their actual
+destruction. Replays
 preserve the original actor, operation, request and generations; a separate
 authorized read recovers a durable receipt after response revocation.
 
@@ -147,14 +161,21 @@ The native Linux tests use real catalog, policy, protected engine and audit
 owners. They cover concurrent generation CAS, lifecycle/tombstone access,
 detached waiter retention and clean reopen, exact selected service rejection,
 stable actor recovery, namespace accounting, original revocation and actual
-response memory charges. Their admission fixture uses the production activation
-memory owner; it does not qualify the node's reserved recovery lane or saturated
-store progress. Entity pages, maintenance jobs and command/effect operations
+response memory charges. Additional tests install the actual shared native
+capacity owner and reserve the actual protected recovery worker. Authenticated
+RPC inspection and encoded response frames progress with the ordinary global
+slot full, all three ordinary storage workers occupied, and ordinary queue,
+accepted-job or retained-byte capacity full. Dropping the body preserves the
+charge held by its byte frame. Detached queued writes retain their global
+capacity until native retirement; an expired original request creates no receipt,
+and an accepted lost response is recovered after a clean engine reopen.
+These tests qualify finite admission and worker progress, not recovery from an
+unreadable device or a complete standalone CLI workflow. Entity pages,
+maintenance jobs and command/effect operations
 must be supplied by the corresponding owning runtime ports.
 
-The boundary tests establish preflight, authenticated association, original
-receipt identity, lossless projection and transport owner retention. They are
-not storage, saturation or real CLI/node workflow evidence. Full issue #400
+The separate structural boundary tests establish preflight, authenticated
+association, original receipt identity and lossless projection. Full issue #400
 closure additionally requires actual node composition, command invocation,
 dispatcher pause/resume and authorized reconciliation, migration/backup/restore
 jobs, typed audit/metrics, and the prescribed real CLI/node recovery and reserved

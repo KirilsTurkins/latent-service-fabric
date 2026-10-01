@@ -95,6 +95,11 @@ async fn concurrent_original_generation_checks_have_one_native_writer_without_re
 #[tokio::test]
 async fn detached_namespace_waiter_retains_real_work_until_commit_and_clean_recovery() {
     let mut fixture = Fixture::new(false).await;
+    let native = latent_core::native_capacity::NativeCapacityOwner::new(
+        latent_core::native_capacity::NativeCapacityLimits::default(),
+    )
+    .unwrap();
+    super::recovery::install(&mut fixture, native.clone());
     drop(fixture.create().await);
     let gates = Rendezvous::new(1);
     let worker_gates = gates.clone();
@@ -127,9 +132,9 @@ async fn detached_namespace_waiter_retains_real_work_until_commit_and_clean_reco
     PollProbe::default().pending(command.as_mut());
     assert_eq!(fixture.store.snapshot().unwrap().accepted, 2);
     assert_eq!(fixture.store.snapshot().unwrap().active_writes, 1);
-    assert_eq!(fixture.admission.budget.outstanding_reservations(), 1);
+    assert_eq!(native.snapshot().unwrap().recovery.slots, 1);
     drop(command);
-    assert_eq!(fixture.admission.budget.outstanding_reservations(), 1);
+    assert_eq!(native.snapshot().unwrap().recovery.slots, 1);
     gates.release(ticket).unwrap();
     hold.await.unwrap().unwrap();
     fixture.store.close();
@@ -144,7 +149,7 @@ async fn detached_namespace_waiter_retains_real_work_until_commit_and_clean_reco
     .unwrap();
     assert!(drained.clean);
     assert!(drained.snapshot.physically_retired());
-    assert_eq!(fixture.admission.budget.outstanding_reservations(), 0);
+    assert!(native.snapshot().unwrap().physically_retired());
     let mut config = fixture.config.clone();
     config.create_if_missing = false;
     let reopened = Arc::new(fixture::start(config).await);
