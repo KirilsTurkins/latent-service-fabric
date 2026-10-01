@@ -115,11 +115,12 @@
         "with": {
           "cache-all-crates": false,
           "cache-bin": false,
+          "cache-directories": "target/debug\ntarget/release\ntarget/wasm32-unknown-unknown\ntarget/wasm32-wasip2\n",
           "cache-on-failure": false,
-          "cache-targets": true,
+          "cache-targets": false,
           "cache-workspace-crates": false,
           "key": "ubuntu-24.04",
-          "prefix-key": "lsf-ci-dependencies-v2",
+          "prefix-key": "lsf-ci-dependencies-v3-contract-profiles",
           "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements' || matrix.lane == 'optimization') }}",
           "shared-key": "${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}"
         }
@@ -281,7 +282,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Require every Python, bindings, native runtime, standalone, six-SDK provider and frozen collector obligation in mandatory isolated matrix variants; fresh component provenance and all exact tests remain enforced.",
+  "reviewReason": "Exclude observed echo and other generated fixture paths from dependency cache; retain original compiled Cargo profiles, all commands and historical obligations, with a distinct cache namespace.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }
