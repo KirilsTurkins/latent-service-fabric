@@ -30,6 +30,7 @@ pub(crate) struct Function {
 pub(crate) struct Surface {
     functions: Vec<((String, String), Function)>,
     pub imports: BTreeSet<String>,
+    pub binding_imports: BTreeSet<String>,
     pub type_imports: BTreeSet<String>,
     pub retained_bytes: usize,
     pub value_codec_limits: crate::values::ValueCodecLimits,
@@ -243,11 +244,24 @@ pub(crate) fn validate_with_providers(
             "manifest or contract metadata disagrees with exported interfaces",
         ));
     }
+    let binding_imports = imports
+        .iter()
+        .filter(|name| {
+            latent_core::PHASE3_HOST_ABI_CURRENT
+                .interface(name)
+                .is_some()
+        })
+        .map(|name| {
+            retain(256 + name.len(), &mut retained_bytes, config)?;
+            Ok(name.clone())
+        })
+        .collect::<Result<BTreeSet<_>, PlatformError>>()?;
     Ok(Surface {
         // Keep cold duplicate/descriptor validation and its conservative charge;
         // retain the same sorted keys for borrowed allocation-free invocation.
         functions: functions.into_iter().collect(),
         imports,
+        binding_imports,
         type_imports,
         retained_bytes,
         value_codec_limits: config.value_codec_limits,

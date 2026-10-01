@@ -670,7 +670,7 @@ impl WasmtimeBackend {
                 false,
             ));
         }
-        Self::validate_bound_imports(&request.imports, &runtime.surface.imports)?;
+        Self::validate_bound_imports(&request.imports, &runtime.surface.binding_imports)?;
         self.validate_invocation_budget(&request.budget, &runtime.declared_budget)?;
         let function = runtime
             .surface
