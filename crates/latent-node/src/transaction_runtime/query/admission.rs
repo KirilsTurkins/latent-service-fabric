@@ -1,4 +1,7 @@
-use std::{sync::Arc, time::Instant};
+use std::{
+    sync::{Arc, Mutex},
+    time::Instant,
+};
 
 use latent_activation::ActivationEnvelope;
 use latent_capabilities::namespace::{
@@ -27,7 +30,8 @@ use super::super::{
 };
 use super::{completion::QueryCompletion, QuerySelection};
 use crate::activation_manager::{
-    TransactionActivationAdmission, TransactionAdmission, TransactionExecution,
+    TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
+    TransactionExecution,
 };
 
 /// These are the existing node owners, not a second database or executor.
@@ -42,6 +46,7 @@ pub struct QueryAdmission {
     owners: QueryOwners,
     selection: QuerySelection,
     binding: PolicyCallBinding,
+    control: Mutex<Option<TransactionAdmissionControl>>,
 }
 
 impl QueryAdmission {
@@ -65,6 +70,7 @@ impl QueryAdmission {
             owners,
             selection,
             binding,
+            control: Mutex::new(None),
         })
     }
 
@@ -129,11 +135,14 @@ impl QueryAdmission {
     async fn read_namespace(
         &self,
         budget: &ActivationBudget,
+        cancellation: crate::CancellationToken,
     ) -> Result<(NamespaceRead, Arc<HostMemoryReservation>), PlatformError> {
         let memory = Arc::new(budget.reserve_host_memory(65_536).map_err(|_| denied())?);
         let worker_memory = Arc::clone(&memory);
         let tenant = self.selection.target.tenant.clone();
         let id = self.selection.namespace.clone();
+        let incarnation = self.selection.incarnation;
+        let observed_cancellation = cancellation.clone();
         let view = self
             .owners
             .store
@@ -146,8 +155,14 @@ impl QueryAdmission {
             .owners
             .store
             .with_view(view, 65_536, move |view| {
-                let read =
-                    NamespaceCatalog::read_in(view, &tenant, &id).map_err(namespace_error)?;
+                let read = if cancellation.is_cancelled() {
+                    Err(StoreError::Unavailable)
+                } else {
+                    latent_state::recovery::require_namespace_ready(view, &tenant, &id, incarnation)
+                        .and_then(|()| {
+                            NamespaceCatalog::read_in(view, &tenant, &id).map_err(namespace_error)
+                        })
+                };
                 // The actual worker/result owner retains the original activation
                 // memory charge if the transport detaches while native I/O lives.
                 Ok((read, worker_memory))
@@ -155,8 +170,15 @@ impl QueryAdmission {
             .map_err(store_error)?;
         let (view, namespace) = job.await.map_err(|_| denied())?;
         view.retire().await;
+        if observed_cancellation.is_cancelled() {
+            return Err(super::failure(
+                latent_executor::transaction::StateFailure::Cancelled,
+            ));
+        }
         let (namespace, result_memory) = namespace.map_err(store_error)?;
-        let namespace = namespace.ok_or_else(denied)?;
+        let namespace = namespace
+            .map_err(|error| super::failure(super::super::io::state_error(error.into(), false)))?
+            .ok_or_else(denied)?;
         Ok((namespace, result_memory))
     }
 
@@ -166,6 +188,17 @@ impl QueryAdmission {
         budget: &ActivationBudget,
     ) -> Result<TransactionExecution, PlatformError> {
         self.selection.accepts(envelope)?;
+        let control = self
+            .control
+            .lock()
+            .map_err(|_| denied())?
+            .take()
+            .ok_or_else(denied)?;
+        if control.token().is_cancelled() {
+            return Err(super::failure(
+                latent_executor::transaction::StateFailure::Cancelled,
+            ));
+        }
         let granted = budget.granted();
         if budget.profile() != BudgetProfile::Phase4
             || granted.state_write_bytes != 0
@@ -179,7 +212,7 @@ impl QueryAdmission {
         let retained = self.retain_authority(envelope, budget)?;
         // This bounded read keeps the original retained authority and physical
         // memory charge while the fixed worker owns the metadata.
-        let (namespace, memory) = self.read_namespace(budget).await?;
+        let (namespace, memory) = self.read_namespace(budget, control.token()).await?;
         let deadline = budget.deadline().monotonic().ok_or_else(denied)?;
         let lifecycle = self
             .owners
@@ -211,6 +244,7 @@ impl QueryAdmission {
             None,
             budget.clone(),
         )?);
+        control.bind_query(&auth)?;
         let host = StateTransactionHost::open(
             Arc::clone(&self.owners.store),
             auth,
@@ -249,6 +283,15 @@ impl QueryAdmission {
 }
 
 impl TransactionActivationAdmission for QueryAdmission {
+    fn bind_control(&self, control: TransactionAdmissionControl) -> Result<(), PlatformError> {
+        let mut slot = self.control.lock().map_err(|_| denied())?;
+        if slot.is_some() {
+            return Err(denied());
+        }
+        *slot = Some(control);
+        Ok(())
+    }
+
     fn admit<'a>(
         &'a self,
         envelope: &'a ActivationEnvelope,

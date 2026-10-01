@@ -26,7 +26,24 @@ impl TransactionAdmissionControl {
         &self,
         authorization: &crate::transaction_runtime::StateAuthorization,
     ) -> Result<(), PlatformError> {
-        if authorization.authority_mode() != latent_capabilities::namespace::Mode::Command
+        self.bind_authorization(authorization, latent_capabilities::namespace::Mode::Command)
+    }
+
+    /// A fresh query observes the original cancellation registration without
+    /// gaining a command, durable claim, writer or commit operation.
+    pub fn bind_query(
+        &self,
+        authorization: &crate::transaction_runtime::StateAuthorization,
+    ) -> Result<(), PlatformError> {
+        self.bind_authorization(authorization, latent_capabilities::namespace::Mode::Query)
+    }
+
+    fn bind_authorization(
+        &self,
+        authorization: &crate::transaction_runtime::StateAuthorization,
+        mode: latent_capabilities::namespace::Mode,
+    ) -> Result<(), PlatformError> {
+        if authorization.authority_mode() != mode
             || authorization.activation_id() != self.cancellation.activation_id()
             || !authorization.budget().is_same_instance(&self.budget)
         {
