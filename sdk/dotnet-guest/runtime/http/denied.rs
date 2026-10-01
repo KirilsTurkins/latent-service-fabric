@@ -1,12 +1,12 @@
 //! Complete pinned HTTP type identities with explicit denial in the closed mode.
 //! No HTTP host import, network call, future completion or successful I/O exists.
 use super::{
-    ClosedRuntime,
     exports::wasi::{
         http::{outgoing_handler, types},
         io,
     },
     quota::Slot,
+    ClosedRuntime,
 };
 use std::cell::{Cell, RefCell};
 
