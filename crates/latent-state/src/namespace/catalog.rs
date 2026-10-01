@@ -392,8 +392,11 @@ impl NamespaceCatalog {
         if limit == 0 || limit > 128 {
             return Err(NamespaceError::Capacity);
         }
-        let after_key = after.map(|id| namespace_record_key(tenant, id)).transpose()?;
-        let page = view.scan_after(
+        let after_key = after
+            .map(|id| namespace_record_key(tenant, id))
+            .transpose()?;
+        let page = view
+            .scan_after(
                 Family::Namespace,
                 &namespace_tenant_prefix(tenant)?,
                 after_key.as_deref(),
@@ -409,7 +412,9 @@ impl NamespaceCatalog {
             }
             records.push(record);
         }
-        let next_after = page.resume.and_then(|_| records.last().map(|record| record.id.clone()));
+        let next_after = page
+            .resume
+            .and_then(|_| records.last().map(|record| record.id.clone()));
         Ok(NamespacePage {
             records,
             next_after,
@@ -581,15 +586,27 @@ mod tests {
             }
         }
         let view = store.snapshot().unwrap();
-        store.apply(catalog.prepare(context("new"), &create("new"), 0).unwrap().batch).unwrap();
+        store
+            .apply(
+                catalog
+                    .prepare(context("new"), &create("new"), 0)
+                    .unwrap()
+                    .batch,
+            )
+            .unwrap();
         let mut cursor = None;
         let mut found = std::collections::BTreeSet::new();
         loop {
-            let page = NamespaceCatalog::page_in(&view, &TenantId("a".into()), cursor.as_ref(), 7).unwrap();
+            let page = NamespaceCatalog::page_in(&view, &TenantId("a".into()), cursor.as_ref(), 7)
+                .unwrap();
             assert!(page.records.len() <= 7);
-            for record in page.records { assert!(found.insert(record.id)); }
+            for record in page.records {
+                assert!(found.insert(record.id));
+            }
             cursor = page.next_after;
-            if cursor.is_none() { break; }
+            if cursor.is_none() {
+                break;
+            }
         }
         assert_eq!(found.len(), 260);
         assert!(!found.contains(&StateNamespaceId("new".into())));
