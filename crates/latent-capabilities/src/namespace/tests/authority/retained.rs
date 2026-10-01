@@ -1,5 +1,6 @@
 //! Retained acquisition uses actual policy/catalog/engine rows, not a copied allow.
 use super::*;
+mod management;
 
 fn retained(fixture: &Fixture) -> OwnedPolicyDecision {
     let actor = principal("alice");

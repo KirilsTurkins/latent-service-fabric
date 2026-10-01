@@ -30,6 +30,19 @@ deduplication horizon. Delay is finite and cannot cross that horizon, the origin
 intent expiry, or the attempt ceiling. The runtime must recheck the original
 effect rules at the final acceptance fence; a newer publication cannot renew them.
 
+The retained policy configuration digest describes the exact consumer
+publication, configured policy IDs/revisions/documents and provider binding.
+Inspection and an approved action share this precondition despite different
+operation labels or remaining budgets. The original retained decisions still
+recheck their real owners and namespace lifecycle together. Hash equality never
+supplies authority and a replacement configured grant cannot revive old stamps.
+
+The redrive rule fence intersects current narrowing with the original effect
+ceiling and expiry. It holds only through final acceptance, allocates no provider
+work and is dropped before disk or network I/O. Typed audit actions distinguish
+planning, reconciliation, redrive, terminal declaration and historical receipt
+read without changing the numeric identities of existing audit actions.
+
 Provider reconciliation accepts a typed positive receipt from a status lookup
 through the existing sealed provider grant. Absent, expired, conflicting or
 ambiguous remote status remains uncertain and cannot authorize another send.

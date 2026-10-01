@@ -108,7 +108,7 @@ fn inspect_in(
         status: response::status(read.record().status) as i32,
         quota: Some(response::quota(read.record().quota)),
         generation: read.record().version.generation,
-        namespace_policy_digest: String::new(),
+        namespace_policy_digest: super::authorization::policy_precondition(access),
     };
     Ok(Ok((read, value)))
 }

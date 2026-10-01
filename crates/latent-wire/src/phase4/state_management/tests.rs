@@ -60,6 +60,8 @@ async fn actual_authenticated_namespace_create_inspect_and_original_receipt() {
         (1, 0, 0, 0)
     );
     assert_eq!(metadata.status, c::NamespaceStatus::Active as i32);
+    assert_eq!(metadata.namespace_policy_digest.len(), 71);
+    assert!(metadata.namespace_policy_digest.starts_with("sha256:"));
     let recovered = adapter
         .get_state_operation_receipt(
             context("alice").request(c::GetStateOperationReceiptRequest {

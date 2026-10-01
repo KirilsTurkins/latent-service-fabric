@@ -1,6 +1,46 @@
 use super::*;
 
 #[test]
+fn explicit_redrive_intersects_narrowed_original_rules_through_final_acceptance() {
+    let (owner, mut rule, authority) = setup();
+    rule.policy_revision = 2;
+    rule.ceiling.maximum_attempts = 2;
+    owner.publish(rule).unwrap();
+    let guard = owner.retry_fence(&authority, 2, 200, time(101)).unwrap();
+    assert!(matches!(
+        owner.0.state.try_lock(),
+        Err(std::sync::TryLockError::WouldBlock)
+    ));
+    drop(guard);
+    assert!(matches!(
+        owner.retry_fence(&authority, 3, 200, time(102)),
+        Err(AuthorityError::Capacity)
+    ));
+    assert!(matches!(
+        owner.retry_fence(&authority, 2, authority.expires_at_millis, time(103)),
+        Err(AuthorityError::Expired)
+    ));
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
+#[test]
+fn newer_publication_cannot_revive_revoked_original_redrive_scope() {
+    let (owner, mut original, authority) = setup();
+    original.policy_revision = 2;
+    original.enabled = false;
+    owner.publish(original.clone()).unwrap();
+    let mut newer = original;
+    newer.scope.publication = "pub-b".into();
+    newer.enabled = true;
+    owner.publish(newer).unwrap();
+    assert!(matches!(
+        owner.retry_fence(&authority, 2, 200, time(101)),
+        Err(AuthorityError::PolicyBlocked)
+    ));
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
+#[test]
 fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_under_fence() {
     let (owner, mut rule, authority) = setup();
     let mut context = owner.accept(&authority, 1, time(101)).unwrap();
