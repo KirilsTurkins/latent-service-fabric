@@ -710,7 +710,7 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
                     "assert state.profile == 'full'\n"
                     "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
-                    "assert selection.profile == 'full'\n"
+                    "assert selection.profile == 'fast'\n"
                     "assert selection.fast_packages\n"
                     "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
                 )
