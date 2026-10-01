@@ -3,12 +3,26 @@ use latent_state::embedded::{AtomicBatch, ExpectedRow, ReadView, RowKey, RowMuta
 
 /// One finite physical callback. It never retains a native view or increments
 /// a bound to accommodate a large closure. Exact duplicates must agree.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub(super) struct Plan {
     pub batch: AtomicBatch,
     bytes: usize,
 }
 impl Plan {
+    pub fn refresh_bound(&mut self) -> Result<(), AtomicError> {
+        if self.batch.expectations.len() > 512 || self.batch.mutations.len() > 512 {
+            return Err(AtomicError::Limit);
+        }
+        let mut bytes = 0;
+        for row in &self.batch.expectations {
+            bytes = append_charge(bytes, &row.key, row.value.as_deref())?;
+        }
+        for row in &self.batch.mutations {
+            bytes = append_charge(bytes, &row.key, row.value.as_deref())?;
+        }
+        self.bytes = bytes;
+        Ok(())
+    }
     pub fn expect(&mut self, row: ExpectedRow) -> Result<(), AtomicError> {
         if let Some(old) = self
             .batch

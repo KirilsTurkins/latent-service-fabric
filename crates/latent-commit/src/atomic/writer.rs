@@ -91,6 +91,7 @@ impl PreparedAdmission {
         mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
     ) -> Result<AdmissionDecision, AtomicError> {
         authorize(CommandAccess::Admit, None)?;
+        latent_state::tenant::inspect(view, &TenantId(input.key.tenant.clone()))?;
         time.check(0)?;
         input.source.validate()?;
         id(&input.result_read_policy)?;
@@ -186,7 +187,7 @@ impl PreparedAdmission {
         let reservation = reservation_key(&record.id.0)?;
         let attempt_key = attempt_row_key(record.id, record.attempt);
         let result_key = result_row_key(record.id, record.attempt);
-        let batch = AtomicBatch {
+        let mut batch = AtomicBatch {
             expectations: vec![
                 ExpectedRow {
                     key: key.clone(),
@@ -246,6 +247,7 @@ impl PreparedAdmission {
                 },
             ],
         };
+        super::accounting::apply(view, &TenantId(record.key.tenant.clone()), &mut batch)?;
         Ok(AdmissionDecision::New(Self { record, batch }))
     }
     #[must_use]
@@ -298,6 +300,7 @@ impl PreparedAdmission {
         mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
     ) -> Result<AdmissionDecision, AtomicError> {
         authorize(CommandAccess::Admit, None)?;
+        latent_state::tenant::inspect(view, &TenantId(input.key.tenant.clone()))?;
         time.check(0)?;
         id(&request.request_id)?;
         let identity = command_identity(&input.key)?;
@@ -510,6 +513,7 @@ impl PreparedAdmission {
                 value: Some(index_bytes),
             });
         }
+        super::accounting::apply(view, &TenantId(record.key.tenant.clone()), &mut batch)?;
         Ok(AdmissionDecision::New(Self { record, batch }))
     }
 }
@@ -1034,6 +1038,7 @@ impl CompleteEnvelope {
                 value: Some(namespace.encode().map_err(|_| AtomicError::Invalid)?),
             });
         }
+        super::accounting::apply(view, &TenantId(terminal.key.tenant.clone()), &mut batch)?;
         let staged = batch.mutations.iter().try_fold(0usize, |bytes, row| {
             bytes
                 .checked_add(row.key.key.len() + row.value.as_ref().map_or(0, Vec::len))
@@ -1073,6 +1078,7 @@ pub fn inspect(
     mut authorize: impl FnMut(CommandAccess, Option<&CommandRecord>) -> Result<(), AtomicError>,
 ) -> Result<(CommandRecord, Option<DurableResult>), AtomicError> {
     authorize(CommandAccess::Replay, None)?;
+    latent_state::tenant::inspect(view, &TenantId(key.tenant.clone()))?;
     let bytes = view
         .get(&command_row_key(command_identity(key)?))?
         .ok_or(AtomicError::NotFound)?;

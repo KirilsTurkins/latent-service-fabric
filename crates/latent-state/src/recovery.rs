@@ -254,6 +254,7 @@ pub fn require_namespace_ready(
     incarnation: u64,
 ) -> Result<(), StoreError> {
     require_ready(view)?;
+    crate::tenant::inspect(view, tenant)?;
     let key = RowKey {
         family: Family::Namespace,
         key: namespace_record_key(tenant, namespace).map_err(|_| StoreError::Invalid)?,

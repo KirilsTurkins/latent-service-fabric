@@ -387,7 +387,7 @@ impl EmbeddedStore {
 
     fn apply_inner<E>(
         &self,
-        batch: AtomicBatch,
+        mut batch: AtomicBatch,
         accept: impl FnOnce() -> Result<(), E>,
         mut checkpoint: impl FnMut(bool),
     ) -> Result<(), FencedStoreError<E>> {
@@ -397,6 +397,27 @@ impl EmbeddedStore {
         let maximum = self.limits.maximum_batch_rows;
         if batch.expectations.len() > maximum || batch.mutations.len() > maximum {
             return Err(FencedStoreError::Store(StoreError::Capacity));
+        }
+        // Legacy catalog callers may compose independent creates. Their one
+        // read-only installation-absence fence is shared; preserve that CAS
+        // without admitting duplicate business keys or installation writes.
+        let tenant_guard = crate::tenant::guard_key();
+        if !batch.mutations.iter().any(|row| row.key == tenant_guard)
+            && batch
+                .expectations
+                .iter()
+                .filter(|row| row.key == tenant_guard)
+                .all(|row| row.value.is_none())
+        {
+            let mut observed = false;
+            batch.expectations.retain(|row| {
+                if row.key != tenant_guard {
+                    return true;
+                }
+                let first = !observed;
+                observed = true;
+                first
+            });
         }
         let mut checks = BTreeSet::new();
         let mut mutations = BTreeSet::new();
@@ -554,6 +575,19 @@ impl ReadView {
     }
 
     pub fn get(&self, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
+        self.get_bounded(key, self.limits.maximum_value_bytes)
+    }
+
+    /// Refuse a hostile oversized value before copying it into the caller's
+    /// finite typed buffer. This does not acquire another physical read view.
+    pub fn get_bounded(
+        &self,
+        key: &RowKey,
+        maximum_bytes: usize,
+    ) -> Result<Option<Vec<u8>>, StoreError> {
+        if maximum_bytes == 0 || maximum_bytes > self.limits.maximum_value_bytes {
+            return Err(StoreError::Invalid);
+        }
         if self.opened.elapsed() > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);
         }
@@ -567,11 +601,36 @@ impl ReadView {
         let value = table.get(key.as_slice()).map_err(|_| StoreError::Corrupt)?;
         if value
             .as_ref()
-            .is_some_and(|v| v.value().len() > self.limits.maximum_value_bytes)
+            .is_some_and(|v| v.value().len() > maximum_bytes)
         {
             return Err(StoreError::Corrupt);
         }
         Ok(value.map(|v| v.value().to_vec()))
+    }
+
+    /// One indexed existence observation without copying an arbitrary stored
+    /// value. Setup uses this to refuse legacy business rows under its fixed
+    /// buffer reservation, rather than loading a whole first record.
+    pub fn contains_prefix(&self, family: Family, prefix: &[u8]) -> Result<bool, StoreError> {
+        if self.opened.elapsed() > self.limits.maximum_view_age {
+            return Err(StoreError::SnapshotExpired);
+        }
+        if prefix.len() > self.limits.maximum_key_bytes {
+            return Err(StoreError::Invalid);
+        }
+        let mut start = vec![family as u8];
+        start.extend_from_slice(prefix);
+        let table = self
+            .tx
+            .as_ref()
+            .expect("retained view")
+            .open_table(ROWS)
+            .map_err(|_| StoreError::Corrupt)?;
+        let mut range = table
+            .range::<&[u8]>(start.as_slice()..)
+            .map_err(|_| StoreError::Corrupt)?;
+        let first = range.next().transpose().map_err(|_| StoreError::Corrupt)?;
+        Ok(first.is_some_and(|(key, _)| key.value().starts_with(&start)))
     }
     pub fn scan(
         &self,

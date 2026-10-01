@@ -33,19 +33,22 @@ fn retire(store: &EmbeddedStore) -> NamespaceRecord {
     let retired = quiescing
         .transition(quiescing.version, &NamespaceTransition::Retire, 0)
         .unwrap();
-    drop(view);
-    store
-        .apply(AtomicBatch {
-            expectations: vec![latent_state::embedded::ExpectedRow {
-                key: namespace_key(),
-                value: Some(bytes),
-            }],
-            mutations: vec![RowMutation {
-                key: namespace_key(),
-                value: Some(retired.encode().unwrap()),
-            }],
-        })
+    let mut batch = AtomicBatch {
+        expectations: vec![latent_state::embedded::ExpectedRow {
+            key: namespace_key(),
+            value: Some(bytes),
+        }],
+        mutations: vec![RowMutation {
+            key: namespace_key(),
+            value: Some(retired.encode().unwrap()),
+        }],
+    };
+    latent_state::tenant::prepare_metadata_update(&view, &record.tenant, &batch)
+        .unwrap()
+        .append_to(&mut batch)
         .unwrap();
+    drop(view);
+    store.apply(batch).unwrap();
     retired
 }
 fn release_request(namespace: &NamespaceRecord, command: Identity) -> FloorReleaseRequest {
@@ -55,6 +58,86 @@ fn release_request(namespace: &NamespaceRecord, command: Identity) -> FloorRelea
         expected: namespace.version,
         command,
     }
+}
+
+#[test]
+fn installed_tenant_floor_release_charges_the_whole_namespace_and_management_slice_once() {
+    use crate::atomic::tests::accounted;
+    use latent_state::embedded::ExpectedRow;
+    let (directory, store, effects) = accounted::setup(8);
+    let record = floor(&store, &effects, "accounted-floor");
+    let namespace = retire(&store);
+    let owner = ResultMaintenanceOwner::default();
+    let view = store.snapshot().unwrap();
+    let before = accounted::usage(&store);
+    let mut plan = owner
+        .prepare_floor_release(
+            &view,
+            &release_request(&namespace, record.id),
+            observation(2302, 202),
+        )
+        .unwrap();
+    let key = RowKey {
+        family: Family::Namespace,
+        key: b"ns-state-op-v1\0synthetic-reviewed-receipt".to_vec(),
+    };
+    let receipt = vec![8; 8192];
+    let original = format!("{:?}", plan.batch());
+    assert_eq!(
+        plan.append_management_batch(AtomicBatch {
+            expectations: vec![ExpectedRow {
+                key: key.clone(),
+                value: None
+            }],
+            mutations: vec![RowMutation {
+                key: key.clone(),
+                value: Some(vec![8; 8193])
+            }],
+        }),
+        Err(AtomicError::Limit)
+    );
+    assert_eq!(format!("{:?}", plan.batch()), original);
+    assert!(view.get(&command_row_key(record.id)).unwrap().is_some());
+    plan.append_management_batch(AtomicBatch {
+        expectations: vec![ExpectedRow {
+            key: key.clone(),
+            value: None,
+        }],
+        mutations: vec![RowMutation {
+            key: key.clone(),
+            value: Some(receipt.clone()),
+        }],
+    })
+    .unwrap();
+    let after_namespace = plan.after().clone();
+    let original_charge =
+        latent_state::tenant::row_charge(&namespace_key(), &namespace.encode().unwrap()).unwrap();
+    let next_charge =
+        latent_state::tenant::row_charge(&namespace_key(), &after_namespace.encode().unwrap())
+            .unwrap();
+    let receipt_charge = latent_state::tenant::row_charge(&key, &receipt).unwrap();
+    drop(view);
+    assert_eq!(
+        plan.publish(&store, |_, _, _| Ok(())).unwrap(),
+        after_namespace
+    );
+    let after = accounted::usage(&store);
+    assert_eq!(after.generation, before.generation + 1);
+    assert_eq!(after.usage.result_rows, 0);
+    assert_eq!(after.usage.result_bytes, 0);
+    assert_eq!(after.usage.effect_rows, 0);
+    assert_eq!(after.usage.payload_bytes, 0);
+    assert_eq!(after.usage.metadata_rows, before.usage.metadata_rows + 1);
+    assert_eq!(
+        after.usage.metadata_bytes,
+        before.usage.metadata_bytes - original_charge + next_charge + receipt_charge
+    );
+    drop(store);
+    let reopened = open(&directory.path().join("state.redb"));
+    assert_eq!(accounted::usage(&reopened), after);
+    let view = reopened.snapshot().unwrap();
+    assert_eq!(view.get(&key).unwrap(), Some(receipt));
+    assert!(view.get(&command_row_key(record.id)).unwrap().is_none());
 }
 
 #[test]

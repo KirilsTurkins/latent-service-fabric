@@ -153,6 +153,12 @@ impl ResultMaintenanceOwner {
             .plan
             .replace(usage_key, usage_bytes, Some(usage.encode()?))?;
         let result = audit.progress(&captured.record, RetentionAction::Terminalize);
+        crate::atomic::accounting::apply(
+            &view,
+            &latent_core::TenantId(request.key.tenant.clone()),
+            &mut captured.plan.batch,
+        )?;
+        captured.plan.refresh_bound()?;
         drop(view);
         store
             .apply_fenced(captured.plan.batch, || {
