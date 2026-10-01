@@ -56,6 +56,45 @@ impl Clone for ProtectedStoreOwner {
 }
 
 impl ProtectedStoreOwner {
+    /// The trusted node carves status/reconciliation/maintenance capacity before
+    /// ordinary admission. This supplies no result-read or mutation authority.
+    pub fn install_recovery_capacity(
+        &self,
+        reserve: crate::store_io::StoreIoRecoveryCapacity,
+    ) -> Result<(), ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .install_recovery_capacity(reserve)
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    pub fn recovery_snapshot(
+        &self,
+    ) -> Result<crate::store_io::StoreIoRecoverySnapshot, ProtectedStoreError> {
+        self.ready
+            .recovery_snapshot()
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    /// Use only after current purpose-specific policy authorization. A bounded
+    /// read can use the reserved worker while ordinary jobs saturate admission;
+    /// a blocked physical writer remains owned and cannot be bypassed.
+    pub fn with_recovery_store<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_payload_bytes: u64,
+        operation: impl FnOnce(&crate::embedded::EmbeddedStore) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit_recovery(kind, retained_payload_bytes, move |store| {
+                store.with_store(kind, operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
     /// Trusted namespace/command control operations use this same physical
     /// owner. Declare all retained payload/result bytes and the correct I/O
     /// class. Return bounded owned metadata; native read views use `open_view`

@@ -17,6 +17,8 @@ use latent_state::{
 use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
 
+mod retention_cases;
+
 fn time(now: u64) -> CommandTime {
     CommandTime {
         unix_millis: now,

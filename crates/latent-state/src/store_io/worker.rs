@@ -36,13 +36,19 @@ fn next<S>(control: &Control<S>) -> Action<S> {
         } else if let Some(index) = state
             .queue
             .iter()
-            .position(|queued| state.can_run(queued.kind))
+            .position(|queued| queued.recovery && state.can_run(queued.kind, true))
+            .or_else(|| {
+                state
+                    .queue
+                    .iter()
+                    .position(|queued| state.can_run(queued.kind, queued.recovery))
+            })
         {
             let queued = state
                 .queue
                 .remove(index)
                 .expect("selected bounded queue index");
-            state.running(queued.kind, true);
+            state.running(queued.kind, true, queued.recovery);
             return Action::Run(queued);
         }
         if state.closed && state.queue.is_empty() && state.physical_owners == 0 {
@@ -66,12 +72,12 @@ fn next<S>(control: &Control<S>) -> Action<S> {
     }
 }
 
-fn finished_job<S>(control: &Control<S>, kind: StoreIoKind) {
+fn finished_job<S>(control: &Control<S>, kind: StoreIoKind, recovery: bool) {
     control
         .state
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
-        .running(kind, false);
+        .running(kind, false, recovery);
     control.notify();
 }
 
@@ -80,7 +86,7 @@ pub(super) fn run<S: Send + Sync + 'static>(control: Arc<Control<S>>, store: Arc
         match next(&control) {
             Action::Run(queued) => {
                 queued.work.run(&store);
-                finished_job(&control, queued.kind);
+                finished_job(&control, queued.kind, queued.recovery);
             }
             Action::Reject(queued) => {
                 queued.work.reject();

@@ -14,6 +14,7 @@
 
 mod drain;
 mod job;
+mod recovery;
 mod retained;
 mod startup;
 mod state;
@@ -22,6 +23,7 @@ mod worker;
 
 pub use drain::StoreIoDrain;
 pub use job::StoreIoJob;
+pub use recovery::{StoreIoRecoveryCapacity, StoreIoRecoverySnapshot};
 pub use retained::StoreIoRetained;
 pub use startup::{StoreIoReady, StoreIoStartup};
 pub use types::{
@@ -160,6 +162,17 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         retained_bytes: u64,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
+        self.submit_class(kind, retained_bytes, false, operation)
+    }
+
+    #[allow(clippy::result_large_err)]
+    fn submit_class<T: Send + 'static, F: FnOnce(&S) -> T + Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_bytes: u64,
+        recovery: bool,
+        operation: F,
+    ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
         let control = &self.inner.control;
         let Ok(mut state) = control.state.lock() else {
             return Err(StoreIoAdmissionError {
@@ -177,7 +190,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             let charge = retained_bytes
                 .checked_add(metadata)
                 .ok_or(StoreIoError::Exhausted)?;
-            state.admit(charge)?;
+            state.admit_class(charge, recovery)?;
             let next = state
                 .next_job
                 .checked_add(1)
@@ -191,10 +204,15 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         state.next_job = next;
         state.accepted += 1;
         state.retained_bytes += charge;
+        if recovery {
+            state.recovery_accepted += 1;
+            state.recovery_bytes += charge;
+        }
         let completion = Arc::new(Completion::new());
         let reservation = Reservation {
             control: Arc::clone(control),
             bytes: charge,
+            recovery,
         };
         let work = TypedWork {
             operation,
@@ -203,6 +221,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         };
         state.queue.push_back(QueuedWork {
             kind,
+            recovery,
             work: Box::new(work),
         });
         drop(state);

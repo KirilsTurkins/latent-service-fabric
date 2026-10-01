@@ -10,6 +10,7 @@ use super::StoreIoError;
 pub(super) struct Reservation<S> {
     pub control: Arc<Control<S>>,
     pub bytes: u64,
+    pub recovery: bool,
 }
 
 impl<S> Drop for Reservation<S> {
@@ -22,6 +23,10 @@ impl<S> Drop for Reservation<S> {
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             state.accepted -= 1;
             state.retained_bytes -= self.bytes;
+            if self.recovery {
+                state.recovery_accepted -= 1;
+                state.recovery_bytes -= self.bytes;
+            }
             if state.snapshot().physically_retired() {
                 state.retired_at = Some(self.control.clock.monotonic_now());
             }

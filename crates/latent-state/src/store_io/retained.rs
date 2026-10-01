@@ -67,6 +67,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             reservation: PhysicalReservation(Reservation {
                 control: Arc::clone(control),
                 bytes,
+                recovery: false,
             }),
         });
         Ok(StoreIoRetained {
