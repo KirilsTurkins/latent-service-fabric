@@ -80,3 +80,28 @@ new schedules cover immutable provenance and expiry under narrowing/widening,
 incompatible profiles and clock/expiry failures, and a policy change between
 refresh and final acceptance. The local Linux rerun was blocked before execution
 by a Docker Desktop engine HTTP 500; it supplies no new Linux evidence.
+
+## Rechecking a retained transport grant
+
+`DispatchGrant::check_current(EffectTime)` checks the exact original sealed
+effect owner after any awaited connection or qualification work and before
+protocol writes. It reads bounded current metadata under the same short rule
+fence. Revocation, changed adapter/profile, a narrower ceiling, credential
+epoch/reference replacement, expired original age/deadline, or clock rollback
+fails closed. Compatible policy widening cannot change the captured ceiling,
+expiry or original attempt deadline. The provider request separately checks its
+original installed provider epoch and protected credential material.
+
+A bounded shared liveness flag belongs to the original affine
+`DispatchContext`. Actual retirement or unexpected context drop closes only
+that attempt's grants; another live attempt cannot revive them. This check
+allocates no physical permit, queue, retry or worker and never refreshes a
+lease. It must run outside the already held `accept_with` fence. The maintained
+NATS adapter invokes it before setup and immediately before publication.
+
+All 57 portable Windows effect library cases passed on Rust 1.97.1, including
+three new current-grant schedules, with zero ignored or filtered cases; strict
+all-target/all-feature effect Clippy passed. The exact Linux inventory is now
+73 cases. New native transport execution remains separately qualified by the
+owned provider fixture; these metadata tests do not establish broker or HTTP
+endpoint qualification.
