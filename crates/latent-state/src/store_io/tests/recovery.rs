@@ -220,14 +220,12 @@ fn blocked_ordinary_native_destructor_cannot_occupy_reserved_recovery_worker() {
     let rendezvous = Rendezvous::new(2);
     let (notice, receiver) = mpsc::channel();
     let mut native = owner.reserve_retained::<Native>(256).unwrap();
-    assert!(
-        native
-            .attach(Native {
-                pause: rendezvous.clone(),
-                notice: notice.clone()
-            })
-            .is_ok()
-    );
+    assert!(native
+        .attach(Native {
+            pause: rendezvous.clone(),
+            notice: notice.clone()
+        })
+        .is_ok());
     let retired = native.retire();
     let (_, destructor) = ready(&receiver);
     let worker = rendezvous.clone();
@@ -288,12 +286,10 @@ fn recovery_native_owner_retires_on_reserved_worker_when_ordinary_capacity_is_fu
     let mut recovery = owner.reserve_recovery_retained::<Native>(32).unwrap();
     assert!(recovery.attach(Native(destroyed)).is_ok());
     let retired = recovery.retire();
-    assert!(
-        receiver
-            .recv_timeout(WATCHDOG)
-            .unwrap()
-            .starts_with("latent-store-recovery-")
-    );
+    assert!(receiver
+        .recv_timeout(WATCHDOG)
+        .unwrap()
+        .starts_with("latent-store-recovery-"));
     wait(retired);
     assert_eq!(owner.snapshot().unwrap().recovery_accepted, 0);
     assert_eq!(owner.snapshot().unwrap().physical_owners, 0);
