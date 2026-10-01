@@ -16,6 +16,46 @@ use super::Inner;
 mod wait;
 
 impl Inner {
+    pub(super) async fn prepare_transaction_input(
+        &self,
+        envelope: &mut ActivationEnvelope,
+        lifecycle: &mut super::lifecycle::Lifecycle,
+        token: &CancellationToken,
+        budget: &ActivationBudget,
+        transport: &TransportStop,
+    ) -> Result<Option<(PreparationKey, PreparedReadiness)>, PlatformError> {
+        if lifecycle.transaction_admission.is_none() {
+            return Ok(None);
+        }
+        // The original code pin is retained for later materialization. No cell,
+        // Store or guest exists while authoritative types certify business input.
+        let (key, ready) = self
+            .prepare_ready(envelope, token, budget, transport)
+            .await?;
+        let read_wait = wait::Timer;
+        let (ready, input) = stage(
+            self.dependencies
+                .backend
+                .canonicalize_transaction_input(ready, envelope, budget, &read_wait),
+            token,
+            budget.deadline().monotonic(),
+            &self.clock,
+            transport,
+        )
+        .await?;
+        self.check_run_start(lifecycle, token)?;
+        if input.bytes().len() > self.config.requests.maximum_input_bytes {
+            return Err(error(
+                PlatformErrorCode::ResourceExhausted,
+                "canonical transaction input exceeds original node input limit",
+            ));
+        }
+        let (bytes, memory) = input.into_parts();
+        envelope.input = bytes;
+        lifecycle.canonical_input_memory = Some(memory);
+        Ok(Some((key, ready)))
+    }
+
     pub(super) async fn prepare_ready(
         &self,
         envelope: &ActivationEnvelope,

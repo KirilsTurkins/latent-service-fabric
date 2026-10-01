@@ -268,12 +268,21 @@ pub(super) fn wire(
             "trigger publication scope does not match",
         ));
     }
-    if value.configuration.len() != 6 {
+    let transaction = target_kind == proto::TriggerTargetKind::Application
+        && value.configuration.get("profile").map(String::as_str)
+            == Some(latent_ingress::http::transaction::PROFILE);
+    if !if transaction {
+        (13..=15).contains(&value.configuration.len())
+    } else {
+        value.configuration.len() == 6
+    } {
         return Err(Status::invalid_argument(
             "closed HTTP trigger configuration is required",
         ));
     }
-    if value.configuration.get("profile").map(String::as_str) != Some(expected_profile) {
+    if !transaction
+        && value.configuration.get("profile").map(String::as_str) != Some(expected_profile)
+    {
         return Err(Status::invalid_argument(
             "HTTP trigger profile does not match target kind",
         ));
@@ -291,11 +300,17 @@ pub(super) fn wire(
     budget.allocation::<u8>(value.configuration.capacity().saturating_mul(128))?;
     for (k, v) in &value.configuration {
         field(k, budget, 32)?;
-        let maximum = match k.as_str() {
-            "path" => 8192,
-            "host" => 255,
-            _ => 32,
-        };
+        let maximum = if transaction {
+            latent_ingress::http::transaction::configuration_limit(k)
+        } else {
+            match k.as_str() {
+                "path" => Some(8192),
+                "host" => Some(255),
+                "profile" | "scheme" | "pathMatch" | "method" => Some(32),
+                _ => None,
+            }
+        }
+        .ok_or_else(|| Status::invalid_argument("unknown HTTP trigger configuration field"))?;
         budget.string(v, maximum.min(limits.max_string_bytes))?;
     }
     Ok(())

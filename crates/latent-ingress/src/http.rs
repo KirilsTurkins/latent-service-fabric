@@ -15,6 +15,7 @@ mod lifecycle;
 mod model;
 mod pool;
 mod target;
+pub mod transaction;
 
 pub use context::TrustedContext;
 pub use delivery::{Delivered, Delivery, DeliveryCause, Outcome};

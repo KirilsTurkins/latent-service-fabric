@@ -63,7 +63,8 @@ pub(crate) fn reserved_node_path(path: &str) -> bool {
 }
 
 /// Bound every field before the generic manifest codec can traverse or copy it.
-/// Configuration is six strings, with no arbitrary JSON children in this profile.
+/// Each supported profile has a closed string configuration, with no arbitrary
+/// JSON children or request-controlled scope selectors.
 pub(crate) fn normalize(
     mut value: TriggerManifest,
 ) -> Result<(TriggerManifest, Matcher), PlatformError> {
@@ -81,9 +82,11 @@ pub(crate) fn normalize(
     let profile = field("profile")?;
     match &value.target {
         TriggerTarget::Application(target) => {
-            if profile != PROFILE
-                || target.contract.0 != CONTRACT
-                || target.function != FUNCTION
+            let transaction = profile == latent_ingress::http::transaction::PROFILE;
+            if (!transaction
+                && (profile != PROFILE
+                    || target.contract.0 != CONTRACT
+                    || target.function != FUNCTION))
                 || target
                     .route
                     .as_deref()
@@ -110,6 +113,13 @@ pub(crate) fn normalize(
         _ => return Err(invalid()),
     };
     let method = Method::parse(field("method")?).map_err(|_| invalid())?;
+    if profile == latent_ingress::http::transaction::PROFILE {
+        latent_ingress::http::transaction::TransactionRoute::from_configuration(
+            &value.configuration,
+        )
+        .and_then(|route| route.require_method(method))
+        .map_err(|_| invalid())?;
+    }
     if matches!(&value.target, TriggerTarget::StaticWeb(_))
         && !matches!(method, Method::Get | Method::Head)
     {
@@ -174,7 +184,7 @@ pub(crate) fn bounded(value: &TriggerManifest) -> Result<(), PlatformError> {
             .namespace
             .as_ref()
             .is_some_and(|s| !text(s, MAX_IDENTIFIER_BYTES))
-        || value.configuration.len() != 6
+        || !configuration_count(value)
     {
         return Err(invalid());
     }
@@ -207,23 +217,47 @@ pub(crate) fn bounded(value: &TriggerManifest) -> Result<(), PlatformError> {
             return Err(invalid());
         }
     }
+    let transaction = value
+        .configuration
+        .get("profile")
+        .and_then(json::Value::as_str)
+        == Some(latent_ingress::http::transaction::PROFILE);
     for (key, value) in &value.configuration {
-        if !["profile", "scheme", "host", "path", "pathMatch", "method"].contains(&key.as_str())
-            || key.capacity() > 32
-        {
+        if key.capacity() > 32 {
             return Err(invalid());
         }
         let json::Value::String(value) = value else {
             return Err(invalid());
         };
-        let maximum = match key.as_str() {
-            "path" => 8192,
-            "host" => 255,
-            _ => 32,
-        };
+        let maximum = configuration_maximum(key, transaction).ok_or_else(invalid)?;
         if !text(value, maximum) {
             return Err(invalid());
         }
     }
     Ok(())
+}
+
+fn configuration_count(value: &TriggerManifest) -> bool {
+    let transaction = value
+        .configuration
+        .get("profile")
+        .and_then(json::Value::as_str)
+        == Some(latent_ingress::http::transaction::PROFILE);
+    if transaction {
+        (13..=15).contains(&value.configuration.len())
+    } else {
+        value.configuration.len() == 6
+    }
+}
+
+fn configuration_maximum(key: &str, transaction: bool) -> Option<usize> {
+    if transaction {
+        return latent_ingress::http::transaction::configuration_limit(key);
+    }
+    match key {
+        "path" => Some(8192),
+        "host" => Some(255),
+        "profile" | "scheme" | "pathMatch" | "method" => Some(32),
+        _ => None,
+    }
 }

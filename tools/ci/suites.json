@@ -2068,14 +2068,20 @@
         "ownership::cancellation_retains_every_actual_owner_until_cleanup_and_allows_later_reuse",
         "ownership::completed_application_is_not_a_completed_delivery_and_disconnect_keeps_charge",
         "ownership::disconnect_and_absolute_deadline_wake_waiters_without_early_refunds",
-        "ownership::pool_intersects_slot_and_byte_caps_and_rejects_without_an_unbounded_queue"
+        "ownership::pool_intersects_slot_and_byte_caps_and_rejects_without_an_unbounded_queue",
+        "transaction::closed_route_scope_rejects_unknown_keys_missing_links_and_noncanonical_incarnation",
+        "transaction::command_mapping_retains_original_key_path_precondition_with_credential_rotation",
+        "transaction::duplicates_and_ambiguous_preconditions_fail_before_invocation",
+        "transaction::queries_ignore_valid_command_keys_and_require_full_original_minimum_view",
+        "transaction::result_requests_cannot_select_guest_inputs_or_preconditions",
+        "transaction::transaction_mapping_retains_exchange_until_actual_delivery_or_drop"
       ],
       "expectedIgnored": [],
       "id": "latent-ingress.test.http",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-ingress/Cargo.toml",
-      "minimumCases": 16,
+      "minimumCases": 22,
       "mode": "libtest",
       "package": "latent-ingress",
       "platforms": [
@@ -6059,7 +6065,9 @@
         "values::tests::transactions::transaction_owned_signatures_fit_the_existing_http_preparation_profile",
         "values::tests::transactions::transaction_resources_need_an_explicit_allowlist_and_nested_pages_reject",
         "values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan",
-        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults"
+        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults",
+        "values::tests::canonical::prepared_parameter_types_define_canonical_record_and_tagged_business_input",
+        "values::tests::canonical::canonical_parameters_retain_changed_values_presence_and_original_codec_limits"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -6072,7 +6080,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 340,
+      "minimumCases": 342,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

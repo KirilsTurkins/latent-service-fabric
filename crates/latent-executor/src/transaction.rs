@@ -116,19 +116,16 @@ pub trait TransactionHost: Send + Sync {
     fn command_info(&self) -> Result<CommandInfo, StateFailure>;
     fn authorize_read(&self) -> Result<(), StateFailure>;
     fn retain_transfer(&self, bytes: usize) -> Result<RetainedTransfer, StateFailure>;
-    fn read<'a>(
-        &'a self,
-        key: Vec<u8>,
-    ) -> BoxFuture<'a, Result<Option<VersionedValue>, StateFailure>>;
-    fn scan<'a>(
-        &'a self,
+    fn read(&self, key: Vec<u8>) -> BoxFuture<'_, Result<Option<VersionedValue>, StateFailure>>;
+    fn scan(
+        &self,
         prefix: Vec<u8>,
         limit: u32,
         cursor: Option<Vec<u8>>,
-    ) -> BoxFuture<'a, Result<Page, StateFailure>>;
-    fn put<'a>(&'a self, key: Vec<u8>, value: Value) -> BoxFuture<'a, Result<(), StateFailure>>;
-    fn delete<'a>(&'a self, key: Vec<u8>) -> BoxFuture<'a, Result<(), StateFailure>>;
-    fn stage<'a>(&'a self, intent: Intent) -> BoxFuture<'a, Result<u32, IntentFailure>>;
+    ) -> BoxFuture<'_, Result<Page, StateFailure>>;
+    fn put(&self, key: Vec<u8>, value: Value) -> BoxFuture<'_, Result<(), StateFailure>>;
+    fn delete(&self, key: Vec<u8>) -> BoxFuture<'_, Result<(), StateFailure>>;
+    fn stage(&self, intent: Intent) -> BoxFuture<'_, Result<u32, IntentFailure>>;
     /// Invoked by the real Store's host-state destructor after guest references
     /// are severed. This closes guest access; pending physical IO stays owned.
     fn finish_guest_access(&self);

@@ -157,6 +157,9 @@ impl Inner {
             )
         };
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
+        let transaction_ready = self
+            .prepare_transaction_input(&mut envelope, lifecycle, &token, &budget, &transport)
+            .await?;
         if let Some(outcome) = admit_transaction(&envelope, lifecycle, &budget).await? {
             return Ok(outcome);
         }
@@ -166,16 +169,13 @@ impl Inner {
         let expiry = budget.deadline().monotonic();
         // Keep the original admission reservation and deadline while code is
         // prepared. A cold request does not occupy an execution cell.
-        let (key, ready) = self
-            .prepare_ready(&envelope, &token, &budget, &transport)
-            .await?;
-        let control = child_control.unwrap_or_else(|| {
-            Arc::new(ActivationControl::new(
-                lifecycle.registration(),
-                transport.clone(),
-                budget.profile().supports_descendants(),
-            ))
-        });
+        let (key, ready) = if let Some(ready) = transaction_ready {
+            ready
+        } else {
+            self.prepare_ready(&envelope, &token, &budget, &transport)
+                .await?
+        };
+        let control = child_control.unwrap_or_else(|| root_control(lifecycle, &transport, &budget));
         let scheduled = if let Some(permit) = permit {
             if budget.profile().supports_descendants() {
                 budget.enable_descendants(permit.delegation_limits(), control.clone())?;
@@ -222,7 +222,7 @@ impl Inner {
             .await
     }
 
-    fn check_run_start(
+    pub(super) fn check_run_start(
         &self,
         lifecycle: &Lifecycle,
         token: &CancellationToken,
@@ -426,6 +426,18 @@ impl Inner {
         lifecycle.advance(ActivationPhase::Admitted, Metadata::new())?;
         Ok((permit, child_owner))
     }
+}
+
+fn root_control(
+    lifecycle: &Lifecycle,
+    transport: &Arc<super::transport_stop::TransportStop>,
+    budget: &ActivationBudget,
+) -> Arc<ActivationControl> {
+    Arc::new(ActivationControl::new(
+        lifecycle.registration(),
+        Arc::clone(transport),
+        budget.profile().supports_descendants(),
+    ))
 }
 
 async fn admit_transaction(
