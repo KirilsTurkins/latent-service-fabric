@@ -48,10 +48,17 @@ impl ActivationClock for Clock {
         ClockSample::system_now()
     }
 }
-struct Plans(Arc<CompiledCapabilityPlan>);
+pub type PlanLookupHook = Arc<Mutex<Option<Box<dyn FnOnce() + Send>>>>;
+struct Plans {
+    plan: Arc<CompiledCapabilityPlan>,
+    hook: PlanLookupHook,
+}
 impl CapabilityPlanSource for Plans {
     fn plan(&self, _: &ResolvedRevision) -> Result<Arc<CompiledCapabilityPlan>, PlatformError> {
-        Ok(self.0.clone())
+        if let Some(hook) = self.hook.lock().unwrap().take() {
+            hook();
+        }
+        Ok(self.plan.clone())
     }
 }
 pub struct Probe(pub AtomicBool);
@@ -94,6 +101,7 @@ pub struct Fixture {
     pub broker: Arc<ActivationCapabilityBroker>,
     pub runtime: Arc<ActivationCapabilityRuntime>,
     pub clock: Arc<Clock>,
+    pub plan_lookup_hook: PlanLookupHook,
     pub revision: ResolvedRevision,
     _provider: ProviderRegistration,
     _directory: tempfile::TempDir,
@@ -225,9 +233,13 @@ impl Fixture {
                 Instant::now() + Duration::from_secs(10),
             )
             .unwrap();
+        let plan_lookup_hook = Arc::new(Mutex::new(None));
         let runtime = Arc::new(ActivationCapabilityRuntime::new(
             broker.clone(),
-            Arc::new(Plans(plan)),
+            Arc::new(Plans {
+                plan,
+                hook: Arc::clone(&plan_lookup_hook),
+            }),
         ));
         let mut config = support::config();
         config.fuel_async_yield_interval = fuel_async_yield_interval;
@@ -260,6 +272,7 @@ impl Fixture {
             broker,
             runtime,
             clock,
+            plan_lookup_hook,
             revision,
             _provider: provider,
             _directory: directory,
