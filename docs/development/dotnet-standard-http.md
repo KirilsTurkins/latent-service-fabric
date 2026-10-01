@@ -17,13 +17,19 @@ grant no network authority. All final LSF imports must belong to the declared
 application imports; ambient WASI imports must be eliminated by exact component
 composition and rejected by ordinary host admission if any survive.
 
-| Source declaration | Adapter | HTTP behavior |
+| Source declaration and emitted graph | Adapter | HTTP behavior |
 | --- | --- | --- |
 | `latent:clock/monotonic@0.1.0` | `closed` | Exact retained HTTP interfaces return `http-request-denied`; closed streams return their actual `closed` state; filesystem operations return `not-permitted` |
 | Clock plus `latent:runtime/activation@0.1.0` | `runtime` | The same HTTP denial, plus activation-owned canonical timer readiness |
-| Clock plus activation plus `latent:http/streaming@0.3.0` | `http` | HTTP operations use independently admitted typed HTTP calls and owned upload, body and chunk resources |
+| Clock plus direct generated `latent:http/streaming@0.3.0` calls without activation | `closed` | Generated typed SDK calls remain independently admitted; retained WASI HTTP interfaces still deny default BCL requests |
+| Clock plus activation plus typed HTTP, without both emitted WASI HTTP interfaces | `runtime` | Generated typed SDK calls remain independent of the default BCL adapter |
+| Clock plus activation plus `latent:http/streaming@0.3.0`, with emitted `wasi:http/types@0.2.0` and `wasi:http/outgoing-handler@0.2.0` | `http` | BCL HTTP operations use independently admitted typed HTTP calls and owned upload, body and chunk resources |
 
-The full HTTP profile requires all three exact imports. A grant for
+The full HTTP profile requires all three exact declared imports and both actual
+outgoing WASI HTTP interfaces. Preflight validates declarations without selecting
+the BCL HTTP adapter from absent compiler output. Existing generated streaming
+SDK fixtures need no activation declaration to preserve their direct typed calls.
+A grant for
 `latent:network/streams@0.1.0` cannot enable the default HTTP backend. Unknown WASI
 interfaces, changed interface versions and undeclared emitted LSF imports fail
 selection. Exact function and resource shapes still require actual composition

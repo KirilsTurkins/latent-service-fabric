@@ -11,14 +11,15 @@ ADAPTERS = {
 }
 EXAMPLES = tuple("tools/toolchain-smoke/examples/" + example.replace("-", "_") + ".rs"
                  for example, _binary in ADAPTERS.values())
+WASI_HTTP_IMPORTS = frozenset({
+    "wasi:http/types@0.2.0", "wasi:http/outgoing-handler@0.2.0"})
 WASI_IMPORTS = frozenset(
     "wasi:" + name + "@0.2.6" for name in (
         "cli/environment", "cli/exit", "cli/stdin", "cli/stdout", "cli/stderr",
         "cli/terminal-input", "cli/terminal-output", "cli/terminal-stdin",
         "cli/terminal-stdout", "cli/terminal-stderr", "clocks/monotonic-clock",
         "clocks/wall-clock", "io/error", "io/poll", "io/streams",
-        "filesystem/preopens", "filesystem/types", "random/random")) | {
-            "wasi:http/types@0.2.0", "wasi:http/outgoing-handler@0.2.0"}
+        "filesystem/preopens", "filesystem/types", "random/random")) | WASI_HTTP_IMPORTS
 
 
 def select(declared: list[str], emitted: list[str]) -> str:
@@ -46,8 +47,10 @@ def select(declared: list[str], emitted: list[str]) -> str:
             raise ValueError("dotnet-runtime-unsupported-activation-version:" + name)
         if name.startswith("latent:http/streaming@") and name != HTTP:
             raise ValueError("dotnet-runtime-unsupported-http-version:" + name)
-    if HTTP in declarations:
-        if ACTIVATION not in declarations:
-            raise ValueError("dotnet-http-requires-declared-activation-runtime")
+    # Generated SDK calls already import typed HTTP directly and do not require
+    # the default BCL adapter or its activation-owned pending-call machinery.
+    # Select that adapter only for its declared authority AND the actual emitted
+    # outgoing WASI HTTP graph. Declarations alone are not evidence of BCL use.
+    if HTTP in declarations and ACTIVATION in declarations and WASI_HTTP_IMPORTS <= actual:
         return "http"
     return "runtime" if ACTIVATION in declarations else "closed"

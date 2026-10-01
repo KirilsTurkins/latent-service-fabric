@@ -20,6 +20,8 @@
     "DotnetAuthoringTests.test_nuget_uses_verified_content_identity_not_raw_signed_zip_hash",
     "DotnetAuthoringTests.test_public_contract_rejection_precedes_compiler_work",
     "DotnetAuthoringTests.test_sdk_capture_cannot_drift",
+    "RuntimeProfileTests.test_generated_streaming_sdk_keeps_its_independent_runtime_profile",
+    "RuntimeProfileTests.test_http_profile_requires_actual_outgoing_wasi_graph",
     "RuntimeProfileTests.test_http_profile_requires_both_exact_declared_capabilities",
     "RuntimeProfileTests.test_opaque_stream_authority_cannot_enable_standard_http",
     "RuntimeProfileTests.test_retained_http_imports_do_not_create_network_authority",
@@ -269,6 +271,30 @@
       ],
       "skipSites": []
     },
+    "RuntimeProfileTests.test_generated_streaming_sdk_keeps_its_independent_runtime_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9c44d2a4239b2e094faef06d74f2a6bb49b971729fbe5c72cfa0b639a5771ef5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RuntimeProfileTests.test_http_profile_requires_actual_outgoing_wasi_graph": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9c44d2a4239b2e094faef06d74f2a6bb49b971729fbe5c72cfa0b639a5771ef5",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "RuntimeProfileTests.test_http_profile_requires_both_exact_declared_capabilities": {
       "bases": [
         "unittest.TestCase"
@@ -356,6 +382,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_capsule_authoring.py",
-  "reviewReason": "Review the added runtime helper import and its module setup fingerprint; preserve all 20 existing cases, bases, decorators, class setup, conditions and skip sites; add seven executable authority/version/capture controls.",
+  "reviewReason": "Preserve generated SDK streaming without activation; select the default BCL HTTP adapter only for both declared capabilities and the actual outgoing WASI HTTP graph. Add two regression controls and retain every historical case and fixture guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -129,9 +129,31 @@ class RuntimeProfileTests(unittest.TestCase):
         self.assertEqual(runtime.select([runtime.CLOCK, runtime.ACTIVATION], emitted), "runtime")
 
     def test_http_profile_requires_both_exact_declared_capabilities(self):
-        self.assertEqual(runtime.select([runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION], []), "http")
-        with self.assertRaisesRegex(ValueError, "requires-declared-activation-runtime"):
-            runtime.select([runtime.CLOCK, runtime.HTTP], [])
+        emitted = ["wasi:http/types@0.2.0", "wasi:http/outgoing-handler@0.2.0"]
+        self.assertEqual(runtime.select([runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION], emitted), "http")
+        self.assertEqual(runtime.select([runtime.CLOCK, runtime.HTTP], emitted), "closed")
+        self.assertEqual(runtime.select([runtime.CLOCK, runtime.ACTIVATION], emitted), "runtime")
+
+    def test_http_profile_requires_actual_outgoing_wasi_graph(self):
+        declared = [runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION]
+        for emitted in ([], [runtime.HTTP], ["wasi:io/streams@0.2.6"],
+                        ["wasi:http/types@0.2.0"], ["wasi:http/outgoing-handler@0.2.0"]):
+            with self.subTest(emitted=emitted):
+                self.assertEqual(runtime.select(declared, emitted), "runtime")
+        self.assertEqual(runtime.select(declared, [runtime.HTTP, *sorted(runtime.WASI_HTTP_IMPORTS)]), "http")
+
+    def test_generated_streaming_sdk_keeps_its_independent_runtime_profile(self):
+        with tempfile.TemporaryDirectory(prefix="lsf-dotnet-streaming-profile-") as temporary:
+            source = project(Path(temporary) / "streaming", "streaming")
+            files = snapshot(source)
+            validate(files)
+            declared = re.findall(r"(?m)^\s*import\s+([^\s;]+);", files["wit/world.wit"].decode())
+            self.assertEqual(set(declared), {runtime.CLOCK, runtime.HTTP})
+            # Preflight has no emitted graph yet. The actual SDK call remains a
+            # direct typed import even if NativeAOT retains unused WASI HTTP.
+            self.assertEqual(runtime.select(declared, []), "closed")
+            self.assertEqual(runtime.select(declared, [runtime.HTTP]), "closed")
+            self.assertEqual(runtime.select(declared, [runtime.HTTP, *sorted(runtime.WASI_HTTP_IMPORTS)]), "closed")
 
     def test_opaque_stream_authority_cannot_enable_standard_http(self):
         self.assertEqual(runtime.select([runtime.CLOCK, runtime.ACTIVATION,
