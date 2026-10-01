@@ -3,24 +3,13 @@ use latent_artifacts::ReleaseUseEligibility;
 use latent_capabilities::namespace::{NamespaceAuthority, INTENT_CONTRACT, STATE_CONTRACT};
 use latent_core::{ActivationBudget, InvocationPrincipal, PlatformError, PlatformErrorCode};
 use latent_policy::capability::{
-    CallRestrictions, CapabilityCeiling, EvaluationInput, GrantRestriction, PolicyStore,
+    CallRestrictions, CapabilityCeiling, EvaluationInput, PolicyStore,
     ResourceTarget, SealedPolicyDecision,
 };
 use latent_state::namespace::catalog::NamespaceRead;
 use std::{sync::Arc, time::Instant};
 
-/// Descriptive installed binding constraints; the actual policy owner must
-/// match every profile/configuration/revision before granting an operation.
-pub struct PolicyCallBinding {
-    pub policies: Vec<String>,
-    pub binding: String,
-    pub profile: String,
-    pub configuration_digest: String,
-    pub configuration_epoch: u64,
-    pub operations: Vec<String>,
-    pub deployment: GrantRestriction,
-    pub provider_configuration: GrantRestriction,
-}
+pub use crate::PolicyCallBinding;
 
 pub struct StateAuthorization {
     policy: Arc<PolicyStore>,

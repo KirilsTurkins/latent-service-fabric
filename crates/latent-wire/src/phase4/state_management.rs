@@ -17,7 +17,7 @@ use latent_core::{
     ActivationClock, BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest, ServiceId,
     StateNamespaceId,
 };
-use latent_node::transaction_runtime::PolicyCallBinding;
+use latent_node::PolicyCallBinding;
 use latent_policy::capability::PolicyStore;
 use latent_rpc::{control::v1 as c, phase4 as contract};
 use latent_state::{
