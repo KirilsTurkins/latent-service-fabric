@@ -146,10 +146,13 @@ def canary(client, targets, publications, releases, host):
         promoted = receipt(client.call("rollout", "promote", "java-http-canary", "--expected-revision", started["revision"],
             "--operation-id", "java-canary-promote", "--next-step", 1), "java-canary-promote")
         held = client.call("node", "get", NODE_ID)["data"]["inventory"]
+        drain["afterPromotion"] = held
+        drain["activationAfterPromotion"] = client.call("activation", "get", "java-canary-drain")["data"]
+        drain["treeAfterPromotion"] = context.tree(client, "java-canary-drain")
+        write_json(client.evidence / "java-canary-drain-promotion.json", drain)
         require(sum(int(row["active"]) for row in held["cellCapacity"]) == 2
             and any(int(value) > 0 for value in held["quotas"]["usage"].values()),
             "java-canary-promotion-released-live-owners")
-        drain["afterPromotion"] = held
         drain["inspectionAfterPromotion"] = inspection.observe(client, "adapter", route=False, guard=False)
         stale_status = request(host)[0]
         require(stale_status in (409, 503), "java-http-stale-trigger-silently-followed-rollout")
