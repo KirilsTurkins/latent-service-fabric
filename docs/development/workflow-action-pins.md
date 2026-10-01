@@ -33,6 +33,7 @@ The pins introduced for Phase 3 issue #281 were resolved against the named upstr
 | `actions/setup-dotnet` | `v6.0.0` | `a98b56852c35b8e3190ac28c8c2271da59106c68` |
 | `actions/upload-artifact` | `v7.0.1` | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` |
 | `actions/download-artifact` | `v4` | `d3f86a106a0bac45b974a628896c90dbdf5c8093` |
+| `actions/cache/restore`, `actions/cache/save` | `v5` | `caa296126883cff596d87d8935842f9db880ef25` |
 | `actions/attest-build-provenance` | `v4.2.2` | `4d101475d8b20a2381f78447822ac1eab6504dd8` |
 | `actions/upload-pages-artifact` | `v5.0.0` | `fc324d3547104276b827a68afc52ff2a11cc49c9` |
 | `dtolnay/rust-toolchain` | `1.97.1` | `4716b85f2fac3e324e64fa2810f6b5c3905760a5` |
@@ -119,6 +120,16 @@ Action-pin updates are supply-chain changes owned by repository maintainers and 
 3. Replace every affected `uses:` reference with the reviewed commit and update the adjacent readable version comment. Update the reviewed-identity table when the repository's chosen identity changes.
 4. Run `python3 -m unittest tools.tests.test_validate_workflow_actions tools.tests.test_ci_contracts`, `python3 tools/validate_workflow_actions.py`, and `python3 tools/ci_coverage.py`, then run the repository validation selected for the workflow change. Do not edit command contracts for a pin/comment-only change. Workflow edits remain full-CI changes; historical 100k or measurement campaigns are not required merely to change an immutable action identity.
 5. If the update regresses validation, roll back to the previously reviewed commit SHA rather than changing the version comment or policy check to hide the failure.
+
+The `actions/cache/restore` and `actions/cache/save` v5 identities and their
+Node 24 action definitions were reviewed on **2026-09-30**. The developer compiler
+cache is keyed by the committed acquisition recipes and language. Restored
+archives remain untrusted: the builder checks their byte ceilings and exact
+committed SHA-256 before copying them into a candidate, using the same finite
+deadline as a cold download. Compiler versions and archive identities do not
+change. Zig uses the explicitly selected Hexops mirror from Zig's published
+[automation mirror list](https://ziglang.org/download/community-mirrors/);
+acquisition has no automatic retry or source fallback.
 
 The workflow policy is also called from `tools/validate_contracts.sh`, so executable workflow changes cannot pass the normal full repository-contract gate with a mutable external action ref.
 
