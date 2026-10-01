@@ -538,3 +538,23 @@ These definitions describe [transaction and recovery contracts](transactions.md)
 They do not establish that a host implements the profile or grant access from
 a namespace, command, effect or receipt identifier. WIT guest ABI versions and
 durable storage formats retain their separate compatibility boundaries.
+
+## Additive immutable target inspection
+
+Issue #716 adds the unary `NodeService.InspectHttpTarget` method, eight bounded
+inspection messages and three observation enums. The descriptor contract
+preserves every existing file, message, field number, enum value and RPC. The
+node descriptor additionally imports the existing release descriptor for exact
+publication identities.
+
+The authenticated tenant administrator receives coherent, stale or unavailable
+observations of the selected catalog and policy owners. Optional preparation
+inspects the same admitted readiness owner without materialization or guest and
+provider execution. The reply reports actual provider imports and validated
+structural type imports separately, and preserves numeric option presence and
+future enum values. See [target inspection](../reference/target-inspection.md).
+
+Engine configuration digests and internal sealed metadata fingerprints retain
+their separate meanings. Live grant checks are explicitly absent; an inspection
+does not grant execution or mutation authority. Public invocation and browser
+error projections retain their existing disclosure rules.
