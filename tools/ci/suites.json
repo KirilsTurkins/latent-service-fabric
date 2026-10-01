@@ -1751,6 +1751,9 @@
       "expectedCases": [
         "authority::tests::bounded_retained_record_roundtrip_never_restores_current_authority",
         "authority::tests::bounded_rule_publication_rejects_rollback_and_same_revision_mutation",
+        "authority::tests::commit_fence_rejects_narrowing_after_refresh_and_allows_compatible_rotation",
+        "authority::tests::commit_refresh_freezes_current_intersection_and_original_expiry_without_dispatch_work",
+        "authority::tests::commit_refresh_rejects_profile_changes_expiry_and_unproven_time",
         "authority::tests::credential_rotation_preserves_destination_and_envelope_provenance",
         "authority::tests::current_ceiling_can_narrow_but_never_widen_a_committed_intent",
         "authority::tests::dropped_context_quarantines_capacity_instead_of_refunding_live_io",
@@ -1795,7 +1798,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 40,
+      "minimumCases": 43,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [
