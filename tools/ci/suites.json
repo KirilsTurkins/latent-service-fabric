@@ -6280,7 +6280,7 @@
       "kind": "test",
       "listContract": "unsupported",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 0,
+      "minimumCases": 1,
       "mode": "custom",
       "package": "latent-wasmtime",
       "platforms": [
