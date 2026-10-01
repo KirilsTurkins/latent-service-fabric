@@ -184,6 +184,22 @@ the six component builds, all ten SDK tests and the source-library signed node,
 then exhausted the original overall deadline at `static-library-sign-demo`.
 Neither failure changed a test, tool pin or deadline.
 
+A subsequent integration replay at
+`8021fe8defa7ffe682c50e8b4028b88205080348` passed nine SDK cases but failed the
+first service success: cold caller compilation consumed 4.784 seconds of its
+unchanged five-second parent budget, and the queued child correctly exhausted
+its delegated remaining time. That failed receipt and diagnostics remain
+separate from the earlier complete replay.
+
+The service fixture now prepares both exact admitted caller/callee publications
+through the ordinary repository/backend path before measuring typed outcomes.
+It drops each preparation owner and checks physical idle owners, zero guest
+Stores and no activation observations. Preparation time is reported separately;
+all existing success, declared-error, permission-denial and reuse assertions
+retain their original guest ceilings and invocation checks. This qualifies
+prepared execution; cold compilation latency still requires separate evidence.
+The updated full replay remains pending.
+
 Current remote CI and complete #684 acceptance reconciliation remain required,
 including the full C dependency edit/test/watch and private capture workflows.
 No release was published; newcomer review #345 remains separate.
