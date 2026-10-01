@@ -80,7 +80,13 @@ enumeration!(AuditControlAction {
     Rollout,
     Promotion,
     Rollback,
-    CapabilityCall
+    CapabilityCall,
+    NamespaceCreate,
+    NamespaceQuiesce,
+    NamespaceRetire,
+    NamespaceDestroy,
+    NamespaceRecreate,
+    NamespaceInspect
 });
 enumeration!(AuditOperationResult {
     Committed,
@@ -157,6 +163,12 @@ pub struct AuditStaticWebTarget {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditIdentities {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub state: Option<AuditStateTarget>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -298,6 +310,16 @@ pub struct AuditIdentities {
         deserialize_with = "codec::present"
     )]
     pub lifecycle_generation: Option<u64>,
+}
+/// Exact namespace metadata target. No business key, payload or credential is
+/// recorded; this descriptive identity is never an execution/recovery grant.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AuditStateTarget {
+    pub namespace: String,
+    pub incarnation: u64,
+    #[serde(with = "codec::text")]
+    pub state_schema: ArtifactBlobDigest,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

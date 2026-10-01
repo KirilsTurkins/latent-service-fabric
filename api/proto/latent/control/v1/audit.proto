@@ -114,6 +114,7 @@ message AuditStaticWebTarget {
 }
 
 message AuditIdentities {
+  AuditStateTarget state = 25;
   AuditStaticWebTarget static_web = 24;
   optional string trigger = 22;
   optional uint64 trigger_generation = 23;
@@ -147,6 +148,13 @@ message AuditIdentities {
   optional uint64 rollback_target_generation = 17;
 }
 
+// Exact captured namespace target; no business keys, payloads or credentials.
+message AuditStateTarget {
+  string namespace = 1;
+  uint64 incarnation = 2;
+  string state_schema = 3;
+}
+
 enum AuditControlAction {
   AUDIT_CONTROL_ACTION_UNSPECIFIED = 0;
   AUDIT_CONTROL_ACTION_PUBLISH = 1;
@@ -161,6 +169,12 @@ enum AuditControlAction {
   AUDIT_CONTROL_ACTION_CAPABILITY_CALL = 10;
   AUDIT_CONTROL_ACTION_TRIGGER_APPLY = 11;
   AUDIT_CONTROL_ACTION_TRIGGER_DELETE = 12;
+  AUDIT_CONTROL_ACTION_NAMESPACE_CREATE = 13;
+  AUDIT_CONTROL_ACTION_NAMESPACE_QUIESCE = 14;
+  AUDIT_CONTROL_ACTION_NAMESPACE_RETIRE = 15;
+  AUDIT_CONTROL_ACTION_NAMESPACE_DESTROY = 16;
+  AUDIT_CONTROL_ACTION_NAMESPACE_RECREATE = 17;
+  AUDIT_CONTROL_ACTION_NAMESPACE_INSPECT = 18;
 }
 
 enum AuditCapabilityResourceClass {
