@@ -609,8 +609,8 @@ class ReviewRegressionTests(unittest.TestCase):
         script = (ROOT / "tools/validate_contracts.sh").read_text()
         # Isolate the script-owned handoff from unrelated WIT/provider builders.
         # Neither its cleanup nor its inventory path is reimplemented here.
-        prelude = script.split("python3 tools/validate_repository.py", 1)[0]
-        assignment = next(line for line in script.splitlines() if line.startswith("ECHO_INVENTORY="))
+        prelude = script.split('case "${VALIDATION_LANE}" in\n  all|python)', 1)[0]
+        assignment = next(line.lstrip() for line in script.splitlines() if line.lstrip().startswith("ECHO_INVENTORY="))
         plan = local.plan_suite(ROOT, "selection.echo-runtime")
         for target in (None, "relative-target", "external"):
             with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:

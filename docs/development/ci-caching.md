@@ -70,6 +70,11 @@ explicitly enabled for both dev and test. Only the third-party Cranelift,
 register allocator and Wasm validator are optimized, so actual Angular components
 use a fast host compiler while retaining the full runtime checks. The isolated
 Angular release compiler has its own dependency cache and still runs Cargo.
+Its Cargo target is `target/angular-t1-compiler`, matching the action's
+workspace-relative target mapping. The corrected layout uses the v3 prefix;
+the older absolute mapping restored into a different directory and did not
+cache the actual release build. Only compiled third-party dependencies survive
+pruning; the compiler executable and qualification receipts remain fresh.
 Frozen optimization collectors remove these CI environment settings before
 building their own inputs. The cache does not preserve incremental directories.
 

@@ -164,6 +164,22 @@ class CacheIdentityTests(unittest.TestCase):
         self.assertEqual(set(dev["package"]), {"cranelift-codegen", "regalloc2", "wasmparser"})
         self.assertTrue(all(set(p) == {"opt-level"} and p["opt-level"] == 3 for p in dev["package"].values()))
 
+    def test_isolated_compiler_cache_matches_its_real_cargo_target_and_excludes_workspace_outputs(self):
+        from tools.ci_lane_inventory import workflow_model
+        root = Path(__file__).resolve().parents[2]
+        steps = workflow_model((root / ".github/workflows/ci.yml").read_text())["jobs"]["rust"]["steps"]
+        cache_step = next(step for step in steps if step.get("name") == "Restore isolated Angular compiler dependencies")
+        build = next(step for step in steps if step.get("name") == "Build the optimized isolated Angular compiler")
+        qualification = next(step for step in steps if step.get("name") == "Qualify actual Angular on the protected T1 node")
+        self.assertEqual(cache_step["with"]["workspaces"], ". -> target/angular-t1-compiler")
+        self.assertEqual(build["env"]["CARGO_TARGET_DIR"], "${{ github.workspace }}/target/angular-t1-compiler")
+        self.assertIs(cache_step["with"]["cache-targets"], True)
+        for option in ("cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
+            self.assertIs(cache_step["with"][option], False)
+        self.assertEqual(cache_step["with"]["prefix-key"], "lsf-ci-dependencies-v3")
+        self.assertEqual(build["run"], "cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked")
+        self.assertIn('objcopy --strip-debug "$PWD/target/angular-t1-compiler/release/latent-aot-compiler"', qualification["run"])
+
     def test_candidate_rejects_unknown_or_msrv_profile_combinations(self):
         for changed in ({"recipe": "release"}, {"configuration": "release"},
                         {"recipe": "msrv", "configuration": "ci-correctness"}):

@@ -692,6 +692,10 @@ class RepositoryMigrationTests(unittest.TestCase):
                 # Exact commands survive; the reviewed fixed matrix allocates
                 # every obligation to its required, failure-propagating lane.
                 value["stepIf"] = lane_baseline[value["job"]]["step_conditions"].get(value["name"], value["stepIf"])
+                if value["name"] == "Qualify actual Angular on the protected T1 node":
+                    value["run"] = value["run"].replace(
+                        '$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler',
+                        '$PWD/target/angular-t1-compiler/release/latent-aot-compiler')
             self.assertIn(key, data["after"])
             if key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)

@@ -673,20 +673,22 @@
         "name": "Restore isolated Angular compiler dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
+          "cache-all-crates": false,
           "cache-bin": false,
           "cache-on-failure": false,
+          "cache-targets": true,
           "cache-workspace-crates": false,
           "key": "ubuntu-24.04",
-          "prefix-key": "lsf-ci-dependencies-v2",
+          "prefix-key": "lsf-ci-dependencies-v3",
           "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}",
           "shared-key": "angular-release-compiler",
-          "workspaces": ". -> ${{ runner.temp }}/angular-t1-compiler"
+          "workspaces": ". -> target/angular-t1-compiler"
         }
       },
       {
         "env": {
           "CARGO_BUILD_JOBS": 2,
-          "CARGO_TARGET_DIR": "${{ runner.temp }}/angular-t1-compiler"
+          "CARGO_TARGET_DIR": "${{ github.workspace }}/target/angular-t1-compiler"
         },
         "if": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
         "name": "Build the optimized isolated Angular compiler",
@@ -706,7 +708,7 @@
       {
         "if": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
         "name": "Qualify actual Angular on the protected T1 node",
-        "run": "python3 -m unittest tools.tests.test_angular_t1_workflow\nmkdir \"$RUNNER_TEMP/angular-t1-bin\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"$PWD/target/debug/$binary\" \"$RUNNER_TEMP/angular-t1-bin/$binary\"\ndone\nobjcopy --strip-debug \"$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler\" \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\"\npython3 tools/run_angular_t1_workflow.py --cli \"$RUNNER_TEMP/angular-t1-bin/latent\" --node \"$RUNNER_TEMP/angular-t1-bin/latentd\" --compiler \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\" --fixture-root \"$RUNNER_TEMP/angular-t1-fixture\" > \"$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json\"\n",
+        "run": "python3 -m unittest tools.tests.test_angular_t1_workflow\nmkdir \"$RUNNER_TEMP/angular-t1-bin\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"$PWD/target/debug/$binary\" \"$RUNNER_TEMP/angular-t1-bin/$binary\"\ndone\nobjcopy --strip-debug \"$PWD/target/angular-t1-compiler/release/latent-aot-compiler\" \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\"\npython3 tools/run_angular_t1_workflow.py --cli \"$RUNNER_TEMP/angular-t1-bin/latent\" --node \"$RUNNER_TEMP/angular-t1-bin/latentd\" --compiler \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\" --fixture-root \"$RUNNER_TEMP/angular-t1-fixture\" > \"$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json\"\n",
         "timeout-minutes": 22
       },
       {

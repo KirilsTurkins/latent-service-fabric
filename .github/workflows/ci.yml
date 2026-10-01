@@ -504,12 +504,14 @@ jobs:
         if: (matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: lsf-ci-dependencies-v2
+          prefix-key: lsf-ci-dependencies-v3
           shared-key: angular-release-compiler
           key: ubuntu-24.04
-          workspaces: . -> ${{ runner.temp }}/angular-t1-compiler
+          workspaces: . -> target/angular-t1-compiler
+          cache-targets: true
           cache-bin: false
           cache-workspace-crates: false
+          cache-all-crates: false
           cache-on-failure: false
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}
       - name: Build the optimized isolated Angular compiler
@@ -517,7 +519,7 @@ jobs:
         timeout-minutes: 25
         env:
           CARGO_BUILD_JOBS: 2
-          CARGO_TARGET_DIR: ${{ runner.temp }}/angular-t1-compiler
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target/angular-t1-compiler
         run: cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked
       - name: Export actual signed Angular T1 fixtures
         if: (matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
@@ -535,7 +537,7 @@ jobs:
           for binary in latent latentd; do
             objcopy --strip-debug "$PWD/target/debug/$binary" "$RUNNER_TEMP/angular-t1-bin/$binary"
           done
-          objcopy --strip-debug "$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler" "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler"
+          objcopy --strip-debug "$PWD/target/angular-t1-compiler/release/latent-aot-compiler" "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler"
           python3 tools/run_angular_t1_workflow.py --cli "$RUNNER_TEMP/angular-t1-bin/latent" --node "$RUNNER_TEMP/angular-t1-bin/latentd" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --fixture-root "$RUNNER_TEMP/angular-t1-fixture" > "$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json"
       - name: Retain compact Phase 2 gate receipts
         if: always() && (matrix.lane == 'publications' || matrix.lane == 'angular-t1')
