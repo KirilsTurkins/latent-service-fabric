@@ -1,6 +1,6 @@
 # Transaction store engine qualification
 
-The first-engine decision is [ADR-0061](../../adr/0061-select-redb-for-transactional-host-state.md).
+The first-engine decision is [ADR-0063](../../adr/0063-select-redb-for-transactional-host-state.md).
 It qualifies the bounded storage prototype, not the complete Phase 4 node.
 The [recorded result](../evidence/transaction-store-engine-381.json) preserves
 the actual source snapshot, engine/tool/configuration and host observations.

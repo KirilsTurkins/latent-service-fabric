@@ -35,6 +35,10 @@ also unavailable. A compiler sandbox does not supply that guest boundary.
   recovery policy and the obsolete catalog/selector compatibility in ADR-0019/0027.
 - ADR-0041 governs documentation ownership, versions and publishing. A working
   website build does not complete human guide review or authorize a runtime release.
+- ADR-0062 supersedes the unsupported guest-owned transaction lifecycle in
+  ADR-0013 with host-owned serializable commands, durable rejection/recovery and
+  independent bounded queries. It preserves ADR-0025 stateless uncertainty;
+  executable model schedules do not establish physical storage durability.
 
 Dates, original rationale and historical measurements remain useful decision
 history. Current guides and reference pages must use the implemented contract;
@@ -115,11 +119,13 @@ old implementation snapshots are not setup instructions.
 ### Library transport research
 
 - [ADR-0059: Defer general outbound streams; evaluate typed protocol boundaries first](0059-defer-general-outbound-streams.md)
+- [ADR-0061: Bound standard outbound streams beneath language runtimes](0061-bound-standard-outbound-streams.md)
 
 ### Library concurrency research
 
 - [ADR-0060: Provide activation-scoped runtime compatibility for ordinary dependencies](0060-bound-invocation-scoped-concurrency.md)
 
-### Transactional state
+### Transactional state and durable outcomes
 
-- [ADR-0061: Select redb for transactional host state](0061-select-redb-for-transactional-host-state.md)
+- [ADR-0062: Host-own serializable transactions and durable outcomes](0062-host-own-serializable-transactions-and-durable-outcomes.md)
+- [ADR-0063: Select redb for transactional host state](0063-select-redb-for-transactional-host-state.md)
