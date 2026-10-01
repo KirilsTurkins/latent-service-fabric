@@ -79,6 +79,10 @@ def distribution(root: Path) -> list[dict]:
 
 
 class Isolation:
+    @staticmethod
+    def observe_distribution(root: Path):
+        return distribution(root)
+
     def __init__(self, workspace: Path, tools: dict[str, Path], distributions: dict[str, Path]):
         if sys.platform != "linux" or not (sandbox := shutil.which("bwrap")) or not (loader_probe := shutil.which("ldd")):
             raise DependencyError("captured-compiler-isolation-requires-linux-bubblewrap")
@@ -87,7 +91,7 @@ class Isolation:
         self.sandbox = regular_path(Path(sandbox)).resolve(strict=True)
         self.tools = {name: regular_path(path).resolve(strict=True) for name, path in tools.items()}
         self.distributions = {name: regular_path(path).resolve(strict=True) for name, path in distributions.items()}
-        self.before = {name: distribution(root) for name, root in self.distributions.items()}
+        self.before = {name: self.observe_distribution(root) for name, root in self.distributions.items()}
         self.tool_before = {name: file_identity(path, name) for name, path in self.tools.items()}
         self.sandbox_before = file_identity(self.sandbox, "build-sandbox")
         self.shared: dict[str, dict] = {}
@@ -167,7 +171,7 @@ class Isolation:
         return rows
 
     def check_unchanged(self):
-        if self.before != {name: distribution(root) for name, root in self.distributions.items()}:
+        if self.before != {name: self.observe_distribution(root) for name, root in self.distributions.items()}:
             raise DependencyError("compiler-distribution-or-sysroot-mutated")
         if self.tool_before != {name: file_identity(path, name) for name, path in self.tools.items()}:
             raise DependencyError("compiler-executable-mutated")
