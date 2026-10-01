@@ -4240,7 +4240,7 @@
       "kind": "lib",
       "manifest": "crates/latent-rpc/Cargo.toml",
       "minimumCases": 14,
-      "mode": "compile-only",
+      "mode": "libtest",
       "package": "latent-rpc",
       "platforms": [
         "linux-x86_64"
