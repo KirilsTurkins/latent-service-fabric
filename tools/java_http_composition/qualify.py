@@ -216,6 +216,11 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                         "java-former-profile-diagnosis-exposed-in-public-invoke")
                     result["formerProfileFailure"] = failure
                     result["formerProfileAuthorizedTree"] = tree
+                    inspected = inspection.observe(client, "domain", publication=publications["domain"], expected=1)
+                    preparation = inspected["candidates"][0]["preparation"]
+                    require(preparation["stateName"] == "rejected" and preparation["diagnostic"] == diagnostic,
+                        "java-former-profile-original-preparation-inspection")
+                    result["formerProfileTargetInspection"] = inspected
                 else:
                     result["standaloneStatus"] = invoke(client, targets, "domain", "status", [], "java-standalone-status")
                     require(decoded(result["standaloneStatus"])[0][0]["sequence"] == "18446744073709551615",
