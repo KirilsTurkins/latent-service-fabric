@@ -180,11 +180,28 @@ def qualify(client, targets, releases, publications, host, evidence: Path):
                         "java-context-header-lineage-became-authority")
             result["headerSpoofs"].append({"headerNames": sorted(headers), **observed})
 
-        for name, flags in (("lineage", ("--root-activation-id", "forged-root", "--parent-activation-id", "forged-parent")),
-            ("oversized-context", tuple(value for index in range(5) for value in ("--metadata", "guest.synthetic" + str(index) + "=" + "x" * 4096)))):
+        bounded_metadata = ["guest.synthetic" + str(index) + "=" + "x" * 4096 for index in range(5)]
+        accepted = invoke(client, targets, "domain", "status", [], "java-context-bounded-metadata",
+                          context_flags=tuple(value for entry in bounded_metadata for value in ("--metadata", entry)))
+        require(accepted["category"] == "success", "java-context-bounded-metadata-rejected")
+        result["boundedMetadata"] = {"requestedUtf8Bytes": sum(len(entry.encode()) for entry in bounded_metadata),
+                                     "response": accepted}
+        oversized_metadata = ["guest.synthetic" + str(index) + "=" + "x" * 4096 for index in range(9)]
+        oversized_bytes = sum(len(entry.encode()) for entry in oversized_metadata)
+        require(oversized_bytes > 32 * 1024, "java-context-oversized-vector-must-exceed-cli-bound")
+        for name, flags, codes in (
+            ("lineage", ("--root-activation-id", "forged-root", "--parent-activation-id", "forged-parent"), (4,)),
+            ("oversized-context", tuple(value for entry in oversized_metadata for value in ("--metadata", entry)), (2,))):
             denied = invoke(client, targets, "domain", "status", [], "java-context-denied-" + name,
-                            context_flags=flags, codes=(4,))
-            require(denied["category"] != "success", "java-context-supplied-authority-accepted")
+                            context_flags=flags, codes=codes)
+            if name == "lineage":
+                require(denied["category"] == "platform-failure" and denied["error"]["code"] == "permission-denied"
+                    and denied["requestDispatched"] and denied["outcomeKnown"], "java-context-supplied-authority-accepted")
+            else:
+                require(denied["category"] == "local-error" and denied["error"]["code"] == "invalid-invocation"
+                    and not denied["requestDispatched"] and denied["outcomeKnown"], "java-context-oversized-metadata-dispatched")
+                result["oversizedMetadataBounds"] = {"requestedUtf8Bytes": oversized_bytes,
+                    "maximumCliMetadataUtf8Bytes": 32 * 1024, "rejectedBeforeDispatch": True}
             result[name + "Denied"] = denied
             idle(client)
             require(request(host)[0] == 200, "java-context-denied-input-poisoned-fresh-call")
