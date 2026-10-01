@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "RecipientTests.test_accepted_disconnect_and_lookup_ambiguity_keep_external_fact_distinct",
+    "RecipientTests.test_actual_socket_frame_parser_rejects_duplicate_and_unbounded_fields",
+    "RecipientTests.test_durable_acceptance_reopen_and_duplicate_preserve_original_receipt",
+    "RecipientTests.test_malformed_present_retained_record_and_unknown_paths_refuse_reopen",
+    "RecipientTests.test_reserved_record_finishes_once_without_overwriting_original_acceptance",
+    "RecipientTests.test_retained_cap_survives_reopen_and_expiry_never_readmits_original_effect",
+    "RecipientTests.test_wrong_credentials_conflicting_facts_and_payload_never_create_acceptance"
+  ],
+  "guards": {
+    "RecipientTests.test_accepted_disconnect_and_lookup_ambiguity_keep_external_fact_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cd43757340fa1ceffc597741ca215ce26bf46cd0b9fd4e6e033d152d1915d07a",
+        "class:setup-sha256:ec87e40f32ee90c59a909740974c2a002bc05f231fb2480a3a92f9a44cbdbcf5"
+      ],
+      "skipSites": []
+    },
+    "RecipientTests.test_actual_socket_frame_parser_rejects_duplicate_and_unbounded_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cd43757340fa1ceffc597741ca215ce26bf46cd0b9fd4e6e033d152d1915d07a",
+        "class:setup-sha256:ec87e40f32ee90c59a909740974c2a002bc05f231fb2480a3a92f9a44cbdbcf5"
+      ],
+      "skipSites": []
+    },
+    "RecipientTests.test_durable_acceptance_reopen_and_duplicate_preserve_original_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cd43757340fa1ceffc597741ca215ce26bf46cd0b9fd4e6e033d152d1915d07a",
+        "class:setup-sha256:ec87e40f32ee90c59a909740974c2a002bc05f231fb2480a3a92f9a44cbdbcf5"
+      ],
+      "skipSites": []
+    },
+    "RecipientTests.test_malformed_present_retained_record_and_unknown_paths_refuse_reopen": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cd43757340fa1ceffc597741ca215ce26bf46cd0b9fd4e6e033d152d1915d07a",
+        "class:setup-sha256:ec87e40f32ee90c59a909740974c2a002bc05f231fb2480a3a92f9a44cbdbcf5"
+      ],
+      "skipSites": []
+    },
+    "RecipientTests.test_reserved_record_finishes_once_without_overwriting_original_acceptance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cd43757340fa1ceffc597741ca215ce26bf46cd0b9fd4e6e033d152d1915d07a",
+        "class:setup-sha256:ec87e40f32ee90c59a909740974c2a002bc05f231fb2480a3a92f9a44cbdbcf5"
+      ],
+      "skipSites": []
+    },
+    "RecipientTests.test_retained_cap_survives_reopen_and_expiry_never_readmits_original_effect": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cd43757340fa1ceffc597741ca215ce26bf46cd0b9fd4e6e033d152d1915d07a",
+        "class:setup-sha256:ec87e40f32ee90c59a909740974c2a002bc05f231fb2480a3a92f9a44cbdbcf5"
+      ],
+      "skipSites": []
+    },
+    "RecipientTests.test_wrong_credentials_conflicting_facts_and_payload_never_create_acceptance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cd43757340fa1ceffc597741ca215ce26bf46cd0b9fd4e6e033d152d1915d07a",
+        "class:setup-sha256:ec87e40f32ee90c59a909740974c2a002bc05f231fb2480a3a92f9a44cbdbcf5"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_recipient.py",
+  "reviewReason": "Register seven bounded external recipient retention and wire cases without claiming native platform admission",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

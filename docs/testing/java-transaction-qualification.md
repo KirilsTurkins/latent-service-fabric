@@ -36,6 +36,12 @@ the actual checkpoint digest and explicitly leaves production restore
 qualification false. It writes no continuity flag. Production
 `ProtectedCommandClock` derives continuity from its own actual samples.
 
+The real immediate-HTTP negative component remains one of the five preserved
+compiler inputs. The native strict-profile metadata validator must refuse its
+unsupported host import before signing. This refusal has a separate original
+diagnostic receipt; it is not signed node admission evidence. The other four
+components continue through the normal package and signing path.
+
 The fixture never overwrites an existing checkpoint, lowers a retained floor,
 or initializes an existing state store. Restart and restore tests preserve the
 original protected checkpoint and require the normal reviewed recovery paths.
@@ -50,9 +56,18 @@ campaign must record the original signed package inputs, exact native binary
 hashes, authenticated policy mutations, retained query views, socket responses,
 provider observations and positive shutdown/retirement reports separately.
 
-The immutable production binaries built at
-`0537a6682f7a7e89c00c13d2bb327432cc3ad6cb` can qualify ordinary transactions.
-They precede the historical result-read change described in
+The preserved production binaries built at
+`0537a6682f7a7e89c00c13d2bb327432cc3ad6cb` precede the transaction manifest
+profile propagation and the historical result-read change described in
 [Historical transaction results](../development/historical-transaction-results.md).
-Positive schema/restore result-recovery evidence requires a new native binary
-containing that change; old binaries cannot supply that evidence.
+The signed transaction campaign requires a new native binary containing both
+changes. The earlier binary observation remains separate evidence.
+
+The disposable external recipient implements the existing native
+`latent.http-effect.put-once.v1` HTTPS contract. Its bounded private records
+preserve original effect, payload digest, provider incarnation and retention
+horizon across restart. Reserved acceptance and applied receipt are distinct;
+the transition appends a record without overwriting the original acceptance.
+The fixture can disconnect after durable recipient acceptance and withhold
+lookup delivery until its fault mode changes. These are external observations,
+never evidence of platform commitment, a namespace grant or recipient delivery.

@@ -113,16 +113,21 @@ def package(portable: Path, output: Path, contracts_tool: Path, signer: Path, *,
     command = Commands(output, output, build_environment(output), deadline_seconds=timeout, command_seconds=min(timeout,600))
     record = {"schemaVersion": "latent.java-transaction-package-fixture.v1", "passed": False,
               "compiledAgain": False, "signedNodeExecutionQualified": False, "packagedDistributionQualified": False,
-              "inputs": [item.observation() for item in items], "tools": [file_identity(contracts_tool,"contracts-tool"), file_identity(signer,"signer")]}
+              "inputs": [item.observation() for item in items], "profileRejections": [],
+              "tools": [file_identity(contracts_tool,"contracts-tool"), file_identity(signer,"signer")]}
     start = time.monotonic()
     try:
         for item in items:
-            prepare(item, output / item.name, contracts_tool, signer, command)
-        command.run("fixture-sign-java-inputs", signer, "fixture-sign-java-inputs", output / "signed", *[output / item.name for item in items])
+            if item.name == "forbidden-http":
+                _forbidden_profile(item, output, contracts_tool, signer, command, record)
+            else:
+                prepare(item, output / item.name, contracts_tool, signer, command)
+        accepted = [item for item in items if item.name != "forbidden-http"]
+        command.run("fixture-sign-java-inputs", signer, "fixture-sign-java-inputs", output / "signed", *[output / item.name for item in accepted])
         signed = decode(read_file(output / "signed/release-set.json"))
         require(signed["schemaVersion"] == "latent.component.signing-fixture.v1"
                 and signed["trust"] == "ephemeral-native-package-test-only", "explicit-fixture-trust-required")
-        require({entry["componentDigest"] for entry in signed["releases"]} == {item.component_digest for item in items}, "signed-original-components")
+        require({entry["componentDigest"] for entry in signed["releases"]} == {item.component_digest for item in accepted}, "signed-original-components")
         require(all(inventory(snapshot(item.directory / "project")) == read_file(item.directory / "source-inputs.json", 4*1024*1024)
                     and digest(read_file(item.directory / "component.wasm")) == item.component_digest for item in items),
                 "preserved-input-recheck")
@@ -133,3 +138,24 @@ def package(portable: Path, output: Path, contracts_tool: Path, signer: Path, *,
     finally:
         record["commands"], record["seconds"] = command.records, round(time.monotonic()-start,6)
         write_json(output / "package-fixture-receipt.json", record)
+
+
+def _forbidden_profile(item, output, contracts, signer, command, record):
+    ordinal = len(command.records)
+    try:
+        prepare(item, output / item.name, contracts, signer, command)
+    except ValueError:
+        require(len(command.records) == ordinal + 1, "expected-profile-rejection-at-contract-validation")
+        observation = command.records[-1]
+        stderr = read_file(output / "logs" / f"{ordinal:02d}-forbidden-http-contracts.stderr.txt", 256)
+        require(observation["stage"] == "forbidden-http-contracts" and observation["exitCode"] == 1
+                and stderr == b"capsule contract generation failed: unsupported-host-import\n",
+                "concrete-strict-profile-refusal-required")
+        rejected = {"variant": item.name, "componentDigest": item.component_digest,
+                    "stage": "native-contract-validation", "reason": "unsupported-host-import",
+                    "diagnosticDigest": digest(stderr), "signed": False,
+                    "signedNodeExecutionQualified": False}
+        record["profileRejections"].append(rejected)
+        write_json(output / item.name / "profile-rejection.json", rejected)
+        return
+    raise ValueError("strict-profile-must-refuse-immediate-http-import")
