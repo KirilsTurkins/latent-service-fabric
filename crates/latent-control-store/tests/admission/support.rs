@@ -5,7 +5,7 @@ use std::any::Any;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use latent_artifacts::package;
 use latent_artifacts::{
@@ -47,7 +47,10 @@ pub struct State {
     pub until: AtomicU64,
     /// Optional finite clock window, independent of policy/proof expiry.
     pub clock_lease_until: AtomicU64,
-    pub fence: Mutex<()>,
+    // Currentness is a read fence. Independent accepted publications can be
+    // checked together without manufacturing a fixture permission failure.
+    // An exclusive writer still prevents entry; this is test-only authority.
+    pub fence: RwLock<()>,
     pub started: AtomicU64,
     pub revoke_after_fence: AtomicBool,
 }
@@ -97,7 +100,7 @@ impl Authority {
                 now: AtomicU64::new(100),
                 until: AtomicU64::new(200),
                 clock_lease_until: AtomicU64::new(0),
-                fence: Mutex::new(()),
+                fence: RwLock::new(()),
                 started: AtomicU64::new(0),
                 revoke_after_fence: AtomicBool::new(false),
             }),
@@ -138,7 +141,7 @@ impl AdmissionGrant for Grant {
         let _guard = self
             .state
             .fence
-            .try_lock()
+            .try_read()
             .map_err(|_| denied("fixture-busy"))?;
         self.state.check()
     }
@@ -149,7 +152,7 @@ impl AdmissionGrant for Grant {
         let _guard = self
             .state
             .fence
-            .try_lock()
+            .try_read()
             .map_err(|_| denied("fixture-busy"))?;
         self.state.check()?;
         self.state.started.fetch_add(1, Ordering::SeqCst);

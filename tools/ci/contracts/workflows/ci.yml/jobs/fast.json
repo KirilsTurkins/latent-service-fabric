@@ -38,8 +38,8 @@
       },
       {
         "if": "needs.profile.outputs.profile == 'full'",
-        "name": "Qualify the genuinely narrow reverse-dependent fixture",
-        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-state/src/lib.rs'])\nassert selection.profile == 'fast'\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
+        "name": "Qualify the bounded reverse-dependent host subset",
+        "run": "packages=\"$(python3 - <<'PYCODE'\nfrom tools.ci_profile import classify_paths\nselection = classify_paths(['crates/latent-state/src/lib.rs'])\nfrom tools import ci_suite_inventory as registry\nassert selection.profile == 'full'\nassert selection.fast_packages\nassert set(selection.fast_packages) < set(registry.load()['fastPackages'])\nprint(selection.outputs()['fast_packages'])\nPYCODE\n)\"\npython3 tools/ci_fast.py --packages-json \"$packages\" --output \"$RUNNER_TEMP/ci-fast/narrow\"\n"
       },
       {
         "if": "always()",
@@ -57,7 +57,7 @@
   },
   "jobId": "fast",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "The protected state owner requires full engine qualification. Keep its smaller reverse-dependent host subset smoke without asserting obsolete host-only classification; unchanged full and affected suites still run.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

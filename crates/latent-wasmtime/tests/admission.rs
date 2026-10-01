@@ -225,7 +225,7 @@ async fn descriptor_only_invocation_and_wrong_tenant_cannot_bypass_currentness()
 async fn contended_authority_fails_without_waiting_for_the_control_writer() {
     let fixture = Fixture::new().await;
     let ready = fixture.ready().await;
-    let guard = fixture.authority.state.fence.lock().unwrap();
+    let guard = fixture.authority.state.fence.write().unwrap();
     std::thread::scope(|scope| {
         let (sender, receiver) = std::sync::mpsc::sync_channel(1);
         let backend = &fixture.backend;

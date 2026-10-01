@@ -125,13 +125,16 @@ jobs:
         env:
           CI_FAST_PACKAGES: ${{ needs.profile.outputs.fast_packages }}
         run: python3 tools/ci_fast.py --packages-json "$CI_FAST_PACKAGES" --output "$RUNNER_TEMP/ci-fast/affected"
-      - name: Qualify the genuinely narrow reverse-dependent fixture
+      - name: Qualify the bounded reverse-dependent host subset
         if: needs.profile.outputs.profile == 'full'
         run: |
           packages="$(python3 - <<'PYCODE'
           from tools.ci_profile import classify_paths
           selection = classify_paths(['crates/latent-state/src/lib.rs'])
-          assert selection.profile == 'fast'
+          from tools import ci_suite_inventory as registry
+          assert selection.profile == 'full'
+          assert selection.fast_packages
+          assert set(selection.fast_packages) < set(registry.load()['fastPackages'])
           print(selection.outputs()['fast_packages'])
           PYCODE
           )"

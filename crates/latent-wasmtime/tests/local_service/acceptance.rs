@@ -121,9 +121,9 @@ async fn oversized_input_unknown_targets_and_expired_deadline_never_start_childr
     );
     f.idle().await;
 }
-// The injected verifier deliberately has a nonblocking exclusive start fence.
-// One executor thread avoids unrelated verifier contention while both canonical
-// async imports retain separate live child grants before either is awaited.
+// Both canonical async imports retain separate live child grants before either
+// is awaited. The injected verifier shares its currentness read fence across
+// both publications; preparation workers must not create false permission denial.
 #[tokio::test]
 async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_call_grant() {
     let f = Fixture::new(3, false, true).await;
@@ -134,7 +134,12 @@ async fn concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_c
     assert_eq!(success.consumption.child_calls, 2);
     assert!(success.consumption.cpu_fuel < super::packages::budget().cpu_fuel);
     assert!(success.consumption.peak_memory_bytes <= super::packages::budget().memory_bytes);
-    assert_eq!(value(receipt), ANSWER);
+    assert_eq!(
+        value(receipt),
+        ANSWER,
+        "bounded child failure classification: {:?}",
+        f.observations.child_failures.snapshot()
+    );
     assert_eq!(f.observations.starts.lock().unwrap().len(), 3);
     f.idle().await;
     let mut request = f.request("one-child-grant", 3);
