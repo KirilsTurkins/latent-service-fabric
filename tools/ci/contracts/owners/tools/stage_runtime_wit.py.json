@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Stage the opt-in Phase 4 resource world without loading unrelated aggregate worlds",
+  "reviewReason": "Stage exact SemVer dependencies for WIT use-type syntax; the dot before the type list is a separator and cannot extend an imported version.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b3d46f2d4fa331a319915c3696f1db5db797bcdeb54c6dc146a54b4d8df571dc"
+  "sha256": "4cd0556eecc99f1a2d06a9220ece2476dba1ab9e586c2872d11da6904e7afaee"
 }
