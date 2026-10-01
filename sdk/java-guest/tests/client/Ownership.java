@@ -2,8 +2,10 @@ package dev.latent.guest.client;
 
 import dev.latent.generated.Bindings;
 import java.io.IOException;
-import java.net.HttpRetryException;
+import java.net.ProtocolException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 
 /** Exercises actual SDK Java state/ownership code against a native model boundary. */
@@ -65,7 +67,8 @@ public final class Ownership {
         require(Bindings.opens==0); connection.disconnect(); cases++;
 
         connection=fresh(); Bindings.status=302;
-        try { connection.getResponseCode(); throw new AssertionError(); } catch(HttpRetryException expected) {}
+        try { connection.getResponseCode(); throw new AssertionError(); }
+        catch(ProtocolException expected) { require(expected.getMessage().contains("status=302")); }
         require(Bindings.opens==1 && Bindings.finishes==1 && Bindings.bodiesDropped==1); connection.disconnect(); cases++;
 
         connection=fresh(); connection.setInstanceFollowRedirects(false); Bindings.status=302;
@@ -76,6 +79,23 @@ public final class Ownership {
         try { new StreamHandler().openConnection(new URL("https://fixture.test/")); throw new AssertionError(); }
         catch(IOException expected) { require(expected.getMessage().equals("java-https-standard-type-not-qualified")); }
         require(Bindings.opens==0); cases++;
+
+        var metadata = new URLConnection(new URL("http://fixture.test/")) {
+            @Override public void connect() { }
+            @Override public String getHeaderField(String name) {
+                return name.equals("X-Full") ? "9223372036854775807" : name.equals("X-Bad") ? "overflow-value" : null;
+            }
+        };
+        require(StandardMembers.headerLong(metadata,"X-Full",-1)==Long.MAX_VALUE);
+        require(StandardMembers.headerLong(metadata,"X-Bad",73)==73);
+        require(StandardMembers.contentLength(metadata)==-1); cases++;
+
+        connection=fresh(); Bindings.finishError=12;
+        try { StandardMembers.contentLength(connection); throw new AssertionError(); }
+        catch(UncheckedIOException expected) {
+            require(expected.getCause() instanceof HttpFailure && ((HttpFailure)expected.getCause()).externalCompletionUncertain());
+        }
+        require(Bindings.opens==1 && Bindings.finishes==1); connection.disconnect(); cases++;
         System.out.println("NATIVE_MODEL_CONTROLS="+cases+"; COMPONENT_QUALIFICATION=pending");
     }
 }

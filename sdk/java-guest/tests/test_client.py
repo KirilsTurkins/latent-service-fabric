@@ -46,7 +46,7 @@ class HttpClient(unittest.TestCase):
                            check=True, capture_output=True, timeout=30)
             result = subprocess.run(["java", "-cp", temporary, "dev.latent.guest.client.Ownership"],
                                     check=True, capture_output=True, text=True, timeout=15)
-            self.assertIn("NATIVE_MODEL_CONTROLS=10; COMPONENT_QUALIFICATION=pending", result.stdout)
+            self.assertIn("NATIVE_MODEL_CONTROLS=12; COMPONENT_QUALIFICATION=pending", result.stdout)
 
 
 if __name__ == "__main__":

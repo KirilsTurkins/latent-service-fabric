@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.HttpRetryException;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
@@ -181,8 +180,7 @@ public final class Connection extends HttpURLConnection {
         input = new ResponseInput(result.body());
         if (instanceFollowRedirects && (responseCode == 301 || responseCode == 302 || responseCode == 303
                 || responseCode == 307 || responseCode == 308)) {
-            throw fail(new HttpRetryException("automatic redirect handling is not qualified", responseCode,
-                header("Location")));
+            throw fail(new ProtocolException("automatic redirect handling is not qualified; status=" + responseCode));
         }
     }
 

@@ -39,6 +39,16 @@ than returning invented empty metadata. Repeated raw header values and binary
 response bytes are preserved. EOF is returned only after the provider verifies
 EOF and trailers. A failed or truncated read remains a failure.
 
+The compiler adds the missing standard declarations for the long fixed-length
+request overload, `usingProxy`, `getContentLengthLong` and `getHeaderFieldLong`
+to the maintained class model. The getters use actual response metadata and
+full-width parsing, retaining transport failures and the standard malformed-value
+default. The finite long request path delegates to the existing bounded upload;
+it does not truncate a requested length. An unchanged outside caller's bytecode
+retains its standard method references. These transformations passed an actual
+TeaVM 0.15 class-model check using the compiler JARs' recorded SHA-256 identities;
+an emitted-component run remains required.
+
 Each upload/body/chunk uses the generated owned WIT resource. Stream close,
 disconnect and errors release guest ownership without claiming physical retirement;
 the original installed provider retains charges through actual cleanup or
