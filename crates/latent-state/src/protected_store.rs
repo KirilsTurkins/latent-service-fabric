@@ -2,11 +2,13 @@
 //! affine view retirement belongs to the same fixed storage workers.
 
 mod config;
+mod operation;
 mod physical;
 mod startup;
 mod view;
 
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
+pub use operation::ProtectedStoreOperation;
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
 

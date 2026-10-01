@@ -1,6 +1,56 @@
 use super::*;
 
 #[test]
+fn physical_operation_pins_bound_admission_keep_root_through_deadline_and_retire_after_close() {
+    let (_root, mut config) = fixture();
+    config.io.accepted_jobs = 4;
+    config.io.queued_jobs = 4;
+    let clock = TestClock::new(1000, Instant::now(), 1);
+    let owner = wait(
+        ProtectedStoreOwner::start_with_clock(config.clone(), Arc::new(clock.clone())).unwrap(),
+    )
+    .unwrap();
+    let pins: Vec<_> = (0..4).map(|_| owner.reserve_operation().unwrap()).collect();
+    assert!(matches!(
+        owner.reserve_operation(),
+        Err(ProtectedStoreError::Io(StoreIoError::AcceptedFull))
+    ));
+    assert_eq!(owner.snapshot().unwrap().physical_owners, 4);
+    let deadline = clock.monotonic_now() + std::time::Duration::from_secs(1);
+    let mut drain = Box::pin(
+        owner
+            .drain_async(deadline, clock.sleep_until(deadline))
+            .unwrap(),
+    );
+    PollProbe::default().pending(drain.as_mut());
+    clock.advance(std::time::Duration::from_secs(1));
+    let report = wait(drain);
+    assert!(!report.clean);
+    assert!(report.snapshot.quarantined);
+    assert_eq!(report.snapshot.physical_owners, 4);
+    assert!(!report.snapshot.engine_closed());
+    assert_eq!(
+        failed_start(config.clone()),
+        ProtectedStoreError::Store(StoreError::Unavailable)
+    );
+    for pin in pins {
+        wait(pin.retire());
+    }
+    let late = wait(
+        owner
+            .drain_async(
+                clock.monotonic_now() + std::time::Duration::from_secs(2),
+                std::future::pending(),
+            )
+            .unwrap(),
+    );
+    assert!(late.snapshot.physically_retired());
+    assert!(!late.clean);
+    let reopened = start(config);
+    assert!(finish(&reopened).clean);
+}
+
+#[test]
 fn protected_initialization_shared_families_snapshots_and_reopen_are_real() {
     let (_root, config) = fixture();
     let owner = start(config.clone());
