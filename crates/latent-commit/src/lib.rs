@@ -2,6 +2,9 @@
 
 #![forbid(unsafe_code)]
 
+/// Executable ADR-0062 reference model; this is not a storage or runtime backend.
+pub mod model;
+
 use latent_core::{ActivationId, BoxFuture, Metadata, PlatformError};
 use latent_effects::{EffectIntent, EffectReceipt};
 use latent_state::{CommitReceipt as StateCommitReceipt, StateTransaction};
@@ -44,10 +47,10 @@ pub struct CommitInspection {
 }
 
 pub trait CommitCoordinator: Send + Sync {
-    fn commit<'a>(
-        &'a self,
+    fn commit(
+        &self,
         plan: ActivationCommitPlan,
-    ) -> BoxFuture<'a, Result<ActivationCommitReceipt, PlatformError>>;
+    ) -> BoxFuture<'_, Result<ActivationCommitReceipt, PlatformError>>;
 
     fn abort<'a>(
         &'a self,
@@ -62,11 +65,11 @@ pub trait CommitCoordinator: Send + Sync {
 }
 
 pub trait AtomicStateEffectStore: Send + Sync {
-    fn persist<'a>(
-        &'a self,
+    fn persist(
+        &self,
         transaction: Option<StateTransaction>,
         effects: Vec<EffectIntent>,
-    ) -> BoxFuture<'a, Result<ActivationCommitReceipt, PlatformError>>;
+    ) -> BoxFuture<'_, Result<ActivationCommitReceipt, PlatformError>>;
 }
 
 pub trait CommitRecovery: Send + Sync {
