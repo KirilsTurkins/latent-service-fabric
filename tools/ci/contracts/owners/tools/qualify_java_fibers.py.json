@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Four unchanged JDK controls cover cached default factories, reset futures and maintained wait/sleep hooks; actual expanded signed guest qualification remains explicitly pending",
+  "reviewReason": "Four unchanged reference-JDK modes and exact locked Throwable constructor controls preserve original application identities; expanded signed guest execution remains unqualified",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "139b1b50a3bcbf1a37bee2b05bd210889fb632c02b68729535633c411dee863d"
+  "sha256": "1507ebe15be9eb75a0570770c19a9be9a8c355df948bf2eb87346623c1551c87"
 }

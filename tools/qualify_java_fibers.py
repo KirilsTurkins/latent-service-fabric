@@ -6,6 +6,8 @@ does not qualify the complete Java standard concurrency profile.
 """
 from __future__ import annotations
 import argparse
+import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -14,6 +16,42 @@ sys.dont_write_bytecode = True
 if __package__ in (None, ""): sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.java_guest.compiler import Compiler
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file, write_json
+
+
+def throwable_model_control(compiler: Compiler, output: Path) -> dict:
+    """Test the actual locked classlib IR, without loading application classes."""
+    names = {"teavm-classlib", "teavm-core", "teavm-extension-spi", "teavm-interop",
+             "teavm-relocated-libs-asm", "teavm-relocated-libs-asm-analysis",
+             "teavm-relocated-libs-asm-commons", "teavm-relocated-libs-asm-tree", "teavm-relocated-libs-hppc"}
+    lock = json.loads(read_file(compiler.sdk / "feasibility/dependencies.lock.json"))
+    artifacts = [item for item in lock["artifacts"]
+                 if Path(item["path"]).parts[-3] in names and item["path"].startswith("org/teavm/")]
+    if (len(artifacts) != len(names) or {Path(item["path"]).parts[-3] for item in artifacts} != names):
+        raise ValueError("Java Throwable model requires the exact locked tooling closure")
+    cache = compiler.directory / "gradle-home/caches/modules-2/files-2.1"
+    jars, identities = [], {}
+    for item in sorted(artifacts, key=lambda row: row["path"]):
+        parts = Path(item["path"]).parts
+        candidates = list((cache / ".".join(parts[:-3]) / parts[-3] / parts[-2]).glob("*/" + parts[-1]))
+        if len(candidates) != 1: raise ValueError("Java Throwable model tooling jar is missing or ambiguous")
+        raw = read_file(candidates[0], 25 * 1024 * 1024)
+        if len(raw) != item["size"] or digest(raw) != item["sha256"]:
+            raise ValueError("Java Throwable model tooling jar integrity mismatch")
+        jars.append(candidates[0])
+        identities[item["path"]] = item["sha256"]
+    output.mkdir()
+    classpath = os.pathsep.join(map(str, jars))
+    compiler.run("throwable-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
+                 "-d", output,
+                 compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java",
+                 compiler.sdk / "fibers/conformance/compiler/ThrowableInitializationControl.java")
+    result = compiler.run("throwable-model-control", "java", "-Xmx256m", "-cp",
+                          str(output) + os.pathsep + classpath,
+                          "dev.latent.guest.runtime.compiler.ThrowableInitializationControl")
+    expected = ("THROWABLE_INITIALIZATION_CONTROL PASS constructors=5;original-negative;real-array-initializer;"
+                "method-owners;layout-and-repeated-port-negatives;application-identity")
+    if result.strip() != expected: raise ValueError("Java Throwable model control did not complete")
+    return {"status": "actual-locked-classlib-model-passed", "constructors": 5, "jarDigests": identities}
 
 
 def recipe_inputs() -> dict[str, str]:
@@ -54,6 +92,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             report["reference"].append({"iteration": iteration, "modes": [0, 1, 2, 3], "results": [42, 42, 42, 42]})
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True)
+        report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
         compiler.check_unchanged()
         report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
         report["componentDigest"] = digest(read_file(component, 64 * 1024 * 1024))

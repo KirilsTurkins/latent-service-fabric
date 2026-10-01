@@ -52,6 +52,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
     private void transform(ClassHolder cls, ClassHolderTransformerContext context) {
         normalizeOwnedConcurrentReferences(cls);
         TimeUnitMethods.transform(cls, context);
+        ThrowableInitialization.transform(cls);
         MonitorContinuations.transform(cls);
         SleepContinuations.transform(cls);
         WaitContinuations.transform(cls);

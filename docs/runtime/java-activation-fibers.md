@@ -121,7 +121,7 @@ failed in its signed executor mode with a closed host `resource-exhausted` cause
 ([retained CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36811904043)).
 Replaying the retained executor component with the corrected resource-free
 result lowering removes that immediate admission failure, but reaches its
-unchanged 120-second deadline during physical pool retirement. The cached-mode
+unchanged 120-second deadline during physical pool retirement before the later pump repair. The cached-mode
 attempt stopped at the missing standard TimeUnit declarations before component
 generation. The subsequent compiler repair and default-factory/wait changes
 have not completed pinned component and signed-node execution; the executor,
@@ -140,8 +140,24 @@ the prior source exposes the queued-work park, while 96 completed model
 activations settle their 256 original model owners once, and a busy pool still
 parks with its pending owners retained. These controls use synthetic host and
 continuation entry seams on JDK 25.0.3; they establish the pump ordering, not
-full guest thread or runtime qualification. Recompiling the pinned component and
-executing all original signed numeric modes after this repair remain pending.
+full guest thread or runtime qualification.
+
+On the preceding three-mode executor source, the repaired SDK was compiled through the unchanged pinned JDK 25.0.4.1,
+Gradle 9.1.0 and WASI SDK 29 tools. Component `2a541dcf` validates and the same
+application passes all nine reference-JDK numeric controls. A normal native
+runtime rebuilt from the exact source passes mode 0, but mode 1 traps after
+63,498 microseconds with 6,085,988 fuel and 9,373,512 peak bytes under the original
+limits. Private bounded numeric stack readers locate a NullPointerException in
+Throwable.addSuppressed during dispatch cleanup. The locked TeaVM classlib model
+confirms that all five real Throwable constructors omit the suppressed-array
+initializer which exists in their unused fakeInit counterparts. The SDK now
+initializes that exact maintained field in the real constructors, preserving the
+original class, methods and application symbols. Actual locked-model controls
+check the prior missing initialization, all five repaired constructor entries,
+unchanged method owners, layout drift and repeated-port rejection. These controls
+run on host JDK 25.0.3 and also belong to the maintained pinned fiber qualifier.
+The subsequent component rebuild and all original signed modes remain pending;
+the original exception masked by cleanup may still require a separate repair.
 
 The original thread-only pinned Linux debug experiment measured 9241560 bytes of activation peak
 memory in each run under the unchanged 67108864-byte ceiling. The first run
