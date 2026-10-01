@@ -445,4 +445,4 @@ fn invalid(field: &'static str) -> PlatformError {
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod rooted;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-pub use rooted::ProtectedRoot;
+pub use rooted::{ProtectedMutableFile, ProtectedRoot};
