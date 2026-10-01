@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/validate_foundation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Count foundation recipes only in the exact complete required matrix with their owned lane conditions; retain every locked scope check and reject exclusions, missing lanes and failure masking.",
+  "reviewReason": "Retain all foundation recipe scopes and rejection guards; recognize only the complete failure-propagating matrix including the required separate metadata/security qualification lane.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4063f60f07d8f27b8e2a19ebaddefb725d966ed282d8411a97502b7923ee9411"
+  "sha256": "9639f4cd0d05e39cb035f19f89e4e6a075dc4a7f36d39bf412139219e5574ec4"
 }
