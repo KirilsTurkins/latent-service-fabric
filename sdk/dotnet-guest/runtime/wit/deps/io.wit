@@ -4,6 +4,7 @@ package wasi:io@0.2.6;
     resource pollable {
       block: func();
     }
+    poll: func(in: list<borrow<pollable>>) -> list<u32>;
   }
   interface error {
     resource error;
@@ -12,11 +13,16 @@ package wasi:io@0.2.6;
     use error.{error};
     use poll.{pollable};
 
-    resource input-stream;
+    resource input-stream {
+      read: func(len: u64) -> result<list<u8>, stream-error>;
+      blocking-read: func(len: u64) -> result<list<u8>, stream-error>;
+      subscribe: func() -> pollable;
+    }
 
     resource output-stream {
       check-write: func() -> result<u64, stream-error>;
       write: func(contents: list<u8>) -> result<_, stream-error>;
+      flush: func() -> result<_, stream-error>;
       blocking-flush: func() -> result<_, stream-error>;
       subscribe: func() -> pollable;
     }
