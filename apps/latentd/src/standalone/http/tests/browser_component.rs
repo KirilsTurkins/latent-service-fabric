@@ -84,7 +84,8 @@ async fn assert_rejected_outputs(fixture: &Fixture) {
         let before = fixture.node.manager.journal().snapshot().begun;
         let reply = call(fixture, path).await;
         assert_eq!(reply.0, 502, "{path}");
-        assert!(reply.2.is_empty());
+        assert_eq!(reply.2, b"Bad gateway\n", "{path}");
+        assert!(reply.1.contains("content-length: 12\r\n"));
         assert_eq!(reply.1.matches("HTTP/1.1").count(), 1);
         assert!(reply
             .1

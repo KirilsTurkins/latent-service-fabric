@@ -126,7 +126,7 @@ try {
           referrer: response.headers.get('referrer-policy'), cache: response.headers.get('cache-control'),
           principal: response.headers.get('x-app-principal'), cors: response.headers.get('access-control-allow-origin')};
       }, policy);
-      assert.deepEqual(rejected, {status: 502, body: '', referrer: 'same-origin', cache: 'no-store',
+      assert.deepEqual(rejected, {status: 502, body: 'Bad gateway\n', referrer: 'same-origin', cache: 'no-store',
         principal: null, cors: null});
     }
     const cacheResponses = await page.evaluate(async () => {
