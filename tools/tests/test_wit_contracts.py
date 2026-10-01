@@ -159,14 +159,32 @@ class WitContractTests(unittest.TestCase):
 
     def test_type_use_selector_stages_the_exact_state_dependency(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            destination = Path(temporary) / "intents"
-            stager.stage(destination, ROOT / "wit/platform/intents")
+            platform = Path(temporary) / "platform"
+            state = platform / "state"
+            intents = platform / "intents"
+            state.mkdir(parents=True)
+            intents.mkdir()
+            state_source = (
+                "package latent:state@0.2.0;\n"
+                "interface key-value { resource transaction; type value = list<u8>; }\n"
+            )
+            (state / "package.wit").write_text(state_source, encoding="utf-8")
+            (intents / "package.wit").write_text(
+                "package latent:intents@0.1.0;\n"
+                "interface staging {\n"
+                "use latent:state/key-value@0.2.0.{transaction, value};\n"
+                "stage: func(transaction: borrow<transaction>, payload: value);\n}\n",
+                encoding="utf-8",
+            )
+            destination = Path(temporary) / "staged"
+            with mock.patch.object(stager, "PLATFORM_WIT", platform):
+                stager.stage(destination, intents)
             self.assertEqual(
                 {path.name for path in (destination / "deps").iterdir()}, {"state"}
             )
             self.assertEqual(
                 (destination / "deps/state/package.wit").read_bytes(),
-                (ROOT / "wit/platform/state/package.wit").read_bytes(),
+                (state / "package.wit").read_bytes(),
             )
         for version in ("0.2.0", "1.2.3-preview.4+build.5"):
             with self.subTest(version=version):
