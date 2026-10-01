@@ -1,0 +1,469 @@
+{
+  "formatVersion": 1,
+  "status": "component-composed-packaging-blocked",
+  "issue": 687,
+  "buildSourceRevision": "277b5f34e5170b3be03a98ff43dcb3e459062e25",
+  "sourceArchive": {
+    "sourceRevision": "277b5f34e5170b3be03a98ff43dcb3e459062e25",
+    "archiveSha256": "e72510840c533296b9f2042c12ad0efe4a0d4ce2f03bfa25ca89804f5ab566eb",
+    "archiveBytes": 9774954,
+    "expandedBytes": 48318118,
+    "entries": 6292,
+    "selectedPaths": [
+      "apps",
+      "sdk/dotnet-guest",
+      "sdk/rust",
+      "sdk/rust-guest",
+      "sdk/java-guest",
+      "sdk/c-guest",
+      "sdk/go-guest",
+      "sdk/typescript-guest",
+      "examples",
+      "tools",
+      "crates",
+      "wit",
+      "schemas",
+      "docs",
+      ".cargo",
+      "Cargo.toml",
+      "Cargo.lock",
+      "rust-toolchain.toml",
+      "LICENSE",
+      "NOTICE"
+    ],
+    "purpose": "fresh source-bound compiler repair; previous source and failed fixture attempts preserved"
+  },
+  "image": {
+    "manifest": "sha256:52830a1053284351a14e1b4fa3c7b6cf1f82cca6dc94f120184755b698dc5fe2",
+    "config": "sha256:808c74683a8e0477a000b28637efed55efe3f62e4d08a3f49defe662f3a03dfd",
+    "python": "3.13.5",
+    "dotnet": "10.0.100",
+    "glibc": "2.39-0ubuntu8.9",
+    "compilerResources": {
+      "cpus": 2,
+      "memoryBytes": 4294967296,
+      "swapTotalBytes": 4294967296
+    }
+  },
+  "inputs": {
+    "sourceSnapshot": {
+      "digest": "sha256:43056990064a95a1710159f1bdc0aefb036ce9fd108f40d0640c2307049a8c28",
+      "size": 12117
+    },
+    "recipe": {
+      "digest": "sha256:cbc502d450e552c6aa6d24e3a368dadedc67026cc9604a1a673ca065f8da7858",
+      "size": 4188
+    },
+    "compilerInputs": {
+      "digest": "sha256:c1305f4bdfc728b8f3f48c2b89963bebb80918c5303f22051a79b3401bb818aa",
+      "size": 3550353
+    },
+    "containment": {
+      "digest": "sha256:70ef544d9976989caaacaed364fe3282c820cee1f55bae43297c28add5957112",
+      "size": 5061452
+    },
+    "nativePackageInputs": {
+      "digest": "sha256:bf87bc0fc1b170efe7707a8a94eeed1d7ef7973de53e5b697f000b8127b0939d",
+      "size": 4791
+    },
+    "fixture": {
+      "formatVersion": 1,
+      "thirdParty": "MemoryPack/1.21.4",
+      "independentApplicationSelections": [
+        "Independent.Developer.Input.20261001/1.0.0",
+        "MemoryPack/1.21.4"
+      ],
+      "transitives": [
+        "MemoryPack.Core",
+        "MemoryPack.Generator"
+      ],
+      "developerOwned": "Independent.Developer.Input.20261001/1.0.0",
+      "generatedSerialization": {
+        "generator": "MemoryPack.Generator/1.21.4",
+        "type": "CapturedPayload",
+        "ordinaryCalls": [
+          "MemoryPackSerializer.Serialize",
+          "MemoryPackSerializer.Deserialize"
+        ]
+      },
+      "resourceDigest": "sha256:23429bd9ba98dd5140309bb9b0094b3aad642430fff6fb3ca61f008ce644f34a",
+      "managedAssemblyDigest": "sha256:46087abc5c7246fd180d065e52145d938a3f9b413370335a4f0f99c6b6b74c2d",
+      "sourceDigest": "sha256:d42b6d6aebe36e1dac55d1c2b600a4c24b94f9fd9ff67772705bc9ac38099aa8",
+      "offlineOriginals": "unavailable-after-capture",
+      "nativeGraphDigest": "sha256:fcd59a6b21adda718d16c69ec756d422ee48cb9ad0acc5eafc9da069a56d180d",
+      "preparationCommands": [
+        {
+          "stage": "dotnet-version",
+          "exitCode": 0,
+          "seconds": 0.157475
+        },
+        {
+          "stage": "wasm-tools-version",
+          "exitCode": 0,
+          "seconds": 0.01161
+        },
+        {
+          "stage": "wit-bindgen-version",
+          "exitCode": 0,
+          "seconds": 0.012524
+        },
+        {
+          "stage": "dotnet-sdks",
+          "exitCode": 0,
+          "seconds": 0.011742
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.339069
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.38238
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.074453
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.125339
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.113826
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.08382
+        },
+        {
+          "stage": "nuget-content-hash",
+          "exitCode": 0,
+          "seconds": 0.134926
+        },
+        {
+          "stage": "component-composer-version",
+          "exitCode": 0,
+          "seconds": 0.011647
+        },
+        {
+          "stage": "developer-library-build",
+          "exitCode": 0,
+          "seconds": 4.053019
+        }
+      ]
+    }
+  },
+  "originalDeveloperSourceAndFeedAbsent": true,
+  "unapprovedGeneratorBuild": "executable-input-approval",
+  "generatedOutputs": {
+    "formatVersion": 1,
+    "approvalIdentity": "sha256:48210e1c62591c74da92462e72a93aa910aaa45d78bf8d3b12f32efa10e0700f",
+    "inputIdentity": "sha256:33d7a1d5a5914ad5ac26e866ca5a81f6584896b6fd6b441cb2d4c4fdaa2d59fc",
+    "recipeDigest": "sha256:d4eb01d4ae76d59d65dfed147105d5ce86e6277b13a16741ff70fd6e429db52b",
+    "compilerInputsDigest": "sha256:dad5a8dc8d9f55da48ebe93f7fb95d38e10509d8dd042bca30a3b79a821443ca",
+    "outputs": {
+      "MemoryPack.Generator/MemoryPack.Generator.MemoryPackGenerator/ServiceWorld.wit.Exports.examples.greeting.CapturedPayload.MemoryPackFormatter.g.cs": {
+        "digest": "sha256:0f6f93ed2a1f5fb3a5248be4303fad4d43d4c40e588400ea6203fd3da02733bc",
+        "size": 4194
+      }
+    },
+    "compilerCommandSucceeded": true,
+    "captureBoundary": "native-aot-process-reaped-before-component-composition",
+    "cleanup": "namespace-and-owned-process-reaped",
+    "hermetic": false
+  },
+  "component": {
+    "digest": "sha256:1369dd6ff6c1b987c6a5edb573896c035fc6e2661631293e477d048ba7656c0d",
+    "size": 8498814
+  },
+  "rawComponent": {
+    "digest": "sha256:35cf101d5f089f489786025ec4902fd1b5612475883dcd61456ffcddf9eea95b",
+    "size": 8403709
+  },
+  "runtimeProfile": {
+    "schemaVersion": "latent.dotnet.runtime.v1",
+    "profile": "closed",
+    "declaredImports": [
+      "latent:clock/monotonic@0.1.0"
+    ],
+    "emittedImports": [
+      "wasi:cli/environment@0.2.6",
+      "wasi:cli/exit@0.2.6",
+      "wasi:cli/stderr@0.2.6",
+      "wasi:cli/stdin@0.2.6",
+      "wasi:cli/stdout@0.2.6",
+      "wasi:cli/terminal-input@0.2.6",
+      "wasi:cli/terminal-output@0.2.6",
+      "wasi:cli/terminal-stderr@0.2.6",
+      "wasi:cli/terminal-stdin@0.2.6",
+      "wasi:cli/terminal-stdout@0.2.6",
+      "wasi:clocks/monotonic-clock@0.2.6",
+      "wasi:clocks/wall-clock@0.2.6",
+      "wasi:filesystem/preopens@0.2.6",
+      "wasi:filesystem/types@0.2.6",
+      "wasi:io/error@0.2.6",
+      "wasi:io/poll@0.2.6",
+      "wasi:io/streams@0.2.6",
+      "wasi:random/random@0.2.6"
+    ],
+    "rawComponent": {
+      "name": "raw-native-aot-component",
+      "digest": "sha256:35cf101d5f089f489786025ec4902fd1b5612475883dcd61456ffcddf9eea95b",
+      "size": 8403709
+    },
+    "adapter": {
+      "name": "closed-runtime",
+      "digest": "sha256:2d4d4de0c6fa08a5118acb4ed2ffb11535e6a95c8cfb016fef2757feb422a0b0",
+      "size": 93876
+    }
+  },
+  "runtimeCoverage": {
+    "requiredImports": [
+      "wasi:cli/environment@0.2.6",
+      "wasi:cli/exit@0.2.6",
+      "wasi:cli/stderr@0.2.6",
+      "wasi:cli/stdin@0.2.6",
+      "wasi:cli/stdout@0.2.6",
+      "wasi:cli/terminal-input@0.2.6",
+      "wasi:cli/terminal-output@0.2.6",
+      "wasi:cli/terminal-stderr@0.2.6",
+      "wasi:cli/terminal-stdin@0.2.6",
+      "wasi:cli/terminal-stdout@0.2.6",
+      "wasi:clocks/monotonic-clock@0.2.6",
+      "wasi:clocks/wall-clock@0.2.6",
+      "wasi:filesystem/preopens@0.2.6",
+      "wasi:filesystem/types@0.2.6",
+      "wasi:io/error@0.2.6",
+      "wasi:io/poll@0.2.6",
+      "wasi:io/streams@0.2.6",
+      "wasi:random/random@0.2.6"
+    ],
+    "adapterExports": [
+      "wasi:cli/environment@0.2.6",
+      "wasi:cli/exit@0.2.6",
+      "wasi:cli/stderr@0.2.6",
+      "wasi:cli/stdin@0.2.6",
+      "wasi:cli/stdout@0.2.6",
+      "wasi:cli/terminal-input@0.2.6",
+      "wasi:cli/terminal-output@0.2.6",
+      "wasi:cli/terminal-stderr@0.2.6",
+      "wasi:cli/terminal-stdin@0.2.6",
+      "wasi:cli/terminal-stdout@0.2.6",
+      "wasi:clocks/monotonic-clock@0.2.6",
+      "wasi:clocks/wall-clock@0.2.6",
+      "wasi:filesystem/preopens@0.2.6",
+      "wasi:filesystem/types@0.2.6",
+      "wasi:http/outgoing-handler@0.2.0",
+      "wasi:http/types@0.2.0",
+      "wasi:io/error@0.2.6",
+      "wasi:io/poll@0.2.6",
+      "wasi:io/streams@0.2.6",
+      "wasi:random/random@0.2.6"
+    ],
+    "gaps": [],
+    "analysisCompleteness": "required-member-names",
+    "authority": "none",
+    "schemaVersion": "lsf.dotnet.runtime.coverage.v1",
+    "runtimeProfile": "dotnet-native-aot-component-v1",
+    "rawComponentDigest": "sha256:35cf101d5f089f489786025ec4902fd1b5612475883dcd61456ffcddf9eea95b",
+    "runtimeAdapterDigest": "sha256:2d4d4de0c6fa08a5118acb4ed2ffb11535e6a95c8cfb016fef2757feb422a0b0",
+    "rawWitDigest": "sha256:d82ab96d4457b631683e91dcc7ab92ee470e158d9e69895fe77719217e161079",
+    "runtimeWitDigest": "sha256:3a7dab274ca024222c71b237e6a2acee19a060fac275117efb8ecc2ac48afde6"
+  },
+  "finalInspection": {
+    "componentDigest": "sha256:1369dd6ff6c1b987c6a5edb573896c035fc6e2661631293e477d048ba7656c0d",
+    "hostAbiDigest": "sha256:4413194663dea86eb471981cbd8f37e4d7f77c093ef685333457357cc5a1b0b4",
+    "imports": [
+      "latent:clock/monotonic@0.1.0"
+    ],
+    "findings": [
+      {
+        "classification": "unresolved-behavior",
+        "phase": "invocation",
+        "evidence": "not-evaluated"
+      }
+    ]
+  },
+  "nativeTools": {
+    "sourceRevision": "6facfd59aa49f5fa8d433e5e352f8f17a3115eaa",
+    "profile": ".cargo/managed-guest.toml",
+    "note": "retained root build; excludes parser817, runtime810 and node819 changes",
+    "files": {
+      "capsule_contracts": {
+        "digest": "sha256:8133a937461ff68388a093770dfde924d701e2cfa14a8d287acf2130c6c19425",
+        "size": 7078256,
+        "originalLinks": 2,
+        "capturedLinks": 1
+      },
+      "package": {
+        "digest": "sha256:a4de248da0743654ed61361a6420d237c2fbffe239760ef212147ade98e5c10e",
+        "size": 14094368,
+        "originalLinks": 2,
+        "capturedLinks": 1
+      }
+    }
+  },
+  "commands": [
+    {
+      "stage": "contracts",
+      "exitCode": 0,
+      "seconds": 0.011948
+    },
+    {
+      "stage": "dotnet-version",
+      "exitCode": 0,
+      "seconds": 0.166178
+    },
+    {
+      "stage": "wasm-tools-version",
+      "exitCode": 0,
+      "seconds": 0.011669
+    },
+    {
+      "stage": "wit-bindgen-version",
+      "exitCode": 0,
+      "seconds": 0.011262
+    },
+    {
+      "stage": "dotnet-sdks",
+      "exitCode": 0,
+      "seconds": 0.011192
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.318508
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.351731
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.074092
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.123707
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.103677
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.073745
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.136437
+    },
+    {
+      "stage": "component-composer-version",
+      "exitCode": 0,
+      "seconds": 0.011974
+    },
+    {
+      "stage": "declared-runtime-wit",
+      "exitCode": 0,
+      "seconds": 0.042287
+    },
+    {
+      "stage": "bindings",
+      "exitCode": 0,
+      "seconds": 0.287752
+    },
+    {
+      "stage": "bindings-drift",
+      "exitCode": 0,
+      "seconds": 0.287812
+    },
+    {
+      "stage": "canonical-wit",
+      "exitCode": 0,
+      "seconds": 0.042135
+    },
+    {
+      "stage": "locked-restore",
+      "exitCode": 0,
+      "seconds": 1.415359
+    },
+    {
+      "stage": "native-aot",
+      "exitCode": 0,
+      "seconds": 68.721078
+    },
+    {
+      "stage": "native-runtime-wit",
+      "exitCode": 0,
+      "seconds": 0.053844
+    },
+    {
+      "stage": "native-aot-raw-wit",
+      "exitCode": 0,
+      "seconds": 0.053228
+    },
+    {
+      "stage": "closed-runtime-adapter-wit",
+      "exitCode": 0,
+      "seconds": 0.053368
+    },
+    {
+      "stage": "closed-runtime-composition",
+      "exitCode": 0,
+      "seconds": 0.094538
+    },
+    {
+      "stage": "validate",
+      "exitCode": 0,
+      "seconds": 0.063658
+    },
+    {
+      "stage": "runtime-final-wit",
+      "exitCode": 0,
+      "seconds": 0.053194
+    },
+    {
+      "stage": "surface",
+      "exitCode": 0,
+      "seconds": 0.053686
+    },
+    {
+      "stage": "compatibility-final-wit",
+      "exitCode": 0,
+      "seconds": 0.022249
+    },
+    {
+      "stage": "package",
+      "exitCode": 1,
+      "seconds": 0.548154
+    }
+  ],
+  "failure": {
+    "stage": "package",
+    "diagnostic": "component-work-limit",
+    "toolSourceIncludesAlias817": false,
+    "attribution": "old native tool; behavior of repaired parser on this component not yet executed"
+  },
+  "pending": [
+    "new-source native packaging",
+    "final build integrity rechecks",
+    "signed admission",
+    "ordinary library/resource invocation",
+    "grant controls and recovery",
+    "dormant ownership counters"
+  ]
+}
