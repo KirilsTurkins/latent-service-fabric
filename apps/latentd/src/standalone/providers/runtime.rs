@@ -42,6 +42,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     pools: Arc<ProviderPools>,
     io: Arc<IoRuntime>,
     secrets: Option<latent_secrets::LocalSecretStore>,
+    streaming_secrets: Option<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
@@ -88,16 +89,17 @@ impl ProviderRuntime {
             pools,
             io,
             secrets: None,
+            streaming_secrets: None,
             guest_secrets: None,
             event_secrets: None,
             metrics: None,
             blobs: None,
             registrations: Vec::with_capacity(3),
-            descriptors: Vec::with_capacity(9),
+            descriptors: Vec::with_capacity(10),
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
-            let mut providers = Vec::with_capacity(9);
+            let mut providers = Vec::with_capacity(10);
             for (installation, monotonic) in
                 [(&config.clock_monotonic, true), (&config.clock_wall, false)]
             {
@@ -122,6 +124,32 @@ impl ProviderRuntime {
                 owner.secrets = secrets;
                 providers.push(owner.record(&http.identity, provider.reference()));
                 owner.runtime.install_http(Arc::new(provider))?;
+            }
+            if let Some(http) = &config.http_streaming {
+                let (references, secrets) = http::credential_references(
+                    &owner.pools,
+                    &http.identity,
+                    &http.configuration,
+                    http.credential_directory.as_deref(),
+                    &http.credentials,
+                    deadline,
+                )
+                .await?;
+                // Retain the actual store before any later installation/binding
+                // can fail. Startup rollback uses the same retirement/join path.
+                owner.streaming_secrets = secrets;
+                let provider = latent_http::StreamingHttpProvider::install_with_secret_references(
+                    owner.pools.clone(),
+                    &http.identity.id,
+                    http.identity.epoch,
+                    0,
+                    http.configuration.clone(),
+                    http.limits,
+                    references,
+                )
+                .map_err(|_| unavailable())?;
+                providers.push(owner.record(&http.identity, provider.reference()));
+                owner.runtime.install_streaming_http(Arc::new(provider))?;
             }
             if let Some(blob) = &config.blob {
                 let root = settings
@@ -252,6 +280,9 @@ impl ProviderRuntime {
         if let Some(secrets) = &self.secrets {
             secrets.close();
         }
+        if let Some(secrets) = &self.streaming_secrets {
+            secrets.close();
+        }
         if let Some(secrets) = &self.guest_secrets {
             secrets.close();
         }
@@ -275,9 +306,14 @@ impl ProviderRuntime {
         let mut secret_generations = 0;
         let mut secret_references = 0;
         let mut secrets_closed = true;
-        for store in [&self.secrets, &self.guest_secrets, &self.event_secrets]
-            .into_iter()
-            .flatten()
+        for store in [
+            &self.secrets,
+            &self.streaming_secrets,
+            &self.guest_secrets,
+            &self.event_secrets,
+        ]
+        .into_iter()
+        .flatten()
         {
             store.close();
             let snapshot = store.snapshot().map_err(|_| unavailable())?;
