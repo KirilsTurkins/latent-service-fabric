@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use super::job::Reservation;
+use super::retirement::{RetirementSignal, StoreIoRetirement};
 use super::state::{Control, Retirement};
 use super::{StoreIoError, StoreIoOwner};
 
@@ -24,14 +25,20 @@ impl<S> Drop for PhysicalReservation<S> {
 struct Retained<S, T> {
     value: Option<T>,
     reservation: PhysicalReservation<S>,
+    retired: Arc<RetirementSignal>,
 }
 
 impl<S: Send + 'static, T: Send + 'static> Retirement for Retained<S, T> {
     fn retire(self: Box<Self>) {
-        let Self { value, reservation } = *self;
+        let Self {
+            value,
+            reservation,
+            retired,
+        } = *self;
         // Native handle destruction precedes physical ownership/byte refund.
         drop(value);
         drop(reservation);
+        retired.complete();
     }
 }
 
@@ -52,7 +59,8 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         let control = &self.inner.control;
         let mut state = control.state.lock().map_err(|_| StoreIoError::Poisoned)?;
         let metadata = std::mem::size_of::<Retained<S, T>>()
-            .checked_add(64)
+            // Box/Arc headers, preallocated retirement receipt and queue slot.
+            .checked_add(192)
             .ok_or(StoreIoError::Exhausted)?;
         let metadata = u64::try_from(metadata).map_err(|_| StoreIoError::Exhausted)?;
         let bytes = retained_bytes
@@ -68,6 +76,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
                 control: Arc::clone(control),
                 bytes,
             }),
+            retired: Arc::new(RetirementSignal::default()),
         });
         Ok(StoreIoRetained {
             control: Arc::clone(control),
@@ -77,6 +86,34 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
 }
 
 impl<S: Send + 'static, T: Send + 'static> StoreIoRetained<S, T> {
+    /// Enqueue the pre-reserved cleanup and observe actual worker retirement.
+    /// A receipt that is dropped never refunds or cancels accepted destruction.
+    pub fn retire(mut self) -> StoreIoRetirement {
+        let retired = Arc::clone(
+            &self
+                .retained
+                .as_ref()
+                .expect("affine resource owner")
+                .retired,
+        );
+        self.enqueue_retirement();
+        StoreIoRetirement::new(retired)
+    }
+
+    fn enqueue_retirement(&mut self) {
+        if let Some(retained) = self.retained.take() {
+            {
+                let mut state = self
+                    .control
+                    .state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                state.retirements.push_back(retained);
+            }
+            self.control.notify();
+        }
+    }
+
     /// Attach only on a physical worker after the resource has been opened.
     pub fn attach(&mut self, value: T) -> Result<(), T> {
         let retained = self.retained.as_mut().expect("affine resource owner");
@@ -98,17 +135,6 @@ impl<S: Send + 'static, T: Send + 'static> StoreIoRetained<S, T> {
 
 impl<S: Send + 'static, T: Send + 'static> Drop for StoreIoRetained<S, T> {
     fn drop(&mut self) {
-        if let Some(retained) = self.retained.take() {
-            {
-                let mut state = self
-                    .control
-                    .state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                // Capacity was reserved before native-resource creation.
-                state.retirements.push_back(retained);
-            }
-            self.control.notify();
-        }
+        self.enqueue_retirement();
     }
 }

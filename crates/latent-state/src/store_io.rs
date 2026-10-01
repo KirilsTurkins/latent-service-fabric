@@ -15,6 +15,7 @@
 mod drain;
 mod job;
 mod retained;
+mod retirement;
 mod startup;
 mod state;
 mod types;
@@ -23,6 +24,7 @@ mod worker;
 pub use drain::StoreIoDrain;
 pub use job::StoreIoJob;
 pub use retained::StoreIoRetained;
+pub use retirement::StoreIoRetirement;
 pub use startup::{StoreIoReady, StoreIoStartup};
 pub use types::{
     StoreIoAdmissionError, StoreIoEnginePhase, StoreIoError, StoreIoKind, StoreIoLimits,

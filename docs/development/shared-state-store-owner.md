@@ -115,6 +115,23 @@ change its command key or report a business abort.
 
 ## Cancellation and shutdown
 
+`reserve_operation` installs a bounded affine physical operation pin before
+claiming durable work or starting provider I/O. It retains exclusive root
+ownership through physical cleanup, without opening another native snapshot.
+`ProtectedStoreOperation::retire` and `ProtectedStoreView::retire` return a
+preallocated `StoreIoRetirement` receipt. The receipt becomes ready only after
+the fixed worker finishes the actual destructor and releases physical ownership.
+Command cleanup awaits native view/buffer retirement before retiring its own
+operation pin and accepting prior-owner proof. Dropping a receipt detaches
+observation without cancelling cleanup. Unexpected operation-pin drop
+quarantines and preserves its bounded reservation/root until process loss.
+
+The pin and receipt qualification passed all 73 state tests and strict Linux
+all-target/all-feature Clippy. Deterministic schedules prove receipt readiness
+waits through a paused destructor, detached waiters retain physical bytes, and
+operation pins preserve the real root lock through deadline quarantine while
+remaining able to retire after logical close.
+
 Dropping a job waiter detaches its response. An accepted queued or active write
 still runs once and keeps its buffers/reservation. Completed result memory stays
 charged until delivered or actually destroyed. Native view destruction is always
