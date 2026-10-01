@@ -309,6 +309,10 @@ def run(args):
             error_lifecycle = []
             for method in ('GET', 'HEAD'):
                 receipts.append(apply(client, 'generator-' + method.lower(), publications['generator-docs'], hosts['generator'], method=method))
+                body, fields = http_response(client, node, hosts['generator'], '/guide/missing', method=method,
+                    headers={'Accept': 'text/html'}, expected=404)
+                require(not body and fields['content-length'] == '0'
+                        and fields['cache-control'] == 'private, no-store', 'static-unconfigured-error-wire-body')
             error_lifecycle.append(browser(client, args, hosts, 'B', mode='error-unconfigured'))
             for method in ('GET', 'HEAD'):
                 receipts.append(apply(client, 'generator-' + method.lower(), publications['generator'], hosts['generator'], method=method))
