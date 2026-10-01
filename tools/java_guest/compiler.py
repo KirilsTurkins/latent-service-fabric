@@ -207,6 +207,8 @@ class Compiler:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_bytes(data)
             shutil.copytree(self.sdk / "server/services", project / "src/main/resources")
+            with (project / "build.gradle").open("a", encoding="utf-8") as build:
+                build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")
             target = java_root / path.relative_to(sources)
