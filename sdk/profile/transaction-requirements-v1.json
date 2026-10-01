@@ -103,7 +103,7 @@
       {
         "service": "latent.transaction.v1.TransactionService",
         "source": "api/proto/latent/transaction/v1/transaction.proto",
-        "sourceSha256": "sha256:bd84dd30f70d9281d3ef067b61eece0a56d65f6494d3e6fcb599b79cf0011db3",
+        "sourceSha256": "sha256:d6ec8c0bc77c032933a0d2bf01807f3bc91bed360197e371a739ecc90b8b4620",
         "operations": [
           {
             "name": "InvokeCommand",
@@ -181,7 +181,7 @@
       {
         "service": "latent.control.v1.StateService",
         "source": "api/proto/latent/control/v1/state.proto",
-        "sourceSha256": "sha256:ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
+        "sourceSha256": "sha256:f2f98d9974ef0afe014b30978eacee03310bb86f25d70cefb7e8591130e19901",
         "operations": [
           {
             "name": "MutateNamespace",
@@ -204,6 +204,11 @@
             "response": "MutateStateResponse"
           },
           {
+            "name": "PlanEffectMutation",
+            "request": "PlanEffectMutationRequest",
+            "response": "PlanEffectMutationResponse"
+          },
+          {
             "name": "GetStateOperationReceipt",
             "request": "GetStateOperationReceiptRequest",
             "response": "GetStateOperationReceiptResponse"
@@ -220,6 +225,10 @@
           "SelectEntityRequest",
           "EntityInspection",
           "SelectEntityResponse",
+          "PlanEffectMutationRequest",
+          "EffectManagementPlan",
+          "PlanEffectMutationResponse",
+          "EffectManagementReceiptDetails",
           "MutateStateRequest",
           "StateOperationReceipt",
           "GetStateOperationReceiptRequest",
@@ -231,7 +240,9 @@
           "NamespaceStatus",
           "NamespaceMutationKind",
           "StateOperationDisposition",
-          "StateMutationKind"
+          "StateMutationKind",
+          "EffectPlanSafety",
+          "EffectManagementFact"
         ]
       },
       {

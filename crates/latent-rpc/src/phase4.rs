@@ -5,6 +5,7 @@
 
 mod bounds;
 mod dispatcher;
+mod effect_management;
 mod profile;
 mod request;
 mod response;
@@ -45,6 +46,7 @@ pub enum Request {
     MutateNamespace(Box<control::MutateNamespaceRequest>),
     SelectEntity(Box<control::SelectEntityRequest>),
     MutateState(Box<control::MutateStateRequest>),
+    PlanEffectMutation(Box<control::PlanEffectMutationRequest>),
     GetStateOperationReceipt(Box<control::GetStateOperationReceiptRequest>),
     InvokeCommand(Box<transaction::InvokeCommandRequest>),
     Query(Box<transaction::QueryRequest>),
@@ -64,6 +66,7 @@ pub enum Response {
     MutateNamespace(Box<control::MutateNamespaceResponse>),
     SelectEntity(Box<control::SelectEntityResponse>),
     MutateState(Box<control::MutateStateResponse>),
+    PlanEffectMutation(Box<control::PlanEffectMutationResponse>),
     GetStateOperationReceipt(Box<control::GetStateOperationReceiptResponse>),
     InvokeCommand(Box<transaction::InvokeCommandResponse>),
     Query(Box<transaction::QueryResponse>),
@@ -95,6 +98,7 @@ conversion!(Request;
     (GetDispatcherOperation,control::GetDispatcherOperationRequest),
     (InspectNamespace,control::InspectNamespaceRequest),(MutateNamespace,control::MutateNamespaceRequest),
     (SelectEntity,control::SelectEntityRequest),(MutateState,control::MutateStateRequest),
+    (PlanEffectMutation,control::PlanEffectMutationRequest),
     (GetStateOperationReceipt,control::GetStateOperationReceiptRequest),(InvokeCommand,transaction::InvokeCommandRequest),
     (Query,transaction::QueryRequest),(LookupCommand,transaction::LookupCommandRequest),
     (LookupCommit,transaction::LookupCommitRequest),(GetEffect,transaction::GetEffectRequest),
@@ -104,6 +108,7 @@ conversion!(Response;
     (GetDispatcherOperation,control::GetDispatcherOperationResponse),
     (InspectNamespace,control::InspectNamespaceResponse),(MutateNamespace,control::MutateNamespaceResponse),
     (SelectEntity,control::SelectEntityResponse),(MutateState,control::MutateStateResponse),
+    (PlanEffectMutation,control::PlanEffectMutationResponse),
     (GetStateOperationReceipt,control::GetStateOperationReceiptResponse),(InvokeCommand,transaction::InvokeCommandResponse),
     (Query,transaction::QueryResponse),(LookupCommand,transaction::LookupCommandResponse),
     (LookupCommit,transaction::LookupCommitResponse),(GetEffect,transaction::GetEffectResponse),
@@ -128,6 +133,7 @@ encoded_len!(
     MutateNamespace,
     SelectEntity,
     MutateState,
+    PlanEffectMutation,
     GetStateOperationReceipt,
     InvokeCommand,
     Query,
@@ -146,6 +152,7 @@ encoded_len!(
     MutateNamespace,
     SelectEntity,
     MutateState,
+    PlanEffectMutation,
     GetStateOperationReceipt,
     InvokeCommand,
     Query,
@@ -200,6 +207,7 @@ impl Request {
                 | Self::MutateNamespace(_)
                 | Self::SelectEntity(_)
                 | Self::MutateState(_)
+                | Self::PlanEffectMutation(_)
                 | Self::GetStateOperationReceipt(_)
         )
     }

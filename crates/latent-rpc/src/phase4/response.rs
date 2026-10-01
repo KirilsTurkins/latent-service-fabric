@@ -46,18 +46,39 @@ pub(super) fn validate(response: &Response, original: &Request) -> Result<(), Va
         ) => {
             let target = required(original.namespace.as_ref())?;
             match (&value.receipt, &value.namespace_receipt) {
-                (Some(value), None) => state_receipt(&mut b, value, target, &original.operation_id),
-                (None, Some(value)) => {
-                    namespace_receipt(&mut b, value, target, &original.operation_id)
+                (Some(receipt), None) => {
+                    state_receipt(&mut b, receipt, target, &original.operation_id)?;
+                    match (&receipt.effect, &original.original_effect_plan) {
+                        (Some(_), Some(plan)) => {
+                            super::effect_management::receipt(&mut b, receipt, plan)?
+                        }
+                        (None, None) => {}
+                        _ => return Err(ValidationError::Association),
+                    }
                 }
-                _ => Err(ValidationError::Shape),
+                (None, Some(value)) => {
+                    if original.original_effect_plan.is_some() {
+                        return Err(ValidationError::Association);
+                    }
+                    namespace_receipt(&mut b, value, target, &original.operation_id)?;
+                }
+                _ => return Err(ValidationError::Shape),
             }
+            audit(&mut b, value.audit_ack.as_ref())
         }
         (Response::SelectEntity(value), Request::SelectEntity(original)) => {
             validate_select_entity(&mut b, value, original)
         }
         (Response::MutateState(value), Request::MutateState(original)) => {
             validate_mutate_state(&mut b, value, original)
+        }
+        (Response::PlanEffectMutation(value), Request::PlanEffectMutation(original)) => {
+            let plan = required(value.plan.as_ref())?;
+            super::effect_management::plan(&mut b, plan)?;
+            if plan.original.as_ref() != Some(&**original) {
+                return Err(ValidationError::Association);
+            }
+            audit(&mut b, value.audit_ack.as_ref())
         }
         (Response::LookupCommand(value), Request::LookupCommand(original)) => {
             validate_lookup_command(&mut b, value, original)
@@ -173,7 +194,8 @@ fn state_receipt(
             c::StateMutationKind::RetryKnownFailedEffect
             | c::StateMutationKind::TerminateEffect
             | c::StateMutationKind::PurgeExpiredPayload
-            | c::StateMutationKind::CheckpointNamespace,
+            | c::StateMutationKind::CheckpointNamespace
+            | c::StateMutationKind::ReconcileEffect,
         ) => Ok(()),
         _ => Err(ValidationError::Shape),
     }
@@ -375,6 +397,19 @@ fn effect(
     b.optional_id(value.provider_receipt.as_ref())?;
     b.optional_id(value.failure_code.as_ref())?;
     b.optional_id(value.management_operation_receipt_id.as_ref())?;
+    if !value.record_version.is_empty() {
+        super::effect_management::version(b, &value.record_version)?;
+    } else {
+        b.bytes(&value.record_version, 32)?;
+    }
+    if !matches!(
+        (value.owner_epoch, value.claim_generation),
+        (None, None) | (Some(1..), Some(1..))
+    ) || (value.owner_epoch.is_some()
+        && (value.dispatch_attempt == 0 || value.dispatch_attempt > 128))
+    {
+        return Err(ValidationError::Shape);
+    }
     if value.effect_id != effect_id {
         return Err(ValidationError::Association);
     }
@@ -390,7 +425,9 @@ fn effect(
             | t::EffectDisposition::UncertainAfterDispatch
             | t::EffectDisposition::Expired
             | t::EffectDisposition::PolicyBlocked
-            | t::EffectDisposition::AdministrativelyTerminated,
+            | t::EffectDisposition::AdministrativelyTerminated
+            | t::EffectDisposition::RetryScheduled
+            | t::EffectDisposition::DeadLettered,
         ) => Ok(()),
         _ => Err(ValidationError::Shape),
     }
@@ -504,6 +541,10 @@ fn validate_inspect_namespace(
     b.id(&value.engine_profile)?;
     b.string(&value.engine_profile_digest, 71)?;
     digest(&value.engine_profile_digest)?;
+    b.string(&value.namespace_policy_digest, 71)?;
+    if !value.namespace_policy_digest.is_empty() {
+        digest(&value.namespace_policy_digest)?;
+    }
     b.sequence(&value.retained_formats, 128)?;
     for value in &value.retained_formats {
         retention(b, value)?;
@@ -617,6 +658,11 @@ fn validate_mutate_state(
         || receipt.policy_digest != original.expected_policy_digest
     {
         return Err(ValidationError::Association);
+    }
+    match (&receipt.effect, &original.effect_plan) {
+        (Some(_), Some(plan)) => super::effect_management::receipt(b, receipt, plan)?,
+        (None, None) => {}
+        _ => return Err(ValidationError::Association),
     }
     audit(b, value.audit_ack.as_ref())
 }

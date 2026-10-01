@@ -4020,6 +4020,12 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "phase4::effect_management::tests::absent_old_version_and_hidden_large_buffer_cannot_authorize_planning",
+        "phase4::effect_management::tests::applying_plan_preserves_original_cas_action_reason_and_publication",
+        "phase4::effect_management::tests::fresh_read_publication_does_not_rewrite_original_plan",
+        "phase4::effect_management::tests::historical_receipt_keeps_expired_plan_and_independent_unknown_audit",
+        "phase4::effect_management::tests::lookup_and_dedup_safety_need_original_attempt_and_finite_horizon",
+        "phase4::effect_management::tests::provider_confirmation_cannot_be_an_administrator_declaration",
         "phase4::tests::business_rejection_remains_durable_without_application_commit",
         "phase4::tests::compatible_current_publication_preserves_original_retained_source",
         "phase4::tests::create_preserves_present_zero_and_requires_finite_configuration",
@@ -4043,7 +4049,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-rpc/Cargo.toml",
-      "minimumCases": 17,
+      "minimumCases": 23,
       "mode": "libtest",
       "package": "latent-rpc",
       "platforms": [
