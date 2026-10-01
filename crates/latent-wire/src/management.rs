@@ -145,6 +145,10 @@ impl ManagementServiceAdapter {
         &self.limits
     }
 
+    pub(crate) fn shared_services(&self) -> ManagementServices {
+        self.services.clone()
+    }
+
     fn authenticate<T>(
         &self,
         request: &mut Request<T>,

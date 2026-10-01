@@ -6,6 +6,8 @@ The Phase 4 definition profile is `lsf-transaction-v1`, with host ABI
 This is a contract definition. It installs no engine, transport integration or
 authority. Unsupported profiles fail before execution. The supported stateless
 V4 profile and existing invocation field numbers retain their meanings.
+The [authenticated native management boundary](state-management.md) specifies
+current access selectors, explicit operation recovery and response ownership.
 The unsupported state 0.1 declaration with guest `begin`/`commit` is retired;
 historical release and evidence bytes remain unchanged.
 

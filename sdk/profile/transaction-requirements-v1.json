@@ -103,7 +103,7 @@
       {
         "service": "latent.transaction.v1.TransactionService",
         "source": "api/proto/latent/transaction/v1/transaction.proto",
-        "sourceSha256": "sha256:00f58cd0d2f6b257b9966b2a1430c610092739095603f54ef8959a02ab3059fd",
+        "sourceSha256": "sha256:bd84dd30f70d9281d3ef067b61eece0a56d65f6494d3e6fcb599b79cf0011db3",
         "operations": [
           {
             "name": "InvokeCommand",
@@ -181,8 +181,13 @@
       {
         "service": "latent.control.v1.StateService",
         "source": "api/proto/latent/control/v1/state.proto",
-        "sourceSha256": "sha256:f713342ff520152036f4dd257fd16a1276f349b5c0a74241c3d958068eededaa",
+        "sourceSha256": "sha256:ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
         "operations": [
+          {
+            "name": "MutateNamespace",
+            "request": "MutateNamespaceRequest",
+            "response": "MutateNamespaceResponse"
+          },
           {
             "name": "InspectNamespace",
             "request": "InspectNamespaceRequest",
@@ -206,7 +211,12 @@
         ],
         "messages": [
           "InspectNamespaceRequest",
+          "NamespaceQuota",
+          "NamespaceConfiguration",
           "NamespaceInspection",
+          "MutateNamespaceRequest",
+          "NamespaceOperationReceipt",
+          "MutateNamespaceResponse",
           "SelectEntityRequest",
           "EntityInspection",
           "SelectEntityResponse",
@@ -218,6 +228,9 @@
           "GetStateOperationReceiptResponse"
         ],
         "enums": [
+          "NamespaceStatus",
+          "NamespaceMutationKind",
+          "StateOperationDisposition",
           "StateMutationKind"
         ]
       }

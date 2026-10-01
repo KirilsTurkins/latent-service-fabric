@@ -24,6 +24,11 @@ deployment names the actual component digest. The generated deployment also need
 Every group and leaf supports `--help`. Global options can appear before or after
 the command.
 
+The opt-in Phase 4 `state` and `transaction` groups use the
+[authenticated transaction management boundary](../protocol/state-management.md).
+They require a node composed with its actual transaction runtime and current
+namespace/result permissions; protocol definitions do not install that runtime.
+
 | Command | Behavior |
 | --- | --- |
 | `validate capsule FILE` | Bounded schema and stateless semantic checks, without credentials or a connection. |
