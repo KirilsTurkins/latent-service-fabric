@@ -6432,14 +6432,18 @@
         "clock_wait_does_not_renew_an_expired_original_admission_lease",
         "clock_wait_never_replaces_a_revoked_original_policy",
         "dropping_actual_clock_wait_drops_store_and_all_pending_owners",
-        "legacy_clock_without_explicit_timer_still_fails_closed_on_real_fence"
+        "dropping_real_session_currentness_wait_retires_prepared_owner_without_guest",
+        "legacy_clock_without_explicit_timer_still_fails_closed_on_real_fence",
+        "legacy_session_without_timer_fails_closed_before_store_or_guest",
+        "real_session_currentness_wait_precedes_store_registration_and_calls_guest_once",
+        "real_session_wait_keeps_original_cancellation_and_lease_expiry"
       ],
       "expectedIgnored": [],
       "id": "latent-wasmtime.test.clock-admission",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 5,
+      "minimumCases": 9,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
