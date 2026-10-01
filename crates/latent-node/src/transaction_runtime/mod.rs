@@ -3,6 +3,7 @@ mod authorization;
 mod host;
 mod initialization;
 mod io;
+pub mod query;
 pub use authorization::{PolicyCallBinding, StateAuthorization};
 
 use latent_commit::atomic::{

@@ -19,6 +19,7 @@ latent-commit = { path = "../latent-commit" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
 latent-effects = { path = "../latent-effects" }
+latent-manifest = { path = "../latent-manifest" }
 latent-policy = { path = "../latent-policy" }
 latent-routing = { path = "../latent-routing" }
 latent-scheduler = { path = "../latent-scheduler" }
@@ -27,5 +28,4 @@ latent-telemetry = { path = "../latent-telemetry" }
 tokio.workspace = true
 
 [dev-dependencies]
-latent-manifest = { path = "../latent-manifest" }
 tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }
