@@ -12,7 +12,14 @@ ROOT = Path(__file__).resolve().parents[1]
 PLATFORM_WIT = ROOT / "wit" / "platform"
 DEFAULT_SOURCE = PLATFORM_WIT / "runtime"
 PACKAGE = re.compile(r"\bpackage\s+([^\s;]+)\s*;")
-REFERENCE = re.compile(r"\b([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/[a-z][a-z0-9-]*@([0-9][a-zA-Z0-9.+-]*)")
+# A WIT `use ...@0.2.0.{type}` reference ends its version before the dot.
+# SemVer suffixes require an identifier after each dot, so that separator cannot
+# be swallowed as part of an otherwise valid imported package version.
+REFERENCE = re.compile(
+    r"\b([a-z][a-z0-9-]*:[a-z][a-z0-9-]*)/[a-z][a-z0-9-]*@"
+    r"([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)"
+)
 
 
 def source_text(source: Path) -> str:
