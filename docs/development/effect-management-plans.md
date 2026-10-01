@@ -7,6 +7,13 @@ physical-attempt history. Their data never supplies a grant. The authenticated
 gateway must retain its original current operator, publication, namespace and
 data-read decisions and apply the prepared batch under the actual writer fence.
 
+Recovery-scope selectors resolve through immutable, bounded installation
+bindings before native admission. An absent selector selects the authenticated
+original caller; an unknown selector or incompatible service principal fails
+before lookup. A configured shared or delegated scope describes the target and
+still requires current publication and data-read permission. It supplies no
+grant, and the bindings cannot be replaced after the backend is shared.
+
 Dispatcher pause/resume and manual effect writes share the acceptance order:
 dispatcher role, original operator policy, state policy and namespace lifecycle
 when applicable, original effect rules, then the original native request gate.
