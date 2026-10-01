@@ -1,0 +1,244 @@
+{
+  "cases": [
+    "FrozenHostProfiles.test_changed_component_prevents_v5_package_report",
+    "FrozenHostProfiles.test_changed_v5_manifest_prevents_package_report",
+    "FrozenHostProfiles.test_declaration_shape_duplicates_and_count_remain_bounded",
+    "FrozenHostProfiles.test_default_v4_cannot_fall_back_after_emitted_runtime_import",
+    "FrozenHostProfiles.test_existing_v4_inspection_shape_and_manifest_identity_are_preserved",
+    "FrozenHostProfiles.test_explicit_v5_does_not_authorize_undeclared_imports",
+    "FrozenHostProfiles.test_explicit_v5_inspection_and_package_bind_both_identities_without_authority",
+    "FrozenHostProfiles.test_failure_report_preserves_v5_profile_and_blocking_observations",
+    "FrozenHostProfiles.test_manifest_id_must_match_explicit_profile",
+    "FrozenHostProfiles.test_missing_inspection_does_not_claim_success_for_declared_v5",
+    "FrozenHostProfiles.test_missing_v5_manifest_never_substitutes_available_v4",
+    "FrozenHostProfiles.test_only_exact_declared_new_interfaces_select_v5",
+    "FrozenHostProfiles.test_preinspection_compile_failure_uses_authoritative_declared_v5_surface",
+    "FrozenHostProfiles.test_stale_manifest_reporting_preserves_original_compiler_error",
+    "FrozenHostProfiles.test_unknown_profile_is_rejected_before_tool_dispatch",
+    "FrozenHostProfiles.test_unsupported_versions_remain_unknown_under_explicit_v5",
+    "FrozenHostProfiles.test_v5_profile_cannot_be_removed_to_launder_inspection_as_v4",
+    "FrozenHostProfiles.test_v5_recognition_cannot_turn_http_grants_into_runtime_or_socket_grants"
+  ],
+  "guards": {
+    "FrozenHostProfiles.test_changed_component_prevents_v5_package_report": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_changed_v5_manifest_prevents_package_report": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_declaration_shape_duplicates_and_count_remain_bounded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_default_v4_cannot_fall_back_after_emitted_runtime_import": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_existing_v4_inspection_shape_and_manifest_identity_are_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_explicit_v5_does_not_authorize_undeclared_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_explicit_v5_inspection_and_package_bind_both_identities_without_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_failure_report_preserves_v5_profile_and_blocking_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_manifest_id_must_match_explicit_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_missing_inspection_does_not_claim_success_for_declared_v5": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_missing_v5_manifest_never_substitutes_available_v4": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_only_exact_declared_new_interfaces_select_v5": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_preinspection_compile_failure_uses_authoritative_declared_v5_surface": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_stale_manifest_reporting_preserves_original_compiler_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_unknown_profile_is_rejected_before_tool_dispatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_unsupported_versions_remain_unknown_under_explicit_v5": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_v5_profile_cannot_be_removed_to_launder_inspection_as_v4": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "FrozenHostProfiles.test_v5_recognition_cannot_turn_http_grants_into_runtime_or_socket_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:76d814ee340f82e378e00fb4b10387252266d6bc45170a8116e79f28b78f7149",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_guest_compatibility_profiles.py",
+  "reviewReason": "Add exact declared V5 selection, unchanged V4 receipts, stale manifest and no authority/fallback controls; retain all historical cases",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

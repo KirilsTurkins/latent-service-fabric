@@ -81,7 +81,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             write_json(output / "bindings.json", generated)
             surface = read_json(derived / "surface.json")
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, compiler.wasm, output, surface)
+            guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,
+                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
