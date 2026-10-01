@@ -20,6 +20,7 @@ impl DispatchCatalog {
     /// Other families/prefixes are left to the complete command registry. No
     /// native view, engine owner or materialized backlog escapes this callback.
     pub fn validate_view(view: &ReadView) -> Result<(), StoreError> {
+        crate::dispatch_store::control::ControlCatalog::validate_view(view)?;
         let owner = view
             .get(&OwnerRecord::key())?
             .as_deref()

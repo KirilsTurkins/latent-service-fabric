@@ -7,7 +7,8 @@ use latent_state::store_io::StoreIoSnapshot;
 use serde::Serialize;
 use tokio::sync::Notify;
 
-use super::{DispatcherConfig, DispatcherError};
+use super::control::{DispatcherControlSnapshot, RestoreReview};
+use super::{DispatcherConfig, DispatcherControlGeneration, DispatcherError};
 
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,6 +25,7 @@ pub struct DispatcherSnapshot {
     pub physical_owners: usize,
     pub quarantined_physical_owners: usize,
     pub paused: bool,
+    pub control: DispatcherControlSnapshot,
     pub admission_closed: bool,
     pub quarantined: bool,
     pub failure: Option<&'static str>,
@@ -40,11 +42,13 @@ pub struct DispatcherShutdown {
     pub snapshot: DispatcherSnapshot,
 }
 
-#[derive(Default)]
 pub(super) struct State {
     pub closed: bool,
     pub paused: bool,
     pub failure: Option<DispatcherError>,
+    pub control_generation: DispatcherControlGeneration,
+    pub pending_control: Option<super::control::PendingControl>,
+    pub restore_review: RestoreReview,
     effects: BTreeSet<String>,
     tenants: BTreeMap<String, usize>,
     pub claims: u64,
@@ -65,11 +69,29 @@ impl State {
 }
 
 impl Shared {
-    pub fn new(paused: bool) -> Self {
+    pub fn new(
+        paused: bool,
+        epoch: crate::dispatch_store::DispatchEpoch,
+        restore_review: bool,
+    ) -> Self {
         Self {
             state: Mutex::new(State {
-                paused,
-                ..State::default()
+                paused: paused || restore_review,
+                closed: false,
+                failure: None,
+                control_generation: DispatcherControlGeneration::initial(epoch.generation()),
+                pending_control: None,
+                restore_review: if restore_review {
+                    RestoreReview::Required
+                } else {
+                    RestoreReview::Clear
+                },
+                effects: BTreeSet::new(),
+                tenants: BTreeMap::new(),
+                claims: 0,
+                counts: DispatchCounts::default(),
+                counts_time: 0,
+                scheduling_retired: false,
             }),
             notify: Notify::new(),
         }
@@ -137,6 +159,11 @@ impl Shared {
             physical_owners: owners.physical,
             quarantined_physical_owners: owners.quarantined,
             paused: state.paused,
+            control: DispatcherControlSnapshot {
+                generation: state.control_generation,
+                pending: state.pending_control.is_some(),
+                restore_review_required: state.restore_review.is_required(),
+            },
             admission_closed: state.closed || jobs.admission_closed,
             quarantined: jobs.quarantined || owners.quarantined != 0 || state.failure.is_some(),
             failure: state.failure.map(failure_name),
