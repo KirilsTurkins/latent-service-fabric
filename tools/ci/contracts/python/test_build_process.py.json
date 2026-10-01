@@ -1,0 +1,275 @@
+{
+  "cases": [
+    "BuildProcessTests.test_binary_output_exact_combined_limit_and_overflow",
+    "BuildProcessTests.test_cancellation_cleans_descendant_before_propagating",
+    "BuildProcessTests.test_competing_reaper_never_signals_unreserved_group",
+    "BuildProcessTests.test_deadline_cleans_descendant_and_preserves_unrelated_process",
+    "BuildProcessTests.test_failed_job_assignment_never_runs_recipe",
+    "BuildProcessTests.test_flood_is_bounded_and_creates_no_reader_threads",
+    "BuildProcessTests.test_limits_reject_before_spawning",
+    "BuildProcessTests.test_nonzero_output_and_spawn_error_are_redacted",
+    "BuildProcessTests.test_opt_in_diagnostics_do_not_disable_process_output_limits",
+    "BuildProcessTests.test_opt_in_nonzero_diagnostics_preserve_status_and_both_streams",
+    "BuildProcessTests.test_repeated_success_and_failure_do_not_retain_handles_or_threads",
+    "BuildProcessTests.test_second_cancellation_during_cleanup_cannot_skip_termination",
+    "BuildProcessTests.test_signal_before_cleanup_context_entry_cannot_abandon_owner",
+    "BuildProcessTests.test_signal_during_constructor_is_deferred_until_child_is_owned",
+    "BuildProcessTests.test_sigterm_during_capture_runs_cleanup_before_exit",
+    "BuildProcessTests.test_silent_deadline_reaps_leader",
+    "BuildProcessTests.test_successful_early_parent_exit_cleans_inherited_pipe_descendant"
+  ],
+  "guards": {
+    "BuildProcessTests.test_binary_output_exact_combined_limit_and_overflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_cancellation_cleans_descendant_before_propagating": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_competing_reaper_never_signals_unreserved_group": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux exclusive reaper ownership')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": [
+        "skip-control-sha256:4121f61eb49f00e29bc58109e1f5ec366da468a50446805aad2462659a51bab7",
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux exclusive reaper ownership')"
+      ]
+    },
+    "BuildProcessTests.test_deadline_cleans_descendant_and_preserves_unrelated_process": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_failed_job_assignment_never_runs_recipe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'nt', 'Windows suspended-start ownership')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": [
+        "skip-control-sha256:f202e8c0e94c1c10b00df372c873a57bfd440a96afe0aeb1b55319ab07e69800",
+        "unittest.skipUnless(os.name == 'nt', 'Windows suspended-start ownership')"
+      ]
+    },
+    "BuildProcessTests.test_flood_is_bounded_and_creates_no_reader_threads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_limits_reject_before_spawning": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_nonzero_output_and_spawn_error_are_redacted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_opt_in_diagnostics_do_not_disable_process_output_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_opt_in_nonzero_diagnostics_preserve_status_and_both_streams": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_repeated_success_and_failure_do_not_retain_handles_or_threads": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_second_cancellation_during_cleanup_cannot_skip_termination": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_signal_before_cleanup_context_entry_cannot_abandon_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_signal_during_constructor_is_deferred_until_child_is_owned": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_sigterm_during_capture_runs_cleanup_before_exit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_silent_deadline_reaps_leader": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    },
+    "BuildProcessTests.test_successful_early_parent_exit_cleans_inherited_pipe_descendant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(os.name == 'nt' or sys.platform == 'linux', 'supported process platform')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:52131776d9a81e2943d428b36f167924cfc1ecfb72a8e8d48cf81399194d5541",
+        "class:setup-sha256:a54e32c7e55eb0fb1e7a4f48f92aadd4c0c5b4a3a490975ef727950c4385f949"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_build_process.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

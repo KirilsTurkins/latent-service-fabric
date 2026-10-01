@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "ActualCatalogTests.test_actual_initial_reopen_and_allocation_functional_graphs",
+    "ActualCatalogTests.test_actual_source_sampler_rows_keep_clock_identity",
+    "ActualCatalogTests.test_frame_requires_actual_calls_and_full_result_checks",
+    "ActualCatalogTests.test_native_runtime_counts_and_released_flags_have_closed_types",
+    "ActualCatalogTests.test_numeric_boolean_compiler_forgery_and_hidden_fetch_reject",
+    "ActualCatalogTests.test_old_pin_cannot_observe_updated_attributes_or_skip_policy",
+    "ActualCatalogTests.test_selected_revision_attributes_and_miss_reason_are_bound"
+  ],
+  "guards": {
+    "ActualCatalogTests.test_actual_initial_reopen_and_allocation_functional_graphs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e101adef5b0adcd50c053ca820deaf7615df368c94e8c64e0ead254b8a585e",
+        "class:setup-sha256:4e5862572d3994ed7be1a08be29bc261ef09203fa3505035b61e18d281f55e76"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogTests.test_actual_source_sampler_rows_keep_clock_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e101adef5b0adcd50c053ca820deaf7615df368c94e8c64e0ead254b8a585e",
+        "class:setup-sha256:4e5862572d3994ed7be1a08be29bc261ef09203fa3505035b61e18d281f55e76"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogTests.test_frame_requires_actual_calls_and_full_result_checks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e101adef5b0adcd50c053ca820deaf7615df368c94e8c64e0ead254b8a585e",
+        "class:setup-sha256:4e5862572d3994ed7be1a08be29bc261ef09203fa3505035b61e18d281f55e76"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogTests.test_native_runtime_counts_and_released_flags_have_closed_types": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e101adef5b0adcd50c053ca820deaf7615df368c94e8c64e0ead254b8a585e",
+        "class:setup-sha256:4e5862572d3994ed7be1a08be29bc261ef09203fa3505035b61e18d281f55e76"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogTests.test_numeric_boolean_compiler_forgery_and_hidden_fetch_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e101adef5b0adcd50c053ca820deaf7615df368c94e8c64e0ead254b8a585e",
+        "class:setup-sha256:4e5862572d3994ed7be1a08be29bc261ef09203fa3505035b61e18d281f55e76"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogTests.test_old_pin_cannot_observe_updated_attributes_or_skip_policy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e101adef5b0adcd50c053ca820deaf7615df368c94e8c64e0ead254b8a585e",
+        "class:setup-sha256:4e5862572d3994ed7be1a08be29bc261ef09203fa3505035b61e18d281f55e76"
+      ],
+      "skipSites": []
+    },
+    "ActualCatalogTests.test_selected_revision_attributes_and_miss_reason_are_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54e101adef5b0adcd50c053ca820deaf7615df368c94e8c64e0ead254b8a585e",
+        "class:setup-sha256:4e5862572d3994ed7be1a08be29bc261ef09203fa3505035b61e18d281f55e76"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_catalog_fixture.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

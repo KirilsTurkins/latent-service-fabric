@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/ci_fast.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "1390b3da76421fbdfd8941359b495e4b6441364724fe70aebc9d952dadb91eaf"
+}

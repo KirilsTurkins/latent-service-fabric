@@ -1,5 +1,10 @@
 # Phase 3 integrated runtime security conformance
 
+The current security baseline selects **Wasmtime 48.0.3**. References below to
+47.0.4 describe the earlier qualification, not the current supported dependency.
+See the [September security update](../development/wasmtime-security-update.md)
+for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+
 Issue [#238](https://github.com/KirilsTurkins/latent-service-fabric/issues/238)
 joins existing **executed guests, real scoped providers, shared ingress,
 durable catalogs and supervised children** into an exact, bounded selection.
@@ -26,7 +31,7 @@ remain one custom entry in the aggregate. The actual publication, T1 security
 profile, provider-management and Angular T1 workflows all passed.
 
 The run used Linux x86_64 (WSL2 kernel `6.6.87.2-microsoft-standard-WSL2`),
-Python 3.13.5, Rust 1.97.1 and Wasmtime 47.0.4 inside the explicitly owned
+Python 3.13.5, Rust 1.97.1 and Wasmtime 48.0.3 inside the explicitly owned
 2-CPU, 8-GiB container. Fixture and executable hashes are retained. Temporary
 outputs were removed, the enclosing container stopped, and its target volume
 was preserved. Root was limited to this disposable fixture environment; these
@@ -56,7 +61,7 @@ one complete bounded observation, not a universal liveness guarantee.
 | HTTP/browser isolation (#235) | `browser-ingress`, `web-component`, `actual-browser`, `actual-browser-application` | Six real Wasm web-component cases cover authentication, response delivery, deadlines, cutover and revocation. Two Chromium cases hydrate/navigate **Node-rendered SSR** over live shared ingress and check injection/CSP/MIME/origin boundaries. The public-application case executes the real public HTTP component and denies management RPC paths, credential forwarding and cookie-derived authentication. This is not browser hydration of Angular-Wasm output. |
 | Protected files and readiness (#278) | `protected-files`, `profile-startup`, `security-profile` workflow | Real descriptors, ACLs, ownership, FIFO/link/ancestor replacement and snapshot mutation fail closed. A privileged disposable fixture explicitly runs the otherwise ignored wrong-owner case. Real `check-config`/`serve` failures occur before readiness/storage creation. |
 | Publication identity, corrected SBOM and current authority (#267) | `parent-catalog-evidence`, `evidence-authority`, `current-trust`, `publication` workflow | Same component bytes with different packages/evidence remain independent across two tenants, revocation, renewal, restart and rollback. Historical receipts do not reissue current grants; legacy ambiguity is not resolved by first/latest selection. |
-| Parent parsing and native currentness (#279) | `parent-package-parsers`, `parent-catalog-evidence`, `evidence-authority`, `guest-native_aot_cache` | Bounded malformed metadata/evidence is rejected before preparation authority. Engine mismatch, replaced native bytes, wrong host key, revoked publication and stale trust cannot authorize deserialization/reuse. The runner first requires the reviewed Wasmtime **47.0.4** lock/toolchain boundary. |
+| Parent parsing and native currentness (#279) | `parent-package-parsers`, `parent-catalog-evidence`, `evidence-authority`, `guest-native_aot_cache` | Bounded malformed metadata/evidence is rejected before preparation authority. Engine mismatch, replaced native bytes, wrong host key, revoked publication and stale trust cannot authorize deserialization/reuse. The runner first requires the reviewed Wasmtime **48.0.3** lock/toolchain boundary. |
 | Real compiler failure and actual isolation (#273/#280) | `guest-isolated_aot`, `compiler-supervisor`, `compiler-sandbox`, `current-trust`, `security-profile` workflow | Real child PID/input rendezvous, kernel denial and reaping cover deadline, resource failure, crash, malformed output, cancellation and unrelated guest availability. The adversarial supervisor fixture is not the production sandbox; both mains run separately. Compiler containment is not guest-process containment. |
 | Native signed provider workflow (#226) | `provider-management` workflow | Existing real CLI/node/protected HTTP/blob workflow publishes maintained signed guests, invokes success/domain/denial paths, restarts, inspects exact selected revisions and revokes authority. Upstream request counts and clean provider/node shutdown are checked. No SDK participant or provider server is duplicated. |
 | Actual selected Angular under protected T1 (#226) | `fixture-angular`, `angular-t1` workflow | The maintained actual Angular build is freshly signed by the existing exporter, then the existing separate-node T1 runner checks enforced publisher/builder/SBOM admission, isolated compilation, selected renders, cancellation/disconnect reclamation, stale grants, independent same-component publication revocation and restart. A native-cache hit must be newer than the pre-restart high-water mark. No T0 receipt, backend grant, reference-app browser result or staged canary is substituted. |

@@ -1,0 +1,205 @@
+{
+  "cases": [
+    "DockerResources.test_actual_lsf_compiler_cleanup_and_quarantine_failures_reject",
+    "DockerResources.test_cgroup_controls_foreign_membership_unowned_process_and_regressed_cpu_reject",
+    "DockerResources.test_changed_child_ticks_namespace_and_outer_pid_reject",
+    "DockerResources.test_connections_events_snapshot_count_and_clock_bounds_reject",
+    "DockerResources.test_copy_join_conservation_forced_kill_and_output_eof_reject",
+    "DockerResources.test_derived_rss_fd_and_socket_rows_are_bound_to_raw",
+    "DockerResources.test_docker_still_rejects_unbounded_leaf_pids",
+    "DockerResources.test_inspect_controls_restart_oom_and_host_pid_confusion_reject",
+    "DockerResources.test_log_original_bytes_duplicate_records_and_line_bound_reject",
+    "DockerResources.test_optional_unavailable_metrics_remain_null_with_reasons",
+    "DockerResources.test_provider_extraction_keeps_docker_projection_exact",
+    "DockerResources.test_root_cgroup_mapping_preserves_actual_empty_join_spelling",
+    "DockerResources.test_seed_has_no_fabricated_start_namespace_or_connection_count",
+    "DockerResources.test_six_snapshots_bind_identity_and_separate_process_rss_from_one_cgroup",
+    "DockerResources.test_unmapped_cgroup_cannot_lend_observed_control_values"
+  ],
+  "guards": {
+    "DockerResources.test_actual_lsf_compiler_cleanup_and_quarantine_failures_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_cgroup_controls_foreign_membership_unowned_process_and_regressed_cpu_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_changed_child_ticks_namespace_and_outer_pid_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_connections_events_snapshot_count_and_clock_bounds_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_copy_join_conservation_forced_kill_and_output_eof_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_derived_rss_fd_and_socket_rows_are_bound_to_raw": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_docker_still_rejects_unbounded_leaf_pids": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_inspect_controls_restart_oom_and_host_pid_confusion_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_log_original_bytes_duplicate_records_and_line_bound_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_optional_unavailable_metrics_remain_null_with_reasons": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_provider_extraction_keeps_docker_projection_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_root_cgroup_mapping_preserves_actual_empty_join_spelling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_seed_has_no_fabricated_start_namespace_or_connection_count": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_six_snapshots_bind_identity_and_separate_process_rss_from_one_cgroup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    },
+    "DockerResources.test_unmapped_cgroup_cannot_lend_observed_control_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:715f35d368393c6bcc28782b82b6c24021d1a5c86fabbd982251a51d9d4d70ec",
+        "class:setup-sha256:7947c327b825dc0d6a31734e16e7feedadfefe0cdf45665a81fcfc3345a4c4e5"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_docker_resources.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

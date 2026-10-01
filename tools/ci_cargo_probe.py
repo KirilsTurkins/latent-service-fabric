@@ -102,7 +102,9 @@ def save_archive(target: Path, archive: Path) -> dict:
                     raise ValueError("workspace-product-survived-probe-pruning")
     if not files:
         raise ValueError("empty-probe-dependency-cache")
-    with tarfile.open(archive, "w:gz", compresslevel=1) as output:
+    # Materialize hard-linked Cargo products as regular archive members.
+    # Restore continues to reject every link entry.
+    with tarfile.open(archive, "w:gz", compresslevel=1, dereference=True) as output:
         for path in files:
             output.add(path, arcname=path.relative_to(target).as_posix(), recursive=False)
     return {"seconds": time.monotonic() - began, "archiveBytes": archive.stat().st_size,

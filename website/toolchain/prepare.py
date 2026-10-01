@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare a locked npm bundle without running downloaded package code.
 
-npm overrides do not replace bundled dependencies. Replace the complete two
+npm overrides do not replace bundled dependencies. Replace the complete three
 reviewed packages before npm executes, then authenticate the deterministic TAR
 against package-lock.json. This is a derived distribution, not an upstream npm
 release. All intermediate archives stay under ignored target/.
@@ -110,7 +110,7 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]]) -> bytes:
     names: set[str] = set()
     for pin, raw in patches:
         name = pin["name"]
-        if name not in {"ip-address", "undici"} or name in names:
+        if name not in {"ip-address", "undici", "brace-expansion"} or name in names:
             raise ValueError("unexpected bundle replacement")
         names.add(name)
         prefix = "package/node_modules/" + name + "/"
@@ -119,12 +119,28 @@ def compose(base: bytes, patches: list[tuple[dict, bytes]]) -> bytes:
         new = package(replacement)
         if old["name"] != name or old["version"] != pin["from"]:
             raise ValueError("unexpected original bundled package")
-        if new["name"] != name or new["version"] != pin["version"] or new.get("dependencies"):
+        expected = {"balanced-match": "^4.0.2"} if name == "brace-expansion" else {}
+        if (new["name"] != name or new["version"] != pin["version"]
+                or new.get("dependencies", {}) != expected
+                or new.get("optionalDependencies") or new.get("peerDependencies")
+                or new.get("bundleDependencies") or new.get("bundledDependencies")
+                or any(key.startswith("package/node_modules/") for key in replacement)):
             raise ValueError("replacement package graph requires review")
+        if name == "brace-expansion":
+            # The authenticated npm archive already contains this exact dependency.
+            # Do not resolve or install a new graph during source preparation.
+            dependency = package(files, "package/node_modules/balanced-match/")
+            if (old.get("dependencies") != expected
+                    or dependency.get("name") != "balanced-match" or dependency.get("version") != "4.0.4"
+                    or dependency.get("dependencies") or dependency.get("optionalDependencies")
+                    or dependency.get("peerDependencies")):
+                raise ValueError("replacement dependency graph requires review")
+            if any(key.startswith(prefix + "node_modules/") for key in files):
+                raise ValueError("shadowed replacement dependency requires review")
         files = {key: value for key, value in files.items() if not key.startswith(prefix)}
         for key, value in replacement.items():
             files[prefix + key.removeprefix("package/")] = value
-    if names != {"ip-address", "undici"}:
+    if names != {"ip-address", "undici", "brace-expansion"}:
         raise ValueError("incomplete bundle replacement")
     # An uncompressed USTAR has stable bytes across zlib/platform versions.
     output = io.BytesIO()

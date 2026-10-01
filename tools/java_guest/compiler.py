@@ -158,7 +158,8 @@ class Compiler:
             # each command's bounded exit/cleanup record beside its log anyway.
             write_json(self.directory / (str(len(self.records) - 1) + "-" + stage + ".command.json"), record)
 
-    def compile(self, sources: Path, wit: Path, world: str, destination: Path) -> tuple[Path, dict]:
+    def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
+                application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None) -> tuple[Path, dict]:
         destination.mkdir(parents=True, exist_ok=False)
         staged = destination / "wit"
         copy_wit_tree(wit, staged)
@@ -174,6 +175,14 @@ class Compiler:
         # Build script is owned by the SDK; applications supply Java and WIT,
         # never arbitrary Gradle plugins or unrecorded repository dependencies.
         (project / "build.gradle").write_bytes(read_file(self.sdk / "compiler.gradle"))
+        # Only already captured, selected JAR bytes enter this owned file-based
+        # classpath. No application repository, plugin or processor is installed.
+        for index, jar in enumerate(application_classpath):
+            target = project / "captured-application/jars" / f"{index:04d}.jar"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(read_file(jar, 64 * 1024 * 1024))
+        if application_resources is not None:
+            shutil.copytree(application_resources, project / "captured-application/resources")
         # Never let Gradle silently select or provision an unobserved JDK. This
         # generated private property file is part of this source-bound recipe.
         (project / "gradle.properties").write_text(

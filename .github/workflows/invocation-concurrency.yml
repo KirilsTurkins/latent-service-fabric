@@ -1,0 +1,76 @@
+name: Invocation concurrency research
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - '.github/workflows/invocation-concurrency.yml'
+      - 'research/invocation-concurrency/**'
+      - 'tools/run_invocation_concurrency.py'
+      - 'tools/build_process*.py'
+      - 'tools/toolchain-smoke/Cargo.toml'
+      - 'tools/toolchain.toml'
+      - 'crates/latent-component-bindings/**'
+      - 'Cargo.*'
+      - 'rust-toolchain.toml'
+  push:
+    branches: [development]
+    paths:
+      - '.github/workflows/invocation-concurrency.yml'
+      - 'research/invocation-concurrency/**'
+      - 'tools/run_invocation_concurrency.py'
+      - 'tools/build_process*.py'
+      - 'tools/toolchain-smoke/Cargo.toml'
+      - 'tools/toolchain.toml'
+      - 'crates/latent-component-bindings/**'
+      - 'Cargo.*'
+      - 'rust-toolchain.toml'
+
+permissions:
+  contents: read
+concurrency:
+  group: invocation-concurrency-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  experiment:
+    name: Bounded invocation concurrency experiment
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13.5'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          components: rustfmt
+          targets: wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: '1.254.0'
+      - id: evidence_tests
+        name: Reject incomplete research evidence
+        run: python3 -m unittest discover -s research/invocation-concurrency -p 'test_*.py'
+      - id: component_experiment
+        name: Build and run bounded actual components
+        run: python3 tools/run_invocation_concurrency.py --output "$RUNNER_TEMP/invocation-concurrency"
+      - id: formatting
+        name: Check research Rust formatting
+        run: rustfmt --edition 2021 --check research/invocation-concurrency/guest.rs research/invocation-concurrency/host.rs research/invocation-concurrency/scope.rs research/invocation-concurrency/memory.rs
+      - name: Retain source-bound successes and failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: invocation-concurrency-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/invocation-concurrency/receipt.json
+            ${{ runner.temp }}/invocation-concurrency/runtime.json
+            ${{ runner.temp }}/invocation-concurrency/actual.wit
+            ${{ runner.temp }}/invocation-concurrency/probe.wasm
+            ${{ runner.temp }}/invocation-concurrency/logs/**
+            ${{ runner.temp }}/invocation-concurrency/formatted/**
+          if-no-files-found: error
+          retention-days: 7

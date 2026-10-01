@@ -1,5 +1,10 @@
 # Angular renderer execution profile
 
+The current security baseline selects **Wasmtime 48.0.3**. References below to
+47.0.4 describe the earlier qualification, not the current supported dependency.
+See the [September security update](../development/wasmtime-security-update.md)
+for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+
 [ADR-0037](../../adr/0037-qualify-a-closed-angular-component-renderer-profile.md)
 selects `angular-ssr-component-v1` for the supported renderer adapter.
 The [executable fixture](../../examples/renderer-profile/README.md) qualifies
@@ -17,11 +22,11 @@ compatibility is not implied.
 
 | Input | Pinned value |
 | --- | --- |
-| Angular core/common/compiler/compiler-cli/platform-browser/platform-server | 22.1.7; full AOT, zoneless, server rendering and client hydration |
+| Angular core/common/compiler/compiler-cli/platform-browser/platform-server | 22.2.0; full AOT, zoneless, server rendering and client hydration |
 | TypeScript / Babel / esbuild / RxJS | 6.0.3 / 8.0.1 / 0.28.2 / 7.8.2 |
 | Build Node / ComponentizeJS / jco | 24.19.0 / 0.22.0 / 1.34.0 |
 | JavaScript guest engine | ComponentizeJS's packaged `starlingmonkey_embedding.wasm`, identified by its observed SHA-256 and npm integrity-locked inputs |
-| Native execution | Wasmtime 47.0.4, Cranelift speed, on-demand allocation, fuel and epoch interruption, Component Model and async types enabled |
+| Native execution | Wasmtime 48.0.3, Cranelift speed, on-demand allocation, fuel and epoch interruption, Component Model and async types enabled |
 | Public application contract | `latent:web/application@0.1.0`, buffered V1, async `handle`; unchanged |
 | Qualification-only interface | `lsf:renderer-qualification/renderer`, synchronous `render` plus adversarial `probe`; no imports |
 

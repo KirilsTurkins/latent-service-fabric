@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "HostAbiProfileTests.test_active_and_historical_generator_mismatches_are_rejected",
+    "HostAbiProfileTests.test_frozen_matrix_matches_exact_sources_world_and_pinned_generators"
+  ],
+  "guards": {
+    "HostAbiProfileTests.test_active_and_historical_generator_mismatches_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:59a390a5427cbe400fa3ca4c719ef49ecb6f0a91dedd0677bbd81986a71bda16",
+        "class:setup-sha256:a36c55b12adb2d7a72f7d8de4ac81f51eda4c3a0bf1fba0685a00b5dfb57006f"
+      ],
+      "skipSites": []
+    },
+    "HostAbiProfileTests.test_frozen_matrix_matches_exact_sources_world_and_pinned_generators": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:59a390a5427cbe400fa3ca4c719ef49ecb6f0a91dedd0677bbd81986a71bda16",
+        "class:setup-sha256:a36c55b12adb2d7a72f7d8de4ac81f51eda4c3a0bf1fba0685a00b5dfb57006f"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_abi_profile.py",
+  "reviewReason": "Reviewed Wasmtime 48.0.3 fixture identities and unchanged skip/execution controls; preserve every existing case. Add exact frozen ABI generator rejection and bounded compiler-cache regression coverage where applicable.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

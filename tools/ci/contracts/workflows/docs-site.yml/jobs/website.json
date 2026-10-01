@@ -1,0 +1,69 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Static site, examples and browser journeys",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "name": "Install the reviewed website dependency graph without lifecycle scripts",
+        "run": "python3 -m unittest discover -s website/toolchain/tests -v\npython3 website/toolchain/prepare.py\nnpm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\necho \"$GITHUB_WORKSPACE/website/toolchain/node_modules/.bin\" >> \"$GITHUB_PATH\"\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund\n"
+      },
+      {
+        "name": "Verify the selected package manager identity",
+        "run": "test \"$(npm --version)\" = '11.19.1'\nnode website/scripts/check-package-manager.mjs\n"
+      },
+      {
+        "name": "Check metadata, source extraction, types and unit regressions",
+        "run": "npm run check\nnpm test\n",
+        "working-directory": "website"
+      },
+      {
+        "name": "Build both supported static base paths",
+        "run": "npm run build\nnpm run build:root\n",
+        "working-directory": "website"
+      },
+      {
+        "name": "Install the pinned test browser and its OS prerequisites",
+        "run": "node node_modules/playwright/cli.js install-deps chromium\nnpm run browser:install\n",
+        "working-directory": "website"
+      },
+      {
+        "name": "Verify production pages, theme and source-backed controls",
+        "run": "npm run test:build\nnpm run test:theme\nnpm run test:examples\nnpm run test:versions\nnpm run test:discovery\n",
+        "working-directory": "website"
+      },
+      {
+        "name": "Retain only the tested site and compact browser receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "compression-level": 6,
+          "if-no-files-found": "error",
+          "include-hidden-files": true,
+          "name": "docs-site-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "website/build/project/\nwebsite/.generated/build-evidence.json\nwebsite/.generated/theme-review/evidence.json\nwebsite/.generated/code-example-review/evidence.json\nwebsite/.generated/version-review/evidence.json\nwebsite/.generated/discovery-review/evidence.json\n",
+          "retention-days": 14
+        }
+      }
+    ],
+    "timeout-minutes": 40
+  },
+  "jobId": "website",
+  "kind": "job",
+  "reviewReason": "Preserve every website command and its existing finite limit; run 36783140060 job 110142455876 completed the version matrix after 27 minutes and the 30-minute job deadline interrupted the final five-minute discovery journey. Allow 40 minutes for the full bounded matrix and receipt upload/cleanup.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/docs-site.yml"
+}

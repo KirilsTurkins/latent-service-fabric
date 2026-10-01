@@ -77,7 +77,9 @@ def cache_archive(target: Path, archive: Path, packages: list[str]) -> dict:
                 raise ValueError("dependency-cache-archive-limit")
     if not files:
         raise ValueError("empty-dependency-cache-archive")
-    with tarfile.open(archive, "w:gz", compresslevel=1) as output:
+    # Cargo can hard-link regular dependency products. Snapshot each file's
+    # bytes so the archive never needs link entries, which restore rejects.
+    with tarfile.open(archive, "w:gz", compresslevel=1, dereference=True) as output:
         for path in sorted(files):
             output.add(path, arcname=path.relative_to(target).as_posix(), recursive=False)
     digest = hashed_file(archive)

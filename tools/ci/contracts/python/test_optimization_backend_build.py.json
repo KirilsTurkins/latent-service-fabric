@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "BackendBuildTests.test_cpu_source_is_required_only_for_cold_experiment",
+    "BackendBuildTests.test_default_build_parent_is_owned_external_and_removed",
+    "BackendBuildTests.test_failed_build_removes_worktree_without_claiming_completed_inputs",
+    "BackendBuildTests.test_non_sha_and_dirty_harness_fail_before_owned_build",
+    "BackendBuildTests.test_only_two_collectors_and_one_echo_share_exact_owned_paths"
+  ],
+  "guards": {
+    "BackendBuildTests.test_cpu_source_is_required_only_for_cold_experiment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60fdd13dd604c474c18742b24e824b34585354ea57a676d89bafe225a34e597c",
+        "class:setup-sha256:23335014c4a8bf397a0664c6629d83daaebde3e39c2e829266011ad5bdc06769"
+      ],
+      "skipSites": []
+    },
+    "BackendBuildTests.test_default_build_parent_is_owned_external_and_removed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60fdd13dd604c474c18742b24e824b34585354ea57a676d89bafe225a34e597c",
+        "class:setup-sha256:23335014c4a8bf397a0664c6629d83daaebde3e39c2e829266011ad5bdc06769"
+      ],
+      "skipSites": []
+    },
+    "BackendBuildTests.test_failed_build_removes_worktree_without_claiming_completed_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60fdd13dd604c474c18742b24e824b34585354ea57a676d89bafe225a34e597c",
+        "class:setup-sha256:23335014c4a8bf397a0664c6629d83daaebde3e39c2e829266011ad5bdc06769"
+      ],
+      "skipSites": []
+    },
+    "BackendBuildTests.test_non_sha_and_dirty_harness_fail_before_owned_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60fdd13dd604c474c18742b24e824b34585354ea57a676d89bafe225a34e597c",
+        "class:setup-sha256:23335014c4a8bf397a0664c6629d83daaebde3e39c2e829266011ad5bdc06769"
+      ],
+      "skipSites": []
+    },
+    "BackendBuildTests.test_only_two_collectors_and_one_echo_share_exact_owned_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60fdd13dd604c474c18742b24e824b34585354ea57a676d89bafe225a34e597c",
+        "class:setup-sha256:23335014c4a8bf397a0664c6629d83daaebde3e39c2e829266011ad5bdc06769"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_backend_build.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

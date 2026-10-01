@@ -1,0 +1,85 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-guest-${{ github.ref }}"
+    },
+    "name": "Go guest qualification",
+    "on": {
+      "pull_request": {
+        "paths": [
+          "sdk/go-guest/**",
+          "tools/go_guest/**",
+          "tools/go_capsule*.py",
+          "tools/probe_go_authoring.py",
+          "tools/qualify_go_capsules.py",
+          "tools/qualify_rust_capsules.py",
+          "tools/*rust_capsule*.py",
+          "tools/guest_runtime_grants.py",
+          "tools/tests/test_go_capsule_authoring.py",
+          "tools/tests/test_build_provenance_schemas.py",
+          "schemas/**",
+          "docs/component-development/go-authoring.md",
+          "docs/development/go-capsule-qualification.md",
+          "crates/latent-wasmtime/**",
+          "crates/latent-control-store/**",
+          "crates/latent-artifacts/**",
+          "crates/latent-policy/**",
+          "crates/latent-packaging/**",
+          ".cargo/managed-guest.toml",
+          "tools/build_go_guest_capsules.py",
+          "apps/latentd/**",
+          "crates/latent-signing/**",
+          "crates/latent-wasmtime/examples/go_runtime_probe.rs",
+          "wit/**",
+          "tools/toolchain.toml",
+          ".github/workflows/go-guest.yml"
+        ]
+      },
+      "push": {
+        "branches": [
+          "development"
+        ],
+        "paths": [
+          "sdk/go-guest/**",
+          "tools/go_guest/**",
+          "tools/go_capsule*.py",
+          "tools/probe_go_authoring.py",
+          "tools/qualify_go_capsules.py",
+          "tools/qualify_rust_capsules.py",
+          "tools/*rust_capsule*.py",
+          "tools/guest_runtime_grants.py",
+          "tools/tests/test_go_capsule_authoring.py",
+          "tools/tests/test_build_provenance_schemas.py",
+          "schemas/**",
+          "docs/component-development/go-authoring.md",
+          "docs/development/go-capsule-qualification.md",
+          "crates/latent-wasmtime/**",
+          "crates/latent-control-store/**",
+          "crates/latent-artifacts/**",
+          "crates/latent-policy/**",
+          "crates/latent-packaging/**",
+          ".cargo/managed-guest.toml",
+          "tools/build_go_guest_capsules.py",
+          "apps/latentd/**",
+          "crates/latent-signing/**",
+          "crates/latent-wasmtime/examples/go_runtime_probe.rs",
+          "wit/**",
+          "tools/toolchain.toml",
+          ".github/workflows/go-guest.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "upstream-probe"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-guest.yml"
+}

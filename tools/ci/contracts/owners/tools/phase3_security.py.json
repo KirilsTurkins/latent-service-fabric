@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/phase3_security.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "261070388f3aefc3604aa07b58d28f79b3dd2cb26bd2e58217619caf0bca232e"
+}

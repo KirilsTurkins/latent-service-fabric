@@ -143,6 +143,49 @@ class DependencyArchiveTests(unittest.TestCase):
                 evaluation.cache_archive(self.target, self.archive, ["latent-testkit"])
             path.unlink()
 
+    def test_hard_linked_cargo_products_round_trip_as_independent_regular_files(self):
+        second = self.dep.with_name("libdependency-fedcba.rlib")
+        os.link(self.dep, second)
+        self.assertTrue(os.path.samefile(self.dep, second))
+        saved = evaluation.cache_archive(self.target, self.archive, ["application"])
+        with tarfile.open(self.archive, "r:gz") as archive:
+            members = archive.getmembers()
+            self.assertEqual(len(members), 2)
+            self.assertTrue(all(member.isfile() and not member.linkname for member in members))
+        destination = self.root / "restored"
+        restored = evaluation.restore(destination, self.archive, saved["sha256"])
+        self.assertEqual(restored["files"], 2)
+        first_result = destination / self.dep.relative_to(self.target)
+        second_result = destination / second.relative_to(self.target)
+        self.assertEqual(first_result.read_bytes(), self.dep.read_bytes())
+        self.assertEqual(second_result.read_bytes(), self.dep.read_bytes())
+        self.assertFalse(os.path.samefile(first_result, second_result))
+
+    def test_archive_hard_link_entries_still_fail_before_destination_creation(self):
+        with tarfile.open(self.archive, "w:gz") as archive:
+            info = tarfile.TarInfo("debug/deps/libdependency-fedcba.rlib")
+            info.type = tarfile.LNKTYPE
+            info.linkname = "debug/deps/libdependency-abcdef.rlib"
+            archive.addfile(info)
+        destination = self.root / "restored"
+        with self.assertRaisesRegex(ValueError, "unsafe-dependency-archive-member"):
+            evaluation.restore(destination, self.archive, evaluation.hashed_file(self.archive))
+        self.assertFalse(destination.exists())
+
+    def test_mechanism_probe_also_snapshots_hard_linked_products_without_link_members(self):
+        from tools import ci_cargo_probe as probe
+        second = self.dep.with_name("libdependency-fedcba.rlib")
+        os.link(self.dep, second)
+        saved = probe.save_archive(self.target, self.archive)
+        destination = self.root / "restored"
+        restored = probe.restore_archive(destination, self.archive, saved["sha256"])
+        self.assertEqual(restored["files"], 2)
+        first_result = destination / self.dep.relative_to(self.target)
+        second_result = destination / second.relative_to(self.target)
+        self.assertEqual(first_result.read_bytes(), self.dep.read_bytes())
+        self.assertEqual(second_result.read_bytes(), self.dep.read_bytes())
+        self.assertFalse(os.path.samefile(first_result, second_result))
+
     def test_bounds_and_links_are_enforced(self):
         with mock.patch.object(evaluation, "MAX_ARCHIVE_BYTES", 1), self.assertRaises(ValueError):
             evaluation.cache_archive(self.target, self.archive, ["application"])

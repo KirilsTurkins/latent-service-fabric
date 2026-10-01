@@ -1,0 +1,361 @@
+{
+  "cases": [
+    "FailedCallObservationTests.test_expected_nonzero_and_success_results_are_forwarded_without_a_failure_record",
+    "FailedCallObservationTests.test_failed_projection_cannot_replace_the_original_cli_error",
+    "FailedCallObservationTests.test_malformed_schema_and_non_boolean_certainty_never_infer_an_outcome",
+    "FailedCallObservationTests.test_only_first_failed_call_is_retained_without_replaying_any_process",
+    "FailedCallObservationTests.test_original_validation_failures_are_unchanged_and_observed_after_cleanup",
+    "FailedCallObservationTests.test_process_cleanup_failure_is_not_relabelled_as_completed_ownership",
+    "FailedCallObservationTests.test_process_failure_keeps_the_original_exception_and_runs_one_cleanup",
+    "FailedCallObservationTests.test_projection_has_closed_tokens_and_fixed_numeric_and_byte_bounds",
+    "FailedCallObservationTests.test_query_and_known_or_unknown_mutation_failures_keep_exact_certainty",
+    "FailedOperatorReceiptTests.test_failed_receipt_is_after_cleanup_has_identities_and_never_claims_clean_shutdown",
+    "FailedOperatorReceiptTests.test_failure_before_client_acquisition_retains_only_completed_identity_capture",
+    "FailedOperatorReceiptTests.test_interrupts_remain_authoritative_after_a_failed_receipt_and_existing_cleanup",
+    "FailedOperatorReceiptTests.test_receipt_sink_failure_does_not_replace_the_original_nonzero_failure",
+    "OperatorWorkflowTests.test_binary_identity_hashes_exact_bytes_without_retaining_paths",
+    "OperatorWorkflowTests.test_both_auth_tokens_pass_local_profile_grammar",
+    "OperatorWorkflowTests.test_candidate_weights_are_explicit_client_copies_only",
+    "OperatorWorkflowTests.test_clean_shutdown_requires_the_actual_message_and_reaped_owner",
+    "OperatorWorkflowTests.test_failure_diagnostic_retains_only_bounded_code",
+    "OperatorWorkflowTests.test_final_receipt_checks_encoded_bytes_including_non_ascii",
+    "OperatorWorkflowTests.test_grpc_diagnostic_requires_exact_fixed_vocabulary",
+    "OperatorWorkflowTests.test_invalid_source_commit_rejects_before_fixture_or_process_acquisition",
+    "OperatorWorkflowTests.test_inventory_compares_exact_bytes_and_bounds_files",
+    "OperatorWorkflowTests.test_node_fixture_enables_shared_owners_and_separate_root",
+    "OperatorWorkflowTests.test_profile_rejects_unowned_endpoint_forms_before_writes",
+    "OperatorWorkflowTests.test_profile_uses_separate_explicit_fixture_credentials",
+    "OperatorWorkflowTests.test_route_identity_preserves_versions_and_ignores_diagnostic_clock",
+    "StartupWatchdogTests.test_invalid_startup_budget_never_launches_and_valid_wait_is_globally_capped"
+  ],
+  "guards": {
+    "FailedCallObservationTests.test_expected_nonzero_and_success_results_are_forwarded_without_a_failure_record": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:eadcf90b9698be7234f31fc1d9569fafcf1ebd05f0b13b7e5edf454dd28947da"
+      ],
+      "skipSites": []
+    },
+    "FailedCallObservationTests.test_failed_projection_cannot_replace_the_original_cli_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:eadcf90b9698be7234f31fc1d9569fafcf1ebd05f0b13b7e5edf454dd28947da"
+      ],
+      "skipSites": []
+    },
+    "FailedCallObservationTests.test_malformed_schema_and_non_boolean_certainty_never_infer_an_outcome": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:eadcf90b9698be7234f31fc1d9569fafcf1ebd05f0b13b7e5edf454dd28947da"
+      ],
+      "skipSites": []
+    },
+    "FailedCallObservationTests.test_only_first_failed_call_is_retained_without_replaying_any_process": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:eadcf90b9698be7234f31fc1d9569fafcf1ebd05f0b13b7e5edf454dd28947da"
+      ],
+      "skipSites": []
+    },
+    "FailedCallObservationTests.test_original_validation_failures_are_unchanged_and_observed_after_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:eadcf90b9698be7234f31fc1d9569fafcf1ebd05f0b13b7e5edf454dd28947da"
+      ],
+      "skipSites": []
+    },
+    "FailedCallObservationTests.test_process_cleanup_failure_is_not_relabelled_as_completed_ownership": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:eadcf90b9698be7234f31fc1d9569fafcf1ebd05f0b13b7e5edf454dd28947da"
+      ],
+      "skipSites": []
+    },
+    "FailedCallObservationTests.test_process_failure_keeps_the_original_exception_and_runs_one_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:eadcf90b9698be7234f31fc1d9569fafcf1ebd05f0b13b7e5edf454dd28947da"
+      ],
+      "skipSites": []
+    },
+    "FailedCallObservationTests.test_projection_has_closed_tokens_and_fixed_numeric_and_byte_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:eadcf90b9698be7234f31fc1d9569fafcf1ebd05f0b13b7e5edf454dd28947da"
+      ],
+      "skipSites": []
+    },
+    "FailedCallObservationTests.test_query_and_known_or_unknown_mutation_failures_keep_exact_certainty": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:eadcf90b9698be7234f31fc1d9569fafcf1ebd05f0b13b7e5edf454dd28947da"
+      ],
+      "skipSites": []
+    },
+    "FailedOperatorReceiptTests.test_failed_receipt_is_after_cleanup_has_identities_and_never_claims_clean_shutdown": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:8831dcebf6356e7c946cd0e3c919080b8fd671ff31e2e05138b09c6ca0c38303"
+      ],
+      "skipSites": []
+    },
+    "FailedOperatorReceiptTests.test_failure_before_client_acquisition_retains_only_completed_identity_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:8831dcebf6356e7c946cd0e3c919080b8fd671ff31e2e05138b09c6ca0c38303"
+      ],
+      "skipSites": []
+    },
+    "FailedOperatorReceiptTests.test_interrupts_remain_authoritative_after_a_failed_receipt_and_existing_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:8831dcebf6356e7c946cd0e3c919080b8fd671ff31e2e05138b09c6ca0c38303"
+      ],
+      "skipSites": []
+    },
+    "FailedOperatorReceiptTests.test_receipt_sink_failure_does_not_replace_the_original_nonzero_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:8831dcebf6356e7c946cd0e3c919080b8fd671ff31e2e05138b09c6ca0c38303"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_binary_identity_hashes_exact_bytes_without_retaining_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_both_auth_tokens_pass_local_profile_grammar": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_candidate_weights_are_explicit_client_copies_only": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_clean_shutdown_requires_the_actual_message_and_reaped_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_failure_diagnostic_retains_only_bounded_code": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_final_receipt_checks_encoded_bytes_including_non_ascii": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_grpc_diagnostic_requires_exact_fixed_vocabulary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_invalid_source_commit_rejects_before_fixture_or_process_acquisition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_inventory_compares_exact_bytes_and_bounds_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_node_fixture_enables_shared_owners_and_separate_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_profile_rejects_unowned_endpoint_forms_before_writes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_profile_uses_separate_explicit_fixture_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "OperatorWorkflowTests.test_route_identity_preserves_versions_and_ignores_diagnostic_clock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StartupWatchdogTests.test_invalid_startup_budget_never_launches_and_valid_wait_is_globally_capped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1340eb88a81ba663f19214c694762b0940ed2f7419248a13b488cdfcf7991daf",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase2_operator_workflow.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

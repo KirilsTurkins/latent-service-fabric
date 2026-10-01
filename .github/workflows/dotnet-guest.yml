@@ -59,7 +59,7 @@ jobs:
         with:
           name: dotnet-guest-command-contract-${{ github.sha }}
           path: |
-            tools/ci/commands.json
+            tools/ci/contracts/
             ${{ runner.temp }}/dotnet-guest-source.tar.gz
             ${{ runner.temp }}/dotnet-guest-source.sha
           if-no-files-found: error

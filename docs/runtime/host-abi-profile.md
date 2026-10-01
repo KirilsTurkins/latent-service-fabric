@@ -1,5 +1,10 @@
 # Host ABI compatibility profiles
 
+The current security baseline selects **Wasmtime 48.0.3**. References below to
+47.0.4 describe the earlier qualification, not the current supported dependency.
+See the [September security update](../development/wasmtime-security-update.md)
+for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+
 `lsf-host-abi-phase3-v4` is the current generic recognition profile in
 `latent-core`. The [frozen matrix](../../wit/host-abi-phase3-v4.json) records its
 exact interface identities, source hashes, function forms and installed bindings.
@@ -88,7 +93,7 @@ checked at invocation. The [sealed broker](capability-broker.md) and
 [exact binding compiler](capability-bindings.md) implement live policy, provider
 epoch and publication checks independently of ABI recognition.
 
-The baseline is Wasmtime 47.0.4 with guest generator wit-bindgen 0.60.0. No WASI
+The baseline is Wasmtime 48.0.3 with guest generator wit-bindgen 0.60.0. No WASI
 filesystem, HTTP or WASIp3 streams are installed. Expanding that surface requires
 an advisory reachability review. ABI compatibility does not establish a stronger
 [execution isolation profile](../../rfcs/0001-minimum-execution-isolation-profiles.md).

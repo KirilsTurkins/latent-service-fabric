@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/build_s3_fixture.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "PR #700 merge: preserve the dependency upgrade and bounded fixture fixes; retain development download cleanup, 600-second ceiling, historical obligations and all existing tests.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "ad9b77ac21213fd2ac6cae28128ec756bc0818b2f3da23ff047c354ecc2a0a22"
+}

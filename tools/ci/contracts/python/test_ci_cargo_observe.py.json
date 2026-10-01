@@ -1,0 +1,237 @@
+{
+  "cases": [
+    "NativeObservationTests.test_diagnostic_failure_does_not_replace_primary_command_failure",
+    "NativeObservationTests.test_real_owned_failure_preserves_status_and_failed_stage_record",
+    "NativeObservationTests.test_real_owned_success_retains_inventory_without_cache_short_circuit",
+    "ObservationTests.test_cargo_freshness_is_artifacts_not_compiler_processes",
+    "ObservationTests.test_fingerprint_and_output_links_are_rejected",
+    "ObservationTests.test_fingerprint_data_is_hashed_not_disclosed",
+    "ObservationTests.test_gnu_time_requires_finite_complete_fields_and_defines_rss",
+    "ObservationTests.test_inventory_destination_is_checked_even_through_python_api",
+    "ObservationTests.test_message_format_and_timing_options_preserve_strict_clippy_separator",
+    "ObservationTests.test_missing_failed_duplicate_and_postcompletion_records_fail",
+    "ObservationTests.test_observation_outputs_cannot_overwrite_sources_or_previous_runs",
+    "ObservationTests.test_output_and_line_bounds_are_enforced",
+    "ProbeArchiveTests.test_archive_expansion_limit_is_checked_before_extraction",
+    "ProbeArchiveTests.test_archive_traversal_and_duplicate_members_fail_before_writes",
+    "ProbeArchiveTests.test_corruption_is_rejected_before_extraction",
+    "ProbeArchiveTests.test_dependency_only_round_trip_records_actual_local_costs",
+    "ProbeArchiveTests.test_workspace_products_and_links_are_not_saved"
+  ],
+  "guards": {
+    "NativeObservationTests.test_diagnostic_failure_does_not_replace_primary_command_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing observation coverage')",
+        "class:setup-sha256:0e01163768655d74b74ad74e92a704e7b0f0ff6c133ea761aae06a7ec58f5a78",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing observation coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeObservationTests.test_real_owned_failure_preserves_status_and_failed_stage_record": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing observation coverage')",
+        "class:setup-sha256:0e01163768655d74b74ad74e92a704e7b0f0ff6c133ea761aae06a7ec58f5a78",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing observation coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeObservationTests.test_real_owned_success_retains_inventory_without_cache_short_circuit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing observation coverage')",
+        "class:setup-sha256:0e01163768655d74b74ad74e92a704e7b0f0ff6c133ea761aae06a7ec58f5a78",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing observation coverage')"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_cargo_freshness_is_artifacts_not_compiler_processes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_fingerprint_and_output_links_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_fingerprint_data_is_hashed_not_disclosed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_gnu_time_requires_finite_complete_fields_and_defines_rss": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_inventory_destination_is_checked_even_through_python_api": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_message_format_and_timing_options_preserve_strict_clippy_separator": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_missing_failed_duplicate_and_postcompletion_records_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_observation_outputs_cannot_overwrite_sources_or_previous_runs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ObservationTests.test_output_and_line_bounds_are_enforced": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"
+      ],
+      "skipSites": []
+    },
+    "ProbeArchiveTests.test_archive_expansion_limit_is_checked_before_extraction": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:62eabfdb90d805ca6a6fafbdf3bb0d459310fa7c7c9866387fe6fa358e9d5a0d"
+      ],
+      "skipSites": []
+    },
+    "ProbeArchiveTests.test_archive_traversal_and_duplicate_members_fail_before_writes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:62eabfdb90d805ca6a6fafbdf3bb0d459310fa7c7c9866387fe6fa358e9d5a0d"
+      ],
+      "skipSites": []
+    },
+    "ProbeArchiveTests.test_corruption_is_rejected_before_extraction": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:62eabfdb90d805ca6a6fafbdf3bb0d459310fa7c7c9866387fe6fa358e9d5a0d"
+      ],
+      "skipSites": []
+    },
+    "ProbeArchiveTests.test_dependency_only_round_trip_records_actual_local_costs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:62eabfdb90d805ca6a6fafbdf3bb0d459310fa7c7c9866387fe6fa358e9d5a0d"
+      ],
+      "skipSites": []
+    },
+    "ProbeArchiveTests.test_workspace_products_and_links_are_not_saved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b5a438d7b865285060f76d642d1681491dc27bbfff31a0effb62b6cf488dde9d",
+        "class:setup-sha256:62eabfdb90d805ca6a6fafbdf3bb0d459310fa7c7c9866387fe6fa358e9d5a0d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_ci_cargo_observe.py",
+  "reviewReason": "PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

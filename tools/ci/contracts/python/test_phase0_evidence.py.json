@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "Phase0ExecutionEvidenceIdentityTests.test_commit_identity_rejects_tree_tag_and_missing_objects",
+    "Phase0ExecutionEvidenceIdentityTests.test_commit_identity_resolves_the_commits_actual_tree",
+    "Phase0ExecutionEvidenceIdentityTests.test_pinned_build_input_changes_alter_the_canonical_identity",
+    "Phase0ExecutionEvidenceIdentityTests.test_pinned_build_inputs_are_execution_relevant"
+  ],
+  "guards": {
+    "Phase0ExecutionEvidenceIdentityTests.test_commit_identity_rejects_tree_tag_and_missing_objects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:05f08c0fea6081f700a231c3bb628e2ccf7dba26a6d988dd63a401e81110db9d",
+        "class:setup-sha256:ed960b43a0903d902cd7948ab567d671c7176fe50c3236cad11b9a0d6a81f889"
+      ],
+      "skipSites": []
+    },
+    "Phase0ExecutionEvidenceIdentityTests.test_commit_identity_resolves_the_commits_actual_tree": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:05f08c0fea6081f700a231c3bb628e2ccf7dba26a6d988dd63a401e81110db9d",
+        "class:setup-sha256:ed960b43a0903d902cd7948ab567d671c7176fe50c3236cad11b9a0d6a81f889"
+      ],
+      "skipSites": []
+    },
+    "Phase0ExecutionEvidenceIdentityTests.test_pinned_build_input_changes_alter_the_canonical_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:05f08c0fea6081f700a231c3bb628e2ccf7dba26a6d988dd63a401e81110db9d",
+        "class:setup-sha256:ed960b43a0903d902cd7948ab567d671c7176fe50c3236cad11b9a0d6a81f889"
+      ],
+      "skipSites": []
+    },
+    "Phase0ExecutionEvidenceIdentityTests.test_pinned_build_inputs_are_execution_relevant": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:05f08c0fea6081f700a231c3bb628e2ccf7dba26a6d988dd63a401e81110db9d",
+        "class:setup-sha256:ed960b43a0903d902cd7948ab567d671c7176fe50c3236cad11b9a0d6a81f889"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase0_evidence.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

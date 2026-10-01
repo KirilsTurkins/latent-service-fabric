@@ -1,0 +1,87 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/ci.yml:msrv:Check workspace at MSRV": {
+      "job": "msrv",
+      "jobIf": "needs.profile.outputs.profile == 'full'",
+      "name": "Check workspace at MSRV",
+      "run": "cargo +1.94.1 check --workspace --all-targets --all-features --locked",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/ci.yml:msrv:Check workspace at MSRV": {
+      "after": ".github/workflows/ci.yml:msrv:Check workspace at MSRV",
+      "disposition": "extended",
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+    }
+  },
+  "definition": {
+    "if": "needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'",
+    "name": "Rust MSRV 1.95.0",
+    "needs": "profile",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Install the declared minimum supported Rust toolchain",
+        "run": "rustup toolchain install 1.95.0 --profile minimal --no-self-update"
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
+          "cache-on-failure": false,
+          "cache-targets": false,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
+          "prefix-key": "lsf-ci-dependencies-v1",
+          "save-if": "${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||\n    (github.event_name == 'workflow_dispatch' &&\n     (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}"
+        }
+      },
+      {
+        "if": "needs.profile.outputs.profile == 'full'",
+        "name": "Check workspace at MSRV",
+        "run": "python3 tools/ci_cargo.py run msrv"
+      },
+      {
+        "env": {
+          "CI_FAST_PACKAGES": "${{ needs.profile.outputs.fast_packages }}"
+        },
+        "if": "needs.profile.outputs.profile == 'fast'",
+        "name": "Check all selected reverse dependents at MSRV",
+        "run": "python3 tools/ci_fast.py --msrv --packages-json \"$CI_FAST_PACKAGES\" --output \"$RUNNER_TEMP/ci-fast-msrv\""
+      },
+      {
+        "if": "always() && needs.profile.outputs.profile == 'fast'",
+        "name": "Retain narrow MSRV timing evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "ci-host-msrv-${{ github.sha }}",
+          "path": "${{ runner.temp }}/ci-fast-msrv/",
+          "retention-days": 7
+        }
+      }
+    ]
+  },
+  "jobId": "msrv",
+  "kind": "job",
+  "reviewReason": "Preserve historical command coverage and incoming explicit MSRV installation; check the updated dependency graph with declared Rust 1.95.0.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/ci.yml"
+}

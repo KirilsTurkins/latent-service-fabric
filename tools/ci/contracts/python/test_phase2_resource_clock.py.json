@@ -1,0 +1,67 @@
+{
+  "cases": [
+    "ClockDescriptorTests.test_accounting_preserves_raw_counts_and_rejects_unrelated_growth",
+    "ClockDescriptorTests.test_exact_renewal_paths_flags_types_and_inodes_are_required",
+    "ClockDescriptorTests.test_live_linux_renewal_files_are_classified_and_lock_is_retained",
+    "ClockDescriptorTests.test_unknown_paths_oversized_files_and_sockets_are_not_exempt"
+  ],
+  "guards": {
+    "ClockDescriptorTests.test_accounting_preserves_raw_counts_and_rejects_unrelated_growth": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5aea50e1701d739f25bad82ea4f3ced5da97e6fa540a3827e097717fb3fca5b1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClockDescriptorTests.test_exact_renewal_paths_flags_types_and_inodes_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5aea50e1701d739f25bad82ea4f3ced5da97e6fa540a3827e097717fb3fca5b1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ClockDescriptorTests.test_live_linux_renewal_files_are_classified_and_lock_is_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'requires real Linux descriptor observations')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:5aea50e1701d739f25bad82ea4f3ced5da97e6fa540a3827e097717fb3fca5b1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:30ebedd6d2c56308de1102efb96de5b0582fa67caa7ef56eb6af0bcc77b7da1b",
+        "unittest.skipUnless(sys.platform == 'linux', 'requires real Linux descriptor observations')"
+      ]
+    },
+    "ClockDescriptorTests.test_unknown_paths_oversized_files_and_sockets_are_not_exempt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5aea50e1701d739f25bad82ea4f3ced5da97e6fa540a3827e097717fb3fca5b1",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase2_resource_clock.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

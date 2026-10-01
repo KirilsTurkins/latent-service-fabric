@@ -1,0 +1,56 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "needs": [
+      "select",
+      "deploy"
+    ],
+    "permissions": {
+      "contents": "read"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false,
+          "ref": "${{ inputs.source_sha }}"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "name": "Install the reviewed browser tools in an unprivileged job",
+        "run": "python3 website/toolchain/prepare.py\nnpm ci --prefix website/toolchain --ignore-scripts --no-audit --no-fund\nnode website/scripts/check-package-manager.mjs\nnode website/toolchain/node_modules/npm/bin/npm-cli.js ci --prefix website --ignore-scripts --no-audit --no-fund\nnode website/node_modules/playwright/cli.js install-deps chromium\nnode website/scripts/site.mjs browser-install\n"
+      },
+      {
+        "env": {
+          "EXPECTED_SITE_SOURCE": "${{ inputs.source_sha }}"
+        },
+        "name": "Verify live navigation, assets, search and selected-version examples",
+        "run": "node website/scripts/test-live.mjs"
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "docs-pages-browser-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "website/.generated/live-review/evidence.json",
+          "retention-days": 14
+        }
+      }
+    ],
+    "timeout-minutes": 10
+  },
+  "jobId": "browser",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/docs-pages.yml"
+}

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_invocation_concurrency.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add the isolated #695 actual-component experiment and failure evidence; preserve all existing CI jobs and historical obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b544f0f1c5aab866b91e8634bfc0cf783dc2c95660812ee470895b9e1aaa4b02"
+}

@@ -256,6 +256,30 @@ fn schema_walk_limits_and_unsupported_types_fail_before_values_exist() {
             .code,
         PlatformErrorCode::IncompatibleContract
     );
+    // A newly exposed Wasmtime type is not an expansion of LSF's wire contract.
+    // Enable it only in this reflection fixture; no Store or guest is created.
+    let fixed_types = fixed_length_types();
+    for ty in &fixed_types {
+        assert_eq!(
+            validate_signature(std::slice::from_ref(ty), limits, 1)
+                .expect_err("fixed-length lists remain unsupported")
+                .code,
+            PlatformErrorCode::IncompatibleContract
+        );
+        assert_eq!(
+            validate_host_signature(std::slice::from_ref(ty), limits, 1, &[])
+                .expect_err("host signatures do not grant new type support")
+                .code,
+            PlatformErrorCode::IncompatibleContract
+        );
+    }
+    assert_eq!(
+        encode_result(&fixed_types[..1], &[Val::Bool(false)], limits)
+            .err()
+            .expect("unsupported result type is rejected before value encoding")
+            .code,
+        PlatformErrorCode::IncompatibleContract
+    );
     assert!(validate_signature(&[Type::Bool], limits, usize::MAX).is_err());
     assert!(ValueCodecLimits {
         max_depth: 65,
@@ -269,4 +293,36 @@ fn schema_walk_limits_and_unsupported_types_fail_before_values_exist() {
     }
     .validate()
     .is_err());
+}
+
+fn fixed_length_types() -> Vec<Type> {
+    use wasm_encoder::{ComponentExportKind, ComponentExportSection, ComponentTypeSection};
+    use wasm_encoder::{ComponentValType, PrimitiveValType};
+
+    let mut definitions = ComponentTypeSection::new();
+    definitions
+        .defined_type()
+        .fixed_length_list(PrimitiveValType::U8, 4);
+    definitions.defined_type().option(ComponentValType::Type(0));
+    let mut exports = ComponentExportSection::new();
+    exports.export("fixed", ComponentExportKind::Type, 0, None);
+    exports.export("optional-fixed", ComponentExportKind::Type, 1, None);
+    let mut encoded = wasm_encoder::Component::new();
+    encoded.section(&definitions).section(&exports);
+    let mut config = Config::new();
+    config
+        .wasm_component_model(true)
+        .wasm_component_model_fixed_length_lists(true);
+    let engine = Engine::new(&config).expect("test reflection engine");
+    let component = Component::new(&engine, encoded.finish()).expect("fixed-length type fixture");
+    component
+        .component_type()
+        .exports(&engine)
+        .map(|(_, export)| {
+            let ComponentItem::Type(ty) = export.ty else {
+                panic!("type export expected")
+            };
+            ty
+        })
+        .collect()
 }

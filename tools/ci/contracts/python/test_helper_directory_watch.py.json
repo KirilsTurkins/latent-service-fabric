@@ -1,0 +1,150 @@
+{
+  "cases": [
+    "CollectorFailureCleanupTests.test_cold_failure_retains_actual_data_removal_and_supervision_limits",
+    "DirectoryWatchTests.test_files_and_total_entries_have_independent_bounds",
+    "DirectoryWatchTests.test_legacy_sixteen_file_limit_is_unchanged",
+    "DirectoryWatchTests.test_per_file_byte_bound_and_recursive_total_are_actual_sizes",
+    "DirectoryWatchTests.test_real_cold_layout_is_counted_and_legacy_flat_watch_stays_strict",
+    "DirectoryWatchTests.test_special_file_is_rejected_without_opening",
+    "DirectoryWatchTests.test_symlink_and_dangling_symlink_are_rejected",
+    "DirectoryWatchTests.test_tree_depth_is_bounded_even_for_empty_directories",
+    "DirectoryWatchTests.test_watcher_limits_cannot_be_unbounded_or_boolean",
+    "LiveDirectoryWatchTests.test_nested_output_total_failure_kills_and_reaps_helper"
+  ],
+  "guards": {
+    "CollectorFailureCleanupTests.test_cold_failure_retains_actual_data_removal_and_supervision_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DirectoryWatchTests.test_files_and_total_entries_have_independent_bounds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:2e0c632447af5e7e632937e7b48c4753ed764663268eb9b64a57bd08368d4b8e"
+      ],
+      "skipSites": []
+    },
+    "DirectoryWatchTests.test_legacy_sixteen_file_limit_is_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:2e0c632447af5e7e632937e7b48c4753ed764663268eb9b64a57bd08368d4b8e"
+      ],
+      "skipSites": []
+    },
+    "DirectoryWatchTests.test_per_file_byte_bound_and_recursive_total_are_actual_sizes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:2e0c632447af5e7e632937e7b48c4753ed764663268eb9b64a57bd08368d4b8e"
+      ],
+      "skipSites": []
+    },
+    "DirectoryWatchTests.test_real_cold_layout_is_counted_and_legacy_flat_watch_stays_strict": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:2e0c632447af5e7e632937e7b48c4753ed764663268eb9b64a57bd08368d4b8e"
+      ],
+      "skipSites": []
+    },
+    "DirectoryWatchTests.test_special_file_is_rejected_without_opening": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux FIFO fixture')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:2e0c632447af5e7e632937e7b48c4753ed764663268eb9b64a57bd08368d4b8e"
+      ],
+      "skipSites": [
+        "skip-control-sha256:9923394c9eabffa07087f7e91e901b184cc09dd962687cb38e34945079bc8286",
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux FIFO fixture')"
+      ]
+    },
+    "DirectoryWatchTests.test_symlink_and_dangling_symlink_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:2e0c632447af5e7e632937e7b48c4753ed764663268eb9b64a57bd08368d4b8e"
+      ],
+      "skipSites": [
+        "self.skipTest(f'symlink creation unavailable: {error}')",
+        "skip-control-sha256:6b56c016b5aeac477f4656a9bcb622ebbf29c670c699f9ae60f6bfa0c993745a"
+      ]
+    },
+    "DirectoryWatchTests.test_tree_depth_is_bounded_even_for_empty_directories": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:2e0c632447af5e7e632937e7b48c4753ed764663268eb9b64a57bd08368d4b8e"
+      ],
+      "skipSites": []
+    },
+    "DirectoryWatchTests.test_watcher_limits_cannot_be_unbounded_or_boolean": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:2e0c632447af5e7e632937e7b48c4753ed764663268eb9b64a57bd08368d4b8e"
+      ],
+      "skipSites": []
+    },
+    "LiveDirectoryWatchTests.test_nested_output_total_failure_kills_and_reaps_helper": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'Linux bounded helper ownership')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a1250631e7f0029bcb0c200506ba1bc80e8814895a608928e306ff1272d8b5dd",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_helper_directory_watch.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

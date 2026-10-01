@@ -1,7 +1,7 @@
 {
   "schemaVersion": "lsf.renderer.qualification.v1",
   "candidate": "angular-ssr-component-v1",
-  "angular": "22.1.7",
+  "angular": "22.2.0",
   "nodeBuild": "24.19.0",
   "componentizeJs": "0.22.0",
   "enableAot": false,
@@ -9,7 +9,7 @@
   "allowedComponentImports": [],
   "requiredPublicWorld": "latent:web/application-service@0.1.0",
   "proofInterface": "lsf:renderer-qualification/renderer",
-  "wasmtime": "47.0.4",
+  "wasmtime": "48.0.3",
   "compiler": "cranelift-speed",
   "allocator": "on-demand",
   "stackBytes": 2097152,

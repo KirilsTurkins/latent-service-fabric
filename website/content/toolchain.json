@@ -11,7 +11,7 @@
   "npmSource": {
     "repository": "npm/cli",
     "commit": "3acf9a784798094a5feb43c2e1898429dd667cb6",
-    "reason": "The original npm 11.19.1 and current 11.20.0/12.1.0 archives bundle newly affected ip-address 10.5.0 and undici 6.28.0. The explicit npm-11.19.1-lsf-bundle-v1 derivation authenticates the upstream archive, replaces those complete packages with integrity-pinned 10.5.1/6.28.1 archives before execution, and produces a deterministic TAR authenticated by the toolchain lock. It is not an upstream npm release. No advisory exceptions or npm major upgrade are introduced.",
+    "reason": "The explicit npm-11.19.1-lsf-bundle-v1 derivation authenticates npm 11.19.1, replaces its complete ip-address, undici, and brace-expansion bundles with SHA-512-pinned 10.7.2, 6.28.1, and 5.0.12 archives before execution, and produces a deterministic TAR authenticated by the toolchain lock. brace-expansion retains the exact existing balanced-match 4.0.4 dependency; new or shadowed graphs are rejected. This is not an upstream npm release. No advisory exceptions or npm major upgrade are introduced.",
     "distribution": "toolchain/source.json"
   },
   "docusaurus": {

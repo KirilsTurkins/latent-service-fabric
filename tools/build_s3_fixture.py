@@ -16,11 +16,13 @@ import re
 import struct
 import sys
 import tarfile
+import time
 import urllib.request
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from tools.owned_test_process import ProcessFailure
 from tools.test_run import TestRun, require
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -233,6 +235,32 @@ def check_image(info: object, receipt: dict) -> None:
             "invalid-fixture", "minio-image-identity-mismatch")
 
 
+def pull_builder(run: TestRun) -> None:
+    """Retry transient registry replies, not builds, within one 240-second budget."""
+    deadline = time.monotonic() + run.remaining(240)
+    for attempt in range(3):
+        require(not run.cancel.is_set(), "cancelled", "runner-interrupted")
+        budget = min(deadline - time.monotonic(), run.remaining())
+        require(budget > 0, "infrastructure-timeout", "minio-builder-pull-watchdog")
+        result = run.command(["docker", "pull", "--platform", "linux/amd64", BUILDER],
+                             timeout=budget, check=False)
+        if result.returncode == 0:
+            return
+        # Match the final Docker diagnostic, not an earlier progress line. In
+        # particular, auth, missing manifests, digest failures and unknown
+        # errors must still fail immediately. TestRun retains every attempt.
+        transient = result.returncode == 1 and re.fullmatch(
+            rb"(?:Error response from daemon: )?received unexpected HTTP status: "
+            rb"(?:429|500|502|503|504)(?:[ \t][^\r\n]*)?",
+            result.output.rstrip().rsplit(b"\n", 1)[-1], re.IGNORECASE)
+        if not transient or attempt == 2:
+            raise ProcessFailure("assertion-failure", "child-exit-failure", result)
+        delay = 2 ** (attempt + 1)
+        require(min(deadline - time.monotonic(), run.remaining()) > delay,
+                "infrastructure-timeout", "minio-builder-pull-watchdog")
+        require(not run.cancel.wait(delay), "cancelled", "runner-interrupted")
+
+
 def build(run: TestRun, output: Path) -> dict:
     output.mkdir(parents=True, exist_ok=False)
     archive = output / "source.tar.gz"
@@ -242,7 +270,7 @@ def build(run: TestRun, output: Path) -> dict:
     source = inspect_archive(archive)
     run.artifact("minio-source", archive)
     run.mark("compiler-image")
-    run.command(["docker", "pull", "--platform", "linux/amd64", BUILDER], timeout=240)
+    pull_builder(run)
     # The retained TestRun ID also identifies partial image-import outputs. They
     # remain unqualified static build artifacts if an import reply is lost.
     token = run.run_id

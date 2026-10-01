@@ -1,0 +1,231 @@
+{
+  "cases": [
+    "DockerOuterEvidence.test_applied_manifest_normalizes_codec_defaults_without_changing_limits",
+    "DockerOuterEvidence.test_context_tar_digest_replays_original_ustar_bytes_without_retaining_another_tar",
+    "DockerOuterEvidence.test_duplicate_json_noncanonical_base64_and_incomplete_line_reject",
+    "DockerOuterEvidence.test_engine_json_reformat_or_crossed_request_response_reject",
+    "DockerOuterEvidence.test_engine_receipt_binds_original_entity_bytes_and_parsed_value",
+    "DockerOuterEvidence.test_engine_unclosed_failure_version_and_nonmonotonic_calls_reject",
+    "DockerOuterEvidence.test_force_removal_unowned_signal_hidden_exec_and_changed_config_reject",
+    "DockerOuterEvidence.test_inventory_escape_duplicate_total_and_mode_reject",
+    "DockerOuterEvidence.test_inventory_original_bytes_and_recorded_modes_are_distinct",
+    "DockerOuterEvidence.test_original_root_cannot_alias_host_or_escape_bench",
+    "DockerOuterEvidence.test_private_network_and_reaped_container_have_one_complete_lifecycle",
+    "DockerOuterEvidence.test_remove_before_wait_and_missing_absence_cannot_claim_cleanup",
+    "DockerOuterEvidence.test_snapshot_window_cannot_cross_phase_or_borrow_another_owner",
+    "DockerOuterEvidence.test_three_actual_window_brackets_bind_all_six_owner_snapshot_receipts",
+    "DockerOuterEvidence.test_unversioned_negotiation_is_separate_bounded_closed_evidence",
+    "DockerOuterEvidence.test_volume_probe_must_bind_the_owned_volume_before_containers",
+    "DockerOuterEvidence.test_wrong_api_ordinal_cannot_bind_a_signal_to_an_inspect"
+  ],
+  "guards": {
+    "DockerOuterEvidence.test_applied_manifest_normalizes_codec_defaults_without_changing_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_context_tar_digest_replays_original_ustar_bytes_without_retaining_another_tar": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_duplicate_json_noncanonical_base64_and_incomplete_line_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_engine_json_reformat_or_crossed_request_response_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_engine_receipt_binds_original_entity_bytes_and_parsed_value": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_engine_unclosed_failure_version_and_nonmonotonic_calls_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_force_removal_unowned_signal_hidden_exec_and_changed_config_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_inventory_escape_duplicate_total_and_mode_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_inventory_original_bytes_and_recorded_modes_are_distinct": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_original_root_cannot_alias_host_or_escape_bench": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_private_network_and_reaped_container_have_one_complete_lifecycle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_remove_before_wait_and_missing_absence_cannot_claim_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_snapshot_window_cannot_cross_phase_or_borrow_another_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_three_actual_window_brackets_bind_all_six_owner_snapshot_receipts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_unversioned_negotiation_is_separate_bounded_closed_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_volume_probe_must_bind_the_owned_volume_before_containers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    },
+    "DockerOuterEvidence.test_wrong_api_ordinal_cannot_bind_a_signal_to_an_inspect": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:223ed0673758dac45b29fb55c7ffed2c490c9c477efdef3278142c78c80c16d7",
+        "class:setup-sha256:2dd50d1600e36894cc5e51b17f0b783d999fad06609f21fe280fc31286fee60d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_docker_evidence.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

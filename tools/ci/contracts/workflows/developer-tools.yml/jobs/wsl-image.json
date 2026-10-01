@@ -1,0 +1,65 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
+    "name": "Pinned WSL image candidate",
+    "permissions": {
+      "attestations": "write",
+      "contents": "read",
+      "id-token": "write"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Build reviewed image and observed package license inventory",
+        "run": "python tools/build_dev_rootfs.py --output target/dev-wsl"
+      },
+      {
+        "id": "attest",
+        "if": "github.event_name != 'pull_request'",
+        "name": "Attest image candidate without release authority",
+        "uses": "actions/attest-build-provenance",
+        "with": {
+          "subject-path": "target/dev-wsl/candidate/SHA256SUMS"
+        }
+      },
+      {
+        "env": {
+          "BUNDLE_PATH": "${{ steps.attest.outputs.bundle-path }}"
+        },
+        "if": "github.event_name != 'pull_request'",
+        "name": "Retain offline image attestation",
+        "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-wsl/candidate/attestation.json"
+      },
+      {
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "developer-wsl-candidate-${{ github.sha }}",
+          "path": "target/dev-wsl/candidate/",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 15
+  },
+  "jobId": "wsl-image",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-tools.yml"
+}

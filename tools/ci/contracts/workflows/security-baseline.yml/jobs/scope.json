@@ -1,0 +1,52 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/security-baseline.yml:scope:select": {
+      "job": "scope",
+      "jobIf": "success()",
+      "name": "select",
+      "run": "python3 tools/security_scope.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/security-baseline.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/security-baseline.yml:scope:select": {
+      "after": ".github/workflows/security-baseline.yml:scope:select",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    }
+  },
+  "definition": {
+    "name": "Select security scope",
+    "outputs": {
+      "dependencies": "${{ steps.select.outputs.dependencies }}",
+      "matrix": "${{ steps.select.outputs.matrix }}",
+      "rustsec": "${{ steps.select.outputs.rustsec }}",
+      "selftest": "${{ steps.select.outputs.selftest }}",
+      "static": "${{ steps.select.outputs.static }}"
+    },
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "id": "select",
+        "name": "Select complete change or both maintained refs; reject expired exceptions",
+        "run": "python3 tools/security_scope.py"
+      }
+    ],
+    "timeout-minutes": 4
+  },
+  "jobId": "scope",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/security-baseline.yml"
+}

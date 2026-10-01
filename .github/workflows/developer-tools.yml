@@ -13,7 +13,7 @@ on:
       - tools/tests/test_dev_packaged_probe.py
       - packaging/dev/qualification-trusted-root.jsonl
       - packaging/dev/qualification.Dockerfile
-      - tools/ci/commands.json
+      - tools/ci/contracts/**
       - docs/**
   pull_request:
     paths:
@@ -148,6 +148,7 @@ jobs:
         language: [rust, c, java, dotnet, go, typescript]
     env:
       LSF_DEV_LANGUAGE: ${{ matrix.language }}
+      LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
     permissions:
       contents: read
       id-token: write
@@ -165,6 +166,12 @@ jobs:
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
+      - name: Restore untrusted pinned compiler archives
+        id: compiler-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ env.LSF_DEV_COMPILER_CACHE }}
+          key: compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}
       - name: Stage the pinned relocatable Python prefix
         run: |
           image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'
@@ -176,9 +183,15 @@ jobs:
           printf 'LSF_DEV_PYTHON_PREFIX=%s\n' "$prefix" >> "$GITHUB_ENV"
       - name: Assemble pinned compiler tools and maintained templates
         run: python tools/build_dev_guest_tools.py --language "$LSF_DEV_LANGUAGE" --output target/dev-tools --python-prefix "$LSF_DEV_PYTHON_PREFIX" --node-tests
+      - name: Save independently verified compiler archive bytes
+        if: steps.compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ env.LSF_DEV_COMPILER_CACHE }}
+          key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
       - name: Compile actual projects with isolated tools and separate operator packaging
         run: python tools/run_dev_guest_tools_tests.py --language "$LSF_DEV_LANGUAGE" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-projects"
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         if: matrix.language == 'typescript'
         with:
           node-version: 24.19.0

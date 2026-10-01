@@ -24,7 +24,7 @@ the Rust correctness job; it does not shard compilation into additional jobs.
 Integration with the current shared suite inventory retains exact workspace
 discovery, separate execution logs for ordinary tests, doctests and signing
 compatibility, and authenticated AOT preparation before execution. All recipe
-commands and delegated owners are registered in `tools/ci/commands.json`.
+commands and delegated owners are registered in `tools/ci/contracts/`.
 
 ## Coverage map
 
@@ -282,6 +282,25 @@ These tiny sequential trials have only one cold/two warm samples per profile,
 They establish invalidation/failure behavior, not a statistically supported LSF
 speedup. No confidence interval, default promotion or redundant-command removal
 is justified by them.
+
+### Warm archive repair on current development
+
+[Evaluation run 36547560769](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36547560769)
+failed in both full-recipe configurations after the cold Rust suites passed.
+The first warm restore rejected `unsafe-dependency-archive-member`: Cargo had
+created hardlinked regular products, and Python's tar writer encoded subsequent
+paths as hardlink members. The retained cold results do not count as completed
+cold/warm comparisons.
+
+Archive creation now snapshots each regular product's bytes with dereferencing
+explicitly enabled. Restore still rejects hardlink and symlink members, unsafe
+paths, collisions, invalid digests and all original count/byte-limit breaches.
+Native Linux controls verify that two hardlinked products restore as independent
+regular files and that a supplied hardlink archive is rejected before extraction.
+The evaluation workflow installs the MSRV declared by current development
+(1.95.0 at integration), and the command registrations use the current modular
+contracts while preserving the immutable v1 inventory and existing test guards.
+This repair changes no ordinary CI cache default or selected build recipe.
 
 ### Actual Rust recipe replay
 

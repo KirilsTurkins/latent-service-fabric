@@ -36,13 +36,16 @@ jobs:
           python-version: 3.13.5
       - name: Install pinned validation dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
-      - uses: dtolnay/rust-toolchain@9376cdc5a5e25b16da71af47712785cf06b0d6d4 # 1.94.1
       - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
           components: rustfmt, clippy
           targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Install maintained MSRV for cache fault controls
+        run: rustup toolchain install 1.95.0 --profile minimal --no-self-update
       - name: Validate recipe and cache observations with native process accounting
         run: |
+          # Reviewed imported observer owner; not an additional runner:
+          # tools/ci_cargo_observe.py
           set -o pipefail
           python3 -m unittest tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_observe tools.tests.test_ci_cargo_evaluate 2>&1 | tee "$RUNNER_TEMP/cargo-recipe-evaluation/tests.log"
       - name: Exercise real Cargo freshness and cache faults without shared cache writes

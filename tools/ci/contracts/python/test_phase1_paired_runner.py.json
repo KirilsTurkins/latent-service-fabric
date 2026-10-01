@@ -1,0 +1,54 @@
+{
+  "cases": [
+    "PairedRunnerTests.test_control_artifact_cannot_escape_or_change_after_receipt",
+    "PairedRunnerTests.test_failed_control_is_retained_and_candidate_never_started",
+    "PairedRunnerTests.test_historical_child_runs_in_declared_source_directory"
+  ],
+  "guards": {
+    "PairedRunnerTests.test_control_artifact_cannot_escape_or_change_after_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6731404c46508829ada9f121f0bcc62c3667a06b83a4512cdaeafd7b84e919e6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PairedRunnerTests.test_failed_control_is_retained_and_candidate_never_started": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:6731404c46508829ada9f121f0bcc62c3667a06b83a4512cdaeafd7b84e919e6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PairedRunnerTests.test_historical_child_runs_in_declared_source_directory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux process identity and working directory')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:6731404c46508829ada9f121f0bcc62c3667a06b83a4512cdaeafd7b84e919e6",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:1dcdde98a0da2f861e653d78101fb68db378d32c0f2204ff2b1353ae5d578980",
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux process identity and working directory')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_phase1_paired_runner.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

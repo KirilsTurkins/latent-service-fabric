@@ -1,0 +1,61 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_PROFILE_DEV_DEBUG": "0"
+    },
+    "name": "Real Harbor CLI authentication and package evidence",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0"
+        }
+      },
+      {
+        "name": "Build the exact CLI and check owned registry guards",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_harbor_registry_runner\ncargo build --locked --package latent --bin latent\n"
+      },
+      {
+        "name": "Qualify the CLI against real Harbor",
+        "run": "umask 077\npython3 tools/run_harbor_registry_tests.py --network --cli target/debug/latent --output \"$RUNNER_TEMP/harbor-cli.json\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain sanitized registry qualification",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "harbor-cli-qualification",
+          "path": "${{ runner.temp }}/harbor-cli.json",
+          "retention-days": 14
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "harbor",
+  "kind": "job",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/registry-cli.yml"
+}

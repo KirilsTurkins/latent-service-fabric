@@ -11,7 +11,9 @@ from . import paths, snapshot, state
 from .common import HOST_ABI, digest, encode, members, require, sha
 
 MAX_ATTEMPTS = 4
-MAX_ENTRIES = 32768
+# Private SDKs and compiler scratch can exceed 32,768 filesystem entries.
+# Keep a finite entry bound; byte, depth and retained-attempt limits still apply.
+MAX_ENTRIES = 65536
 # A private managed SDK plus compiler scratch must fit without sharing mutable
 # tool installations. The four-attempt retention bound remains independent.
 MAX_BYTES = 4 * 1024 * 1024 * 1024

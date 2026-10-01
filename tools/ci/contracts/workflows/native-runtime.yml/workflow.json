@@ -1,0 +1,57 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "native-runtime-candidate-${{ github.ref }}"
+    },
+    "name": "Native runtime candidate",
+    "on": {
+      "push": {
+        "branches": [
+          "**"
+        ],
+        "paths": [
+          ".github/workflows/native-runtime.yml",
+          "packaging/linux/**",
+          "tools/native_runtime/**",
+          "tools/native_runtime_build.py",
+          "tools/build_native_runtime.py",
+          "tools/tests/test_native_runtime.py",
+          "tools/run_native_vm.py",
+          "tools/native_vm_guest.py",
+          "tools/native-vm-profile.json",
+          "tools/native-fixture/**",
+          "tools/prepare_native_workspace.py",
+          "tools/native_release_gate.py",
+          "tools/tests/test_native_release_gate.py",
+          "tools/select_native_vm_artifact.py"
+        ]
+      },
+      "workflow_dispatch": {
+        "inputs": {
+          "artifact_run": {
+            "default": "",
+            "description": "Optional prior native candidate run for VM-only diagnostics, never release authority",
+            "type": "string"
+          },
+          "development_test_node": {
+            "default": false,
+            "description": "Build a nonpublishing disposable-test runtime with explicit guest fixtures",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "candidate",
+    "native-vm"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/native-runtime.yml"
+}

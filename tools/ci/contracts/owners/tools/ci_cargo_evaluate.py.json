@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/ci_cargo_evaluate.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "8d63f26a44ec0bb57f30cc469d55cc95cb05cc57d026a68e29300129654d1cfe"
+}

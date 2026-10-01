@@ -232,7 +232,7 @@ fn run() -> Result<(), String> {
     }
     println!(
         "{}",
-        json!({"format_version":1,"engine":"wasmtime-47.0.4","profile_sha256":profile_digest,
+        json!({"format_version":1,"engine":"wasmtime-48.0.3","profile_sha256":profile_digest,
         "target_os":std::env::consts::OS,"target_arch":std::env::consts::ARCH,
         "component_sha256":format!("sha256:{:x}",latent_core::digest::HexDigest(Sha256::digest(&bytes))),"component_bytes":bytes.len(),
         "preparation_millis":preparation_ms,"memory_limit_bytes":MEMORY,"hostcall_bytes":HOSTCALL,

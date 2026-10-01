@@ -2,7 +2,7 @@ buildscript {
     repositories { mavenCentral() }
     dependencies { classpath 'org.teavm:teavm-gradle-plugin:0.15.0' }
     configurations.classpath.resolutionStrategy.eachDependency {
-        if (requested.group.startsWith('com.fasterxml.jackson')) useVersion '2.18.10'
+        if (requested.group.startsWith('com.fasterxml.jackson')) useVersion '2.18.11'
         if (requested.group.startsWith('org.eclipse.jetty')) useVersion '12.1.10'
     }
 }
@@ -13,16 +13,19 @@ java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
 tasks.withType(JavaCompile).configureEach {
     options.release = 25
     options.encoding = 'UTF-8'
+    options.compilerArgs.add('-proc:none')
 }
 configurations.configureEach {
     resolutionStrategy.failOnDynamicVersions()
     resolutionStrategy.failOnChangingVersions()
     resolutionStrategy.eachDependency {
-        if (requested.group.startsWith('com.fasterxml.jackson')) useVersion '2.18.10'
+        if (requested.group.startsWith('com.fasterxml.jackson')) useVersion '2.18.11'
         if (requested.group.startsWith('org.eclipse.jetty')) useVersion '12.1.10'
     }
 }
 dependencies { implementation teavm.libs.interop }
+dependencies { implementation fileTree(dir: 'captured-application/jars', include: '*.jar') }
+sourceSets.main.resources.srcDir('captured-application/resources')
 teavm {
     c {
         mainClass = 'dev.latent.generated.Bindings'

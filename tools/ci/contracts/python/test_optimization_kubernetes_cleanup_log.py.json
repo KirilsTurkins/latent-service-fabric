@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "CleanupAbsenceTests.test_warning_requires_later_empty_cri_inventory_and_exact_original_pod",
+    "CleanupLogTests.test_cri_policy_binds_no_restart_and_original_container_name",
+    "CleanupLogTests.test_default_stderr_and_any_other_failure_stay_rejected",
+    "CleanupLogTests.test_exact_owned_missing_log_is_retained_with_successful_reap",
+    "CleanupLogTests.test_original_smoke03_exception_requires_exact_journal_bytes",
+    "CleanupLogTests.test_policy_cannot_authorize_rmp_foreign_namespace_or_changed_uid",
+    "CleanupLogTests.test_quiet_rm_with_owned_policy_remains_quiet",
+    "CleanupLogTests.test_worker_policy_retains_original_warning_and_defaults_still_fail",
+    "CleanupLogTests.test_wrong_path_container_message_or_extra_line_never_matches"
+  ],
+  "guards": {
+    "CleanupAbsenceTests.test_warning_requires_later_empty_cri_inventory_and_exact_original_pod": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec60837ed46892db6c4b5a8419690a516fb69a8600dfb8037302eef432921fe4",
+        "class:setup-sha256:4c558bea1038daca0673062859fd15fbc43803709af64be26bca95f8c01f60d2"
+      ],
+      "skipSites": []
+    },
+    "CleanupLogTests.test_cri_policy_binds_no_restart_and_original_container_name": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec60837ed46892db6c4b5a8419690a516fb69a8600dfb8037302eef432921fe4",
+        "class:setup-sha256:6f66b084304d6f5c0cc51ae7ec824978cb4cc7b9bbf863079c085dc5480801f7"
+      ],
+      "skipSites": []
+    },
+    "CleanupLogTests.test_default_stderr_and_any_other_failure_stay_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec60837ed46892db6c4b5a8419690a516fb69a8600dfb8037302eef432921fe4",
+        "class:setup-sha256:6f66b084304d6f5c0cc51ae7ec824978cb4cc7b9bbf863079c085dc5480801f7"
+      ],
+      "skipSites": []
+    },
+    "CleanupLogTests.test_exact_owned_missing_log_is_retained_with_successful_reap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec60837ed46892db6c4b5a8419690a516fb69a8600dfb8037302eef432921fe4",
+        "class:setup-sha256:6f66b084304d6f5c0cc51ae7ec824978cb4cc7b9bbf863079c085dc5480801f7"
+      ],
+      "skipSites": []
+    },
+    "CleanupLogTests.test_original_smoke03_exception_requires_exact_journal_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec60837ed46892db6c4b5a8419690a516fb69a8600dfb8037302eef432921fe4",
+        "class:setup-sha256:6f66b084304d6f5c0cc51ae7ec824978cb4cc7b9bbf863079c085dc5480801f7"
+      ],
+      "skipSites": []
+    },
+    "CleanupLogTests.test_policy_cannot_authorize_rmp_foreign_namespace_or_changed_uid": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec60837ed46892db6c4b5a8419690a516fb69a8600dfb8037302eef432921fe4",
+        "class:setup-sha256:6f66b084304d6f5c0cc51ae7ec824978cb4cc7b9bbf863079c085dc5480801f7"
+      ],
+      "skipSites": []
+    },
+    "CleanupLogTests.test_quiet_rm_with_owned_policy_remains_quiet": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec60837ed46892db6c4b5a8419690a516fb69a8600dfb8037302eef432921fe4",
+        "class:setup-sha256:6f66b084304d6f5c0cc51ae7ec824978cb4cc7b9bbf863079c085dc5480801f7"
+      ],
+      "skipSites": []
+    },
+    "CleanupLogTests.test_worker_policy_retains_original_warning_and_defaults_still_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec60837ed46892db6c4b5a8419690a516fb69a8600dfb8037302eef432921fe4",
+        "class:setup-sha256:6f66b084304d6f5c0cc51ae7ec824978cb4cc7b9bbf863079c085dc5480801f7"
+      ],
+      "skipSites": []
+    },
+    "CleanupLogTests.test_wrong_path_container_message_or_extra_line_never_matches": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ec60837ed46892db6c4b5a8419690a516fb69a8600dfb8037302eef432921fe4",
+        "class:setup-sha256:6f66b084304d6f5c0cc51ae7ec824978cb4cc7b9bbf863079c085dc5480801f7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_cleanup_log.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

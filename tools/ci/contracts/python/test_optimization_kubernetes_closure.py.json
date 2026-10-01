@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "KubernetesClosureTests.test_background_binds_each_original_node_sample_and_baseline_window",
+    "KubernetesClosureTests.test_delete_poll_requires_owned_uid_then_final_absence",
+    "KubernetesClosureTests.test_poll_rejects_crossed_uid_restarts_early_clock_and_wrong_endpoint",
+    "KubernetesClosureTests.test_preparation_allows_only_one_exact_adjacent_owned_mkdir_parent",
+    "KubernetesClosureTests.test_progress_preserves_original_framing_sequence_and_source_values",
+    "KubernetesClosureTests.test_ready_poll_is_consumed_only_until_first_success",
+    "KubernetesClosureTests.test_unconsumed_workload_or_mutation_cannot_pass_final_gate"
+  ],
+  "guards": {
+    "KubernetesClosureTests.test_background_binds_each_original_node_sample_and_baseline_window": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c66977052d4acb6634cbc5b85d97fcb7ab1ff0efc1c0eef57fca22e2f063927a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesClosureTests.test_delete_poll_requires_owned_uid_then_final_absence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c66977052d4acb6634cbc5b85d97fcb7ab1ff0efc1c0eef57fca22e2f063927a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesClosureTests.test_poll_rejects_crossed_uid_restarts_early_clock_and_wrong_endpoint": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c66977052d4acb6634cbc5b85d97fcb7ab1ff0efc1c0eef57fca22e2f063927a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesClosureTests.test_preparation_allows_only_one_exact_adjacent_owned_mkdir_parent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c66977052d4acb6634cbc5b85d97fcb7ab1ff0efc1c0eef57fca22e2f063927a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesClosureTests.test_progress_preserves_original_framing_sequence_and_source_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c66977052d4acb6634cbc5b85d97fcb7ab1ff0efc1c0eef57fca22e2f063927a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesClosureTests.test_ready_poll_is_consumed_only_until_first_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c66977052d4acb6634cbc5b85d97fcb7ab1ff0efc1c0eef57fca22e2f063927a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "KubernetesClosureTests.test_unconsumed_workload_or_mutation_cannot_pass_final_gate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c66977052d4acb6634cbc5b85d97fcb7ab1ff0efc1c0eef57fca22e2f063927a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_optimization_kubernetes_closure.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

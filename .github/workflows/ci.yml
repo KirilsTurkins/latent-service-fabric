@@ -72,9 +72,15 @@ jobs:
           cache-dependency-path: tools/requirements.lock
       - name: Install documentation validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
+      - name: Validate reviewed CI contracts and observe the tested source
+        id: contract_coverage
+        run: |
+          # Reviewed delegated parser/storage owners, not additional runners:
+          # tools/ci_contracts.py tools/ci_lane_inventory.py tools/workflow_action_yaml.py
+          python3 tools/ci_coverage.py --receipt target/ci/observed-inventory.json
       - name: Validate documentation and profile selection
         run: |
-          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff tools.tests.test_ci_cargo_evaluate
+          LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_contracts tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff tools.tests.test_ci_cargo_evaluate
           python3 tools/ci_coverage.py
           LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner tools.tests.test_ci_cargo_observe
           python3 tools/validate_docs.py
@@ -86,6 +92,16 @@ jobs:
 
       - name: Validate deterministic dependency regressions
         run: python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies
+
+      - name: Retain CI contract diagnostics even on validation failure
+        id: contract_evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ci-contracts-${{ github.sha }}
+          path: target/ci/observed-inventory.json
+          if-no-files-found: warn
+          retention-days: 7
 
   fast:
     name: Fast host correctness
@@ -221,6 +237,11 @@ jobs:
         run: python3 tools/ci_cargo.py run prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
       - name: Verify complete registered workspace test discovery
         run: python3 tools/ci_suite_discovery.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --receipt "$RUNNER_TEMP/ci-discovery.json"
+      - name: Exercise the local exact-case entry point with prepared workspace inputs
+        run: |
+          python3 tools/test.py prepare --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
+          python3 tools/test.py check --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
+          python3 tools/test.py run --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
       - name: Prepare authenticated AOT test inputs
         run: |
           python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests
@@ -276,7 +297,7 @@ jobs:
           retention-days: 14
       - name: Set up the qualified Angular build runtime
         if: needs.profile.outputs.renderer == 'true'
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -663,7 +684,7 @@ jobs:
           retention-days: 14
 
   msrv:
-    name: Rust MSRV 1.94.1
+    name: Rust MSRV 1.95.0
     needs: profile
     if: needs.profile.outputs.profile == 'full' || needs.profile.outputs.profile == 'fast'
     runs-on: ubuntu-24.04
@@ -671,7 +692,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@9376cdc5a5e25b16da71af47712785cf06b0d6d4 # 1.94.1
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Install the declared minimum supported Rust toolchain
+        run: rustup toolchain install 1.95.0 --profile minimal --no-self-update
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
@@ -758,7 +781,7 @@ jobs:
       - name: Install verified guest binding generator
         run: python3 tools/install_guest_bindgen.py "${RUNNER_TEMP}/lsf-guest-tools" >> "${GITHUB_PATH}"
       - name: Set up the Node SDK provider participant
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm
@@ -865,7 +888,7 @@ jobs:
         with:
           version: 1.72.0
           github_token: ${{ github.token }}
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm

@@ -93,7 +93,7 @@ jobs:
         with:
           name: go-guest-command-contract-${{ github.sha }}
           path: |
-            tools/ci/commands.json
+            tools/ci/contracts/
             ${{ runner.temp }}/go-guest-source.tar.gz
             ${{ runner.temp }}/go-guest-source.sha
           if-no-files-found: error

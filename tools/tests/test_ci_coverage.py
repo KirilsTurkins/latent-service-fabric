@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools import ci_coverage as coverage, ci_suite_inventory as registry
+from tools import ci_coverage as coverage, ci_suite_inventory as registry, ci_contracts
 
 
 class CoverageTests(unittest.TestCase):
@@ -40,11 +40,12 @@ class CoverageTests(unittest.TestCase):
             coverage.validate()
 
     def test_no_coverage_row_may_remove_an_existing_required_owner(self):
-        data = registry.read_json(coverage.INVENTORY)
-        row = next(iter(data['coverage'].values())); row['after'] = 'removed'
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory)/'commands.json'; path.write_text(json.dumps(data))
-            with self.assertRaises(ValueError): coverage.validate(inventory=path)
+        records = copy.deepcopy(ci_contracts.fragments(registry.ROOT))
+        owner = next(value for value in records.values() if value['kind'] == 'job' and value['coverage'])
+        row = next(iter(owner['coverage'].values()))
+        row['after'] += '-removed'
+        with patch.object(ci_contracts, 'fragments', return_value=records), self.assertRaisesRegex(ValueError, 'removed-required-command'):
+            coverage.validate()
 
     def test_duplicate_required_step_identity_fails_closed(self):
         document = 'jobs:\n  test:\n    steps:\n      - name: same\n        run: true\n      - name: same\n        run: false\n'

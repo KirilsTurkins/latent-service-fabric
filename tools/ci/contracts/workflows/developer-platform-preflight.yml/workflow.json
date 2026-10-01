@@ -1,0 +1,31 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "developer-platform-preflight-${{ github.ref }}"
+    },
+    "name": "Developer platform preflight",
+    "on": {
+      "push": {
+        "branches": [
+          "feat/559-hosted-qualification",
+          "feat/559-preflight-ready"
+        ],
+        "paths": [
+          ".github/workflows/developer-platform-preflight.yml"
+        ]
+      },
+      "workflow_dispatch": null
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "windows-wsl"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-platform-preflight.yml"
+}

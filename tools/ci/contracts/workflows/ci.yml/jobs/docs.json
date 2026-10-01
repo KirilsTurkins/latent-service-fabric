@@ -1,0 +1,98 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {
+    ".github/workflows/ci.yml:docs:Install documentation validator dependencies": {
+      "job": "docs",
+      "jobIf": "success()",
+      "name": "Install documentation validator dependencies",
+      "run": "python -m pip install --requirement tools/requirements.lock",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    },
+    ".github/workflows/ci.yml:docs:Validate documentation and profile selection": {
+      "job": "docs",
+      "jobIf": "success()",
+      "name": "Validate documentation and profile selection",
+      "run": "python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs\npython3 tools/validate_docs.py",
+      "shell": "default",
+      "stepIf": "success()",
+      "workflow": ".github/workflows/ci.yml",
+      "workingDirectory": "."
+    }
+  },
+  "coverage": {
+    ".github/workflows/ci.yml:docs:Install documentation validator dependencies": {
+      "after": ".github/workflows/ci.yml:docs:Install documentation validator dependencies",
+      "disposition": "unchanged",
+      "reason": "The exact command and its triggering conditions are retained."
+    },
+    ".github/workflows/ci.yml:docs:Validate documentation and profile selection": {
+      "after": ".github/workflows/ci.yml:docs:Validate documentation and profile selection",
+      "disposition": "extended",
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+    }
+  },
+  "definition": {
+    "name": "Documentation and SVGs",
+    "needs": "profile",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "cache": "pip",
+          "cache-dependency-path": "tools/requirements.lock",
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Install documentation validator dependencies",
+        "run": "python -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "id": "contract_coverage",
+        "name": "Validate reviewed CI contracts and observe the tested source",
+        "run": "# Reviewed delegated parser/storage owners, not additional runners:\n# tools/ci_contracts.py tools/ci_lane_inventory.py tools/workflow_action_yaml.py\npython3 tools/ci_coverage.py --receipt target/ci/observed-inventory.json\n"
+      },
+      {
+        "name": "Validate documentation and profile selection",
+        "run": "LSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_contracts tools.tests.test_ci_browser_artifacts tools.tests.test_ci_lanes tools.tests.test_ci_lane_inventory tools.tests.test_local_tests tools.tests.test_ci_cargo tools.tests.test_ci_cargo_cache tools.tests.test_ci_cargo_aot_handoff tools.tests.test_ci_cargo_evaluate\npython3 tools/ci_coverage.py\nLSF_REQUIRE_NATIVE_PROCESS_TESTS=1 python3 -m unittest tools.tests.test_owned_test_process tools.tests.test_owned_runners tools.tests.test_ci_rust_artifacts tools.tests.test_oci_registry_runner tools.tests.test_ci_cargo_observe\npython3 tools/validate_docs.py\n"
+      },
+      {
+        "if": "needs.profile.outputs.profile == 'fast'",
+        "name": "Preserve repository source contracts in the host-only profile",
+        "run": "python3 tools/validate_repository.py\npython3 tools/validate_foundation.py\n"
+      },
+      {
+        "name": "Validate deterministic dependency regressions",
+        "run": "python3 -m unittest tools.tests.test_deterministic_tests tools.tests.test_testkit_dependencies"
+      },
+      {
+        "id": "contract_evidence",
+        "if": "always()",
+        "name": "Retain CI contract diagnostics even on validation failure",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "ci-contracts-${{ github.sha }}",
+          "path": "target/ci/observed-inventory.json",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 5
+  },
+  "jobId": "docs",
+  "kind": "job",
+  "reviewReason": "PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/ci.yml"
+}

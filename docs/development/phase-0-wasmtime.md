@@ -1,10 +1,15 @@
 # Phase 0 Wasmtime echo backend
 
+The current security baseline selects **Wasmtime 48.0.3**. References below to
+47.0.4 describe the earlier qualification, not the current supported dependency.
+See the [September security update](wasmtime-security-update.md)
+for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+
 Issue #21 introduced the first executable `ExecutionBackend` for the narrow `examples:echo/service@0.1.0` contract. The maintained `Phase0WasmtimeEngineFactory` and `Phase0WasmtimeBackend` now preserve that contract as a compatibility facade over the shared Phase 1 backend. This page describes the retained echo path; see [the generic Wasmtime runtime](../runtime/wasmtime.md) and [activation capabilities](../runtime/capabilities.md) for the current runtime surface. These updates do not revise the archived Phase 0 measurements or authorization.
 
 ## Engine profile
 
-`Phase0WasmtimeEngineFactory` constructs one node-owned Wasmtime 47.0.4 engine through the shared factory, with the Component Model, async support, fuel accounting, and epoch interruption enabled. Wasm and asynchronous stacks have explicit maximum sizes, and detailed Wasm backtraces are disabled. The shared runtime owns one `latent-wasmtime-epoch` helper thread per factory, shared by backend handles and prepared uses. The factory creates no Tokio runtime, listener, socket, execution cell, or persistent guest instance. The final shared-runtime owner wakes and joins the epoch helper when dropped.
+`Phase0WasmtimeEngineFactory` constructs one node-owned Wasmtime 48.0.3 engine through the shared factory, with the Component Model, async support, fuel accounting, and epoch interruption enabled. Wasm and asynchronous stacks have explicit maximum sizes, and detailed Wasm backtraces are disabled. The shared runtime owns one `latent-wasmtime-epoch` helper thread per factory, shared by backend handles and prepared uses. The factory creates no Tokio runtime, listener, socket, execution cell, or persistent guest instance. The final shared-runtime owner wakes and joins the epoch helper when dropped.
 
 The generated profile and preparation key include compatibility-relevant engine, store, cache, context, codec, and log bounds, including aggregate linear-memory accounting and the Phase 0 guest-to-host transfer ceiling. A key from a different Wasmtime version, target, CPU profile, or configuration is rejected before compilation. The internal prepared handle also binds component content and bounded artifact, manifest, and contract metadata, so a changed capsule resource ceiling cannot reuse an older prepared policy. Deployment-only budget updates can reuse the compiled artifact while receiving a newly admitted revision and grant.
 

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/dev_http_fixture_probe.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b482cb9d53bdb1b594ce061c4d14f2f8b5d05f79516a233c34403f982e02a05c"
+}

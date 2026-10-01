@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "NativeAotInventoryTests.test_every_resolved_compiler_runtime_and_linker_package_is_scanned",
+    "NativeAotInventoryTests.test_missing_transitive_package_is_not_an_empty_success",
+    "NativeAotInventoryTests.test_project_lock_and_both_configuration_changes_fail_closed",
+    "NativeAotInventoryTests.test_unknown_rid_cannot_hide_in_a_reviewed_lock",
+    "NativeAotInventoryTests.test_unresolved_versions_and_missing_checksums_fail"
+  ],
+  "guards": {
+    "NativeAotInventoryTests.test_every_resolved_compiler_runtime_and_linker_package_is_scanned": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ceb66212b41c77e9ae507e4e1bfe7706f69851ec297e8cc38141aeb7f9ac56d2",
+        "class:setup-sha256:9f81592b6ec8253239f0fbd1efb452b243131ecbfffd97e928c8e3b9feae9205"
+      ],
+      "skipSites": []
+    },
+    "NativeAotInventoryTests.test_missing_transitive_package_is_not_an_empty_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ceb66212b41c77e9ae507e4e1bfe7706f69851ec297e8cc38141aeb7f9ac56d2",
+        "class:setup-sha256:9f81592b6ec8253239f0fbd1efb452b243131ecbfffd97e928c8e3b9feae9205"
+      ],
+      "skipSites": []
+    },
+    "NativeAotInventoryTests.test_project_lock_and_both_configuration_changes_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ceb66212b41c77e9ae507e4e1bfe7706f69851ec297e8cc38141aeb7f9ac56d2",
+        "class:setup-sha256:9f81592b6ec8253239f0fbd1efb452b243131ecbfffd97e928c8e3b9feae9205"
+      ],
+      "skipSites": []
+    },
+    "NativeAotInventoryTests.test_unknown_rid_cannot_hide_in_a_reviewed_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ceb66212b41c77e9ae507e4e1bfe7706f69851ec297e8cc38141aeb7f9ac56d2",
+        "class:setup-sha256:9f81592b6ec8253239f0fbd1efb452b243131ecbfffd97e928c8e3b9feae9205"
+      ],
+      "skipSites": []
+    },
+    "NativeAotInventoryTests.test_unresolved_versions_and_missing_checksums_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ceb66212b41c77e9ae507e4e1bfe7706f69851ec297e8cc38141aeb7f9ac56d2",
+        "class:setup-sha256:9f81592b6ec8253239f0fbd1efb452b243131ecbfffd97e928c8e3b9feae9205"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_security_native_aot.py",
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

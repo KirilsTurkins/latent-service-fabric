@@ -1,0 +1,41 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "name": "Phase 1 measurements",
+    "on": {
+      "workflow_dispatch": {
+        "inputs": {
+          "kind": {
+            "default": "all",
+            "description": "Measurement suite to execute",
+            "options": [
+              "all",
+              "scale",
+              "soak",
+              "benchmark"
+            ],
+            "type": "choice"
+          },
+          "profile": {
+            "default": "smoke",
+            "description": "Full includes 100k scale/soak; smoke only validates collectors",
+            "options": [
+              "smoke",
+              "full"
+            ],
+            "type": "choice"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "contents": "read"
+    }
+  },
+  "requiredJobs": [
+    "measurements"
+  ],
+  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/phase1-measurements.yml"
+}
