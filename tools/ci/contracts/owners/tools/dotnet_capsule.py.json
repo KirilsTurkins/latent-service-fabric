@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain the pinned NativeAOT installation and explicitly compile all three source-bound finite runtime adapters",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5f91abb33e0e81a962c1dd3305adcefba477a2bbb51bbb2f42b901cead9a49af"
+  "sha256": "c05d015d374981842cbd92baa61c54fc781f891eb99fc11fcc37e334ddee4e03"
 }
