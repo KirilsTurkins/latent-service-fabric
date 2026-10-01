@@ -690,6 +690,7 @@ impl StandaloneNode {
                         .handle(),
                     clock: self.clock.clone(),
                     budget: settings.admission.budget_ceiling.clone(),
+                    state: self.state.clone(),
                 },
             )?);
         }

@@ -8533,6 +8533,9 @@
         "standalone::http::tests::real::actual_http_component_authenticates_executes_cancels_and_recovers",
         "standalone::http::tests::real_delivery::actual_http_component_pinned_cutover_and_revocation_use_current_authority",
         "standalone::http::tests::real_delivery::actual_http_component_tls_body_and_slow_output_keep_owners_until_retirement",
+        "standalone::http::transaction::tests::framework_metadata_is_excluded_and_maximum_result_has_a_bounded_json_envelope",
+        "standalone::http::transaction::tests::query_requires_the_complete_host_view_token_and_preserves_declared_error",
+        "standalone::http::transaction::tests::required_http_replay_forms_reject_oversize_media_and_cookie_fields_before_commit",
         "standalone::load::tests::missing_observation_and_stop_never_become_a_fresh_accepting_zero",
         "standalone::load::tests::pressure_preserves_zero_and_rejects_missing_ambiguous_or_invalid_samples",
         "standalone::load::tests::pressure_refresh_uses_the_same_clock_domain_as_admission",
@@ -8723,7 +8726,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 249,
+      "minimumCases": 252,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

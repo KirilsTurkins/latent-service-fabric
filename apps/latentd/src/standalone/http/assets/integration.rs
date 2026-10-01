@@ -127,6 +127,7 @@ impl Harness {
                 cleanup: node.node.cleanup.as_ref().unwrap().handle(),
                 clock: node.node.clock.clone(),
                 budget: settings.admission.budget_ceiling.clone(),
+                state: None,
             },
         )
         .unwrap();

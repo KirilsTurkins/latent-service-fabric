@@ -1,0 +1,217 @@
+{
+  "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+  "tree": "db20ef891c62e574b6d779d957168a80cac177de",
+  "sourceArchiveSha256": "1c957c572b139f9827b8935f62ef75770a226ca9392cd11fb1776eea9fa72fad",
+  "toolImage": "sha256:808682d39104dc67ea35b407841aa8ecd4d5662bb8fa8df09e78cecdf4cacde7",
+  "scope": [
+    "latent-state",
+    "latent-protected-files",
+    "latent-commit",
+    "latent-effects",
+    "latent-http",
+    "latent-node",
+    "latent-ingress",
+    "latent-executor",
+    "latent-wasmtime"
+  ],
+  "qualification": "Linux x86_64 ext4 combined ownership, physical recovery, actual HTTP effect and canonical Wasmtime primitives; not Java/signed installed HTTP transaction execution",
+  "resources": {
+    "cpus": 4,
+    "memoryBytes": 8589934592,
+    "pids": 512,
+    "deadlineSeconds": 1800
+  },
+  "exitCode": 101,
+  "elapsedSeconds": 392.374,
+  "schema": "latent.transaction-foundation-observation.v1",
+  "fullQualificationPassed": false,
+  "ownershipTests": {
+    "passed": 487,
+    "failed": 0,
+    "ignored": 1
+  },
+  "actualCanonicalTypeTests": {
+    "passed": 2,
+    "failed": 0,
+    "filteredOut": 340
+  },
+  "strictAllTargetClippy": {
+    "passed": false,
+    "exitCode": 101,
+    "errors": 65
+  },
+  "executableInventory": [
+    {
+      "owner": "latent_state",
+      "executable": "latent_state-4333989a0ae6401c",
+      "bytes": 20747488,
+      "executableSha256": "65245bbcf870008ee22462ff16b69676078899f54a03c61b209995fdd67ac0b8",
+      "archiveSha256": "9a5143985d68a887bb8c1906899b88b2dcd0520a80c20b3ab45d47aba2939ffb",
+      "cases": 160,
+      "ignored": [],
+      "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+      "caseContractPassed": true,
+      "missing": [],
+      "unexpected": []
+    },
+    {
+      "owner": "latent_wasmtime",
+      "executable": "latent_wasmtime-f9df589bce471bc6",
+      "bytes": 94642688,
+      "executableSha256": "c10e31aaa7e31923fc8114413fd2b5926fa0e9b3154b31fcfe6bdca179f0a7ed",
+      "archiveSha256": "d3dc0a57b5fcfbe913bbe50c2ffbcb623cf0c06c1659d0b2a6b8cfc03543e0ec",
+      "cases": 342,
+      "ignored": [
+        "cache::measurement::cache_lookup_collector",
+        "values::tests::measurement::codec_collector"
+      ],
+      "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+      "caseContractPassed": false,
+      "missing": [
+        "bindings::tests::transaction_preparation_requires_exact_mixed_async_and_affine_resource_shapes",
+        "bindings::tests::transaction_support_changes_prepared_and_native_identity_without_mutating_stateless_abi"
+      ],
+      "unexpected": [
+        "bindings::compatibility_tests::transaction_preparation_requires_exact_mixed_async_and_affine_resource_shapes",
+        "bindings::compatibility_tests::transaction_support_changes_prepared_and_native_identity_without_mutating_stateless_abi"
+      ]
+    },
+    {
+      "owner": "latent_http",
+      "executable": "latent_http-52638ebd78bb40d2",
+      "bytes": 49330312,
+      "executableSha256": "86630ad687d3f3d493c4057890563e1bd27a22337b1e05df6b5aa62f1a88ce64",
+      "archiveSha256": "f2c204ba0b827a4358b82ba6add4792e76a0ce578f1453f8bac8b08ef8b74c6b",
+      "cases": 54,
+      "ignored": [],
+      "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+      "caseContractPassed": true,
+      "missing": [],
+      "unexpected": []
+    },
+    {
+      "owner": "latent_ingress",
+      "executable": "latent_ingress-de89adccb606a6b7",
+      "bytes": 3298848,
+      "executableSha256": "df39e48aa989bc3fb3d544182815dd51c93f41cb4e4fcd0f85128f4779366b06",
+      "archiveSha256": "1e0395c4722fb06eeb5705f05ae3c7e825ed50c9c52a738371b6bf316704c0e3",
+      "cases": 23,
+      "ignored": [],
+      "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+      "caseContractPassed": true,
+      "missing": [],
+      "unexpected": []
+    },
+    {
+      "owner": "latent_node",
+      "executable": "latent_node-f349a5ea305d33fa",
+      "bytes": 21263264,
+      "executableSha256": "4257b9567ba311e13c8662771ac10771e8923bdc9667b88f97cde27fd9b0b3b3",
+      "archiveSha256": "e155fc144968d8cbb177a1a98827c5e2ef32cf424d9029a260107817cc28d535",
+      "cases": 95,
+      "ignored": [],
+      "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+      "caseContractPassed": true,
+      "missing": [],
+      "unexpected": []
+    },
+    {
+      "owner": "latent_protected_files",
+      "executable": "latent_protected_files-b3b832635220af89",
+      "bytes": 1819288,
+      "executableSha256": "eaecf05926233270bcedba19842e37c92613b793277210d2a74e2f144b29dc66",
+      "archiveSha256": "58b67c4a26f1dc8ce12b2392d879ed0129af2a587e5dbb3ae064449786b80537",
+      "cases": 19,
+      "ignored": [
+        "tests::unexpected_file_and_directory_owners_are_rejected"
+      ],
+      "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+      "caseContractPassed": true,
+      "missing": [],
+      "unexpected": []
+    },
+    {
+      "owner": "latent_effects",
+      "executable": "latent_effects-9f001cb21e5645a1",
+      "bytes": 13281976,
+      "executableSha256": "30dc09b108b0e838d5504f1e32a8385e4ad27cb88d0efd1830a4ac854fdaa392",
+      "archiveSha256": "749c1e25b2959d8166e2c695ae21adf830907cca5d488f9bdf1b07f6e6432e35",
+      "cases": 71,
+      "ignored": [],
+      "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+      "caseContractPassed": true,
+      "missing": [],
+      "unexpected": []
+    },
+    {
+      "owner": "latent_executor",
+      "executable": "latent_executor-eae177fe4400d124",
+      "bytes": 6883208,
+      "executableSha256": "960be0e118ec6599bc51d211e2a3d682e9167abda755ac2620da692b09ab46f5",
+      "archiveSha256": "8626dad59bd6586586f573097b8b5a06ab30d0d3c4eeedf83d5245fc8388213f",
+      "cases": 9,
+      "ignored": [],
+      "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+      "caseContractPassed": true,
+      "missing": [],
+      "unexpected": []
+    },
+    {
+      "owner": "latent_commit",
+      "executable": "latent_commit-bc0c0bb9541cfb13",
+      "bytes": 10142800,
+      "executableSha256": "81a98114533a05da51a320b1eb7fadcf0fa333df752d10403ce81c2dea1a893a",
+      "archiveSha256": "5c907ad6e00c75249f637c982f06595bc2ce6816a151437b63d777a8ce11104b",
+      "cases": 57,
+      "ignored": [],
+      "source": "39e3facc297b8f58e4d8836df758d311a97da507",
+      "caseContractPassed": true,
+      "missing": [],
+      "unexpected": []
+    }
+  ],
+  "boundaries": [
+    "No signed Java application execution through installed HTTP routes.",
+    "No production deployment or packaged clean-host qualification.",
+    "Two Wasmtime expectedCases module paths disagree with actual executable; actual tests and original ignores retained.",
+    "Clippy and case inventory correction require a new source checkpoint; this receipt is not reused for changed code."
+  ],
+  "retainedLogs": {
+    "build.log": {
+      "bytes": 249225,
+      "sha256": "1f4c4158e126d6e212417c666e7d586f6d18c371afd9379faacca0e68c952ec3"
+    },
+    "container.log": {
+      "bytes": 7482,
+      "sha256": "174a83e17f99e483c90d07fd3a3a6f1fe59b44f0cd6ffb7bcbff9aafae875e13"
+    },
+    "ownership-tests.log": {
+      "bytes": 55091,
+      "sha256": "2778917c76821e4ea58c525b84458d14e84aa9f6219cf75f31ea4638874d52b4"
+    },
+    "canonical-tests.log": {
+      "bytes": 913,
+      "sha256": "501c5cd5593e112ac98f04ce672bad7641f5c863b2536ace179ca4c84fef6b82"
+    },
+    "clippy.log": {
+      "bytes": 50353,
+      "sha256": "ca58284a1d8f68963e13b4bc80426c4f215c6526a7dfbb3b3c35210191cbb99f"
+    },
+    "export.log": {
+      "bytes": 1010,
+      "sha256": "870b6708c2b65de9f981242b3e370aa6784bf81691da3e2938171c8867074a49"
+    },
+    "export-r2.log": {
+      "bytes": 984,
+      "sha256": "01249103b5c12ecc67b60f45e3a33f07beff06a6efd08b0b1908293040c57f99"
+    },
+    "native.sh": {
+      "bytes": 2023,
+      "sha256": "355e3bc02307835dac1a5ee10871b26453416f12b24ba39b295aad1abc9a7fcc"
+    },
+    "run_native.py": {
+      "bytes": 3246,
+      "sha256": "dcf005c934beb9b1559f4812272ebc2f81e1bd328417b1f77b3d61bf544d866e"
+    }
+  }
+}
