@@ -31,6 +31,13 @@ pub struct DispatcherControlReceipt {
 }
 
 impl DispatcherControlReceipt {
+    /// Digest of the exact bounded durable bytes, without any authority meaning.
+    pub fn digest(&self) -> Result<[u8; 32], StoreError> {
+        let mut hash = Sha256::new();
+        hash.update(b"lsf-dispatch-control-receipt-v1\0");
+        hash.update(self.encode()?);
+        Ok(hash.finalize().into())
+    }
     #[must_use]
     pub const fn request(&self) -> &DispatcherControlRequest {
         &self.request

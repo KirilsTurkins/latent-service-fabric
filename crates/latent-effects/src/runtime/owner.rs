@@ -16,7 +16,7 @@ use super::{
 /// accepted physical work remains in fixed workers and the scheduling owner.
 pub struct DispatcherOwner {
     pub(super) services: Arc<Services>,
-    jobs: StoreIoOwner<Arc<Services>>,
+    pub(super) jobs: StoreIoOwner<Arc<Services>>,
     driver: Option<tokio::task::JoinHandle<()>>,
     workers: usize,
     joined_workers: usize,

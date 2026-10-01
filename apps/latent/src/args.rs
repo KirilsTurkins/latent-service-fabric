@@ -1,6 +1,7 @@
 //! Explicit single-operation command grammar.
 
 pub mod audit;
+pub mod dispatcher;
 mod invoke;
 mod package;
 pub mod phase3;
@@ -87,6 +88,9 @@ pub enum Command {
     /// Invoke once or inspect the original durable command/effect; never auto-retry.
     #[command(subcommand)]
     Transaction(phase4::TransactionCommand),
+    /// Authenticated global dispatcher control and original receipt recovery.
+    #[command(subcommand)]
+    Dispatcher(dispatcher::DispatcherCommand),
     /// Manage bounded tenant policies and provider binding metadata.
     Policy(policy::PolicyArgs),
     #[command(subcommand)]

@@ -9,6 +9,31 @@ pub(super) fn validate(response: &Response, original: &Request) -> Result<(), Va
     let mut b = Budget::new::<Response>(MAX_RESPONSE_BYTES)?;
     b.charge(response.native_message_bytes())?;
     match (response, original) {
+        (Response::InspectDispatcher(value), Request::InspectDispatcher(_)) => {
+            super::dispatcher::snapshot(&mut b, required(value.dispatcher.as_ref())?)?;
+            audit(&mut b, value.audit_ack.as_ref())
+        }
+        (Response::ControlDispatcher(value), Request::ControlDispatcher(original)) => {
+            let receipt = required(value.receipt.as_ref())?;
+            super::dispatcher::receipt(&mut b, receipt, original)?;
+            audit(&mut b, value.audit_ack.as_ref())?;
+            if (value.replayed && value.published)
+                || (original.action == c::DispatcherAction::Pause as i32
+                    && value.published
+                    && !value.paused)
+            {
+                return Err(ValidationError::Shape);
+            }
+            Ok(())
+        }
+        (Response::GetDispatcherOperation(value), Request::GetDispatcherOperation(original)) => {
+            super::dispatcher::receipt(
+                &mut b,
+                required(value.receipt.as_ref())?,
+                required(original.original.as_ref())?,
+            )?;
+            audit(&mut b, value.audit_ack.as_ref())
+        }
         (Response::InspectNamespace(value), Request::InspectNamespace(original)) => {
             validate_inspect_namespace(&mut b, value, original)
         }

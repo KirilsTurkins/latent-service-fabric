@@ -1,6 +1,8 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use latent_rpc::{control::v1 as c, invocation::v1 as i, phase4::Response, transaction::v1 as t};
 use serde_json::{json, Value};
+mod dispatcher;
+pub(super) use dispatcher::generation as dispatcher_generation;
 
 pub(super) fn bytes(value: &[u8]) -> Value {
     json!({"encoding":"base64","data":STANDARD.encode(value)})
@@ -120,6 +122,19 @@ fn invocation(value: &i::InvokeResponse) -> Value {
 }
 pub(super) fn response(value: &Response) -> Value {
     match value {
+        Response::InspectDispatcher(value) => {
+            json!({"dispatcher":value.dispatcher.as_ref().map(dispatcher::snapshot),
+            "auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+        }
+        Response::ControlDispatcher(value) => {
+            json!({"receipt":value.receipt.as_ref().map(dispatcher::receipt),
+            "replayed":value.replayed,"published":value.published,"paused":value.paused,
+            "auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+        }
+        Response::GetDispatcherOperation(value) => {
+            json!({"receipt":value.receipt.as_ref().map(dispatcher::receipt),
+            "auditAcknowledgement":value.audit_ack.as_ref().map(audit)})
+        }
         Response::InspectNamespace(value) => {
             json!({"namespace":value.namespace.as_ref().map(|v|json!({"view":v.view.as_ref().map(view),
             "encodedStateBytes":v.encoded_state_bytes.to_string(),"commandCount":v.command_count.to_string(),"pendingEffectCount":v.pending_effect_count.to_string(),

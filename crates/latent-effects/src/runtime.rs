@@ -6,6 +6,7 @@ mod admission;
 mod config;
 pub mod control;
 mod driver;
+mod management;
 mod owner;
 mod state;
 mod store;
@@ -19,6 +20,10 @@ pub use control::{
     DispatcherControlJob, DispatcherControlLookup, DispatcherControlOutcome,
     DispatcherControlReceipt, DispatcherControlRequest, DispatcherControlSnapshot,
     PreparedDispatcherControl,
+};
+pub use management::{
+    DispatcherManagementPort, RetainedDispatcherControl, RetainedDispatcherControlJob,
+    RetainedDispatcherControlLookup, RetainedDispatcherLookup,
 };
 pub use owner::DispatcherOwner;
 pub use state::{DispatcherShutdown, DispatcherSnapshot};

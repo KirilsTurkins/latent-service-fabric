@@ -75,12 +75,6 @@ pub(super) async fn begin(
         component: Some(access.binding.component.clone()),
         ..Default::default()
     };
-    let Some(audit) = &inner.services.audit else {
-        return Ok(Pending {
-            attempt: None,
-            identities,
-        });
-    };
     let (operation_id, action, expected) = operation(request)?;
     let mut hash = Sha256::new();
     hash.update(b"lsf-state-management-request-v1\0");
@@ -90,21 +84,62 @@ pub(super) async fn begin(
         contract::Request::GetStateOperationReceipt(value) => hash.update(value.encode_to_vec()),
         _ => return Err(unsupported()),
     }
+    begin_operation(
+        inner,
+        context,
+        OperationAudit {
+            scope: AuditScope::Tenant(context.principal().tenant.clone().ok_or_else(denied)?),
+            identities,
+            operation_id,
+            action,
+            expected,
+            request_digest: format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(hash.finalize())
+            )
+            .parse()
+            .map_err(|_| invalid())?,
+        },
+    )
+    .await
+}
+pub(super) struct OperationAudit {
+    pub scope: AuditScope,
+    pub identities: AuditIdentities,
+    pub operation_id: String,
+    pub action: AuditControlAction,
+    pub expected: Option<u64>,
+    pub request_digest: ArtifactBlobDigest,
+}
+pub(super) async fn begin_operation(
+    inner: &Inner,
+    context: &AuthenticatedInvocationContext,
+    value: OperationAudit,
+) -> Result<Pending, PlatformError> {
+    let OperationAudit {
+        scope,
+        identities,
+        operation_id,
+        action,
+        expected,
+        request_digest,
+    } = value;
+    let Some(audit) = &inner.services.audit else {
+        return Ok(Pending {
+            attempt: None,
+            identities,
+        });
+    };
     let attempt = AuditOperationAttempt {
         expected_state_version: None,
         expected_rollback_target_generation: None,
-        scope: AuditScope::Tenant(context.principal().tenant.clone().ok_or_else(denied)?),
+        scope,
         actor: AuditActorIdentity {
             subject: context.principal().subject.clone(),
             kind: actor(context.principal().kind)?,
         },
         operation_id,
-        request_digest: format!(
-            "sha256:{:x}",
-            latent_core::digest::HexDigest(hash.finalize())
-        )
-        .parse()
-        .map_err(|_| invalid())?,
+        request_digest,
         preview_receipt_digest: None,
         action,
         identities: identities.clone(),
@@ -149,19 +184,22 @@ fn operation(
             value.expected_generation,
         ));
     }
+    Ok((
+        read_operation_id("namespace")?,
+        AuditControlAction::NamespaceInspect,
+        None,
+    ))
+}
+pub(super) fn read_operation_id(family: &str) -> Result<String, PlatformError> {
     let read = NEXT_READ
         .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
             value.checked_add(1)
         })
         .map_err(|_| capacity())?;
-    Ok((
-        format!(
-            "namespace-read-{}-{}-{read}",
-            std::process::id(),
-            unix_now()
-        ),
-        AuditControlAction::NamespaceInspect,
-        None,
+    Ok(format!(
+        "{family}-read-{}-{}-{read}",
+        std::process::id(),
+        unix_now()
     ))
 }
 pub(super) async fn ack(finish: Finish) -> c::AuditAck {

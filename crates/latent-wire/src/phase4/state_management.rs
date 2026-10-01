@@ -1,6 +1,7 @@
 //! Actual namespace management over the node's single protected engine.
 mod audit;
 mod authorization;
+mod dispatcher;
 mod inspection;
 mod mutation;
 mod recovery;
@@ -12,7 +13,7 @@ mod tests;
 use super::{OwnedPhase4Response, Phase4Call, Phase4Runtime};
 use crate::{
     invocation::AuthenticatedInvocationContext,
-    management::{ManagementOperation, ManagementPolicy},
+    management::{ManagementDecision, ManagementOperation, ManagementPolicy},
 };
 use latent_artifacts::{ArtifactRepository, PublicationRef};
 use latent_core::{
@@ -77,11 +78,13 @@ pub struct StateManagementServices {
 struct Inner {
     services: StateManagementServices,
     bindings: Vec<Arc<StateManagementBinding>>,
+    dispatcher: Option<latent_effects::runtime::DispatcherManagementPort>,
 }
 struct AdmittedRequest {
     context: AuthenticatedInvocationContext,
     request: contract::Request,
-    binding: Arc<StateManagementBinding>,
+    binding: Option<Arc<StateManagementBinding>>,
+    node_decision: Option<Arc<dyn ManagementDecision>>,
     deadline: Instant,
     permit: Arc<dyn StateManagementReservation>,
 }
@@ -111,7 +114,21 @@ impl StateManagementBackend {
         Ok(Self(Arc::new(Inner {
             services,
             bindings: bindings.into_iter().map(Arc::new).collect(),
+            dispatcher: None,
         })))
+    }
+
+    /// Installs only a sealed handle to the existing node dispatcher. A foreign
+    /// store or an already shared backend cannot create an alternate owner.
+    pub fn with_dispatcher(
+        mut self,
+        dispatcher: latent_effects::runtime::DispatcherManagementPort,
+    ) -> Result<Self, PlatformError> {
+        if !dispatcher.uses_store(&self.0.services.store) {
+            return Err(invalid());
+        }
+        Arc::get_mut(&mut self.0).ok_or_else(invalid)?.dispatcher = Some(dispatcher);
+        Ok(self)
     }
 
     /// Reserves real recovery capacity synchronously; lookup/admission happens
@@ -128,9 +145,22 @@ impl StateManagementBackend {
                 context,
                 request,
                 binding,
+                node_decision,
                 deadline,
                 permit,
             } = admission?;
+            if request.is_node_management() {
+                return dispatcher::execute(
+                    Arc::clone(&self.0),
+                    context,
+                    request,
+                    node_decision.ok_or_else(invalid)?,
+                    deadline,
+                    permit,
+                )
+                .await;
+            }
+            let binding = binding.ok_or_else(invalid)?;
             let access =
                 authorization::authorize(&self.0.services, &binding, &context, &request, deadline)
                     .await?;
@@ -183,7 +213,70 @@ impl StateManagementBackend {
             contract::ValidationError::UnsupportedProfile => unsupported(),
             _ => invalid(),
         })?;
-        let target = target(&request)?;
+        let binding = self.binding(&context, &request)?;
+        let node = request.is_node_management();
+        // Capture the original operator decision before returning the future.
+        // Polling later must not replace a revoked decision with a new grant.
+        let node_decision = if node {
+            Some(
+                self.0
+                    .services
+                    .authorization
+                    .retain_node_control(context.principal())?,
+            )
+        } else {
+            None
+        };
+        let now = self.0.services.clock.monotonic_now();
+        let deadline = context
+            .transport_expires_at()
+            .unwrap_or(now + Duration::from_secs(30));
+        if now >= deadline || deadline.saturating_duration_since(now) > Duration::from_secs(30) {
+            return Err(expired());
+        }
+        let (work_bytes, response_bytes) = if node {
+            (dispatcher::WORK_BYTES, dispatcher::RESPONSE_BYTES)
+        } else {
+            (WORK_BYTES, RESPONSE_BYTES)
+        };
+        let permit = self.0.services.admission.reserve_recovery(
+            request
+                .encoded_len()
+                .checked_mul(4)
+                .and_then(|bytes| bytes.checked_add(32768))
+                .ok_or_else(capacity)?,
+            work_bytes,
+            response_bytes,
+            deadline,
+        )?;
+        if permit.reserved_response_bytes() < response_bytes {
+            return Err(capacity());
+        }
+        Ok(AdmittedRequest {
+            context,
+            request,
+            binding,
+            node_decision,
+            deadline,
+            permit,
+        })
+    }
+    fn binding(
+        &self,
+        context: &AuthenticatedInvocationContext,
+        request: &contract::Request,
+    ) -> Result<Option<Arc<StateManagementBinding>>, PlatformError> {
+        if request.is_node_management() {
+            if context.principal().tenant.is_none() || self.0.dispatcher.is_none() {
+                return Err(denied());
+            }
+            self.0
+                .services
+                .authorization
+                .authorize(context.principal(), ManagementOperation::NodeControl)?;
+            return Ok(None);
+        }
+        let target = target(request)?;
         let selector = target.namespace.as_ref().ok_or_else(invalid)?;
         let principal = context.principal();
         if principal
@@ -217,33 +310,7 @@ impl StateManagementBackend {
             })
             .cloned()
             .ok_or_else(denied)?;
-        let now = self.0.services.clock.monotonic_now();
-        let deadline = context
-            .transport_expires_at()
-            .unwrap_or(now + Duration::from_secs(30));
-        if now >= deadline || deadline.saturating_duration_since(now) > Duration::from_secs(30) {
-            return Err(expired());
-        }
-        let permit = self.0.services.admission.reserve_recovery(
-            request
-                .encoded_len()
-                .checked_mul(4)
-                .and_then(|bytes| bytes.checked_add(32768))
-                .ok_or_else(capacity)?,
-            WORK_BYTES,
-            RESPONSE_BYTES,
-            deadline,
-        )?;
-        if permit.reserved_response_bytes() < RESPONSE_BYTES {
-            return Err(capacity());
-        }
-        Ok(AdmittedRequest {
-            context,
-            request,
-            binding,
-            deadline,
-            permit,
-        })
+        Ok(Some(binding))
     }
 }
 impl Phase4Runtime for StateManagementBackend {

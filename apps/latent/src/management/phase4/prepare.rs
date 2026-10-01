@@ -17,6 +17,8 @@ use latent_rpc::{
 };
 use serde::Deserialize;
 use std::path::Path;
+mod dispatcher;
+pub use dispatcher::prepare_dispatcher;
 
 fn target(args: &NamespaceArgs, config: &ResolvedConfig) -> c::InspectNamespaceRequest {
     c::InspectNamespaceRequest {
