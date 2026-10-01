@@ -511,3 +511,9 @@ mutation preconditions, tenant isolation and current authority checks remain
 explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
+
+The Phase 4 coordinator descriptor baseline also contains the additive
+`latent/control/v1/state.proto` and `latent/transaction/v1/transaction.proto`
+contracts and State audit resource value 11. The reviewed Buf descriptor keeps
+every earlier file, field, type, cardinality and oneof unchanged. This golden
+records the wire contract; it grants no namespace or transaction authority.

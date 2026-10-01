@@ -1667,6 +1667,8 @@
         "budget::incoming::tests::exact_deadline_does_not_bypass_budget_intersection_or_unsupported_dimensions",
         "budget::incoming::tests::exact_incoming_survives_millisecond_boundary_and_wall_clock_changes",
         "budget::incoming::tests::zero_relative_budget_and_expired_exact_deadline_remain_rejected",
+        "budget::host_memory::tests::actual_native_owner_keeps_capacity_after_terminal_report_and_settles_once",
+        "budget::host_memory::tests::native_and_linear_memory_compete_before_allocation_and_failed_preparations_roll_back",
         "budget::profile::tests::phase3_finalization_keeps_live_reservations_until_the_real_owner_retires",
         "budget::profile::tests::phase3_is_explicit_and_intersects_each_enabled_counter_without_enabling_state",
         "budget::profile::tests::phase3_preserves_incoming_monotonic_time_despite_wall_clock_regression",
@@ -1748,7 +1750,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 96,
+      "minimumCases": 98,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -3649,6 +3651,8 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "authoring::inputs::tests::diagnostic_asset_inventory_cannot_cover_replaced_bytes",
+        "authoring::inputs::tests::diagnostic_assets_preserve_checked_component_and_wit_inventory",
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
         "authoring::policy::tests::demo_publisher_and_builder_proof_age_ceilings_remain_independent",
         "fixture_tls::tests::fixture_tls_is_fresh_private_and_never_replaces_an_existing_identity"
@@ -3658,7 +3662,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 3,
+      "minimumCases": 5,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -6718,6 +6722,7 @@
         "engine_profiles::foreign_profile_prepared_ownership_is_rejected_before_native_instantiation",
         "engine_profiles::insufficient_native_memory_pool_rejects_without_leaking_prepared_or_active_owners",
         "host_abi::forged_or_stale_host_profile_descriptors_cannot_reuse_preparation",
+        "host_abi::outbound_proposal_and_wasi_sockets_are_not_ambient_authority",
         "host_abi::recognized_provider_imports_fail_preparation_without_installed_owners",
         "owned_preparation::dropped_and_unwinding_pending_guests_preserve_unsampled_fuel_and_memory",
         "owned_preparation::foreign_factory_changed_descriptor_and_foreign_guard_fail_before_store_creation",
@@ -6827,7 +6832,7 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 46,
+      "minimumCases": 47,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -7957,6 +7962,10 @@
         "output::tests::output_failure_preserves_managed_recovery_without_bulk_response",
         "output::tests::requested_control_characters_are_escaped_and_roundtrip_as_data",
         "output::tests::unknown_outcome_and_absent_identity_survive_document_conversion",
+        "package::canonical_policy::tests::duplicate_or_conflicting_keys_requirements_and_encodings_fail_without_echo",
+        "package::canonical_policy::tests::independent_key_and_requirement_permutations_keep_exact_policy_identity",
+        "package::canonical_policy::tests::inventories_and_duplicate_json_fields_remain_bounded_and_fail_closed",
+        "package::canonical_policy::tests::shared_multi_key_vectors_match_the_runtime_canonical_bytes_and_digests",
         "package::registry::profile::advanced_tests::advanced_cli_profile_constructor_denies_wrong_realms_roots_and_destinations",
         "package::registry::profile::advanced_tests::advanced_cli_profile_preserves_separate_authorities_identity_limits_and_network",
         "package::registry::profile::advanced_tests::advanced_cli_profile_rejects_closed_fields_version_mixing_and_excess_authority",
@@ -7973,7 +7982,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 134,
+      "minimumCases": 138,
       "mode": "libtest",
       "package": "latent",
       "platforms": [

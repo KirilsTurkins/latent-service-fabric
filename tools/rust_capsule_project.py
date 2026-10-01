@@ -100,7 +100,7 @@ def checked_path(path: Path) -> Path:
     return path.resolve(strict=False)
 
 
-def snapshot(root: Path) -> dict[str, bytes]:
+def snapshot(root: Path, *, exclude: tuple[str, ...] = ()) -> dict[str, bytes]:
     root = checked_path(root)
     if not root.is_dir():
         raise ValueError("project directory does not exist")
@@ -109,7 +109,7 @@ def snapshot(root: Path) -> dict[str, bytes]:
     while pending:
         parent = pending.pop()
         for path in sorted(parent.iterdir()):
-            if parent == root and path.name in {".git", "target"}:
+            if parent == root and path.name in {".git", "target", "dependency-inputs", *exclude}:
                 continue
             visited += 1
             if visited > MAX_FILES:
