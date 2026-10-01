@@ -2,6 +2,7 @@
 mod admission;
 mod completion;
 mod policy;
+mod replay;
 mod selection;
 pub use selection::{TransactionInstallation, TransactionSelection};
 
@@ -93,6 +94,7 @@ pub enum TransactionCompletionResult {
     },
     Existing {
         command: CommandRecord,
+        result: Result<Option<Arc<latent_commit::atomic::DurableResult>>, PlatformError>,
         retained: Arc<TransactionRetention>,
     },
     PendingRetired {

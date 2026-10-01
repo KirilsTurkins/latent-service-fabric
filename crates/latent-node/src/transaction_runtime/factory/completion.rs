@@ -72,10 +72,20 @@ impl NativeTransactionAdmission {
                     observation,
                 )
             }
-            TransactionAdmissionResult::Existing { command, retained } => (
-                TransactionCompletionResult::Existing { command, retained },
-                outcome,
-            ),
+            TransactionAdmissionResult::Existing { command, retained } => {
+                let (command, result) = match self.replay_existing(&command).await {
+                    Ok((command, result)) => (command, Ok(result)),
+                    Err(error) => (command, Err(error)),
+                };
+                (
+                    TransactionCompletionResult::Existing {
+                        command,
+                        result,
+                        retained,
+                    },
+                    outcome,
+                )
+            }
             TransactionAdmissionResult::Pending(pending) => {
                 let command = pending.record().clone();
                 let proof = pending.retire_without_guest().map(Box::new);
@@ -91,6 +101,17 @@ impl NativeTransactionAdmission {
                 )
             }
         };
+        self.publish_completion(result, observation)
+    }
+
+    fn publish_completion(
+        &self,
+        result: TransactionCompletionResult,
+        observation: ActivationOutcome,
+    ) -> ActivationOutcome {
+        if self.bind_completion_retention(&result).is_err() {
+            return unavailable(outcome_consumption(&observation));
+        }
         match self.completion.lock() {
             Ok(mut slot) if slot.is_none() => {
                 *slot = Some(result);

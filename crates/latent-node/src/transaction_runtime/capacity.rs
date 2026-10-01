@@ -106,6 +106,20 @@ impl TransactionRetention {
         self.native.with_live(action).map_err(|_| unavailable())
     }
 
+    pub(super) fn monotonic_now(&self) -> Instant {
+        self.native.monotonic_now()
+    }
+
+    pub(super) fn with_current_until<T>(
+        &self,
+        deadline: Instant,
+        action: impl FnOnce() -> T,
+    ) -> Result<T, PlatformError> {
+        self.native
+            .with_live_until(deadline, action)
+            .map_err(|_| unavailable())
+    }
+
     pub(super) fn check_current(&self) -> Result<(), PlatformError> {
         self.with_current(|| ())
     }
