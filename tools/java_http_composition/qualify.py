@@ -99,7 +99,10 @@ def canary(client, targets, publications, releases, host):
     candidate_path = client.directory / "candidate.json"
     write_json(candidate_path, candidate)
     policy_path = client.directory / "canary-policy.json"
-    write_json(policy_path, {"formatVersion": 1, "observationMillis": 5000, "minimumCandidateSamples": 1,
+    # Include the bounded, actual candidate preparation inspection in this
+    # window. A cold managed preparation can occupy the former five-second
+    # window before the first sample reaches the route.
+    write_json(policy_path, {"formatVersion": 1, "observationMillis": 15000, "minimumCandidateSamples": 1,
         "maximumFailureBasisPoints": 0, "latencyThresholdMicros": 10000000, "maximumSlowBasisPoints": 0})
     started = receipt(client.call("rollout", "start", "java-http-canary", "--base", "java-http-adapter",
         "--expected-base-generation", base["generation"], "--candidate", candidate_path, "--weights", "5000,10000",
@@ -110,8 +113,8 @@ def canary(client, targets, publications, releases, host):
         sample = invoke(client, targets, "adapter", "handle", web_request(host), f"java-canary-{ordinal:02d}", route_name=False)
         require(decoded(sample)[0]["status"] == 200, "java-canary-composed-failed")
         samples.append(sample["data"]["resolvedRevision"])
-    end = min(client.deadline, time.monotonic() + 10)
-    for _ in range(64):
+    end = min(client.deadline, time.monotonic() + 20)
+    for _ in range(256):
         report = client.call("rollout", "evaluate", "java-http-canary", "--expected-revision", started["revision"])["data"]["report"]
         if not report["assessment"]["verdict"].endswith(("COLLECTING", "DRAINING")):
             break
