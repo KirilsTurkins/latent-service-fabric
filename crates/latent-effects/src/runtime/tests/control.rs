@@ -61,7 +61,19 @@ async fn detached_control_waiter_keeps_actual_writer_and_original_receipt_on_sha
     })
     .await;
     assert_eq!(receipt.request(), &request);
-    let snapshot = owner.snapshot().unwrap();
+    let snapshot = with_watchdog(WATCHDOG, async {
+        loop {
+            let snapshot = owner.snapshot().unwrap();
+            // A read worker may observe the durable receipt before the writer
+            // publishes metadata. Neither receipt nor waiter drop proves that
+            // the separate accepted control has finished publication.
+            if !snapshot.control.pending {
+                break snapshot;
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await;
     assert!(snapshot.paused && !snapshot.control.pending);
     assert_eq!(snapshot.control.generation, receipt.generation());
     assert!(
