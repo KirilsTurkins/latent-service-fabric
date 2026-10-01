@@ -1357,6 +1357,8 @@
         "broker::pools::tests::control_admission::poisoned_queue_registry_is_not_treated_as_transient_contention",
         "broker::pools::tests::control_admission::queued_request_waits_for_registry_contention_without_losing_ownership",
         "broker::pools::tests::control_admission::registry_contention_does_not_extend_the_original_queue_deadline",
+        "broker::pools::tests::deferred::deferred_authority_cannot_select_another_provider_or_refund_live_rotated_requests",
+        "broker::pools::tests::deferred::deferred_socket_preserves_shared_capacity_after_request_drop_and_finite_operations",
         "broker::pools::tests::fixed_limits_reserve_before_dial_and_lowering_preserves_live_owners",
         "broker::pools::tests::idle_socket_is_shared_while_activation_ownership_is_reclaimed",
         "broker::pools::tests::ingress::cloned_requests_share_finite_operations_and_rotation_fences_network_work",
@@ -1469,7 +1471,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 151,
+      "minimumCases": 153,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
