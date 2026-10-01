@@ -70,6 +70,9 @@ pub struct GuestTrap {
     pub message: String,
     pub guest_backtrace: Vec<String>,
     pub metadata: Metadata,
+    /// Closed host-producer observation. Guest messages/metadata never derive
+    /// this field; it does not change the trap or assert an effect disposition.
+    pub diagnostic: Option<latent_core::diagnostic::ActivationDiagnostic>,
 }
 
 /// Stable reason why non-cooperative guest execution was stopped.
