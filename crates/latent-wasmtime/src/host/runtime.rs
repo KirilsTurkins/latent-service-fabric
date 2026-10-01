@@ -19,6 +19,9 @@ use std::{
 };
 use wasmtime::{component::Linker, AsContextMut};
 
+mod fixed_result;
+use fixed_result::{Completion, FixedValue};
+
 pub(crate) const CAPABILITY: &str = "latent:runtime/activation@0.1.0";
 const STOP_OBSERVATION: Duration = Duration::from_millis(10);
 
@@ -122,14 +125,19 @@ fn synchronous<T>(
     state: &mut HostState,
     operation: &str,
     execute: impl FnOnce(&mut Table) -> Result<T, PlatformError>,
-) -> Result<T, wit::Error> {
+) -> Completion<Result<T, wit::Error>>
+where
+    Result<T, wit::Error>: FixedValue,
+{
     let started = Instant::now();
-    let mut call = authorize(state, operation).map_err(convert)?;
+    let mut call = match authorize(state, operation) {
+        Ok(call) => call,
+        Err(error) => return Completion::new(Err(convert(error)), None),
+    };
     let result = table(state).and_then(execute);
     let _ = call.record_provider_outcome(AuditProviderOutcome::HostCompleted);
-    state.capabilities.retain_lowering(call);
     state.record_host_call(started);
-    result.map_err(convert)
+    Completion::new(result.map_err(convert), Some(call))
 }
 
 #[expect(
@@ -259,7 +267,10 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
         |access, (timer,): (wit::Token,)| {
             Box::pin(async move {
                 let started = Instant::now();
-                let prepared = access.with(|mut access| {
+                let PreparedWait {
+                    result: prepared,
+                    failed_call,
+                } = access.with(|mut access| {
                     let mut store = access.as_context_mut();
                     super::service::checkpoint(&mut store)?;
                     let prepared = prepare_timer_next(store.data_mut(), token(timer));
@@ -274,17 +285,14 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
                             .record_provider_outcome(AuditProviderOutcome::HostCompleted);
                         (result.map_err(convert), Some(wait.call))
                     }
-                    Err(error) => (Err(convert(error)), None),
+                    Err(error) => completed_failure(error, failed_call),
                 };
                 access.with(|mut access| {
                     let mut store = access.as_context_mut();
                     super::service::checkpoint(&mut store)?;
-                    if let Some(call) = call {
-                        store.data_mut().capabilities.retain_lowering(call);
-                    }
                     super::service::synchronize(&mut store)?;
                     store.data_mut().record_host_call(started);
-                    Ok((result,))
+                    Ok((Completion::new(result, call),))
                 })
             })
         },
@@ -295,7 +303,10 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
             move |access, (value, continuation): (u64, Option<wit::Token>)| {
                 Box::pin(async move {
                     let started = Instant::now();
-                    let prepared = access.with(|mut access| {
+                    let PreparedWait {
+                        result: prepared,
+                        failed_call,
+                    } = access.with(|mut access| {
                         let mut store = access.as_context_mut();
                         super::service::checkpoint(&mut store)?;
                         let prepared = prepare_wait(
@@ -315,17 +326,14 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
                                 .record_provider_outcome(AuditProviderOutcome::HostCompleted);
                             (result.map(|_| ()).map_err(convert), Some(wait.call))
                         }
-                        Err(error) => (Err(convert(error)), None),
+                        Err(error) => completed_failure(error, failed_call),
                     };
                     access.with(|mut access| {
                         let mut store = access.as_context_mut();
                         super::service::checkpoint(&mut store)?;
-                        if let Some(call) = call {
-                            store.data_mut().capabilities.retain_lowering(call);
-                        }
                         super::service::synchronize(&mut store)?;
                         store.data_mut().record_host_call(started);
-                        Ok((result,))
+                        Ok((Completion::new(result, call),))
                     })
                 })
             },
@@ -344,87 +352,127 @@ struct WaitingTimer {
     requested: Instant,
     call: ProviderCall,
 }
+struct PreparedWait {
+    result: Result<WaitingTimer, PlatformError>,
+    failed_call: Option<ProviderCall>,
+}
+fn completed_failure<T>(
+    error: PlatformError,
+    mut call: Option<ProviderCall>,
+) -> (Result<T, wit::Error>, Option<ProviderCall>) {
+    if let Some(call) = call.as_mut() {
+        let _ = call.record_provider_outcome(AuditProviderOutcome::HostCompleted);
+    }
+    (Err(convert(error)), call)
+}
 fn prepare_wait(
     state: &mut HostState,
     operation: &str,
     value: u64,
     continuation: Option<RuntimeToken>,
-) -> Result<WaitingTimer, PlatformError> {
-    let call = authorize(state, operation)?;
-    let wait = state.currentness_read_wait.clone().ok_or_else(|| {
-        failure(
-            PlatformErrorCode::Unavailable,
-            "runtime-timer-provider-unavailable",
-        )
-    })?;
-    let stop = state.runtime_stop.clone().ok_or_else(|| {
-        failure(
-            PlatformErrorCode::Unavailable,
-            "runtime-stop-owner-unavailable",
-        )
-    })?;
-    let clock = Arc::clone(&state.clock);
-    let sample = clock.sample();
-    let elapsed = if operation == "wait-for" {
-        Duration::from_nanos(value)
-    } else {
-        Duration::from_millis(value.saturating_sub(sample.unix_millis()))
+) -> PreparedWait {
+    let mut call = match authorize(state, operation) {
+        Ok(call) => Some(call),
+        Err(error) => {
+            return PreparedWait {
+                result: Err(error),
+                failed_call: None,
+            }
+        }
     };
-    let requested = sample.monotonic().checked_add(elapsed).ok_or_else(|| {
-        failure(
-            PlatformErrorCode::InvalidArgument,
-            "runtime-timer-out-of-range",
-        )
-    })?;
-    let runtime = table(state)?.runtime.clone();
-    let owner = runtime.register(OwnerKind::Timer, continuation)?;
-    Ok(WaitingTimer {
-        runtime,
-        _owner: Some(owner),
-        timer_wait: None,
-        wait,
-        clock,
-        stop,
-        requested,
-        call,
-    })
+    let result = (|| {
+        let wait = state.currentness_read_wait.clone().ok_or_else(|| {
+            failure(
+                PlatformErrorCode::Unavailable,
+                "runtime-timer-provider-unavailable",
+            )
+        })?;
+        let stop = state.runtime_stop.clone().ok_or_else(|| {
+            failure(
+                PlatformErrorCode::Unavailable,
+                "runtime-stop-owner-unavailable",
+            )
+        })?;
+        let clock = Arc::clone(&state.clock);
+        let sample = clock.sample();
+        let elapsed = if operation == "wait-for" {
+            Duration::from_nanos(value)
+        } else {
+            Duration::from_millis(value.saturating_sub(sample.unix_millis()))
+        };
+        let requested = sample.monotonic().checked_add(elapsed).ok_or_else(|| {
+            failure(
+                PlatformErrorCode::InvalidArgument,
+                "runtime-timer-out-of-range",
+            )
+        })?;
+        let runtime = table(state)?.runtime.clone();
+        let owner = runtime.register(OwnerKind::Timer, continuation)?;
+        Ok(WaitingTimer {
+            runtime,
+            _owner: Some(owner),
+            timer_wait: None,
+            wait,
+            clock,
+            stop,
+            requested,
+            call: call.take().expect("original accepted runtime call"),
+        })
+    })();
+    // A failed timer preparation has no pending producer, but its accepted
+    // call still owns the fixed error result through actual canonical lowering.
+    PreparedWait {
+        result,
+        failed_call: call,
+    }
 }
-fn prepare_timer_next(
-    state: &mut HostState,
-    token: RuntimeToken,
-) -> Result<WaitingTimer, PlatformError> {
-    let call = authorize(state, "timer-next")?;
-    let wait = state.currentness_read_wait.clone().ok_or_else(|| {
-        failure(
-            PlatformErrorCode::Unavailable,
-            "runtime-timer-provider-unavailable",
-        )
-    })?;
-    let stop = state.runtime_stop.clone().ok_or_else(|| {
-        failure(
-            PlatformErrorCode::Unavailable,
-            "runtime-stop-owner-unavailable",
-        )
-    })?;
-    let clock = Arc::clone(&state.clock);
-    let table = table(state)?;
-    let timer = table
-        .timers
-        .iter()
-        .find(|timer| timer.token() == token)
-        .ok_or_else(|| failure(PlatformErrorCode::InvalidArgument, "runtime-timer-token"))?;
-    let timer_wait = timer.begin_wait()?;
-    let requested = timer_wait.requested();
-    Ok(WaitingTimer {
-        runtime: table.runtime.clone(),
-        _owner: None,
-        timer_wait: Some(timer_wait),
-        wait,
-        clock,
-        stop,
-        requested,
-        call,
-    })
+fn prepare_timer_next(state: &mut HostState, token: RuntimeToken) -> PreparedWait {
+    let mut call = match authorize(state, "timer-next") {
+        Ok(call) => Some(call),
+        Err(error) => {
+            return PreparedWait {
+                result: Err(error),
+                failed_call: None,
+            }
+        }
+    };
+    let result = (|| {
+        let wait = state.currentness_read_wait.clone().ok_or_else(|| {
+            failure(
+                PlatformErrorCode::Unavailable,
+                "runtime-timer-provider-unavailable",
+            )
+        })?;
+        let stop = state.runtime_stop.clone().ok_or_else(|| {
+            failure(
+                PlatformErrorCode::Unavailable,
+                "runtime-stop-owner-unavailable",
+            )
+        })?;
+        let clock = Arc::clone(&state.clock);
+        let table = table(state)?;
+        let timer = table
+            .timers
+            .iter()
+            .find(|timer| timer.token() == token)
+            .ok_or_else(|| failure(PlatformErrorCode::InvalidArgument, "runtime-timer-token"))?;
+        let timer_wait = timer.begin_wait()?;
+        let requested = timer_wait.requested();
+        Ok(WaitingTimer {
+            runtime: table.runtime.clone(),
+            _owner: None,
+            timer_wait: Some(timer_wait),
+            wait,
+            clock,
+            stop,
+            requested,
+            call: call.take().expect("original accepted runtime call"),
+        })
+    })();
+    PreparedWait {
+        result,
+        failed_call: call,
+    }
 }
 impl WaitingTimer {
     async fn run(&mut self) -> Result<u64, PlatformError> {
