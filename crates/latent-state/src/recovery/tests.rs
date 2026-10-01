@@ -76,6 +76,81 @@ fn staging() -> RecoveryGuard {
 }
 
 #[test]
+fn physical_readiness_cas_rejects_namespace_history_and_restore_changes() {
+    for changed in 0..3 {
+        let fixture = fixture();
+        let view = fixture.store.snapshot().unwrap();
+        let expectations = namespace_readiness_expectations(
+            &view,
+            &fixture.scope.tenant,
+            &fixture.scope.namespace,
+            1,
+        )
+        .unwrap();
+        let record =
+            NamespaceRecord::decode(&view.get(&namespace_key(&fixture.scope)).unwrap().unwrap())
+                .unwrap();
+        let mutation = match changed {
+            0 => {
+                let mut changed = record.clone();
+                changed.status = NamespaceStatus::Quiescing;
+                RowMutation {
+                    key: namespace_key(&fixture.scope),
+                    value: Some(changed.encode().unwrap()),
+                }
+            }
+            1 => {
+                let mut history = NamespaceHistory::initial(&record);
+                history.status = HistoryStatus::ReconciliationRequired;
+                RowMutation {
+                    key: crate::namespace::history::history_key(
+                        &record.tenant,
+                        &record.id,
+                        record.version.incarnation,
+                    )
+                    .unwrap(),
+                    value: Some(history.encode().unwrap()),
+                }
+            }
+            _ => staging().prepare_staging().unwrap().mutations.remove(0),
+        };
+        fixture
+            .store
+            .apply(AtomicBatch {
+                expectations: vec![],
+                mutations: vec![mutation],
+            })
+            .unwrap();
+        let output = RowKey {
+            family: Family::Maintenance,
+            key: b"guarded-physical-write".to_vec(),
+        };
+        assert_eq!(
+            fixture.store.apply(AtomicBatch {
+                expectations: expectations.into(),
+                mutations: vec![RowMutation {
+                    key: output.clone(),
+                    value: Some(vec![1])
+                }],
+            }),
+            Err(StoreError::Conflict)
+        );
+        let actual = fixture.store.snapshot().unwrap();
+        assert_eq!(actual.get(&output), Ok(None));
+        assert_eq!(
+            namespace_readiness_expectations(
+                &actual,
+                &fixture.scope.tenant,
+                &fixture.scope.namespace,
+                1,
+            )
+            .err(),
+            Some(StoreError::Unavailable)
+        );
+    }
+}
+
+#[test]
 fn actual_staging_and_completed_restore_guard_block_admission_and_original_namespace_dispatch() {
     let fixture = fixture();
     let old = fixture.store.snapshot().unwrap();

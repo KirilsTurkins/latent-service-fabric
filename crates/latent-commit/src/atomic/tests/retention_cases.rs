@@ -49,6 +49,78 @@ fn result_bytes(store: &EmbeddedStore, record: &CommandRecord) -> Vec<u8> {
 }
 
 #[test]
+fn paused_namespace_history_and_restore_hold_expiry_without_progress_or_body_changes() {
+    for changed in 0..3 {
+        let (_dir, store, effects) = setup();
+        let record = completed(&store, &effects, "paused-linked-expiry");
+        let owner = ResultMaintenanceOwner::default();
+        let progress = owner
+            .anchor(&store, None, observation(1000, 0), maintenance)
+            .unwrap();
+        let view = store.snapshot().unwrap();
+        let body = result_bytes(&store, &record);
+        let namespace = latent_state::namespace::NamespaceRecord::decode(
+            &view.get(&namespace_key()).unwrap().unwrap(),
+        )
+        .unwrap();
+        let mutation = match changed {
+            0 => {
+                let mut namespace = namespace.clone();
+                namespace.status = latent_state::namespace::NamespaceStatus::Quiescing;
+                RowMutation {
+                    key: namespace_key(),
+                    value: Some(namespace.encode().unwrap()),
+                }
+            }
+            1 => {
+                let mut history =
+                    latent_state::namespace::history::NamespaceHistory::initial(&namespace);
+                history.status =
+                    latent_state::namespace::history::HistoryStatus::ReconciliationRequired;
+                RowMutation {
+                    key: latent_state::namespace::history::history_key(
+                        &namespace.tenant,
+                        &namespace.id,
+                        namespace.version.incarnation,
+                    )
+                    .unwrap(),
+                    value: Some(history.encode().unwrap()),
+                }
+            }
+            _ => latent_state::recovery::RecoveryGuard::staging([1; 32], [2; 32], [3; 32])
+                .unwrap()
+                .prepare_staging()
+                .unwrap()
+                .mutations
+                .remove(0),
+        };
+        store
+            .apply(AtomicBatch {
+                expectations: vec![],
+                mutations: vec![mutation],
+            })
+            .unwrap();
+        assert_eq!(
+            owner.step(&store, observation(1100, 100), maintenance),
+            Err(AtomicError::Unavailable)
+        );
+        assert_eq!(result_bytes(&store, &record), body);
+        assert_eq!(
+            MaintenanceProgress::decode(
+                &store
+                    .snapshot()
+                    .unwrap()
+                    .get(&MaintenanceProgress::key())
+                    .unwrap()
+                    .unwrap(),
+            )
+            .unwrap(),
+            progress
+        );
+    }
+}
+
+#[test]
 fn response_expiry_preserves_uncertain_effect_inbox_source_and_original_key_after_reopen() {
     let (dir, mut store, effects) = setup();
     let record = completed(&store, &effects, "linked-expiry");

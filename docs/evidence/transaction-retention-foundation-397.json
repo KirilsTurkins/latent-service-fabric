@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "latent.transaction.retention.foundation.evidence.v1",
+  "sourceCommit": "32982d793f24b97bfc9b20016c3b3c6e2dc81fc5",
+  "sourceTree": "7d587b5f7fa8caa01f94ea9b5ec50605396645a5",
+  "sourceArchiveSha256": "ab75370b70e1556911135ac774c9bdc972fd6ffaaf418b7d47247b77b9c5b13a",
+  "platform": "linux-x86_64",
+  "toolchain": "Rust 1.97.1",
+  "tests": {
+    "latentState": {
+      "passed": 109,
+      "failed": 0,
+      "ignored": 0
+    },
+    "latentCommit": {
+      "passed": 45,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "clippy": {
+    "owners": [
+      "latent-state",
+      "latent-commit"
+    ],
+    "allFeatures": true,
+    "allTargets": true,
+    "noDeps": true,
+    "denyWarnings": true,
+    "passed": true
+  },
+  "counterexample": {
+    "originalSource": "1dba08064f879362fa3036d81e9801716d7cb8e5",
+    "addedTestSha256": "2eb4f6fdcd39c18275c0b543497a577f2407f348f91b3fda5a39792813d3bb34",
+    "originalSourceModified": false,
+    "exitCode": 101,
+    "assertion": "wall1900/mono0 returned retired1; required RecoveryRequired",
+    "fixedSourcePassed": true
+  },
+  "scope": {
+    "linkedResponseRetirement": true,
+    "cumulativeClockAnchorSurvivesReopen": true,
+    "actualProtectedStoreRecoveryReadUnderOrdinarySaturation": true,
+    "identityOrPayloadPurge": false,
+    "completeIssue397": false,
+    "javaOrHttpQualification": false
+  },
+  "reports": {
+    "tests.log": "sha256:cbe600a3480cc5e956a195ff190615454790f10fc810b7f2302559682bc6f61f",
+    "clippy.log": "sha256:0cd6212a445e7f2d871caed8992e091232e41736efe9a6a862991e41c310f24e",
+    "original-code-counterexample.log": "sha256:2c02f8732098a58be15171a330b7c2141c8567b5f82027790362bf50aab6ed01",
+    "result.txt": "sha256:7972d8dac29302752a26ebb0ed6c4b8a62852b34ebf3886f06e7badb0cb7216e"
+  }
+}

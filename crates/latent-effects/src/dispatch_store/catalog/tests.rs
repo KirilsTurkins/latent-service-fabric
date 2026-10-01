@@ -59,6 +59,7 @@ fn seed(store: &EmbeddedStore, identity: char) -> DueRecord {
         .apply(AtomicBatch {
             expectations: vec![],
             mutations: vec![
+                namespace_mutation(authority.scope()),
                 RowMutation {
                     key: effect_row_key(payload.effect()).unwrap(),
                     value: Some(record.encode().unwrap()),
@@ -93,6 +94,82 @@ fn receipt(disposition: Disposition, now: u64) -> AttemptReceipt {
         provider_receipt: (disposition == Disposition::ProviderAcknowledged)
             .then(|| "provider-receipt".into()),
         observed_at_millis: now,
+    }
+}
+
+#[test]
+fn paused_namespace_blocks_due_claim_and_actual_send_marker_without_changing_original_effect() {
+    for sending in [false, true] {
+        for changed in 0..3 {
+            let fixture = Fixture::new();
+            let store = fixture.store();
+            let due = seed(store, 'a');
+            let epoch = DispatchCatalog::begin_exclusive_epoch(store, time(100), None).unwrap();
+            let claim =
+                sending.then(|| DispatchCatalog::claim(store, epoch, &due, time(101)).unwrap());
+            let original = record(store, &due.effect);
+            let scope = original.authority().unwrap().scope().clone();
+            let namespace = namespace_mutation(&scope);
+            let current =
+                latent_state::namespace::NamespaceRecord::decode(namespace.value.as_ref().unwrap())
+                    .unwrap();
+            let mutation = match changed {
+                0 => {
+                    let mut current = current.clone();
+                    current.status = latent_state::namespace::NamespaceStatus::Quiescing;
+                    RowMutation {
+                        key: namespace.key,
+                        value: Some(current.encode().unwrap()),
+                    }
+                }
+                1 => {
+                    let mut history =
+                        latent_state::namespace::history::NamespaceHistory::initial(&current);
+                    history.status =
+                        latent_state::namespace::history::HistoryStatus::ReconciliationRequired;
+                    RowMutation {
+                        key: latent_state::namespace::history::history_key(
+                            &current.tenant,
+                            &current.id,
+                            current.version.incarnation,
+                        )
+                        .unwrap(),
+                        value: Some(history.encode().unwrap()),
+                    }
+                }
+                _ => latent_state::recovery::RecoveryGuard::staging([1; 32], [2; 32], [3; 32])
+                    .unwrap()
+                    .prepare_staging()
+                    .unwrap()
+                    .mutations
+                    .remove(0),
+            };
+            store
+                .apply(AtomicBatch {
+                    expectations: vec![],
+                    mutations: vec![mutation],
+                })
+                .unwrap();
+            if let Some(claim) = claim {
+                assert_eq!(
+                    DispatchCatalog::begin_send(store, epoch, &claim.attempt, time(102)),
+                    Err(DispatchStoreError::Storage(StoreError::Unavailable))
+                );
+            } else {
+                let page =
+                    DispatchCatalog::due_page(&store.snapshot().unwrap(), 102, None, 1, 4096);
+                if changed == 2 {
+                    assert_eq!(page.err(), Some(StoreError::Unavailable));
+                } else {
+                    assert!(page.unwrap().rows.is_empty());
+                }
+                assert_eq!(
+                    DispatchCatalog::claim(store, epoch, &due, time(102)).err(),
+                    Some(DispatchStoreError::Storage(StoreError::Unavailable))
+                );
+            }
+            assert_eq!(record(store, &due.effect), original);
+        }
     }
 }
 
@@ -413,7 +490,7 @@ fn accepted_attempt_reserves_disposition_bytes_and_actual_history_row_under_full
 
     let directory = tempfile::tempdir().unwrap();
     let limits = StoreLimits {
-        maximum_rows: 6,
+        maximum_rows: 7,
         maximum_logical_bytes: 96 * 1024,
         ..StoreLimits::default()
     };
@@ -433,7 +510,7 @@ fn accepted_attempt_reserves_disposition_bytes_and_actual_history_row_under_full
     let claim = DispatchCatalog::claim(&store, epoch, &due, time(101)).unwrap();
     let view = store.snapshot().unwrap();
     let (rows, logical_bytes) = charged_usage(&view);
-    assert_eq!(rows, 5);
+    assert_eq!(rows, 6);
     let history = DispatchCatalog::history_page(&view, &due.effect, None, 16, 4096).unwrap();
     assert!(history.rows.is_empty());
     assert_eq!(history.pending_slots, 1);
@@ -502,6 +579,7 @@ fn charged_usage(view: &ReadView) -> (usize, usize) {
     let mut logical_bytes = 0;
     let mut rows = 0;
     for family in [
+        Family::Namespace,
         Family::Outbox,
         Family::PayloadReference,
         Family::Maintenance,
@@ -521,4 +599,25 @@ fn charged_usage(view: &ReadView) -> (usize, usize) {
         }
     }
     (rows, logical_bytes)
+}
+
+fn namespace_mutation(scope: &crate::authority::EffectScope) -> RowMutation {
+    use latent_state::namespace::{namespace_record_key, NamespaceQuota, NamespaceRecord};
+    let tenant = latent_core::TenantId(scope.tenant.clone());
+    let id = latent_core::StateNamespaceId(scope.namespace.clone());
+    let mut record = NamespaceRecord::create(
+        tenant.clone(),
+        id.clone(),
+        format!("sha256:{}", "1".repeat(64)),
+        NamespaceQuota::default(),
+    )
+    .unwrap();
+    record.version.incarnation = scope.incarnation;
+    RowMutation {
+        key: latent_state::embedded::RowKey {
+            family: latent_state::embedded::Family::Namespace,
+            key: namespace_record_key(&tenant, &id).unwrap(),
+        },
+        value: Some(record.encode().unwrap()),
+    }
 }

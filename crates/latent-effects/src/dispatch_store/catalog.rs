@@ -117,6 +117,7 @@ impl DispatchCatalog {
         maximum_rows: usize,
         maximum_bytes: usize,
     ) -> Result<DuePage, StoreError> {
+        latent_state::recovery::require_ready(view)?;
         let page = view.scan_after(
             Family::Maintenance,
             DUE_PREFIX,
@@ -132,7 +133,24 @@ impl DispatchCatalog {
                 next_due_millis = Some(row.due_millis);
                 break;
             }
-            rows.push(row);
+            let loaded = write::Loaded::read(view, &row.effect).map_err(|error| match error {
+                DispatchStoreError::Storage(error) => error,
+                _ => StoreError::Corrupt,
+            })?;
+            let authority = loaded.record.authority().map_err(storage_error)?;
+            let scope = authority.scope();
+            match latent_state::recovery::require_namespace_ready(
+                view,
+                &latent_core::TenantId(scope.tenant.clone()),
+                &latent_core::StateNamespaceId(scope.namespace.clone()),
+                scope.incarnation,
+            ) {
+                Ok(()) => rows.push(row),
+                // Preserve paused/original-incarnation work for review while
+                // allowing the same bounded page to serve ready namespaces.
+                Err(StoreError::Unavailable | StoreError::Conflict) => {}
+                Err(error) => return Err(error),
+            }
         }
         Ok(DuePage {
             rows,
@@ -161,6 +179,7 @@ impl DispatchCatalog {
         let payload_bytes = view.get(&payload_key)?.ok_or(StoreError::Corrupt)?;
         let payload = PayloadRecord::decode(&payload_bytes).map_err(storage_error)?;
         let authority = loaded.record.authority().map_err(storage_error)?;
+        writer.expect_ready_namespace(&view, authority.scope())?;
         payload.verify(&authority).map_err(storage_error)?;
         let attempt = match loaded.record.claim(epoch.0, time) {
             Ok(attempt) => attempt,
@@ -199,6 +218,10 @@ impl DispatchCatalog {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, claim.effect())?;
+        writer.expect_ready_namespace(
+            &view,
+            loaded.record.authority().map_err(storage_error)?.scope(),
+        )?;
         loaded.record.check_claim(claim)?;
         writer.verify_attempt(&view, &loaded.record)?;
         loaded.record.begin_send(claim)?;
