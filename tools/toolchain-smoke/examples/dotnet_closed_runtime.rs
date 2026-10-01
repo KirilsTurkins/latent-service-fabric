@@ -19,16 +19,22 @@ struct ClosedOutput;
 struct ClosedPoll;
 struct ClosedError;
 struct ClosedDescriptor;
+struct ClosedDirectoryEntries;
 struct ClosedTerminalInput;
 struct ClosedTerminalOutput;
 
 impl io::poll::Guest for ClosedRuntime {
     type Pollable = ClosedPoll;
+
+    fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
+        // The only pollables this profile creates are subscriptions to closed
+        // streams. Their operation has already completed with Closed; polling
+        // these resources must not fabricate an OS wait or a timer.
+        (0..inputs.len()).map(|index| index as u32).collect()
+    }
 }
 impl io::poll::GuestPollable for ClosedPoll {
-    fn block(&self) {
-        panic!("WASI polling is unsupported; await a declared LSF capability");
-    }
+    fn block(&self) {}
 }
 impl io::error::Guest for ClosedRuntime {
     type Error = ClosedError;
@@ -38,7 +44,23 @@ impl io::streams::Guest for ClosedRuntime {
     type InputStream = ClosedInput;
     type OutputStream = ClosedOutput;
 }
-impl io::streams::GuestInputStream for ClosedInput {}
+impl io::streams::GuestInputStream for ClosedInput {
+    fn read(&self, len: u64) -> Result<Vec<u8>, io::streams::StreamError> {
+        if len == 0 {
+            Ok(Vec::new())
+        } else {
+            Err(io::streams::StreamError::Closed)
+        }
+    }
+
+    fn blocking_read(&self, len: u64) -> Result<Vec<u8>, io::streams::StreamError> {
+        self.read(len)
+    }
+
+    fn subscribe(&self) -> io::poll::Pollable {
+        io::poll::Pollable::new(ClosedPoll)
+    }
+}
 impl io::streams::GuestOutputStream for ClosedOutput {
     fn check_write(&self) -> Result<u64, io::streams::StreamError> {
         Err(io::streams::StreamError::Closed)
@@ -49,8 +71,11 @@ impl io::streams::GuestOutputStream for ClosedOutput {
     fn blocking_flush(&self) -> Result<(), io::streams::StreamError> {
         Err(io::streams::StreamError::Closed)
     }
+    fn flush(&self) -> Result<(), io::streams::StreamError> {
+        Err(io::streams::StreamError::Closed)
+    }
     fn subscribe(&self) -> io::poll::Pollable {
-        panic!("WASI stream subscriptions are unsupported");
+        io::poll::Pollable::new(ClosedPoll)
     }
 }
 impl cli::environment::Guest for ClosedRuntime {
@@ -132,6 +157,14 @@ impl filesystem::preopens::Guest for ClosedRuntime {
 }
 impl filesystem::types::Guest for ClosedRuntime {
     type Descriptor = ClosedDescriptor;
+    type DirectoryEntryStream = ClosedDirectoryEntries;
+}
+impl filesystem::types::GuestDirectoryEntryStream for ClosedDirectoryEntries {
+    fn read_directory_entry(
+        &self,
+    ) -> Result<Option<filesystem::types::DirectoryEntry>, filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
 }
 impl filesystem::types::GuestDescriptor for ClosedDescriptor {
     fn read_via_stream(
@@ -154,11 +187,66 @@ impl filesystem::types::GuestDescriptor for ClosedDescriptor {
     ) -> Result<filesystem::types::DescriptorFlags, filesystem::types::ErrorCode> {
         Err(filesystem::types::ErrorCode::NotPermitted)
     }
+    fn advise(
+        &self,
+        _offset: u64,
+        _length: u64,
+        _advice: filesystem::types::Advice,
+    ) -> Result<(), filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
+    fn read(
+        &self,
+        _length: u64,
+        _offset: u64,
+    ) -> Result<(Vec<u8>, bool), filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
+    fn write(&self, _buffer: Vec<u8>, _offset: u64) -> Result<u64, filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
+    fn read_directory(
+        &self,
+    ) -> Result<filesystem::types::DirectoryEntryStream, filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
+    fn sync(&self) -> Result<(), filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
     fn stat(&self) -> Result<filesystem::types::DescriptorStat, filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
+    fn stat_at(
+        &self,
+        _path_flags: filesystem::types::PathFlags,
+        _path: String,
+    ) -> Result<filesystem::types::DescriptorStat, filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
+    fn open_at(
+        &self,
+        _path_flags: filesystem::types::PathFlags,
+        _path: String,
+        _open_flags: filesystem::types::OpenFlags,
+        _flags: filesystem::types::DescriptorFlags,
+    ) -> Result<filesystem::types::Descriptor, filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
+    fn readlink_at(&self, _path: String) -> Result<String, filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
+    fn unlink_file_at(&self, _path: String) -> Result<(), filesystem::types::ErrorCode> {
         Err(filesystem::types::ErrorCode::NotPermitted)
     }
     fn metadata_hash(
         &self,
+    ) -> Result<filesystem::types::MetadataHashValue, filesystem::types::ErrorCode> {
+        Err(filesystem::types::ErrorCode::NotPermitted)
+    }
+    fn metadata_hash_at(
+        &self,
+        _path_flags: filesystem::types::PathFlags,
+        _path: String,
     ) -> Result<filesystem::types::MetadataHashValue, filesystem::types::ErrorCode> {
         Err(filesystem::types::ErrorCode::NotPermitted)
     }

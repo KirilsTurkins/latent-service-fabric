@@ -8,12 +8,46 @@ package wasi:filesystem@0.2.6;
       read-via-stream: func(offset: filesize) -> result<input-stream, error-code>;
       write-via-stream: func(offset: filesize) -> result<output-stream, error-code>;
       append-via-stream: func() -> result<output-stream, error-code>;
+      advise: func(offset: filesize, length: filesize, advice: advice) -> result<_, error-code>;
       get-flags: func() -> result<descriptor-flags, error-code>;
+      read: func(length: filesize, offset: filesize) -> result<tuple<list<u8>, bool>, error-code>;
+      write: func(buffer: list<u8>, offset: filesize) -> result<filesize, error-code>;
+      read-directory: func() -> result<directory-entry-stream, error-code>;
+      sync: func() -> result<_, error-code>;
       stat: func() -> result<descriptor-stat, error-code>;
+      stat-at: func(path-flags: path-flags, path: string) -> result<descriptor-stat, error-code>;
+      open-at: func(path-flags: path-flags, path: string, open-flags: open-flags, %flags: descriptor-flags) -> result<descriptor, error-code>;
+      readlink-at: func(path: string) -> result<string, error-code>;
+      unlink-file-at: func(path: string) -> result<_, error-code>;
       metadata-hash: func() -> result<metadata-hash-value, error-code>;
+      metadata-hash-at: func(path-flags: path-flags, path: string) -> result<metadata-hash-value, error-code>;
+    }
+
+    resource directory-entry-stream {
+      read-directory-entry: func() -> result<option<directory-entry>, error-code>;
     }
 
     type filesize = u64;
+
+    enum advice {
+      normal,
+      sequential,
+      random,
+      will-need,
+      dont-need,
+      no-reuse,
+    }
+
+    flags path-flags {
+      symlink-follow,
+    }
+
+    flags open-flags {
+      create,
+      directory,
+      exclusive,
+      truncate,
+    }
 
     enum error-code {
       access,
@@ -89,6 +123,11 @@ package wasi:filesystem@0.2.6;
     record metadata-hash-value {
       lower: u64,
       upper: u64,
+    }
+
+    record directory-entry {
+      %type: descriptor-type,
+      name: string,
     }
   }
   interface preopens {
