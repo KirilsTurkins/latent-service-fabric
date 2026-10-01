@@ -75,8 +75,12 @@ empty, and no owner is claimed released from an inferred sleep. The original
 96 raw compiler log identities total 1,523,287 bytes and remain in
 [original-compiler-file-inventory.json](original-compiler-file-inventory.json);
 per-command JSON records stay in their original bounded build receipts.
-[public-file-inventory.json](public-file-inventory.json) fixes the exact bytes of
-the ten curated/copied evidence files before this explanatory README was added.
+[public-file-inventory.json](public-file-inventory.json) preserves the exact original
+identities of the ten curated/copied evidence files before this explanatory
+README was added. Nine retain their original bytes. The original zero-byte
+stderr stream is stored as [an explicit empty-stream encoding](qualification.stderr.empty.json),
+with its original name, byte count and SHA256. Its empty base64 content
+reconstructs those exact bytes; the historical inventory remains unchanged.
 
 The earlier failed aggregates remain unchanged in
 [R1](../java-packaged710-clean-host-r1/README.md),

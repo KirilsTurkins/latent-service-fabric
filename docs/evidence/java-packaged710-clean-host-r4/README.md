@@ -8,7 +8,10 @@ home and workspace started without SDK programs or a workspace. The unchanged
 pinned clean-host Dockerfile was rebuilt after maintenance; its new image
 identity and original environment receipt are retained here. No native runtime
 was rebuilt or old missing volume treated as available.
-This folder preserves original output bytes so their recorded hashes remain exact.
+This folder preserves original output identities. The original zero-byte stderr
+stream is stored as [an explicit empty-stream encoding](current-standalone-failed.stderr.empty.json),
+with its original name, byte count and SHA256 from the unchanged receipt. Its
+empty base64 content reconstructs the exact original bytes; no output is added.
 
 Four fresh Java components compiled with original receipts and exact retained
 component bytes. These are new R4 build observations, separate from the C4 and
