@@ -14,7 +14,7 @@ from tools.build_process_signals import owned_cancellation
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.java_http_composition.build import compile_pair
-from tools.java_http_composition import context, trust
+from tools.java_http_composition import context, inspection, trust
 from tools.java_http_composition.node import (
     ADAPTER, DOMAIN_CONTRACT, SERVICE_CAPABILITY, WEB_CONTRACT, configure, decoded,
     grant, idle, invoke, request, route, service_grant, web_request, rebind,
@@ -112,6 +112,13 @@ def canary(client, targets, publications, releases, host):
     started = receipt(client.call("rollout", "start", "java-http-canary", "--base", "java-http-adapter",
         "--expected-base-generation", base["generation"], "--candidate", candidate_path, "--weights", "5000,10000",
         "--operation-id", "java-canary-start", "--expected-revision", 0, "--canary-policy", policy_path), "java-canary-start")
+    ambiguity = inspection.observe(client, "adapter", route=False, expected=2)
+    require(ambiguity["selectedRevisionId"] is None
+        and {row["publication"]["id"] for row in ambiguity["candidates"]} == {
+            publications["adapter"], publications["adapter-next"]}, "java-target-canary-candidates-are-not-an-implicit-choice")
+    selected = inspection.observe(client, "adapter", route=False, routing_key="java-supported-inspection-key", expected=2)
+    require(selected["selectedRevisionId"] in {row["revisionId"] for row in selected["candidates"]},
+        "java-target-supported-selector-not-attributed-to-real-candidate")
     historical = rollback_target(client, "java-http-canary", started)
     samples = []
     for ordinal in range(16):
@@ -143,6 +150,7 @@ def canary(client, targets, publications, releases, host):
             and any(int(value) > 0 for value in held["quotas"]["usage"].values()),
             "java-canary-promotion-released-live-owners")
         drain["afterPromotion"] = held
+        drain["inspectionAfterPromotion"] = inspection.observe(client, "adapter", route=False, guard=False)
         stale_status = request(host)[0]
         require(stale_status in (409, 503), "java-http-stale-trigger-silently-followed-rollout")
         rolled = receipt(client.call("rollout", "rollback", "java-http-canary", "--expected-revision", promoted["revision"],
@@ -158,8 +166,11 @@ def canary(client, targets, publications, releases, host):
     drain["afterPhysicalRelease"] = idle(client)
     route(client, host, publications["adapter"])
     require(request(host)[0] == 200, "java-http-rollback-fresh-route")
+    final_inspection = inspection.selected(client, releases, publications, "adapter")
     return {"started": started, "samples": samples, "evaluation": report, "promoted": promoted,
-            "staleTriggerStatus": stale_status, "rolledBack": rolled, "drain": drain, "idle": idle(client)}
+            "staleTriggerStatus": stale_status, "rolledBack": rolled, "drain": drain, "idle": idle(client),
+            "inspectionAmbiguity": ambiguity, "inspectionExplicitRoutingKey": selected,
+            "inspectionAfterRollback": final_inspection}
 
 
 def run_node(binaries, releases, output, *, http, former_profile=False):
@@ -219,6 +230,11 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                             {"capability": SERVICE_CAPABILITY, "policy": "java-domain-allow"}])
                     require(request(host)[0] in (409, 503), "java-http-stale-deployment-target-accepted")
                     route(client, host, publications["adapter"])
+                    domain_inspection = inspection.selected(client, releases, publications, "domain")
+                    adapter_inspection = inspection.selected(client, releases, publications, "adapter")
+                    result["targetInspection"] = {"domain": domain_inspection, "adapter": adapter_inspection,
+                        "authority": inspection.authority(client),
+                        "ordinaryHttpBinding": inspection.ordinary_http_binding(client, host, domain_inspection)}
                     result["composed"] = fresh_status(client, targets, host, "java-domain-direct-composed")
                     generated_client = run_bounded_result(["node", "--dns-result-order=ipv4first",
                         str(ROOT / "examples/java-http-composition/client-test.mjs"), "http://" + host,
@@ -232,6 +248,7 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     result["ordinaryContextImport"] = context.ordinary_import(client, targets, releases, publications, host)
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
+                    result["targetInspection"]["triggerOnlyOldPlan"] = inspection.stale_policy(client, "adapter", adapter_inspection)
                     result["triggerOnlyRebinding"] = rebind(client, targets, releases, publications)
                     impersonation = invoke(client, targets, "adapter", "handle", web_request(host), "java-trigger-impersonation")
                     require(decoded(impersonation)[0]["status"] == 403, "java-operator-impersonated-original-http-trigger")
@@ -241,8 +258,12 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     require(len(impersonation_nodes) == 1 and impersonation_nodes[0]["principalKind"] == "administrator"
                         and impersonation_nodes[0]["callerService"] is None, "java-context-operator-cannot-inherit-ingress-trigger")
                     service_generation = service_grant(client, node, publications, generation=service_generation)
+                    result["targetInspection"]["restoredPolicyOldPlan"] = inspection.observe(client, "adapter", expected=1, preparation=False)
+                    require(not result["targetInspection"]["restoredPolicyOldPlan"]["candidates"][0]["eligible"],
+                        "java-target-restored-policy-silently-refreshed-frozen-plan")
                     result["restoredGrantRebinding"] = rebind(client, targets, releases, publications)
                     route(client, host, publications["adapter"])
+                    result["targetInspection"]["explicitRebinding"] = inspection.selected(client, releases, publications, "adapter")
                     wide = decoded(result["standaloneStatus"])[0][0]
                     for path, arguments in (("echo", [wide]),
                             ("nested", [{"value": wide, "optional": {"some": wide}, "labels": ["Gr\u00fc\u00dfe \U0001f600"]}]),

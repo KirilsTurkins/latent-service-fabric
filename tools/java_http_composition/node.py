@@ -32,6 +32,12 @@ def configure(directory: Path, releases: Path, *, http=True, former_profile=Fals
     require(not former_profile or not http, "java-former-profile-no-http")
     config = configure_node(directory, releases, TENANT)
     value = read_json(config)
+    # Public qualification credentials exercise tenant and management scope.
+    # They are bounded test inputs, never guest context or production tokens.
+    from tools.java_http_composition.inspection import WRONG_TENANT_TOKEN, INVOKER_TOKEN
+    value["credentials"] += [
+        {"token": WRONG_TENANT_TOKEN, "subject": "other-workflow-operator", "tenant": "other-examples", "role": "operator"},
+        {"token": INVOKER_TOKEN, "subject": "ordinary-workflow-invoker", "tenant": TENANT, "role": "invoke"}]
     value["engine"] = {"javaGuest": True}
     value["execution"].update(maximumWallTimeMillis=120000)
     value["limits"] = {"maximumComponentBytes": 32 * 1024 * 1024,
@@ -135,9 +141,14 @@ def route(client, host, publication, *, path="/api", function="handle"):
             "metadata": {"name": name, "tenant": TENANT}, "spec": {"target": target,
             "configuration": {"profile": "buffered-v1", "scheme": "http", "host": host,
                               "path": path, "pathMatch": "prefix", "method": method}}})
-        client.call("trigger", "apply", source, "--operation-id", f"java-trigger-{client.calls}",
+        operation = f"java-trigger-{client.calls}"
+        applied = client.call("trigger", "apply", source, "--operation-id", operation,
             "--expected-generation", state["trigger"]["generation"] if state["trigger"] else 0,
-            "--expected-state-version", state["stateVersion"])
+            "--expected-state-version", state["stateVersion"], codes=(0, 2, 4, 5, 6))
+        recovered = client.call("trigger", "operation", operation)
+        require(applied["category"] == "success" and applied["outcomeKnown"]
+            and recovered["outcomeKnown"] and recovered["data"]["receipt"] == applied["data"]["receipt"],
+            "java-http-original-trigger-operation-recovery")
     return target
 
 
