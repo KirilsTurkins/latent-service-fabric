@@ -47,7 +47,13 @@ impl EffectRuntime {
         )
         .await
         .map(|owner| Self { owner })
-        .map_err(runtime_error)
+        .map_err(|reason| {
+            super::startup_observation::record(
+                super::startup_observation::Stage::EffectDispatcher,
+                reason,
+            );
+            runtime_error(reason)
+        })
     }
 
     #[must_use]

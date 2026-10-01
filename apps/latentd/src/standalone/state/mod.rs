@@ -17,6 +17,7 @@ pub use inspection::{
     NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,
 };
 pub use lifecycle::StateShutdownReport;
+pub(in crate::standalone) use recovery::failure::Failure as StartupFailure;
 pub use recovery::TransactionStoreDiagnosis;
 pub use request::StateRequest;
 pub use runtime::StateRuntime;

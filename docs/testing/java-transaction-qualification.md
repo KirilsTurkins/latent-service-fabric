@@ -73,6 +73,21 @@ retired while its cleanup report remains unclean; a deadline or dropped waiter
 does not prove retirement. Building this helper and inspecting a failed physical
 root are separate observations from signed Java guest execution.
 
+The explicit `--diagnose-startup` switch runs the normal startup path and its
+ordinary shutdown under the same protected administrator and tenant check.
+Its `latent.startup-failure-observation.v1` report retains at most 32 finite
+stage and producer error codes in an isolated async task scope. It records
+failures only, preserves the original public errors, and excludes error messages,
+configuration, paths and credentials. `startupSucceeded`, `terminalFailure`
+and the actual shutdown report describe the outcome; helper process success
+means that it returned an observation.
+
+Normal startup can advance the durable dispatcher epoch and process an existing
+backlog. Run this switch only as a separately retained attempt on a disposable
+qualification root. Keep the original failed root and read-only diagnosis
+receipt intact. The trace grants no checkpoint, namespace, provider or recovery
+authority and follows all ordinary startup and shutdown limits.
+
 ## Evidence boundaries
 
 The bounded receipt parser checks full-width unsigned values, absence versus

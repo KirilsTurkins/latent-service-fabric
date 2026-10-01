@@ -3,6 +3,7 @@ use super::{
     InstalledTransactionOperation, StateRequest,
 };
 use crate::config::NodeSettings;
+use crate::standalone::startup_observation::{platform, record, Stage};
 use latent_artifacts::{DirectoryArtifactRepository, ReleaseUseEligibility};
 use latent_capabilities::namespace::RecoverySelection;
 use latent_core::{
@@ -72,38 +73,37 @@ impl StateRuntime {
         control: tokio::runtime::Handle,
         providers: Option<&super::super::providers::ProviderRuntime>,
     ) -> Result<(Arc<Self>, super::super::EffectRuntime), PlatformError> {
-        let state = settings.state.as_ref().ok_or_else(super::denied)?;
-        let time = ProtectedCommandClock::load(settings, Arc::clone(&clock))?;
-        let installed = super::load_operations(&artifacts, state.operations.clone()).await?;
-        let native =
-            NativeCapacityOwner::with_clock(NativeCapacityLimits::default(), Arc::clone(&clock))
-                .map_err(|_| super::capacity())?;
-        let waiters = CommandWaiterRegistry::new(CommandWaiterConfig::default())
-            .map_err(|_| super::capacity())?;
-        let authority = EffectAuthorityOwner::new(128, 2, time.minimum_checkpoint().1)
-            .map_err(|_| super::unavailable())?;
-        let effect_time: Arc<dyn latent_effects::runtime::EffectTimeSource> = time.clone();
-        let installation = super::effects::install(
-            settings,
-            &installed,
-            providers,
-            &policy,
-            &authority,
-            &effect_time,
+        let state = platform(
+            Stage::StateConfiguration,
+            settings.state.as_ref().ok_or_else(super::denied),
         )?;
-        let mut config = ProtectedStoreConfig::bounded_linux(settings.data_directory.join("state"));
-        config.create_if_missing = state.create_if_missing;
-        let store = Arc::new(
-            ProtectedStoreOwner::start_validated_view_with_clock(
-                config,
-                4 * 1024 * 1024,
-                super::validate_view,
-                Arc::clone(&clock),
-            )
-            .map_err(|_| super::unavailable())?
-            .await
-            .map_err(|_| super::unavailable())?,
-        );
+        let time = platform(
+            Stage::StateClock,
+            ProtectedCommandClock::load(settings, Arc::clone(&clock)),
+        )?;
+        let installed = platform(
+            Stage::StateOperations,
+            super::load_operations(&artifacts, state.operations.clone()).await,
+        )?;
+        let (native, waiters) = startup_capacity(&clock)?;
+        let authority =
+            EffectAuthorityOwner::new(128, 2, time.minimum_checkpoint().1).map_err(|reason| {
+                record(Stage::EffectAuthority, reason);
+                super::unavailable()
+            })?;
+        let effect_time: Arc<dyn latent_effects::runtime::EffectTimeSource> = time.clone();
+        let installation = platform(
+            Stage::EffectInstallation,
+            super::effects::install(
+                settings,
+                &installed,
+                providers,
+                &policy,
+                &authority,
+                &effect_time,
+            ),
+        )?;
+        let store = open_store(settings, Arc::clone(&clock)).await?;
         let effects = super::super::EffectRuntime::start(
             DispatcherConfig::default(),
             Arc::clone(&store),
@@ -272,7 +272,7 @@ async fn finish_open(
     audit: Option<latent_audit::AuditHandle>,
     grace: std::time::Duration,
 ) -> Result<(Arc<StateRuntime>, super::super::EffectRuntime), PlatformError> {
-    match management(&inner, clock, audit) {
+    match platform(Stage::StateManagement, management(&inner, clock, audit)) {
         Ok(management) => inner.management = management,
         Err(error) => {
             effects.close();
@@ -289,6 +289,45 @@ async fn finish_open(
         }
     }
     Ok((Arc::new(StateRuntime(Arc::new(inner))), effects))
+}
+async fn open_store(
+    settings: &NodeSettings,
+    clock: Arc<dyn ActivationClock>,
+) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
+    let mut config = ProtectedStoreConfig::bounded_linux(settings.data_directory.join("state"));
+    config.create_if_missing = settings
+        .state
+        .as_ref()
+        .ok_or_else(super::denied)?
+        .create_if_missing;
+    let startup = ProtectedStoreOwner::start_validated_view_with_clock(
+        config,
+        4 * 1024 * 1024,
+        super::validate_view,
+        clock,
+    )
+    .map_err(|reason| {
+        record(Stage::ProtectedStoreAdmission, reason);
+        super::unavailable()
+    })?;
+    startup.await.map(Arc::new).map_err(|reason| {
+        record(Stage::ProtectedStoreStartup, reason);
+        super::unavailable()
+    })
+}
+fn startup_capacity(
+    clock: &Arc<dyn ActivationClock>,
+) -> Result<(NativeCapacityOwner, CommandWaiterRegistry), PlatformError> {
+    let native = platform(
+        Stage::NativeCapacity,
+        NativeCapacityOwner::with_clock(NativeCapacityLimits::default(), Arc::clone(clock))
+            .map_err(|_| super::capacity()),
+    )?;
+    let waiters = platform(
+        Stage::CommandWaiters,
+        CommandWaiterRegistry::new(CommandWaiterConfig::default()).map_err(|_| super::capacity()),
+    )?;
+    Ok((native, waiters))
 }
 async fn retire_startup_store(store: &ProtectedStoreOwner, deadline: std::time::Instant) {
     store.close();
