@@ -148,10 +148,17 @@ def qualify(client, targets, releases, publications, host, evidence: Path):
         try:
             result["wrongClockPolicyRebinding"] = rebind(client, targets, releases, publications, ("domain", "adapter"))
             route(client, host, publications["adapter"])
-            denied = capture_http(client, host, expected=(403,))
-            if denied["tree"]:
-                require(all(row["terminalState"] != "completed" for row in denied["tree"]["nodes"]
-                    if row["parentActivationId"] is not None), "java-context-wrong-child-grant-accepted")
+            denied = capture_http(client, host, expected=(403, 500))
+            require(denied["tree"] is not None, "java-context-wrong-child-grant-observation-missing")
+            children = [row for row in denied["tree"]["nodes"] if row["parentActivationId"] is not None]
+            require(len(children) == 1 and len(denied["tree"]["nodes"]) == 2,
+                    "java-context-wrong-child-grant-real-child-required")
+            child = children[0]
+            diagnostic = child["diagnostic"]
+            require(child["principalKind"] == "service" and child["callerService"] == ADAPTER
+                and child["terminalState"] != "completed"
+                and diagnostic is not None and diagnostic["stage"] == 4 and diagnostic["reason"] == 8,
+                "java-context-wrong-child-grant-producer-diagnosis-required")
             result["wrongChildPrincipalGrant"] = denied
         finally:
             policy(client, "policy", "clockMonotonic-allow", record["document"], int(changed["generation"]))

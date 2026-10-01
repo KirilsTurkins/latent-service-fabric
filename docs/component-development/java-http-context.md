@@ -34,6 +34,11 @@ the adapter has an Administrator root and a Service child. A child never acquire
 the original HTTP trigger or administrator principal from its parent's metadata.
 The qualifier proves this with a trigger-only grant that rejects the operator
 path, a missing service grant, and a wrong child-principal clock grant.
+The domain's `status` operation actually calls the declared monotonic provider;
+an unused import cannot prove grant denial. The wrong-principal case requires the
+actual child's bounded Binding/GrantDenied diagnostic and failed outcome,
+alongside the adapter's HTTP failure. A guest trap while calling a denied clock
+can produce HTTP 500 through the existing platform-failure mapping.
 
 ## Run and inspect the actual example
 
