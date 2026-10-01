@@ -5,6 +5,16 @@
       "cancel-in-progress": true,
       "group": "dotnet-guest-${{ github.ref }}"
     },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
     "name": ".NET guest qualification",
     "on": {
       "pull_request": {
@@ -42,7 +52,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Select the existing required .NET job for the new exact BCL probe and ownership tests",
+  "reviewReason": "Keep the required .NET job selection for the exact BCL probe and ownership tests, preserving the reviewed development workflow caching and complete execution obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }
