@@ -5087,14 +5087,17 @@
         "recovery::restore::tests::tenant::restored_tenant_accounting_uses_original_quota_and_charges_new_paused_history_with_reopen",
         "tenant::tests::census::actual_startup_census_reconstructs_state_tombstones_and_metadata_across_tenants_and_reopen",
         "tenant::tests::census::actual_startup_census_refuses_valid_encoded_drift_and_orphaned_state_instead_of_repairing_counters",
-        "tenant::tests::census::census_refuses_unconfigured_ownership_duplicate_rows_and_unbounded_global_exclusions"
+        "tenant::tests::census::census_refuses_unconfigured_ownership_duplicate_rows_and_unbounded_global_exclusions",
+        "recovery::offline::tests::restore_authority::protected_restore_final_publication_revocation_preserves_paused_history_without_success_receipt",
+        "recovery::offline::tests::restore_authority::protected_restore_requires_installed_final_authority_before_creating_destination",
+        "recovery::offline::tests::restore_authority::protected_restore_revocation_after_review_denies_writes_without_changing_source"
       ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 189,
+      "minimumCases": 192,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

@@ -38,6 +38,7 @@ const DEFINITION: &[u8] =
     include_bytes!("../../../../../contracts/state/application-aggregate-v1.schema.json");
 
 mod migration;
+mod restore_authority;
 
 struct Codecs {
     denied: AtomicBool,
@@ -160,6 +161,16 @@ impl RecoveryCodecs for Codecs {
         request: &OfflineRestoreRequest,
     ) -> Result<(), StoreError> {
         self.authorize_inspection(view, request)
+    }
+    fn accept_restore(
+        &self,
+        request: &OfflineRestoreRequest,
+        _: RestoreFence,
+    ) -> Result<(), StoreError> {
+        if self.denied.load(Ordering::Acquire) || request.review.operator_id != "operator" {
+            return Err(StoreError::Unavailable);
+        }
+        Ok(())
     }
     fn review_reconciliation(
         &self,

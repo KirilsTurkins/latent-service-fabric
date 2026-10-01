@@ -122,6 +122,13 @@ impl RecoveryCodecs for MigrationCodecs {
     ) -> Result<(), StoreError> {
         self.inner.authorize_inspection(view, request)
     }
+    fn accept_restore(
+        &self,
+        request: &OfflineRestoreRequest,
+        fence: RestoreFence,
+    ) -> Result<(), StoreError> {
+        self.inner.accept_restore(request, fence)
+    }
     fn authorize_namespace_inspection(
         &self,
         view: &ReadView,
