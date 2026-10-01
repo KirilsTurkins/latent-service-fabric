@@ -53,7 +53,11 @@ pub(super) async fn inspect(
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
     let acknowledgement = read_ack(finish).await;
-    let (read, namespace) = result.map_err(protected_error)??;
+    let (read, namespace) = result.map_err(|error| {
+        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
+            error,
+        ))
+    })??;
     acknowledgement?;
     response::owned(
         inner,
@@ -218,7 +222,11 @@ pub(super) async fn receipt(
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
     let acknowledgement = read_ack(finish).await;
-    let (read, receipt, public) = result.map_err(protected_error)??;
+    let (read, receipt, public) = result.map_err(|error| {
+        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
+            error,
+        ))
+    })??;
     acknowledgement?;
     response::owned(
         inner,

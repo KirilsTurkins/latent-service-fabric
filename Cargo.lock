@@ -1830,8 +1830,8 @@ dependencies = [
  "latent-scheduler",
  "latent-state",
  "latent-telemetry",
- "tempfile",
  "sha2 0.11.0",
+ "tempfile",
  "tokio",
 ]
 
@@ -2305,8 +2305,8 @@ dependencies = [
  "latent-audit",
  "latent-blobs",
  "latent-capabilities",
- "latent-control-store",
  "latent-commit",
+ "latent-control-store",
  "latent-core",
  "latent-effects",
  "latent-executor",

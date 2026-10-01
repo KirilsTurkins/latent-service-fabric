@@ -76,7 +76,11 @@ pub(super) async fn mutate(
     let (result, inspect, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
     let ack = audit::ack(finish).await;
-    let (read, receipt, replayed) = result.map_err(protected_error)??;
+    let (read, receipt, replayed) = result.map_err(|error| {
+        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
+            error,
+        ))
+    })??;
     let public = receipt_to_proto(&receipt).map_err(namespace_error)?;
     response::owned(
         inner,
