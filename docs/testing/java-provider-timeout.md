@@ -26,6 +26,11 @@ original adapter service caller, exact domain publication, GET and the peer's
 fixed `/allowed` destination. Credentials and raw request fields are absent from
 the evidence.
 
+For a managed workspace, `configure` must receive the actual
+`runtime/config` directory because the provider credential directory is relative
+to that installed configuration. The conductor's evidence directory is not a
+substitute installation root.
+
 `qualify` performs two distinct real HTTP requests through the adapter and child.
 For the first request the peer records an actual authenticated GET, then an actual
 socket EOF or reset. The domain handles the provider error; authorized root/tree
@@ -42,7 +47,10 @@ text or substitutes a queue deadline for a running provider timeout.
 After normal node shutdown, pass the original `stopped_record` to
 `verify_shutdown`. Provider counters are unavailable before that report; the
 helper requires every known pool counter to be zero and the original node to be
-reaped. Call `stop_peer` to reap the original peer and require exactly one
+reaped. Managed `dev down` returns its shipped bounded projection; pass those
+original bytes to `verify_managed_shutdown`, which requires `state: stopped`,
+`reaped`, `cleanShutdown` and every `providerShutdown` counter. Do not reconstruct
+an arbitrary standalone report from that projection. Call `stop_peer` to reap the original peer and require exactly one
 physically closed hold and one fresh authorized request. The SDK matrix's
 `stop_provider` requires four holds and is not the correct campaign oracle.
 For a failed campaign use the existing `close_failed_provider`, retain its failed
