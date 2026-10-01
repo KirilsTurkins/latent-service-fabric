@@ -111,3 +111,8 @@ caller loss during send/read. Protected-owner tests cover durable send-marker
 ordering and a reopened database after a crash before that marker. Test-source
 identity and results must accompany qualification; a synthetic endpoint pass
 does not certify arbitrary commercial APIs or production entry gate #240.
+
+The [version-1 native conformance record](../testing/http-effect-conformance.md)
+pins the endpoint, proxy, transport owner and source bytes used for the measured
+54-case Linux run. The upper guest transaction path requires its own common
+commit integration qualification.
