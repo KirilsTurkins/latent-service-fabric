@@ -47,8 +47,9 @@ ceilings and retire after an uninterrupted 60-second idle period.
 
 The owned compiler hooks keep TeaVM's actual sleep and monitor continuations.
 They reserve a single wait owner and, for a timed wait, a timer owner before
-installing its maintained listener. Listener completion settles those owners
-after monitor reacquisition and before delivering the application continuation. Standard wait argument
+installing its maintained listener. The original callback resumes the Java wait
+frame after monitor reacquisition. That frame closes the timer and wait owners
+before returning or throwing to application code. Standard wait argument
 validation precedes monitor ownership checks; interruption clears the current
 thread's flag at the standard throwing boundary. Absolute deadlines saturate
 without shortening a large requested timeout.
@@ -122,6 +123,33 @@ preserved enum owners, layout rejection and unchanged application class identity
 The SDK source also passed 1661 conversion comparisons against the installed
 JDK 25.0.3, including signed saturation and Duration/ChronoUnit boundaries.
 These controls do not establish C-backend continuation or signed guest behavior.
+
+The four-mode component `e90e1025d36cbacfd57fe6be5938fb4f7140012cf31f8e9cffede3844efd6d3b`
+passed pinned component generation and all twelve reference-JDK controls, but
+the first normal signed activation failed with `runtime-lifecycle-unproven`.
+An independently built private numeric observer replayed those unchanged bytes
+with the original 120-second, 10 billion fuel and 64 MiB limits. The guest
+returned the expected `42` and both task owners settled, while exactly one wait
+owner and one timer owner remained at finalization; the physical timer table
+was empty. This is a lifecycle failure, even though the application result is
+correct. The observer's outer wrapper later timed out during its final input
+hash pass. Its original log and component were subsequently removed by external
+worktree cleanup; the completed observation, original identities and wrapper
+failure remain recorded separately from the surviving model-control receipts.
+
+The original callback wrapper called the resumable typed lease-close bridge
+from an EventQueue callback outside the suspended Java frame. The SDK now keeps
+the lease scope in the ordinary high-level sleep or wait frame. Private native
+aliases retain TeaVM's actual `@Async` declarations and their matching maintained
+callback bodies; the callback resumes that frame, which can suspend correctly
+while closing its leases. No callback-return refund, host ownership rule, WIT
+change or quota increase is involved. A control against the nine verified
+TeaVM 0.15.0 model JARs checks both real native/callback pairs, preserved standard
+method identity and throws declarations, unexpected-shape and repeated-port
+rejection, and unchanged application class identity. Host JDK 25.0.3 passed this
+metadata control. The maintained qualifier repeats it using the pinned compiler
+toolchain. A new component and all twelve normal signed invocations are still
+required to prove this repair; the complete runtime profile remains unqualified.
 
 The last attempted expanded executor component passed its thread-only mode but
 failed in its signed executor mode with a closed host `resource-exhausted` cause

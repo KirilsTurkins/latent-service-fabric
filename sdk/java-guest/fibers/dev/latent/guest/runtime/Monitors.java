@@ -62,60 +62,34 @@ public final class Monitors {
         callback.error(new InterruptedException());
     }
 
-    private static final class OwnedCompletion implements AsyncCallback<Void> {
-        private final Activation.Lease wait;
-        private final Activation.Lease timer;
-        private final AsyncCallback<Void> callback;
-        private boolean settled;
-        OwnedCompletion(Activation.Lease wait, Activation.Lease timer, AsyncCallback<Void> callback) {
-            this.wait = wait;
-            this.timer = timer;
-            this.callback = callback;
-        }
-        private void settle() {
-            if (settled) throw new IllegalStateException("duplicate-owned-wait-completion");
-            settled = true;
-            try { if (timer != null) timer.close(); } finally { wait.close(); }
-        }
-        @Override public void complete(Void unused) { settle(); callback.complete(null); }
-        @Override public void error(Throwable error) { settle(); callback.error(error); }
-    }
-
-    private static OwnedCompletion accept(boolean timed, AsyncCallback<Void> callback) {
-        Activation.Lease wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait);
-        Activation.Lease timer = null;
-        try {
-            if (timed) timer = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Timer);
-            return new OwnedCompletion(wait, timer, callback);
-        } catch (Throwable error) {
-            try { if (timer != null) timer.close(); } finally { wait.close(); }
-            throw error;
+    public static void ownedSleep(long millis) throws InterruptedException {
+        if (millis < 0) throw new IllegalArgumentException();
+        if (Thread.interrupted()) throw new InterruptedException();
+        // Lease.close can suspend in the typed capability bridge. Keep it in
+        // the actual Java wait frame, resumed by the maintained callback, rather
+        // than invoking it from an EventQueue callback outside that frame.
+        try (Activation.Lease wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait);
+             Activation.Lease timer = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Timer)) {
+            rawSleep(millis);
         }
     }
 
-    public static void ownedSleep(long millis, AsyncCallback<Void> callback) {
-        if (millis < 0) { callback.error(new IllegalArgumentException()); return; }
-        if (Thread.interrupted()) { callback.error(new InterruptedException()); return; }
-        OwnedCompletion completion;
-        try { completion = accept(true, callback); }
-        catch (Throwable error) { callback.error(error); return; }
-        try { rawSleep(millis, completion); }
-        catch (Throwable error) { completion.error(error); }
+    public static void ownedWait(Object object, long millis, int nanos) throws InterruptedException {
+        validateWait(millis, nanos);
+        try (Activation.Lease wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait);
+             Activation.Lease timer = millis != 0 || nanos != 0
+                 ? Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Timer) : null) {
+            // The original notify/timeout/interrupt callback reacquires the
+            // monitor before this frame resumes and releases its owned leases.
+            rawWait(object, millis, nanos);
+        }
     }
 
-    public static void ownedWait(Object object, long millis, int nanos, AsyncCallback<Void> callback) {
-        OwnedCompletion completion;
-        try { validateWait(millis, nanos); completion = accept(millis != 0 || nanos != 0, callback); }
-        catch (Throwable error) { callback.error(error); return; }
-        try { rawWait(object, millis, nanos, completion); }
-        catch (Throwable error) { completion.error(error); }
-    }
-
-    public static void rawSleep(long millis, AsyncCallback<Void> callback) {
+    public static void rawSleep(long millis) throws InterruptedException {
         throw new IllegalStateException("activation-sleep-compiler-hook-required");
     }
 
-    public static void rawWait(Object object, long millis, int nanos, AsyncCallback<Void> callback) {
+    public static void rawWait(Object object, long millis, int nanos) throws InterruptedException {
         throw new IllegalStateException("activation-wait-compiler-hook-required");
     }
 }

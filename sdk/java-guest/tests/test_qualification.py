@@ -125,6 +125,57 @@ class TimeUnitModelIntegrity(unittest.TestCase):
             self.assertEqual(native.args[-1], "TimeUnitNativeControl")
 
 
+class WaitFrameModelIntegrity(unittest.TestCase):
+    def test_changed_tooling_cannot_enter_host_frame_model_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = ThrowableModelIntegrity.fixture(root)
+            jars[0].write_bytes(b"modified classlib")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_missing_callback_model_closure_fails_before_host_loading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, lock = ThrowableModelIntegrity.fixture(root)
+            document = json.loads(lock.read_bytes())
+            document["artifacts"] = document["artifacts"][:-1]
+            lock.write_text(json.dumps(document))
+            with self.assertRaisesRegex(ValueError, "exact locked tooling closure"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_partial_native_pair_receipt_is_not_owner_frame_proof(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root)
+            compiler.run.side_effect = ["", "WAIT_FRAME_MODEL_CONTROL PASS real-native-callback-pairs"]
+            with self.assertRaisesRegex(ValueError, "wait frame model control did not complete"):
+                fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+    def test_model_receipt_requires_both_actual_standard_api_pairs_and_closed_shape_negatives(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root)
+            compiler.run.side_effect = ["", ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;"
+                "real-native-callback-pairs;resumed-java-frame-owners;throws-and-standard-owners;"
+                "shape-and-repeat-negatives;application-identity\n")]
+            report = fibers.wait_frame_model_control(compiler, root / "model")
+            self.assertEqual(report["nativeCallbackPairs"], 2)
+            self.assertEqual(len(report["jarDigests"]), 9)
+            compile_call, model_call = compiler.run.call_args_list
+            self.assertEqual(compile_call.args[:3], ("wait-frame-model-compile", "javac", "-proc:none"))
+            self.assertEqual(compile_call.args[-3:], tuple(compiler.sdk / source for source in (
+                "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
+                "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java",
+                "fibers/conformance/compiler/WaitFrameModelControl.java")))
+            self.assertEqual(model_call.args[-1], "dev.latent.guest.runtime.compiler.WaitFrameModelControl")
+
+
 class PackagingTools(unittest.TestCase):
     def test_prebuilt_tools_are_reused_without_a_narrower_cargo_rebuild(self):
         with tempfile.TemporaryDirectory() as directory:

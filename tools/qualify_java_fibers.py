@@ -87,6 +87,24 @@ def timeunit_model_control(compiler: Compiler, output: Path) -> dict:
             "referenceConversionChecks": 1661, "jarDigests": identities}
 
 
+def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
+    """Verify the actual native/callback pairs and their resumed owner frames."""
+    classpath, identities = locked_model_classpath(compiler)
+    output.mkdir()
+    sources = ("fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java",
+               "fibers/conformance/compiler/WaitFrameModelControl.java")
+    compiler.run("wait-frame-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
+                 "-d", output, *(compiler.sdk / source for source in sources))
+    result = compiler.run("wait-frame-model-control", "java", "-Xmx256m", "-cp",
+                          str(output) + os.pathsep + classpath,
+                          "dev.latent.guest.runtime.compiler.WaitFrameModelControl").strip()
+    expected = ("WAIT_FRAME_MODEL_CONTROL PASS original-native-negative;real-native-callback-pairs;"
+                "resumed-java-frame-owners;throws-and-standard-owners;shape-and-repeat-negatives;application-identity")
+    if result != expected: raise ValueError("Java wait frame model control did not complete")
+    return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2, "jarDigests": identities}
+
+
 def recipe_inputs() -> dict[str, str]:
     paths = [Path(__file__), *sorted((ROOT / "tools/java_guest").glob("*.py")),
              ROOT / "tools/stage_runtime_wit.py", ROOT / "tools/rust_capsule_project.py",
@@ -127,6 +145,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             "tests:caller/service@1.0.0", output / "build", activation_profile=True)
         report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
         report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
+        report["waitFrameModel"] = wait_frame_model_control(compiler, output / "wait-frame-model")
         compiler.check_unchanged()
         report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
         report["componentDigest"] = digest(read_file(component, 64 * 1024 * 1024))

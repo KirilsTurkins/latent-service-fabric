@@ -16,6 +16,7 @@ import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.util.ModelUtils;
 
 /** Reserve once at the maintained monitor-listener allocation boundary. */
 final class WaitContinuations {
@@ -41,11 +42,22 @@ final class WaitContinuations {
             validate.setArguments(wait.getProgram().variableAt(1), wait.getProgram().variableAt(2));
             wait.getProgram().basicBlockAt(0).getFirstInstruction().insertPrevious(validate);
 
+            var waiting = cls.getMethod(new MethodDescriptor("waitImpl", ValueType.LONG, ValueType.INTEGER, ValueType.VOID));
             var maintained = cls.getMethod(new MethodDescriptor("waitImpl", ValueType.LONG, ValueType.INTEGER, CALLBACK, ValueType.VOID));
-            if (maintained == null || maintained.getProgram() == null
+            if (waiting == null || waiting.getProgram() != null
+                    || !waiting.getModifiers().contains(ElementModifier.NATIVE)
+                    || waiting.getModifiers().contains(ElementModifier.STATIC)
+                    || waiting.getAnnotations().get("org.teavm.interop.Async") == null
+                    || maintained == null || maintained.getProgram() == null
                     || maintained.getModifiers().contains(ElementModifier.STATIC)
-                    || cls.getMethod(new MethodDescriptor("lsfOwnedWait", ValueType.LONG, ValueType.INTEGER, CALLBACK, ValueType.VOID)) != null)
+                    || cls.getMethod(new MethodDescriptor("lsfOwnedWait", ValueType.LONG, ValueType.INTEGER, CALLBACK, ValueType.VOID)) != null
+                    || cls.getMethod(new MethodDescriptor("lsfOwnedWait", ValueType.LONG, ValueType.INTEGER, ValueType.VOID)) != null)
                 throw new IllegalStateException("unreviewed-maintained-monitor-handler");
+            var nativeWait = new MethodHolder("lsfOwnedWait", ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
+            nativeWait.setLevel(AccessLevel.PRIVATE);
+            nativeWait.getModifiers().addAll(waiting.getModifiers());
+            nativeWait.setThrownTypes(waiting.getThrownTypes());
+            ModelUtils.copyAnnotations(waiting.getAnnotations(), nativeWait.getAnnotations());
             var raw = new MethodHolder("lsfOwnedWait", ValueType.LONG, ValueType.INTEGER, CALLBACK, ValueType.VOID);
             raw.setLevel(AccessLevel.PRIVATE);
             raw.getModifiers().add(ElementModifier.FINAL);
@@ -77,31 +89,33 @@ final class WaitContinuations {
             }
             if (instants.size() != 1 || deadlines != 1)
                 throw new IllegalStateException("unreviewed-maintained-monitor-deadline");
+            cls.addMethod(nativeWait);
             cls.addMethod(raw);
+            cls.removeMethod(maintained);
 
             var program = new Program();
             var object = program.createVariable();
             var millis = program.createVariable();
             var nanos = program.createVariable();
-            var callback = program.createVariable();
-            var call = invoke(SUPPORT, "ownedWait", OBJECT_TYPE, ValueType.LONG, ValueType.INTEGER, CALLBACK, ValueType.VOID);
-            call.setArguments(object, millis, nanos, callback);
+            var call = invoke(SUPPORT, "ownedWait", OBJECT_TYPE, ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
+            call.setArguments(object, millis, nanos);
             var block = program.createBasicBlock();
             block.add(call);
             block.add(new ExitInstruction());
-            maintained.setProgram(program);
+            waiting.getModifiers().remove(ElementModifier.NATIVE);
+            waiting.getAnnotations().remove("org.teavm.interop.Async");
+            waiting.setProgram(program);
         } else if (cls.getName().equals(SUPPORT)) {
-            var method = cls.getMethod(new MethodDescriptor("rawWait", OBJECT_TYPE, ValueType.LONG, ValueType.INTEGER, CALLBACK, ValueType.VOID));
+            var method = cls.getMethod(new MethodDescriptor("rawWait", OBJECT_TYPE, ValueType.LONG, ValueType.INTEGER, ValueType.VOID));
             if (method == null) throw new IllegalStateException("missing-owned-monitor-hook");
             var program = new Program();
             program.createVariable();
             var object = program.createVariable();
             var millis = program.createVariable();
             var nanos = program.createVariable();
-            var callback = program.createVariable();
-            var call = invoke(OBJECT, "lsfOwnedWait", ValueType.LONG, ValueType.INTEGER, CALLBACK, ValueType.VOID);
+            var call = invoke(OBJECT, "lsfOwnedWait", ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
             call.setInstance(object);
-            call.setArguments(millis, nanos, callback);
+            call.setArguments(millis, nanos);
             var block = program.createBasicBlock();
             block.add(call);
             block.add(new ExitInstruction());

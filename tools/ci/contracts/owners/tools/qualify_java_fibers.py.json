@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Expanded thread and default-future controls preserve all four original reference-JDK modes and verify locked Throwable and TimeUnit model ownership and reference conversions",
+  "reviewReason": "Preserves all four reference-JDK modes and existing locked Throwable/TimeUnit controls; additionally verifies the actual locked Thread/Object native callback pairs with owner cleanup in resumed Java frames",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c975c01b87b6a7bda589df36857d696cacaab5d2aaeaeb13d622694563ce04b1"
+  "sha256": "f5e51da765273ce36ab2bda3abf46de192d4f23e5bc1e4e1fb25d01eae466da8"
 }

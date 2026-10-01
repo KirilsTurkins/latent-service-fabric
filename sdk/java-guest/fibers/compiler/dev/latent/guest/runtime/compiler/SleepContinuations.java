@@ -18,6 +18,7 @@ import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.util.ModelUtils;
 
 /** Keep the maintained low-level handler, with bounded owned sleep lifetimes. */
 final class SleepContinuations {
@@ -43,12 +44,23 @@ final class SleepContinuations {
 
     static void transform(ClassHolder cls) {
         if (cls.getName().equals(THREAD)) {
+            var sleeping = cls.getMethod(new MethodDescriptor("sleep", ValueType.LONG, ValueType.VOID));
             var descriptor = new MethodDescriptor("sleep", ValueType.LONG, CALLBACK, ValueType.VOID);
             var maintained = cls.getMethod(descriptor);
-            if (maintained == null || maintained.getProgram() == null
+            if (sleeping == null || sleeping.getProgram() != null
+                    || !sleeping.getModifiers().contains(ElementModifier.NATIVE)
+                    || !sleeping.getModifiers().contains(ElementModifier.STATIC)
+                    || sleeping.getAnnotations().get("org.teavm.interop.Async") == null
+                    || maintained == null || maintained.getProgram() == null
                     || !maintained.getModifiers().contains(ElementModifier.STATIC)
-                    || cls.getMethod(new MethodDescriptor("lsfOwnedSleep", ValueType.LONG, CALLBACK, ValueType.VOID)) != null)
+                    || cls.getMethod(new MethodDescriptor("lsfOwnedSleep", ValueType.LONG, CALLBACK, ValueType.VOID)) != null
+                    || cls.getMethod(new MethodDescriptor("lsfOwnedSleep", ValueType.LONG, ValueType.VOID)) != null)
                 throw new IllegalStateException("unreviewed-maintained-sleep-handler");
+            var nativeSleep = new MethodHolder("lsfOwnedSleep", ValueType.LONG, ValueType.VOID);
+            nativeSleep.setLevel(AccessLevel.PRIVATE);
+            nativeSleep.getModifiers().addAll(sleeping.getModifiers());
+            nativeSleep.setThrownTypes(sleeping.getThrownTypes());
+            ModelUtils.copyAnnotations(sleeping.getAnnotations(), nativeSleep.getAnnotations());
             var raw = new MethodHolder("lsfOwnedSleep", ValueType.LONG, CALLBACK, ValueType.VOID);
             raw.setLevel(AccessLevel.PRIVATE);
             raw.getModifiers().add(ElementModifier.STATIC);
@@ -82,8 +94,12 @@ final class SleepContinuations {
             }
             if (instants.size() != 1 || deadlines != 1)
                 throw new IllegalStateException("unreviewed-maintained-sleep-deadline");
+            cls.addMethod(nativeSleep);
             cls.addMethod(raw);
-            delegate(maintained, SUPPORT, "ownedSleep", ValueType.LONG, CALLBACK, ValueType.VOID);
+            cls.removeMethod(maintained);
+            sleeping.getModifiers().remove(ElementModifier.NATIVE);
+            sleeping.getAnnotations().remove("org.teavm.interop.Async");
+            delegate(sleeping, SUPPORT, "ownedSleep", ValueType.LONG, ValueType.VOID);
 
             var nanos = new MethodDescriptor("sleep", ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
             if (cls.getMethod(nanos) != null) throw new IllegalStateException("unreviewed-maintained-sleep-nanos");
@@ -130,9 +146,9 @@ final class SleepContinuations {
             }
             if (interrupted != 2) throw new IllegalStateException("unreviewed-maintained-sleep-callbacks");
         } else if (cls.getName().equals(SUPPORT)) {
-            var method = cls.getMethod(new MethodDescriptor("rawSleep", ValueType.LONG, CALLBACK, ValueType.VOID));
+            var method = cls.getMethod(new MethodDescriptor("rawSleep", ValueType.LONG, ValueType.VOID));
             if (method == null) throw new IllegalStateException("missing-owned-sleep-hook");
-            delegate(method, THREAD, "lsfOwnedSleep", ValueType.LONG, CALLBACK, ValueType.VOID);
+            delegate(method, THREAD, "lsfOwnedSleep", ValueType.LONG, ValueType.VOID);
         }
     }
 }
