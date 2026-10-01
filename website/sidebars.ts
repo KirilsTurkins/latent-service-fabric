@@ -1,7 +1,7 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
-import {prepare} from './lib/prepare.mjs';
+import {createRepositoryIndex} from './lib/repository.mjs';
 import {buildSidebars} from './lib/navigation.mjs';
 
-const sidebars: SidebarsConfig = buildSidebars(prepare().index.pages);
+const sidebars: SidebarsConfig = buildSidebars(createRepositoryIndex().pages);
 
 export default sidebars;
