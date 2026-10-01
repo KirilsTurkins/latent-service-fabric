@@ -38,19 +38,24 @@ impl Fixture {
         fs::create_dir(&root).unwrap();
         fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
         write(&root, b"synthetic-alpha");
-        let secrets = LocalSecretStore::open(
+        // Initial secret installation uses one finite original control deadline.
+        // Brief worker-table contention may wait before acceptance; accepted
+        // filesystem work is never retried.
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let secrets = LocalSecretStore::open_before(
             http.pools.clone(),
             root.clone(),
             SecretLimits::default(),
             vec![],
             Arc::new(SystemSecretClock),
+            deadline,
         )
         .unwrap()
         .await
         .unwrap();
         let origin = http.provider.inner.config.destinations[0].origin.clone();
         secrets
-            .reload(0, specs(&origin, "1"))
+            .reload_before(0, specs(&origin, "1"), deadline)
             .unwrap()
             .await
             .unwrap();

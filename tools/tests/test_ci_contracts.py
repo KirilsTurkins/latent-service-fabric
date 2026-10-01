@@ -666,7 +666,21 @@ class RepositoryMigrationTests(unittest.TestCase):
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
         for key, value in legacy["after"].items():
             self.assertIn(key, data["after"])
-            if key != reviewed_extension:
+            host_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
+            if key == host_fixture:
+                # State now has real engine consumers. Preserve its original
+                # selected subset and runner, and explicitly prove full CI is
+                # still selected alongside this smaller host qualification.
+                expected = dict(value)
+                expected["run"] = value["run"].replace(
+                    "assert selection.profile == 'fast'\n",
+                    "from tools import ci_suite_inventory as registry\n"
+                    "assert selection.profile == 'full'\n"
+                    "assert selection.fast_packages\n"
+                    "assert set(selection.fast_packages) < set(registry.load()['fastPackages'])\n",
+                )
+                self.assertEqual(data["after"][key], expected, key)
+            elif key != reviewed_extension:
                 self.assertEqual(data["after"][key], value, key)
             else:
                 self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
