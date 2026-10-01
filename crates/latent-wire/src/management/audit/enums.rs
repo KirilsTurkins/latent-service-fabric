@@ -20,7 +20,9 @@ mapping!(policy, AuditPolicyRole, AuditPolicyRole; Publisher, PublisherRevocatio
 mapping!(action, AuditControlAction, AuditControlAction; Publish, Revoke, Retire,
     RenewEvidence, DeploymentApply, DeploymentDelete, TriggerApply, TriggerDelete, Rollout, Promotion, Rollback, CapabilityCall,
     NamespaceCreate, NamespaceQuiesce, NamespaceRetire, NamespaceDestroy, NamespaceRecreate, NamespaceInspect,
-    DispatcherInspect, DispatcherPause, DispatcherResume, DispatcherOperationRead);
+    DispatcherInspect, DispatcherPause, DispatcherResume, DispatcherOperationRead,
+    EffectPlan, EffectReconcile, EffectRedrive, EffectTerminate, StateOperationRead,
+    StateCheckpoint, PayloadPurge);
 mapping!(capability_resource, AuditCapabilityResourceClass, AuditCapabilityResourceClass;
     Context, Clock, Random, Log, Http, Blob, Secrets, Events, Telemetry, Service, State);
 mapping!(provider_outcome, AuditProviderOutcome, AuditProviderOutcome;

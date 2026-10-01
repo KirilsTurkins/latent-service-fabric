@@ -532,6 +532,36 @@ impl EffectAuthorityOwner {
         Ok(EffectCommitFence { _state: state })
     }
 
+    /// Current original effect rules for an explicit admitted redrive. The
+    /// current ceiling may narrow the captured ceiling; neither publication nor
+    /// delay can renew the immutable expiry. Hold only through the final short
+    /// acceptance CAS, then drop before disk or provider I/O.
+    pub fn retry_fence<'a>(
+        &'a self,
+        authority: &DurableEffectAuthority,
+        next_attempt: u32,
+        retry_at_millis: u64,
+        time: EffectTime,
+    ) -> Result<EffectCommitFence<'a>, AuthorityError> {
+        if next_attempt == 0 || retry_at_millis <= time.unix_millis {
+            return Err(AuthorityError::Invalid);
+        }
+        let mut state = self
+            .0
+            .state
+            .lock()
+            .map_err(|_| AuthorityError::Unavailable)?;
+        check_time(&mut state, time)?;
+        let (ceiling, expiry) = current_ceiling(&state, authority, time)?;
+        if next_attempt > ceiling.maximum_attempts {
+            return Err(AuthorityError::Capacity);
+        }
+        if retry_at_millis >= expiry {
+            return Err(AuthorityError::Expired);
+        }
+        Ok(EffectCommitFence { _state: state })
+    }
+
     /// Accept one physical attempt. Local expiry of this owner never permits a
     /// concurrent resend; the dispatcher owns claim/attempt CAS and passes the
     /// resulting once-only attempt here. Provider uncertainty is not abort proof.

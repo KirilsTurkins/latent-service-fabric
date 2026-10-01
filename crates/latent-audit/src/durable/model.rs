@@ -90,7 +90,14 @@ enumeration!(AuditControlAction {
     DispatcherInspect,
     DispatcherPause,
     DispatcherResume,
-    DispatcherOperationRead
+    DispatcherOperationRead,
+    EffectPlan,
+    EffectReconcile,
+    EffectRedrive,
+    EffectTerminate,
+    StateOperationRead,
+    StateCheckpoint,
+    PayloadPurge
 });
 enumeration!(AuditOperationResult {
     Committed,

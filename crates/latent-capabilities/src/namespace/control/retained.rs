@@ -52,6 +52,54 @@ pub struct RetainedNamespaceControlFence<'a> {
 }
 
 impl NamespaceControl {
+    /// Current approved host action and data inspection under one original
+    /// policy -> namespace lifecycle fence. The callback must not perform I/O,
+    /// await, flush audit, or recursively enter either owner.
+    pub fn with_operation_retained(
+        store: &PolicyStore,
+        operation: &OwnedPolicyDecision,
+        inspection: &OwnedPolicyDecision,
+        lifecycle: &NamespaceLifecycleRegistry,
+        current: &NamespaceRead,
+        expected_operation: &str,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if !matches!(
+            expected_operation,
+            "effect-plan"
+                | "effect-reconcile"
+                | "effect-redrive"
+                | "effect-terminate"
+                | "state-checkpoint"
+                | "purge-expired-payload"
+        ) {
+            return Err(denied());
+        }
+        let mut action = Some(action);
+        store.with_retained_decisions(&[operation, inspection], &mut |inputs| {
+            let actual = inputs[0];
+            let inspect = inputs[1];
+            if actual.capability != STATE_CONTRACT
+                || actual.operation != expected_operation
+                || actual.principal.subject != inspect.principal.subject
+                || actual.principal.kind != inspect.principal.kind
+                || actual.principal.tenant != inspect.principal.tenant
+                || actual.publication != inspect.publication
+                || actual.service != inspect.service
+                || actual.resource != inspect.resource
+            {
+                return Err(denied());
+            }
+            inspection_actual(
+                inspect,
+                lifecycle,
+                current,
+                None,
+                action.take().ok_or_else(denied)?,
+            )
+        })
+    }
+
     /// Current metadata inspection with the original retained policy decision.
     /// This is the same policy -> lifecycle fence as the borrowed control path;
     /// the callback performs no I/O and cannot renew the acquisition.

@@ -15,6 +15,30 @@ pub(super) struct Access {
     pub inspect: OwnedPolicyDecision,
     pub mutation: Option<OwnedPolicyDecision>,
 }
+/// A descriptive SHA-256 precondition over original sealed configuration, not a
+/// permission. Every operation still rechecks its actual retained policy owner.
+pub(super) fn policy_precondition(access: &Access) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hash = Sha256::new();
+    hash.update(b"lsf-namespace-policy-precondition-v1\0");
+    hash.update(access.inspect.configuration_digest());
+    for text in [
+        &access.binding.namespace.0,
+        &access.binding.result_policy,
+        &access.binding.state_schema,
+        &access.binding.state.profile,
+        &access.binding.state.configuration_digest,
+    ] {
+        hash.update((text.len() as u64).to_be_bytes());
+        hash.update(text.as_bytes());
+    }
+    hash.update(access.binding.incarnation.to_be_bytes());
+    hash.update(access.binding.state.configuration_epoch.to_be_bytes());
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(hash.finalize())
+    )
+}
 pub(super) fn validate_binding(value: &StateManagementBinding) -> Result<(), PlatformError> {
     if value.publication.scope.tenant().is_none()
         || value.incarnation == 0
