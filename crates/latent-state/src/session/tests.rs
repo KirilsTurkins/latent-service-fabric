@@ -4,6 +4,7 @@ use crate::namespace::NamespaceQuota;
 use std::fs::OpenOptions;
 
 mod history;
+mod inspection;
 
 struct Fixture {
     store: EmbeddedStore,
