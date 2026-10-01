@@ -635,6 +635,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_local_tests.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Make the missing-fixture tool refusal independent of verified warm fixtures; preserve the production reuse guard and every case",
   "schemaVersion": "latent.ci.contracts.v1"
 }
