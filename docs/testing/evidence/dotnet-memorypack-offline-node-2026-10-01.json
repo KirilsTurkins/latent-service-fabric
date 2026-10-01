@@ -1,0 +1,3545 @@
+{
+  "buildSourceRevision": "907e8fa0791e85d764d7b06a716f4f238a84e05d",
+  "formatVersion": 1,
+  "issue": 687,
+  "nativeTools": {
+    "files": {
+      "capsule_authoring": {
+        "digest": "sha256:56fc9db0bb9b0d2fa7cdfbac99385d711a092585cfee5e48cc8115322b1e0731",
+        "size": 19321248
+      },
+      "capsule_contracts": {
+        "digest": "sha256:ac890bf161d41d713ce889a84faaf5a09384a0a72736d4be62609676d4890385",
+        "size": 7077424
+      },
+      "latent": {
+        "digest": "sha256:bbe8498b4044b34d814e69112eaf92e7f793612f414b576d2836492b04753b58",
+        "size": 58553768
+      },
+      "latentd": {
+        "digest": "sha256:69e1481c0aa9dd587cfba255c89e0c1329518607a0da0beed6efb58193e9dd00",
+        "size": 143909072
+      },
+      "package": {
+        "digest": "sha256:f71dacff4d07d9589eb3fe778a748e0e2aca471a41a60fa4b3fda8b6795fbb18",
+        "size": 14119016
+      }
+    },
+    "formatVersion": 1,
+    "hermetic": false,
+    "inputs": {
+      "attempt": 3,
+      "cacheLayers": {
+        "cache": "read-only Windows public Cargo archives",
+        "homeAndExtractedSources": "independently owned /work/cargo",
+        "index": "read-only Windows public Cargo index"
+      },
+      "cacheSeed": {
+        "files": {
+          "examples/capsule_authoring": {
+            "digest": "sha256:9934a14b6f7f9815880c6012639e73dfea26cc2335558380448add806688176d",
+            "size": 19308920
+          },
+          "examples/capsule_contracts": {
+            "digest": "sha256:8133a937461ff68388a093770dfde924d701e2cfa14a8d287acf2130c6c19425",
+            "size": 7078256
+          },
+          "examples/package": {
+            "digest": "sha256:a4de248da0743654ed61361a6420d237c2fbffe239760ef212147ade98e5c10e",
+            "size": 14094368
+          },
+          "latent": {
+            "digest": "sha256:45b6a6bc6f120e8ed9295b182157cd97925c30d15770759f587d6ada40ab6a69",
+            "size": 58536272
+          },
+          "latentd": {
+            "digest": "sha256:50af48b1450674399df88c7cef517fe07f98634852598b635cb37ec264d6f514",
+            "size": 143837600
+          }
+        },
+        "originalMounts": "read-only",
+        "sourceRevision": "6facfd59aa49f5fa8d433e5e352f8f17a3115eaa",
+        "writableCopies": "owned work volume"
+      },
+      "compiler": {
+        "cargo": {
+          "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+          "size": 42839824
+        },
+        "cargoVersion": "cargo 1.97.1 (c980f4866 2026-06-30)",
+        "cc": {
+          "digest": "sha256:75e997ec62297a6484f491bae28ab0ccb489daba23e398fd10fe68e9e6f0def8",
+          "size": 1301496
+        },
+        "ccVersion": "cc (Debian 12.2.0-14+deb12u1) 12.2.0",
+        "rustc": {
+          "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+          "size": 645000
+        },
+        "rustcVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n"
+      },
+      "configuration": {
+        "debugInfo": 0,
+        "incremental": false,
+        "jobs": 2,
+        "managedGuest": {
+          "digest": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a",
+          "size": 652
+        },
+        "offline": true
+      },
+      "formatVersion": 1,
+      "fullTrackedInventory": {
+        "digest": "sha256:1bee162b2e014bfd258d74309fea2d0132001eb32a9191b93b63d84e465b06e2",
+        "size": 1505651
+      },
+      "previousFailures": [
+        "offline-base64-index-unavailable",
+        "selected-archive-api-proto-omission"
+      ],
+      "source": {
+        "archiveBytes": 381695157,
+        "archiveSha256": "d32d7b2a8751fe70f96f8e38531406ac2b26e2ab58a04551b885709035bd11df",
+        "entries": 8663,
+        "expandedBytes": 545537053,
+        "formatVersion": 1,
+        "includes": [
+          "alias-accounting repair8557fdb7",
+          "control-only admission lease7d5c0cd1"
+        ],
+        "previousAttempts": [
+          {
+            "attempt": 1,
+            "failure": "copied cache lacks base64 metadata before compilation"
+          },
+          {
+            "attempt": 2,
+            "failure": "selected source archive omitted api/proto during latent-rpc compilation"
+          }
+        ],
+        "purpose": "normal pinned offline native helper build with complete frozen source",
+        "scope": "all tracked paths from git archive of the frozen revision",
+        "sourceRevision": "907e8fa0791e85d764d7b06a716f4f238a84e05d"
+      },
+      "sourceDirectory": "/work/source-full",
+      "sourceInputs": {
+        "bytes": 14420806,
+        "files": 2274,
+        "hermetic": false,
+        "implicitCompilerInputs": "not-attested",
+        "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+        "sha256": "sha256:5fb2988237305e3161aecb9cd0aab363b81e284ff44b1a17bec616153b119363"
+      },
+      "workspaceInputsMtimeRefreshed": 7329
+    },
+    "invocation": "pending",
+    "seconds": 181.320283,
+    "sharedCacheMutation": false,
+    "status": "native-build-passed"
+  },
+  "normalSignedNode": {
+    "binaries": {
+      "latent": {
+        "digest": "sha256:bbe8498b4044b34d814e69112eaf92e7f793612f414b576d2836492b04753b58",
+        "size": 58553768
+      },
+      "latentd": {
+        "digest": "sha256:69e1481c0aa9dd587cfba255c89e0c1329518607a0da0beed6efb58193e9dd00",
+        "size": 143909072
+      }
+    },
+    "cleanupEvidence": "Original failure receipt precedes its finally reaping; it does not retain a normal shutdown counter report.",
+    "clockProviderObservations": [
+      {
+        "capability": "latent:clock/monotonic@0.1.0",
+        "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_GRANT_ALLOWED",
+        "operation": "now-nanos",
+        "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+        "providerOutcome": null,
+        "reason": "admitted"
+      },
+      {
+        "capability": "latent:clock/monotonic@0.1.0",
+        "kind": "PHASE2_AUDIT_EVENT_KIND_CAPABILITY_PROVIDER_OUTCOME",
+        "operation": "now-nanos",
+        "outcome": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+        "providerOutcome": "AUDIT_PROVIDER_OUTCOME_HOST_COMPLETED",
+        "reason": "committed"
+      }
+    ],
+    "compilerPayloadMounted": false,
+    "container": "latent-sdk-dotnet-memorypack-node-02-20261001",
+    "externalClrExecutableAvailable": false,
+    "invocations": [
+      {
+        "activation": "memorypack-clock-denied",
+        "decoded": null,
+        "elapsedNanos": "10181796166",
+        "exitCode": 4,
+        "processReaped": true,
+        "response": {
+          "category": "platform-failure",
+          "command": "invoke",
+          "data": {
+            "activationId": "memorypack-clock-denied",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "0",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "0",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "10163397"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:0ea293a7f4c36972a3e532f63b077dd46c8714d089b832fd6b9bf2c2c168471e",
+              "releaseDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+              "revisionId": "revision-v1:sha256:2be96b0e161cff44bb8191ae4c8e61082ad9c3433948af5d98e5b8f4420f7451",
+              "routeGeneration": "2"
+            },
+            "terminalState": "rejected"
+          },
+          "error": {
+            "code": "permission-denied",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "startedAtUnixMillis": "1790851937396"
+      },
+      {
+        "activation": "memorypack-library-0",
+        "decoded": null,
+        "elapsedNanos": "46832071",
+        "exitCode": 4,
+        "processReaped": true,
+        "response": {
+          "category": "platform-failure",
+          "command": "invoke",
+          "data": {
+            "activationId": "memorypack-library-0",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "51344399",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "54984704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "35196"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:0ea293a7f4c36972a3e532f63b077dd46c8714d089b832fd6b9bf2c2c168471e",
+              "releaseDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+              "revisionId": "revision-v1:sha256:e35019462c92b92f9a08ba9c80c8a2f44fa3fee01c0654e85783c5c36756912f",
+              "routeGeneration": "3"
+            },
+            "terminalState": "guest_trap"
+          },
+          "error": {
+            "code": "guest-trap",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "startedAtUnixMillis": "1790851948594"
+      }
+    ],
+    "network": "Docker --network none",
+    "originalCountersBeforeLibraryCall": [
+      {
+        "dormantDeployments": 0,
+        "inventory": {
+          "cacheSummary": {
+            "available": true,
+            "compiledImageBytes": "0",
+            "entries": "0",
+            "evictions": "0",
+            "hits": "0",
+            "invalidations": "0",
+            "maximumCompiledImageBytes": "134217728",
+            "maximumConcurrentPreparations": "1",
+            "maximumEntries": "2",
+            "maximumMetadataBytes": "8388608",
+            "maximumSourceBytes": "67108864",
+            "metadataBytes": "0",
+            "misses": "0",
+            "preparing": "0",
+            "preparingMetadataBytes": "0",
+            "preparingSourceBytes": "0",
+            "sourceBytes": "0"
+          },
+          "cellCapacity": [
+            {
+              "accepting": true,
+              "active": 0,
+              "available": 1,
+              "cancellations": "0",
+              "class": "standard",
+              "expired": "0",
+              "granted": "0",
+              "maxWaitMicros": "0",
+              "observationAvailable": true,
+              "oldestLeaseAgeMicros": "0",
+              "quarantined": 0,
+              "queueCapacity": 2,
+              "queueDepth": 0,
+              "queuedTenants": 0,
+              "rejected": "0",
+              "total": 1,
+              "totalWaitMicros": "0"
+            }
+          ],
+          "queueDepth": "0",
+          "quotas": {
+            "limits": {
+              "maximumConcurrentActivations": 3,
+              "maximumQueuedActivations": 3,
+              "maximumReservedCpuFuel": "30000000000",
+              "maximumReservedMemoryBytes": "402653184"
+            },
+            "retainedTenants": "0",
+            "usage": {
+              "activeActivations": 0,
+              "queuedActivations": 0,
+              "reservedCpuFuel": "0",
+              "reservedMemoryBytes": "0"
+            }
+          },
+          "topology": {
+            "available": true,
+            "complete": true,
+            "entries": [
+              {
+                "activeCount": "1",
+                "attributes": {
+                  "chargedStorageBytes": "0",
+                  "contentIndexBytes": "0",
+                  "incompleteFileBytes": "0",
+                  "indexedPublications": "0",
+                  "maximumContentIndexBytes": "67108864",
+                  "maximumFilesPerPublication": "1024",
+                  "maximumPublications": "8",
+                  "maximumRecoveryDirectories": "24",
+                  "maximumReleaseIndexBytes": "67108864",
+                  "maximumSharedBlobs": "1000000",
+                  "maximumStorageBytes": "4294967296",
+                  "measurementStatus": "available",
+                  "publicationLinkBytes": "0",
+                  "releaseDirectories": "0",
+                  "releaseIndexBytes": "1248",
+                  "sharedBlobBytes": "0",
+                  "sharedBlobs": "0",
+                  "webControlBytes": "0"
+                },
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "publication-catalog",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "process",
+                "name": "standalone-node",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "invocation-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "2",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "control-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-epoch",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-compiler",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "listener",
+                "name": "grpc-listener",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "32",
+                "kind": "connection",
+                "name": "accepted-connections",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "rpc",
+                "name": "in-flight-rpcs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "job",
+                "name": "control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "task",
+                "name": "invocation-cleanup-driver",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "continuation",
+                "name": "invocation-cleanup-slots",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "cell",
+                "name": "execution-cell-leases",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "reservation",
+                "name": "prepared-instance-reservations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "invocation",
+                "name": "guest-invocations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "guest-stores",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "host-state",
+                "name": "guest-host-states",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "component-instance",
+                "name": "guest-component-instances",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "buffer-group",
+                "name": "guest-value-buffers",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "probe",
+                "name": "guest-cancellation-probes",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "process",
+                "name": "resident-service-processes",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "thread",
+                "name": "resident-service-threads",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "listener",
+                "name": "resident-service-listeners",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "command",
+                "name": "capability-policy-control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "68",
+                "kind": "response-or-snapshot",
+                "name": "capability-policy-read-owners",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "blocking-task",
+                "name": "rollout-coordinator",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "command",
+                "name": "rollout-control-commands",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "window",
+                "name": "canary-observation-windows",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "128",
+                "kind": "sample",
+                "name": "canary-retained-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "sample",
+                "name": "canary-live-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "snapshot",
+                "name": "canary-snapshot-owners",
+                "ownership": "node-fixed"
+              }
+            ]
+          }
+        },
+        "os": {
+          "beganMonotonicNanos": "18864345664835",
+          "consistency": "non-atomic-finite-scan",
+          "disappearedProcesses": [],
+          "finishedMonotonicNanos": "18864352125824",
+          "identity": {
+            "executableSha256": "sha256:69e1481c0aa9dd587cfba255c89e0c1329518607a0da0beed6efb58193e9dd00",
+            "processId": 7,
+            "startTimeTicks": "1886399"
+          },
+          "metrics": {
+            "disappearedDescriptors": 0,
+            "handles": 20,
+            "highWaterRssBytes": 53587968,
+            "listeners": 1,
+            "processes": 1,
+            "rssBytes": 53587968,
+            "sockets": 3,
+            "tasks": 7,
+            "tcpConnections": 0,
+            "threads": 7,
+            "udpSockets": 0
+          },
+          "observedProcesses": 1,
+          "procBytesRead": 3368,
+          "processTree": [
+            {
+              "disappearedDescriptors": 0,
+              "handles": 20,
+              "highWaterRssBytes": 53587968,
+              "listeners": 1,
+              "processId": 7,
+              "rssBytes": 53587968,
+              "sockets": 3,
+              "startTimeTicks": "1886399",
+              "tasks": 7,
+              "tcpConnections": 0,
+              "threads": 7,
+              "udpSockets": 0,
+              "unavailable": {}
+            }
+          ],
+          "treeComplete": true,
+          "unavailable": {
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter",
+            "rendererHeapBytes": "guest-JS-allocator-not-exported"
+          }
+        },
+        "phase": "empty",
+        "settlingObservations": 1
+      },
+      {
+        "dormantDeployments": 1,
+        "inventory": {
+          "cacheSummary": {
+            "available": true,
+            "compiledImageBytes": "0",
+            "entries": "0",
+            "evictions": "0",
+            "hits": "0",
+            "invalidations": "0",
+            "maximumCompiledImageBytes": "134217728",
+            "maximumConcurrentPreparations": "1",
+            "maximumEntries": "2",
+            "maximumMetadataBytes": "8388608",
+            "maximumSourceBytes": "67108864",
+            "metadataBytes": "0",
+            "misses": "0",
+            "preparing": "0",
+            "preparingMetadataBytes": "0",
+            "preparingSourceBytes": "0",
+            "sourceBytes": "0"
+          },
+          "cellCapacity": [
+            {
+              "accepting": true,
+              "active": 0,
+              "available": 1,
+              "cancellations": "0",
+              "class": "standard",
+              "expired": "0",
+              "granted": "0",
+              "maxWaitMicros": "0",
+              "observationAvailable": true,
+              "oldestLeaseAgeMicros": "0",
+              "quarantined": 0,
+              "queueCapacity": 2,
+              "queueDepth": 0,
+              "queuedTenants": 0,
+              "rejected": "0",
+              "total": 1,
+              "totalWaitMicros": "0"
+            }
+          ],
+          "queueDepth": "0",
+          "quotas": {
+            "limits": {
+              "maximumConcurrentActivations": 3,
+              "maximumQueuedActivations": 3,
+              "maximumReservedCpuFuel": "30000000000",
+              "maximumReservedMemoryBytes": "402653184"
+            },
+            "retainedTenants": "0",
+            "usage": {
+              "activeActivations": 0,
+              "queuedActivations": 0,
+              "reservedCpuFuel": "0",
+              "reservedMemoryBytes": "0"
+            }
+          },
+          "topology": {
+            "available": true,
+            "complete": true,
+            "entries": [
+              {
+                "activeCount": "1",
+                "attributes": {
+                  "chargedStorageBytes": "17053393",
+                  "contentIndexBytes": "47723",
+                  "incompleteFileBytes": "0",
+                  "indexedPublications": "1",
+                  "maximumContentIndexBytes": "67108864",
+                  "maximumFilesPerPublication": "1024",
+                  "maximumPublications": "8",
+                  "maximumRecoveryDirectories": "24",
+                  "maximumReleaseIndexBytes": "67108864",
+                  "maximumSharedBlobs": "1000000",
+                  "maximumStorageBytes": "4294967296",
+                  "measurementStatus": "available",
+                  "publicationLinkBytes": "8527136",
+                  "releaseDirectories": "1",
+                  "releaseIndexBytes": "40748",
+                  "sharedBlobBytes": "8526257",
+                  "sharedBlobs": "20",
+                  "webControlBytes": "0"
+                },
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "publication-catalog",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "process",
+                "name": "standalone-node",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "invocation-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "2",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "control-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-epoch",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-compiler",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "listener",
+                "name": "grpc-listener",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "32",
+                "kind": "connection",
+                "name": "accepted-connections",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "rpc",
+                "name": "in-flight-rpcs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "job",
+                "name": "control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "task",
+                "name": "invocation-cleanup-driver",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "continuation",
+                "name": "invocation-cleanup-slots",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "cell",
+                "name": "execution-cell-leases",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "reservation",
+                "name": "prepared-instance-reservations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "invocation",
+                "name": "guest-invocations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "guest-stores",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "host-state",
+                "name": "guest-host-states",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "component-instance",
+                "name": "guest-component-instances",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "buffer-group",
+                "name": "guest-value-buffers",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "probe",
+                "name": "guest-cancellation-probes",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "process",
+                "name": "resident-service-processes",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "thread",
+                "name": "resident-service-threads",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "listener",
+                "name": "resident-service-listeners",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "command",
+                "name": "capability-policy-control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "68",
+                "kind": "response-or-snapshot",
+                "name": "capability-policy-read-owners",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "blocking-task",
+                "name": "rollout-coordinator",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "command",
+                "name": "rollout-control-commands",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "window",
+                "name": "canary-observation-windows",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "128",
+                "kind": "sample",
+                "name": "canary-retained-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "sample",
+                "name": "canary-live-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "snapshot",
+                "name": "canary-snapshot-owners",
+                "ownership": "node-fixed"
+              }
+            ]
+          }
+        },
+        "os": {
+          "beganMonotonicNanos": "18868197303504",
+          "consistency": "non-atomic-finite-scan",
+          "disappearedProcesses": [],
+          "finishedMonotonicNanos": "18868202791667",
+          "identity": {
+            "executableSha256": "sha256:69e1481c0aa9dd587cfba255c89e0c1329518607a0da0beed6efb58193e9dd00",
+            "processId": 7,
+            "startTimeTicks": "1886399"
+          },
+          "metrics": {
+            "disappearedDescriptors": 0,
+            "handles": 20,
+            "highWaterRssBytes": 75616256,
+            "listeners": 1,
+            "processes": 1,
+            "rssBytes": 75616256,
+            "sockets": 3,
+            "tasks": 7,
+            "tcpConnections": 0,
+            "threads": 7,
+            "udpSockets": 0
+          },
+          "observedProcesses": 1,
+          "procBytesRead": 4127,
+          "processTree": [
+            {
+              "disappearedDescriptors": 0,
+              "handles": 20,
+              "highWaterRssBytes": 75616256,
+              "listeners": 1,
+              "processId": 7,
+              "rssBytes": 75616256,
+              "sockets": 3,
+              "startTimeTicks": "1886399",
+              "tasks": 7,
+              "tcpConnections": 0,
+              "threads": 7,
+              "udpSockets": 0,
+              "unavailable": {}
+            }
+          ],
+          "treeComplete": true,
+          "unavailable": {
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter",
+            "rendererHeapBytes": "guest-JS-allocator-not-exported"
+          }
+        },
+        "phase": "signed-dormant",
+        "settlingObservations": 1
+      },
+      {
+        "dormantDeployments": 1,
+        "inventory": {
+          "cacheSummary": {
+            "available": true,
+            "compiledImageBytes": "13640744",
+            "entries": "1",
+            "evictions": "0",
+            "hits": "0",
+            "invalidations": "0",
+            "maximumCompiledImageBytes": "134217728",
+            "maximumConcurrentPreparations": "1",
+            "maximumEntries": "2",
+            "maximumMetadataBytes": "8388608",
+            "maximumSourceBytes": "67108864",
+            "metadataBytes": "28195",
+            "misses": "1",
+            "preparing": "0",
+            "preparingMetadataBytes": "0",
+            "preparingSourceBytes": "0",
+            "sourceBytes": "8498814"
+          },
+          "cellCapacity": [
+            {
+              "accepting": true,
+              "active": 0,
+              "available": 1,
+              "cancellations": "0",
+              "class": "standard",
+              "expired": "0",
+              "granted": "1",
+              "maxWaitMicros": "101",
+              "observationAvailable": true,
+              "oldestLeaseAgeMicros": "0",
+              "quarantined": 0,
+              "queueCapacity": 2,
+              "queueDepth": 0,
+              "queuedTenants": 0,
+              "rejected": "0",
+              "total": 1,
+              "totalWaitMicros": "101"
+            }
+          ],
+          "queueDepth": "0",
+          "quotas": {
+            "limits": {
+              "maximumConcurrentActivations": 3,
+              "maximumQueuedActivations": 3,
+              "maximumReservedCpuFuel": "30000000000",
+              "maximumReservedMemoryBytes": "402653184"
+            },
+            "retainedTenants": "0",
+            "usage": {
+              "activeActivations": 0,
+              "queuedActivations": 0,
+              "reservedCpuFuel": "0",
+              "reservedMemoryBytes": "0"
+            }
+          },
+          "topology": {
+            "available": true,
+            "complete": true,
+            "entries": [
+              {
+                "activeCount": "1",
+                "attributes": {
+                  "chargedStorageBytes": "17053393",
+                  "contentIndexBytes": "47723",
+                  "incompleteFileBytes": "0",
+                  "indexedPublications": "1",
+                  "maximumContentIndexBytes": "67108864",
+                  "maximumFilesPerPublication": "1024",
+                  "maximumPublications": "8",
+                  "maximumRecoveryDirectories": "24",
+                  "maximumReleaseIndexBytes": "67108864",
+                  "maximumSharedBlobs": "1000000",
+                  "maximumStorageBytes": "4294967296",
+                  "measurementStatus": "available",
+                  "publicationLinkBytes": "8527136",
+                  "releaseDirectories": "1",
+                  "releaseIndexBytes": "40748",
+                  "sharedBlobBytes": "8526257",
+                  "sharedBlobs": "20",
+                  "webControlBytes": "0"
+                },
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "publication-catalog",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "process",
+                "name": "standalone-node",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "invocation-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "2",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "control-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-epoch",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-compiler",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "listener",
+                "name": "grpc-listener",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "32",
+                "kind": "connection",
+                "name": "accepted-connections",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "rpc",
+                "name": "in-flight-rpcs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "job",
+                "name": "control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "task",
+                "name": "invocation-cleanup-driver",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "continuation",
+                "name": "invocation-cleanup-slots",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "cell",
+                "name": "execution-cell-leases",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "reservation",
+                "name": "prepared-instance-reservations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "invocation",
+                "name": "guest-invocations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "guest-stores",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "host-state",
+                "name": "guest-host-states",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "component-instance",
+                "name": "guest-component-instances",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "buffer-group",
+                "name": "guest-value-buffers",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "probe",
+                "name": "guest-cancellation-probes",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "process",
+                "name": "resident-service-processes",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "thread",
+                "name": "resident-service-threads",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "listener",
+                "name": "resident-service-listeners",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "command",
+                "name": "capability-policy-control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "68",
+                "kind": "response-or-snapshot",
+                "name": "capability-policy-read-owners",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "blocking-task",
+                "name": "rollout-coordinator",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "command",
+                "name": "rollout-control-commands",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "window",
+                "name": "canary-observation-windows",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "128",
+                "kind": "sample",
+                "name": "canary-retained-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "sample",
+                "name": "canary-live-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "snapshot",
+                "name": "canary-snapshot-owners",
+                "ownership": "node-fixed"
+              }
+            ]
+          }
+        },
+        "os": {
+          "beganMonotonicNanos": "18878397616795",
+          "consistency": "non-atomic-finite-scan",
+          "disappearedProcesses": [],
+          "finishedMonotonicNanos": "18878400207659",
+          "identity": {
+            "executableSha256": "sha256:69e1481c0aa9dd587cfba255c89e0c1329518607a0da0beed6efb58193e9dd00",
+            "processId": 7,
+            "startTimeTicks": "1886399"
+          },
+          "metrics": {
+            "disappearedDescriptors": 0,
+            "handles": 20,
+            "highWaterRssBytes": 228155392,
+            "listeners": 1,
+            "processes": 1,
+            "rssBytes": 220704768,
+            "sockets": 3,
+            "tasks": 7,
+            "tcpConnections": 0,
+            "threads": 7,
+            "udpSockets": 0
+          },
+          "observedProcesses": 1,
+          "procBytesRead": 4431,
+          "processTree": [
+            {
+              "disappearedDescriptors": 0,
+              "handles": 20,
+              "highWaterRssBytes": 228155392,
+              "listeners": 1,
+              "processId": 7,
+              "rssBytes": 220704768,
+              "sockets": 3,
+              "startTimeTicks": "1886399",
+              "tasks": 7,
+              "tcpConnections": 0,
+              "threads": 7,
+              "udpSockets": 0,
+              "unavailable": {}
+            }
+          ],
+          "treeComplete": true,
+          "unavailable": {
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter",
+            "rendererHeapBytes": "guest-JS-allocator-not-exported"
+          }
+        },
+        "phase": "after-clock-denial",
+        "settlingObservations": 1
+      }
+    ],
+    "publication": {
+      "category": "success",
+      "command": "release publish-package",
+      "data": {
+        "admissionWarnings": [],
+        "auditAck": {
+          "attemptSequence": "5",
+          "status": "AUDIT_ACK_STATUS_DURABLE"
+        },
+        "operation": {
+          "action": "RELEASE_LIFECYCLE_ACTION_PUBLISH",
+          "actor": {
+            "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+            "subject": "workflow-operator"
+          },
+          "componentDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+          "disposition": "RELEASE_OPERATION_DISPOSITION_COMMITTED",
+          "expectedGeneration": "0",
+          "observedAtUnixMillis": "1790851935753",
+          "operationId": "memorypack-publish",
+          "packageManifestDigest": "sha256:2375dceef693f6df4ebac81269b56d1a676503b0032a57075efae39c6b3daeb4",
+          "policy": {
+            "digest": "sha256:2bc4d54a80465ba34fef8ef535dfa6e36f217f2d1fca59bbae26a1c4980c9fcc",
+            "generation": "1",
+            "scope": "examples"
+          },
+          "publication": {
+            "id": "publication:sha256:0ea293a7f4c36972a3e532f63b077dd46c8714d089b832fd6b9bf2c2c168471e",
+            "tenant": "examples"
+          },
+          "reason": "RELEASE_LIFECYCLE_REASON_ADMITTED",
+          "record": {
+            "actor": {
+              "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+              "subject": "workflow-operator"
+            },
+            "componentDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+            "evidenceRevisionDigest": null,
+            "generation": "1",
+            "observedAtUnixMillis": "1790851935753",
+            "operationId": "memorypack-publish",
+            "packageDigest": "sha256:2375dceef693f6df4ebac81269b56d1a676503b0032a57075efae39c6b3daeb4",
+            "policy": {
+              "digest": "sha256:2bc4d54a80465ba34fef8ef535dfa6e36f217f2d1fca59bbae26a1c4980c9fcc",
+              "generation": "1",
+              "scope": "examples"
+            },
+            "publication": {
+              "id": "publication:sha256:0ea293a7f4c36972a3e532f63b077dd46c8714d089b832fd6b9bf2c2c168471e",
+              "tenant": "examples"
+            },
+            "reason": "RELEASE_LIFECYCLE_REASON_ADMITTED",
+            "state": "RELEASE_LIFECYCLE_STATE_ADMITTED",
+            "tenant": "examples"
+          },
+          "requestDigest": "sha256:8865f3b58ebff37e8754e5653dc27e99e2e8027ad9ebdfaa816c51a8adc41eaa",
+          "tenant": "examples"
+        },
+        "recovery": {
+          "expectedGeneration": "0",
+          "family": "release",
+          "operationId": "memorypack-publish",
+          "tenant": "examples"
+        },
+        "release": {
+          "admitted": true,
+          "annotations": {},
+          "artifactReference": "package:sha256:2375dceef693f6df4ebac81269b56d1a676503b0032a57075efae39c6b3daeb4",
+          "createdAtUnixMillis": "0",
+          "digest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+          "mediaType": "application/wasm",
+          "packageDigest": "sha256:2375dceef693f6df4ebac81269b56d1a676503b0032a57075efae39c6b3daeb4",
+          "publication": {
+            "id": "publication:sha256:0ea293a7f4c36972a3e532f63b077dd46c8714d089b832fd6b9bf2c2c168471e",
+            "tenant": "examples"
+          },
+          "publisher": "local-demo-publisher",
+          "semanticVersion": "1.0.0",
+          "service": "examples/memorypack-library",
+          "sizeBytes": "8498814",
+          "tenant": "examples",
+          "world": "examples:greeting/service@1.0.0"
+        }
+      },
+      "error": null,
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    },
+    "signedRelease": {
+      "buildType": "https://latent.dev/build/dotnet-capsule/v1",
+      "componentDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+      "name": "memorypack-library",
+      "observationDigest": "sha256:587340fdba4bd8d0b9c6782ba4d7b6c84d4d61b2b0aaa42890f3e54bf55bab85",
+      "packageDigest": "sha256:2375dceef693f6df4ebac81269b56d1a676503b0032a57075efae39c6b3daeb4",
+      "service": "examples/memorypack-library",
+      "sourceSnapshotDigest": "sha256:43056990064a95a1710159f1bdc0aefb036ce9fd108f40d0640c2307049a8c28",
+      "world": "examples:greeting/service@1.0.0"
+    },
+    "sourceRevision": "907e8fa0791e85d764d7b06a716f4f238a84e05d",
+    "trust": "isolated short-lived public demo signatures; no production publication",
+    "unsignedAdmissionDenial": {
+      "category": "platform-failure",
+      "command": "release publish-package",
+      "data": {
+        "auditAck": {
+          "attemptSequence": "2",
+          "status": "durable"
+        },
+        "recovery": {
+          "expectedGeneration": "0",
+          "family": "release",
+          "operationId": "memorypack-unsigned-denied",
+          "tenant": "examples"
+        }
+      },
+      "error": {
+        "code": "permission-denied",
+        "details": [],
+        "message": "The platform reported a failure.",
+        "retryable": false
+      },
+      "outcomeKnown": true,
+      "requestDispatched": true,
+      "schemaVersion": "latent.cli.result.v1"
+    }
+  },
+  "offlineBuild": {
+    "actualFinalInspection": {
+      "componentDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+      "findings": [
+        {
+          "classification": "unresolved-behavior",
+          "evidence": "not-evaluated",
+          "phase": "invocation"
+        }
+      ],
+      "hostAbiDigest": "sha256:4413194663dea86eb471981cbd8f37e4d7f77c093ef685333457357cc5a1b0b4",
+      "imports": [
+        "latent:clock/monotonic@0.1.0"
+      ]
+    },
+    "approvedGeneratedOutputs": {
+      "approvalIdentity": "sha256:48210e1c62591c74da92462e72a93aa910aaa45d78bf8d3b12f32efa10e0700f",
+      "captureBoundary": "native-aot-process-reaped-before-component-composition",
+      "cleanup": "namespace-and-owned-process-reaped",
+      "compilerCommandSucceeded": true,
+      "compilerInputsDigest": "sha256:dad5a8dc8d9f55da48ebe93f7fb95d38e10509d8dd042bca30a3b79a821443ca",
+      "formatVersion": 1,
+      "hermetic": false,
+      "inputIdentity": "sha256:33d7a1d5a5914ad5ac26e866ca5a81f6584896b6fd6b441cb2d4c4fdaa2d59fc",
+      "outputs": {
+        "MemoryPack.Generator/MemoryPack.Generator.MemoryPackGenerator/ServiceWorld.wit.Exports.examples.greeting.CapturedPayload.MemoryPackFormatter.g.cs": {
+          "digest": "sha256:0f6f93ed2a1f5fb3a5248be4303fad4d43d4c40e588400ea6203fd3da02733bc",
+          "size": 4194
+        }
+      },
+      "recipeDigest": "sha256:d4eb01d4ae76d59d65dfed147105d5ce86e6277b13a16741ff70fd6e429db52b"
+    },
+    "buildObservation": {
+      "buildType": "https://latent.dev/build/dotnet-capsule/v1",
+      "componentDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+      "componentSize": 8498814,
+      "dependencyCompleteness": "declared-inputs-incomplete",
+      "finishedAt": 1790850769,
+      "formatVersion": 1,
+      "hermetic": false,
+      "materials": [
+        {
+          "digest": "sha256:c9266a3a2515cf975d1acac46e0f8442802a9c63fb6366f6d9060fefc13a8c44",
+          "name": "activation-runtime",
+          "size": 147560
+        },
+        {
+          "digest": "sha256:a65d32df1d3c2b2f63eaf96481a8261ff6ac48f24db7bdf8ae51b608c50e65c4",
+          "name": "application-dependencies",
+          "size": 11995
+        },
+        {
+          "digest": "sha256:3ed2a65bc3cf1888a16974396f2dad2868ee1e67d7d86a99f8e146aace28d58c",
+          "name": "automatic-compiler-patches",
+          "size": 982
+        },
+        {
+          "digest": "sha256:cbc502d450e552c6aa6d24e3a368dadedc67026cc9604a1a673ca065f8da7858",
+          "name": "build-recipe",
+          "size": 4188
+        },
+        {
+          "digest": "sha256:2d4d4de0c6fa08a5118acb4ed2ffb11535e6a95c8cfb016fef2757feb422a0b0",
+          "name": "closed-runtime",
+          "size": 93876
+        },
+        {
+          "digest": "sha256:1009842d5785c19ceb153fd4ebaec4b3e86803df384d82a14554700b80fdab53",
+          "name": "closed-runtime-coverage",
+          "size": 1908
+        },
+        {
+          "digest": "sha256:70ef544d9976989caaacaed364fe3282c820cee1f55bae43297c28add5957112",
+          "name": "compiler-containment",
+          "size": 5061452
+        },
+        {
+          "digest": "sha256:c1305f4bdfc728b8f3f48c2b89963bebb80918c5303f22051a79b3401bb818aa",
+          "name": "compiler-inputs",
+          "size": 3550353
+        },
+        {
+          "digest": "sha256:763395bd7c1330e58a2fe0578e71a7adbbcb4706053650da99ca5f211932b23c",
+          "name": "compiler-namespace-arguments",
+          "size": 1815
+        },
+        {
+          "digest": "sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406",
+          "name": "component-composer",
+          "size": 21726840
+        },
+        {
+          "digest": "sha256:ac890bf161d41d713ce889a84faaf5a09384a0a72736d4be62609676d4890385",
+          "name": "contracts-tool",
+          "size": 7077424
+        },
+        {
+          "digest": "sha256:c52f3ff2af8396c543f93063caf0a36ff41fed9e47f20383ae51fd432f74ad82",
+          "name": "dependency-lock",
+          "size": 2475
+        },
+        {
+          "digest": "sha256:b3e9698b9e5e68d716115f7cc3cc98c939f479f90977c158d67b1740353c334c",
+          "name": "dotnet",
+          "size": 70048
+        },
+        {
+          "digest": "sha256:924132460acbc3e3ecff65454d20240da8804055593bcf145efc8d506314a82d",
+          "name": "executable-input-outputs",
+          "size": 888
+        },
+        {
+          "digest": "sha256:63936d9dd83de3a3914d659a20be0519974f02eb6a24f92d011a381d28f865bb",
+          "name": "http-runtime",
+          "size": 226137
+        },
+        {
+          "digest": "sha256:bf87bc0fc1b170efe7707a8a94eeed1d7ef7973de53e5b697f000b8127b0939d",
+          "name": "nuget-build-inputs",
+          "size": 4791
+        },
+        {
+          "digest": "sha256:b5e32b358890ea5317d689133c30a0f013437512beb7e7ba9a7f7fa2dc91eb6f",
+          "name": "package-inputs",
+          "size": 936
+        },
+        {
+          "digest": "sha256:f71dacff4d07d9589eb3fe778a748e0e2aca471a41a60fa4b3fda8b6795fbb18",
+          "name": "packager",
+          "size": 14119016
+        },
+        {
+          "digest": "sha256:8620f1d21a772dfd6239e64e73afc86cdf434df987cc3f1bc91515864753a5dd",
+          "name": "runtime-profile",
+          "size": 1092
+        },
+        {
+          "digest": "sha256:43056990064a95a1710159f1bdc0aefb036ce9fd108f40d0640c2307049a8c28",
+          "name": "source-snapshot",
+          "size": 12117
+        },
+        {
+          "digest": "sha256:0aa4b85ae248d59bbc4138f346d952b7fae4fe18cc701d921fa1c003211be777",
+          "name": "toolchain-config",
+          "size": 105
+        },
+        {
+          "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+          "name": "wasm-tools",
+          "size": 20231696
+        },
+        {
+          "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+          "name": "wit-bindgen",
+          "size": 19856344
+        }
+      ],
+      "parameters": {
+        "ambientWasi": false,
+        "bindings": "wit-bindgen-csharp",
+        "compiler": "native-aot-llvm",
+        "language": "csharp",
+        "locked": true,
+        "runtime": "native-aot",
+        "target": "wasi-wasm"
+      },
+      "reproducibility": "not-checked",
+      "source": {
+        "capture": "explicit-input-files",
+        "repository": "https://github.com/KirilsTurkins/latent-service-fabric",
+        "repositoryTrust": "operator-asserted",
+        "revision": "43056990064a95a1710159f1bdc0aefb036ce9fd108f40d0640c2307049a8c28",
+        "snapshotDigest": "sha256:43056990064a95a1710159f1bdc0aefb036ce9fd108f40d0640c2307049a8c28"
+      },
+      "startedAt": 1790850647
+    },
+    "compilerContainment": "Verified captured distribution, loaders and application closure inside owned bubblewrap; no network/home/credentials.",
+    "completedBuild": {
+      "buildSeconds": 121.987703,
+      "commands": [
+        {
+          "exitCode": 0,
+          "seconds": 0.01187,
+          "stage": "contracts"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.164805,
+          "stage": "dotnet-version"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.011542,
+          "stage": "wasm-tools-version"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.011384,
+          "stage": "wit-bindgen-version"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.011804,
+          "stage": "dotnet-sdks"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.337839,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.409959,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.083201,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.154853,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.124072,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.082905,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.154421,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.011757,
+          "stage": "component-composer-version"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.053449,
+          "stage": "declared-runtime-wit"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.370535,
+          "stage": "bindings"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.329304,
+          "stage": "bindings-drift"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.04248,
+          "stage": "canonical-wit"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 1.780032,
+          "stage": "locked-restore"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 75.779391,
+          "stage": "native-aot"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.063334,
+          "stage": "native-runtime-wit"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.052909,
+          "stage": "native-aot-raw-wit"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.052884,
+          "stage": "closed-runtime-adapter-wit"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.14514,
+          "stage": "closed-runtime-composition"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.07377,
+          "stage": "validate"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.063524,
+          "stage": "runtime-final-wit"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.063996,
+          "stage": "surface"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.022399,
+          "stage": "compatibility-final-wit"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 1.104219,
+          "stage": "package"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.537084,
+          "stage": "inspect"
+        }
+      ],
+      "componentDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+      "formatVersion": 1,
+      "observationDigest": "sha256:aff156a764abde7011e1370e66d93749a4626c5bdf76346956da92c86d7f9b87",
+      "packageAssembled": true,
+      "sdkBindingDigest": "sha256:e13dbeada07bcecb0903bd3257ae913b53e7f117a9ae6551d41c8d66e5c2f213",
+      "sourceDigest": "sha256:43056990064a95a1710159f1bdc0aefb036ce9fd108f40d0640c2307049a8c28"
+    },
+    "container": "latent-sdk-dotnet-memorypack-fixture-07-20261001",
+    "cpus": 2,
+    "dependencyTransport": {
+      "bytes": 1333132,
+      "inputIdentity": "sha256:33d7a1d5a5914ad5ac26e866ca5a81f6584896b6fd6b441cb2d4c4fdaa2d59fc",
+      "objects": 33,
+      "scope": "Only native locks, original archives and expanded file objects selected by the verified lock; original/fresh Store.get/put and verify_inputs match."
+    },
+    "finalMemberCoverage": {
+      "adapterExports": [
+        "wasi:cli/environment@0.2.6",
+        "wasi:cli/exit@0.2.6",
+        "wasi:cli/stderr@0.2.6",
+        "wasi:cli/stdin@0.2.6",
+        "wasi:cli/stdout@0.2.6",
+        "wasi:cli/terminal-input@0.2.6",
+        "wasi:cli/terminal-output@0.2.6",
+        "wasi:cli/terminal-stderr@0.2.6",
+        "wasi:cli/terminal-stdin@0.2.6",
+        "wasi:cli/terminal-stdout@0.2.6",
+        "wasi:clocks/monotonic-clock@0.2.6",
+        "wasi:clocks/wall-clock@0.2.6",
+        "wasi:filesystem/preopens@0.2.6",
+        "wasi:filesystem/types@0.2.6",
+        "wasi:http/outgoing-handler@0.2.0",
+        "wasi:http/types@0.2.0",
+        "wasi:io/error@0.2.6",
+        "wasi:io/poll@0.2.6",
+        "wasi:io/streams@0.2.6",
+        "wasi:random/random@0.2.6"
+      ],
+      "analysisCompleteness": "required-member-names",
+      "authority": "none",
+      "gaps": [],
+      "rawComponentDigest": "sha256:2431243df27440a65f77bbf0edc052122279b6206f83ba33a797ba9904e5be56",
+      "rawWitDigest": "sha256:d82ab96d4457b631683e91dcc7ab92ee470e158d9e69895fe77719217e161079",
+      "requiredImports": [
+        "wasi:cli/environment@0.2.6",
+        "wasi:cli/exit@0.2.6",
+        "wasi:cli/stderr@0.2.6",
+        "wasi:cli/stdin@0.2.6",
+        "wasi:cli/stdout@0.2.6",
+        "wasi:cli/terminal-input@0.2.6",
+        "wasi:cli/terminal-output@0.2.6",
+        "wasi:cli/terminal-stderr@0.2.6",
+        "wasi:cli/terminal-stdin@0.2.6",
+        "wasi:cli/terminal-stdout@0.2.6",
+        "wasi:clocks/monotonic-clock@0.2.6",
+        "wasi:clocks/wall-clock@0.2.6",
+        "wasi:filesystem/preopens@0.2.6",
+        "wasi:filesystem/types@0.2.6",
+        "wasi:io/error@0.2.6",
+        "wasi:io/poll@0.2.6",
+        "wasi:io/streams@0.2.6",
+        "wasi:random/random@0.2.6"
+      ],
+      "runtimeAdapterDigest": "sha256:2d4d4de0c6fa08a5118acb4ed2ffb11535e6a95c8cfb016fef2757feb422a0b0",
+      "runtimeProfile": "dotnet-native-aot-component-v1",
+      "runtimeWitDigest": "sha256:3a7dab274ca024222c71b237e6a2acee19a060fac275117efb8ecc2ac48afde6",
+      "schemaVersion": "lsf.dotnet.runtime.coverage.v1"
+    },
+    "finalRuntimeSelection": {
+      "adapter": {
+        "digest": "sha256:2d4d4de0c6fa08a5118acb4ed2ffb11535e6a95c8cfb016fef2757feb422a0b0",
+        "name": "closed-runtime",
+        "size": 93876
+      },
+      "declaredImports": [
+        "latent:clock/monotonic@0.1.0"
+      ],
+      "emittedImports": [
+        "wasi:cli/environment@0.2.6",
+        "wasi:cli/exit@0.2.6",
+        "wasi:cli/stderr@0.2.6",
+        "wasi:cli/stdin@0.2.6",
+        "wasi:cli/stdout@0.2.6",
+        "wasi:cli/terminal-input@0.2.6",
+        "wasi:cli/terminal-output@0.2.6",
+        "wasi:cli/terminal-stderr@0.2.6",
+        "wasi:cli/terminal-stdin@0.2.6",
+        "wasi:cli/terminal-stdout@0.2.6",
+        "wasi:clocks/monotonic-clock@0.2.6",
+        "wasi:clocks/wall-clock@0.2.6",
+        "wasi:filesystem/preopens@0.2.6",
+        "wasi:filesystem/types@0.2.6",
+        "wasi:io/error@0.2.6",
+        "wasi:io/poll@0.2.6",
+        "wasi:io/streams@0.2.6",
+        "wasi:random/random@0.2.6"
+      ],
+      "profile": "closed",
+      "rawComponent": {
+        "digest": "sha256:2431243df27440a65f77bbf0edc052122279b6206f83ba33a797ba9904e5be56",
+        "name": "raw-native-aot-component",
+        "size": 8403709
+      },
+      "schemaVersion": "latent.dotnet.runtime.v1"
+    },
+    "fixture": {
+      "developerOwned": "Independent.Developer.Input.20261001/1.0.0",
+      "formatVersion": 1,
+      "generatedSerialization": {
+        "generator": "MemoryPack.Generator/1.21.4",
+        "ordinaryCalls": [
+          "MemoryPackSerializer.Serialize",
+          "MemoryPackSerializer.Deserialize"
+        ],
+        "type": "CapturedPayload"
+      },
+      "independentApplicationSelections": [
+        "Independent.Developer.Input.20261001/1.0.0",
+        "MemoryPack/1.21.4"
+      ],
+      "managedAssemblyDigest": "sha256:46087abc5c7246fd180d065e52145d938a3f9b413370335a4f0f99c6b6b74c2d",
+      "nativeGraphDigest": "sha256:fcd59a6b21adda718d16c69ec756d422ee48cb9ad0acc5eafc9da069a56d180d",
+      "offlineOriginals": "unavailable-after-capture",
+      "preparationCommands": [
+        {
+          "exitCode": 0,
+          "seconds": 0.157475,
+          "stage": "dotnet-version"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.01161,
+          "stage": "wasm-tools-version"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.012524,
+          "stage": "wit-bindgen-version"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.011742,
+          "stage": "dotnet-sdks"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.339069,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.38238,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.074453,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.125339,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.113826,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.08382,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.134926,
+          "stage": "nuget-content-hash"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 0.011647,
+          "stage": "component-composer-version"
+        },
+        {
+          "exitCode": 0,
+          "seconds": 4.053019,
+          "stage": "developer-library-build"
+        }
+      ],
+      "resourceDigest": "sha256:23429bd9ba98dd5140309bb9b0094b3aad642430fff6fb3ca61f008ce644f34a",
+      "sourceDigest": "sha256:d42b6d6aebe36e1dac55d1c2b600a4c24b94f9fd9ff67772705bc9ac38099aa8",
+      "thirdParty": "MemoryPack/1.21.4",
+      "transitives": [
+        "MemoryPack.Core",
+        "MemoryPack.Generator"
+      ]
+    },
+    "hermetic": false,
+    "imageConfig": "sha256:808c74683a8e0477a000b28637efed55efe3f62e4d08a3f49defe662f3a03dfd",
+    "imageManifest": "sha256:52830a1053284351a14e1b4fa3c7b6cf1f82cca6dc94f120184755b698dc5fe2",
+    "inputFileIdentities": {
+      "application-dependencies.json": {
+        "digest": "sha256:a65d32df1d3c2b2f63eaf96481a8261ff6ac48f24db7bdf8ae51b608c50e65c4",
+        "size": 11995
+      },
+      "compatibility-report.json": {
+        "digest": "sha256:d4b3b53ed57435c370b879cc17b5df056164b4d955680fa6bc348d44afc8baf1",
+        "size": 1254
+      },
+      "compiler-containment.json": {
+        "digest": "sha256:70ef544d9976989caaacaed364fe3282c820cee1f55bae43297c28add5957112",
+        "size": 5061452
+      },
+      "compiler-inputs.json": {
+        "digest": "sha256:c1305f4bdfc728b8f3f48c2b89963bebb80918c5303f22051a79b3401bb818aa",
+        "size": 3550353
+      },
+      "compiler-patches.json": {
+        "digest": "sha256:3ed2a65bc3cf1888a16974396f2dad2868ee1e67d7d86a99f8e146aace28d58c",
+        "size": 982
+      },
+      "component.wasm": {
+        "digest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+        "size": 8498814
+      },
+      "recipe-inputs.json": {
+        "digest": "sha256:cbc502d450e552c6aa6d24e3a368dadedc67026cc9604a1a673ca065f8da7858",
+        "size": 4188
+      },
+      "runtime-profile.json": {
+        "digest": "sha256:8620f1d21a772dfd6239e64e73afc86cdf434df987cc3f1bc91515864753a5dd",
+        "size": 1092
+      },
+      "source-inputs.json": {
+        "digest": "sha256:43056990064a95a1710159f1bdc0aefb036ce9fd108f40d0640c2307049a8c28",
+        "size": 12117
+      }
+    },
+    "memoryBytes": 4294967296,
+    "namespacePrerequisites": {
+      "capAdd": [
+        "SYS_ADMIN"
+      ],
+      "privileged": false,
+      "securityOptions": [
+        "seccomp=unconfined",
+        "apparmor=unconfined"
+      ]
+    },
+    "network": "Docker --network none",
+    "originalDeveloperSourceAndFeed": "source/feed already deleted",
+    "unapprovedGenerator": "Fresh exact approval request retained and executable input denied before native-aot.",
+    "wholeFixtureSeconds": 145.073314
+  },
+  "pending": [
+    "Actual ordinary resource output and MemoryPack serialize/deserialize result after entropy support.",
+    "Normal fuel/memory/cancellation/trap recovery, fresh invocation state, persisted node recovery and original dormant population counters.",
+    "Framework/RID/assets, supported reflection/trimming, native asset rejection, private credential/update/remove/watch and strict resource-index ownership qualification.",
+    "Task/ThreadPool/HttpClient qualification belongs to the separately selected runtime ports."
+  ],
+  "previousCompositionFailure": "dotnet-memorypack-composition-2026-10-01.json",
+  "previousSetupFailures": [
+    {
+      "attempt": 5,
+      "reason": "Source snapshot excludes CAS by design; diagnostic transfer omitted selected objects.",
+      "stage": "dependency-input-transport"
+    },
+    {
+      "attempt": 6,
+      "reason": "Diagnostic runner omitted required namespace capabilities; bubblewrap correctly denied setup.",
+      "stage": "compiler-namespace-before-native-aot"
+    }
+  ],
+  "privateOriginalComponentDiagnostic": {
+    "afterTrapOriginalCounters": [
+      {
+        "dormantDeployments": 1,
+        "inventory": {
+          "cacheSummary": {
+            "available": true,
+            "compiledImageBytes": "16512816",
+            "entries": "1",
+            "evictions": "0",
+            "hits": "1",
+            "invalidations": "0",
+            "maximumCompiledImageBytes": "134217728",
+            "maximumConcurrentPreparations": "1",
+            "maximumEntries": "2",
+            "maximumMetadataBytes": "8388608",
+            "maximumSourceBytes": "67108864",
+            "metadataBytes": "28195",
+            "misses": "1",
+            "preparing": "0",
+            "preparingMetadataBytes": "0",
+            "preparingSourceBytes": "0",
+            "sourceBytes": "8498814"
+          },
+          "cellCapacity": [
+            {
+              "accepting": true,
+              "active": 0,
+              "available": 1,
+              "cancellations": "0",
+              "class": "standard",
+              "expired": "0",
+              "granted": "2",
+              "maxWaitMicros": "134",
+              "observationAvailable": true,
+              "oldestLeaseAgeMicros": "0",
+              "quarantined": 0,
+              "queueCapacity": 2,
+              "queueDepth": 0,
+              "queuedTenants": 0,
+              "rejected": "0",
+              "total": 1,
+              "totalWaitMicros": "207"
+            }
+          ],
+          "queueDepth": "0",
+          "quotas": {
+            "limits": {
+              "maximumConcurrentActivations": 3,
+              "maximumQueuedActivations": 3,
+              "maximumReservedCpuFuel": "30000000000",
+              "maximumReservedMemoryBytes": "402653184"
+            },
+            "retainedTenants": "0",
+            "usage": {
+              "activeActivations": 0,
+              "queuedActivations": 0,
+              "reservedCpuFuel": "0",
+              "reservedMemoryBytes": "0"
+            }
+          },
+          "topology": {
+            "available": true,
+            "complete": true,
+            "entries": [
+              {
+                "activeCount": "1",
+                "attributes": {
+                  "chargedStorageBytes": "17053393",
+                  "contentIndexBytes": "47723",
+                  "incompleteFileBytes": "0",
+                  "indexedPublications": "1",
+                  "maximumContentIndexBytes": "67108864",
+                  "maximumFilesPerPublication": "1024",
+                  "maximumPublications": "8",
+                  "maximumRecoveryDirectories": "24",
+                  "maximumReleaseIndexBytes": "67108864",
+                  "maximumSharedBlobs": "1000000",
+                  "maximumStorageBytes": "4294967296",
+                  "measurementStatus": "available",
+                  "publicationLinkBytes": "8527136",
+                  "releaseDirectories": "1",
+                  "releaseIndexBytes": "40748",
+                  "sharedBlobBytes": "8526257",
+                  "sharedBlobs": "20",
+                  "webControlBytes": "0"
+                },
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "publication-catalog",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "process",
+                "name": "standalone-node",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "invocation-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "3",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "control-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-epoch",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-compiler",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "listener",
+                "name": "grpc-listener",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "32",
+                "kind": "connection",
+                "name": "accepted-connections",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "rpc",
+                "name": "in-flight-rpcs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "job",
+                "name": "control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "task",
+                "name": "invocation-cleanup-driver",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "continuation",
+                "name": "invocation-cleanup-slots",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "cell",
+                "name": "execution-cell-leases",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "reservation",
+                "name": "prepared-instance-reservations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "invocation",
+                "name": "guest-invocations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "guest-stores",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "host-state",
+                "name": "guest-host-states",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "component-instance",
+                "name": "guest-component-instances",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "buffer-group",
+                "name": "guest-value-buffers",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "probe",
+                "name": "guest-cancellation-probes",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "process",
+                "name": "resident-service-processes",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "thread",
+                "name": "resident-service-threads",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "listener",
+                "name": "resident-service-listeners",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "command",
+                "name": "capability-policy-control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "68",
+                "kind": "response-or-snapshot",
+                "name": "capability-policy-read-owners",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "blocking-task",
+                "name": "rollout-coordinator",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "command",
+                "name": "rollout-control-commands",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "window",
+                "name": "canary-observation-windows",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "128",
+                "kind": "sample",
+                "name": "canary-retained-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "sample",
+                "name": "canary-live-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "snapshot",
+                "name": "canary-snapshot-owners",
+                "ownership": "node-fixed"
+              }
+            ]
+          }
+        },
+        "os": {
+          "beganMonotonicNanos": "20598323354212",
+          "consistency": "non-atomic-finite-scan",
+          "disappearedProcesses": [],
+          "finishedMonotonicNanos": "20598326758755",
+          "identity": {
+            "executableSha256": "sha256:e945989def7aa2fb366dc3455d9d14d8e8b870e01550104f6e6098d4f7d02e5f",
+            "processId": 7,
+            "startTimeTicks": "2057827"
+          },
+          "metrics": {
+            "disappearedDescriptors": 0,
+            "handles": 22,
+            "highWaterRssBytes": 275607552,
+            "listeners": 1,
+            "processes": 1,
+            "rssBytes": 225316864,
+            "sockets": 3,
+            "tasks": 8,
+            "tcpConnections": 0,
+            "threads": 8,
+            "udpSockets": 0
+          },
+          "observedProcesses": 1,
+          "procBytesRead": 5331,
+          "processTree": [
+            {
+              "disappearedDescriptors": 0,
+              "handles": 22,
+              "highWaterRssBytes": 275607552,
+              "listeners": 1,
+              "processId": 7,
+              "rssBytes": 225316864,
+              "sockets": 3,
+              "startTimeTicks": "2057827",
+              "tasks": 8,
+              "tcpConnections": 0,
+              "threads": 8,
+              "udpSockets": 0,
+              "unavailable": {}
+            }
+          ],
+          "treeComplete": true,
+          "unavailable": {
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter",
+            "rendererHeapBytes": "guest-JS-allocator-not-exported"
+          }
+        },
+        "phase": "after-private-0",
+        "settlingObservations": 1
+      },
+      {
+        "dormantDeployments": 1,
+        "inventory": {
+          "cacheSummary": {
+            "available": true,
+            "compiledImageBytes": "16512816",
+            "entries": "1",
+            "evictions": "0",
+            "hits": "2",
+            "invalidations": "0",
+            "maximumCompiledImageBytes": "134217728",
+            "maximumConcurrentPreparations": "1",
+            "maximumEntries": "2",
+            "maximumMetadataBytes": "8388608",
+            "maximumSourceBytes": "67108864",
+            "metadataBytes": "28195",
+            "misses": "1",
+            "preparing": "0",
+            "preparingMetadataBytes": "0",
+            "preparingSourceBytes": "0",
+            "sourceBytes": "8498814"
+          },
+          "cellCapacity": [
+            {
+              "accepting": true,
+              "active": 0,
+              "available": 1,
+              "cancellations": "0",
+              "class": "standard",
+              "expired": "0",
+              "granted": "3",
+              "maxWaitMicros": "134",
+              "observationAvailable": true,
+              "oldestLeaseAgeMicros": "0",
+              "quarantined": 0,
+              "queueCapacity": 2,
+              "queueDepth": 0,
+              "queuedTenants": 0,
+              "rejected": "0",
+              "total": 1,
+              "totalWaitMicros": "271"
+            }
+          ],
+          "queueDepth": "0",
+          "quotas": {
+            "limits": {
+              "maximumConcurrentActivations": 3,
+              "maximumQueuedActivations": 3,
+              "maximumReservedCpuFuel": "30000000000",
+              "maximumReservedMemoryBytes": "402653184"
+            },
+            "retainedTenants": "0",
+            "usage": {
+              "activeActivations": 0,
+              "queuedActivations": 0,
+              "reservedCpuFuel": "0",
+              "reservedMemoryBytes": "0"
+            }
+          },
+          "topology": {
+            "available": true,
+            "complete": true,
+            "entries": [
+              {
+                "activeCount": "1",
+                "attributes": {
+                  "chargedStorageBytes": "17053393",
+                  "contentIndexBytes": "47723",
+                  "incompleteFileBytes": "0",
+                  "indexedPublications": "1",
+                  "maximumContentIndexBytes": "67108864",
+                  "maximumFilesPerPublication": "1024",
+                  "maximumPublications": "8",
+                  "maximumRecoveryDirectories": "24",
+                  "maximumReleaseIndexBytes": "67108864",
+                  "maximumSharedBlobs": "1000000",
+                  "maximumStorageBytes": "4294967296",
+                  "measurementStatus": "available",
+                  "publicationLinkBytes": "8527136",
+                  "releaseDirectories": "1",
+                  "releaseIndexBytes": "40748",
+                  "sharedBlobBytes": "8526257",
+                  "sharedBlobs": "20",
+                  "webControlBytes": "0"
+                },
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "publication-catalog",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "process",
+                "name": "standalone-node",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "invocation-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "3",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "thread",
+                "name": "control-runtime",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-epoch",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "thread",
+                "name": "wasmtime-compiler",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": null,
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "listener",
+                "name": "grpc-listener",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "32",
+                "kind": "connection",
+                "name": "accepted-connections",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "rpc",
+                "name": "in-flight-rpcs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "job",
+                "name": "control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "task",
+                "name": "invocation-cleanup-driver",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "continuation",
+                "name": "invocation-cleanup-slots",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "cell",
+                "name": "execution-cell-leases",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "reservation",
+                "name": "prepared-instance-reservations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "invocation",
+                "name": "guest-invocations",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "store",
+                "name": "guest-stores",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "host-state",
+                "name": "guest-host-states",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "component-instance",
+                "name": "guest-component-instances",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "buffer-group",
+                "name": "guest-value-buffers",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "probe",
+                "name": "guest-cancellation-probes",
+                "ownership": "activation-scoped"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "process",
+                "name": "resident-service-processes",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "thread",
+                "name": "resident-service-threads",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "0",
+                "kind": "listener",
+                "name": "resident-service-listeners",
+                "ownership": "service-resident"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "2",
+                "kind": "command",
+                "name": "capability-policy-control-jobs",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "68",
+                "kind": "response-or-snapshot",
+                "name": "capability-policy-read-owners",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "1",
+                "attributes": {},
+                "configuredCount": "1",
+                "kind": "blocking-task",
+                "name": "rollout-coordinator",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "3",
+                "kind": "command",
+                "name": "rollout-control-commands",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "window",
+                "name": "canary-observation-windows",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "128",
+                "kind": "sample",
+                "name": "canary-retained-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "8",
+                "kind": "sample",
+                "name": "canary-live-samples",
+                "ownership": "node-fixed"
+              },
+              {
+                "activeCount": "0",
+                "attributes": {},
+                "configuredCount": "4",
+                "kind": "snapshot",
+                "name": "canary-snapshot-owners",
+                "ownership": "node-fixed"
+              }
+            ]
+          }
+        },
+        "os": {
+          "beganMonotonicNanos": "20598404648082",
+          "consistency": "non-atomic-finite-scan",
+          "disappearedProcesses": [],
+          "finishedMonotonicNanos": "20598408150378",
+          "identity": {
+            "executableSha256": "sha256:e945989def7aa2fb366dc3455d9d14d8e8b870e01550104f6e6098d4f7d02e5f",
+            "processId": 7,
+            "startTimeTicks": "2057827"
+          },
+          "metrics": {
+            "disappearedDescriptors": 0,
+            "handles": 22,
+            "highWaterRssBytes": 275640320,
+            "listeners": 1,
+            "processes": 1,
+            "rssBytes": 225701888,
+            "sockets": 3,
+            "tasks": 8,
+            "tcpConnections": 0,
+            "threads": 8,
+            "udpSockets": 0
+          },
+          "observedProcesses": 1,
+          "procBytesRead": 5781,
+          "processTree": [
+            {
+              "disappearedDescriptors": 0,
+              "handles": 22,
+              "highWaterRssBytes": 275640320,
+              "listeners": 1,
+              "processId": 7,
+              "rssBytes": 225701888,
+              "sockets": 3,
+              "startTimeTicks": "2057827",
+              "tasks": 8,
+              "tcpConnections": 0,
+              "threads": 8,
+              "udpSockets": 0,
+              "unavailable": {}
+            }
+          ],
+          "treeComplete": true,
+          "unavailable": {
+            "allocatorRetainedBytes": "RSS-is-not-an-allocator-retention-counter",
+            "rendererHeapBytes": "guest-JS-allocator-not-exported"
+          }
+        },
+        "phase": "after-private-1",
+        "settlingObservations": 1
+      }
+    ],
+    "changesNeeded": "An explicitly declared/granted SDK-owned noncryptographic entropy port; secure-random denial must remain.",
+    "componentDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+    "derivation": {
+      "command": [
+        "/usr/local/rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo",
+        "build",
+        "-p",
+        "latentd",
+        "--locked",
+        "--offline",
+        "--config",
+        "/work/private-memorypack-backtrace-source-20261001/.cargo/managed-guest.toml"
+      ],
+      "formatVersion": 1,
+      "inputs": {
+        "baseNativeCompiler": {
+          "cargo": {
+            "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+            "size": 42839824
+          },
+          "cargoVersion": "cargo 1.97.1 (c980f4866 2026-06-30)",
+          "cc": {
+            "digest": "sha256:75e997ec62297a6484f491bae28ab0ccb489daba23e398fd10fe68e9e6f0def8",
+            "size": 1301496
+          },
+          "ccVersion": "cc (Debian 12.2.0-14+deb12u1) 12.2.0",
+          "rustc": {
+            "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+            "size": 645000
+          },
+          "rustcVersion": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n"
+        },
+        "baseSource": {
+          "archiveBytes": 381695157,
+          "archiveSha256": "d32d7b2a8751fe70f96f8e38531406ac2b26e2ab58a04551b885709035bd11df",
+          "entries": 8663,
+          "expandedBytes": 545537053,
+          "formatVersion": 1,
+          "includes": [
+            "alias-accounting repair8557fdb7",
+            "control-only admission lease7d5c0cd1"
+          ],
+          "previousAttempts": [
+            {
+              "attempt": 1,
+              "failure": "copied cache lacks base64 metadata before compilation"
+            },
+            {
+              "attempt": 2,
+              "failure": "selected source archive omitted api/proto during latent-rpc compilation"
+            }
+          ],
+          "purpose": "normal pinned offline native helper build with complete frozen source",
+          "scope": "all tracked paths from git archive of the frozen revision",
+          "sourceRevision": "907e8fa0791e85d764d7b06a716f4f238a84e05d"
+        },
+        "baseSourceRevision": "907e8fa0791e85d764d7b06a716f4f238a84e05d",
+        "capabilityImplementationChanges": false,
+        "configuration": {
+          "debugInfo": 0,
+          "incremental": false,
+          "jobs": 2,
+          "managedGuest": {
+            "digest": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a",
+            "size": 652
+          },
+          "offline": true
+        },
+        "formatVersion": 1,
+        "memoryPackComponent": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+        "nameMaximumCharacters": 256,
+        "normalBundleReadOnlyIdentity": {
+          "digest": "sha256:69e1481c0aa9dd587cfba255c89e0c1329518607a0da0beed6efb58193e9dd00",
+          "size": 143909072
+        },
+        "originalGuestBudget": {
+          "cpuFuel": 1000000000,
+          "memoryBytes": 134217728,
+          "wallTimeMillis": 120000
+        },
+        "patches": [
+          {
+            "diagnostic": {
+              "digest": "sha256:2730b015a8b6a7ece005966235ff363d6f74b31e42801017758cfbca8e997984",
+              "size": 6115
+            },
+            "original": {
+              "digest": "sha256:8821b141d34f56e4779c86a9bebddd048281644baaba68e8c71960b3fb28b676",
+              "size": 6088
+            },
+            "path": "crates/latent-wasmtime/src/config/engine.rs"
+          },
+          {
+            "diagnostic": {
+              "digest": "sha256:309c6b1f6f8c3eb987b2dc361c2902aa793edcc6c2d72700d8fb85b32a4d3da9",
+              "size": 20953
+            },
+            "original": {
+              "digest": "sha256:65801b5f40a9cb98c41945d9f108438ccad4c49a0d4ffdf5f01f1b2a2728c6e3",
+              "size": 20200
+            },
+            "path": "crates/latent-wasmtime/src/containment.rs"
+          }
+        ],
+        "previousSetupFailure": "Rustup proxy attempted offline channel/component synchronization; direct installed compiler selected by verified bytes.",
+        "privateWorkspaceCacheOnly": true,
+        "retainedFrames": 128,
+        "scope": "private backtrace-only node diagnostic; no admission qualification"
+      },
+      "latentd": {
+        "digest": "sha256:e945989def7aa2fb366dc3455d9d14d8e8b870e01550104f6e6098d4f7d02e5f",
+        "size": 143861568
+      },
+      "normalAdmissionEvidence": false,
+      "seconds": 312.719609,
+      "status": "private-backtrace-build-passed"
+    },
+    "finding": "Ordinary embedded assembly lookup triggers System.Marvin hash seeding through SystemNative_GetNonCryptographicallySecureRandomBytes and the closed secure-random adapter. Serialization was not reached.",
+    "frames": [
+      {
+        "functionIndex": 146,
+        "functionName": "_RNvCs9wFQrvczXsK_7___rustc12___rust_abort",
+        "functionOffset": 1,
+        "index": 0,
+        "moduleOffset": 24590
+      },
+      {
+        "functionIndex": 130,
+        "functionName": "_RNvCs9wFQrvczXsK_7___rustc18___rust_start_panic",
+        "functionOffset": 1,
+        "index": 1,
+        "moduleOffset": 18021
+      },
+      {
+        "functionIndex": 142,
+        "functionName": "_RNvCs9wFQrvczXsK_7___rustc10rust_panic",
+        "functionOffset": 5,
+        "index": 2,
+        "moduleOffset": 19065
+      },
+      {
+        "functionIndex": 140,
+        "functionName": "_RNvNtCsdl5sGgnNXvY_3std9panicking15panic_with_hook",
+        "functionOffset": 330,
+        "index": 3,
+        "moduleOffset": 19037
+      },
+      {
+        "functionIndex": 138,
+        "functionName": "_RNCNvNtCsdl5sGgnNXvY_3std9panicking13panic_handler0B5_",
+        "functionOffset": 92,
+        "index": 4,
+        "moduleOffset": 18463
+      },
+      {
+        "functionIndex": 137,
+        "functionName": "_RINvNtNtCsdl5sGgnNXvY_3std3sys9backtrace26___rust_end_short_backtraceNCNvNtB6_9panicking13panic_handler0zEB6_",
+        "functionOffset": 3,
+        "index": 5,
+        "moduleOffset": 18361
+      },
+      {
+        "functionIndex": 152,
+        "functionName": "_RNvCs9wFQrvczXsK_7___rustc17rust_begin_unwind",
+        "functionOffset": 48,
+        "index": 6,
+        "moduleOffset": 27547
+      },
+      {
+        "functionIndex": 176,
+        "functionName": "_RNvNtCsdkdt1aaAg1T_4core9panicking9panic_fmt",
+        "functionOffset": 63,
+        "index": 7,
+        "moduleOffset": 29611
+      },
+      {
+        "functionIndex": 32,
+        "functionName": "_RNvXsm_CsdHmE2uQz3P6_21dotnet_closed_runtimeNtB5_13ClosedRuntimeNtNtNtNtNtB5_7exports4wasi6random6random5Guest16get_random_bytes",
+        "functionOffset": 16,
+        "index": 8,
+        "moduleOffset": 8625
+      },
+      {
+        "functionIndex": 109,
+        "functionName": "wasi:random/random@0.2.6#get-random-bytes",
+        "functionOffset": 15,
+        "index": 9,
+        "moduleOffset": 14000
+      },
+      {
+        "functionIndex": 66,
+        "functionName": "",
+        "functionOffset": 47,
+        "index": 10,
+        "moduleOffset": 10365
+      },
+      {
+        "functionIndex": 25,
+        "functionName": "",
+        "functionOffset": 7,
+        "index": 11,
+        "moduleOffset": 8486164
+      },
+      {
+        "functionIndex": 8016,
+        "functionName": "random_get_random_bytes",
+        "functionOffset": 27,
+        "index": 12,
+        "moduleOffset": 2522482
+      },
+      {
+        "functionIndex": 8101,
+        "functionName": "__wasilibc_random",
+        "functionOffset": 28,
+        "index": 13,
+        "moduleOffset": 2546583
+      },
+      {
+        "functionIndex": 8102,
+        "functionName": "arc4random_buf",
+        "functionOffset": 7,
+        "index": 14,
+        "moduleOffset": 2546667
+      },
+      {
+        "functionIndex": 744,
+        "functionName": "minipal_get_non_cryptographically_secure_random_bytes",
+        "functionOffset": 5,
+        "index": 15,
+        "moduleOffset": 348738
+      },
+      {
+        "functionIndex": 745,
+        "functionName": "SystemNative_GetNonCryptographicallySecureRandomBytes",
+        "functionOffset": 5,
+        "index": 16,
+        "moduleOffset": 348751
+      },
+      {
+        "functionIndex": 5130,
+        "functionName": "S_P_CoreLib_System_Marvin___cctor",
+        "functionOffset": 67,
+        "index": 17,
+        "moduleOffset": 1658740
+      },
+      {
+        "functionIndex": 4460,
+        "functionName": "S_P_CoreLib_System_Runtime_CompilerServices_ClassConstructorRunner__EnsureClassConstructorRun",
+        "functionOffset": 330,
+        "index": 18,
+        "moduleOffset": 1387138
+      },
+      {
+        "functionIndex": 1638,
+        "functionName": "S_P_CoreLib_System_Runtime_CompilerServices_ClassConstructorRunner__CheckStaticClassConstructionReturnNonGCStaticBase",
+        "functionOffset": 19,
+        "index": 19,
+        "moduleOffset": 375907
+      },
+      {
+        "functionIndex": 1223,
+        "functionName": "__GetNonGCStaticBase_S_P_CoreLib_System_Marvin",
+        "functionOffset": 27,
+        "index": 20,
+        "moduleOffset": 358727
+      },
+      {
+        "functionIndex": 3504,
+        "functionName": "S_P_CoreLib_System_Reflection_RuntimeAssemblyName__GetHashCode",
+        "functionOffset": 69,
+        "index": 21,
+        "moduleOffset": 1046847
+      },
+      {
+        "functionIndex": 3969,
+        "functionName": "S_P_CoreLib_System_Collections_Concurrent_ConcurrentUnifierW_2<System___Canon__System___Canon>__GetOrAdd",
+        "functionOffset": 84,
+        "index": 22,
+        "moduleOffset": 1207867
+      },
+      {
+        "functionIndex": 4985,
+        "functionName": "S_P_CoreLib_System_Reflection_Runtime_Dispensers_DispenserThatReusesAsLongAsValueIsAlive_2<System___Canon__System___Canon>__GetOrAdd",
+        "functionOffset": 40,
+        "index": 23,
+        "moduleOffset": 1606557
+      },
+      {
+        "functionIndex": 7772,
+        "functionName": "S_P_CoreLib_System_Reflection_Runtime_Assemblies_RuntimeAssemblyInfo__TryGetRuntimeAssembly",
+        "functionOffset": 116,
+        "index": 24,
+        "moduleOffset": 2450995
+      },
+      {
+        "functionIndex": 6524,
+        "functionName": "S_P_CoreLib_System_Reflection_Runtime_TypeInfos_NativeFormat_NativeFormatRuntimeNamedTypeInfo__get_Assembly",
+        "functionOffset": 121,
+        "index": 25,
+        "moduleOffset": 2089840
+      },
+      {
+        "functionIndex": 1670,
+        "functionName": "Library_DeveloperInput_LibraryPrefix__Read",
+        "functionOffset": 138,
+        "index": 26,
+        "moduleOffset": 393317
+      },
+      {
+        "functionIndex": 4462,
+        "functionName": "Capsule_ServiceWorld_wit_Exports_examples_greeting_ApiExportsImpl__Prefix",
+        "functionOffset": 60,
+        "index": 27,
+        "moduleOffset": 1388189
+      },
+      {
+        "functionIndex": 1636,
+        "functionName": "Capsule_ServiceWorld_wit_Exports_examples_greeting_ApiExportsImpl__Greet",
+        "functionOffset": 217,
+        "index": 28,
+        "moduleOffset": 375700
+      },
+      {
+        "functionIndex": 4422,
+        "functionName": "Capsule_ServiceWorld_wit_Exports_examples_greeting_ApiExportsInterop__wasmExportGreet",
+        "functionOffset": 314,
+        "index": 29,
+        "moduleOffset": 1358580
+      }
+    ],
+    "invocations": [
+      {
+        "activation": "memorypack-clock-denied",
+        "decoded": null,
+        "elapsedNanos": "13829431411",
+        "exitCode": 4,
+        "processReaped": true,
+        "response": {
+          "category": "platform-failure",
+          "command": "invoke",
+          "data": {
+            "activationId": "memorypack-clock-denied",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "0",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "0",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "13814555"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:0ea293a7f4c36972a3e532f63b077dd46c8714d089b832fd6b9bf2c2c168471e",
+              "releaseDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+              "revisionId": "revision-v1:sha256:2be96b0e161cff44bb8191ae4c8e61082ad9c3433948af5d98e5b8f4420f7451",
+              "routeGeneration": "2"
+            },
+            "terminalState": "rejected"
+          },
+          "error": {
+            "code": "permission-denied",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "startedAtUnixMillis": "1790853652244"
+      },
+      {
+        "activation": "memorypack-private-0",
+        "decoded": [
+          {
+            "err": "Please enter a name."
+          }
+        ],
+        "elapsedNanos": "52497088",
+        "exitCode": 3,
+        "processReaped": true,
+        "response": {
+          "category": "declared-error",
+          "command": "invoke",
+          "data": {
+            "activationId": "memorypack-private-0",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "51314009",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "54984704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "35972"
+            },
+            "declaredError": {
+              "code": "declared-error",
+              "message": "component returned a declared error",
+              "metadata": {},
+              "payload": {
+                "byteLength": "32",
+                "data": "W3siZXJyIjoiUGxlYXNlIGVudGVyIGEgbmFtZS4ifV0=",
+                "encoding": "base64",
+                "mediaType": "application/vnd.latent.wit-values.v1+json"
+              }
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:0ea293a7f4c36972a3e532f63b077dd46c8714d089b832fd6b9bf2c2c168471e",
+              "releaseDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+              "revisionId": "revision-v1:sha256:e35019462c92b92f9a08ba9c80c8a2f44fa3fee01c0654e85783c5c36756912f",
+              "routeGeneration": "3"
+            }
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "startedAtUnixMillis": "1790853667318"
+      },
+      {
+        "activation": "memorypack-private-1",
+        "decoded": null,
+        "elapsedNanos": "47038017",
+        "exitCode": 4,
+        "processReaped": true,
+        "response": {
+          "category": "platform-failure",
+          "command": "invoke",
+          "data": {
+            "activationId": "memorypack-private-1",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "51344399",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "54984704",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "31354"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:0ea293a7f4c36972a3e532f63b077dd46c8714d089b832fd6b9bf2c2c168471e",
+              "releaseDigest": "sha256:32c76d0af3b7a38cb4324a25d0538479de3009b5446f322b52964b41d435fef5",
+              "revisionId": "revision-v1:sha256:e35019462c92b92f9a08ba9c80c8a2f44fa3fee01c0654e85783c5c36756912f",
+              "routeGeneration": "3"
+            },
+            "terminalState": "guest_trap"
+          },
+          "error": {
+            "code": "guest-trap",
+            "details": [],
+            "message": "The platform reported a failure.",
+            "retryable": false
+          },
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "startedAtUnixMillis": "1790853667392"
+      }
+    ],
+    "measuredShutdown": [
+      {
+        "processId": 7,
+        "reaped": true,
+        "record": {
+          "clean": true,
+          "event": "stopped",
+          "report": {
+            "activeActivations": 0,
+            "activeBackendInvocations": 0,
+            "activeConnections": 0,
+            "activeControlJobs": 0,
+            "activeLeases": 0,
+            "activeRpcs": 0,
+            "audit": {
+              "pendingAttempts": 0,
+              "previousSessionLossUnknown": false,
+              "queryBytes": 0,
+              "queryOwners": 0,
+              "queuedOperations": 0,
+              "recoveryPending": false,
+              "reservedRecords": 0,
+              "stageBytes": 0,
+              "unknownOutcomes": 0,
+              "workerJoined": true
+            },
+            "cancellationRegistrations": 0,
+            "clean": true,
+            "cleanup": {
+              "accepting": false,
+              "capacity": 3,
+              "completed": 0,
+              "driverAlive": false,
+              "driverJoined": true,
+              "failed": false,
+              "fallbacks": 0,
+              "handoffs": 0,
+              "panicked": 0,
+              "queued": 0,
+              "reserved": 0,
+              "running": 0,
+              "timedOut": 0
+            },
+            "compiler": {
+              "accepting": false,
+              "assigned_jobs": 0,
+              "cancelled_waiters": 0,
+              "coalesced_waiters": 0,
+              "discarded_results": 0,
+              "failed": false,
+              "jobs_abandoned": 0,
+              "jobs_completed": 1,
+              "jobs_failed": 0,
+              "jobs_started": 1,
+              "maximum_document_bytes": 5308416,
+              "maximum_jobs": 1,
+              "maximum_queued_jobs": 0,
+              "maximum_ready_preparations": 3,
+              "maximum_waiters": 3,
+              "maximum_waiters_per_job": 3,
+              "maximum_workers": 1,
+              "queue_rejected": 0,
+              "queued_jobs": 0,
+              "ready_compiled_image_bytes": 0,
+              "ready_metadata_bytes": 0,
+              "ready_preparations": 0,
+              "ready_rejected": 0,
+              "reserved_document_bytes": 0,
+              "running_jobs": 0,
+              "waiter_rejected": 0,
+              "waiting_callers": 0,
+              "workers_joined": 1,
+              "workers_live": 0,
+              "workers_quiescent": 1
+            },
+            "epochHelperJoined": true,
+            "instanceReservations": 0,
+            "liveCancellationProbes": 0,
+            "liveHostStates": 0,
+            "liveInstances": 0,
+            "liveStores": 0,
+            "liveTemporaryBuffers": 0,
+            "observerCorrelations": 0,
+            "policies": {
+              "activeJobs": 0,
+              "retainedReadOwners": 0,
+              "workCompleted": true
+            },
+            "preparingComponents": 0,
+            "preparingMetadataBytes": 0,
+            "preparingSourceBytes": 0,
+            "providers": {
+              "blobHandles": 0,
+              "blobStages": 0,
+              "blobWork": 0,
+              "calls": 0,
+              "clean": true,
+              "cleanupJobs": 0,
+              "connections": 0,
+              "controlOwners": 0,
+              "failedCleanup": 0,
+              "handles": 0,
+              "ioCalls": 0,
+              "ioRetainedBytes": 0,
+              "pendingRequests": 0,
+              "results": 0,
+              "runningRequests": 0,
+              "secretGenerations": 0,
+              "secretReferences": 0,
+              "sessions": 0,
+              "workers": 0
+            },
+            "quarantinedCells": 0,
+            "queuedActivations": 0,
+            "queuedReservations": 0,
+            "quotaReservations": 0,
+            "reservedCpuFuel": 0,
+            "reservedMemoryBytes": 0,
+            "rollouts": {
+              "activeCommands": 0,
+              "canary": {
+                "liveSamples": 0,
+                "retainedSamples": 0,
+                "retainedWindows": 0,
+                "snapshotOwners": 0
+              },
+              "failed": false,
+              "queuedCommands": 0,
+              "responseBytes": 0,
+              "responseOwners": 0,
+              "retainedRequestBytes": 0,
+              "workerJoined": true,
+              "workerLive": false
+            },
+            "telemetryFlushed": true,
+            "telemetryRetainedEntries": 112
+          },
+          "schemaVersion": "latent.standalone.status.v1"
+        }
+      }
+    ],
+    "scope": "Backtrace-only source derivation; no normal admission or successful-library qualification",
+    "traceIdentity": {
+      "digest": "sha256:a58f7478058b6c31d16136c29a4ff1e85c164a4c46a07b4cbe84f666eacc7466",
+      "size": 5413
+    },
+    "trap": "unreachable-code",
+    "unchangedGuestBudget": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 134217728,
+      "wallTimeMillis": 120000
+    }
+  },
+  "reproducibility": "Not measured; component differs from the previous failed composed artifact.",
+  "sourceScope": "all tracked paths from a frozen complete git archive",
+  "status": "offline-observed-package-signing-admission-passed-normal-library-invocation-guest-trap"
+}

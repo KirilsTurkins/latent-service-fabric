@@ -144,7 +144,7 @@ class HttpErrorPort:
 
 
 def prepare(sdk: Path, tools: Path, dotnet: Path, declared: list[str], project: Path,
-            output: Path, evidence: Path, run) -> HttpErrorPort | None:
+            output: Path, evidence: Path, run, *, protect_inputs=None) -> HttpErrorPort | None:
     if not {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared):
         return None
     tool = verify_installed(sdk, tools)
@@ -172,6 +172,10 @@ def prepare(sdk: Path, tools: Path, dotnet: Path, declared: list[str], project: 
     retained = evidence / "derived-System.Net.Http.dll"
     with retained.open("xb") as destination:
         destination.write(read_file(assembly, MAX_ASSEMBLY))
+    if protect_inputs is not None:
+        # Derived framework inputs stay immutable in the compiler namespace,
+        # including while approved NuGet build code runs in its owned workspace.
+        protect_inputs(assembly, targets)
     reference_receipt = owned / "native-aot-references.txt"
     document = XML.fromstring(read_file(project / "Capsule.csproj", MAX_RECEIPT))
     properties = XML.SubElement(document, "PropertyGroup")

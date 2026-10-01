@@ -21,6 +21,8 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
           "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
           "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
           "tools/stage_runtime_wit.py")
+RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
+           "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")

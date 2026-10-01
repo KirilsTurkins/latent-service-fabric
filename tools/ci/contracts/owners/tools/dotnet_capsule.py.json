@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Install the source-bound bounded BCL error tool using the already locked ILLink assembly",
+  "reviewReason": "Combine the captured NuGet compiler and four-adapter source with the declared HTTP BCL error port. Retain every parent command/case and all skip predicates. Reviewed fixture hash changes only add trusted support imports, preserve both distribution capture helpers, and supply the captured compiler API in controls; no decorator, skip site, execution hook or required command is removed.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a4e89b96728c9e780a92b0015689143fad7c381f0644b396bbbd4582d12c54b4"
+  "sha256": "85bf437f5da3df036d8ea046752dc6104b8d8e753e8892ec79a0a3cb44c40bf0"
 }

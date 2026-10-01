@@ -1,0 +1,86 @@
+# Captured NuGet application inputs
+
+Add ordinary `PackageReference` items to the application's `Capsule.csproj`. Keep the maintained SDK properties, WIT items, compiler package lock and `vendor/lsf` unchanged. Package identities describe provenance and do not require an LSF catalogue entry.
+
+Resolve into a fresh review candidate, accept its exact lock, and compile offline:
+
+```powershell
+python tools/dotnet_capsule.py resolve ./my-csharp --candidate ./nuget-candidate.json --dotnet ./reviewed-dotnet/dotnet --tools ./reviewed-native-aot
+Copy-Item -LiteralPath ./nuget-candidate.json -Destination ./my-csharp/latent.dependencies.lock.json
+python tools/dotnet_capsule.py build ./my-csharp --tools ./reviewed-native-aot --output ./my-csharp/target/build-1 --repository https://github.com/example/application
+```
+
+The fetch stage uses .NET SDK 10.0.100, a fresh home/cache and an SDK-owned restore project. It evaluates only reviewed literal package, resource and trimming declarations. It never imports application targets, directory props, property functions or an application's generated `obj` inputs. Native NuGet selects versions, transitive edges and assets for `net10.0` and `wasi-wasm`; changing those targets requires an installed compiler/runtime profile. Conditions using these two target properties and literal equality/inequality are recorded. Package `IncludeAssets`, `ExcludeAssets` and `PrivateAssets` retain native semantics. Version conflicts remain native restore errors.
+
+`packages.lock.json`, the normalized `nuget-resolved.lock.json`, original package archives and selected bytes are bound independently of the SDK's compiler lock. Signed NuGet content hashes use the pinned SDK's NuGet algorithm and signature-integrity check; the original ZIP's SHA-256 is a separate identity. Missing graph edges, changed content hashes, unsafe archives, mutated SDK packages and unobserved offline asset fallback fail explicitly. The compiler never uses an ambient NuGet cache or installs dependencies during a guest invocation.
+
+The reviewed composer is checksum-pinned WAC 0.10.1 and includes the [upstream imported-resource alias fix](https://github.com/bytecodealliance/wac/pull/205). The SDK's original bundled composer and selected composer have separate identities in `compiler-patches.json`; source, compiler selection, containment and package inputs bind the change. That fix does not supply missing runtime interfaces or methods. After NativeAOT succeeds, the build retains `native-aot-raw.wasm` (at most 64 MiB) and its WIT JSON (at most 4 MiB) before runtime selection. Profile rejection therefore preserves the actual output after the temporary workspace is retired. NuGet asset verification uses the project declarations independently of the authoritative WIT imports. Before composition, `closed-runtime-coverage.json` compares the actual NativeAOT and runtime-adapter WIT metadata and names missing interfaces, types and methods. Missing-member failures also retain a bounded compatibility report. Member presence remains a necessary check; WAC checks type signatures, final validation rejects residual WASI imports, and execution requires separate qualification.
+
+Application builds with captures require Linux x86-64 and bubblewrap. The maintained NativeAOT distribution, BCL/reference assemblies, WASI SDK, closed runtime adapter, child tools, Python standard library and observed loader files are captured and rechecked. A fresh compiler-owned package cache receives only the exact SDK packages and verified application closure. Compilation runs with network, home and credentials unavailable; source and package inputs are read-only. A finite SDK-owned account entry supplies compiler identity without importing the host's account database. The compiler host uses invariant globalization and disabled diagnostics; the optional SDK LTTng provider remains hashed but its unavailable ABI is not enabled. Offline NuGet keeps signature verification enabled with the captured SDK's certificate bundles and offline revocation mode; it does not claim current online certificate revocation evidence. [NuGet's signature verification documentation](https://learn.microsoft.com/en-us/dotnet/core/tools/nuget-signed-package-verification) describes the SDK certificate bundles. These are compiler settings and do not grant application runtime behavior. Receipts target a trusted single-user build host and retain `hermetic: false`.
+
+Use literal `EmbeddedResource Include="resources/prefix.txt" LogicalName="example.prefix"` declarations for captured application data. The maintained compiler preserves those bytes and ordinary managed assembly resource lookup. Resources inside captured managed package assemblies retain their assembly ownership. Embedding grants no host filesystem access. Resource names, bytes, selected package ownership and final component identity must remain consistent with signed package/resource evidence; inclusion alone does not establish every resource-reader implementation.
+
+`TrimmerRootDescriptor` items must refer to captured literal paths. The actual NativeAOT compiler performs reflection/trimming analysis; unsupported JIT, dynamic loading, native/PInvoke assets and missing runtime members remain concrete incompatibilities. An assembly's managed PE header is a capture preflight, not proof of its complete AOT compatibility. `Task`, `ThreadPool` or timer references do not imply blanket package rejection and do not establish their execution: #746 owns those runtime ports, and #693 owns ordinary `HttpClient`.
+
+Package targets, analyzers, source generators and `.resx` processing are executable compiler inputs. A first build retains `executable-input-approval-request.json` and stops before running them. Review its exact original/selected hashes, source, compiler distribution, loader closure and namespace policy, then pass its retained identity with `--executable-approval` on a fresh build attempt. Any changed source, lock, recipe or compiler input invalidates approval. After the owned NativeAOT process exits, the build retains generated source under `executable-input-outputs/` with an exact approval/input/recipe/compiler binding in `executable-input-outputs.json`. Capture rejects unsafe paths, more than 8192 entries or more than 64 MiB of generated bytes. The receipt records whether the compiler command succeeded; partial output from a failed command remains diagnostic evidence. Capture precedes runtime inspection and composition, so later ABI failures preserve the generated source. A successful build rechecks both the original generated bytes and retained copy before binding the receipt into build materials. Arbitrary application MSBuild targets remain outside the reviewed recipe.
+
+For additional local/private feeds, pass `--feed-config` with `{"sources":[{"name":"private","url":"https://feed.example.com/index.json","patterns":["Example.*"],"authorizationEnv":"LSF_PRIVATE_NUGET_AUTH","username":"token"}]}` or a local `path` containing only `.nupkg` files. Feed mappings preserve native package-source selection. Credentials enter only an owned fetch configuration; public fetch receipts retain endpoint/location digests. Offline compilation inherits neither credentials nor feed configuration. After changing or removing a `PackageReference`, use `--update-lock`, review the fresh candidate and replace the accepted lock. An old accepted lock remains unusable with changed declarations.
+
+The required .NET CI qualifier selects MemoryPack 1.21.4 and an independent developer NuGet assembly absent from the catalogue. The ordinary application calls `MemoryPackSerializer.Serialize` and `Deserialize` on a `MemoryPackable` payload; native NuGet captures MemoryPack.Core and the actual MemoryPack.Generator executable. The developer assembly performs ordinary embedded-resource lookup. Its feed and source are removed after capture. The qualifier first verifies generator denial without approval, then explicitly approves its fresh exact request under the SDK fixture policy and checks the retained generated payload source. Normal application builds never approve their own requests. The resulting component must still pass the existing signing, admission and node execution checks. Exact-head successful receipts are required before claiming this generated serialization qualification. The earlier SmartFormat/Newtonsoft.Json/ZString fixture remains available as a retained failed composition control; its NativeAOT success does not establish runtime compatibility. Supported reflection, private-feed recovery/update/removal/watch, generic resource-index integration and additional runtime cleanup qualification remain open until their receipts pass. Source-only authoring remains available through the existing guide.
+
+The [2026-10-01 MemoryPack attempt](../testing/evidence/dotnet-memorypack-composition-2026-10-01.json) compiled the approved generator, composed the actual component and passed validation with only the declared monotonic-clock import. The retained native packager, built from an earlier source without the alias-accounting repair, then rejected the component with `component-work-limit`. The component and generated bytes remain available; signing, final build-integrity checks and ordinary resource/library invocation are pending.
+
+The separate [offline build and signed node attempt](../testing/evidence/dotnet-memorypack-offline-node-2026-10-01.json) rebuilt the verified closure with the original developer source and feed absent and Docker networking disabled. It passed composition, packaging, final integrity checks, signing, unsigned admission denial and explicit clock-grant denial. The first ordinary library call then trapped. A private backtrace of the unchanged component identified embedded assembly lookup's `System.Marvin` hash-seed initialization reaching the closed random adapter through `SystemNative_GetNonCryptographicallySecureRandomBytes`. The blank-input declared-error path passed, and private shutdown recorded clean ownership counters. Serialization was not reached. An explicit noncryptographic entropy port and fresh normal-node library/resource/recovery receipts are still required; the earlier failed package remains a separate observation.
+
+The optional `dotnet-hash-entropy-v1` port requires the application's authoritative
+world to import `latent:random/random@0.1.0`, with its normal installed provider
+and explicit operator grant. It redirects only the captured CLR's
+`SystemNative_GetNonCryptographicallySecureRandomBytes`; the separate secure
+entrypoint retains its existing denial. The [pinned native implementation](https://github.com/dotnet/runtimelab/blob/8449ba666dd991e495d8363d9852f18eb86a1aa1/src/native/libs/System.Native/pal_random.c)
+and exact original archive/member hashes identify the upstream input. The private
+C object calls WASI insecure entropy; a separate adapter supplies only the two
+reviewed insecure interface versions from the declared LSF random capability.
+It rejects oversized or wrong-length results and propagates unavailable entropy
+as a failure. It creates no entropy provider, grant, fixed seed or cryptographic
+random implementation.
+
+Reinstall the source-bound tool distribution after this SDK change. The compiler
+retains the original native preimage, private object, trusted target and actual
+link-response binding in `noncrypto-entropy-port.json`. It separately preserves
+`compiler-patches-preparation.json` and binds the completed `compiler-patches.json`
+and generated object into final build materials. Coverage examines both selected
+adapters, rejects duplicate exports, and still requires real WAC composition,
+validation and the exact final declared graph. This source port and its derivation
+checks do not qualify ordinary resource lookup or MemoryPack execution. Those
+claims require a fresh signed node run with the unchanged application/library
+sources, entropy denial controls, recovery and measured retirement.
+
+The application-library qualifier explicitly adds that import before NuGet
+capture. Its optional node configuration binds one normal random provider only
+to the greeting service. After installing the existing clock grant, it requires
+the still-missing entropy grant to fail with zero guest fuel, memory and effects.
+It then binds the exact installed provider profile, configuration digest and
+epoch, and grants only `bytes` for that service and publication: at most 16
+operations, eight input bytes, 4096 output bytes and five seconds. Existing
+authoring defaults and other languages keep their original grants. This setup
+retains ordinary secure-random denial and records no random payload bytes.
+
+When an additional adapter is selected, the compiler connects every actual WASI
+import once by its complete interface name. It retains the bounded
+`runtime-composition.wac` source and `runtime-composition.json` receipt and binds
+both into build materials. The original raw component, inspected graphs and
+selected adapters must match before and after the owned composer runs. The
+reviewed WAC binary still checks actual signatures and resource identities;
+application host imports pass through to normal admission and grants.
+
+The [entropy build and exact composition observation](../testing/evidence/dotnet-memorypack-entropy-composition-2026-10-01.json)
+records an offline four-adapter rebuild and unchanged MemoryPack NativeAOT
+success. Its original full builder failed because pinned WAC `plug` assigned
+both compatible insecure-random exports to one `0.2.6` input. The
+[pinned plug implementation](https://github.com/bytecodealliance/wac/blob/v0.10.1/crates/wac-graph/src/plug.rs)
+tries compatible exports after exact matches. A separate exact-edge probe on
+the untouched raw component and adapters passed normal WAC composition and
+Wasm validation, with only the declared clock and random imports. It preserves
+both reviewed insecure-random versions and keeps secure-random denial. This
+probe qualifies the composition mechanism; a fresh complete maintained build,
+signing and normal-node library/resource run remain required.

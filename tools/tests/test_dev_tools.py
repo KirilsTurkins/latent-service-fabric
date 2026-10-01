@@ -243,7 +243,7 @@ class DotnetRuntimeDistribution(unittest.TestCase):
 
         source = root / "installed"
         source.mkdir()
-        for name in ("packages", "package-hash", "package-hash-source", "http-errors", "http-errors-source"):
+        for name in ("packages", "package-hash", "package-hash-source", "component-composer", "http-errors", "http-errors-source"):
             (source / name).mkdir()
             (source / name / "input").write_bytes(name.encode())
         for name in ("runtime-inputs.json", "wasi-sdk.json", *(binary for _example, binary in ADAPTERS.values())):
@@ -268,7 +268,20 @@ class DotnetRuntimeDistribution(unittest.TestCase):
                 self.assertIn(path, {row["path"] for row in record["files"]})
                 self.assertEqual((target / path).read_bytes(), filename.encode())
                 self.assertEqual((source / filename).read_bytes(), filename.encode())
-            self.assertEqual(len(ADAPTERS), 3)
+            self.assertIn("tools/component-composer/input", {row["path"] for row in record["files"]})
+            self.assertEqual((target / "tools/component-composer/input").read_bytes(), b"component-composer")
+            self.assertEqual(len(ADAPTERS), 4)
+
+    def test_missing_selected_composer_fails_before_a_distribution_can_be_published(self):
+        from tools.dev_managed_distribution import retain_dotnet_support
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = self.installed(root)
+            (source / "component-composer/input").unlink()
+            (source / "component-composer").rmdir()
+            with self.assertRaises(FileNotFoundError):
+                retain_dotnet_support(source, root / "retained")
+            self.assertFalse((root / "managed.zip").exists())
 
     def test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack(self):
         from tools.dev_managed_distribution import pack, retain_dotnet_support

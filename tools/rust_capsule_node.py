@@ -114,7 +114,9 @@ class RecordingClient(Client):
         return value
 
 
-def configure(directory, fixture, port, *, runtime_grants=False, language="rust"):
+def configure(directory, fixture, port, *, runtime_grants=False, language="rust", noncrypto_entropy=False):
+    require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
+            "authoring-noncrypto-entropy-language")
     initial = configure_provider_node(directory, fixture, port)
     settings = read_json(initial)
     settings["credentials"][0]["tenant"] = "examples"
@@ -140,6 +142,9 @@ def configure(directory, fixture, port, *, runtime_grants=False, language="rust"
     if runtime_grants:
         from tools.guest_runtime_grants import configure as configure_runtime
         configure_runtime(settings, ("greeting", "word-count", "shipping", "http-status", "recovery"), language=language)
+    if noncrypto_entropy:
+        from tools.dotnet_guest.entropy_grants import configure as configure_entropy
+        configure_entropy(settings)
     path = directory / "authoring-node.json"
     write_json(path, settings)
     return path, settings

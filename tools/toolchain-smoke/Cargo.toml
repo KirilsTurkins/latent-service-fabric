@@ -181,6 +181,14 @@ bench = false
 doc = false
 
 [[example]]
+name = "dotnet-noncrypto-entropy"
+path = "examples/dotnet_noncrypto_entropy.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
 name = "tutorial-greeting"
 path = "examples/tutorial_greeting/component.rs"
 crate-type = ["cdylib"]

@@ -1,0 +1,23 @@
+# Captured Go modules
+
+Use ordinary application `go.mod`/`go.sum`, with an exact native module selection. Keep the SDK's vendored runtime/module/compiler locks unchanged. Application coordinates identify provenance and do not require an LSF catalogue entry.
+
+Update native declarations and checksums in a separate fetch stage, then capture and review the candidate:
+
+```powershell
+python tools/go_capsule.py resolve ./my-go --candidate ./go-candidate.json --go ./reviewed-go/bin/go --tag application_feature
+Copy-Item -LiteralPath ./go-candidate.json -Destination ./my-go/latent.dependencies.lock.json
+python tools/go_capsule.py build ./my-go --output ./my-go/target/build-1 --repository https://github.com/example/application
+```
+
+The resolver uses the pinned Go version with an empty home/cache, disabled toolchain installation, explicit proxy/checksum policy and no Go workspace/environment configuration. Native minimum-version selection, module replacements, excludes, build tags and target/runtime selection are recorded. Both original module ZIP `h1` hashes and module-manifest hashes must match reviewed `go.sum` entries; expanded files must equal the safe original archive. Local module bytes and runtime/compiler modules are separate attributable artifacts. Relative/absolute local replacements are transformed automatically into owned captured paths with original bytes, patch preimages and selected digests retained. Unselected local replacement paths cannot become ambient fallback paths during compilation.
+
+Builds with application captures use the maintained Linux namespace. The complete Go distribution, SDK runtime, componentize-go, validator, native helpers and observed loader files are captured and rechecked. Offline module-download records populate a fresh compiler-owned cache; proxy/checksum network access and automatic toolchain installation remain disabled. The native compiler vendors actual selected application code before applying the exact SDK runtime overlay. SDK-generated module imports follow the application's module identity; application and transitive imports keep ordinary Go semantics. Generated bindings and source movement, runtime preimages/selected bytes, package selection and embedded-resource names are recorded. No native Go compiler silently replaces the maintained async/component compiler.
+
+Application `src` entrypoints still implement their generated export packages. Additional package directories and `go:embed` files are preserved, including relative resource lookup within a moved export package. Embedding makes immutable component data; it grants no host filesystem access. Native C/assembly/object paths are diagnosed only when selected in reachable application packages. Generator directives are captured data and `go generate` is never run. Executable tool declarations require a separately approved isolated stage; this ingestion slice does not enable generators.
+
+For a private module proxy, pass `--proxy-config` containing `{"proxy":"https://proxy.example.com","sumdb":"off","private":["private.example.com/*"],"authorizationEnv":"LSF_PRIVATE_GO_AUTH","username":"token"}`. The explicit resolver uses an owned netrc for that endpoint. Builds never inherit those credentials or ambient module caches. Checksum policy is an explicit trust decision; reviewed native sums and immutable object identities still bind every selected artifact. Public capture receipts use digests for local locations and proxy configuration, while native project inputs may contain private module coordinates.
+
+The required Go CI qualifier adds a real pure-Go Unicode module/transitive graph, an outside-checkout developer module, a build-tag selection and embedded UTF-8 input, then deletes the original external source. The emitted component goes through existing signing/admission/node checks. Exact-head successful receipts are required before claiming that qualification; native module metadata and host controls are not guest execution evidence.
+
+`go-component-async-v1` remains the selected maintained profile. Module ingestion does not grant timers, native networking, threads or a new scheduler. Runtime #742 and ordinary client #692 own their separate ports and real component evidence. Approved generator execution, the full private-feed/update/removal/watch and denial/recovery matrix, resource-index integration and additional runtime cleanup qualification remain pending. The boundary targets a trusted single-user compiler host and `hermetic` remains false.

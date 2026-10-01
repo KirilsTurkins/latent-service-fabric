@@ -1,0 +1,468 @@
+{
+  "cases": [
+    "CapturedCompilerSelection.test_captured_nuget_selection_preserves_authoritative_wit_imports",
+    "CapturedCompilerSelection.test_final_component_cannot_introduce_undeclared_authority",
+    "CapturedCompilerSelection.test_offline_asset_drift_still_fails_before_native_aot",
+    "CapturedCompilerSelection.test_oversized_raw_wit_is_rejected_before_diagnostic_publication",
+    "CapturedCompilerSelection.test_profile_rejection_retains_raw_component_and_wit_after_workspace_cleanup",
+    "NativeAotRuntimeCoverage.test_actual_raw_failure_retention_preserves_shared_failure_report",
+    "NativeAotRuntimeCoverage.test_failure_report_rechecks_raw_bytes_and_does_not_invent_source_identity",
+    "NativeAotRuntimeCoverage.test_malformed_world_tables_type_indices_and_function_names_fail",
+    "NativeAotRuntimeCoverage.test_missing_http_is_not_a_clock_grant_or_catalogue_decision",
+    "NativeAotRuntimeCoverage.test_partial_resource_exports_report_exact_missing_members",
+    "NativeAotRuntimeCoverage.test_present_names_do_not_claim_signature_or_runtime_qualification",
+    "NugetDependencies.test_analyzer_and_build_assets_are_executable_inputs",
+    "NugetDependencies.test_application_import_task_and_property_functions_never_evaluate",
+    "NugetDependencies.test_composer_profile_rejects_stale_selection_and_changed_binary",
+    "NugetDependencies.test_embedded_resources_cannot_read_absolute_or_uncaptured_files",
+    "NugetDependencies.test_missing_transitive_and_changed_sdk_hash_fail",
+    "NugetDependencies.test_namespace_argument_transport_preserves_literals_and_denies_mutation",
+    "NugetDependencies.test_native_package_and_resource_declarations_preserve_sdk",
+    "NugetDependencies.test_native_transitive_closure_is_selected_without_catalogue",
+    "NugetDependencies.test_nuget_standard_archive_metadata_preserves_safe_brackets",
+    "NugetDependencies.test_private_feed_invalid_credential_and_endpoint_fail_without_fallback",
+    "NugetDependencies.test_private_feed_policy_receipt_excludes_location_and_credentials",
+    "NugetDependencies.test_resx_processing_is_an_explicit_executable_input",
+    "NugetDependencies.test_sdk_compiler_properties_cannot_be_overridden_by_application",
+    "NugetDependencies.test_supported_target_conditions_are_exact_and_other_evaluation_is_denied",
+    "NugetDependencies.test_unsafe_native_asset_paths_and_wrong_profiles_fail",
+    "NugetGeneratedOutputs.test_bounded_capture_failure_does_not_mask_original_compiler_failure",
+    "NugetGeneratedOutputs.test_missing_empty_capture_directory_and_non_boolean_status_are_rejected",
+    "NugetGeneratedOutputs.test_native_aot_failure_retains_real_generated_bytes_after_temporary_cleanup",
+    "NugetGeneratedOutputs.test_output_receipt_binds_exact_approval_and_cannot_be_recaptured",
+    "NugetGeneratedOutputs.test_retained_or_compiled_generated_byte_changes_are_rejected",
+    "NugetGeneratedOutputs.test_successful_compiler_capture_is_bound_before_component_exists",
+    "RuntimeAdapterCapture.test_all_three_runtime_adapters_are_captured_under_the_owned_namespace",
+    "RuntimeAdapterCapture.test_changed_source_during_capture_cannot_publish_an_adapter_family",
+    "RuntimeAdapterCapture.test_missing_or_additional_runtime_profiles_fail_before_staging"
+  ],
+  "guards": {
+    "CapturedCompilerSelection.test_captured_nuget_selection_preserves_authoritative_wit_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompilerSelection.test_final_component_cannot_introduce_undeclared_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompilerSelection.test_offline_asset_drift_still_fails_before_native_aot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompilerSelection.test_oversized_raw_wit_is_rejected_before_diagnostic_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "CapturedCompilerSelection.test_profile_rejection_retains_raw_component_and_wit_after_workspace_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:3f7ae40da91118440dd00e9ce8eb83f8f956242146042545e153eb5a08ea7d15"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_actual_raw_failure_retention_preserves_shared_failure_report": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_failure_report_rechecks_raw_bytes_and_does_not_invent_source_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_malformed_world_tables_type_indices_and_function_names_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_missing_http_is_not_a_clock_grant_or_catalogue_decision": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_partial_resource_exports_report_exact_missing_members": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NativeAotRuntimeCoverage.test_present_names_do_not_claim_signature_or_runtime_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:c3981bdf37bfc37c7de136d137dada9cf0294e88040866cb0ad7ca9f0ee270d2"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_analyzer_and_build_assets_are_executable_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_application_import_task_and_property_functions_never_evaluate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_composer_profile_rejects_stale_selection_and_changed_binary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_embedded_resources_cannot_read_absolute_or_uncaptured_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_missing_transitive_and_changed_sdk_hash_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_namespace_argument_transport_preserves_literals_and_denies_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": [
+        "self.skipTest('Linux namespace profile unavailable')",
+        "skip-control-sha256:5b14f4dcd67d5a45af5fa00f45c45a016b67e9de286491b6a23c896281325eb5"
+      ]
+    },
+    "NugetDependencies.test_native_package_and_resource_declarations_preserve_sdk": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_native_transitive_closure_is_selected_without_catalogue": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_nuget_standard_archive_metadata_preserves_safe_brackets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_private_feed_invalid_credential_and_endpoint_fail_without_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_private_feed_policy_receipt_excludes_location_and_credentials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_resx_processing_is_an_explicit_executable_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_sdk_compiler_properties_cannot_be_overridden_by_application": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_supported_target_conditions_are_exact_and_other_evaluation_is_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetDependencies.test_unsafe_native_asset_paths_and_wrong_profiles_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": []
+    },
+    "NugetGeneratedOutputs.test_bounded_capture_failure_does_not_mask_original_compiler_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:99f939fdf1d4bc1f91948dce5361cb36c5810c4427ffae15df09e87ea0024e67"
+      ],
+      "skipSites": []
+    },
+    "NugetGeneratedOutputs.test_missing_empty_capture_directory_and_non_boolean_status_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:99f939fdf1d4bc1f91948dce5361cb36c5810c4427ffae15df09e87ea0024e67"
+      ],
+      "skipSites": []
+    },
+    "NugetGeneratedOutputs.test_native_aot_failure_retains_real_generated_bytes_after_temporary_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:99f939fdf1d4bc1f91948dce5361cb36c5810c4427ffae15df09e87ea0024e67"
+      ],
+      "skipSites": []
+    },
+    "NugetGeneratedOutputs.test_output_receipt_binds_exact_approval_and_cannot_be_recaptured": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:99f939fdf1d4bc1f91948dce5361cb36c5810c4427ffae15df09e87ea0024e67"
+      ],
+      "skipSites": []
+    },
+    "NugetGeneratedOutputs.test_retained_or_compiled_generated_byte_changes_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:99f939fdf1d4bc1f91948dce5361cb36c5810c4427ffae15df09e87ea0024e67"
+      ],
+      "skipSites": []
+    },
+    "NugetGeneratedOutputs.test_successful_compiler_capture_is_bound_before_component_exists": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:99f939fdf1d4bc1f91948dce5361cb36c5810c4427ffae15df09e87ea0024e67"
+      ],
+      "skipSites": []
+    },
+    "RuntimeAdapterCapture.test_all_three_runtime_adapters_are_captured_under_the_owned_namespace": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:ae062c778a4e8ccf1e250dd638dd2a4cecd00574e0e114335944d24b9c45042f"
+      ],
+      "skipSites": []
+    },
+    "RuntimeAdapterCapture.test_changed_source_during_capture_cannot_publish_an_adapter_family": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:ae062c778a4e8ccf1e250dd638dd2a4cecd00574e0e114335944d24b9c45042f"
+      ],
+      "skipSites": []
+    },
+    "RuntimeAdapterCapture.test_missing_or_additional_runtime_profiles_fail_before_staging": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:ae062c778a4e8ccf1e250dd638dd2a4cecd00574e0e114335944d24b9c45042f"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_application_dependencies.py",
+  "reviewReason": "Preserve existing NativeAOT ingestion contracts and add actual chained shared-failure/raw-diagnostic retention without replacing immutable reports or changing fixture guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

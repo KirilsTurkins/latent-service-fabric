@@ -213,3 +213,24 @@ original preflight, full validator and value-graph checks with the pinned
 wasmparser 0.259.0 and Rust 1.97.1. Its complete graph spends 20,268 type nodes;
 14 focused binary/metadata controls pass. These are semantic-validation receipts,
 not a fresh successful package, default HTTP client or node qualification.
+
+The subsequent normal signed-node control at source
+`40cd44f5fe157e3ed234b996316072d55ba3b2e6` admitted the ordinary default
+`HttpClient` component with explicit HTTP, activation and monotonic-clock grants.
+Its missing-authority controls denied before provider work. The GET activation
+then trapped before any HTTP effect: 51,186,250 fuel, 54,722,560 peak bytes and
+103,338 microseconds, under the original one-billion-fuel, 128 MiB and
+120-second limits. The component's typed failure remains a failed receipt; it
+does not identify a CLR initializer or establish a successful request.
+
+The captured NuGet compiler and separate optional noncrypto entropy adapter now
+share the source with this BCL error port. The compiler stages the exact BCL
+framework preimages and trusted transformer inside its approved namespace,
+protects the derived assembly and target before restore or NativeAOT, and
+rechecks them after composition. Its final material list retains the real ILC
+reference binding and both selected adapters. Entropy still requires the exact
+`latent:random/random@0.1.0` declaration and its own provider grant; secure WASI
+random remains denied. The combined compiler control verifies this ownership
+and provenance, including mutation rejection. A fresh normal signed-node
+execution remains necessary to qualify the combined profile and diagnose the
+original default-client trap.

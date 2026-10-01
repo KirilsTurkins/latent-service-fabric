@@ -1,0 +1,9 @@
+package latent:dotnet-entropy@0.1.0;
+
+// Hash seeding imports explicit LSF entropy authority. Cryptographic WASI
+// entropy is deliberately absent from this adapter's exports.
+world noncrypto {
+    import latent:random/random@0.1.0;
+    export wasi:random/insecure@0.2.0;
+    export wasi:random/insecure@0.2.6;
+}

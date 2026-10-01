@@ -1,16 +1,32 @@
 {
   "cases": [
+    "HttpErrorPortTests.test_captured_http_and_entropy_composition_retains_bcl_port_and_protected_inputs",
     "HttpErrorPortTests.test_changed_derived_retained_or_target_bytes_cannot_be_reused",
+    "HttpErrorPortTests.test_derived_framework_and_target_are_protected_before_native_aot_can_use_them",
+    "HttpErrorPortTests.test_namespace_capture_rejects_unknown_framework_before_creating_destination",
     "HttpErrorPortTests.test_original_unknown_and_duplicate_rsp_references_cannot_qualify_the_port",
     "HttpErrorPortTests.test_partial_and_opaque_grants_do_not_install_a_bcl_port_or_touch_inputs",
     "HttpErrorPortTests.test_private_derived_owner_requires_actual_native_aot_reference_evidence",
     "HttpErrorPortTests.test_rewrite_receipt_cannot_introduce_arbitrary_payload_or_change_categories",
     "HttpErrorPortTests.test_sdk_capture_rejects_modified_patch_sources_and_stale_locks",
+    "HttpErrorPortTests.test_transformer_and_original_framework_survive_owned_namespace_capture",
     "HttpErrorPortTests.test_unknown_framework_or_cecil_preimage_denies_before_project_mutation",
     "RawCompilerRetentionTests.test_oversized_raw_wit_is_not_published_or_composed",
     "RawCompilerRetentionTests.test_profile_rejection_keeps_raw_component_and_wit_after_workspace_retirement"
   ],
   "guards": {
+    "HttpErrorPortTests.test_captured_http_and_entropy_composition_retains_bcl_port_and_protected_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
+      ],
+      "skipSites": []
+    },
     "HttpErrorPortTests.test_changed_derived_retained_or_target_bytes_cannot_be_reused": {
       "bases": [
         "unittest.TestCase"
@@ -18,8 +34,32 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:686623f568a65511fe22eb33eb745f0e36176e7fc211f8ba751c01393153e196",
-        "class:setup-sha256:ca89be97ea6a2d8632d9ed5e3e27ef655e9b3627558dcddbd741119e5f26152f"
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
+      ],
+      "skipSites": []
+    },
+    "HttpErrorPortTests.test_derived_framework_and_target_are_protected_before_native_aot_can_use_them": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
+      ],
+      "skipSites": []
+    },
+    "HttpErrorPortTests.test_namespace_capture_rejects_unknown_framework_before_creating_destination": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
       ],
       "skipSites": []
     },
@@ -30,8 +70,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:686623f568a65511fe22eb33eb745f0e36176e7fc211f8ba751c01393153e196",
-        "class:setup-sha256:ca89be97ea6a2d8632d9ed5e3e27ef655e9b3627558dcddbd741119e5f26152f"
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
       ],
       "skipSites": []
     },
@@ -42,8 +82,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:686623f568a65511fe22eb33eb745f0e36176e7fc211f8ba751c01393153e196",
-        "class:setup-sha256:ca89be97ea6a2d8632d9ed5e3e27ef655e9b3627558dcddbd741119e5f26152f"
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
       ],
       "skipSites": []
     },
@@ -54,8 +94,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:686623f568a65511fe22eb33eb745f0e36176e7fc211f8ba751c01393153e196",
-        "class:setup-sha256:ca89be97ea6a2d8632d9ed5e3e27ef655e9b3627558dcddbd741119e5f26152f"
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
       ],
       "skipSites": []
     },
@@ -66,8 +106,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:686623f568a65511fe22eb33eb745f0e36176e7fc211f8ba751c01393153e196",
-        "class:setup-sha256:ca89be97ea6a2d8632d9ed5e3e27ef655e9b3627558dcddbd741119e5f26152f"
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
       ],
       "skipSites": []
     },
@@ -78,8 +118,20 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:686623f568a65511fe22eb33eb745f0e36176e7fc211f8ba751c01393153e196",
-        "class:setup-sha256:ca89be97ea6a2d8632d9ed5e3e27ef655e9b3627558dcddbd741119e5f26152f"
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
+      ],
+      "skipSites": []
+    },
+    "HttpErrorPortTests.test_transformer_and_original_framework_survive_owned_namespace_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
       ],
       "skipSites": []
     },
@@ -90,8 +142,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:686623f568a65511fe22eb33eb745f0e36176e7fc211f8ba751c01393153e196",
-        "class:setup-sha256:ca89be97ea6a2d8632d9ed5e3e27ef655e9b3627558dcddbd741119e5f26152f"
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:d4043543ce26c3010b519c084b84d4d3c1a658e742f216fcaf481bf6febedab5"
       ],
       "skipSites": []
     },
@@ -102,8 +154,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:686623f568a65511fe22eb33eb745f0e36176e7fc211f8ba751c01393153e196",
-        "class:setup-sha256:2d0b88176e20b7cdade0277d7eabe3d86dd86dbc530ef83bcef6d8adab49c97f"
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:02b1d0322382369c05eb410dc4ee1fe5c864f7411c91713f4e9e7c836289fed1"
       ],
       "skipSites": []
     },
@@ -114,14 +166,14 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:686623f568a65511fe22eb33eb745f0e36176e7fc211f8ba751c01393153e196",
-        "class:setup-sha256:2d0b88176e20b7cdade0277d7eabe3d86dd86dbc530ef83bcef6d8adab49c97f"
+        "module:setup-sha256:c3f8876039d0b0913f6aad7c30abf7ab43899666fde5217a79f8d317f45532eb",
+        "class:setup-sha256:02b1d0322382369c05eb410dc4ee1fe5c864f7411c91713f4e9e7c836289fed1"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_http_errors.py",
-  "reviewReason": "Add finite compiler authority, immutable patch ownership and original raw component retention controls",
+  "reviewReason": "Combine the captured NuGet compiler and four-adapter source with the declared HTTP BCL error port. Retain every parent command/case and all skip predicates. Reviewed fixture hash changes only add trusted support imports, preserve both distribution capture helpers, and supply the captured compiler API in controls; no decorator, skip site, execution hook or required command is removed.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

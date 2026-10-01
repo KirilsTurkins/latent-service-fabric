@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import shutil
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -46,9 +47,96 @@ class HttpErrorPortTests(unittest.TestCase):
             "method": http_errors.METHOD, "categories": list(http_errors.MARKERS),
             "arbitraryPayloadDisclosure": False, "defaultClientComponentQualified": False})
 
-    def prepare(self, declared=None):
+    def prepare(self, declared=None, **keywords):
         return http_errors.prepare(self.sdk, self.tools, self.root / "dotnet", declared or
-            [runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION], self.project, self.output, self.evidence, self.run_tool)
+            [runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION], self.project, self.output, self.evidence, self.run_tool,
+            **keywords)
+
+    def test_derived_framework_and_target_are_protected_before_native_aot_can_use_them(self):
+        protected = []
+        def protect(*paths):
+            self.assertEqual(self.stages, ["http-errors-rewrite"])
+            self.assertNotIn("LsfHttpErrorAssembly", (self.project / "Capsule.csproj").read_text())
+            self.assertTrue(all(path.is_file() for path in paths))
+            protected.extend(paths)
+        port = self.prepare(protect_inputs=protect)
+        self.assertEqual(protected, [port.assembly, port.targets])
+        self.assertIn("LsfHttpErrorAssembly", (self.project / "Capsule.csproj").read_text())
+
+    def test_transformer_and_original_framework_survive_owned_namespace_capture(self):
+        from tools.dotnet_compiler_isolation import stage_http_errors
+        destination = stage_http_errors(self.sdk, self.tools, self.root / "namespace-support")
+        self.assertEqual(snapshot(destination / "http-errors"), snapshot(self.tools / "http-errors"))
+        self.assertEqual(snapshot(destination / "http-errors-source"), snapshot(self.sdk / "tools/http-errors"))
+        self.assertTrue(all(path.read_bytes() == b"control-original" for path in http_errors.source_paths(destination)))
+        (self.tools / "http-errors/HttpErrors.dll").write_bytes(b"different-parent-helper")
+        self.assertEqual((destination / "http-errors/HttpErrors.dll").read_bytes(), b"control-compiler-tool")
+
+    def test_namespace_capture_rejects_unknown_framework_before_creating_destination(self):
+        from tools.dotnet_compiler_isolation import stage_http_errors
+        http_errors.source_paths(self.tools)[0].write_bytes(b"unknown-framework")
+        destination = self.root / "namespace-support"
+        with self.assertRaisesRegex(ValueError, "unsupported-material"):
+            stage_http_errors(self.sdk, self.tools, destination)
+        self.assertFalse(destination.exists())
+
+    def test_captured_http_and_entropy_composition_retains_bcl_port_and_protected_inputs(self):
+        from tools.tests import test_dotnet_application_dependencies as fixtures
+        fixture = fixtures.CapturedCompilerSelection()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        declared = sorted([runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION, runtime.RANDOM])
+        wasi = [*sorted(runtime.WASI_HTTP_IMPORTS), "wasi:random/random@0.2.6", "wasi:random/insecure@0.2.6"]
+        compiler, work, output = fixture.application(fixture.root, emitted=[runtime.CLOCK, *wasi], final=declared)
+        compiler.http_error_tools = self.tools
+        compiler.generated_materials, compiler.compiler_patches = [], []
+        compiler.wac.write_bytes(b"owned unit-boundary component composer")
+        original_run, original_native = compiler.run, compiler.native_aot
+        def run(stage, executable, *arguments):
+            if stage == "declared-runtime-wit":
+                return json.dumps(fixture.graph(declared)).encode()
+            if stage == "http-errors-rewrite":
+                self.run_tool(stage, executable, *arguments)
+                return b""
+            if stage == "closed-runtime-adapter-wit":
+                graph = fixture.graph([runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION, *wasi[:-1]])
+                imports = graph["worlds"][0]["imports"]
+                graph["worlds"][0]["imports"] = {key: value for key, value in imports.items() if int(key) < 3}
+                graph["worlds"][0]["exports"] = {key: value for key, value in imports.items() if int(key) >= 3}
+                return json.dumps(graph).encode()
+            if stage == "additional-runtime-entropy-wit":
+                graph = fixture.graph([runtime.RANDOM, *sorted(runtime.WASI_INSECURE_IMPORTS)])
+                imports = graph["worlds"][0]["imports"]
+                graph["worlds"][0]["imports"] = {"0": imports["0"]}
+                graph["worlds"][0]["exports"] = {key: value for key, value in imports.items() if key != "0"}
+                return json.dumps(graph).encode()
+            return original_run(stage, executable, *arguments)
+        def native(project, compiled, wrapper):
+            port = compiler.http_error_port
+            self.assertIn(port.assembly, compiler.isolation.read_only_inputs)
+            self.assertIn(port.targets, compiler.isolation.read_only_inputs)
+            original_native(project, compiled, wrapper)
+            port.reference_receipt.write_text(str(port.assembly) + "\n")
+            (project / "obj/native-aot.rsp").write_text("-r:" + str(port.assembly) + "\n")
+        compiler.run, compiler.native_aot = run, native
+        with patch("tools.dotnet_application_dependencies.configure", fixture.configure), patch(
+                "tools.dotnet_guest.entropy.prepare", return_value=None) as entropy_prepare:
+            component, result = compiler.compile(work, "examples:greeting/service@1.0.0", output)
+        entropy_prepare.assert_called_once_with(compiler, declared, output / "project", output)
+        self.assertTrue(component.is_file())
+        self.assertEqual(self.stages, ["http-errors-rewrite"])
+        self.assertEqual(result["runtimeProfile"]["profile"], "http")
+        self.assertEqual(result["runtimeProfile"]["additionalAdapters"][0]["name"], "noncrypto-entropy")
+        self.assertEqual(compiler.compiler_patches[0]["name"], "latent.dotnet.http-errors.v1")
+        self.assertFalse(compiler.compiler_patches[0]["selection"]["arbitraryPayloadDisclosure"])
+        self.assertEqual(result["httpErrorPort"]["patch"], "latent.dotnet.http-errors.v1")
+        materials = {row["name"]: row for row in compiler.generated_materials}
+        self.assertEqual(materials["dotnet-http-errors-derived"]["digest"], digest(b"control-derived"))
+        self.assertIn("dotnet-http-error-port", materials)
+        self.assertIn("runtime-composition-source", materials)
+        compiler.http_error_port.assembly.write_bytes(b"changed-after-composition")
+        with self.assertRaisesRegex(ValueError, "derived-input-changed"):
+            compiler.check_unchanged()
 
     def reference_files(self, port, references=None, response=None):
         values = references if references is not None else [str(self.root / "other.dll"), str(port.assembly)]
@@ -168,6 +256,9 @@ class RawCompilerRetentionTests(unittest.TestCase):
         compiler.tools, compiler.dotnet, compiler.wasm, compiler.wac = [root / name for name in
             ("tools", "dotnet", "wasm-tools", "wac")]
         compiler.offline, compiler.wasi_sdk, compiler.generated_materials = False, root / "wasi-sdk", []
+        compiler.isolation = compiler.application_closure = compiler.executable_approval = None
+        compiler.python, compiler.package_cache = Path(sys.executable), compiler.tools / "packages"
+        compiler.compiler_patches, compiler.noncrypto_port = [], None
         compiler.runtimes = {}
         stages, receipt = [], {"outputs": {"ServiceWorld.cs": "captured-binding"}}
         def run(stage, *arguments):
@@ -191,6 +282,7 @@ class RawCompilerRetentionTests(unittest.TestCase):
                 return raw_wit
             return b""
         compiler.commands = SimpleNamespace(run=run, output=evidence)
+        compiler.run = run
         actual_temporary = tempfile.TemporaryDirectory
         with patch("tools.dotnet_guest.compiler.install_sdk", return_value={}), patch(
                 "tools.dotnet_guest.compiler.tempfile.TemporaryDirectory",

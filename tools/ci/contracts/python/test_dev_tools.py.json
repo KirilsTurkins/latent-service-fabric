@@ -21,6 +21,7 @@
     "DotnetRuntimeDistribution.test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack",
     "DotnetRuntimeDistribution.test_missing_bcl_patch_tool_or_source_fails_before_publication",
     "DotnetRuntimeDistribution.test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published",
+    "DotnetRuntimeDistribution.test_missing_selected_composer_fails_before_a_distribution_can_be_published",
     "FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly",
     "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound",
     "ManagedCompilerInputs.test_changed_member_and_path_escape_are_rejected",
@@ -249,7 +250,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
-        "class:setup-sha256:d4f97c51a8dcd7a13f550aa8f9bc3d7581641ea09971ffc4925ec89f5354c36f"
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
       ],
       "skipSites": []
     },
@@ -261,7 +262,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
-        "class:setup-sha256:d4f97c51a8dcd7a13f550aa8f9bc3d7581641ea09971ffc4925ec89f5354c36f"
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
       ],
       "skipSites": []
     },
@@ -273,7 +274,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
-        "class:setup-sha256:d4f97c51a8dcd7a13f550aa8f9bc3d7581641ea09971ffc4925ec89f5354c36f"
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
       ],
       "skipSites": []
     },
@@ -285,7 +286,19 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
-        "class:setup-sha256:d4f97c51a8dcd7a13f550aa8f9bc3d7581641ea09971ffc4925ec89f5354c36f"
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
+      ],
+      "skipSites": []
+    },
+    "DotnetRuntimeDistribution.test_missing_selected_composer_fails_before_a_distribution_can_be_published": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40",
+        "class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"
       ],
       "skipSites": []
     },
@@ -410,6 +423,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_tools.py",
-  "reviewReason": "Preserve both reviewed histories unchanged: actual isolated six-language recipe imports and mandatory captured .NET adapter/BCL-tool distribution controls; no old case or execution/skip guard changes.",
+  "reviewReason": "Combine the captured NuGet compiler and four-adapter source with the declared HTTP BCL error port. Retain every parent command/case and all skip predicates. Reviewed fixture hash changes only add trusted support imports, preserve both distribution capture helpers, and supply the captured compiler API in controls; no decorator, skip site, execution hook or required command is removed.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

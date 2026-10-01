@@ -162,6 +162,18 @@ def failure_report(output: Path, language: str, stage: str) -> None:
             pass  # The caller retains its existing bounded build-failure path.
 
 
+def retain_report(output: Path, value: dict, *, kind: str) -> None:
+    """Keep a diagnostic beside an existing immutable package/shared report."""
+    require(kind in {"failure", "raw"}, "compatibility-diagnostic-kind")
+    target = output / "compatibility-report.json"
+    if target.exists():
+        # A packaged report already has an asset digest. A raw-component
+        # report also describes different bytes from the final component.
+        # Preserve those identities instead of replacing their report.
+        target = output / ("compatibility-" + kind + "-report.json")
+    write_json(target, value)
+
+
 def _failure_report(output: Path, language: str, stage: str) -> None:
     source_path = output / "source-inputs.json"
     if not source_path.exists():
@@ -179,4 +191,4 @@ def _failure_report(output: Path, language: str, stage: str) -> None:
         findings = [*inspection["findings"], *findings]
     value = compatibility.report(language, digest(read_file(source_path)),
         digest(component) if component is not None else None, host["id"], [], findings)
-    write_json(output / "compatibility-report.json", value)
+    retain_report(output, value, kind="failure")

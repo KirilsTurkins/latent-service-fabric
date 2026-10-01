@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Expose the explicit application dependency fixture qualification flag while retaining direct Go SDK qualification.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "497409dd0d4c072b12a64c84e9ef1dbc804eb888c62ccae6fb8a27b9e64e97ce"
+  "sha256": "7081a7e7bd5567239d1c003969563d78125b363be19629cd5dba8d3de758999e"
 }

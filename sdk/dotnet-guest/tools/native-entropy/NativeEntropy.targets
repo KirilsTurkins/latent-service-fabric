@@ -1,0 +1,13 @@
+<Project>
+  <Target Name="LsfInternalNoncryptoEntropy" BeforeTargets="LinkNativeLlvm"
+          Condition="'$(RuntimeIdentifier)' == 'wasi-wasm'">
+    <Error Condition="'$(LsfInternalNoncryptoEntropyProfile)' != 'dotnet-hash-entropy-v1'"
+           Text="LSF noncryptographic entropy requires its exact reviewed profile." />
+    <Error Condition="'$(LsfInternalNoncryptoEntropyObject)' == '' or !Exists('$(LsfInternalNoncryptoEntropyObject)')"
+           Text="LSF noncryptographic entropy requires its private verified object." />
+    <ItemGroup>
+      <NativeLibrary Include="$(LsfInternalNoncryptoEntropyObject)" />
+      <LinkerArg Include="-Wl,--wrap=SystemNative_GetNonCryptographicallySecureRandomBytes" />
+    </ItemGroup>
+  </Target>
+</Project>

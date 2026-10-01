@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Review explicit dependency qualification flag forwarding without changing existing node checks.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ee566c6eb8f1b8728db9f12f925f1abf60ab3687ed9bfbe59b3a2c2b4b821a30"
+  "sha256": "c866a4b93851b24fa9cad12b5fc39a0518f9278a98167103b4d3aadb9578d2df"
 }

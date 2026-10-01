@@ -1,0 +1,167 @@
+{
+  "requiredImports": [
+    "wasi:cli/environment@0.2.6",
+    "wasi:cli/exit@0.2.6",
+    "wasi:cli/stderr@0.2.6",
+    "wasi:cli/stdin@0.2.6",
+    "wasi:cli/stdout@0.2.6",
+    "wasi:cli/terminal-input@0.2.6",
+    "wasi:cli/terminal-output@0.2.6",
+    "wasi:cli/terminal-stderr@0.2.6",
+    "wasi:cli/terminal-stdin@0.2.6",
+    "wasi:cli/terminal-stdout@0.2.6",
+    "wasi:clocks/monotonic-clock@0.2.6",
+    "wasi:clocks/wall-clock@0.2.6",
+    "wasi:filesystem/preopens@0.2.6",
+    "wasi:filesystem/types@0.2.6",
+    "wasi:http/outgoing-handler@0.2.0",
+    "wasi:http/types@0.2.0",
+    "wasi:io/error@0.2.6",
+    "wasi:io/poll@0.2.6",
+    "wasi:io/streams@0.2.6",
+    "wasi:random/random@0.2.6"
+  ],
+  "adapterExports": [
+    "wasi:cli/environment@0.2.6",
+    "wasi:cli/exit@0.2.6",
+    "wasi:cli/stderr@0.2.6",
+    "wasi:cli/stdin@0.2.6",
+    "wasi:cli/stdout@0.2.6",
+    "wasi:cli/terminal-input@0.2.6",
+    "wasi:cli/terminal-output@0.2.6",
+    "wasi:cli/terminal-stderr@0.2.6",
+    "wasi:cli/terminal-stdin@0.2.6",
+    "wasi:cli/terminal-stdout@0.2.6",
+    "wasi:clocks/monotonic-clock@0.2.6",
+    "wasi:clocks/wall-clock@0.2.6",
+    "wasi:filesystem/preopens@0.2.6",
+    "wasi:filesystem/types@0.2.6",
+    "wasi:io/error@0.2.6",
+    "wasi:io/poll@0.2.6",
+    "wasi:io/streams@0.2.6",
+    "wasi:random/random@0.2.6"
+  ],
+  "gaps": [
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "types",
+      "symbol": "advice"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "types",
+      "symbol": "directory-entry"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "types",
+      "symbol": "directory-entry-stream"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "types",
+      "symbol": "open-flags"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "types",
+      "symbol": "path-flags"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.advise"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.metadata-hash-at"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.open-at"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.read"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.read-directory"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.readlink-at"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.stat-at"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.sync"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.unlink-file-at"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]descriptor.write"
+    },
+    {
+      "interface": "wasi:filesystem/types@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]directory-entry-stream.read-directory-entry"
+    },
+    {
+      "interface": "wasi:http/outgoing-handler@0.2.0",
+      "kind": "interface"
+    },
+    {
+      "interface": "wasi:http/types@0.2.0",
+      "kind": "interface"
+    },
+    {
+      "interface": "wasi:io/poll@0.2.6",
+      "kind": "functions",
+      "symbol": "poll"
+    },
+    {
+      "interface": "wasi:io/streams@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]input-stream.blocking-read"
+    },
+    {
+      "interface": "wasi:io/streams@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]input-stream.read"
+    },
+    {
+      "interface": "wasi:io/streams@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]input-stream.subscribe"
+    },
+    {
+      "interface": "wasi:io/streams@0.2.6",
+      "kind": "functions",
+      "symbol": "[method]output-stream.flush"
+    }
+  ],
+  "analysisCompleteness": "required-member-names",
+  "authority": "none",
+  "schemaVersion": "lsf.dotnet.runtime.coverage.v1",
+  "runtimeProfile": "dotnet-native-aot-component-v1",
+  "rawComponentDigest": "sha256:dc9dac40ba449c4590e33b811964957d9549290e865a4d761c09b3446aabf5cb",
+  "runtimeAdapterDigest": "sha256:12420fe56223cf483bd47370789c4341fa7538c05ffd521f02a9ccfa8b31dae7",
+  "rawWitDigest": "sha256:10243b3f76231da41524d8c6721179a720fa9da1c18527f66ee7a7cdd57db0f8",
+  "runtimeWitDigest": "sha256:b6c09f766f995ccf11cd5abb9e3eaeebbd06dff82beff53c6f5aa2640b0835bb"
+}

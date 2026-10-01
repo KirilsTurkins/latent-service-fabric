@@ -62,6 +62,11 @@ jobs:
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: '0.16.0'
+      - name: Install captured Rust compiler namespace
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install pinned validation and guest tools
         run: |
           python3 -m pip install --requirement tools/requirements.lock
@@ -69,9 +74,19 @@ jobs:
           echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
           cargo fetch --locked
       - name: Test standalone validation and process ownership
-        run: python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process
+        env:
+          LSF_REQUIRE_COMPILER_ISOLATION: '1'
+        run: |
+          python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process
+      - name: Test captured Rust executable-input approvals and namespace
+        run: |
+          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_rust_application_dependencies tools.tests.test_application_dependency_approval tools.tests.test_captured_compiler_isolation
       - name: Execute complete outside-checkout authoring qualification
-        run: python3 tools/qualify_rust_capsules.py --output "$RUNNER_TEMP/rust-capsule-authoring"
+        run: |
+          python3 tools/qualify_rust_capsules.py --output "$RUNNER_TEMP/rust-capsule-authoring"
+      - name: Qualify captured Rust libraries and approved generators
+        run: |
+          python3 tools/qualify_rust_capsules.py --application-dependencies --output "$RUNNER_TEMP/rust-capsule-dependencies"
       - name: Exercise developer cache with the actual operator and compiled Rust package inputs
         run: >-
           python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent
@@ -89,6 +104,7 @@ jobs:
           name: rust-capsule-authoring-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/dev-build-cache/
+            ${{ runner.temp }}/rust-capsule-dependencies/**
             ${{ runner.temp }}/rust-capsule-authoring/*.json
             ${{ runner.temp }}/rust-capsule-authoring/*.log
             ${{ runner.temp }}/rust-capsule-authoring/*.stdout
