@@ -1821,6 +1821,20 @@
       "expectedCases": [
         "dns::tests::aliases_are_finite_and_all_returned_addresses_are_checked",
         "dns::tests::transaction_question_lengths_and_compression_cycles_fail_closed",
+        "effects::contract::tests::closed_profile_refuses_generic_http_dynamic_dns_redirects_and_unsafe_peers",
+        "effects::contract::tests::finite_contract_and_provider_incarnation_changes_never_reinterpret_retained_profiles",
+        "tests::effects::dispatcher::durable_dispatcher_writes_send_marker_then_recovers_actual_lost_tls_response",
+        "tests::effects::dispatcher::crash_before_send_marker_reopens_as_known_nonexecution_without_remote_mutation",
+        "tests::effects::ownership::unpolled_acceptance_releases_prepaid_buffers_and_never_opens_a_socket",
+        "tests::effects::ownership::current_credentials_rotate_and_revocation_or_expiry_denies_new_effect_acceptance",
+        "tests::effects::ownership::credential_epoch_replacement_fails_closed_before_send_and_requires_current_effect_rule",
+        "tests::effects::ownership::caller_loss_during_send_or_read_keeps_physical_owner_until_real_socket_retirement",
+        "tests::effects::reconciliation::qualified_tls_delivery_and_equal_key_replay_mutate_remote_durable_counter_once",
+        "tests::effects::reconciliation::lost_response_after_remote_flush_recovers_by_one_lookup_without_resending_mutation",
+        "tests::effects::reconciliation::absent_or_expired_remote_lookup_never_schedules_duplicate_execution",
+        "tests::effects::reconciliation::original_remote_horizon_and_expired_history_reject_late_equal_key_mutation",
+        "tests::effects::reconciliation::reservation_retry_retains_original_identity_body_incarnation_and_horizon",
+        "tests::effects::reconciliation::malformed_oversized_redirect_and_unqualified_remote_replies_remain_bounded_and_private",
         "tests::audit::required_audit_keeps_provider_receipts_and_redacts_secrets",
         "tests::audit::streamed_required_audit_commits_metadata_and_known_header_without_claiming_body_completion",
         "tests::dns::cached_dns_is_shared_bounded_and_uses_no_system_resolution",
@@ -1865,7 +1879,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-http/Cargo.toml",
-      "minimumCases": 40,
+      "minimumCases": 54,
       "mode": "libtest",
       "package": "latent-http",
       "platforms": [
@@ -1873,6 +1887,7 @@
       ],
       "prerequisites": [
         "pinned Rust toolchain",
+        "protected ext4 test directory (LATENT_STATE_TEST_ROOT when temporary storage is overlay)",
         "successful source-matched Cargo artifact inventory"
       ],
       "recipe": "workspace-all-features",

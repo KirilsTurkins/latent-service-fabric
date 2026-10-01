@@ -5,6 +5,7 @@ mod credentials;
 mod destination;
 mod dns;
 mod execute;
+pub mod effects;
 mod headers;
 mod network;
 pub mod protocol;
