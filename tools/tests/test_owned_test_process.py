@@ -394,6 +394,40 @@ else:
             self.assert_retired(pid)
         asyncio.run(scenario())
 
+    def test_separate_streams_preserve_json_and_reap_stderr_session_writer(self):
+        result = self.execute("""import os,time
+os.write(1,b'{"reason":')
+os.write(2,b'fingerprint diagnostic\\n')
+os.write(1,b'"build-finished","success":true}\\n')
+read_fd,write_fd=os.pipe()
+pid=os.fork()
+if pid == 0:
+    os.close(read_fd)
+    os.setsid()
+    os.write(2,(str(os.getpid())+'\\n').encode())
+    os.write(write_fd,b'ready')
+    time.sleep(60)
+else:
+    os.close(write_fd)
+    os.read(read_fd,5)
+""", separate_stderr=True)
+        self.assertEqual(json.loads(result.output), {"reason": "build-finished", "success": True})
+        self.assertTrue(result.stderr.startswith(b"fingerprint diagnostic\n"))
+        self.assertTrue(result.cleaned)
+        self.assertGreaterEqual(result.reaped, 1)
+        self.assert_retired(result.pid)
+        self.assert_retired(int(result.stderr.splitlines()[1]))
+
+    def test_separate_streams_share_one_output_limit(self):
+        with self.assertRaises(ProcessFailure) as error:
+            self.execute("import os; os.write(1,b'aaaa'); os.write(2,b'bbbb'); "
+                         "os.write(2,b'x'*65536)", maximum=8, separate_stderr=True)
+        self.assertEqual(error.exception.category, "output-overflow")
+        result = error.exception.result
+        self.assertEqual(len(result.output) + len(result.stderr), 8)
+        self.assertTrue(result.cleaned)
+        self.assert_retired(result.pid)
+
 
 if __name__ == "__main__":
     unittest.main()

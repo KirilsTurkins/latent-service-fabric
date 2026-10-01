@@ -233,6 +233,20 @@ GNU time data remains unavailable, never zero. Diagnostic export failures cannot
 replace an already-observed failed Cargo exit status. A failed observer removes
 its inventory handoff, and no retained observation is an artifact qualification.
 
+The observer captures Cargo JSON stdout separately from fingerprint/debug stderr.
+`cargo.log` retains redacted stdout for the existing test-execution validators;
+`cargo-diagnostics.log` retains redacted stderr. Both streams share the same
+16 MiB output bound, original deadline, and descendant-process owner. Combining
+their file descriptors can splice a debug write into a JSON record and omit a
+successfully compiled artifact from discovery. The full October 1 attempt exposed
+that failure in both configurations: compilation completed, but discovery found
+178 of 179 expected targets and stopped before ordinary test execution or warm
+replay. The missing target was `typescript_runtime_probe`; its compiled artifact
+record was interleaved with a fingerprint message. These failed attempts remain
+retained in [run 36834225838](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36834225838).
+They are not complete-suite or performance samples. Native split-write and
+descendant/overflow controls cover the repair; a fresh full replay is required.
+
 ```sh
 python3 tools/ci_cargo_observe.py workspace-check --output "$RUNNER_TEMP/cargo-observations"
 python3 tools/ci_cargo_probe.py --include-msrv --output "$RUNNER_TEMP/cargo-probe"

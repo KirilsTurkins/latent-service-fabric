@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_cargo_observe.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.",
+  "reviewReason": "PR729: retain every historical command, case and guard; separate Cargo stdout and stderr under one unchanged descendant owner, deadline and combined output bound; add three native stream regressions.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e1afffb1b928825a4014e7658d8e019b05832b406c1bb479e5c29297034a5bc4"
+  "sha256": "8cdc4740b562da4ba24af31b924ade9db3670729fc90d202f6f1b7e958f86b1d"
 }

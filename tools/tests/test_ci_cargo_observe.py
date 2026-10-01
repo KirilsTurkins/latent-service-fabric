@@ -157,6 +157,28 @@ class NativeObservationTests(unittest.TestCase):
         self.assertEqual(record["builtArtifactRecords"], 1)
         ci_cargo.validate_inventory(inventory)
 
+    def test_native_split_json_writes_keep_stderr_out_of_artifact_handoff(self):
+        invocation = ci_cargo.RECIPES["prepare"][1]
+        inventory = self.root / "target/inventory.jsonl"
+        raw = stream()
+        split = raw.index(b',') + 1
+        code = ("import os; os.write(1," + repr(raw[:split]) + "); "
+                "os.write(2,b'fingerprint diagnostic token=private-observer-canary\\n'); "
+                "os.write(1," + repr(raw[split:]) + ")")
+        with mock.patch.object(observe, "observed_argv", return_value=[sys.executable, "-c", code]), \
+             mock.patch.object(observe.TestRun, "source_identity"):
+            record = observe.observe(invocation, repo=self.root, output=self.root / "target/split",
+                                     inventory=inventory, timeout=10)
+        self.assertTrue(record["passed"])
+        self.assertEqual(record["builtArtifactRecords"], 1)
+        self.assertEqual(len(inventory.read_text().splitlines()), 2)
+        ci_cargo.validate_inventory(inventory)
+        self.assertNotIn("fingerprint diagnostic", (self.root / "target/split/cargo.log").read_text())
+        diagnostics = (self.root / "target/split/cargo-diagnostics.log").read_text()
+        self.assertIn("fingerprint diagnostic", diagnostics)
+        self.assertNotIn("private-observer-canary", diagnostics)
+        self.assertTrue(record["stageDiagnostic"]["child"]["cleanupAcknowledged"])
+
 
 class ProbeArchiveTests(unittest.TestCase):
     def setUp(self):

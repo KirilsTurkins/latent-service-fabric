@@ -30,6 +30,8 @@
     "NativeOwnershipTests.test_inherited_pipe_writers_and_session_escape_are_reaped",
     "NativeOwnershipTests.test_missing_executable_cannot_pass",
     "NativeOwnershipTests.test_output_overflow_is_bounded_and_reaped",
+    "NativeOwnershipTests.test_separate_streams_preserve_json_and_reap_stderr_session_writer",
+    "NativeOwnershipTests.test_separate_streams_share_one_output_limit",
     "NativeOwnershipTests.test_success_reaps_process"
   ],
   "guards": {
@@ -409,6 +411,34 @@
       ],
       "skipSites": []
     },
+    "NativeOwnershipTests.test_separate_streams_preserve_json_and_reap_stderr_session_writer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
+    "NativeOwnershipTests.test_separate_streams_share_one_output_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9d73c173faba1cf244c687594baa06e87f0a134b6c7fde7c21f96408ad857004",
+        "class:raise:raise unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')",
+        "class:setup-sha256:1b77a1c802aa963a45488342a11e5f5ed8e077d6c88b680d443d8f68891b6f82",
+        "class:skip:unittest.SkipTest('native descendant accounting unavailable; not passing ownership coverage')"
+      ],
+      "skipSites": []
+    },
     "NativeOwnershipTests.test_success_reaps_process": {
       "bases": [
         "unittest.TestCase"
@@ -426,6 +456,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_owned_test_process.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "PR729: retain every historical command, case and guard; separate Cargo stdout and stderr under one unchanged descendant owner, deadline and combined output bound; add three native stream regressions.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

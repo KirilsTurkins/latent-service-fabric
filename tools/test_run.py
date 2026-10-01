@@ -282,11 +282,12 @@ class TestRun:
 
     def command(self, args: list[str], *, timeout: float = 30, maximum: int = 65536,
                 env: dict[str, str] | None = None, check: bool = True,
-                cwd: Path | None = None) -> Result:
+                cwd: Path | None = None, separate_stderr: bool = False) -> Result:
         try:
             result = run_owned(args, cwd=cwd or self.repo, env=env,
                                timeout=self.remaining(timeout), maximum=maximum,
-                               cancel=None if self.stage == "teardown" else self.cancel)
+                               cancel=None if self.stage == "teardown" else self.cancel,
+                               **({"separate_stderr": True} if separate_stderr else {}))
         except ProcessFailure as error:
             if error.result:
                 self.observe(error.result)
@@ -298,7 +299,7 @@ class TestRun:
 
     def observe(self, result: Result) -> None:
         self.last = result
-        safe = redact(result.output.decode("utf-8", "replace"),
+        safe = redact((result.output + result.stderr).decode("utf-8", "replace"),
                       (str(self.root), str(self.repo), str(Path.home())), self.secrets)
         self.log_tail = (self.log_tail + safe)[-MAX_TAIL:]
 

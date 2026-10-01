@@ -212,11 +212,17 @@ def observe(invocation: ci_cargo.Invocation, *, repo: Path, output: Path,
             run.mark("cargo-command")
             timer = Path("/usr/bin/time")
             command = [str(timer), "-f", TIME_FORMAT, "-o", str(output / "time.txt"), *argv] if timer.is_file() else argv
-            result = run.command(command, timeout=timeout, maximum=MAX_BYTES, env=env, check=False)
+            # Cargo JSON stdout is the authoritative artifact handoff. Debug
+            # fingerprint writes on stderr may split a JSON write; merging the
+            # file descriptors loses otherwise valid compiler-artifact records.
+            result = run.command(command, timeout=timeout, maximum=MAX_BYTES, env=env,
+                                 check=False, separate_stderr=True)
             if result.returncode != 0:
                 primary_failure = ProcessFailure("assertion-failure", "cargo-command-failed", result)
             # The bounded owner captured private output. Publish only redacted text.
             (output / "cargo.log").write_text(redact(result.output.decode("utf-8", "replace"),
+                (str(repo), str(Path.home())), run.secrets), encoding="utf-8")
+            (output / "cargo-diagnostics.log").write_text(redact(result.stderr.decode("utf-8", "replace"),
                 (str(repo), str(Path.home())), run.secrets), encoding="utf-8")
             item["exitCode"] = result.returncode
             item["metrics"] = time_metrics(output / "time.txt") if timer.is_file() else None
