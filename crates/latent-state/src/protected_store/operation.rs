@@ -29,6 +29,26 @@ impl ProtectedStoreOwner {
         })
     }
 
+    /// Bind the original shared capacity keeper before any ordinary native or
+    /// provider work. It survives detached retirement and an unexpected pin drop.
+    pub fn reserve_operation_retaining(
+        &self,
+        owner: Arc<dyn std::any::Any + Send + Sync>,
+    ) -> Result<ProtectedStoreOperation, ProtectedStoreError> {
+        self.available()?;
+        let mut retained = self
+            .ready
+            .reserve_retained(512)
+            .map_err(ProtectedStoreError::Io)?;
+        retained
+            .retain_owner(owner)
+            .map_err(|_| ProtectedStoreError::InvalidConfiguration)?;
+        Ok(ProtectedStoreOperation {
+            retained: Some(retained),
+            failure: Arc::clone(&self.failure),
+        })
+    }
+
     /// An explicit authenticated recovery keeps this same protected engine open
     /// using its reserved native partition. The original request owner survives
     /// actual worker retirement; a lost waiter cannot refund it.

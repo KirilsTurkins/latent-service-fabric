@@ -36,12 +36,14 @@ async fn live_provider_owner_blocks_alias_epoch_recovery_and_deadline_never_rese
     assert!(report.snapshot.retained_attempt_bytes >= DispatcherConfig::ATTEMPT_BYTES);
     assert_eq!(adapter.sent.load(Ordering::SeqCst), 1);
     assert_eq!(adapter.physical.load(Ordering::SeqCst), 1);
+    assert_eq!(fixture.capacity.snapshot().unwrap().ordinary.slots, 1);
     adapter.gates.release(parked.ticket.unwrap()).unwrap();
     let late = with_watchdog(WATCHDOG, dispatcher.shutdown(Instant::now() + WATCHDOG))
         .await
         .unwrap();
     assert!(!late.clean);
     assert!(late.physically_retired, "{late:?}");
+    assert!(fixture.capacity.snapshot().unwrap().physically_retired());
     assert_eq!(adapter.sent.load(Ordering::SeqCst), 1);
     adapter.gates.require_retired(parked.registration).unwrap();
     assert_eq!(

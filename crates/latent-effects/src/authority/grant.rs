@@ -158,6 +158,19 @@ impl DispatchGrant {
 }
 
 impl DispatchContext {
+    /// Narrow the original physical deadline before handing out a grant. A
+    /// queued node reservation cannot gain lifetime when its worker starts.
+    pub fn restrict_deadline(&mut self, deadline: Instant) -> Result<(), AuthorityError> {
+        if self.grant_issued || self.retired {
+            return Err(AuthorityError::Stale);
+        }
+        self.deadline = self.deadline.min(deadline);
+        if Instant::now() >= self.deadline {
+            return Err(AuthorityError::Expired);
+        }
+        Ok(())
+    }
+
     /// Linearize reviewed adapter admission with current rule publication.
     /// `accept` is a short synchronous admission callback: no storage, network
     /// or blocking credential lookup under this fence. It returns an owned
