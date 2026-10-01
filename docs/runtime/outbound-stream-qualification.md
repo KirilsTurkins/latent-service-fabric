@@ -16,10 +16,10 @@ application credentials or host key paths.
 
 | Evidence | Executed source boundary | Result |
 | --- | --- | --- |
-| Native TCP/DNS owners | `latent-streams` real loopback sockets and UDP DNS peer, original sealed policy/catalog/budget | 13 passing cases: actual partial read/EOF/send half-close, chunk backpressure before copy, retained chunks after socket closure, dropped unpolled operation, alternate endpoint denial, revocation before write, revocation during pending read, provider retirement during pending read, explicit host TLS rejection, rotation/drain retaining actual old-generation owners, autonomous idle/DNS expiry of inactive sockets, and pending DNS cancellation with independently observed kernel descriptor retirement |
+| Native TCP/DNS owners | `latent-streams` real loopback sockets and UDP DNS peer, original sealed policy/catalog/budget | 14 passing cases: actual partial read/EOF/send half-close, chunk backpressure before copy, retained chunks after socket closure, dropped unpolled operation, alternate endpoint denial, revocation before write, revocation during pending read, provider retirement during pending read, explicit host TLS rejection, rotation/drain retaining actual old-generation owners, autonomous idle/DNS expiry of inactive sockets, pending DNS cancellation with independently observed kernel descriptor retirement, and a lost mutation reply preserving uncertainty without host replay |
 | Existing broker behavior | Existing `latent-capabilities` library suite | 125 passing cases, including HTTP/provider audit, cancellation, fair finite queues, delayed physical retirement and exact authority bookkeeping contention |
 | Bounded DNS | `latent-network` real UDP/TCP resolver peers | 3 passing cases: truncated UDP to same explicit TCP resolver, preallocation TCP length rejection and exact special-address policy |
-| Canonical component | Maintained encoded Component Model guest, package/WIT evidence, ordinary Wasmtime backend and actual TCP peer | 6 passing cases: partial owned chunks/EOF, three fresh activations on the same execution cell, oversized byte-list rejection before send, terminal trap/wrong kind/stale resources, root cancellation and policy revocation while a canonical read waits, 256 dormant deployments with zero Stores and socket owners |
+| Canonical component | Maintained encoded Component Model guest, package/WIT evidence, ordinary Wasmtime backend and actual TCP peer | 7 passing cases: partial owned chunks/EOF, three fresh activations on the same execution cell, oversized byte-list rejection before send, terminal trap/wrong kind/stale resources, root cancellation and policy revocation while a canonical read waits, 256 dormant deployments with zero Stores and socket owners, and protected preparation rejection of UTF-16/compact UTF-16 before Store creation |
 | Signed node execution | Real signatures, SBOM/provenance, enforced package catalog, compiled deployment binding, normal local node admission/manager and actual TCP peers | 4 passing cases: three fresh activations on one execution cell; missing/stale provider binding denied before Store or contact; cancellation acknowledgement retaining original owners followed by actual physical retirement and fresh work; policy revocation at a pending peer barrier before the deadline |
 | Protected node configuration | Normal Linux node configuration loading and derivation, explicit development feature | 3 passing cases: closed input without credential/key-path reflection, exact installed binding scope, protected input and finite exact-address policy before storage or network work |
 | Normal node lifecycle | Protected configuration, ordinary standalone node startup and shutdown | 32 restarts in one maintained case: installation never dials the controlled peer, one prepaid maintenance owner is joined, and physical stream/maintenance owners are zero on each clean shutdown |
@@ -53,6 +53,16 @@ future also closes inactive sockets at DNS or idle expiry without another guest
 call. The peer observes actual FIN, a subsequent write retains the typed timeout,
 and the retained facade keeps its original charges until real Drop. Stop handles
 retain maintenance metadata through acknowledgement and actual future destruction.
+
+The lost-reply case records connection attempts and business mutations separately.
+The controlled peer commits one mutation and withholds its reply. The original
+read returns a typed timeout with `may-have-applied`, and further writes fail
+before copying payload. Actual peer retirement precedes the cleanup claim, while
+the retained facade still holds its original memory charge. Finalizing the
+original budget does not release that owner or permit its frozen report to change.
+Only a distinct fresh activation opens the second connection, and it performs no
+second mutation. Broader language middleware and protocol retry behavior remain
+part of the unqualified workload matrix.
 
 The signed node cases bind their observed component digest, frozen network WIT,
 binary builders, package source and exact provider configuration before signing.

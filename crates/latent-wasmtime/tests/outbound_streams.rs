@@ -229,3 +229,39 @@ fn stream_package_preserves_exact_owned_resources_and_async_signatures() {
     assert!(artifact.contracts[0].interfaces[0].functions[0].asynchronous);
     assert_eq!(artifact.manifest.imports[0].contract.0, component::CAP);
 }
+
+#[tokio::test]
+async fn non_utf8_canonical_stream_encoding_is_rejected_before_any_store() {
+    let fixture = Fixture::new(12345).await;
+    let before = fixture.pools.snapshot().unwrap();
+    for encoding in [
+        wasm_encoder::CanonicalOption::UTF16,
+        wasm_encoder::CanonicalOption::CompactUTF16,
+    ] {
+        let error = fixture
+            .encoding_failure(component::bytes_with_encoding(
+                12345,
+                component::CONTRACT,
+                Some(encoding),
+            ))
+            .await;
+        assert_eq!(
+            error.code,
+            latent_core::PlatformErrorCode::IncompatibleContract
+        );
+        assert_eq!(
+            error.message,
+            "outbound streams require UTF-8 linear canonical memory"
+        );
+        assert_eq!(fixture.backend.resource_snapshot().stores_created, 0);
+        assert_eq!(fixture.io.snapshot(), IoSnapshot::default());
+        assert_eq!(fixture.pools.snapshot().unwrap(), before);
+    }
+    fixture.idle();
+    assert!(fixture
+        .pools
+        .shutdown(Instant::now() + Duration::from_secs(2))
+        .await
+        .unwrap()
+        .is_clean());
+}

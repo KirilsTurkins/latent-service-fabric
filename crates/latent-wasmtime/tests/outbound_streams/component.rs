@@ -18,11 +18,18 @@ pub const OPS: [&str; 8] = [
 pub fn bytes(port: u16) -> Vec<u8> {
     bytes_with_contract(port, CONTRACT)
 }
+pub fn bytes_with_contract(port: u16, contract: &str) -> Vec<u8> {
+    bytes_with_encoding(port, contract, None)
+}
 #[expect(
     clippy::too_many_lines,
     reason = "Finite encoded guest instructions remain in canonical ABI execution order."
 )]
-pub fn bytes_with_contract(port: u16, contract: &str) -> Vec<u8> {
+pub fn bytes_with_encoding(
+    port: u16,
+    contract: &str,
+    encoding: Option<CanonicalOption>,
+) -> Vec<u8> {
     let mut component = Component::new();
     let spec = latent_core::PHASE3_HOST_ABI_V5.interface(CAP).unwrap();
     let mut types = ComponentTypeSection::new();
@@ -71,6 +78,9 @@ pub fn bytes_with_contract(port: u16, contract: &str) -> Vec<u8> {
     let mut canonical = CanonicalFunctionSection::new();
     for function in 0..8 {
         let mut options = vec![CanonicalOption::Memory(0), CanonicalOption::Realloc(0)];
+        if let Some(encoding) = encoding {
+            options.push(encoding);
+        }
         if function != 4 {
             options.push(CanonicalOption::Async);
         }

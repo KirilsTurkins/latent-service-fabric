@@ -97,7 +97,7 @@ impl ExecutionCancellation for Control {
 pub struct Fixture {
     ceiling: latent_core::ResourceBudget,
     _guest_runtime: support::guest_runtime::Runtime,
-    _factory: WasmtimeComponentEngineFactory,
+    factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
     pub prepared: PreparedComponent,
     catalog: Arc<DirectoryArtifactRepository>,
@@ -310,7 +310,7 @@ impl Fixture {
         Self {
             ceiling,
             _guest_runtime: guest_runtime,
-            _factory: factory,
+            factory,
             backend,
             prepared,
             catalog,
@@ -365,6 +365,42 @@ impl Fixture {
                 probe: Arc::new(Probe(AtomicBool::new(false))),
             },
         )
+    }
+    pub async fn encoding_failure(&self, bytes: Vec<u8>) -> PlatformError {
+        let mut artifact = support::artifact_bytes(bytes, &[component::CONTRACT]);
+        artifact.contracts = super::packages::artifact(&super::packages::capsule(12345)).contracts;
+        artifact.manifest.execution.resource_budget_ceiling = self.ceiling.clone();
+        artifact.manifest.imports.push(ContractImport {
+            contract: ContractId(component::CAP.into()),
+            optional: false,
+        });
+        let release = artifact.descriptor.release_digest.clone();
+        let receipt = self
+            .catalog
+            .publish_managed(
+                ReleaseMutationContext {
+                    scope: LifecycleScope::Tenant(TenantId("tests".into())),
+                    actor: ReleaseActor {
+                        subject: "broker-test".into(),
+                        kind: ReleaseActorKind::Host,
+                    },
+                    operation: Some(ReleaseOperationPrecondition {
+                        operation_id: format!("encoding-{}", &release.0[7..23]),
+                        expected_generation: 0,
+                    }),
+                },
+                ManagedPublicationUpload::Local(artifact),
+                &mut |_| Ok(()),
+            )
+            .await
+            .unwrap();
+        let mut key = self.factory.preparation_key(release);
+        key.publication = Some(receipt.publication.id);
+        self.backend
+            .prepare_ready_from_repository(self.catalog.clone(), key)
+            .await
+            .err()
+            .unwrap()
     }
     pub async fn dormant_deployments(&self) {
         use latent_control_store::{

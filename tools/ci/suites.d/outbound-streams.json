@@ -15,6 +15,7 @@
         "tests::sockets::revoking_policy_prevents_application_write_on_existing_socket",
         "tests::sockets::wrong_endpoint_is_denied_before_network_dispatch",
         "tests::unimplemented_host_tls_is_never_silently_replaced_with_tcp",
+        "tests::uncertainty::lost_mutation_reply_preserves_typed_uncertainty_and_never_replays",
         "tests::maintenance::idle_expiry_retires_inactive_socket_on_one_weak_owned_driver",
         "tests::maintenance::dns_authority_expiry_retires_inactive_socket_without_another_guest_call"
       ],
@@ -23,7 +24,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-streams/Cargo.toml",
-      "minimumCases": 13,
+      "minimumCases": 14,
       "mode": "libtest",
       "package": "latent-streams",
       "platforms": [
@@ -45,6 +46,7 @@
         "cancelling_a_suspended_canonical_read_closes_socket_before_reuse",
         "canonical_guest_reads_partial_chunks_eof_and_reuses_no_authenticated_socket",
         "dormant_stream_deployments_create_no_activation_or_socket_owners",
+        "non_utf8_canonical_stream_encoding_is_rejected_before_any_store",
         "revoking_a_policy_during_canonical_read_closes_the_real_socket",
         "stream_package_preserves_exact_owned_resources_and_async_signatures",
         "traps_wrong_kind_stale_resources_and_oversized_write_retire_actual_owners"
@@ -54,7 +56,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 6,
+      "minimumCases": 7,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

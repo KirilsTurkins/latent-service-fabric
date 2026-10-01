@@ -14,6 +14,8 @@ mod lifecycle;
 mod maintenance;
 #[cfg(unix)]
 mod sockets;
+#[cfg(unix)]
+mod uncertainty;
 
 fn config() -> StreamProviderConfig {
     StreamProviderConfig {

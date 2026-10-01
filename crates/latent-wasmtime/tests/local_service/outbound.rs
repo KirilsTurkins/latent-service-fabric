@@ -18,14 +18,7 @@ use tokio::{
 #[path = "../outbound_streams/component.rs"]
 #[allow(dead_code)]
 mod component;
-#[path = "../guest_sdk/package.rs"]
-mod package;
-#[path = "../../../latent-signing/tests/build_provenance/support.rs"]
-#[allow(dead_code)]
-mod provenance;
-#[path = "../generic_backend/support.rs"]
-#[allow(dead_code)]
-mod support;
+use super::runtime::{package, provenance};
 
 fn configuration(port: u16) -> StreamProviderConfig {
     StreamProviderConfig {
