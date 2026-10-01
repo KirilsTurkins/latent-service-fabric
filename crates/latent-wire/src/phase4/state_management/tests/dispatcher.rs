@@ -20,6 +20,116 @@ fn operator(subject: &str) -> AuthenticatedInvocationContext {
         claims: Metadata::from([("latent.node.operator".into(), "true".into())]),
     })
 }
+
+#[tokio::test]
+async fn accepted_namespace_close_invalidates_original_provider_grant_before_more_io() {
+    use latent_effects::authority::{
+        CommitLink, DispatchCeiling, DispatchProfile, EffectRule, EffectScope,
+    };
+    let mut fixture = Fixture::new(true).await;
+    drop(fixture.create().await);
+    let authority = EffectAuthorityOwner::new(16, 4, 100).unwrap();
+    let rule = EffectRule {
+        scope: EffectScope {
+            tenant: "a".into(),
+            namespace: "orders".into(),
+            incarnation: 1,
+            publication: fixture.target().authorization_publication.unwrap().id,
+            binding: "events".into(),
+            operation: "http".into(),
+        },
+        profile: DispatchProfile {
+            provider: "http".into(),
+            destination: "orders".into(),
+            adapter: "http.atomic.v1".into(),
+            intent_format: 1,
+            payload_format: "value.v1".into(),
+            idempotency_profile: "lookup.v1".into(),
+        },
+        policy_revision: 1,
+        credential_epoch: 1,
+        protected_credential_reference: "http-secret".into(),
+        ceiling: DispatchCeiling {
+            maximum_payload_bytes: 1024,
+            maximum_response_bytes: 1024,
+            maximum_attempts: 3,
+            maximum_age_millis: 60_000,
+            attempt_timeout_millis: 30_000,
+        },
+        enabled: true,
+    };
+    authority.publish(rule.clone()).unwrap();
+    let now = EffectTime {
+        unix_millis: 100,
+        continuity_proven: true,
+    };
+    let original = authority
+        .capture(
+            &rule.scope,
+            CommitLink {
+                command: "command".into(),
+                caller_scope: "caller".into(),
+                attempt: 1,
+                commit: "commit".into(),
+                effect: "a".repeat(64),
+                sequence: 0,
+            },
+            1,
+            "b".repeat(64),
+            now,
+        )
+        .unwrap();
+    let mut physical = authority.accept(&original, 1, now).unwrap();
+    let grant = physical
+        .accept_with(&original, 1, now, |grant| grant)
+        .unwrap();
+    let mut owner = DispatcherOwner::start(
+        DispatcherConfig {
+            start_paused: true,
+            ..DispatcherConfig::default()
+        },
+        Arc::clone(&fixture.store),
+        authority.clone(),
+        vec![],
+        Arc::new(move || now),
+        None,
+    )
+    .await
+    .unwrap();
+    Arc::get_mut(&mut fixture.backend.0).unwrap().dispatcher = Some(owner.management_port());
+    let response = fixture
+        .backend
+        .execute_state(
+            context("alice"),
+            fixture
+                .mutation("close-original-grant", c::NamespaceMutationKind::Quiesce, 1)
+                .into(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        grant.check_current(now),
+        Err(latent_effects::authority::AuthorityError::PolicyBlocked)
+    );
+    assert_eq!(authority.owners().unwrap().physical, 1);
+    let mut replacement = rule;
+    replacement.policy_revision = 2;
+    replacement.scope.publication = format!("publication:sha256:{}", "c".repeat(64));
+    assert_eq!(
+        authority.publish(replacement),
+        Err(latent_effects::authority::AuthorityError::PolicyBlocked)
+    );
+    drop(response);
+    physical.retire().unwrap();
+    assert!(
+        owner
+            .shutdown(Instant::now() + std::time::Duration::from_secs(10))
+            .await
+            .unwrap()
+            .clean
+    );
+    fixture.finish().await;
+}
 async fn install(fixture: &mut Fixture) -> (DispatcherOwner, NativeCapacityOwner) {
     let capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
     super::recovery::install(fixture, capacity.clone());

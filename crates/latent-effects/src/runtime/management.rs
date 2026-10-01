@@ -41,6 +41,19 @@ impl DispatcherOwner {
     }
 }
 impl DispatcherManagementPort {
+    /// Call only inside the original Policy -> Namespace lifecycle fence, then
+    /// accept under the original Native request gate before entering disk I/O.
+    pub fn prepare_namespace_close(
+        &self,
+        tenant: &str,
+        namespace: &str,
+        incarnation: u64,
+    ) -> Result<crate::authority::NamespaceEffectCloseFence<'_>, crate::authority::AuthorityError>
+    {
+        self.services
+            .authority
+            .prepare_namespace_close(tenant, namespace, incarnation)
+    }
     #[must_use]
     pub fn uses_store(&self, store: &ProtectedStoreOwner) -> bool {
         self.services.store.is_same_owner(store)
