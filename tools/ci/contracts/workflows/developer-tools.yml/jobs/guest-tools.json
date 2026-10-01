@@ -16,25 +16,25 @@
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
-        "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "uses": "actions/checkout",
         "with": {
           "persist-credentials": false
         }
       },
       {
-        "uses": "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97",
+        "uses": "actions/setup-python",
         "with": {
           "python-version": "3.13.5"
         }
       },
       {
-        "uses": "dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5",
+        "uses": "dtolnay/rust-toolchain",
         "with": {
           "targets": "wasm32-unknown-unknown"
         }
       },
       {
-        "uses": "bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613",
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
           "version": "1.254.0"
         }
@@ -46,7 +46,7 @@
       {
         "id": "compiler-cache",
         "name": "Restore untrusted pinned compiler archives",
-        "uses": "actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25",
+        "uses": "actions/cache/restore",
         "with": {
           "key": "compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}",
           "path": "${{ runner.temp }}/compiler-archives"
@@ -66,7 +66,7 @@
       {
         "if": "steps.compiler-cache.outputs.cache-hit != 'true'",
         "name": "Save independently verified compiler archive bytes",
-        "uses": "actions/cache/save@caa296126883cff596d87d8935842f9db880ef25",
+        "uses": "actions/cache/save",
         "with": {
           "key": "${{ steps.compiler-cache.outputs.cache-primary-key }}",
           "path": "${{ runner.temp }}/compiler-archives"
@@ -78,7 +78,7 @@
       },
       {
         "if": "matrix.language == 'typescript'",
-        "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+        "uses": "actions/setup-node",
         "with": {
           "node-version": "24.19.0"
         }
@@ -96,7 +96,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual watch failure, revision and revocation observations",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-watch-fixtures-${{ github.sha }}",
@@ -107,7 +107,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual workspace isolation and expired original receipt observations",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-workspace-isolation-${{ github.sha }}",
@@ -118,7 +118,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain authenticated immediate-event protocol and cleanup receipts",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-event-fixtures-${{ github.sha }}",
@@ -129,7 +129,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual clock fixtures and node comparison receipts",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-clock-fixtures-${{ github.sha }}",
@@ -140,7 +140,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain authored failures and actual running cancellation",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-failure-fixtures-${{ github.sha }}",
@@ -151,7 +151,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain original-operation recovery and authority receipts",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-recovery-fixtures-${{ github.sha }}",
@@ -162,7 +162,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain authenticated HTTP fixture and comparison receipts",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-http-fixtures-${{ github.sha }}",
@@ -173,7 +173,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual immutable-blob ownership and restart receipts",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-blob-fixtures-${{ github.sha }}",
@@ -184,7 +184,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual scoped secret disclosure and cleanup receipts",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-secret-fixtures-${{ github.sha }}",
@@ -195,7 +195,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual metric exports and joined-owner cleanup receipts",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-metric-fixtures-${{ github.sha }}",
@@ -206,7 +206,7 @@
       {
         "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual local caller and callee receipts",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-local-service-fixtures-${{ github.sha }}",
@@ -216,7 +216,7 @@
       },
       {
         "name": "Retain identical applications for both native execution hosts",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
           "name": "developer-${{ matrix.language }}-applications-${{ github.sha }}",
@@ -232,7 +232,7 @@
       {
         "if": "matrix.language == 'c'",
         "name": "Retain exact C components and shared scenarios",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
           "name": "developer-c-portable-inputs-${{ github.sha }}",
@@ -244,7 +244,7 @@
         "id": "attest",
         "if": "github.event_name != 'pull_request'",
         "name": "Attest guest tool candidate without release authority",
-        "uses": "actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8",
+        "uses": "actions/attest-build-provenance",
         "with": {
           "subject-path": "target/dev-tools/candidate/SHA256SUMS"
         }
@@ -258,7 +258,7 @@
         "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-tools/candidate/attestation.json"
       },
       {
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
           "name": "developer-${{ matrix.language }}-tools-candidate-${{ github.sha }}",
@@ -269,7 +269,7 @@
       {
         "if": "always()",
         "name": "Retain compiler and application evidence",
-        "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "developer-${{ matrix.language }}-builds-${{ github.sha }}",
