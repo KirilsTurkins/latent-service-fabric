@@ -146,3 +146,100 @@ async fn clock_wait_does_not_renew_an_expired_original_admission_lease() {
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
     f.idle();
 }
+
+#[tokio::test]
+async fn real_session_currentness_wait_precedes_store_registration_and_calls_guest_once() {
+    let signed = signed::Fixture::new(true).await;
+    let f = &signed.guest;
+    let held = signed.hold_before_session();
+    let (request, control) = f.request("real-session-contention");
+    let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
+    pending_at_fence(invocation.as_mut(), &held).await;
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 0);
+    assert_eq!(f.broker.snapshot().sessions, 0);
+    assert_eq!(f.backend.resource_snapshot().live_stores, 0);
+    assert_eq!(f.backend.active_instance_reservations(), 1);
+    held.lock().unwrap().take().unwrap().release();
+    let report = invocation.await;
+    let GuestOutcome::Returned { consumption, .. } = report.outcome.unwrap() else {
+        panic!("one original guest must complete after session contention");
+    };
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 2);
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    assert!(control
+        .budget
+        .finalize_at(Some(&consumption), Instant::now())
+        .violation()
+        .is_none());
+    f.idle();
+}
+
+#[tokio::test]
+async fn dropping_real_session_currentness_wait_retires_prepared_owner_without_guest() {
+    let signed = signed::Fixture::new(true).await;
+    let f = &signed.guest;
+    let held = signed.hold_before_session();
+    let (request, control) = f.request("real-session-drop");
+    let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
+    pending_at_fence(invocation.as_mut(), &held).await;
+    assert_eq!(f.broker.snapshot().sessions, 0);
+    assert_eq!(f.backend.resource_snapshot().live_stores, 0);
+    drop(invocation);
+    held.lock().unwrap().take().unwrap().release();
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 0);
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    f.idle();
+}
+
+#[tokio::test]
+async fn real_session_wait_keeps_original_cancellation_and_lease_expiry() {
+    for cancelled in [false, true] {
+        let signed = signed::Fixture::new(true).await;
+        let f = &signed.guest;
+        let held = signed.hold_before_session();
+        let (request, control) = f.request("real-session-stop");
+        let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
+        pending_at_fence(invocation.as_mut(), &held).await;
+        if cancelled {
+            control.probe.0.store(true, Ordering::Release);
+        } else {
+            signed.expire_original_lease();
+        }
+        held.lock().unwrap().take().unwrap().release();
+        let report = invocation.await;
+        if cancelled {
+            assert!(matches!(
+                report.outcome.unwrap(),
+                GuestOutcome::Interrupted { .. }
+            ));
+        } else {
+            let error = report.outcome.unwrap_err();
+            assert_eq!(error.code, latent_core::PlatformErrorCode::Unavailable);
+            assert!(error.details.iter().any(|detail| detail
+                .fields
+                .get("reason")
+                .map(String::as_str)
+                == Some("admission-clock-lease-uncovered")));
+        }
+        assert_eq!(f.clock.calls.load(Ordering::Acquire), 0);
+        assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+        f.idle();
+    }
+}
+
+#[tokio::test]
+async fn legacy_session_without_timer_fails_closed_before_store_or_guest() {
+    let signed = signed::Fixture::new(false).await;
+    let f = &signed.guest;
+    let held = signed.hold_before_session();
+    let (request, control) = f.request("real-session-legacy");
+    let report = f.backend.invoke_contained(request, &control).await;
+    held.lock().unwrap().take().unwrap().release();
+    assert_eq!(
+        report.outcome.unwrap_err().code,
+        latent_core::PlatformErrorCode::Unavailable
+    );
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 0);
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    f.idle();
+}
