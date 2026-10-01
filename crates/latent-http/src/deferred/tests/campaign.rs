@@ -62,7 +62,7 @@ async fn provider_cancellation_during_tls_or_reply_retires_actual_socket_before_
         let effect = fixture.commit("provider-cancel").await;
         fixture.owner.as_ref().unwrap().resume().unwrap();
         fixture.proxy.wait_gate().await;
-        assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 1);
+        assert_eq!(fixture.pool_snapshot().await.running_requests, 1);
         assert_eq!(fixture.endpoint.counter().await, u64::from(after_mutation));
         fixture.pools.retire();
         let record = fixture
@@ -84,8 +84,8 @@ async fn provider_cancellation_during_tls_or_reply_retires_actual_socket_before_
             }
         );
         assert_eq!(record.attempts(), 1);
-        assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
-        assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 0);
+        assert_eq!(fixture.pool_snapshot().await.connections, 0);
+        assert_eq!(fixture.pool_snapshot().await.running_requests, 0);
         fixture.proxy.release();
         assert_eq!(
             fixture.proxy.posts.load(Ordering::Acquire),
@@ -146,8 +146,8 @@ async fn operator_lookup_confirms_exact_original_history_and_row_version_without
             .unwrap()
             .unwrap();
         let outcome = lookup.await;
-        assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 0);
-        assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
+        assert_eq!(fixture.pool_snapshot().await.running_requests, 0);
+        assert_eq!(fixture.pool_snapshot().await.connections, 0);
         physical.retire().unwrap();
         match outcome {
             ProviderReconciliationOutcome::Confirmed(confirmation) => {
@@ -263,7 +263,7 @@ async fn lost_mutation_reply_recovers_only_by_lookup_with_one_durable_remote_mut
     let first = fixture.settled(&effect, Disposition::RetryScheduled).await;
     assert_eq!(first.latest().unwrap().disposition, Disposition::Uncertain);
     assert_eq!(fixture.endpoint.counter().await, 1);
-    assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 0);
+    assert_eq!(fixture.pool_snapshot().await.running_requests, 0);
     fixture.clock.0.store(200, Ordering::Release);
     let recovered = fixture
         .settled(&effect, Disposition::ProviderAcknowledged)
@@ -454,7 +454,7 @@ async fn credential_rotation_and_current_revocation_after_connect_reject_before_
         fixture.settled(&effect, Disposition::PolicyBlocked).await;
         assert_eq!(fixture.endpoint.counter().await, 0);
         assert_eq!(fixture.proxy.posts.load(Ordering::Acquire), 0);
-        assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
+        assert_eq!(fixture.pool_snapshot().await.connections, 0);
         fixture.finish().await;
     }
 }
@@ -466,7 +466,7 @@ async fn original_shutdown_cutoff_retains_real_request_root_role_and_buffers_unt
     fixture.owner.as_ref().unwrap().resume().unwrap();
     fixture.proxy.wait_gate().await;
     assert_eq!(fixture.endpoint.counter().await, 1);
-    assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 1);
+    assert_eq!(fixture.pool_snapshot().await.running_requests, 1);
     let report = fixture
         .owner
         .as_mut()
@@ -488,19 +488,31 @@ async fn original_shutdown_cutoff_retains_real_request_root_role_and_buffers_unt
     .await
     .is_err());
     assert_eq!(fixture.record(&effect).await.attempts(), 1);
-    assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 1);
+    assert_eq!(fixture.pool_snapshot().await.running_requests, 1);
     fixture.proxy.release();
     tokio::time::timeout(WATCHDOG, async {
-        while fixture.pools.snapshot().unwrap().running_requests != 0
-            || fixture
-                .owner
-                .as_ref()
-                .unwrap()
-                .snapshot()
-                .unwrap()
-                .physical_owners
-                != 0
-        {
+        loop {
+            let requests_retired = match fixture.pools.snapshot() {
+                Ok(snapshot) => snapshot.running_requests == 0,
+                Err(error) if error.code == latent_core::PlatformErrorCode::ResourceExhausted => {
+                    false
+                }
+                Err(error) => panic!("provider retirement observation failed: {error:?}"),
+            };
+            if requests_retired
+                && fixture
+                    .owner
+                    .as_ref()
+                    .unwrap()
+                    .snapshot()
+                    .unwrap()
+                    .physical_owners
+                    == 0
+            {
+                break;
+            }
+            // Busy bookkeeping is not a retirement proof. Only both actual
+            // owner counts above permit the final cleanup assertions.
             tokio::task::yield_now().await;
         }
     })
@@ -549,7 +561,7 @@ async fn unsafe_or_generic_endpoint_profiles_cannot_open_a_provider_connection()
     };
     assert!(valid.validate(&unsafe_peer).is_err());
     assert!(fixture.proxy.requests.lock().unwrap().is_empty());
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
+    assert_eq!(fixture.pool_snapshot().await.connections, 0);
     fixture.finish().await;
 }
 

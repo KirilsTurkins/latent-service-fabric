@@ -274,6 +274,26 @@ pub struct Fixture {
     _policies: Arc<PolicyStore>,
 }
 impl Fixture {
+    pub async fn pool_snapshot(&self) -> latent_capabilities::broker::pools::ProviderPoolSnapshot {
+        tokio::time::timeout(WATCHDOG, async {
+            loop {
+                match self.pools.snapshot() {
+                    Ok(snapshot) => return snapshot,
+                    Err(error)
+                        if error.code == latent_core::PlatformErrorCode::ResourceExhausted =>
+                    {
+                        // The read-only status probe races finite bookkeeping.
+                        // Busy never supplies a physical retirement witness.
+                        tokio::task::yield_now().await;
+                    }
+                    Err(error) => panic!("provider status observation failed: {error:?}"),
+                }
+            }
+        })
+        .await
+        .expect("finite provider status bookkeeping")
+    }
+
     pub async fn new(fault: proxy::Fault) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);

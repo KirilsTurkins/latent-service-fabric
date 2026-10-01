@@ -95,6 +95,6 @@ async fn synchronous_acceptance_does_not_reverse_actual_role_and_effect_lock_ord
     command.retire();
     drop(adapter);
     assert!(fixture.proxy.requests.lock().unwrap().is_empty());
-    assert_eq!(fixture.pools.snapshot().unwrap().running_requests, 0);
+    assert_eq!(fixture.pool_snapshot().await.running_requests, 0);
     fixture.finish().await;
 }
