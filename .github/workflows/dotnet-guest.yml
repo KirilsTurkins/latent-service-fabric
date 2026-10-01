@@ -7,13 +7,20 @@ on:
       - 'tools/dotnet_guest*'
       - 'tools/dotnet_guest/**'
       - 'tools/dotnet_capsule.py'
+      - 'tools/dotnet_application_dependencies.py'
+      - 'tools/dotnet_dependency_fixture.py'
+      - 'tools/dotnet_compiler_isolation.py'
+      - 'tools/application_dependenc*.py'
+      - 'tools/captured_compiler_isolation.py'
       - 'tools/*dotnet*guest*capsules.py'
       - 'tools/*dotnet_capsule*.py'
       - 'tools/*rust_capsule*.py'
       - 'tools/guest_runtime_grants.py'
       - 'tools/wait_capsule_audit_idle.py'
       - 'tools/tests/test_dotnet_capsule_authoring.py'
+      - 'tools/tests/test_dotnet_application_dependencies.py'
       - 'docs/component-development/dotnet-authoring.md'
+      - 'docs/component-development/dotnet-dependencies.md'
       - 'crates/latent-signing/**'
       - 'crates/latent-packaging/**'
       - 'crates/latent-policy/**'
@@ -98,6 +105,11 @@ jobs:
           mkdir -p "$RUNNER_TEMP/dotnet-guest"
           git rev-parse HEAD > "$RUNNER_TEMP/dotnet-guest/revision.txt"
           cmp wit/platform/clock/package.wit sdk/dotnet-guest/runtime/wit/deps/latent-clock.wit
+      - name: Install captured NativeAOT namespace and loader inputs
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap libgdbm6t64 libreadline8t64 libsqlite3-0 liblttng-ust1t64 libtcl8.6 libtk8.6
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install the pinned native compiler and closed runtime
         shell: bash
         run: |
@@ -115,6 +127,9 @@ jobs:
         run: |
           python3 -m pip install -r tools/requirements.lock
           python3 -m unittest tools.tests.test_dotnet_capsule_authoring tools.tests.test_build_provenance_schemas
+      - name: Test captured NuGet selection and compiler isolation
+        run: |
+          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_dotnet_application_dependencies tools.tests.test_captured_compiler_isolation
       - name: Generate and independently check current typed guest bindings
         run: |
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dotnet-guest/tools"
@@ -149,6 +164,10 @@ jobs:
           "$tools/wac" plug "$RUNNER_TEMP/dotnet-guest/raw.wasm" --plug "$RUNNER_TEMP/dotnet-guest/runtime.wasm" -o "$RUNNER_TEMP/dotnet-guest/component.wasm"
           wasm-tools validate "$RUNNER_TEMP/dotnet-guest/component.wasm"
           wasm-tools component wit "$RUNNER_TEMP/dotnet-guest/component.wasm" | tee "$RUNNER_TEMP/dotnet-guest/admitted.wit"
+      - name: Validate reviewed resource-alias composer
+        run: |
+          "$RUNNER_TEMP/dotnet-authoring-tools/component-composer/wac" plug "$RUNNER_TEMP/dotnet-guest/raw.wasm" --plug "$RUNNER_TEMP/dotnet-guest/runtime.wasm" -o "$RUNNER_TEMP/dotnet-guest/reviewed-composer.wasm"
+          wasm-tools validate "$RUNNER_TEMP/dotnet-guest/reviewed-composer.wasm"
       - name: Execute LSF authority and fresh-heap qualification
         env:
           LSF_DOTNET_PROBE: ${{ runner.temp }}/dotnet-guest
@@ -157,7 +176,11 @@ jobs:
           set -o pipefail
           cargo test --quiet -p latent-wasmtime --test dotnet_guest --locked -- --ignored --nocapture --test-threads=1 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/execution.log"
       - name: Qualify captured projects, all SDK owners, enforced node and printed guide
-        run: python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-authoring" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+        run: |
+          python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-authoring" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+      - name: Qualify captured NuGet libraries and embedded resources
+        run: |
+          python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-dependencies" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --application-dependencies
       - name: Retain output and failed attempts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -166,6 +189,7 @@ jobs:
           path: |
             ${{ runner.temp }}/dotnet-guest/
             ${{ runner.temp }}/dotnet-capsule-authoring/
+            ${{ runner.temp }}/dotnet-capsule-dependencies/
             ${{ runner.temp }}/dotnet-authoring-tools/logs/
             ${{ runner.temp }}/dotnet-authoring-tools/INSTALL-COMPLETE.json
             ${{ runner.temp }}/dotnet-authoring-tools/runtime-inputs.json

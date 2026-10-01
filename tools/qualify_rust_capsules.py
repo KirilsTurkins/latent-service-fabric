@@ -60,8 +60,11 @@ def inputs(language="rust"):
                     "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
-                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/sdk.py",
+                    "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/sdk.py",
                     "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
+                    'application_dependencies.py', 'application_dependency_store.py', 'application_dependency_tools.py',
+                    'application_dependency_approval.py', 'captured_compiler_isolation.py', 'dotnet_compiler_isolation.py',
+                    'dotnet_application_dependencies.py', 'dotnet_dependency_fixture.py',
                     "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
@@ -212,6 +215,12 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 result["applicationDependencies"] = install(project, output / "outside-project-dependencies", Path(go).resolve(strict=True))
                 write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
                 stage = "standalone-builds"
+            if language == 'dotnet' and application_dependencies and template == 'greeting':
+                from tools.dotnet_dependency_fixture import install
+                stage = 'application-dependency-capture'
+                result['applicationDependencies'] = install(project, output / 'outside-project-dependencies', dotnet_tools)
+                write_json(output / 'application-dependency-fixture.json', result['applicationDependencies'])
+                stage = 'standalone-builds'
             artifact = builder(project, output / "builds" / template, binaries["examples/capsule_contracts"],
                 binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric",
                 **({"offline": offline or executable_approval is not None, "executable_approval": executable_approval} if language == "rust" else

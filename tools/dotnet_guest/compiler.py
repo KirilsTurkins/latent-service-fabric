@@ -70,11 +70,13 @@ def packages(lock: dict, directory: Path, content_hash) -> dict[str, Path]:
 
 
 class Compiler:
-    def __init__(self, tools: Path, commands, vendor: Path, *, offline: bool = False):
+    def __init__(self, tools: Path, commands, vendor: Path, *, offline: bool = False, captured: bool = False):
         if sys.platform != "linux" or platform.machine() not in {"x86_64", "AMD64"}:
             raise ValueError("the pinned NativeAOT LLVM compiler is qualified only on Linux x86-64")
         self.tools, self.commands, self.vendor = tools.resolve(strict=True), commands, vendor
-        self.offline = offline
+        self.offline = offline or captured
+        self.isolation, self.application_closure = None, None
+        self.python, self.package_cache = Path(sys.executable).resolve(strict=True), self.tools / 'packages'
         self.sdk = vendor / "sdk/dotnet-guest"
         self.dotnet = Path(shutil.which("dotnet", path=commands.environment["PATH"]) or "missing-dotnet").resolve(strict=True)
         self.wasm = Path(shutil.which("wasm-tools", path=commands.environment["PATH"]) or "missing-wasm-tools").resolve(strict=True)
@@ -99,6 +101,7 @@ class Compiler:
         self.roots = {"dotnet-sdk": Path(matches[0]) / SDK_VERSION,
                       "dotnet-runtime": installation / "shared/Microsoft.NETCore.App/10.0.0",
                       "dotnet-ref": installation / "packs/Microsoft.NETCore.App.Ref/10.0.0",
+                      "dotnet-ref-aspnet": installation / "packs/Microsoft.AspNetCore.App.Ref/10.0.0",
                       "dotnet-hostfxr": installation / "host/fxr"}
         self.roots["package-hash"] = tools / "package-hash"
         if snapshot(tools / "package-hash-source") != snapshot(self.sdk / "tools/package-hash"):
@@ -113,68 +116,140 @@ class Compiler:
         self.runtime = tools / "runtime.wasm"
         if read_file(tools / "runtime-inputs.json") != runtime_inputs(vendor):
             raise ValueError("installed closed runtime source capture differs from the project SDK")
-        self.wac = tools / "packages/bytecodealliance.componentize.dotnet.wasm.sdk" / COMPONENT_VERSION / "tools/linux-x64/wac"
+        from tools.dotnet_guest.composer import observed as observed_composer, selection as composer_selection
+        bundled_composer = tools / "packages/bytecodealliance.componentize.dotnet.wasm.sdk" / COMPONENT_VERSION / "tools/linux-x64/wac"
+        self.wac = observed_composer(tools, self.sdk)
+        self.roots['component-composer'] = tools / 'component-composer'
+        self.compiler_patches = [{
+            'name': 'wac-imported-resource-alias-v1', 'profile': 'dotnet-native-aot-component-v1',
+            'original': file_identity(bundled_composer, 'sdk-bundled-component-composer'),
+            'selected': file_identity(self.wac, 'component-composer'), 'selection': composer_selection(self.sdk)}]
+        if commands.run('component-composer-version', self.wac, '--version').strip() != b'wac-cli 0.10.1':
+            raise ValueError('unreviewed component composer version')
         self.materials = [file_identity(path, name) for name, path in (
-            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen), ("closed-runtime", self.runtime))]
+            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen), ("closed-runtime", self.runtime),
+            ('component-composer', self.wac))]
         self.before = tree_identity(self.roots)
+        if captured:
+            from tools.dotnet_compiler_isolation import stage
+            self.isolation = stage(self, commands.root.parent)
+
+    def run(self, name, executable, *arguments):
+        executable = Path(executable).resolve(strict=True)
+        if self.isolation is None:
+            return self.commands.run(name, executable, *arguments)
+        return self.commands.run(name, *self.isolation.wrap(executable, [str(value) for value in arguments],
+            self.commands.root, self.commands.environment))
 
     def compile(self, work: Path, world: str, output: Path):
+        if self.isolation is not None and not output.resolve().is_relative_to(self.isolation.workspace):
+            raise ValueError('NativeAOT-output-outside-captured-build-workspace')
         output.mkdir()
         command, source = self.commands, work / "wit"
         generated = output / "generated"
         binding = work / "vendor/lsf/tools/dotnet_guest_bindings.py"
-        command.run("bindings", sys.executable, "-I", "-B", binding, "c-sharp", source, "--world", world,
+        self.run("bindings", self.python, "-I", "-B", binding, "c-sharp", source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated)
-        command.run("bindings-drift", sys.executable, "-I", "-B", binding, "c-sharp", source, "--world", world,
+        self.run("bindings-drift", self.python, "-I", "-B", binding, "c-sharp", source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated, "--check")
         receipt = json.loads(read_file(generated / "bindings.json", 16 * 1024 * 1024))
         project = output / "project"
         project.mkdir()
+        resource_inputs = set()
+        if self.application_closure is not None:
+            from tools.dotnet_application_dependencies import declarations, configure
+            selected = declarations(snapshot(work, exclude=('dependencies', 'application-vendor')))
+            resource_inputs = {row['attributes']['Include'] for key in ('resources', 'trimmingDescriptors') for row in selected[key] if row['active']}
         for name, data in snapshot(work / "src").items():
-            if not name.endswith(".cs"):
+            if not name.endswith(".cs") and 'src/' + name not in resource_inputs:
                 raise ValueError("unsupported C# application input; put sources in src/*.cs")
             path = project / "src" / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
+        for name in sorted(resource_inputs):
+            if name.startswith('src/'):
+                continue
+            path = project / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(read_file(work / name))
         for name, data in {
             "Capsule.csproj": read_file(work / "Capsule.csproj"),
             "global.json": read_file(self.sdk / "global.json"),
             "nuget.config": read_file(self.sdk / "nuget.config"),
-            "packages.lock.json": read_file(self.sdk / "probes/smoke/packages.lock.json"),
-            "component.wit": command.run("canonical-wit", self.wasm, "component", "wit", source, "--no-docs"),
+            "packages.lock.json": read_file(work / 'packages.lock.json') if self.application_closure else read_file(self.sdk / "probes/smoke/packages.lock.json"),
+            "component.wit": self.run("canonical-wit", self.wasm, "component", "wit", source, "--no-docs"),
         }.items():
             (project / name).write_bytes(data)
         facades = install_sdk(self.sdk, generated, project / "lsf")
+        if self.application_closure is not None:
+            selected = configure(self.application_closure, work, self.package_cache)
+            self.cache_before = tree_identity({'nuget-packages': self.package_cache})
+            write_json(command.output / 'nuget-build-inputs.json', selected)
+            self.isolation.protect_inputs(self.package_cache, work, project / 'src', project / 'lsf', project / 'Capsule.csproj', project / 'component.wit')
+            for name in resource_inputs:
+                self.isolation.protect_inputs(project / name)
         if self.offline:
             # All locked packages must already be present. An empty source list
             # prohibits restore from silently reaching the network on a miss.
             (project / "nuget.config").write_text(
                 '<configuration><packageSources><clear /></packageSources></configuration>\n', encoding="utf-8")
-        command.run("locked-restore", self.dotnet, "restore", project / "Capsule.csproj", "--configfile",
-            project / "nuget.config", "--locked-mode", "--packages", self.tools / "packages", "--disable-parallel",
-            "-p:NuGetAudit=false")
+        self.run("locked-restore", self.dotnet, "restore", project / "Capsule.csproj", "--configfile",
+            project / "nuget.config", "--locked-mode", "--packages", self.package_cache, "--disable-parallel",
+            "-p:NuGetAudit=false", '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')
+        if self.application_closure is not None:
+            from tools.dotnet_application_dependencies import analyze
+            declared = declarations(snapshot(work, exclude=('dependencies', 'application-vendor')))
+            actual_selection = analyze(json.loads(read_file(project / 'packages.lock.json')),
+                json.loads(read_file(project / 'obj/project.assets.json', 16 * 1024 * 1024)),
+                json.loads(read_file(self.sdk / 'probes/smoke/packages.lock.json')), declared)
+            expected = json.loads(read_file(work / 'nuget-resolved.lock.json', 16 * 1024 * 1024))
+            expected_rows = [{key: value for key, value in row.items() if key not in {'originalDigest', 'originalSize'}} for row in expected['packages']]
+            if actual_selection['packages'] != expected_rows:
+                expected_by_id = {row['package'] + '/' + row['version']: row for row in expected_rows}
+                actual_by_id = {row['package'] + '/' + row['version']: row for row in actual_selection['packages']}
+                write_json(command.output / 'nuget-asset-selection-drift.json', {'formatVersion': 1,
+                    'expectedDigest': digest(json.dumps(expected_rows, sort_keys=True).encode()),
+                    'actualDigest': digest(json.dumps(actual_selection['packages'], sort_keys=True).encode()),
+                    'differences': [{'id': identity, 'fields': {key: {'expected': expected_by_id.get(identity, {}).get(key),
+                        'actual': actual_by_id.get(identity, {}).get(key)} for key in
+                        set(expected_by_id.get(identity, {})) | set(actual_by_id.get(identity, {}))
+                        if expected_by_id.get(identity, {}).get(key) != actual_by_id.get(identity, {}).get(key)}}
+                        for identity in sorted(set(expected_by_id) | set(actual_by_id))
+                        if expected_by_id.get(identity) != actual_by_id.get(identity)]})
+                raise ValueError('offline-NuGet-native-asset-selection-differs-from-reviewed-capture')
         # The upstream SDK interpolates WitBindgenExe into a shell Exec task.
         # Give it one ASCII-only owned path. Actual Python/source paths remain
         # literal quoted arguments, including spaces, Unicode and metacharacters.
         # This finite wrapper is private and retired after the owned process.
-        with tempfile.TemporaryDirectory(prefix="lsf-dotnet-bindgen-", dir="/tmp") as wrapper_root:
+        with tempfile.TemporaryDirectory(prefix="lsf-dotnet-bindgen-", dir=str(output) if self.isolation else "/tmp") as wrapper_root:
             wrapper = Path(wrapper_root) / "wit-bindgen"
-            script = "#!/bin/sh\nexec " + shlex.join([sys.executable, "-I", "-B", str(binding)]) + ' "$@"\n'
+            if self.isolation:
+                self.commands.environment['LSF_CAPTURED_BINDING'] = str(binding)
+                script = '#!/bin/sh\nexec "$LSF_CAPTURED_PYTHON" -I -B "$LSF_CAPTURED_BINDING" "$@"\n'
+            else:
+                script = "#!/bin/sh\nexec " + shlex.join([sys.executable, "-I", "-B", str(binding)]) + ' "$@"\n'
             if len(script.encode()) > 16384:
                 raise ValueError("binding wrapper path limit exceeded")
             wrapper.write_text(script, encoding="utf-8")
             wrapper.chmod(0o700)
-            command.run("native-aot", self.dotnet, "build", project / "Capsule.csproj", "-c", "Release", "--no-restore",
+            if self.isolation:
+                self.isolation.protect_inputs(wrapper)
+            self.run("native-aot", self.dotnet, "build", project / "Capsule.csproj", "-c", "Release", "--no-restore",
                 "-nodeReuse:false", "-p:UseSharedCompilation=false", "-p:WasiSdkRoot=" + str(self.wasi_sdk),
-                "-p:WitBindgenExe=" + str(wrapper))
+                "-p:WitBindgenExe=" + str(wrapper), '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false',
+                *(['-p:EmitCompilerGeneratedFiles=true', '-p:CompilerGeneratedFilesOutputPath=' + str(output / 'generator-outputs')] if self.application_closure else []))
+            if self.isolation:
+                if wrapper.read_text() != script:
+                    raise ValueError('SDK-owned-binding-wrapper-mutated')
+                self.isolation.read_only_inputs.remove(wrapper)
         actual = list((project / "obj").rglob("bindings.json"))
         if len(actual) != 1 or json.loads(read_file(actual[0], 16 * 1024 * 1024))["outputs"] != receipt["outputs"]:
             raise ValueError("actual NativeAOT binding inputs differ from independent drift generation")
         raw = project / "bin/Release/net10.0/wasi-wasm/publish/Capsule.wasm"
         component = output / "component.wasm"
-        command.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", self.runtime, "-o", component)
-        command.run("validate", self.wasm, "validate", component)
-        surface = command.run("surface", self.wasm, "component", "wit", component).decode()
+        self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", self.runtime, "-o", component)
+        self.run("validate", self.wasm, "validate", component)
+        surface = self.run("surface", self.wasm, "component", "wit", component).decode()
         if "import wasi:" in surface or "wasi_snapshot_preview1" in surface:
             raise ValueError("ambient WASI import survived the closed runtime composition")
         (output / "component.wit").write_text(surface, encoding="utf-8")
@@ -185,6 +260,11 @@ class Compiler:
         if tree_identity(self.roots) != self.before:
             raise ValueError("observed .NET compiler inputs changed during build")
         after = [file_identity(path, name) for name, path in (
-            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen), ("closed-runtime", self.runtime))]
+            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen), ("closed-runtime", self.runtime),
+            ('component-composer', self.wac))]
         if after != self.materials:
             raise ValueError(".NET compiler or runtime adapter changed during build")
+        if self.isolation:
+            self.isolation.check_unchanged()
+            if self.application_closure and tree_identity({'nuget-packages': self.package_cache}) != self.cache_before:
+                raise ValueError('captured-NuGet-compiler-cache-mutated')

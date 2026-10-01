@@ -13,13 +13,20 @@
           "tools/dotnet_guest*",
           "tools/dotnet_guest/**",
           "tools/dotnet_capsule.py",
+          "tools/dotnet_application_dependencies.py",
+          "tools/dotnet_dependency_fixture.py",
+          "tools/dotnet_compiler_isolation.py",
+          "tools/application_dependenc*.py",
+          "tools/captured_compiler_isolation.py",
           "tools/*dotnet*guest*capsules.py",
           "tools/*dotnet_capsule*.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
           "tools/wait_capsule_audit_idle.py",
           "tools/tests/test_dotnet_capsule_authoring.py",
+          "tools/tests/test_dotnet_application_dependencies.py",
           "docs/component-development/dotnet-authoring.md",
+          "docs/component-development/dotnet-dependencies.md",
           "crates/latent-signing/**",
           "crates/latent-packaging/**",
           "crates/latent-policy/**",
@@ -40,7 +47,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain NativeAOT qualification and select dependency/isolation/resource fixture changes.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

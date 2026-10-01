@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Capture Go native module inputs and exercise the real local/transitive/embed fixture in the signed workflow.",
+  "reviewReason": "Review outside NuGet/transitive embedded-resource fixture integration while preserving all six language qualification paths.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "44a9a9867ceb37c303f783cb5596d54062ff9317f513f4c2acaa2aa6abba02bb"
+  "sha256": "fc688c47876b7ad1a1141a44f222d3d20f2983e535cf742c670800dc216b8c96"
 }

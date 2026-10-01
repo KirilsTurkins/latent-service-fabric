@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Review separate NuGet resolve candidate, exact executable approval, checksum-pinned composer resource alias fix and unchanged source-only entrypoints.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5f91abb33e0e81a962c1dd3305adcefba477a2bbb51bbb2f42b901cead9a49af"
+  "sha256": "76ffaeeb71248112109bdc8331076a169881e711464e07f6b43e0011d2fb8815"
 }

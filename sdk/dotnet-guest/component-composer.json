@@ -1,0 +1,9 @@
+{
+  "formatVersion": 1,
+  "version": "0.10.1",
+  "target": "x86_64-unknown-linux-musl",
+  "size": 21726840,
+  "digest": "sha256:250c11762916ba733c7d22b62487580f21270ec9dde4f13460ea69d300e25406",
+  "url": "https://github.com/bytecodealliance/wac/releases/download/v0.10.1/wac-cli-x86_64-unknown-linux-musl",
+  "upstreamFix": "https://github.com/bytecodealliance/wac/pull/205"
+}
