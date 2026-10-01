@@ -112,6 +112,16 @@ impl<S: Send + Sync + 'static> StoreIoStartup<S> {
         }
     }
 
+    /// Nonblocking joins of actual finished startup workers. An initializer or
+    /// dropped awaiter never certifies retirement; delivery moves this owner to
+    /// `StoreIoReady` and makes the startup handle unavailable.
+    pub fn reap_retired_threads(&self) -> Result<usize, StoreIoError> {
+        self.owner
+            .as_ref()
+            .ok_or(StoreIoError::AlreadyDelivered)?
+            .reap_retired_threads()
+    }
+
     pub fn drain_async<F: Future<Output = ()>>(
         &self,
         deadline: Instant,
