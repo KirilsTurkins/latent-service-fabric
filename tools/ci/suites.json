@@ -4968,6 +4968,7 @@
         "recovery::restore::tests::restore_review_refuses_unacknowledged_wrong_runtime_scope_stale_window_and_changed_roster",
         "recovery::resume::tests::explicit_namespace_resume_preserves_restored_ids_and_original_lost_response_receipt",
         "recovery::resume::tests::namespace_resume_receipt_rejects_truncation_trailing_bytes_and_wrong_physical_identity",
+        "recovery::resume::tests::namespace_resume_row_dispatch_preserves_foreign_bytes_and_rejects_malformed_owned_receipts",
         "recovery::resume::tests::resume_rechecks_final_authority_and_exact_history_and_rejects_stale_or_changed_plans",
         "recovery::snapshot::tests::actual_engine_snapshot_stream_retains_exact_rows_and_source_schema_history",
         "recovery::snapshot::tests::interrupted_corrupt_unsupported_and_trailing_streams_never_produce_a_usable_receipt",
@@ -5037,7 +5038,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 163,
+      "minimumCases": 164,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

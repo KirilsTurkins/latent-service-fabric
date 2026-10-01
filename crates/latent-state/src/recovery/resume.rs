@@ -229,10 +229,11 @@ impl NamespaceResumeReceipt {
         Ok(receipt)
     }
     pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+        if key.family != Family::Maintenance || !key.key.starts_with(RECEIPT_PREFIX) {
+            return Err(StoreError::UnsupportedFormat);
+        }
         let receipt = Self::decode(bytes)?;
-        if key.family != Family::Maintenance
-            || key.key.len() != RECEIPT_PREFIX.len() + 32
-            || !key.key.starts_with(RECEIPT_PREFIX)
+        if key.key.len() != RECEIPT_PREFIX.len() + 32
             || key.key[RECEIPT_PREFIX.len()..] != receipt.key_digest
         {
             return Err(StoreError::Corrupt);
