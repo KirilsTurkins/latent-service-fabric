@@ -27,7 +27,8 @@ def recipe_inputs() -> dict[str, str]:
 def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None):
     output = fresh(output)
     fixture = ROOT / "sdk/java-guest/fibers/conformance"
-    source = output / "src/dev/latent/app/Capsule.java"
+    # Exercise real source attribution independently of package-directory layout.
+    source = output / "src/Capsule.java"
     source.parent.mkdir(parents=True)
     source.write_bytes(read_file(fixture / "Capsule.java"))
     wit = output / "wit/service.wit"
@@ -40,11 +41,6 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
     report["recipeInputs"] = before
     try:
         compiler = Compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache, timeout=1200)
-        component, report["record"] = compiler.compile(output / "src", wit.parent,
-            "tests:caller/service@1.0.0", output / "build", activation_profile=True)
-        compiler.check_unchanged()
-        report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
-        report["componentDigest"] = digest(read_file(component, 64 * 1024 * 1024))
         control = output / "reference-jdk"
         control.mkdir()
         main = control / "Main.java"
@@ -54,8 +50,13 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         report["reference"] = []
         for iteration in range(3):
             result = compiler.run(f"reference-jdk-{iteration}", "java", "-cp", control, "Main")
-            if result.strip() != "42": raise ValueError("reference-JDK fiber observable mismatch")
-            report["reference"].append({"iteration": iteration, "result": 42})
+            if result.strip() != "42 42 42": raise ValueError("reference-JDK fiber observable mismatch")
+            report["reference"].append({"iteration": iteration, "modes": [0, 1, 2], "results": [42, 42, 42]})
+        component, report["record"] = compiler.compile(output / "src", wit.parent,
+            "tests:caller/service@1.0.0", output / "build", activation_profile=True)
+        compiler.check_unchanged()
+        report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
+        report["componentDigest"] = digest(read_file(component, 64 * 1024 * 1024))
         compiler.check_unchanged()
         if recipe_inputs() != before: raise ValueError("Java fiber qualification recipe changed during preparation")
         report["commands"] = compiler.records

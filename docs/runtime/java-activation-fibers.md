@@ -23,9 +23,36 @@ objects, continuation arrays and events remain inside the original accounted
 linear-memory allocation. Shared runtime task/wait records retain their original
 native reservations until actual physical destruction.
 
+The pending SDK class-library implementation supplies `Executors.newSingleThreadExecutor`
+and `newFixedThreadPool`, including ordinary `ThreadFactory` overloads. Each pool
+has its own FIFO queue and honors its requested parallelism with lazy Java worker
+fibers. Submissions reserve executor, queued-work and pending-result records;
+blocked future and termination waits reserve wait records. A cancelled running
+future keeps its pending-result owner until the callable's physical `finally`
+finishes. Completed results and returned queued tasks stay inside the accounted
+Java heap. All logical ceilings come from the explicit host runtime configuration.
+
+`FutureTask` supports runnable/callable construction, pending get, timed get,
+completion/error/cancellation, readable result state, and subclass `done` callbacks.
+A callback runs outside the future's monitor, so another thread can read a
+completed result while that callback blocks. `AbstractExecutorService` implements
+standard submit, ordered `invokeAll` and first-successful-completion `invokeAny`.
+Factories and class substitutions apply only to these exact standard classes;
+application and library API references remain unchanged. TimeUnit conversions
+saturate and finite waits preserve positive submillisecond timeouts.
+
+Root completion closes independent admission, while accepted application threads
+and running callbacks may still submit necessary continuations. Idle pool workers
+remain available during that drain. Once no accepted application work remains,
+the pump retires idle workers, executes their ordinary finally blocks, and settles
+the executor owners. Explicit `shutdown`/`shutdownNow` and `close` keep their
+standard rejection, queue-return, interruption and await-termination behavior.
+
 Compiler checkpoints are selected from actual application class files and the
 captured JAR closure, without a package allowlist or loading application classes
-in the compiler JVM. A bounded source-origin index and its digest are retained
+in the compiler JVM. The trusted javac parser reads declared packages; input
+directory layout does not determine class ownership. Package/SourceFile ambiguity
+fails closed. A bounded source-origin index and its digest are retained
 with the compilation. SDK plugin services are separate from application compiler
 extension services. Loop headers use the maintained Thread context-switch path.
 Class initializers and explicitly unmanaged methods are excluded; their fairness
@@ -50,11 +77,21 @@ Selecting the signed case without its prepared component fails. The Java CI lane
 prepares and executes it explicitly; normal runtime tests do not install a
 compiler or silently skip a missing fixture. Three fresh signed/admitted
 activations verify ordinary thread start, a sleeping worker, ThreadLocal
-isolation, join, and a volatile flag loop without explicit yield. Every invocation
-checks real Store, broker, activation and cell reclamation. The same unmodified
-application source returns 42 in three separate reference-JDK executions.
+isolation, join, and a volatile flag loop without explicit yield. Prepared additional modes
+cover independent pools, future exceptions and interruption/cancellation,
+timeouts, a blocking completion callback, ordered batches and first-successful
+completion. A root-return mode supplies idle and pending pools without application
+shutdown glue. Every invocation checks real Store, broker, activation and cell
+reclamation. The unchanged application source runs all three modes in each of
+three separate reference-JDK processes; only the reference harness terminates its
+ordinary process-owned pools. The last attempted expanded executor component
+failed in its signed guest run. The subsequent monitor-continuation changes have
+not yet completed pinned component and signed-node execution; the executor and
+root-return modes remain unqualified. Reference-JDK success and successful
+component generation do not establish their guest behavior. Complete failed
+attempts are retained separately.
 
-The pinned Linux debug experiment measured 9241560 bytes of activation peak
+The original thread-only pinned Linux debug experiment measured 9241560 bytes of activation peak
 memory in each run under the unchanged 67108864-byte ceiling. The first run
 included cold preparation at 14.73 seconds; subsequent runs took 112.9 and 118.4
 milliseconds. These measurements describe this small fixture, not general
@@ -62,9 +99,9 @@ latency, fairness or physical memory plateaus.
 
 ## Remaining profile requirements
 
-ExecutorService, ordinary Executors factories, Future/CompletableFuture,
-independent queues, scheduled executors, recurring callbacks, full interruption
-and wait/notify races, shared I/O readiness, sockets/DNS, idle-pool retirement,
+CompletableFuture, cached/work-stealing/virtual-thread factories, scheduled
+executors, recurring callbacks, FutureTask.runAndReset, duration-based TimeUnit
+members, full interruption and wait/notify races, shared I/O readiness, sockets/DNS,
 cross-tenant reuse, late wakes and node stop remain open. General generated host
 I/O still uses the existing synchronous lowering and does not establish sibling
 progress while an accepted socket operation waits. Published library/default

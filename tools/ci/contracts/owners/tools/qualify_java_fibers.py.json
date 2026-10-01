@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "SDK-owned fiber fixture prepares the existing exact compiler, captures SDK and recipe identities, retains failed diagnostics and verifies unchanged reference-JDK source",
+  "reviewReason": "Owned thread and pending executor controls retain original reference-JDK results and qualify source attribution independently of package directories",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fd690205514a2bc917f1fb0ddb2de4822873a7736f4de94970b6d87ec879c1fa"
+  "sha256": "8f2f7118d6444f4ebaa6aed05144c7377217379af5b3d9d379cdf977a6358ede"
 }

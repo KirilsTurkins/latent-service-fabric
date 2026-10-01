@@ -13,11 +13,13 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.parsing.ClassRefsRenamer;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
@@ -48,12 +50,15 @@ public final class RuntimePlugin implements TeaVMPlugin {
     }
 
     private void transform(ClassHolder cls, ClassHolderTransformerContext context) {
+        normalizeOwnedConcurrentReferences(cls);
+        MonitorContinuations.transform(cls);
         boolean thread = cls.getName().equals("java.lang.Thread");
         boolean monotonic = thread || cls.getName().equals("java.lang.Object")
             || cls.getName().equals("org.teavm.runtime.EventQueue");
         for (var method : cls.getMethods()) {
             var program = method.getProgram();
             if (program == null || program.basicBlockCount() == 0) continue;
+            SynchronizedMethods.lower(cls.getName(), method);
             if (thread) threadMethod(method, program);
             if (monotonic) {
                 for (var block : program.getBasicBlocks()) for (Instruction instruction : block) {
@@ -77,6 +82,38 @@ public final class RuntimePlugin implements TeaVMPlugin {
                 if (first != null) first.insertPrevious(call("checkpoint", ValueType.VOID));
             }
         }
+    }
+
+    private static boolean privateConcurrentHelper(String suffix) {
+        return suffix.equals("ManagedExecutor") || suffix.startsWith("ManagedExecutor$")
+            || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$");
+    }
+
+    private static String concurrentReference(String name) {
+        String standard = RuntimeSubstitution.STANDARD;
+        String sdk = RuntimeSubstitution.SDK;
+        if (name.startsWith(standard)) {
+            String suffix = name.substring(standard.length());
+            if (privateConcurrentHelper(suffix)) return sdk + suffix;
+        } else if (name.startsWith(sdk)) {
+            String suffix = name.substring(sdk.length());
+            if (RuntimeSubstitution.API.contains(suffix)) return standard + suffix;
+        }
+        return name;
+    }
+
+    private static void normalizeOwnedConcurrentReferences(ClassHolder cls) {
+        String name = cls.getName();
+        boolean api = name.startsWith(RuntimeSubstitution.STANDARD)
+            && RuntimeSubstitution.API.contains(name.substring(RuntimeSubstitution.STANDARD.length()));
+        boolean helper = name.startsWith(RuntimeSubstitution.SDK)
+            && privateConcurrentHelper(name.substring(RuntimeSubstitution.SDK.length()));
+        if (!api && !helper) return;
+        // Package substitution can give the same SDK type two class identities.
+        // Normalize only trusted API bodies and their private implementation;
+        // captured application/library bytecode retains its standard symbols.
+        ClassHolder normalized = new ClassRefsRenamer(new ReferenceCache(), RuntimePlugin::concurrentReference).rename(cls);
+        if (normalized != cls) throw new IllegalStateException("unexpected-owned-runtime-class-alias");
     }
 
     private static void threadMethod(MethodHolder method, Program program) {
