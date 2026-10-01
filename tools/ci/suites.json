@@ -3971,6 +3971,7 @@
         "tests::pathname_replacement_does_not_redirect_opened_descriptor",
         "tests::secret_policy_accepts_owner_service_group_and_private_directory_reads",
         "tests::secret_policy_rejects_public_reads_on_traversable_paths_and_writable_group_access",
+        "tests::strict_secret_leaf_rejects_readable_modes_even_below_a_private_ancestor",
         "tests::symlinks_hardlinks_and_untrusted_ancestor_writes_fail_closed",
         "tests::unexpected_file_and_directory_owners_are_rejected"
       ],
@@ -3983,7 +3984,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-protected-files/Cargo.toml",
-      "minimumCases": 19,
+      "minimumCases": 20,
       "mode": "libtest",
       "package": "latent-protected-files",
       "platforms": [
