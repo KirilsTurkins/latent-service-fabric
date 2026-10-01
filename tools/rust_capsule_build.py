@@ -19,7 +19,8 @@ BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
           "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
           "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
-          "tools/stage_runtime_wit.py", "tools/transaction_guest_project.py")
+          "tools/stage_runtime_wit.py", "tools/transaction_guest_project.py",
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 
 
 class Commands:

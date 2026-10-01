@@ -34,17 +34,8 @@ def package_companion(output: Path, project: dict, files: dict[str, bytes]) -> t
     raw = files.get("transaction-binding.json")
     if raw is None:
         return None
-    if len(raw) > 131072:
-        raise ValueError("transaction companion byte limit")
-    from tools.rust_capsule_project import decode_json
-    declaration = decode_json(raw)
-    required = {"apiVersion", "kind", "capsule", "deployment", "binding", "profile", "hostAbiDigest",
-                "namespace", "stateSchema", "operations"}
-    if (not isinstance(declaration, dict) or set(declaration) != required
-            or declaration["apiVersion"] != "latent.dev/v1" or declaration["kind"] != "TransactionBinding"
-            or declaration["capsule"] != project["service"] or declaration["deployment"] != project["name"]
-            or declaration["profile"] != "lsf-transaction-v1"):
-        raise ValueError("transaction companion must explicitly link the captured capsule/deployment")
+    from tools.dev_workflow.transaction_binding import validate
+    validate(raw, capsule=project["service"], deployment=project["name"], binding=project["name"])
     # Semantic/profile/namespace authority validation is the real host admission
     # boundary. Source packaging carries the bytes; it never approves them.
     with (output / "transaction-binding.json").open("xb") as stream:

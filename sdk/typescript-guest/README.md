@@ -9,6 +9,14 @@ for an editable project, package/sign/admit/deploy/invoke/cleanup path.
 This guest SDK is separate from the external Node client and closed Angular
 renderer. It does not embed Node, a browser, or application-owned host threads.
 
+The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
+adds `state.Command`, `state.Query`, `state.Page` and the logical `intents.Intent`
+builder. Versions remain `Uint8Array`, full-width sequences remain `bigint`,
+and declared enum errors remain typed results. Shared owner cells retain the
+original view during page calls and exclude close while calls/pages remain live.
+The separately admitted Phase 4 profile and signed Linux-node execution matrix
+are tracked by #389.
+
 ## Contract and compiler
 
 `tools/typescript_capsule.py new` copies authoritative WIT and the immutable

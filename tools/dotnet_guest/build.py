@@ -18,7 +18,8 @@ RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dot
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
-    "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py")
+    "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py",
+    "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,

@@ -61,6 +61,7 @@ def execute(executable: Path, source: Path, artifacts: Path, descriptor: dict,
             selection: list[str], *, host_identity: dict) -> dict:
     deadline = time.monotonic() + 300
     project.validate(descriptor)
+    require(descriptor["hostAbi"] == HOST_ABI, "portable-transaction-profile-not-qualified")
     documents = [scenarios.validate(decode(paths.read(source, name)), "portable")
                  for name in descriptor["scenarios"]]
     document = scenarios.validate({"schemaVersion": "latent.dev.scenarios.v1",
