@@ -57,7 +57,10 @@ def _compiler_logs(roots, output):
     destination = output / "compiler-logs"
     total, count, retained = 0, 0, []
     for workspace, root in roots.items():
-        for pattern in ("*/source/build-cache/compiler-*.log", "*/source/output/compiler-logs/*",
+        # Per-command JSON is already retained in the original bounded public
+        # BUILD-COMPLETE receipt. Count actual logs here, preserving every raw
+        # stream and the existing global file/byte bounds.
+        for pattern in ("*/source/build-cache/compiler-*.log", "*/source/output/compiler-logs/*.log",
                         "*/source/output/*FAILED*.json"):
             for original in sorted((root / "builds").glob(pattern)):
                 require(original.resolve().is_relative_to((root / "builds").resolve())

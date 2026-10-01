@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "CompositionProbeSourceTests.test_changed_original_metadata_layer_is_rejected_before_selecting_dependencies",
+    "CompositionProbeSourceTests.test_dependency_union_is_bounded_exact_and_excludes_locally_exported_type_owners",
+    "CompositionProbeSourceTests.test_original_signed_contract_dependencies_complete_the_callable_build_surface"
+  ],
+  "guards": {
+    "CompositionProbeSourceTests.test_changed_original_metadata_layer_is_rejected_before_selecting_dependencies": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb4436cc506cfe99f1605e4c67a4fdf87f74a4a09bfd69314f33f0b8f3e7ecb3",
+        "class:setup-sha256:7edeb9848152836eacc9af02c1721932509515edf99f8e42e17dde9ff0497221"
+      ],
+      "skipSites": []
+    },
+    "CompositionProbeSourceTests.test_dependency_union_is_bounded_exact_and_excludes_locally_exported_type_owners": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb4436cc506cfe99f1605e4c67a4fdf87f74a4a09bfd69314f33f0b8f3e7ecb3",
+        "class:setup-sha256:7edeb9848152836eacc9af02c1721932509515edf99f8e42e17dde9ff0497221"
+      ],
+      "skipSites": []
+    },
+    "CompositionProbeSourceTests.test_original_signed_contract_dependencies_complete_the_callable_build_surface": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:cb4436cc506cfe99f1605e4c67a4fdf87f74a4a09bfd69314f33f0b8f3e7ecb3",
+        "class:setup-sha256:7edeb9848152836eacc9af02c1721932509515edf99f8e42e17dde9ff0497221"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_composition_probe_source.py",
+  "reviewReason": "New original-byte boundary cases validate signed metadata dependencies, drift refusal and finite import sets without invocation claims",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -135,6 +135,36 @@ class PackagedProbe(unittest.TestCase):
             packaged._compiler_logs({'test-original-workspace': workspace}, self.root / 'failed-observation')
         self.assertEqual(len(list(logs.iterdir())), 129)
 
+    def test_four_compiler_log_streams_keep_original_command_metadata_in_the_build_receipts(self):
+        from tools.java_http_composition import packaged
+
+        workspace = self.root / 'test-original-workspace'
+        original = {}
+        for attempt in range(4):
+            source = workspace / 'builds' / f'actual-attempt-{attempt}' / 'source'
+            cache = source / 'build-cache'
+            logs = source / 'output/compiler-logs'
+            cache.mkdir(parents=True)
+            logs.mkdir(parents=True)
+            for name in ('compiler-stdout.log', 'compiler-stderr.log'):
+                (cache / name).write_bytes(b'original captured build stream')
+            commands = []
+            for index in range(22):
+                (logs / f'{index:03d}.log').write_bytes(b'original raw compiler stream')
+                path = logs / f'{index:03d}.command.json'
+                row = {'stage': index, 'exitCode': 0}
+                path.write_bytes(json.dumps(row).encode())
+                commands.append(row)
+                original[path] = path.read_bytes()
+            complete = source / 'output/BUILD-COMPLETE.json'
+            complete.write_bytes(json.dumps({'formatVersion': 1, 'commands': commands}).encode())
+            original[complete] = complete.read_bytes()
+        retained = packaged._compiler_logs({'test-original-workspace': workspace}, self.root / 'observation')
+        self.assertEqual(len(retained), 96)
+        self.assertTrue(all(row['path'].endswith('.log') for row in retained))
+        self.assertEqual(len(original), 92)
+        self.assertTrue(all(path.read_bytes() == raw for path, raw in original.items()))
+
     @unittest.skipUnless(os.name == 'nt', 'actual Windows DACL required')
     def test_conductor_protects_only_its_new_windows_directory(self):
         from tools.dev_packaged_windows import make_private

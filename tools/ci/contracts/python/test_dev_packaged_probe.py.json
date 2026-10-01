@@ -8,6 +8,7 @@
     "PackagedProbe.test_deadline_does_not_replay_the_command",
     "PackagedProbe.test_exact_inventory_extracts_without_executing_any_member",
     "PackagedProbe.test_failed_start_retains_actual_events_without_replaying_start",
+    "PackagedProbe.test_four_compiler_log_streams_keep_original_command_metadata_in_the_build_receipts",
     "PackagedProbe.test_generation_uses_original_inventoried_tools_and_rejects_changed_bytes",
     "PackagedProbe.test_installed_workspace_requires_the_real_private_owner_record",
     "PackagedProbe.test_linux_exact_entrypoint_is_executable_and_private",
@@ -121,6 +122,18 @@
       "skipSites": []
     },
     "PackagedProbe.test_failed_start_retains_actual_events_without_replaying_start": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:380891144ed1bf4cf8dfab6b7d9b65fa466e3f38a28fc4fe71e06189027b01b7",
+        "class:setup-sha256:2d277f0aa3c5c73844dfdc30c8b6be8d4044721929ec72c60537958f66c7321c"
+      ],
+      "skipSites": []
+    },
+    "PackagedProbe.test_four_compiler_log_streams_keep_original_command_metadata_in_the_build_receipts": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -402,6 +415,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_packaged_probe.py",
-  "reviewReason": "Qualify actual string operator identity and preserve bounded original compiler log retention",
+  "reviewReason": "Add four-build raw-log retention evidence while preserving all original file/byte bounds and case guards",
   "schemaVersion": "latent.ci.contracts.v1"
 }
