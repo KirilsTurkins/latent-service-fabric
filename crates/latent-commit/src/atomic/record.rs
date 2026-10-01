@@ -151,6 +151,7 @@ pub struct CommandRecord {
     pub(super) outcome: Outcome,
     pub(super) completed_at: u64,
     pub(super) committed_version: Option<NamespaceVersion>,
+    pub(super) committed_view_token: Vec<u8>,
     pub(super) result_digest: Identity,
     pub(super) effects: Vec<Identity>,
     pub(super) inbox: Option<InboxIdentity>,
@@ -186,6 +187,12 @@ impl CommandRecord {
     #[must_use]
     pub const fn committed_version(&self) -> Option<NamespaceVersion> {
         self.committed_version
+    }
+    /// Exact opaque original view, including the schema and recovery epochs.
+    #[must_use]
+    pub fn committed_view_token(&self) -> Option<&[u8]> {
+        self.committed_version
+            .map(|_| self.committed_view_token.as_slice())
     }
     #[must_use]
     pub const fn completed_at(&self) -> u64 {
@@ -250,7 +257,7 @@ impl CommandRecord {
     }
     pub fn encode(&self) -> Result<Vec<u8>, AtomicError> {
         self.validate()?;
-        let mut out = Encoder::new(b"LCM\0\x02");
+        let mut out = Encoder::new(b"LCM\0\x03");
         for text in [
             &self.key.tenant,
             &self.key.namespace,
@@ -298,10 +305,11 @@ impl CommandRecord {
             out.number(version.incarnation);
             out.number(version.generation);
         }
+        encode_token(&mut out, &self.committed_view_token)?;
         out.finish(METADATA_BYTES)
     }
     pub fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
-        let mut input = Decoder::new(bytes, b"LCM\0\x02", METADATA_BYTES)?;
+        let mut input = Decoder::new(bytes, b"LCM\0\x03", METADATA_BYTES)?;
         let key = CommandKey {
             tenant: input.text(256)?,
             namespace: input.text(256)?,
@@ -348,6 +356,7 @@ impl CommandRecord {
             1 => Some(decode_version(&mut input)?),
             _ => return Err(AtomicError::Corrupt),
         };
+        let committed_view_token = decode_token(&mut input)?;
         input.finish()?;
         let record = Self {
             key,
@@ -365,6 +374,7 @@ impl CommandRecord {
             outcome,
             completed_at,
             committed_version,
+            committed_view_token,
             result_digest,
             effects,
             inbox,
@@ -400,6 +410,7 @@ impl CommandRecord {
         if self.outcome == Outcome::Pending {
             if self.completed_at != 0
                 || self.committed_version.is_some()
+                || !self.committed_view_token.is_empty()
                 || !self.effects.is_empty()
                 || self.abort_proof.is_some()
                 || self.result_digest != Identity([0; 32])
@@ -415,6 +426,14 @@ impl CommandRecord {
         if self.outcome != Outcome::Pending {
             let version = self.committed_version.ok_or(AtomicError::Invalid)?;
             if version.incarnation != incarnation(&self.key)? || version.generation == 0 {
+                return Err(AtomicError::Invalid);
+            }
+            let scope = record_scope(self)?;
+            let identity = latent_state::session::version::ViewIdentity::from_token(
+                &scope,
+                &self.committed_view_token,
+            )?;
+            if identity.namespace != version {
                 return Err(AtomicError::Invalid);
             }
         }
@@ -437,6 +456,7 @@ pub struct DurableResult {
     pub(super) transaction: Identity,
     pub(super) outcome: Outcome,
     pub(super) committed_version: NamespaceVersion,
+    pub(super) committed_view_token: Vec<u8>,
     pub(super) code: Option<String>,
     pub(super) digest: Identity,
     pub(super) value: Option<Value>,
@@ -448,6 +468,7 @@ impl DurableResult {
         code: Option<String>,
         value: Value,
         committed_version: NamespaceVersion,
+        committed_view_token: Vec<u8>,
     ) -> Result<Self, AtomicError> {
         value.validate().map_err(|_| AtomicError::Limit)?;
         if value.bytes.len() > record.result_policy.maximum_result_bytes
@@ -461,13 +482,27 @@ impl DurableResult {
         if let Some(code) = &code {
             id(code)?;
         }
-        let digest = result_payload_digest(outcome, code.as_deref(), &value, committed_version)?;
+        let identity = latent_state::session::version::ViewIdentity::from_token(
+            &record_scope(record)?,
+            &committed_view_token,
+        )?;
+        if identity.namespace != committed_version {
+            return Err(AtomicError::Invalid);
+        }
+        let digest = result_payload_digest(
+            outcome,
+            code.as_deref(),
+            &value,
+            committed_version,
+            &committed_view_token,
+        )?;
         Ok(Self {
             command: record.id,
             attempt: record.attempt,
             transaction: record.transaction_id(),
             outcome,
             committed_version,
+            committed_view_token,
             code,
             digest,
             value: if record.result_policy.replay == ReplayPolicy::Full {
@@ -490,17 +525,22 @@ impl DurableResult {
         self.committed_version
     }
     #[must_use]
+    pub fn committed_view_token(&self) -> &[u8] {
+        &self.committed_view_token
+    }
+    #[must_use]
     pub fn code(&self) -> Option<&str> {
         self.code.as_deref()
     }
     pub fn encode(&self) -> Result<Vec<u8>, AtomicError> {
-        let mut out = Encoder::new(b"LCR\0\x02");
+        let mut out = Encoder::new(b"LCR\0\x03");
         out.identity(self.command);
         out.number(self.attempt);
         out.identity(self.transaction);
         out.0.push(outcome_tag(self.outcome));
         out.number(self.committed_version.incarnation);
         out.number(self.committed_version.generation);
+        encode_token(&mut out, &self.committed_view_token)?;
         out.optional(self.code.as_deref())?;
         out.identity(self.digest);
         out.0.push(u8::from(self.value.is_some()));
@@ -510,12 +550,18 @@ impl DurableResult {
         out.finish(RESULT_BYTES)
     }
     pub fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
-        let mut input = Decoder::new(bytes, b"LCR\0\x02", RESULT_BYTES)?;
+        let mut input = Decoder::new(bytes, b"LCR\0\x03", RESULT_BYTES)?;
         let command = input.identity()?;
         let attempt = input.number()?;
         let transaction = input.identity()?;
         let outcome = decode_outcome(input.byte()?)?;
         let committed_version = decode_version(&mut input)?;
+        let committed_view_token = decode_token(&mut input)?;
+        if committed_view_token.len() != latent_state::session::version::VIEW_TOKEN_BYTES
+            || !committed_view_token.starts_with(b"NV\x02")
+        {
+            return Err(AtomicError::Corrupt);
+        }
         let code = input.optional()?;
         let digest = input.identity()?;
         let value = match input.byte()? {
@@ -539,6 +585,7 @@ impl DurableResult {
             transaction,
             outcome,
             committed_version,
+            committed_view_token,
             code,
             digest,
             value,
@@ -549,6 +596,7 @@ impl DurableResult {
                 result.code.as_deref(),
                 value,
                 result.committed_version,
+                &result.committed_view_token,
             )? != result.digest
             {
                 return Err(AtomicError::Corrupt);
@@ -562,6 +610,7 @@ impl DurableResult {
             || self.transaction != record.transaction_id()
             || self.outcome != record.outcome
             || Some(self.committed_version) != record.committed_version
+            || self.committed_view_token != record.committed_view_token
             || self.digest != record.result_digest
             || (record.result_policy.replay == ReplayPolicy::Full) != self.value.is_some()
         {
@@ -574,6 +623,7 @@ impl DurableResult {
                     self.code.as_deref(),
                     value,
                     self.committed_version,
+                    &self.committed_view_token,
                 )? != self.digest
             {
                 return Err(AtomicError::Corrupt);
@@ -588,17 +638,56 @@ fn result_payload_digest(
     code: Option<&str>,
     value: &Value,
     version: NamespaceVersion,
+    view_token: &[u8],
 ) -> Result<Identity, AtomicError> {
-    let mut full = Encoder::new(b"lsf-result-payload-v2\0");
+    let mut full = Encoder::new(b"lsf-result-payload-v3\0");
     full.number(version.incarnation);
     full.number(version.generation);
+    encode_token(&mut full, view_token)?;
     full.0.push(outcome_tag(outcome));
     full.optional(code)?;
     full.value(value)?;
     Ok(Identity::derive(
-        b"lsf-result-digest-v2\0",
+        b"lsf-result-digest-v3\0",
         &[&full.finish(RESULT_BYTES)?],
     ))
+}
+
+pub(super) fn record_scope(
+    record: &CommandRecord,
+) -> Result<latent_state::session::StateScope, AtomicError> {
+    Ok(latent_state::session::StateScope {
+        tenant: latent_core::TenantId(record.key.tenant.clone()),
+        namespace: latent_core::StateNamespaceId(record.key.namespace.clone()),
+        incarnation: incarnation(&record.key)?,
+        entity: record.key.entity.clone(),
+        state_schema: record.source.state_schema.clone(),
+        mode: latent_state::session::StateMode::Command,
+    })
+}
+fn encode_token(out: &mut Encoder, token: &[u8]) -> Result<(), AtomicError> {
+    if token.len() > latent_core::transaction_contract::VERSION_BYTES {
+        return Err(AtomicError::Limit);
+    }
+    out.0.extend_from_slice(
+        &u16::try_from(token.len())
+            .map_err(|_| AtomicError::Limit)?
+            .to_le_bytes(),
+    );
+    out.0.extend_from_slice(token);
+    Ok(())
+}
+fn decode_token(input: &mut Decoder<'_>) -> Result<Vec<u8>, AtomicError> {
+    let length = usize::from(u16::from_le_bytes(
+        input
+            .take(2)?
+            .try_into()
+            .map_err(|_| AtomicError::Corrupt)?,
+    ));
+    if length > latent_core::transaction_contract::VERSION_BYTES {
+        return Err(AtomicError::Corrupt);
+    }
+    Ok(input.take(length)?.to_vec())
 }
 
 fn decode_version(input: &mut Decoder<'_>) -> Result<NamespaceVersion, AtomicError> {

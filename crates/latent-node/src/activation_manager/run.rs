@@ -168,51 +168,8 @@ impl Inner {
             )
         };
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
-        if let Some(admission) = &lifecycle.transaction_admission {
-            if budget.profile() != latent_core::BudgetProfile::Phase4
-                || envelope.parent_activation_id.is_some()
-                || budget.granted().child_calls != 0
-                || budget.granted().outbound_requests != 0
-            {
-                return Err(error(
-                    PlatformErrorCode::PermissionDenied,
-                    "strict transaction admission required",
-                ));
-            }
-            admission.bind_control(super::TransactionAdmissionControl::new(
-                lifecycle.registration().handle(),
-                budget.clone(),
-            ))?;
-            let execution = match admission.admit(&envelope, &budget).await? {
-                super::TransactionAdmission::Execute(execution) => execution,
-                super::TransactionAdmission::Existing(completion) => {
-                    let outcome = completion.outcome().clone();
-                    lifecycle.transaction_completion = Some(completion);
-                    return Ok(outcome);
-                }
-            };
-            let host = execution.host;
-            if host.activation_id() != &envelope.activation_id
-                || !host.budget().is_same_instance(&budget)
-            {
-                return Err(error(
-                    PlatformErrorCode::PermissionDenied,
-                    "transaction admission owner mismatch",
-                ));
-            }
-            if host.mode() == latent_executor::transaction::Mode::Query
-                && (budget.granted().state_write_bytes != 0 || budget.granted().effect_count != 0)
-            {
-                return Err(error(
-                    PlatformErrorCode::PermissionDenied,
-                    "query write budget denied",
-                ));
-            }
-            if let Some(gate) = execution.cancellation {
-                lifecycle.registration().handle().bind_commit_gate(gate)?;
-            }
-            lifecycle.transaction_hook = Some(execution.completion);
-            lifecycle.transaction_host = Some(host);
+        if let Some(outcome) = admit_transaction(&envelope, lifecycle, &budget).await? {
+            return Ok(outcome);
         }
         if permit.is_some() {
             lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;
@@ -382,37 +339,13 @@ impl Inner {
             let resolved = catalog.resolve(&envelope.target, Some(&envelope.activation_id.0))?;
             (resolved, catalog)
         };
-        if resolved.target != envelope.target || resolved.route_generation != catalog.generation() {
-            return Err(error(
-                PlatformErrorCode::IncompatibleContract,
-                "resolved activation does not match its pinned target",
-            ));
-        }
-        if let Some(child) = &child {
-            child.check_target(&resolved)?;
-        }
-        if let Some(previous) = &lifecycle.resolved {
-            if previous != &resolved || lifecycle.budget.is_some() {
-                return Err(error(
-                    PlatformErrorCode::IncompatibleContract,
-                    "admission cannot replace or repeat an accepted revision",
-                ));
-            }
-        } else {
-            lifecycle.resolved = Some(resolved.clone());
-            envelope.resolved_revision = Some(resolved.clone());
-            lifecycle.advance(
-                ActivationPhase::Resolved,
-                Metadata::from([
-                    ("revision".to_owned(), resolved.revision.0.clone()),
-                    ("release".to_owned(), resolved.release.0.clone()),
-                    (
-                        "route-generation".to_owned(),
-                        resolved.route_generation.0.to_string(),
-                    ),
-                ]),
-            )?;
-        }
+        retain_selection(
+            envelope,
+            lifecycle,
+            &resolved,
+            catalog.generation(),
+            child.as_ref(),
+        )?;
         if token.is_cancelled() {
             return Err(cancelled(token));
         }
@@ -484,4 +417,100 @@ impl Inner {
         lifecycle.advance(ActivationPhase::Admitted, Metadata::new())?;
         Ok((permit, child_owner))
     }
+}
+
+async fn admit_transaction(
+    envelope: &ActivationEnvelope,
+    lifecycle: &mut Lifecycle,
+    budget: &ActivationBudget,
+) -> Result<Option<ActivationOutcome>, PlatformError> {
+    let Some(admission) = &lifecycle.transaction_admission else {
+        return Ok(None);
+    };
+    if budget.profile() != latent_core::BudgetProfile::Phase4
+        || envelope.parent_activation_id.is_some()
+        || budget.granted().child_calls != 0
+        || budget.granted().outbound_requests != 0
+    {
+        return Err(error(
+            PlatformErrorCode::PermissionDenied,
+            "strict transaction admission required",
+        ));
+    }
+    admission.bind_control(super::TransactionAdmissionControl::new(
+        lifecycle.registration().handle(),
+        budget.clone(),
+    ))?;
+    let execution = match admission.admit(envelope, budget).await? {
+        super::TransactionAdmission::Execute(execution) => execution,
+        super::TransactionAdmission::Existing(completion) => {
+            let outcome = completion.outcome().clone();
+            lifecycle.transaction_completion = Some(*completion);
+            return Ok(Some(outcome));
+        }
+    };
+    let host = execution.host;
+    // Retain the issued owners even when a malformed trusted factory is refused;
+    // the positively never-created guest path still awaits native retirement.
+    lifecycle.transaction_hook = Some(execution.completion);
+    lifecycle.transaction_host = Some(host.clone());
+    if host.activation_id() != &envelope.activation_id || !host.budget().is_same_instance(budget) {
+        return Err(error(
+            PlatformErrorCode::PermissionDenied,
+            "transaction admission owner mismatch",
+        ));
+    }
+    if host.mode() == latent_executor::transaction::Mode::Query
+        && (budget.granted().state_write_bytes != 0 || budget.granted().effect_count != 0)
+    {
+        return Err(error(
+            PlatformErrorCode::PermissionDenied,
+            "query write budget denied",
+        ));
+    }
+    if let Some(gate) = execution.cancellation {
+        lifecycle.registration().handle().bind_commit_gate(gate)?;
+    }
+    Ok(None)
+}
+
+fn retain_selection(
+    envelope: &mut ActivationEnvelope,
+    lifecycle: &mut Lifecycle,
+    resolved: &latent_routing::ResolvedRevision,
+    generation: latent_core::RouteGeneration,
+    child: Option<&super::local_service::ChildAdmission>,
+) -> Result<(), PlatformError> {
+    if resolved.target != envelope.target || resolved.route_generation != generation {
+        return Err(error(
+            PlatformErrorCode::IncompatibleContract,
+            "resolved activation does not match its pinned target",
+        ));
+    }
+    if let Some(child) = child {
+        child.check_target(resolved)?;
+    }
+    if let Some(previous) = &lifecycle.resolved {
+        if previous != resolved || lifecycle.budget.is_some() {
+            return Err(error(
+                PlatformErrorCode::IncompatibleContract,
+                "admission cannot replace or repeat an accepted revision",
+            ));
+        }
+    } else {
+        lifecycle.resolved = Some(resolved.clone());
+        envelope.resolved_revision = Some(resolved.clone());
+        lifecycle.advance(
+            ActivationPhase::Resolved,
+            Metadata::from([
+                ("revision".to_owned(), resolved.revision.0.clone()),
+                ("release".to_owned(), resolved.release.0.clone()),
+                (
+                    "route-generation".to_owned(),
+                    resolved.route_generation.0.to_string(),
+                ),
+            ]),
+        )?;
+    }
+    Ok(())
 }
