@@ -23,6 +23,8 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
           "tools/stage_runtime_wit.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
+RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
+           "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 
 
 class Commands:
@@ -94,27 +96,39 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
         raise ValueError("Cargo and capsule project identities disagree")
     if cargo.get("lib") != {"crate-type": ["cdylib"]}:
         raise ValueError("the standalone recipe requires the default cdylib library target")
-    if cargo.get("patch") or cargo.get("replace"):
+    captured = "latent.dependencies.json" in files
+    if captured:
+        from tools.application_dependencies import validate_manifest
+        validate_manifest(decode_json(files["latent.dependencies.json"]), "rust")
+    if (cargo.get("patch") or cargo.get("replace")) and not captured:
         raise ValueError("dependency patches and replacements cannot override the pinned SDK")
     expected = {"wit-bindgen": "=" + pins["toolchain"]["rust"]["dependencies"]["wit-bindgen"],
                 "latent-guest": {"path": "vendor/lsf/sdk/rust-guest"}}
-    if cargo.get("target", {}).get('cfg(target_arch = "wasm32")', {}).get("dependencies") != expected:
+    maintained = cargo.get("target", {}).get('cfg(target_arch = "wasm32")', {}).get("dependencies", {})
+    if (not isinstance(maintained, dict) or any(maintained.get(name) != value for name, value in expected.items())
+            or not captured and maintained != expected):
         raise ValueError("guest SDK and binding generator dependencies must match the pinned authoring recipe")
     # Other registry dependencies are allowed with exact direct versions and a
     # committed transitive Cargo.lock. Git/path overrides would escape the
     # captured closure and cannot replace the maintained SDK here.
-    for group in ("dependencies", "build-dependencies", "dev-dependencies"):
-        for name, specification in cargo.get(group, {}).items():
+    groups = [cargo.get(group, {}) for group in ("dependencies", "build-dependencies", "dev-dependencies")]
+    if captured:
+        groups.extend(value.get(group, {}) for value in cargo.get("target", {}).values()
+                      for group in ("dependencies", "build-dependencies", "dev-dependencies"))
+    for group in groups:
+        for name, specification in group.items():
             if name in {"latent-guest", "latent-component-bindings", "wit-bindgen"}:
+                if captured and maintained.get(name) == specification and name in expected:
+                    continue
                 raise ValueError("SDK dependency overrides are not supported")
             version = specification if isinstance(specification, str) else specification.get("version") if isinstance(specification, dict) else None
-            if not isinstance(version, str) or not re.fullmatch(r"=[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", version):
+            if not captured and (not isinstance(version, str) or not re.fullmatch(r"=[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", version)):
                 raise ValueError("additional dependencies require exact versions and a committed Cargo.lock")
-            if isinstance(specification, dict) and not set(specification) <= {"version", "features", "default-features", "optional", "package"}:
+            if isinstance(specification, dict) and not captured and not set(specification) <= {"version", "features", "default-features", "optional", "package"}:
                 raise ValueError("uncaptured dependency source override")
-    if set(cargo.get("target", {})) != {'cfg(target_arch = "wasm32")'}:
+    if not captured and set(cargo.get("target", {})) != {'cfg(target_arch = "wasm32")'}:
         raise ValueError("additional target dependency tables require an explicit source-capture extension")
-    if set(cargo.get("target", {})['cfg(target_arch = "wasm32")']) != {"dependencies"}:
+    if not captured and set(cargo.get("target", {})['cfg(target_arch = "wasm32")']) != {"dependencies"}:
         raise ValueError("unsupported target dependency classes")
     script = cargo["package"].get("build", "build.rs" if "build.rs" in files else False)
     if script is not False and (not isinstance(script, str) or script not in files):
@@ -190,7 +204,14 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, *, offline: bool = False, host_linker: Path | None = None,
-          rust_bin: Path | None = None) -> Path:
+          rust_bin: Path | None = None, executable_approval: str | None = None) -> Path:
+    # Commands/package_inputs are shared by every language. Only this recipe
+    # loads the Rust application graph and executable-input approval consumer.
+    from tools.application_dependencies import prepare, verify_inputs
+    from tools.application_dependency_approval import approve as approve_execution, request as execution_request
+    from tools.rust_application_dependencies import configure as configure_application
+    from tools.captured_compiler_isolation import Isolation
+
     project_path, output = checked_path(project_path), checked_path(output)
     if output == project_path or output in project_path.parents:
         raise ValueError("build output overlaps source")
@@ -240,6 +261,45 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             environment.update(RUSTC=str(paths["rustc"]), RUSTUP_TOOLCHAIN=pins["toolchain"]["rust"]["toolchain"],
                                CARGO_INCREMENTAL="0", CARGO_TARGET_DIR=str(temporary / "target"))
             commands = Commands(work, output, environment)
+            stage = "application-dependencies"
+            verified = verify_inputs(project_path, "rust")
+            closure, approval = None, None
+            isolation, adapted_manifest = None, None
+            if verified is not None:
+                environment.update(CARGO_HOME=str(temporary / "cargo-home"), CARGO_NET_OFFLINE="true", RUSTUP_AUTO_INSTALL="0")
+                sysroot = Path(commands.run("rust-sysroot", paths["rustc"], "--print", "sysroot").decode().strip()).resolve(strict=True)
+                zig = shutil.which("zig", path=environment.get("PATH"))
+                shell = shutil.which("sh", path=environment.get("PATH"))
+                if not zig or not shell:
+                    raise ValueError("captured Rust compilation requires pinned Zig and Linux shell host linker tools")
+                zig, shell = Path(zig).resolve(strict=True), Path(shell).resolve(strict=True)
+                reported = commands.run("zig-version", zig, "version").decode().strip()
+                if reported != pins["toolchain"]["sdk"]["zig"]:
+                    raise ValueError("Rust host linker Zig version differs from the pinned compiler profile")
+                linker = temporary / "captured-host-linker"
+                linker.write_text("#!" + str(shell) + '\nexec "$LSF_CAPTURED_ZIG" cc -target x86_64-linux-gnu.2.39 "$@"\n')
+                linker.chmod(0o700)
+                environment["CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER"] = str(linker)
+                environment.update(ZIG_GLOBAL_CACHE_DIR=str(temporary / "zig-global"), ZIG_LOCAL_CACHE_DIR=str(temporary / "zig-local"),
+                                   LSF_CAPTURED_ZIG=str(zig))
+                selected_tools = {name: paths[name] for name in ("cargo", "rustc", "wasm-tools", "wit-bindgen")}
+                selected_tools.update(zig=zig, shell=shell, linker=linker)
+                isolation = Isolation(temporary, selected_tools, {"rust-compiler-and-sysroot": sysroot,
+                                      "zig-host-linker-and-sysroot": zig.parent})
+                write_json(output / "rust-compiler-inputs.json", isolation.receipt)
+                if verified.lock["executableInputs"]:
+                    stage = "executable-input-approval"
+                    executable_recipe = digest(canonical({"recipe": digest(recipe_inputs), "sourceSnapshot": digest(source_inputs)}))
+                    requested = execution_request(verified, isolation, executable_recipe)
+                    write_json(output / "executable-input-approval-request.json", {
+                        "formatVersion": 1, "identity": digest(canonical(requested)), "specification": requested})
+                    if executable_approval is None:
+                        raise ValueError("captured Cargo build scripts/macros require the exact retained executable-input approval identity")
+                    approval = approve_execution(verified, isolation, executable_recipe, executable_approval)
+                closure = prepare(project_path, work, output, "rust", execution_approval=approval)
+                adapted_manifest, cargo_inputs = configure_application(closure, work, Path(environment["CARGO_HOME"]))
+                isolation.protect_inputs(work)
+                write_json(output / "cargo-inputs.json", cargo_inputs)
             stage = "bindings"
             version = commands.run("bindgen-version", paths["wit-bindgen"], "--version").decode().strip().split()
             if version != ["wit-bindgen-cli", pins["toolchain"]["rust"]["dependencies"]["wit-bindgen"]]:
@@ -247,7 +307,36 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             binding_digest = binding_check(work, pins, commands, paths["wit-bindgen"])
             stage = "compile"
             diagnostics = ["--message-format=json"] if packager is None else []
-            commands.run("compile", paths["cargo"], "build", "--locked", "--release", "--lib", "--target", "wasm32-unknown-unknown", *diagnostics)
+            compile_arguments = ["build", "--locked", "--release", "--lib", "--target", "wasm32-unknown-unknown", *diagnostics]
+            if closure is not None:
+                selection = closure.lock["selection"]
+                if selection.get("features"):
+                    compile_arguments.extend(["--features", ",".join(selection["features"])])
+                if selection.get("allFeatures"):
+                    compile_arguments.append("--all-features")
+                if selection.get("noDefaultFeatures"):
+                    compile_arguments.append("--no-default-features")
+                commands.run("compile", *isolation.wrap(paths["cargo"], compile_arguments, work, environment))
+                if approval is not None:
+                    from tools.application_dependency_store import directory_files
+                    generated_outputs = {}
+                    targets = [temporary / "target/release", temporary / "target/wasm32-unknown-unknown/release"]
+                    total = 0
+                    for target in targets:
+                        for directory in sorted((target / "build").glob("*/out")):
+                            for name, data in directory_files(directory).items():
+                                total += len(data)
+                                if len(generated_outputs) >= 8192 or total > 64 * 1024 * 1024:
+                                    raise ValueError("captured build-tool generated output limit exceeded")
+                                generated_outputs[directory.relative_to(temporary / "target").as_posix() + "/" + name] = {
+                                    "digest": digest(data), "size": len(data)}
+                    for path in sorted((targets[0] / "deps").glob("*.so")):
+                        generated_outputs[path.relative_to(temporary / "target").as_posix()] = {
+                            "digest": file_identity(path, "compiled-proc-macro")["digest"], "size": path.stat().st_size}
+                    write_json(output / "executable-input-outputs.json", {"formatVersion": 1, "approvalIdentity": approval.identity,
+                        "outputs": generated_outputs, "cleanup": "namespace-and-owned-process-reaped", "hermetic": False})
+            else:
+                commands.run("compile", paths["cargo"], *compile_arguments)
             module = temporary / "target/wasm32-unknown-unknown/release" / (project["name"].replace("-", "_") + ".wasm")
             stage = "component"
             commands.run("component", paths["wasm-tools"], "component", "new", module, "-o", output / "component.wasm")
@@ -270,7 +359,14 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
                 commands.run("inspect", paths["packager"], "inspect", output / "package")
             stage = "recheck"
-            if snapshot(project_path) != files or snapshot(work) != files:
+            captured_files = snapshot(work, exclude=("dependencies", "application-vendor"))
+            if adapted_manifest is not None:
+                if captured_files.get("Cargo.toml") != adapted_manifest:
+                    raise ValueError("selected Cargo manifest changed during compilation")
+                captured_files["Cargo.toml"] = files["Cargo.toml"]
+                closure.check_unchanged()
+                isolation.check_unchanged()
+            if snapshot(project_path) != files or captured_files != files:
                 raise ValueError("project changed during the observed build")
             if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe_inputs:
                 raise ValueError("authoring recipe changed during the build")
@@ -285,6 +381,14 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
                 ("source-snapshot", source_inputs), ("build-recipe", recipe_inputs), ("package-inputs", package_inventory),
                 ("toolchain-config", files["rust-toolchain.toml"]), ("dependency-lock", files["Cargo.lock"])))
+            if closure is not None:
+                for name in ("application-dependencies.json", "cargo-inputs.json", "rust-compiler-inputs.json"):
+                    data = read_file(output / name, 8 * 1024 * 1024)
+                    materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+                if approval is not None:
+                    for name in ("executable-input-approval-request.json", "executable-input-outputs.json"):
+                        data = read_file(output / name, 8 * 1024 * 1024)
+                        materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
             finished = int(time.time())
             if finished < started or time.monotonic() - start > 900 or finished - started > 900:
                 raise ValueError("build clock or overall deadline invalid")
