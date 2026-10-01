@@ -33,6 +33,7 @@ class Compiler:
             commands.environment.update(caches)
         self.deadline = time.monotonic() + timeout
         self.sdk, self.platform, self.commands = sdk, platform, commands
+        self.isolation = None
         self.paths: dict[str, Path] = {}
         self.materials: dict[str, dict] = {}
         config = config or tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
@@ -58,6 +59,14 @@ class Compiler:
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise ValueError("C build deadline exceeded")
+        if self.isolation is not None:
+            cwd = self.commands.root if self.commands is not None else self.isolation.workspace
+            environment = self.commands.environment if self.commands is not None else self.environment
+            command = self.isolation.wrap(self.paths[tool], list(map(str, arguments)), cwd, environment)
+            if self.commands is not None:
+                return self.commands.run(tool, command[0], *command[1:]).decode("utf-8")
+            return run_bounded(command, cwd, environment, timeout_seconds=min(remaining, 300),
+                               max_output_bytes=4 * 1024 * 1024).stdout.decode("utf-8")
         if self.commands is not None:
             return self.commands.run(tool, self.paths[tool], *arguments).decode("utf-8")
         result = run_bounded((str(self.paths[tool]), *map(str, arguments)), ROOT,
@@ -69,10 +78,18 @@ class Compiler:
         for name, path in self.paths.items():
             if file_identity(path, name) != self.materials[name]:
                 raise ValueError("C compiler tool changed during build")
+        if self.isolation is not None:
+            self.isolation.check_unchanged()
+
+    def enable_captured_isolation(self, workspace: Path) -> dict:
+        from tools.captured_compiler_isolation import Isolation
+        self.isolation = Isolation(workspace, self.paths, {"zig-compiler-and-sysroot": self.paths["zig"].parent})
+        return self.isolation.receipt
 
     def compile(self, sources: list[Path], wit_source: Path, world: str,
                 destination: Path, *, memory_bytes: int = 16 * 1024 * 1024,
-                trap: bool = True) -> tuple[Path, dict]:
+                trap: bool = True, include_directories: tuple[Path, ...] = (),
+                static_libraries: tuple[Path, ...] = (), defines: tuple[str, ...] = ()) -> tuple[Path, dict]:
         if not sources or len(sources) > 64:
             raise ValueError("C source count must be between 1 and 64")
         if any(path.is_symlink() or not path.is_file() or path.stat().st_size > 262144 for path in sources):
@@ -86,10 +103,30 @@ class Compiler:
                    "-Wl,--no-entry", "-Wl,--export-memory", "-Wl,-z,stack-size=65536",
                    f"-Wl,--max-memory={memory_bytes}", "-I", str(generated),
                    "-I", str(self.sdk / "include"), *map(str, sources)]
+        for directory in include_directories:
+            command.extend(["-I", str(directory)])
+        command.extend("-D" + define for define in defines)
+        command.extend(map(str, static_libraries))
         if trap:
             command.append(str(self.sdk / "src/trap.c"))
         command.extend([str(generated / "probe.c"), str(generated / "probe_component_type.o"),
                         "-o", str(core)])
+        if self.isolation is not None:
+            preprocessor = ["cc", "-std=c11", "-target", "wasm32-wasi", "-I", str(generated),
+                            "-I", str(self.sdk / "include")]
+            for directory in include_directories:
+                preprocessor.extend(["-I", str(directory)])
+            preprocessor.extend("-D" + define for define in defines)
+            selected_sources = [*sources, generated / "probe.c"]
+            if trap:
+                selected_sources.append(self.sdk / "src/trap.c")
+            observed = []
+            for index, source in enumerate(selected_sources):
+                depfile = destination / f"inputs-{index:04}.d"
+                self.run("zig", *preprocessor, "-M", "-MT", "lsf-inputs", "-MF", str(depfile), str(source))
+                observed.extend(self.isolation.observe_inputs(depfile))
+            self.isolation.receipt["preprocessorInputs"] = sorted(
+                {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
         self.run("zig", *command)
         self.run("wasm-tools", "component", "new", str(core), "-o", str(component))
         self.run("wasm-tools", "validate", str(component))
