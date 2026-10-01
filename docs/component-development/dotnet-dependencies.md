@@ -95,5 +95,44 @@ fuel, memory and effects before an explicit grant. The declared-error path,
 shutdown reported clean provider, compiler, Store and activation ownership.
 The persisted-node restart then failed with `startup-unavailable`, before the
 recovery invocation or original dormant-growth samples. That failure is retained
-in the same observation; full recovery, resource-limit and ticket acceptance
-remain open.
+in the same observation.
+
+The [fresh normal recovery run](../testing/evidence/dotnet-memorypack-entropy-recovery-2026-10-01.json)
+passed eight recorded invocations, a separate entropy-grant denial, persisted
+recovery and the original dormant-service counters. Its component, application,
+captured MemoryPack bytes and developer resource assembly remain unchanged.
+Normal source `907e8fa` CLI, signer and node binaries were rebuilt from the full
+tracked tree after the previous cache was removed. That new setup retains its
+original cold-build deadline failure and later successful bounded build. The
+node mounts no compiler, package feed, original developer source or CLR.
+
+A separate private replay of the immediate-restart protocol retained the exact
+`admission-restart-clock-floor` refusal. This is the existing
+[trusted-clock lease contract](../reference/package-admission.md#clock-leases-retries-and-fresh-admission):
+an enforced node can refuse restart until its previously persisted future floor
+passes. The successful fixture waits for its configured five-second lease after
+physically reaping the cleanly stopped node, then attempts one normal startup.
+The wait checks cancellation and stays within the original 900-second workflow
+deadline. It changes no authority, policy, signed bytes, grant or guest budget,
+and retries no failed startup or accepted operation. The
+[retained driver](../testing/evidence/dotnet-memorypack-entropy-recovery-2026-10-01-driver.txt)
+records the exact experiment; the private observer supplies diagnostic evidence
+separately from normal admission.
+
+Recovery returns `Hello, Ada!` under the original one-billion-fuel, 128 MiB,
+120-second invocation budget. All 19 owner samples report idle cells and quotas,
+zero activation-scoped owners and zero resident service processes, threads or
+listeners. Adding four and twelve dormant deployments produces populations of
+five and thirteen, with three samples each. Those six Linux scans retain one
+process, seven threads, one listener, three sockets, 23 handles and no UDP
+sockets; RSS is 233,443,328 bytes in each scan. Both shutdowns physically reap
+the node and report zero Stores, instances and provider calls, with the compiler
+worker joined. Node-owned metadata may remain, and these finite non-atomic
+observations do not establish production sizing or complete GC behavior. The
+second shutdown also preserves the audit's `previousSessionLossUnknown` marker;
+no general audit-loss reconciliation claim is made.
+
+Supported reflection/trimming, general resource-index ownership, private-feed
+authentication and identity variation, update/remove/watch, and broader memory,
+cancellation, exception/disposal/GC qualification remain required for #687.
+Task/ThreadPool and ordinary HttpClient retain their separate runtime tickets.
