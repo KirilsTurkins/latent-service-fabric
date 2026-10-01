@@ -39,6 +39,23 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
         )
         .unwrap(),
     );
+    let mut client =
+        proto::capability_service_client::CapabilityServiceClient::new(harness.channel.clone());
+    let unconfigured = client
+        .list_capabilities(request("operator", list("local", true)))
+        .await
+        .unwrap()
+        .into_inner()
+        .node_usage
+        .unwrap();
+    assert!(!unconfigured
+        .unavailable
+        .contains(&"outbound-streams-no-retained-observation".into()));
+    assert!(!unconfigured
+        .counters
+        .keys()
+        .any(|key| key.starts_with("stream_")));
+    assert!(!broker.inspect_node_usage().unwrap().streams_configured);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let configuration = serde_json::from_value(serde_json::json!({
         "formatVersion":1,"profile":"lsf-outbound-streams-v1",
@@ -57,8 +74,7 @@ async fn stream_diagnostics_are_operator_scoped_and_keep_actual_maintenance_visi
     let maintenance = owner.maintenance().unwrap();
     let stop = maintenance.stop_handle();
     let driver = tokio::spawn(maintenance.run());
-    let mut client =
-        proto::capability_service_client::CapabilityServiceClient::new(harness.channel.clone());
+    assert!(broker.inspect_node_usage().unwrap().streams_configured);
     for identity in ["alice", "caller", "bob"] {
         assert_eq!(
             client

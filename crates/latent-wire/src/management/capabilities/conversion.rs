@@ -172,7 +172,9 @@ pub(super) fn node_usage(value: &domain::NodeUsage) -> proto::CapabilityResource
     result
         .counters
         .insert("audit_capture_dropped".into(), value.audit_capture_dropped);
-    stream_usage(&mut result, value.streams);
+    if value.streams_configured {
+        stream_usage(&mut result, value.streams);
+    }
     if let Some(audit) = value.audit {
         result
             .counters
@@ -246,6 +248,7 @@ mod tests {
             broker: Default::default(),
             pools: None,
             io: None,
+            streams_configured: false,
             streams: None,
             audit_capture_dropped: 0,
             audit: Some(latent_audit::AuditSnapshot {
@@ -256,6 +259,13 @@ mod tests {
             }),
         };
         let encoded = node_usage(&usage);
+        assert!(!encoded
+            .unavailable
+            .contains(&"outbound-streams-no-retained-observation".into()));
+        assert!(!encoded
+            .counters
+            .keys()
+            .any(|key| key.starts_with("stream_")));
         assert_eq!(encoded.counters["audit_queued_operations"], 0);
         assert_eq!(encoded.counters["audit_reserved_records"], 0);
         assert_eq!(encoded.counters["audit_reserved_bytes"], 0);
@@ -277,5 +287,14 @@ mod tests {
             .unavailable
             .contains(&"audit-owner-not-configured".into()));
         assert!(!unavailable.counters.contains_key("audit_queued_bytes"));
+        usage.streams_configured = true;
+        let retired = node_usage(&usage);
+        assert!(retired
+            .unavailable
+            .contains(&"outbound-streams-no-retained-observation".into()));
+        assert!(!retired
+            .counters
+            .keys()
+            .any(|key| key.starts_with("stream_")));
     }
 }

@@ -75,6 +75,13 @@ provider bindings return permission denied before the first Store or peer
 connection. These internal node tests do not replace packaged standalone-node
 operator workflow qualification or ordinary language clients.
 
+Operator inspection distinguishes a node with no stream installation from an
+installed provider whose physical observer has been destroyed. HTTP-only nodes
+omit stream counters and have no missing-stream observation. A destroyed
+configured observer reports unavailable without fabricating zero counters. The
+CLI accepts only the ten defined stream counters and that exact unavailable
+reason; unknown fields and provider error text remain rejected.
+
 Open delivery gates include #737's explicit review, protected node/operator
 end-to-end qualification and live rotation workflow (#739), full adversarial
 socket/uncertainty and measured native
