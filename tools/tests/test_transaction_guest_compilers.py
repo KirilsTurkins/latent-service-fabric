@@ -70,6 +70,51 @@ class TransactionGuestCompilerTests(unittest.TestCase):
             self.assertEqual(report["reason"], "controlled-source-failure")
             self.assertFalse((output / "forbidden-http").exists())
 
+    def test_three_java_schema_captures_keep_real_put_once_inputs_and_original_read_tokens(self):
+        from tools.compile_transaction_guests import authored_project
+        from tools.java_transaction_schema import DEFINITIONS
+        from tools.rust_capsule_project import digest
+        from tools.transaction_guest_project import HTTP_BODY, put_once_requirements
+
+        with tempfile.TemporaryDirectory() as temporary:
+            for variant in ("legacy-v1", "compatible-v2", "writer-v2"):
+                with self.subTest(variant=variant):
+                    work = authored_project("java", "put-once-" + variant, Path(temporary) / variant)
+                    source = (work / "src/dev/latent/app/Capsule.java").read_bytes()
+                    owner = json.loads((work / "capsule-project.json").read_bytes())
+                    binding = (work / "transaction-binding.json").read_bytes()
+                    requirements = json.loads((work / "deferred-http-requirements.json").read_bytes())
+                    schema = json.loads((work / "application-schema-inputs.json").read_bytes())
+                    lock = json.loads((work / "sdk-lock.json").read_bytes())
+                    self.assertEqual(requirements, put_once_requirements(owner, binding))
+                    self.assertEqual(lock["template"]["sourceDigest"], digest(source))
+                    self.assertEqual(schema["variant"], variant)
+                    self.assertEqual(schema["effect"], "put-once")
+                    self.assertEqual(schema["writers"], [DEFINITIONS["v2" if variant == "writer-v2" else "v1"]])
+                    self.assertFalse(schema["componentCompiled"])
+                    self.assertFalse(schema["stateExecutionQualified"])
+                    self.assertEqual(owner["limits"]["effectCount"], 1)
+                    self.assertEqual(owner["limits"]["outboundRequests"], 0)
+                    self.assertEqual(owner["limits"]["childCalls"], 0)
+                    self.assertIn(b'new Intent("qualified-http", "put-once", effectPayload).stage(command)', source)
+                    self.assertNotIn(b"LatentHttpClient.send", source)
+                    self.assertEqual(len(HTTP_BODY), 27)
+                    wit = (work / "wit/world.wit").read_text()
+                    self.assertIn("view-version: list<u8>", wit)
+                    self.assertIn("key-version: option<list<u8>>", wit)
+
+    def test_java_schema_mode_rejects_wrong_compiler_or_implicit_boolean_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "uncreated"
+            for language in ("rust", "c", "go", "dotnet", "typescript", "future"):
+                with self.subTest(language=language), self.assertRaisesRegex(ValueError, "explicit Java compiler"):
+                    compile_guests(language, output, java_schema_put_once=True)
+                self.assertFalse(output.exists())
+            for value in (1, 0, None, "true"):
+                with self.subTest(value=value), self.assertRaisesRegex(ValueError, "explicit Java compiler"):
+                    compile_guests("java", output, java_schema_put_once=value)
+                self.assertFalse(output.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

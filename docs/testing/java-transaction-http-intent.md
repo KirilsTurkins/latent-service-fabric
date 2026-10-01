@@ -59,3 +59,21 @@ effect identity to distinguish attempts from mutations. Do not retry an unknown
 command, infer remote nonexecution from a timeout, or keep a Java Store or cell
 for pending work. Signed Java atomic execution and the actual two-version
 recovery campaign remain separate evidence from these captured source inputs.
+
+Compile all three captured schema variants with the maintained pinned compiler:
+
+```sh
+python3 tools/compile_transaction_guests.py --language java \
+  --wasi-sdk /path/to/wasi-sdk-29.0-x86_64-linux \
+  --java-schema-put-once --output target/java-put-once-components
+```
+
+The explicit Java-only option retains the original aggregate and forbidden
+immediate-HTTP builds, then independently compiles `put-once-legacy-v1`,
+`put-once-compatible-v2` and `put-once-writer-v2`. Each project has its original
+900-second compiler deadline. Receipts capture the exact application schema and
+deferred-HTTP requirement inputs, both immutable schema definitions, generated
+bindings, source archive, recipe, compiler inputs and validated component surface.
+The default command still selects its original two projects. Failed attempts
+retain their bounded diagnostics; compiler receipts keep signed node execution
+and actual admission-rejection qualification false.
