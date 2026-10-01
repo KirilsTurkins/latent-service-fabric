@@ -23,6 +23,8 @@ pub struct DispatcherSnapshot {
     pub live_tenants: usize,
     pub claims: u64,
     pub physical_owners: usize,
+    pub command_owners: usize,
+    pub command_clock_floor: u64,
     pub quarantined_physical_owners: usize,
     pub paused: bool,
     pub control: DispatcherControlSnapshot,
@@ -52,6 +54,8 @@ pub(super) struct State {
     effects: BTreeSet<String>,
     tenants: BTreeMap<String, usize>,
     pub claims: u64,
+    pub command_owners: usize,
+    pub command_clock_floor: u64,
     pub counts: DispatchCounts,
     pub counts_time: u64,
     pub scheduling_retired: bool,
@@ -60,11 +64,12 @@ pub(super) struct State {
 pub(super) struct Shared {
     pub state: Mutex<State>,
     pub notify: Notify,
+    pub maximum_command_owners: usize,
 }
 
 impl State {
     pub fn effects_empty(&self) -> bool {
-        self.effects.is_empty()
+        self.effects.is_empty() && self.command_owners == 0
     }
 }
 
@@ -73,6 +78,8 @@ impl Shared {
         paused: bool,
         epoch: crate::dispatch_store::DispatchEpoch,
         restore_review: bool,
+        maximum_command_owners: usize,
+        command_clock_floor: u64,
     ) -> Self {
         Self {
             state: Mutex::new(State {
@@ -89,11 +96,14 @@ impl Shared {
                 effects: BTreeSet::new(),
                 tenants: BTreeMap::new(),
                 claims: 0,
+                command_owners: 0,
+                command_clock_floor,
                 counts: DispatchCounts::default(),
                 counts_time: 0,
                 scheduling_retired: false,
             }),
             notify: Notify::new(),
+            maximum_command_owners,
         }
     }
 
@@ -157,6 +167,8 @@ impl Shared {
             live_tenants: state.tenants.len(),
             claims: state.claims,
             physical_owners: owners.physical,
+            command_owners: state.command_owners,
+            command_clock_floor: state.command_clock_floor,
             quarantined_physical_owners: owners.quarantined,
             paused: state.paused,
             control: DispatcherControlSnapshot {

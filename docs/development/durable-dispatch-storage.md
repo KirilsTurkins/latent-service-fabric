@@ -221,3 +221,42 @@ publication remains a known receipt and reports `published: false`.
 The common authenticated RPC/CLI composition and #397 reserved recovery lane
 consume these ports. This domain implementation does not by itself qualify the
 public management workflow, ordinary-queue saturation or backup/restore review.
+
+## Original command role and clock
+
+The same protected node role also supplies commands when no effect adapters are
+configured. `command_admission_source()` returns a cloneable sealed metadata
+source, with no worker or scheduling handle. `capture()` reserves a non-clone
+`CommandAdmission` from a finite node slot table (128 by default, hard ceiling
+1024). Captured guards expose their actual protected owner epoch and positively
+qualified time; descriptions and client counters cannot reconstruct them.
+
+`with_current` is the short outer native-writer acceptance fence. It checks the
+same epoch/control generation, pending control, restore review, current store
+failure/close/quarantine and nonrewinding original clock before invoking the
+host's namespace, policy/effect and cancellation acceptance. It performs no I/O
+and releases before flush. Initial startup time still needs the admitted
+external checkpoint and retained command registry's maximum clock floor; this
+port does not synthesize continuity from wall time.
+
+The actual physical command owner must retain its guard through guest/native
+cleanup and invoke `retire(self)` only after positive retirement. Lost waiters,
+logical cancellation, expired leases and a finalized activation ledger are not
+retirement proof. Unexpected guard Drop quarantines the shared store and keeps
+the bounded guard/root role. Driver shutdown cannot retire that role or allow a
+new epoch while any original command guard remains. A plain effect pause allows
+fresh commands to accumulate paused intents; stale control generations and
+restore review fail writer acceptance. Diagnostic epoch/time getters reserve no
+command slot and grant no writer permission. The sealed source exposes the exact
+installed effect registry and checks registry owner identity; it does not create
+a second authority. Its clock getter fails closed after physical role close.
+
+Pinned Rust1.97.1 Linux: all70 effect cases and strict all-target/all-feature
+Clippy passed, including four real protected-store command schedules: zero
+adapters with bounded sources and clock rollback, control/restore fences, sticky
+deadline with exclusive role retention, and detached native writer/buffer
+retirement before rejecting an old command fence. The earlier adapter factory
+passed all-feature standalone compilation. Checking the newly added command
+wrapper was interrupted by Docker becoming read-only (SIGBUS and filesystem
+error 30), so that full application check remains pending. Full guest admission
+and response/recovery capacity remain their integration owners.

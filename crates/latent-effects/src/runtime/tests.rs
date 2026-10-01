@@ -28,6 +28,7 @@ use crate::payload::{payload_digest, PayloadRecord};
 
 use super::*;
 
+mod admission;
 mod control;
 mod ownership;
 mod pressure;
