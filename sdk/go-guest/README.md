@@ -10,6 +10,13 @@ captures the actual compiler inputs, signs the resulting package, admits it to
 a node and explicitly cleans up. External Go clients under `sdk/go` are a
 different product: they call a node and do not compile Go guests.
 
+The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
+adds `state.Command`, `state.Query`, `state.Page` and the logical `intents.Builder`
+builder. Copies share one owner cell; pages retain their original view and
+explicit close releases access only. Optional values keep presence and sequence
+values retain `uint64`. The separately admitted Phase 4 profile and signed
+Linux-node transaction execution matrix are tracked by #389.
+
 This profile uses the pinned Go 1.27.1 `wasiOnIdle` compiler and
 componentize-go 0.4.3 commit recorded in [toolchain.lock.json](toolchain.lock.json).
 Do not substitute stock Go or TinyGo. No ambient WASI imports survive the

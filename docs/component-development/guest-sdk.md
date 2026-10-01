@@ -9,6 +9,13 @@ For your first application, follow [Creating a capsule](creating-a-capsule.md).
 It has one shared workflow and selectable examples for all six languages. This
 reference explains the SDKs' capability types, ownership and runtime limits.
 
+The explicit [transactional aggregate authoring path](transactional-authoring.md)
+adds scoped state/query and deferred intent facades for all six guest languages.
+It selects `lsf-host-abi-phase4-v1` and captures an exact `TransactionBinding`
+companion. The stateless authoring profile below remains the default. Phase 4
+signed Linux-node execution and cleanup require their own #389/#718 evidence;
+external client coverage and compiler definition receipts are separate.
+
 [Packaged application development](../start/application-development.md)
 is the starting point for installing their compilers and creating a project.
 [Rust `latent-guest`](../../sdk/rust-guest/README.md) provides the Rust owners.

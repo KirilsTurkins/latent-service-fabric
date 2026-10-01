@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 from . import paths, snapshot
-from .common import HOST_ABI, MAX_DOCUMENT, decode, digest, encode, identifier, integer, members, require, sha
+from .common import TRANSACTION_HOST_ABI, MAX_DOCUMENT, decode, digest, encode, guest_host_abi, identifier, integer, members, require, sha
 
 LANGUAGES = {"rust": 544, "c": 545, "typescript": 546, "go": 547, "java": 548, "dotnet": 549}
 
@@ -24,7 +24,7 @@ def validate(value: dict) -> dict:
             and isinstance(template["revision"], str) and re.fullmatch(r"[a-f0-9]{40}", template["revision"]),
             "language-template-owner-or-revision")
     sha(template["sha256"])
-    require(value["hostAbi"] == HOST_ABI, "incompatible-host-abi")
+    guest_host_abi(value["hostAbi"])
     for key in ("inputRoots", "exclude"):
         require(isinstance(value[key], list) and len(value[key]) <= 64, "project-path-count")
         for name in value[key]:
@@ -67,7 +67,9 @@ def validate(value: dict) -> dict:
     integer(build["timeoutSeconds"], 1, 900)
     integer(build["maximumOutputBytes"], 1, 4 * 1024 * 1024)
     artifacts = members(value["artifacts"], {"component", "capsule", "contracts", "deployment", "packageSource", "packageRoot"},
-                        {"evidence"})
+                        {"evidence", "transactionBinding"})
+    require(("transactionBinding" in artifacts) == (value["hostAbi"] == TRANSACTION_HOST_ABI),
+            "transaction-profile-requires-exact-companion-artifact")
     for name in artifacts.values():
         paths.relative(name)
         require(name.startswith(build["outputRoot"] + "/"), "artifact-outside-output-root")

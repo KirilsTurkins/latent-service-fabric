@@ -13,6 +13,7 @@ from .common import DevError, MAX_DOCUMENT, decode, digest, encode, identifier, 
 
 OUTCOMES = {"success", "declared-error", "platform-failure", "transport-failure"}
 NODE_ONLY = {"authentication", "deployment", "restart", "pressure", "compiler-isolation", "protected-files", "native-cache", "running-cancellation", "immutable-blob-fixture", "scoped-secret-fixture", "local-service-fixture", "immediate-event-fixture"}
+NODE_ONLY.add("transactional-state")
 PORTABLE = {"context", "log", "clock", "random", "metrics", "buffered-http-fixture", "fresh-state", "fuel", "memory"}
 
 

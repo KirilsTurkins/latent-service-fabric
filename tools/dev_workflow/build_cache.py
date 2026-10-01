@@ -21,7 +21,8 @@ MAX_BYTES = 4 * 1024 * 1024 * 1024
 
 def identity(record: dict, descriptor: dict, recipe: str, host: str, packager: str) -> str:
     return digest(encode({"observationProfile": "compiler-and-controller-v1", "source": record["identity"], "recipe": recipe, "tools": descriptor["build"]["tools"],
-        "hostAbi": HOST_ABI, "host": host, "target": descriptor["build"]["target"], "packager": packager}))
+        "hostAbi": descriptor["hostAbi"], "controllerHostAbi": HOST_ABI,
+        "host": host, "target": descriptor["build"]["target"], "packager": packager}))
 
 
 def owner(directory: Path) -> dict:

@@ -8,7 +8,7 @@ import platform
 import time
 
 from . import build_artifacts, build_cache, diagnostics, paths, process, project, snapshot, state, tool_inventory
-from .common import DevError, HOST_ABI, decode, encode, members, require
+from .common import DevError, decode, encode, members, require
 
 
 def unchanged(source: Path, descriptor: dict, record: dict) -> None:
@@ -99,7 +99,7 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
                 from .build_provenance import complete
                 complete(working, descriptor, cli, packager, packaged)
                 receipt = {"schemaVersion": "latent.dev.build.v1", "source": record["identity"], "recipe": trusted,
-                    "host": host, "target": recipe["target"], "hostAbi": HOST_ABI,
+                    "host": host, "target": recipe["target"], "hostAbi": descriptor["hostAbi"],
                     "artifacts": build_artifacts.identities(working, descriptor["artifacts"]), "package": packaged,
                     "tools": recipe["tools"], "template": descriptor["template"], "authority": "observed-local-build",
                     "toolInventory": inventory,

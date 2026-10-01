@@ -9,6 +9,13 @@ for an editable project outside the checkout, compilation, signed admission,
 publish/deploy/invoke, declared errors and cleanup. Client-side .NET RPC SDKs
 are separate and are not used to implement guest capabilities.
 
+The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
+adds disposable `State.Command`, `State.Query`, `State.Page` and logical
+`Intent` owners. Nullable options preserve absence, bytes preserve opaque
+versions, and `ulong` preserves every sequence bit. Generated resource drop order
+and WIT metadata remain exact. The separately admitted Phase 4 profile and
+signed Linux-node transaction execution matrix are tracked by #389.
+
 ## Compiler and supported contract
 
 Linux x86-64 is the qualified compiler host. The exact inputs are .NET SDK
