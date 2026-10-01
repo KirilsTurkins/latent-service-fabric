@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import re
 import unittest
 
@@ -14,9 +15,9 @@ UPLOAD = "Retain bounded browser boundary observations"
 
 
 def retention_enabled(expression: str, renderer: str, outcome: str | None,
-                      job_status: str = "success") -> bool:
+                      job_status: str = "success", lane: str = "renderer-public") -> bool:
     """Evaluate this guard's conjunctions, comparisons and status checks only."""
-    context = {"needs.profile.outputs.renderer": renderer}
+    context = {"needs.profile.outputs.renderer": renderer, "matrix.lane": lane}
     if outcome is not None:
         context["steps.integration_lanes.outcome"] = outcome
     status_checks = {
@@ -29,6 +30,8 @@ def retention_enabled(expression: str, renderer: str, outcome: str | None,
     # Actions adds success() when the expression has no status check function.
     results = [True if any(c in status_checks for c in clauses) else job_status == "success"]
     for clause in clauses:
+        if clause.startswith("(") and clause.endswith(")"):
+            clause = clause[1:-1].strip()
         if clause in status_checks:
             results.append(status_checks[clause])
             continue
@@ -42,6 +45,20 @@ def retention_enabled(expression: str, renderer: str, outcome: str | None,
 
 
 class BrowserArtifactTests(unittest.TestCase):
+    def test_website_image_matches_the_locked_browser_and_supplies_dependencies_without_network_apt(self):
+        website = yaml.safe_load((ROOT / ".github/workflows/docs-site.yml").read_text())["jobs"]["website"]
+        version = json.loads((ROOT / "website/package.json").read_text())["devDependencies"]["@playwright/test"]
+        self.assertRegex(website["container"]["image"],
+            rf"^mcr\.microsoft\.com/playwright:v{re.escape(version)}-noble@sha256:[0-9a-f]{{64}}$")
+        self.assertEqual(website["container"]["options"], "--init --ipc=host")
+        browser = next(step for step in website["steps"] if step.get("name") == "Install the pinned test browser and its OS prerequisites")
+        self.assertEqual(browser["run"], "npm run browser:install")
+        self.assertNotIn("if", browser)
+        self.assertNotIn("continue-on-error", browser)
+        trust = next(step for step in website["steps"] if step.get("name") == "Trust only the checked-out repository inside the owned container")
+        self.assertEqual(trust["run"], 'git config --system --add safe.directory "$GITHUB_WORKSPACE"')
+        self.assertLess(website["steps"].index(trust), website["steps"].index(browser))
+
     def setUp(self) -> None:
         self.workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
         self.steps = self.workflow["jobs"]["rust"]["steps"]
@@ -83,6 +100,14 @@ class BrowserArtifactTests(unittest.TestCase):
             for outcome in (None, "", "skipped", "success", "failure", "cancelled"):
                 with self.subTest(renderer=renderer, outcome=outcome):
                     self.assertFalse(retention_enabled(self.upload["if"], renderer, outcome, "failure"))
+
+    def test_other_matrix_lanes_cannot_upload_browser_evidence(self) -> None:
+        lanes = self.workflow["jobs"]["rust"]["strategy"]["matrix"]["lane"]
+        self.assertIn("renderer-public", lanes)
+        for lane in set(lanes) - {"renderer-public"}:
+            with self.subTest(lane=lane):
+                self.assertFalse(retention_enabled(self.upload["if"], "true", "success", lane=lane))
+        self.assertTrue(self.upload["with"]["name"].endswith("-${{ matrix.lane }}"))
 
     def test_missing_evidence_is_still_fatal_after_execution(self) -> None:
         self.assertEqual(self.upload["with"]["if-no-files-found"], "error")

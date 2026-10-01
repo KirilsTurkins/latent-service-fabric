@@ -5,6 +5,16 @@
       "cancel-in-progress": true,
       "group": "dotnet-guest-${{ github.ref }}"
     },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
     "name": ".NET guest qualification",
     "on": {
       "pull_request": {
@@ -49,7 +59,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Combine the captured NuGet compiler and four-adapter source with the declared HTTP BCL error port. Retain every parent command/case and all skip predicates. Reviewed fixture hash changes only add trusted support imports, preserve both distribution capture helpers, and supply the captured compiler API in controls; no decorator, skip site, execution hook or required command is removed.",
+  "reviewReason": "Reconcile current development cache prerequisites with all captured-library, namespace and HTTP BCL obligations. Adopt its pinned wasm-tools 1.254 setup, exact version check and actual executable artifact path. Preserve the stricter required Rust compiler isolation, all other parent commands and historical replacements.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

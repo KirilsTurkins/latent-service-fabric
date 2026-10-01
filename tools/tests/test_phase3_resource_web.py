@@ -184,11 +184,11 @@ class WorkflowTests(unittest.TestCase):
         option = source.split('run_phase3_resources:\n', 1)[1].split('\n\n', 1)[0]
         self.assertIn('default: false', option)
         step = source.split('- name: Execute the bounded Phase 3 resource matrix\n', 1)[1].split('- name:', 1)[0]
-        self.assertIn("if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources", step)
+        self.assertIn("if: matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources", step)
         self.assertIn('tools/run_phase3_resource_acceptance.py', step)
         self.assertIn('CARGO_TARGET_DIR: ${{ github.workspace }}/target/phase3-resource', step)
         retention = source.split('- name: Retain immutable Phase 3 resource attempts\n', 1)[1].split('\n  oci-registry:', 1)[0]
-        self.assertIn("if: always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources", retention)
+        self.assertIn("if: matrix.lane == 'angular-t1' && always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources", retention)
         self.assertIn('phase3-resource-matrix/*.sha256', retention)
 
 
