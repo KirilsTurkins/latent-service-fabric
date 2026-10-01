@@ -102,6 +102,7 @@ fn incoherent_logical_links_fail_before_ready_and_preserve_every_existing_row() 
     );
     assert!(!report.clean);
     assert!(report.snapshot.physically_retired());
+    assert_eq!(denied.reap_retired_threads().unwrap(), config.io.workers);
     let reopened = start(config);
     let view = wait(reopened.open_view().unwrap()).unwrap().unwrap();
     let (view, values) = read(&reopened, view);

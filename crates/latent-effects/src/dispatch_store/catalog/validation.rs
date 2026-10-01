@@ -162,6 +162,16 @@ impl DispatchCatalog {
             .transpose()
             .map(|owner| owner.is_some())
     }
+
+    /// Describes the original retained owner epoch and clock floor through its
+    /// closed decoder. These numbers grant no restart, restore or dispatch right.
+    pub fn owner_checkpoint(view: &ReadView) -> Result<Option<(u64, u64)>, StoreError> {
+        view.get(&OwnerRecord::key())?
+            .as_deref()
+            .map(OwnerRecord::decode)
+            .transpose()
+            .map(|owner| owner.map(|owner| (owner.epoch, owner.clock_floor)))
+    }
 }
 
 fn validate_effect(

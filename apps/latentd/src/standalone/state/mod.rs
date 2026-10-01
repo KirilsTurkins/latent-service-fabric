@@ -6,6 +6,7 @@ mod effect_requirements;
 mod effects;
 mod inspection;
 mod lifecycle;
+mod recovery;
 mod request;
 mod result;
 mod role;
@@ -16,6 +17,7 @@ pub use inspection::{
     NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,
 };
 pub use lifecycle::StateShutdownReport;
+pub use recovery::TransactionStoreDiagnosis;
 pub use request::StateRequest;
 pub use runtime::StateRuntime;
 

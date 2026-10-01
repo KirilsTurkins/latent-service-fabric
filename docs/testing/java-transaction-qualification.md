@@ -54,6 +54,25 @@ The fixture never overwrites an existing checkpoint, lowers a retained floor,
 or initializes an existing state store. Restart and restore tests preserve the
 original protected checkpoint and require the normal reviewed recovery paths.
 
+## Native startup diagnosis
+
+The private `latentd` example `transaction_recovery` diagnoses an existing
+protected store after the node has physically stopped. It loads the protected
+node configuration and an exact protected bearer token, authenticates through
+the same native transport credential owner, and requires the matching tenant's
+administrator identity. It opens with creation disabled and runs the ordinary
+complete linked record validator. It returns only finite initialization and
+codec failure codes, original checkpoint numbers, actual clock continuity, and
+observed drain and worker-join facts. It returns no stored payload or credential.
+
+Build the example with the normal locked managed profile and run it with
+`--config`, `--credential-file`, and `--tenant`. The helper initializes no
+dispatcher epoch and changes no business rows. Its descriptive owner checkpoint
+does not authorize restart or restoration. A failed startup can be physically
+retired while its cleanup report remains unclean; a deadline or dropped waiter
+does not prove retirement. Building this helper and inspecting a failed physical
+root are separate observations from signed Java guest execution.
+
 ## Evidence boundaries
 
 The bounded receipt parser checks full-width unsigned values, absence versus
