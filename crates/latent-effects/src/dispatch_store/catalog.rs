@@ -13,6 +13,7 @@ use super::{
     effect_payload_key, effect_row_key, storage_error, DueRecord, DUE_PREFIX, EFFECT_PREFIX,
 };
 
+mod checkpoint;
 #[cfg(test)]
 mod tests;
 mod validation;
