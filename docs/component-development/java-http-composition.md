@@ -8,6 +8,14 @@ exports its typed interface; the generated adapter exports only
 `latent:service/invoke@0.1.0` provider. An additional local-service hop remains
 necessary in this supported profile. No latency difference has been measured.
 
+Build and sign each component independently using the
+[paired-capsule signing recipe](../operations/paired-capsule-signing.md).
+It keeps a distinct ephemeral builder key and exact source/compiler requirement
+for each test artifact and calls the runtime's canonical policy constructors.
+The recipe identifies its development-only helper separately from released CLI
+commands and retains the original publication operation when recovering a lost
+management response.
+
 The one-export Java compiler profile is deliberately retained. Components with
 both web and business exports would use the web lifting profile for their whole
 surface, including uncalled business operations. Separate components preserve

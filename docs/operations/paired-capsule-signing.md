@@ -134,3 +134,12 @@ turn that complete pipeline into a successful qualification.
 The [fresh source-66 paired record](../evidence/java-paired-trust-66f2a031/README.md)
 adds actual builder-identity revocation and host-derived child grant observations,
 while preserving its separate later context fixture failure.
+
+The [executed C4/3b7 campaign](../evidence/java-composed-c4-3b7/README.md)
+retains the newer actual four-component builds and a successful complete
+synthetic HTTP/context/canary campaign. Its paired record verifies the independent
+domain and adapter identities under three equivalent canonical policy orders,
+nine verifier negatives and six admission cases. Two original admission grants
+expire before their fenced actions can enter. All original failed aggregate
+receipts remain failed; the newer success does not qualify the private reporting
+application, packaged native frontend or transactional Java scope.
