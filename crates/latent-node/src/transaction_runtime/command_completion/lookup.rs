@@ -130,11 +130,14 @@ impl CommandCoordinator {
                     )
                 }
                 CommandWaiterDecision::Wait(notification) if wait => {
-                    let deadline = current
-                        .budget
-                        .deadline()
-                        .monotonic()
-                        .min(current.authority.deadline());
+                    let original_deadline =
+                        current.budget.deadline().monotonic().ok_or_else(|| {
+                            errors::fixed(
+                                latent_core::PlatformErrorCode::InvalidArgument,
+                                "original-command-deadline-unavailable",
+                            )
+                        })?;
+                    let deadline = original_deadline.min(current.authority.deadline());
                     let cancelled = async {
                         if let Some(token) = &cancellation {
                             token.cancelled().await;

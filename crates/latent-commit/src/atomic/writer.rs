@@ -67,15 +67,15 @@ impl EnvelopeNamespaceExpectation {
 }
 pub enum PreparedDisposition {
     Confirmed {
-        command: CommandRecord,
-        result: DurableResult,
+        command: Box<CommandRecord>,
+        result: Box<DurableResult>,
     },
     KnownNotCommitted {
-        command: AdmittedCommand,
+        command: Box<AdmittedCommand>,
         reason: AtomicError,
     },
     RecoveryRequired {
-        identity: CommandRecord,
+        identity: Box<CommandRecord>,
     },
 }
 
@@ -690,8 +690,8 @@ impl CompleteEnvelope {
             Ok(()) => {
                 self.claim.physical.phase.store(TERMINAL, Ordering::Release);
                 PreparedDisposition::Confirmed {
-                    command: self.terminal,
-                    result: self.result,
+                    command: Box::new(self.terminal),
+                    result: Box::new(self.result),
                 }
             }
             Err(FencedStoreError::Store(
@@ -700,11 +700,11 @@ impl CompleteEnvelope {
             )) => {
                 self.claim.physical.phase.store(UNKNOWN, Ordering::Release);
                 PreparedDisposition::RecoveryRequired {
-                    identity: self.claim.record.clone(),
+                    identity: Box::new(self.claim.record.clone()),
                 }
             }
             Err(error) => PreparedDisposition::KnownNotCommitted {
-                command: self.claim,
+                command: Box::new(self.claim),
                 reason: fenced_error(error),
             },
         }
@@ -747,7 +747,9 @@ impl CompleteEnvelope {
         }
         terminal.outcome = result.outcome;
         terminal.committed_version = Some(version);
-        terminal.committed_view_token = result.committed_view_token.clone();
+        terminal
+            .committed_view_token
+            .clone_from(&result.committed_view_token);
         terminal.completed_at = time.unix_millis;
         terminal.clock_floor = time.unix_millis;
         terminal.result_digest = result.digest;
