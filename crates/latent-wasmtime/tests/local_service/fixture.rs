@@ -133,6 +133,7 @@ pub struct Fixture {
     pub catalog: Arc<DirectoryArtifactRepository>,
     pub quotas: LocalQuotaProvider,
     pub broker: Arc<ActivationCapabilityBroker>,
+    pub maximum_calls_per_session: usize,
     pub policies: Arc<PolicyStore>,
     _provider: ProviderRegistration,
     pub target: DeploymentManifest,
@@ -425,11 +426,12 @@ impl Fixture {
                 .unwrap();
         }
         let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
+        let broker_limits = CapabilityBrokerLimits::default();
         let broker = ActivationCapabilityBroker::new(
             catalog.lifecycle_authority(),
             policies.clone(),
             clock.clone(),
-            CapabilityBrokerLimits::default(),
+            broker_limits,
         )
         .unwrap();
         let broker = Arc::new(match audit {
@@ -594,6 +596,7 @@ impl Fixture {
             catalog,
             quotas,
             broker,
+            maximum_calls_per_session: broker_limits.maximum_calls_per_session,
             policies,
             _provider: provider,
             target,
