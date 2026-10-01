@@ -290,7 +290,9 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
                 for case in ("throw", "over", "under", "double", "before", "closed", "flush", "chunk", "forbidden", "unsafe-cookie", "oversize", "memory"):
                     check("GET", "/case?" + case, 502)
                     check("GET", "/hey", 200, b"Hey!")
-                check("POST", "/case?input", 502, body=b"x" * 65537,
+                # The original ingress cap rejects excess bytes before dispatch.
+                # Guest-side rejection is exercised by ServerConformance instead.
+                denied_without_cell("POST", "/case?input", 413, body=b"x" * 65537,
                       headers={"Content-Type": "application/octet-stream", "Origin": scheme + "://java.server.test"})
                 check("GET", "/hey", 200, b"Hey!")
             result["idle"] = observe_idle(client, evidence, "dormant-after-requests")
