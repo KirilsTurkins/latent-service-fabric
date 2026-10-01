@@ -33,7 +33,9 @@ pub(crate) fn recovery(request: &latent_rpc::phase4::Request) -> Option<serde_js
         Request::MutateState(value) => {
             Some(json!({"family":"state","operationId":value.operation_id,
             "namespace":value.namespace.as_ref().and_then(|v|v.namespace.as_ref()).map(projection::namespace),
-            "expectedVersion":projection::bytes(&value.expected_version),"expectedPolicyDigest":value.expected_policy_digest}))
+            "expectedVersion":projection::bytes(&value.expected_version),"expectedPolicyDigest":value.expected_policy_digest,
+            "action":latent_rpc::control::v1::StateMutationKind::try_from(value.mutation).ok().map(|v|v.as_str_name()),
+            "originalEffectPlan":value.effect_plan.as_ref().map(projection::effect_plan),"automaticRetry":false}))
         }
         Request::InvokeCommand(value) => Some(
             json!({"family":"command","command":value.command.as_ref().map(projection::selector),

@@ -7919,6 +7919,9 @@
         "management::phase4::tests::configuration_is_closed_bounded_lossless_and_not_arbitrary_state_editing",
         "management::phase4::tests::dispatcher::dispatcher_cli_requires_explicit_node_scope_action_and_original_precondition",
         "management::phase4::tests::dispatcher::dispatcher_recovery_keeps_lossless_original_epoch_revision_action_and_operation",
+        "management::phase4::tests::effect_management::effect_apply_and_recovery_preserve_the_original_plan_and_separate_current_read_target",
+        "management::phase4::tests::effect_management::effect_plan_input_rejects_oversize_unknown_fields_bad_cas_and_unqualified_delay",
+        "management::phase4::tests::effect_management::expired_historical_effect_plan_projects_losslessly_and_recovers_without_resubmitting",
         "management::phase4::tests::grammar_requires_current_target_and_original_operation_precondition",
         "management::phase4::tests::human_and_json_projection_keep_exact_retention_source_and_cleanup_facts",
         "management::phase4::tests::paging_uses_exact_opaque_continuation_without_hidden_polling",
@@ -7991,7 +7994,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 140,
+      "minimumCases": 143,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
