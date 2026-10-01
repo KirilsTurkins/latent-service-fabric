@@ -12,6 +12,11 @@ Use the `0.1.0-alpha.5` CLI and matching helper checkout. The
 framework compatibility and the complete path to a running site.
 Keep organization credentials and signing files outside the build checkout.
 
+For multiple independently built capsules, the development
+[paired-artifact policy recipe](paired-capsule-signing.md) reuses the authoritative
+publisher/builder canonicalization. It distinguishes the new development command
+from this workflow's released CLI commands.
+
 ## Prepare the reviewed files
 
 Build your frontend normally. Review its public file list, deliberate exclusions,

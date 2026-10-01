@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "latent.maintenance.synthetic-input.v1",
+  "tenant": "synthetic-tests",
+  "records": [
+    {"id": "example-a", "expiresAtMillis": 1000},
+    {"id": "example-b", "expiresAtMillis": 2000},
+    {"id": "example-c", "expiresAtMillis": 3000}
+  ]
+}
