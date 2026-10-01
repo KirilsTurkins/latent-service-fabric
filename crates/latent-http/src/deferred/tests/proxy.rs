@@ -18,6 +18,7 @@ use tokio::{
 pub enum Fault {
     Normal,
     LosePostReply,
+    LosePostReplyHoldLookupTls,
     HoldPostReply,
     HoldSecondTls,
     MalformedPost,
@@ -79,7 +80,9 @@ impl Proxy {
                 assert!(connections <= 64, "fixture socket admission is finite");
                 let services = &services;
                 tokio::time::timeout(WATCHDOG, async {
-                    if services.fault == Fault::HoldSecondTls && connections == 2 {
+                    if (services.fault == Fault::HoldSecondTls && connections == 2)
+                        || (services.fault == Fault::LosePostReplyHoldLookupTls && connections == 4)
+                    {
                         services.entered.notify_one();
                         services.release.notified().await;
                     }
@@ -235,7 +238,7 @@ async fn forward(services: &Shared, request: WireRequest) -> Option<Vec<u8>> {
         return Some(reply);
     }
     match services.fault {
-        Fault::LosePostReply => None,
+        Fault::LosePostReply | Fault::LosePostReplyHoldLookupTls => None,
         Fault::HoldPostReply => {
             services.entered.notify_one();
             services.release.notified().await;

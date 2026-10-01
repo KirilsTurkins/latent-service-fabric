@@ -15,7 +15,8 @@ use latent_capabilities::broker::pools::ProviderMetadata;
 use latent_core::BoxFuture;
 use latent_effects::{
     authority::{
-        AuthorityError, DispatchCeiling, DispatchGrant, DispatchProfile, EffectRule, EffectScope,
+        AuthorityError, DispatchCeiling, DispatchGrant, DispatchProfile, DispatchPurpose,
+        EffectRule, EffectScope,
     },
     dispatch::AttemptIdentity,
     payload::PayloadRecord,
@@ -121,6 +122,7 @@ impl DeferredEffectAdapter for HttpEffectAdapter {
         payload: PayloadRecord,
         attempt: AttemptIdentity,
     ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
+        grant.require_execution()?;
         let lookup = attempt.attempt() > 1;
         let accepted = self.accept_operation(grant, payload, attempt, lookup, true)?;
         Ok(Box::pin(accepted.run()))
@@ -152,6 +154,9 @@ impl HttpEffectAdapter {
         lookup: bool,
         retry_enabled: bool,
     ) -> Result<attempt::AcceptedOperation, AuthorityError> {
+        if grant.purpose() == DispatchPurpose::ReconcileOnly && (!lookup || retry_enabled) {
+            return Err(AuthorityError::PolicyBlocked);
+        }
         let horizon = self.check_grant(&grant, &payload, &attempt)?;
         let value = payload.into_value();
         let response_bytes = usize::try_from(qualification::RESPONSE_RESERVATION_BYTES)
@@ -243,17 +248,21 @@ impl HttpEffectAdapter {
         if grant.ceiling().maximum_response_bytes < qualification::RESPONSE_RESERVATION_BYTES {
             return Err(AuthorityError::Capacity);
         }
-        let horizon = grant
+        let retained_until = grant
             .committed_at_millis()
             .checked_add(self.endpoint.retention_millis)
-            .ok_or(AuthorityError::Invalid)?
-            .min(grant.expires_at_millis());
+            .ok_or(AuthorityError::Invalid)?;
+        let horizon = match grant.purpose() {
+            DispatchPurpose::Execute => retained_until.min(grant.expires_at_millis()),
+            DispatchPurpose::ReconcileOnly => retained_until,
+        };
         // accept_with holds the effect time fence. Observing a role-owning
         // clock here would reverse Role -> Effect lock order. Polling and
         // prewrite recheck that same clock outside this acceptance fence.
-        if attempt
-            .retry_horizon_millis()
-            .is_some_and(|original| original > horizon)
+        if grant.purpose() == DispatchPurpose::Execute
+            && attempt
+                .retry_horizon_millis()
+                .is_some_and(|original| original > horizon)
         {
             return Err(AuthorityError::Expired);
         }

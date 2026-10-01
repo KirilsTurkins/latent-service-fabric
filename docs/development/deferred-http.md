@@ -93,6 +93,23 @@ validate current operator authority, actual physical retirement and that exact
 row/version before recording a disposition. Absence is never a proof of
 nonexecution, and generic HTTP redrive remains denied.
 
+Fresh management lookup has sealed `ReconcileOnly` purpose. It can inspect the
+original receipt after execution revocation or expiry when current management
+permission, the exact retained profile and protected credential remain valid.
+It preserves the original execution expiry as provenance; it does not renew
+execution or authorize POST. The status horizon remains original commit time
+plus the approved endpoint retention, intersected with the original finite
+management deadline. Ordinary adapter acceptance rejects lookup-only grants
+before provider admission or application buffer construction.
+
+Lookup admission uses the existing provider maintenance/cleanup ledger rather
+than ordinary running/request slots. One finite request owns its metadata and
+protocol-operation allowance through actual socket destruction, including after
+the caller drops its request. It uses the same client, credential epoch, pool
+and connection limits; it cannot borrow an idle guest connection or create a
+second pool. Exhausted cleanup, shared metadata, live connection, or active
+dial/backoff capacity remains an explicit bounded unavailable/uncertain result.
+
 ## Standalone factory
 
 `providers.http.deferred` is optional and contains at most 16 distinct
@@ -149,3 +166,16 @@ ordinary standalone transaction composition and authenticated management
 qualification remain separate integration work. The reference endpoint proves
 this closed contract under its stated administration assumptions. It does not
 certify commercial APIs, arbitrary HTTP mutations or endpoint rollback safety.
+
+The lookup-purpose follow-up passed all 59 HTTP, 145 capability, 106 effect and
+118 state library cases on pinned Rust 1.97.1 Linux, with no ignored or filtered
+cases. Strict HTTP/effects/state all-target/all-feature Clippy passed. Three new
+real-TLS schedules exercise expired and revoked execution with an exact positive
+original receipt, absent/recreated/expired status, and current lookup revocation
+while the actual TLS socket is held. The positive schedule fills the original
+shared native ordinary slots and provider running slot while its same-owner
+recovery pin and maintenance request complete. Two real-TCP pool schedules prove
+bounded operation counts, metadata/socket retention after caller drop, and the
+explicit unavailable boundary when a live ordinary connection occupies capacity.
+These provider-purpose schedules use a controlled current authorization gate;
+the production authenticated Wire management path has its separate qualification.
