@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/reset_validation_echo.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Authenticate the three exact generated WIT files retained by the pinned cache false-Cargo-profile cleanup; preserve unknown or altered partial owners and all previous bounds",
+  "reviewReason": "Reconcile development337 cache round-trip without changing its body or guards; retain exact three-WIT legacy cache recovery, require that authenticated sibling for an empty package, reject bare empty owners, and replace the synthetic all-files cache assumption with actual retained WIT bytes.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9b4c6fafdd4efb4c1843ade901ee169efec7b11225b97a33f5491b77aa763a96"
+  "sha256": "228cda95ca3a0f23500acde529b2d845e25bf141449c88b0688217d96fd635b3"
 }
