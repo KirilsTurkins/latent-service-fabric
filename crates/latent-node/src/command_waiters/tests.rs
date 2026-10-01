@@ -75,7 +75,9 @@ fn actual_concurrent_engine_claims_and_duplicate_waiters_have_one_effect_set() {
     let claim = claims.into_iter().find_map(Result::ok).unwrap();
     let owner = registry.register(&claim).unwrap();
     let mut waiters = std::thread::scope(|scope| {
-        let threads: Vec<_> = (0..16)
+        // The real engine admits at most eight concurrent read views. Exercise
+        // duplicate delivery within that owner instead of assuming unlimited IO.
+        let threads: Vec<_> = (0..8)
             .map(|_| {
                 scope.spawn(|| {
                     let view = fixture.store.snapshot().unwrap();
@@ -106,7 +108,7 @@ fn actual_concurrent_engine_claims_and_duplicate_waiters_have_one_effect_set() {
     assert_eq!(result.outcome(), Outcome::Committed);
     assert_eq!(result.effect_ids().len(), 1);
     owner.notify_reload();
-    assert_eq!(wake.0.load(Ordering::SeqCst), 16);
+    assert_eq!(wake.0.load(Ordering::SeqCst), 8);
     for waiter in &mut waiters {
         assert_eq!(
             poll(waiter, &waker),
