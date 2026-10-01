@@ -3,13 +3,9 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0
-    },
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 75,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -19,25 +15,25 @@
       },
       {
         "name": "Capture immutable qualification source inputs",
-        "run": "# Retain every input used below, including the pinned compiler lock.\n# Historical benchmark archives are not inputs to this runtime lane.\ngit archive --format=tar.gz --output \"$RUNNER_TEMP/typescript-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/typescript-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/typescript-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/typescript-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/typescript-guest-source.sha\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "# Retain every input used below, including the pinned compiler lock.\n# Historical benchmark archives are not inputs to this runtime lane.\ngit archive --format=tar.gz --output \"$RUNNER_TEMP/typescript-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/typescript-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/typescript-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/typescript-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/typescript-guest-source.sha\"\n"
       },
       {
         "name": "Retain the exact reviewed command contract input",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "typescript-guest-command-contract-${{ github.sha }}",
           "path": "tools/ci/contracts/\n${{ runner.temp }}/typescript-guest-source.tar.gz\n${{ runner.temp }}/typescript-guest-source.sha\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
       {
         "uses": "actions/setup-node",
         "with": {
+          "node-version": "24.19.0",
           "cache": "npm",
-          "cache-dependency-path": "sdk/typescript-guest/tools/package-lock.json",
-          "node-version": "24.19.0"
+          "cache-dependency-path": "sdk/typescript-guest/tools/package-lock.json"
         }
       },
       {
@@ -52,7 +48,15 @@
       {
         "uses": "Swatinem/rust-cache",
         "with": {
-          "key": "typescript-guest-runtime-optimized-compiler"
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -60,8 +64,14 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\""
       },
       {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
         "name": "Install pinned component validator",
-        "run": "cargo install --locked wasm-tools --version 1.254.0"
+        "run": "test \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'"
       },
       {
         "name": "Qualify proposed transaction shapes with the maintained stackful TypeScript compiler",
@@ -77,8 +87,8 @@
       },
       {
         "name": "Execute supplementary value and ownership models",
-        "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts sdk/typescript-guest/tests/model/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime/tests/model\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "set -o pipefail\nmkdir -p target/typescript-guest-runtime\nnode \"$RUNNER_TEMP/typescript-guest-tools/node_modules/typescript/bin/tsc\" --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --lib ES2022 --outDir target/typescript-guest-runtime sdk/typescript-guest/runtime/*.ts sdk/typescript-guest/tests/model/*.ts\nprintf '{\"type\":\"module\"}\\n' > target/typescript-guest-runtime/package.json\nLSF_TYPESCRIPT_RUNTIME=\"$PWD/target/typescript-guest-runtime/tests/model\" node --test sdk/typescript-guest/tests/runtime.test.mjs 2>&1 | tee target/typescript-guest-runtime/runtime-tests.log\n"
       },
       {
         "name": "Check captured sources and actual generated-resource owners",
@@ -89,22 +99,21 @@
         "run": "python3 tools/qualify_typescript_capsules.py --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\""
       },
       {
-        "if": "always()",
         "name": "Preserve attempted runtime test evidence",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "typescript-guest-runtime-${{ github.sha }}",
           "path": "${{ runner.temp }}/transaction-contract-typescript/report.json\n${{ runner.temp }}/transaction-contract-typescript/source.tar.gz\n${{ runner.temp }}/transaction-contract-typescript/component.wit\n${{ runner.temp }}/transaction-contract-typescript/preparation.json\n${{ runner.temp }}/transaction-contract-typescript/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-typescript/logs/**\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.log\n${{ runner.temp }}/transaction-contract-typescript/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-typescript/compiled/component.wit\n${{ runner.temp }}/transaction-contract-typescript/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/generated/**\n${{ runner.temp }}/transaction-contract-typescript/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-typescript/bindings/**\n${{ runner.temp }}/transaction-contract-typescript/component.wasm\ntarget/typescript-guest-runtime/runtime-tests.log\ntarget/typescript-guest-runtime/owner-tests.log\n${{ runner.temp }}/typescript-guest-probe/\n${{ runner.temp }}/typescript-capsule-authoring/\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 75
+    ]
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
+  "reviewReason": "Preserve the historical narrow dependency fixture and every Phase4 compiler/guest qualification while retaining incoming dependency-cache, native website, and interrupt correctness checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

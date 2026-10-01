@@ -6,12 +6,6 @@
     "name": "Admitted C capability ownership",
     "runs-on": "ubuntu-24.04",
     "timeout-minutes": 35,
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0,
-      "CARGO_PROFILE_TEST_DEBUG": 0
-    },
     "steps": [
       {
         "uses": "actions/checkout",
@@ -29,6 +23,21 @@
         "uses": "dtolnay/rust-toolchain",
         "with": {
           "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -81,7 +90,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Retain the reviewed transaction shape compiler lane and every original C/Rust capability/ownership gate, with the incoming captured C application-library qualification and its receipts preserved.",
+  "reviewReason": "Preserve the historical narrow dependency fixture and every Phase4 compiler/guest qualification while retaining incoming dependency-cache, native website, and interrupt correctness checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }
