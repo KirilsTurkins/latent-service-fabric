@@ -4,9 +4,6 @@
   "coverage": {},
   "definition": {
     "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0,
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "name": "NativeAOT component qualification",
@@ -61,13 +58,13 @@
         "with": {
           "cache-all-crates": false,
           "cache-bin": false,
-          "cache-directories": "target/debug/.fingerprint\ntarget/debug/build\ntarget/debug/deps\n",
           "cache-on-failure": false,
-          "cache-targets": false,
+          "cache-targets": true,
           "cache-workspace-crates": false,
-          "key": "ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}",
-          "prefix-key": "lsf-ci-dependencies-v1",
-          "save-if": false
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -136,7 +133,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
+  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate; retain the accepted CI performance dependency caches, correctness guards and independent execution obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

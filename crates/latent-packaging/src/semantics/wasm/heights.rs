@@ -2,9 +2,12 @@
 //!
 //! The preceding borrowed scan bounds every AST allocation. This pass keeps only
 //! depth/work summaries, including aliases and nested scopes; no validator runs here.
+//! Export names borrow the checked input. Summary tables share stable indices,
+//! and every scope, index entry and table member spends the original node ceiling.
 mod links;
 mod types;
 use super::{charge, exhausted, invalid, read, Result, SemanticLimits};
+use std::collections::BTreeMap;
 use wasmparser::{
     CanonicalFunction, ComponentExternalKind as Kind, ComponentTypeRef, ComponentValType, Encoding,
     Parser, Payload, TypeBounds,
@@ -14,10 +17,15 @@ use wasmparser::{
 struct Measure {
     depth: usize,
     work: usize,
+    exports: Option<usize>,
 }
 
 impl Measure {
-    const LEAF: Self = Self { depth: 1, work: 1 };
+    const LEAF: Self = Self {
+        depth: 1,
+        work: 1,
+        exports: None,
+    };
 
     fn include(&mut self, child: Self, limits: SemanticLimits) -> Result<()> {
         self.depth = self.depth.max(child.depth.saturating_add(1));
@@ -30,17 +38,18 @@ impl Measure {
 }
 
 #[derive(Default)]
-struct Scope {
+struct Scope<'a> {
     types: Vec<Measure>,
     functions: Vec<Measure>,
     instances: Vec<Measure>,
     components: Vec<Measure>,
     values: Vec<Measure>,
+    exports: BTreeMap<&'a str, (Kind, Measure)>,
     depth: usize,
     work: usize,
 }
 
-impl Scope {
+impl Scope<'_> {
     fn items(&self, kind: Kind) -> &[Measure] {
         match kind {
             Kind::Type => &self.types,
@@ -63,8 +72,10 @@ impl Scope {
     }
 }
 
-struct Guard {
-    scopes: Vec<Scope>,
+struct Guard<'a> {
+    scopes: Vec<Scope<'a>>,
+    exports: Vec<BTreeMap<&'a str, (Kind, Measure)>>,
+    nodes: usize,
     work: usize,
     limits: SemanticLimits,
 }
@@ -72,6 +83,8 @@ struct Guard {
 pub(super) fn validate(bytes: &[u8], limits: SemanticLimits) -> Result<()> {
     let mut guard = Guard {
         scopes: Vec::new(),
+        exports: Vec::new(),
+        nodes: 0,
         work: 0,
         limits,
     };
@@ -112,6 +125,7 @@ pub(super) fn validate(bytes: &[u8], limits: SemanticLimits) -> Result<()> {
                     } else {
                         guard.push(value.kind, actual)?;
                     }
+                    guard.export(value.name.name, value.kind, actual)?;
                 }
             }
             Payload::ComponentAliasSection(values) => {
@@ -144,8 +158,8 @@ pub(super) fn validate(bytes: &[u8], limits: SemanticLimits) -> Result<()> {
     Ok(())
 }
 
-impl Guard {
-    fn current(&self) -> Result<&Scope> {
+impl<'a> Guard<'a> {
+    fn current(&self) -> Result<&Scope<'a>> {
         self.scopes
             .last()
             .ok_or_else(|| invalid("missing-component-scope"))
@@ -155,6 +169,7 @@ impl Guard {
         if self.scopes.len() >= self.limits.max_type_depth {
             return Err(exhausted("component-reference-depth-limit"));
         }
+        self.node()?;
         self.scopes.push(Scope::default());
         Ok(())
     }
@@ -169,10 +184,53 @@ impl Guard {
             Measure {
                 depth: scope.depth,
                 work: scope.work,
+                exports: None,
             },
             self.limits,
         )?;
+        result.exports = Some(self.retain_exports(scope.exports)?);
         Ok(result)
+    }
+
+    fn node(&mut self) -> Result<()> {
+        // Charge before growing any index, table or scope. Summary sharing does
+        // not exempt metadata allocation or repeated reference work.
+        charge(&mut self.nodes, 1, self.limits.max_type_nodes)
+    }
+
+    fn retain_exports(&mut self, exports: BTreeMap<&'a str, (Kind, Measure)>) -> Result<usize> {
+        self.node()?;
+        let index = self.exports.len();
+        self.exports.push(exports);
+        Ok(index)
+    }
+
+    fn insert_export(
+        &mut self,
+        exports: &mut BTreeMap<&'a str, (Kind, Measure)>,
+        name: &'a str,
+        kind: Kind,
+        value: Measure,
+    ) -> Result<()> {
+        if exports.contains_key(name) {
+            return Err(invalid("duplicate-component-export"));
+        }
+        self.node()?;
+        exports.insert(name, (kind, value));
+        Ok(())
+    }
+
+    fn export(&mut self, name: &'a str, kind: Kind, value: Measure) -> Result<()> {
+        if self.current()?.exports.contains_key(name) {
+            return Err(invalid("duplicate-component-export"));
+        }
+        self.node()?;
+        self.scopes
+            .last_mut()
+            .ok_or_else(|| invalid("missing-component-scope"))?
+            .exports
+            .insert(name, (kind, value));
+        Ok(())
     }
 
     fn record(&mut self, value: Measure) -> Result<()> {
@@ -187,6 +245,7 @@ impl Guard {
 
     fn push(&mut self, kind: Kind, value: Measure) -> Result<()> {
         self.record(value)?;
+        self.node()?;
         let scope = self
             .scopes
             .last_mut()
@@ -209,7 +268,7 @@ impl Guard {
         }
     }
 
-    fn reference(&mut self, reference: ComponentTypeRef) -> Result<()> {
+    fn reference(&mut self, reference: ComponentTypeRef) -> Result<(Kind, Measure)> {
         let (kind, value) = match reference {
             ComponentTypeRef::Module(_) => (Kind::Module, Measure::LEAF),
             ComponentTypeRef::Func(index) => (Kind::Func, self.current()?.at(Kind::Type, index)?),
@@ -225,6 +284,12 @@ impl Guard {
             ComponentTypeRef::Type(TypeBounds::SubResource) => (Kind::Type, Measure::LEAF),
             ComponentTypeRef::Value(value) => (Kind::Value, self.value(value)?),
         };
-        self.push(kind, value)
+        self.push(kind, value)?;
+        Ok((kind, value))
+    }
+
+    fn export_type(&mut self, name: &'a str, reference: ComponentTypeRef) -> Result<()> {
+        let (kind, value) = self.reference(reference)?;
+        self.export(name, kind, value)
     }
 }

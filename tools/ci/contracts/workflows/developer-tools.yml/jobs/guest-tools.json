@@ -64,7 +64,7 @@
         "run": "python tools/build_dev_guest_tools.py --language \"$LSF_DEV_LANGUAGE\" --output target/dev-tools --python-prefix \"$LSF_DEV_PYTHON_PREFIX\" --node-tests"
       },
       {
-        "if": "steps.compiler-cache.outputs.cache-hit != 'true'",
+        "if": "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/development' && steps.compiler-cache.outputs.cache-hit != 'true'",
         "name": "Save independently verified compiler archive bytes",
         "uses": "actions/cache/save",
         "with": {
@@ -295,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Move only the runner temporary-directory compiler cache into a step-owned GITHUB_ENV value because job-level env does not permit runner context; preserve every compiler, application and retained-evidence gate.",
+  "reviewReason": "Preserve the step-owned compiler cache environment and every compiler/application/evidence gate; restrict compiler archive cache publication to an explicit development dispatch as reviewed by the CI performance change.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
