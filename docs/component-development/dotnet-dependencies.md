@@ -20,6 +20,15 @@ Application builds with captures require Linux x86-64 and bubblewrap. The mainta
 
 The loader uses the captured Python library directory for both dependency observation and compiler execution, including hosted CPython executables with an absolute RUNPATH. Its receipt binds the hashed distribution owner and relative directory, so a fresh output location preserves the exact approval identity. The [focused loader qualification](../testing/evidence/dotnet-captured-python-loader-2026-10-01.json) reproduces the CI rejection with its original executable and library, then executes those same bytes in the namespace after deleting the original-path library.
 
+The maintained outside-library fixture builds its reviewed library from that
+library's owned preparation tree. This keeps the selected sources visible when
+application projects live in a sibling `projects/` directory and excludes the
+application and enclosing output tree from the preparation namespace. The
+[nested-workspace controls](../testing/evidence/dotnet-nested-library-namespace-2026-10-01.json)
+retain the original missing-source failure, exercise source reads and ambient
+read denials through bubblewrap, and pass all 48 namespace/NuGet source controls.
+Actual managed and NativeAOT compilation requires separate qualification.
+
 Use literal `EmbeddedResource Include="resources/prefix.txt" LogicalName="example.prefix"` declarations for captured application data. The maintained compiler preserves those bytes and ordinary managed assembly resource lookup. Resources inside captured managed package assemblies retain their assembly ownership. Embedding grants no host filesystem access. Resource names, bytes, selected package ownership and final component identity must remain consistent with signed package/resource evidence; inclusion alone does not establish every resource-reader implementation.
 
 `TrimmerRootDescriptor` items must refer to captured literal paths. The actual NativeAOT compiler performs reflection/trimming analysis; unsupported JIT, dynamic loading, native/PInvoke assets and missing runtime members remain concrete incompatibilities. An assembly's managed PE header is a capture preflight, not proof of its complete AOT compatibility. `Task`, `ThreadPool` or timer references do not imply blanket package rejection and do not establish their execution: #746 owns those runtime ports, and #693 owns ordinary `HttpClient`.

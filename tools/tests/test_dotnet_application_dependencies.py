@@ -175,6 +175,62 @@ class NugetDependencies(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'differs'):
             observed(tools.parent, ROOT / 'sdk/dotnet-guest')
 
+    def test_outside_library_fixture_reads_only_its_owned_nested_workspace(self):
+        if sys.platform != 'linux' or not shutil.which('bwrap') or not shutil.which('ldd'):
+            if os.environ.get('LSF_REQUIRE_COMPILER_ISOLATION') == '1':
+                self.fail('required Linux namespace profile unavailable')
+            self.skipTest('Linux namespace profile unavailable')
+        from unittest.mock import patch
+        from tools.build_process import run_bounded_result
+        from tools.captured_compiler_isolation import Isolation
+        from tools.dotnet_dependency_fixture import install
+        (self.root / 'projects').mkdir()
+        project = create(self.root / 'projects/greeting', 'greeting')
+        outside = self.root / 'outside-project-dependencies'
+        secret = self.root / 'unselected-credential.txt'
+        secret.write_bytes(b'must-not-be-readable')
+        cat = Path(shutil.which('cat')).resolve(strict=True)
+        test = self
+
+        class NamespaceProbed(Exception):
+            pass
+
+        class NamespaceProbeCompiler:
+            def __init__(self, tools, commands, vendor, *, offline, captured):
+                test.assertTrue(offline and captured)
+                test.assertEqual(vendor, project / 'vendor/lsf')
+                self.commands, self.dotnet = commands, cat
+                self.boundary = Isolation(commands.root.parent, {'cat': cat}, {})
+
+            def run(self, name, executable, *arguments):
+                test.assertEqual(name, 'developer-library-build')
+                source = Path(arguments[1])
+                # Exercise the actual process and mount boundary before any
+                # SDK library compilation or application package can execute.
+                command = self.boundary.wrap(cat, [str(source), str(source.parent / 'prefix.txt')],
+                    self.commands.root, self.commands.environment)
+                selected = run_bounded_result(command, self.commands.root,
+                    self.commands.environment, 15, 16384)
+                test.assertEqual(selected.returncode, 0, selected.stderr.decode('utf-8', 'replace'))
+                content = selected.stdout
+                test.assertIn(b'LogicalName="developer.prefix"', content)
+                test.assertTrue(content.endswith(b'Hello, '))
+                for unselected in (secret, project / 'src/Main.cs'):
+                    command = self.boundary.wrap(cat, [str(unselected)],
+                        self.commands.root, self.commands.environment)
+                    denied = run_bounded_result(command, self.commands.root,
+                        self.commands.environment, 15, 16384)
+                    test.assertNotEqual(denied.returncode, 0)
+                    test.assertNotIn(b'must-not-be-readable', denied.stdout)
+                self.boundary.check_unchanged()
+                raise NamespaceProbed
+
+        with patch('tools.dotnet_dependency_fixture.Compiler', NamespaceProbeCompiler):
+            with self.assertRaises(NamespaceProbed):
+                install(project, outside, self.root / 'unused-sdk')
+        self.assertFalse((outside / 'developer-library/bin').exists())
+        self.assertEqual(list((outside / 'local-feed').iterdir()), [])
+
     def test_namespace_argument_transport_preserves_literals_and_denies_mutation(self):
         if sys.platform != 'linux' or not shutil.which('bwrap'):
             if os.environ.get('LSF_REQUIRE_COMPILER_ISOLATION') == '1':

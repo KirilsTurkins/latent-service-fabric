@@ -20,6 +20,7 @@
     "NugetDependencies.test_native_package_and_resource_declarations_preserve_sdk",
     "NugetDependencies.test_native_transitive_closure_is_selected_without_catalogue",
     "NugetDependencies.test_nuget_standard_archive_metadata_preserves_safe_brackets",
+    "NugetDependencies.test_outside_library_fixture_reads_only_its_owned_nested_workspace",
     "NugetDependencies.test_private_feed_invalid_credential_and_endpoint_fail_without_fallback",
     "NugetDependencies.test_private_feed_policy_receipt_excludes_location_and_credentials",
     "NugetDependencies.test_resx_processing_is_an_explicit_executable_input",
@@ -280,6 +281,21 @@
       ],
       "skipSites": []
     },
+    "NugetDependencies.test_outside_library_fixture_reads_only_its_owned_nested_workspace": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
+        "class:setup-sha256:1abd1b729f6877e783423d4fcbd8a4f241e270f34d4ba2f452da9e4338fca87e"
+      ],
+      "skipSites": [
+        "self.skipTest('Linux namespace profile unavailable')",
+        "skip-control-sha256:0e2fedd436e51e9d5335c4921d21341effc567d446e271d10c1f91e128b60f79"
+      ]
+    },
     "NugetDependencies.test_private_feed_invalid_credential_and_endpoint_fail_without_fallback": {
       "bases": [
         "unittest.TestCase"
@@ -463,6 +479,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_application_dependencies.py",
-  "reviewReason": "Preserve existing NativeAOT ingestion contracts and add actual chained shared-failure/raw-diagnostic retention without replacing immutable reports or changing fixture guards.",
+  "reviewReason": "Retain all historical NuGet controls and add actual nested outside-library namespace source-read and ambient-denial regression",
   "schemaVersion": "latent.ci.contracts.v1"
 }
