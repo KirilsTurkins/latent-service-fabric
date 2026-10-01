@@ -12,3 +12,6 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+
+[dev-dependencies]
+latent-core = { path = "../latent-core", features = ["test-support"] }
