@@ -1,17 +1,16 @@
 """Structural guard for the bounded CI lane rollout.
 
 Exact run-block text is owned by tools/ci/contracts/. This module checks
-the architectural invariants that matter specifically to #431: one shared Rust
-producer, one co-located bounded lane coordinator, exact inventory ownership,
-renderer gating, exclusive late physical qualification, cancellation, and the
-unconditional final result.
+the architectural invariants: a fixed required Rust matrix, fresh current-job
+Cargo producers, bounded lane coordinators, exact inventory ownership, renderer
+gating, isolated physical qualification, cancellation, and the final result.
 """
 from __future__ import annotations
 
 from typing import Any
 
 
-SCHEMA = "lsf.ci-lane-baseline.v2"
+SCHEMA = "lsf.ci-lane-baseline.v3"
 
 
 def _steps(job: object) -> list[dict[str, Any]]:
@@ -51,6 +50,17 @@ def workflow_errors(workflow: dict[str, Any], baseline: dict[str, Any]) -> tuple
         errors.append("rust:selection-drift")
     steps = _steps(rust)
     names = [step.get("name") for step in steps]
+    if rust.get("strategy") != {"fail-fast": False, "matrix": {"lane": spec["matrix_lanes"]}}:
+        errors.append("rust:required-matrix-drift")
+    if rust.get("continue-on-error", False):
+        errors.append("rust:matrix-failure-ignored")
+    for name, condition in spec["step_conditions"].items():
+        matches = [step for step in steps if step.get("id", step.get("name")) == name]
+        if len(matches) != 1 or matches[0].get("if") != condition:
+            errors.append("rust:matrix-step-drift:" + name)
+
+    def expected_condition(step):
+        return spec["step_conditions"].get(step.get("id", step.get("name")), spec["renderer_condition"])
 
     lanes = [step for step in steps if step.get("id") == spec["lane_id"]]
     if len(lanes) != 1:
@@ -63,19 +73,19 @@ def workflow_errors(workflow: dict[str, Any], baseline: dict[str, Any]) -> tuple
             errors.append("rust:lane-command-drift")
 
     prepared = [step for step in steps if step.get("name") == spec["prepared_step"]]
-    if (len(prepared) != 1 or prepared[0].get("if") != spec["renderer_condition"]
+    if (len(prepared) != 1 or prepared[0].get("if") != expected_condition(prepared[0])
             or any(fragment not in prepared[0].get("run", "")
                    for fragment in spec["prepared_command_fragments"])):
         errors.append("rust:prepared-renderer-drift")
 
     for name in spec["renderer_actions"]:
         matches = [step for step in steps if step.get("name") == name and "uses" in step]
-        if len(matches) != 1 or matches[0].get("if") != spec["renderer_condition"]:
+        if len(matches) != 1 or matches[0].get("if") != expected_condition(matches[0]):
             errors.append("rust:renderer-prerequisite-drift:" + name)
 
     for name in spec["renderer_run_steps"]:
         matches = [step for step in steps if step.get("name") == name and "run" in step]
-        if len(matches) != 1 or matches[0].get("if") != spec["renderer_condition"]:
+        if len(matches) != 1 or matches[0].get("if") != expected_condition(matches[0]):
             errors.append("rust:renderer-prerequisite-drift:" + name)
 
     for name in spec["removed_serial_steps"]:
@@ -87,6 +97,29 @@ def workflow_errors(workflow: dict[str, Any], baseline: dict[str, Any]) -> tuple
         positions = [i for i, step in enumerate(steps) if step.get("name") == name]
         if len(positions) != 1 or positions[0] <= lane_index:
             errors.append("rust:physical-order-drift:" + name)
+
+    contract_spec = baseline["contracts"]
+    contract_job = jobs.get("contracts")
+    if not isinstance(contract_job, dict):
+        errors.append("contracts:missing-job")
+    else:
+        if (contract_job.get("needs") != contract_spec["needs"]
+                or contract_job.get("if") != contract_spec["if"]):
+            errors.append("contracts:selection-drift")
+        if contract_job.get("strategy") != {
+                "fail-fast": False, "matrix": {"lane": contract_spec["matrix_lanes"]}}:
+            errors.append("contracts:required-matrix-drift")
+        if contract_job.get("continue-on-error", False):
+            errors.append("contracts:matrix-failure-ignored")
+        contract_steps = _steps(contract_job)
+        for name, condition in contract_spec["step_conditions"].items():
+            matches = [step for step in contract_steps if step.get("id", step.get("name")) == name]
+            if len(matches) != 1 or matches[0].get("if") != condition:
+                errors.append("contracts:matrix-step-drift:" + name)
+        dispatcher = [step for step in contract_steps if step.get("name") == contract_spec["lane_step"]]
+        if (len(dispatcher) != 1 or dispatcher[0].get("run") != contract_spec["lane_command"]
+                or dispatcher[0].get("env", {}).get("CI_CONTRACT_LANE") != "${{ matrix.lane }}"):
+            errors.append("contracts:lane-command-drift")
 
     catalog = jobs.get("catalog")
     catalog_steps = _steps(catalog)
