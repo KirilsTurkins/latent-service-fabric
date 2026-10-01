@@ -46,7 +46,7 @@ pub(in crate::standalone) struct ProviderRuntime {
     secrets: Option<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
-    http: Option<latent_http::HttpProvider>
+    http: Option<latent_http::HttpProvider>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
     blobs: Option<Arc<LocalBlobStore>>,
     registrations: Vec<ProviderRegistration>,
