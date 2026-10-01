@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "CDependencies.test_host_native_and_thin_archives_are_rejected",
+    "CDependencies.test_include_or_source_escape_and_uncaptured_source_fail",
+    "CDependencies.test_member_paths_duplicates_overflow_and_missing_linking_fail",
+    "CDependencies.test_relocatable_wasm_members_preserve_feature_identity",
+    "CDependencies.test_shell_build_configuration_and_flag_injection_fail",
+    "CDependencies.test_unknown_source_and_transitive_header_are_selected_offline",
+    "CDependencies.test_unqualified_thread_or_memory_abi_requires_runtime_qualification"
+  ],
+  "guards": {
+    "CDependencies.test_host_native_and_thin_archives_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fd80220be8134529a8ac643ebc027cc76c1a22170053ad2cd2062d3a97bc91ca",
+        "class:setup-sha256:24c0e40cfd2f135432c654b46cf614171ddfe8cd323f7d89d76c10dc9aeb30f0"
+      ],
+      "skipSites": []
+    },
+    "CDependencies.test_include_or_source_escape_and_uncaptured_source_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fd80220be8134529a8ac643ebc027cc76c1a22170053ad2cd2062d3a97bc91ca",
+        "class:setup-sha256:24c0e40cfd2f135432c654b46cf614171ddfe8cd323f7d89d76c10dc9aeb30f0"
+      ],
+      "skipSites": []
+    },
+    "CDependencies.test_member_paths_duplicates_overflow_and_missing_linking_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fd80220be8134529a8ac643ebc027cc76c1a22170053ad2cd2062d3a97bc91ca",
+        "class:setup-sha256:24c0e40cfd2f135432c654b46cf614171ddfe8cd323f7d89d76c10dc9aeb30f0"
+      ],
+      "skipSites": []
+    },
+    "CDependencies.test_relocatable_wasm_members_preserve_feature_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fd80220be8134529a8ac643ebc027cc76c1a22170053ad2cd2062d3a97bc91ca",
+        "class:setup-sha256:24c0e40cfd2f135432c654b46cf614171ddfe8cd323f7d89d76c10dc9aeb30f0"
+      ],
+      "skipSites": []
+    },
+    "CDependencies.test_shell_build_configuration_and_flag_injection_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fd80220be8134529a8ac643ebc027cc76c1a22170053ad2cd2062d3a97bc91ca",
+        "class:setup-sha256:24c0e40cfd2f135432c654b46cf614171ddfe8cd323f7d89d76c10dc9aeb30f0"
+      ],
+      "skipSites": []
+    },
+    "CDependencies.test_unknown_source_and_transitive_header_are_selected_offline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fd80220be8134529a8ac643ebc027cc76c1a22170053ad2cd2062d3a97bc91ca",
+        "class:setup-sha256:24c0e40cfd2f135432c654b46cf614171ddfe8cd323f7d89d76c10dc9aeb30f0"
+      ],
+      "skipSites": []
+    },
+    "CDependencies.test_unqualified_thread_or_memory_abi_requires_runtime_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fd80220be8134529a8ac643ebc027cc76c1a22170053ad2cd2062d3a97bc91ca",
+        "class:setup-sha256:24c0e40cfd2f135432c654b46cf614171ddfe8cd323f7d89d76c10dc9aeb30f0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_application_dependencies.py",
+  "reviewReason": "Add captured C source graph, object ABI and target controls without removing existing cases",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
