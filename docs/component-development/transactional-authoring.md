@@ -23,6 +23,8 @@ Build the resulting project with that language's existing `build` command and pi
 
 The shared representation uses namespace `transactional-aggregate`, key bytes `aggregate/count`, an eight-byte little-endian unsigned count, media type `application/vnd.lsf.aggregate-v1`, and empty metadata. An absent value means zero; malformed stored bytes are a declared `malformed-state` result. Opaque versions remain byte arrays, and optional values retain presence in every language.
 
+The captured transaction template requests finite ceilings of 4 MiB of state reads, 2 MiB of state writes and 32 staged intents. The host also enforces individual key/value/page/intent limits and its shared staging ledger. These application budgets grant no access; namespace, command/query, result and intent binding authority still require explicit admission. Immediate outbound HTTP remains at a zero budget.
+
 <!-- lsf-example: guest/transactional-aggregate capsule -->
 
 Each facade retains the generated WIT types and the activation's host-issued owners. A command/query owner cannot close while an accepted call or child page remains live. Pages close before their original view. C callback frames retain argument buffers until physical retirement; Rust borrows enforce the same exclusion at compilation; the other facades enforce it through shared owner cells. Disposal releases access without asserting a durable abort or replacing accepted work.

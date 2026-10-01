@@ -76,6 +76,13 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                     files = snapshot(project_path)
                     project = json.loads(files["capsule-project.json"])
                     declaration = json.loads(files["transaction-binding.json"])
+                    # Captured application budgets must permit the shared guest
+                    # operation without installing application effect authority.
+                    self.assertGreaterEqual(project["limits"]["stateReadBytes"], 2 * 1024 * 1024)
+                    self.assertGreaterEqual(project["limits"]["stateWriteBytes"], 1024 * 1024)
+                    self.assertGreater(project["limits"]["effectCount"], 0)
+                    self.assertLessEqual(project["limits"]["effectCount"], 32)
+                    self.assertEqual(project["limits"]["outboundRequests"], 0)
                     self.assertEqual(declaration["capsule"], project["service"])
                     self.assertEqual(declaration["deployment"], project["name"])
                     self.assertEqual(declaration["binding"], project["name"])

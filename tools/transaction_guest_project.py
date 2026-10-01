@@ -12,6 +12,13 @@ RESULT_FORMAT = "lsf-wit-values-v1"
 
 def augment(files: dict[str, bytes], project: dict) -> None:
     """Declare exact compatibility; only authenticated node admission grants it."""
+    if "limits" in project:
+        # The stateless seed has zero state/effect budgets. These finite request
+        # ceilings let an authorized aggregate use its imports; they confer no
+        # namespace, recovery, result-read or provider authority.
+        project["limits"].update(stateReadBytes=4 * 1024 * 1024,
+                                 stateWriteBytes=2 * 1024 * 1024, effectCount=32)
+        files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
     for package in ("state", "intents"):
         files["wit/deps/" + package + "/package.wit"] = (ROOT / "wit/platform" / package / "package.wit").read_bytes()
     profile = (ROOT / "sdk/profile/transaction-requirements-v1.json").read_bytes()
