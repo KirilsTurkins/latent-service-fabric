@@ -511,3 +511,18 @@ mutation preconditions, tenant isolation and current authority checks remain
 explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
+
+## Phase 4 transaction and state descriptors
+
+The descriptor baseline adds `latent/transaction/v1/transaction.proto` and
+`latent/control/v1/state.proto` for explicitly negotiated transaction and
+management requests. `AuditCapabilityResourceClass` adds
+`AUDIT_CAPABILITY_RESOURCE_CLASS_STATE` at enum number 11. Every existing
+descriptor semantic, including field numbers, enum values, RPC signatures and
+reservations, remains unchanged apart from that additive audit value.
+
+The baseline is generated from the current module with Buf 1.72.0 and checked
+with the full normalized descriptor comparison. The [transaction contract](transactions.md)
+defines the required profile, current authority, original command identity and
+uncertain-outcome recovery. Generated service definitions require the installed
+runtime implementation before those methods can execute.
