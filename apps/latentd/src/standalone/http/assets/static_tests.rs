@@ -316,9 +316,10 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
 ) {
     let h = Harness::static_site().await;
     let reference = publish(&h, "first", b"root");
+    let mut root_generations = [0; 2];
     for (id, mount) in [("root", "/"), ("docs", "/docs")] {
-        for method in ["GET", "HEAD"] {
-            apply(
+        for (index, method) in ["GET", "HEAD"].into_iter().enumerate() {
+            let generation = apply(
                 &h,
                 &format!("{id}-{method}"),
                 &reference,
@@ -327,6 +328,9 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
                 method,
                 0,
             );
+            if id == "root" {
+                root_generations[index] = generation;
+            }
         }
     }
     for (path, headers, body) in [
@@ -386,14 +390,14 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         .1
         .contains("private, max-age=31536000, immutable"));
     assert!(h.store().snapshot().cache_hits > 0);
-    signed_error_documents(&h).await;
+    signed_error_documents(&h, root_generations).await;
     no_execution(&h);
     h.finish().await;
 }
 
-async fn signed_error_documents(h: &Harness) {
+async fn signed_error_documents(h: &Harness, root_generations: [u64; 2]) {
     let error = publish_error_site(h, "configured-error", Some(b"signed not found"));
-    for method in ["GET", "HEAD"] {
+    for (method, generation) in ["GET", "HEAD"].into_iter().zip(root_generations) {
         apply(
             h,
             &format!("root-{method}"),
@@ -401,7 +405,7 @@ async fn signed_error_documents(h: &Harness) {
             "/",
             "prefix",
             method,
-            1,
+            generation,
         );
         apply(
             h,
