@@ -95,3 +95,42 @@ management API. The fixed HTTP routes select command, fresh query and original
 result lookup. Bodyless queries and result requests carry no content type or
 business body. Synthetic provisioning/parser tests and the local HTTP transport
 fixture do not qualify native transaction execution.
+
+## Run the focused native campaign
+
+After building current production binaries, run the compiler-free conductor in
+an isolated Linux environment with Python 3.13 and a new private output root:
+
+```bash
+python3.13 tools/run_java_transaction_http_qualification.py \
+  --cli /native/latent --node /native/latentd \
+  --aot-compiler /native/latent-aot-compiler \
+  --contracts-tool /native/capsule_contracts --signer /native/capsule_authoring \
+  --portable /inputs/portable-r3 --output /owned/java-transaction-r1 \
+  --native-source-commit <exact-binary-build-commit> \
+  --conductor-source-commit <exact-collector-commit>
+```
+
+Both source identities are supplied explicitly and remain separate from the
+original Java compiler source. The runner hashes all five native executables and
+the collector files before and after execution. It creates fresh ephemeral
+package trust, uses the actual native clock sample, and obtains real provider
+and authenticated-caller observations from the stopped node. Policy mutation
+receipts establish authority; the observation and configuration do not.
+
+The campaign checks real command/query/scan sockets, lost response recovery,
+canonical duplicate input, changed input under the original command ID,
+declared rejection replay after a later business change, stale edit and caller
+and tenant isolation, current read revocation/restoration, and compatible
+publication cutover. It then crashes its own reserved node leader only after
+proven commitment and actual uncertain dispatch with durable recipient
+acceptance. Restart must preserve the original result, effect, receipt and
+retention horizon. External recipient acceptance never establishes LSF
+commitment or recipient delivery.
+
+Every CLI/native process and socket response has a bounded original observation.
+Failed attempts remain in their private output root. The final receipt reports
+only cases actually completed, requires positive final native shutdown counters,
+and explicitly lists missing schema/restore, trap/fuel, precommit cancellation,
+memory exhaustion and full retention-window scenarios. A pass of this focused
+campaign does not complete the full Java or Phase 4 acceptance checklist.
