@@ -5,7 +5,10 @@ The maintained native test
 uses the common atomic command envelope, protected Linux/ext4 offline recovery
 ports, fixed dispatcher and the synthetic TLS put-once endpoint from
 [the qualified HTTP effect profile](../reference/qualified-http-effects.md).
-Its source is a test fixture; execution requires a source-matched native receipt.
+Source `2f8292059ce82b2356c25d7a59543784b85ad9e5` passed all 55 native HTTP
+cases, exact suite discovery and strict owner Clippy on Linux/x86-64 ext4.
+The [compact source-bound receipt](evidence/recovery399-http-restore-2f829205.json)
+records executed artifact hashes and preserves the prior failed attempts.
 
 The common envelope commits an aggregate value, original command and result,
 an inbox identity, pending effect and immutable payload together. After actual
