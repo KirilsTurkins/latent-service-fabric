@@ -17,6 +17,11 @@ export const websiteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.u
 export const repositoryRoot = path.dirname(websiteRoot);
 export const repositoryUrl = 'https://github.com/KirilsTurkins/latent-service-fabric';
 export const maxSourceBytes = 2 * 1024 * 1024;
+const markdownParser = unified().use(remarkParse).use(remarkGfm);
+const mdxParser = unified().use(remarkParse).use(remarkGfm).use(remarkMdx);
+const parsedBodies = new Map();
+const maxParsedBytes = 16 * 1024 * 1024;
+let parsedBytes = 0;
 
 export function requireValue(condition, message) {
   if (!condition) throw new Error(message);
@@ -49,15 +54,20 @@ export function canonicalPath(relative) {
 
 export function safeFile(root, relative, limit = maxSourceBytes) {
   canonicalPath(relative);
-  let current = fs.realpathSync(root);
+  const actualRoot = fs.realpathSync(root);
+  let current = actualRoot;
   for (const segment of relative.split('/')) {
-    requireValue(fs.readdirSync(current).includes(segment), `Missing or incorrectly cased path: ${relative}`);
+    // Linux lookups enforce exact case themselves. Enumerating every directory
+    // for every source/link made validation quadratic in directory size.
+    // Other hosts retain the check for potentially case-insensitive volumes.
+    if (process.platform !== 'linux') requireValue(fs.readdirSync(current).includes(segment), `Missing or incorrectly cased path: ${relative}`);
     current = path.join(current, segment);
-    const metadata = fs.lstatSync(current);
+    const metadata = fs.lstatSync(current, {throwIfNoEntry: false});
+    requireValue(metadata !== undefined, `Missing or incorrectly cased path: ${relative}`);
     requireValue(!metadata.isSymbolicLink(), `Linked input is not allowed: ${relative}`);
-    const resolved = path.relative(fs.realpathSync(root), fs.realpathSync(current));
-    requireValue(resolved !== '..' && !resolved.startsWith(`..${path.sep}`) && !path.isAbsolute(resolved), `Repository escape: ${relative}`);
   }
+  const resolved = path.relative(actualRoot, fs.realpathSync(current));
+  requireValue(resolved !== '..' && !resolved.startsWith(`..${path.sep}`) && !path.isAbsolute(resolved), `Repository escape: ${relative}`);
   const metadata = fs.statSync(current);
   requireValue(metadata.isFile() && metadata.size <= limit, `Nonregular or oversized input: ${relative}`);
   return current;
@@ -70,14 +80,31 @@ export function readSource(root, relative, limit = maxSourceBytes) {
 }
 
 export function parseDocument(text, source) {
-  const processor = unified().use(remarkParse).use(remarkGfm);
-  if (source.endsWith('.mdx')) processor.use(remarkMdx);
   const header = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
   const frontMatter = header ? parseYaml(header[1], {uniqueKeys: true, maxAliasCount: 20}) : {};
   requireValue(frontMatter && typeof frontMatter === 'object' && !Array.isArray(frontMatter), `Invalid front matter: ${source}`);
   requireValue(frontMatter.format === undefined || frontMatter.format === 'detect' || frontMatter.format === (source.endsWith('.mdx') ? 'mdx' : 'md'), `Front matter cannot change the file execution mode: ${source}`);
   requireValue(!frontMatter.draft && !frontMatter.unlisted && frontMatter.custom_edit_url === undefined, `Draft/hidden/custom-edit overrides require a publication-contract review: ${source}`);
-  const tree = processor.parse(header ? text.slice(header[0].length) : text);
+  const body = header ? text.slice(header[0].length) : text;
+  const mode = source.endsWith('.mdx') ? 'mdx' : 'md';
+  const key = `${mode}:${body}`;
+  let parsed = parsedBodies.get(key);
+  if (!parsed) {
+    parsed = (mode === 'mdx' ? mdxParser : markdownParser).parse(body);
+    const bytes = Buffer.byteLength(key);
+    if (bytes <= maxParsedBytes) {
+      while (parsedBodies.size >= 2000 || parsedBytes + bytes > maxParsedBytes) {
+        const oldest = parsedBodies.keys().next().value;
+        parsedBytes -= Buffer.byteLength(oldest);
+        parsedBodies.delete(oldest);
+      }
+      parsedBodies.set(key, parsed);
+      parsedBytes += bytes;
+    }
+  }
+  // Only exact syntax bytes are memoized. Every caller gets an independent AST,
+  // and source, front matter, link and publication validation still runs fresh.
+  const tree = structuredClone(parsed);
   tree.frontMatter = frontMatter;
   return tree;
 }
