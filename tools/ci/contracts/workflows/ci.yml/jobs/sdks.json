@@ -38,6 +38,13 @@
         }
       },
       {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "components": "rustfmt",
+          "toolchain": "1.97.1"
+        }
+      },
+      {
         "uses": "actions/setup-go",
         "with": {
           "cache-dependency-path": "sdk/go/go.sum",
@@ -99,6 +106,10 @@
         "shell": "bash"
       },
       {
+        "name": "Verify additive transaction client definitions and bounded Rust bridges",
+        "run": "python3 tools/transaction_client_models.py --check\npython3 tools/transaction_client_conversions.py --check\npython3 tools/transaction_client_rust_shapes.py --check\npython3 -m unittest tools.tests.test_transaction_client_models\n"
+      },
+      {
         "if": "always()",
         "name": "Retain Java SDK qualification diagnostics",
         "uses": "actions/upload-artifact",
@@ -113,7 +124,7 @@
   },
   "jobId": "sdks",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Preserve every stateless SDK qualification and check all additive transaction definitions with pinned formatters",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

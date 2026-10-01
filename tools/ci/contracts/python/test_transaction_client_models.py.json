@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "TransactionClientModelTests.test_all_six_models_preserve_optional_full_width_preconditions_and_protocol_data",
+    "TransactionClientModelTests.test_future_external_package_cannot_reuse_an_approved_short_name",
+    "TransactionClientModelTests.test_paging_uses_exact_protobuf_owner_and_rejects_an_external_alias",
+    "TransactionClientModelTests.test_qualification_preserves_go_fields_and_dotnet_record_properties"
+  ],
+  "guards": {
+    "TransactionClientModelTests.test_all_six_models_preserve_optional_full_width_preconditions_and_protocol_data": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0908101c6239c1fc23dbd027c8d6b59cf2b7cd80a4a48adb9d0d8cb5ddb42d71",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionClientModelTests.test_future_external_package_cannot_reuse_an_approved_short_name": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0908101c6239c1fc23dbd027c8d6b59cf2b7cd80a4a48adb9d0d8cb5ddb42d71",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionClientModelTests.test_paging_uses_exact_protobuf_owner_and_rejects_an_external_alias": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0908101c6239c1fc23dbd027c8d6b59cf2b7cd80a4a48adb9d0d8cb5ddb42d71",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TransactionClientModelTests.test_qualification_preserves_go_fields_and_dotnet_record_properties": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0908101c6239c1fc23dbd027c8d6b59cf2b7cd80a4a48adb9d0d8cb5ddb42d71",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_transaction_client_models.py",
+  "reviewReason": "Reject foreign descriptor aliases and preserve full-width optional preconditions across all six model projections",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

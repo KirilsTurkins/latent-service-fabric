@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/transaction_client_conversions.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Generate lossless Rust Protobuf bridges with checked oneof ownership",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "9dfe67ee008212ca974ed8dc3e9da431d2f5bc0d72de36fdb6848f6e7353a252"
+}

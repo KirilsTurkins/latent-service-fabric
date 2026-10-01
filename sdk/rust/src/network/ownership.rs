@@ -1,6 +1,6 @@
 use super::{ClientLimits, FailureKind, RpcFailure};
 use std::{future::Future, sync::Arc};
-use tokio::sync::{watch, Notify, OwnedSemaphorePermit, Semaphore};
+use tokio::sync::{Notify, OwnedSemaphorePermit, Semaphore, watch};
 
 pub(super) struct Resources {
     pub limits: ClientLimits,
@@ -41,14 +41,27 @@ impl Resources {
     }
 
     pub fn begin(self: &Arc<Self>, encoded: usize) -> Result<Arc<Lease>, RpcFailure> {
+        self.begin_with_reservation(encoded, 0)
+    }
+
+    pub fn begin_with_reservation(
+        self: &Arc<Self>,
+        encoded: usize,
+        additional_bytes: usize,
+    ) -> Result<Arc<Lease>, RpcFailure> {
         if *self.closed.borrow() {
             return Err(RpcFailure::local(FailureKind::Closed));
         }
         if encoded > self.limits.maximum_request_bytes {
             return Err(RpcFailure::local(FailureKind::Capacity));
         }
-        let reserved = u32::try_from(2 * (encoded + self.limits.maximum_response_bytes) + 32768)
-            .map_err(|_| RpcFailure::local(FailureKind::Capacity))?;
+        let reserved = encoded
+            .checked_add(self.limits.maximum_response_bytes)
+            .and_then(|bytes| bytes.checked_mul(2))
+            .and_then(|bytes| bytes.checked_add(32768))
+            .and_then(|bytes| bytes.checked_add(additional_bytes))
+            .and_then(|bytes| u32::try_from(bytes).ok())
+            .ok_or_else(|| RpcFailure::local(FailureKind::Capacity))?;
         let slot = self
             .calls
             .clone()

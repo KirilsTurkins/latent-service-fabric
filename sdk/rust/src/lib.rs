@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod management;
+pub mod transaction;
 
 #[cfg(feature = "transport")]
 pub mod network;

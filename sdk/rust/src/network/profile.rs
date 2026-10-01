@@ -7,8 +7,8 @@ mod responses;
 mod vectors;
 
 use super::{
-    channel::CallChannel, AuditAcknowledgement, FailureKind, RecoveryIdentity, RpcClient,
-    RpcFailure,
+    AuditAcknowledgement, FailureKind, RecoveryIdentity, RpcClient, RpcFailure,
+    channel::CallChannel,
 };
 use crate::management as model;
 use latent_rpc::{control::v1 as control, invocation::v1 as invocation};
@@ -18,6 +18,12 @@ use responses::ResponseProfile;
 use std::future::Future;
 use tokio::time::Instant;
 use tonic::{Request, Response, Status};
+
+pub(super) fn response_audit(
+    value: Option<AuditAcknowledgement>,
+) -> (Option<model::AuditAck>, Option<String>, Option<u64>) {
+    metadata::audit(value)
+}
 
 macro_rules! operation {
     ($method:ident, $request:ident, $response:ident, $module:ident, $service_module:ident, $service:ident) => {

@@ -63,7 +63,7 @@
     "sdks",
     "website"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add pinned reproducible transaction model and bounded Rust conversion checks to maintained SDK owner",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

@@ -3,6 +3,7 @@ mod config;
 mod error;
 mod ownership;
 mod profile;
+mod transaction;
 
 #[cfg(test)]
 mod tests;
@@ -134,14 +135,33 @@ impl RpcClient {
         Call: FnOnce(CallChannel, Request<Input>) -> Reply + Send,
         Reply: Future<Output = Result<Response<Output>, Status>> + Send,
     {
+        self.unary_with_reservation(input, deadline, recovery, 0, call)
+            .await
+    }
+
+    async fn unary_with_reservation<Input, Output, Call, Reply>(
+        &self,
+        input: Input,
+        deadline: Instant,
+        recovery: RecoveryIdentity,
+        additional_bytes: usize,
+        call: Call,
+    ) -> Result<RpcResponse<Output>, RpcFailure>
+    where
+        Input: Message + Send,
+        Output: Message + Send,
+        Call: FnOnce(CallChannel, Request<Input>) -> Reply + Send,
+        Reply: Future<Output = Result<Response<Output>, Status>> + Send,
+    {
         let deadline = deadline.min(Instant::now() + self.limits().rpc_timeout);
         if deadline <= Instant::now() {
             return Err(RpcFailure::local(FailureKind::Deadline).context(&recovery, false));
         }
-        let lease = self
-            .inner
-            .resources
-            .begin(input.encoded_len())
+        let lease = if additional_bytes == 0 {
+            self.inner.resources.begin(input.encoded_len())
+        } else {
+            self.inner.resources.begin_with_reservation(input.encoded_len(), additional_bytes)
+        }
             .map_err(|error| error.context(&recovery, false))?;
         let mut closed = self.inner.resources.closed.subscribe();
         let channel = tokio::select! {

@@ -1,0 +1,1708 @@
+{
+  "schemaVersion": "latent.transaction-client.models.v1",
+  "profile": "latent.client.transaction.v1",
+  "wireProfile": "lsf-transaction-v1",
+  "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "preparationProfileDigest": "sha256:6acd7a248633dd01c9cdcbf8a1ed33fc5e6aa1d2edb09b7d89e53fda594b5507",
+  "evidenceKind": "generated-model-definition",
+  "externalClientExecutionQualified": false,
+  "operations": [
+    {
+      "name": "InvokeCommand",
+      "request": "InvokeCommandRequest",
+      "response": "InvokeCommandResponse",
+      "service": "latent.transaction.v1.TransactionService",
+      "wireRequest": ".latent.transaction.v1.InvokeCommandRequest",
+      "wireResponse": ".latent.transaction.v1.InvokeCommandResponse"
+    },
+    {
+      "name": "Query",
+      "request": "QueryRequest",
+      "response": "QueryResponse",
+      "service": "latent.transaction.v1.TransactionService",
+      "wireRequest": ".latent.transaction.v1.QueryRequest",
+      "wireResponse": ".latent.transaction.v1.QueryResponse"
+    },
+    {
+      "name": "LookupCommand",
+      "request": "LookupCommandRequest",
+      "response": "LookupCommandResponse",
+      "service": "latent.transaction.v1.TransactionService",
+      "wireRequest": ".latent.transaction.v1.LookupCommandRequest",
+      "wireResponse": ".latent.transaction.v1.LookupCommandResponse"
+    },
+    {
+      "name": "LookupCommit",
+      "request": "LookupCommitRequest",
+      "response": "LookupCommitResponse",
+      "service": "latent.transaction.v1.TransactionService",
+      "wireRequest": ".latent.transaction.v1.LookupCommitRequest",
+      "wireResponse": ".latent.transaction.v1.LookupCommitResponse"
+    },
+    {
+      "name": "GetEffect",
+      "request": "GetEffectRequest",
+      "response": "GetEffectResponse",
+      "service": "latent.transaction.v1.TransactionService",
+      "wireRequest": ".latent.transaction.v1.GetEffectRequest",
+      "wireResponse": ".latent.transaction.v1.GetEffectResponse"
+    },
+    {
+      "name": "ListEffectHistory",
+      "request": "ListEffectHistoryRequest",
+      "response": "ListEffectHistoryResponse",
+      "service": "latent.transaction.v1.TransactionService",
+      "wireRequest": ".latent.transaction.v1.ListEffectHistoryRequest",
+      "wireResponse": ".latent.transaction.v1.ListEffectHistoryResponse"
+    },
+    {
+      "name": "CancelCommand",
+      "request": "CancelCommandRequest",
+      "response": "CancelCommandResponse",
+      "service": "latent.transaction.v1.TransactionService",
+      "wireRequest": ".latent.transaction.v1.CancelCommandRequest",
+      "wireResponse": ".latent.transaction.v1.CancelCommandResponse"
+    },
+    {
+      "name": "MutateNamespace",
+      "request": "MutateNamespaceRequest",
+      "response": "MutateNamespaceResponse",
+      "service": "latent.control.v1.StateService",
+      "wireRequest": ".latent.control.v1.MutateNamespaceRequest",
+      "wireResponse": ".latent.control.v1.MutateNamespaceResponse"
+    },
+    {
+      "name": "InspectNamespace",
+      "request": "InspectNamespaceRequest",
+      "response": "InspectNamespaceResponse",
+      "service": "latent.control.v1.StateService",
+      "wireRequest": ".latent.control.v1.InspectNamespaceRequest",
+      "wireResponse": ".latent.control.v1.InspectNamespaceResponse"
+    },
+    {
+      "name": "SelectEntity",
+      "request": "SelectEntityRequest",
+      "response": "SelectEntityResponse",
+      "service": "latent.control.v1.StateService",
+      "wireRequest": ".latent.control.v1.SelectEntityRequest",
+      "wireResponse": ".latent.control.v1.SelectEntityResponse"
+    },
+    {
+      "name": "MutateState",
+      "request": "MutateStateRequest",
+      "response": "MutateStateResponse",
+      "service": "latent.control.v1.StateService",
+      "wireRequest": ".latent.control.v1.MutateStateRequest",
+      "wireResponse": ".latent.control.v1.MutateStateResponse"
+    },
+    {
+      "name": "GetStateOperationReceipt",
+      "request": "GetStateOperationReceiptRequest",
+      "response": "GetStateOperationReceiptResponse",
+      "service": "latent.control.v1.StateService",
+      "wireRequest": ".latent.control.v1.GetStateOperationReceiptRequest",
+      "wireResponse": ".latent.control.v1.GetStateOperationReceiptResponse"
+    }
+  ],
+  "sources": {
+    "latent/transaction/v1/transaction.proto": {
+      "sha256": "sha256:bd84dd30f70d9281d3ef067b61eece0a56d65f6494d3e6fcb599b79cf0011db3",
+      "service": "latent.transaction.v1.TransactionService"
+    },
+    "latent/control/v1/state.proto": {
+      "sha256": "sha256:ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
+      "service": "latent.control.v1.StateService"
+    }
+  },
+  "wireNames": {
+    "EntityInspection": ".latent.control.v1.EntityInspection",
+    "GetStateOperationReceiptRequest": ".latent.control.v1.GetStateOperationReceiptRequest",
+    "GetStateOperationReceiptResponse": ".latent.control.v1.GetStateOperationReceiptResponse",
+    "InspectNamespaceRequest": ".latent.control.v1.InspectNamespaceRequest",
+    "InspectNamespaceResponse": ".latent.control.v1.InspectNamespaceResponse",
+    "MutateNamespaceRequest": ".latent.control.v1.MutateNamespaceRequest",
+    "MutateNamespaceResponse": ".latent.control.v1.MutateNamespaceResponse",
+    "MutateStateRequest": ".latent.control.v1.MutateStateRequest",
+    "MutateStateResponse": ".latent.control.v1.MutateStateResponse",
+    "NamespaceConfiguration": ".latent.control.v1.NamespaceConfiguration",
+    "NamespaceInspection": ".latent.control.v1.NamespaceInspection",
+    "NamespaceMutationKind": ".latent.control.v1.NamespaceMutationKind",
+    "NamespaceOperationReceipt": ".latent.control.v1.NamespaceOperationReceipt",
+    "NamespaceQuota": ".latent.control.v1.NamespaceQuota",
+    "NamespaceStatus": ".latent.control.v1.NamespaceStatus",
+    "SelectEntityRequest": ".latent.control.v1.SelectEntityRequest",
+    "SelectEntityResponse": ".latent.control.v1.SelectEntityResponse",
+    "StateMutationKind": ".latent.control.v1.StateMutationKind",
+    "StateOperationDisposition": ".latent.control.v1.StateOperationDisposition",
+    "StateOperationReceipt": ".latent.control.v1.StateOperationReceipt",
+    "AbortFence": ".latent.transaction.v1.AbortFence",
+    "CancelCommandRequest": ".latent.transaction.v1.CancelCommandRequest",
+    "CancelCommandResponse": ".latent.transaction.v1.CancelCommandResponse",
+    "CommandCancelDisposition": ".latent.transaction.v1.CommandCancelDisposition",
+    "CommandInspection": ".latent.transaction.v1.CommandInspection",
+    "CommandKey": ".latent.transaction.v1.CommandKey",
+    "CommandOutcome": ".latent.transaction.v1.CommandOutcome",
+    "CommandSelector": ".latent.transaction.v1.CommandSelector",
+    "CommitReceipt": ".latent.transaction.v1.CommitReceipt",
+    "EffectDisposition": ".latent.transaction.v1.EffectDisposition",
+    "EffectReceipt": ".latent.transaction.v1.EffectReceipt",
+    "ExpectedVersion": ".latent.transaction.v1.ExpectedVersion",
+    "GetEffectRequest": ".latent.transaction.v1.GetEffectRequest",
+    "GetEffectResponse": ".latent.transaction.v1.GetEffectResponse",
+    "InvokeCommandRequest": ".latent.transaction.v1.InvokeCommandRequest",
+    "InvokeCommandResponse": ".latent.transaction.v1.InvokeCommandResponse",
+    "LinkedRetention": ".latent.transaction.v1.LinkedRetention",
+    "ListEffectHistoryRequest": ".latent.transaction.v1.ListEffectHistoryRequest",
+    "ListEffectHistoryResponse": ".latent.transaction.v1.ListEffectHistoryResponse",
+    "LookupCommandRequest": ".latent.transaction.v1.LookupCommandRequest",
+    "LookupCommandResponse": ".latent.transaction.v1.LookupCommandResponse",
+    "LookupCommitRequest": ".latent.transaction.v1.LookupCommitRequest",
+    "LookupCommitResponse": ".latent.transaction.v1.LookupCommitResponse",
+    "NamespaceSelector": ".latent.transaction.v1.NamespaceSelector",
+    "PageRequest": ".latent.transaction.v1.PageRequest",
+    "PageResponse": ".latent.transaction.v1.PageResponse",
+    "QueryRequest": ".latent.transaction.v1.QueryRequest",
+    "QueryResponse": ".latent.transaction.v1.QueryResponse",
+    "RetryAttempt": ".latent.transaction.v1.RetryAttempt",
+    "SourceIdentity": ".latent.transaction.v1.SourceIdentity",
+    "TransactionProfile": ".latent.transaction.v1.TransactionProfile",
+    "ViewIdentity": ".latent.transaction.v1.ViewIdentity"
+  },
+  "externalTypes": [
+    "AuditAck",
+    "DeclaredError",
+    "InvokeRequest",
+    "InvokeResponse",
+    "PlatformError",
+    "PublicationRef",
+    "Success"
+  ],
+  "messages": {
+    "AbortFence": [
+      {
+        "name": "command_id",
+        "number": 1,
+        "jsonName": "commandId",
+        "type": "string"
+      },
+      {
+        "name": "attempt_id",
+        "number": 2,
+        "jsonName": "attemptId",
+        "type": "string"
+      },
+      {
+        "name": "transaction_id",
+        "number": 3,
+        "jsonName": "transactionId",
+        "type": "string"
+      },
+      {
+        "name": "owner_fence",
+        "number": 4,
+        "jsonName": "ownerFence",
+        "type": "bytes"
+      }
+    ],
+    "TransactionProfile": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "string"
+      },
+      {
+        "name": "host_abi_digest",
+        "number": 2,
+        "jsonName": "hostAbiDigest",
+        "type": "string"
+      },
+      {
+        "name": "preparation_profile_digest",
+        "number": 3,
+        "jsonName": "preparationProfileDigest",
+        "type": "string"
+      }
+    ],
+    "NamespaceSelector": [
+      {
+        "name": "tenant",
+        "number": 1,
+        "jsonName": "tenant",
+        "type": "string"
+      },
+      {
+        "name": "namespace",
+        "number": 2,
+        "jsonName": "namespace",
+        "type": "string"
+      },
+      {
+        "name": "incarnation",
+        "number": 3,
+        "jsonName": "incarnation",
+        "type": "string"
+      }
+    ],
+    "CommandSelector": [
+      {
+        "name": "namespace",
+        "number": 1,
+        "jsonName": "namespace",
+        "type": "NamespaceSelector",
+        "wireType": ".latent.transaction.v1.NamespaceSelector",
+        "optional": true
+      },
+      {
+        "name": "operation",
+        "number": 2,
+        "jsonName": "operation",
+        "type": "string"
+      },
+      {
+        "name": "entity",
+        "number": 3,
+        "jsonName": "entity",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "client_key",
+        "number": 4,
+        "jsonName": "clientKey",
+        "type": "string"
+      },
+      {
+        "name": "shared_recovery_scope",
+        "number": 5,
+        "jsonName": "sharedRecoveryScope",
+        "type": "string",
+        "optional": true
+      }
+    ],
+    "LookupCommandRequest": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "TransactionProfile",
+        "wireType": ".latent.transaction.v1.TransactionProfile",
+        "optional": true
+      },
+      {
+        "name": "command",
+        "number": 2,
+        "jsonName": "command",
+        "type": "CommandSelector",
+        "wireType": ".latent.transaction.v1.CommandSelector",
+        "optional": true
+      },
+      {
+        "name": "attempt_id",
+        "number": 3,
+        "jsonName": "attemptId",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "authorization_publication",
+        "number": 4,
+        "jsonName": "authorizationPublication",
+        "type": "PublicationRef",
+        "wireType": ".latent.control.v1.PublicationRef",
+        "external": true,
+        "optional": true
+      }
+    ],
+    "CancelCommandRequest": [
+      {
+        "name": "command",
+        "number": 1,
+        "jsonName": "command",
+        "type": "LookupCommandRequest",
+        "wireType": ".latent.transaction.v1.LookupCommandRequest",
+        "optional": true
+      },
+      {
+        "name": "reason",
+        "number": 2,
+        "jsonName": "reason",
+        "type": "string"
+      }
+    ],
+    "CommandKey": [
+      {
+        "name": "namespace",
+        "number": 1,
+        "jsonName": "namespace",
+        "type": "NamespaceSelector",
+        "wireType": ".latent.transaction.v1.NamespaceSelector",
+        "optional": true
+      },
+      {
+        "name": "recovery_scope",
+        "number": 2,
+        "jsonName": "recoveryScope",
+        "type": "string"
+      },
+      {
+        "name": "operation",
+        "number": 3,
+        "jsonName": "operation",
+        "type": "string"
+      },
+      {
+        "name": "entity",
+        "number": 4,
+        "jsonName": "entity",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "client_key",
+        "number": 5,
+        "jsonName": "clientKey",
+        "type": "string"
+      }
+    ],
+    "SourceIdentity": [
+      {
+        "name": "publication_id",
+        "number": 1,
+        "jsonName": "publicationId",
+        "type": "string"
+      },
+      {
+        "name": "revision_id",
+        "number": 2,
+        "jsonName": "revisionId",
+        "type": "string"
+      },
+      {
+        "name": "release_digest",
+        "number": 3,
+        "jsonName": "releaseDigest",
+        "type": "string"
+      },
+      {
+        "name": "route_generation",
+        "number": 4,
+        "jsonName": "routeGeneration",
+        "type": "uint64"
+      },
+      {
+        "name": "contract_digest",
+        "number": 5,
+        "jsonName": "contractDigest",
+        "type": "string"
+      },
+      {
+        "name": "state_schema",
+        "number": 6,
+        "jsonName": "stateSchema",
+        "type": "string"
+      },
+      {
+        "name": "input_format",
+        "number": 7,
+        "jsonName": "inputFormat",
+        "type": "string"
+      },
+      {
+        "name": "result_format",
+        "number": 8,
+        "jsonName": "resultFormat",
+        "type": "string"
+      },
+      {
+        "name": "component_digest",
+        "number": 9,
+        "jsonName": "componentDigest",
+        "type": "string"
+      }
+    ],
+    "CommitReceipt": [
+      {
+        "name": "command_id",
+        "number": 1,
+        "jsonName": "commandId",
+        "type": "string"
+      },
+      {
+        "name": "attempt_id",
+        "number": 2,
+        "jsonName": "attemptId",
+        "type": "string"
+      },
+      {
+        "name": "transaction_id",
+        "number": 3,
+        "jsonName": "transactionId",
+        "type": "string"
+      },
+      {
+        "name": "committed_version",
+        "number": 4,
+        "jsonName": "committedVersion",
+        "type": "bytes"
+      },
+      {
+        "name": "committed_at_unix_millis",
+        "number": 5,
+        "jsonName": "committedAtUnixMillis",
+        "type": "uint64"
+      },
+      {
+        "name": "effect_ids",
+        "number": 6,
+        "jsonName": "effectIds",
+        "type": "string",
+        "repeated": true
+      },
+      {
+        "name": "receipt_id",
+        "number": 7,
+        "jsonName": "receiptId",
+        "type": "string"
+      },
+      {
+        "name": "source",
+        "number": 8,
+        "jsonName": "source",
+        "type": "SourceIdentity",
+        "wireType": ".latent.transaction.v1.SourceIdentity",
+        "optional": true
+      }
+    ],
+    "LinkedRetention": [
+      {
+        "name": "record_format",
+        "number": 1,
+        "jsonName": "recordFormat",
+        "type": "string"
+      },
+      {
+        "name": "record_version",
+        "number": 2,
+        "jsonName": "recordVersion",
+        "type": "uint32"
+      },
+      {
+        "name": "payload_expires_at_unix_millis",
+        "number": 3,
+        "jsonName": "payloadExpiresAtUnixMillis",
+        "type": "uint64",
+        "optional": true
+      },
+      {
+        "name": "identity_expires_at_unix_millis",
+        "number": 4,
+        "jsonName": "identityExpiresAtUnixMillis",
+        "type": "uint64",
+        "optional": true
+      },
+      {
+        "name": "remaining_recovery_millis",
+        "number": 5,
+        "jsonName": "remainingRecoveryMillis",
+        "type": "uint64",
+        "optional": true
+      },
+      {
+        "name": "required_record_ids",
+        "number": 6,
+        "jsonName": "requiredRecordIds",
+        "type": "string",
+        "repeated": true
+      },
+      {
+        "name": "payload_available",
+        "number": 7,
+        "jsonName": "payloadAvailable",
+        "type": "bool"
+      }
+    ],
+    "CommandInspection": [
+      {
+        "name": "key",
+        "number": 1,
+        "jsonName": "key",
+        "type": "CommandKey",
+        "wireType": ".latent.transaction.v1.CommandKey",
+        "optional": true
+      },
+      {
+        "name": "command_id",
+        "number": 2,
+        "jsonName": "commandId",
+        "type": "string"
+      },
+      {
+        "name": "attempt_id",
+        "number": 3,
+        "jsonName": "attemptId",
+        "type": "string"
+      },
+      {
+        "name": "fingerprint_sha256",
+        "number": 4,
+        "jsonName": "fingerprintSha256",
+        "type": "bytes"
+      },
+      {
+        "name": "outcome",
+        "number": 5,
+        "jsonName": "outcome",
+        "type": "CommandOutcome",
+        "wireType": ".latent.transaction.v1.CommandOutcome"
+      },
+      {
+        "name": "metadata_durable",
+        "number": 6,
+        "jsonName": "metadataDurable",
+        "type": "bool"
+      },
+      {
+        "name": "application_state_committed",
+        "number": 7,
+        "jsonName": "applicationStateCommitted",
+        "type": "bool"
+      },
+      {
+        "name": "source",
+        "number": 8,
+        "jsonName": "source",
+        "type": "SourceIdentity",
+        "wireType": ".latent.transaction.v1.SourceIdentity",
+        "optional": true
+      },
+      {
+        "name": "success",
+        "number": 9,
+        "jsonName": "success",
+        "type": "Success",
+        "wireType": ".latent.invocation.v1.Success",
+        "external": true,
+        "optional": true,
+        "oneof": "retained_result"
+      },
+      {
+        "name": "business_rejection",
+        "number": 10,
+        "jsonName": "businessRejection",
+        "type": "DeclaredError",
+        "wireType": ".latent.invocation.v1.DeclaredError",
+        "external": true,
+        "optional": true,
+        "oneof": "retained_result"
+      },
+      {
+        "name": "technical_failure",
+        "number": 11,
+        "jsonName": "technicalFailure",
+        "type": "PlatformError",
+        "wireType": ".latent.invocation.v1.PlatformError",
+        "external": true,
+        "optional": true,
+        "oneof": "retained_result"
+      },
+      {
+        "name": "commit",
+        "number": 12,
+        "jsonName": "commit",
+        "type": "CommitReceipt",
+        "wireType": ".latent.transaction.v1.CommitReceipt",
+        "optional": true
+      },
+      {
+        "name": "proven_abort",
+        "number": 13,
+        "jsonName": "provenAbort",
+        "type": "AbortFence",
+        "wireType": ".latent.transaction.v1.AbortFence",
+        "optional": true
+      },
+      {
+        "name": "retention",
+        "number": 14,
+        "jsonName": "retention",
+        "type": "LinkedRetention",
+        "wireType": ".latent.transaction.v1.LinkedRetention",
+        "optional": true
+      },
+      {
+        "name": "cleanup_failure",
+        "number": 15,
+        "jsonName": "cleanupFailure",
+        "type": "PlatformError",
+        "wireType": ".latent.invocation.v1.PlatformError",
+        "external": true,
+        "optional": true
+      }
+    ],
+    "CancelCommandResponse": [
+      {
+        "name": "disposition",
+        "number": 1,
+        "jsonName": "disposition",
+        "type": "CommandCancelDisposition",
+        "wireType": ".latent.transaction.v1.CommandCancelDisposition"
+      },
+      {
+        "name": "command",
+        "number": 2,
+        "jsonName": "command",
+        "type": "CommandInspection",
+        "wireType": ".latent.transaction.v1.CommandInspection",
+        "optional": true
+      }
+    ],
+    "EffectReceipt": [
+      {
+        "name": "effect_id",
+        "number": 1,
+        "jsonName": "effectId",
+        "type": "string"
+      },
+      {
+        "name": "command_id",
+        "number": 2,
+        "jsonName": "commandId",
+        "type": "string"
+      },
+      {
+        "name": "command_attempt_id",
+        "number": 3,
+        "jsonName": "commandAttemptId",
+        "type": "string"
+      },
+      {
+        "name": "dispatch_attempt",
+        "number": 4,
+        "jsonName": "dispatchAttempt",
+        "type": "uint32"
+      },
+      {
+        "name": "disposition",
+        "number": 5,
+        "jsonName": "disposition",
+        "type": "EffectDisposition",
+        "wireType": ".latent.transaction.v1.EffectDisposition"
+      },
+      {
+        "name": "provider_receipt",
+        "number": 6,
+        "jsonName": "providerReceipt",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "failure_code",
+        "number": 7,
+        "jsonName": "failureCode",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "occurred_at_unix_millis",
+        "number": 8,
+        "jsonName": "occurredAtUnixMillis",
+        "type": "uint64"
+      },
+      {
+        "name": "retention",
+        "number": 9,
+        "jsonName": "retention",
+        "type": "LinkedRetention",
+        "wireType": ".latent.transaction.v1.LinkedRetention",
+        "optional": true
+      },
+      {
+        "name": "management_operation_receipt_id",
+        "number": 10,
+        "jsonName": "managementOperationReceiptId",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "provider_profile",
+        "number": 11,
+        "jsonName": "providerProfile",
+        "type": "string"
+      }
+    ],
+    "EntityInspection": [
+      {
+        "name": "entity",
+        "number": 1,
+        "jsonName": "entity",
+        "type": "string"
+      },
+      {
+        "name": "version",
+        "number": 2,
+        "jsonName": "version",
+        "type": "bytes"
+      }
+    ],
+    "ExpectedVersion": [
+      {
+        "name": "key",
+        "number": 1,
+        "jsonName": "key",
+        "type": "bytes"
+      },
+      {
+        "name": "absent",
+        "number": 2,
+        "jsonName": "absent",
+        "type": "bool",
+        "optional": true,
+        "oneof": "expectation"
+      },
+      {
+        "name": "version",
+        "number": 3,
+        "jsonName": "version",
+        "type": "bytes",
+        "optional": true,
+        "oneof": "expectation"
+      }
+    ],
+    "GetEffectRequest": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "TransactionProfile",
+        "wireType": ".latent.transaction.v1.TransactionProfile",
+        "optional": true
+      },
+      {
+        "name": "command",
+        "number": 2,
+        "jsonName": "command",
+        "type": "CommandSelector",
+        "wireType": ".latent.transaction.v1.CommandSelector",
+        "optional": true
+      },
+      {
+        "name": "effect_id",
+        "number": 3,
+        "jsonName": "effectId",
+        "type": "string"
+      },
+      {
+        "name": "authorization_publication",
+        "number": 4,
+        "jsonName": "authorizationPublication",
+        "type": "PublicationRef",
+        "wireType": ".latent.control.v1.PublicationRef",
+        "external": true,
+        "optional": true
+      }
+    ],
+    "GetEffectResponse": [
+      {
+        "name": "effect",
+        "number": 1,
+        "jsonName": "effect",
+        "type": "EffectReceipt",
+        "wireType": ".latent.transaction.v1.EffectReceipt",
+        "optional": true
+      }
+    ],
+    "InspectNamespaceRequest": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "TransactionProfile",
+        "wireType": ".latent.transaction.v1.TransactionProfile",
+        "optional": true
+      },
+      {
+        "name": "namespace",
+        "number": 2,
+        "jsonName": "namespace",
+        "type": "NamespaceSelector",
+        "wireType": ".latent.transaction.v1.NamespaceSelector",
+        "optional": true
+      },
+      {
+        "name": "authorization_publication",
+        "number": 3,
+        "jsonName": "authorizationPublication",
+        "type": "PublicationRef",
+        "wireType": ".latent.control.v1.PublicationRef",
+        "external": true,
+        "optional": true
+      }
+    ],
+    "GetStateOperationReceiptRequest": [
+      {
+        "name": "namespace",
+        "number": 1,
+        "jsonName": "namespace",
+        "type": "InspectNamespaceRequest",
+        "wireType": ".latent.control.v1.InspectNamespaceRequest",
+        "optional": true
+      },
+      {
+        "name": "operation_id",
+        "number": 2,
+        "jsonName": "operationId",
+        "type": "string"
+      }
+    ],
+    "StateOperationReceipt": [
+      {
+        "name": "operation_id",
+        "number": 1,
+        "jsonName": "operationId",
+        "type": "string"
+      },
+      {
+        "name": "receipt_id",
+        "number": 2,
+        "jsonName": "receiptId",
+        "type": "string"
+      },
+      {
+        "name": "mutation",
+        "number": 3,
+        "jsonName": "mutation",
+        "type": "StateMutationKind",
+        "wireType": ".latent.control.v1.StateMutationKind"
+      },
+      {
+        "name": "namespace",
+        "number": 4,
+        "jsonName": "namespace",
+        "type": "NamespaceSelector",
+        "wireType": ".latent.transaction.v1.NamespaceSelector",
+        "optional": true
+      },
+      {
+        "name": "authenticated_operator",
+        "number": 5,
+        "jsonName": "authenticatedOperator",
+        "type": "string"
+      },
+      {
+        "name": "before_version",
+        "number": 6,
+        "jsonName": "beforeVersion",
+        "type": "bytes"
+      },
+      {
+        "name": "after_version",
+        "number": 7,
+        "jsonName": "afterVersion",
+        "type": "bytes"
+      },
+      {
+        "name": "completed_at_unix_millis",
+        "number": 8,
+        "jsonName": "completedAtUnixMillis",
+        "type": "uint64"
+      },
+      {
+        "name": "record_id",
+        "number": 9,
+        "jsonName": "recordId",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "policy_digest",
+        "number": 10,
+        "jsonName": "policyDigest",
+        "type": "string"
+      },
+      {
+        "name": "disposition",
+        "number": 11,
+        "jsonName": "disposition",
+        "type": "StateOperationDisposition",
+        "wireType": ".latent.control.v1.StateOperationDisposition"
+      }
+    ],
+    "NamespaceOperationReceipt": [
+      {
+        "name": "operation_id",
+        "number": 1,
+        "jsonName": "operationId",
+        "type": "string"
+      },
+      {
+        "name": "receipt_id",
+        "number": 2,
+        "jsonName": "receiptId",
+        "type": "string"
+      },
+      {
+        "name": "mutation",
+        "number": 3,
+        "jsonName": "mutation",
+        "type": "NamespaceMutationKind",
+        "wireType": ".latent.control.v1.NamespaceMutationKind"
+      },
+      {
+        "name": "namespace",
+        "number": 4,
+        "jsonName": "namespace",
+        "type": "NamespaceSelector",
+        "wireType": ".latent.transaction.v1.NamespaceSelector",
+        "optional": true
+      },
+      {
+        "name": "authenticated_operator",
+        "number": 5,
+        "jsonName": "authenticatedOperator",
+        "type": "string"
+      },
+      {
+        "name": "before_generation",
+        "number": 6,
+        "jsonName": "beforeGeneration",
+        "type": "uint64",
+        "optional": true
+      },
+      {
+        "name": "after_generation",
+        "number": 7,
+        "jsonName": "afterGeneration",
+        "type": "uint64"
+      },
+      {
+        "name": "status",
+        "number": 8,
+        "jsonName": "status",
+        "type": "NamespaceStatus",
+        "wireType": ".latent.control.v1.NamespaceStatus"
+      },
+      {
+        "name": "state_schema",
+        "number": 9,
+        "jsonName": "stateSchema",
+        "type": "string"
+      },
+      {
+        "name": "disposition",
+        "number": 10,
+        "jsonName": "disposition",
+        "type": "StateOperationDisposition",
+        "wireType": ".latent.control.v1.StateOperationDisposition"
+      }
+    ],
+    "GetStateOperationReceiptResponse": [
+      {
+        "name": "receipt",
+        "number": 1,
+        "jsonName": "receipt",
+        "type": "StateOperationReceipt",
+        "wireType": ".latent.control.v1.StateOperationReceipt",
+        "optional": true
+      },
+      {
+        "name": "namespace_receipt",
+        "number": 2,
+        "jsonName": "namespaceReceipt",
+        "type": "NamespaceOperationReceipt",
+        "wireType": ".latent.control.v1.NamespaceOperationReceipt",
+        "optional": true
+      }
+    ],
+    "ViewIdentity": [
+      {
+        "name": "namespace",
+        "number": 1,
+        "jsonName": "namespace",
+        "type": "NamespaceSelector",
+        "wireType": ".latent.transaction.v1.NamespaceSelector",
+        "optional": true
+      },
+      {
+        "name": "version",
+        "number": 2,
+        "jsonName": "version",
+        "type": "bytes"
+      },
+      {
+        "name": "state_schema",
+        "number": 3,
+        "jsonName": "stateSchema",
+        "type": "string"
+      }
+    ],
+    "NamespaceQuota": [
+      {
+        "name": "state_keys",
+        "number": 1,
+        "jsonName": "stateKeys",
+        "type": "uint64"
+      },
+      {
+        "name": "state_bytes",
+        "number": 2,
+        "jsonName": "stateBytes",
+        "type": "uint64"
+      },
+      {
+        "name": "result_rows",
+        "number": 3,
+        "jsonName": "resultRows",
+        "type": "uint64"
+      },
+      {
+        "name": "result_bytes",
+        "number": 4,
+        "jsonName": "resultBytes",
+        "type": "uint64"
+      },
+      {
+        "name": "effect_rows",
+        "number": 5,
+        "jsonName": "effectRows",
+        "type": "uint64"
+      },
+      {
+        "name": "effect_bytes",
+        "number": 6,
+        "jsonName": "effectBytes",
+        "type": "uint64"
+      },
+      {
+        "name": "payload_bytes",
+        "number": 7,
+        "jsonName": "payloadBytes",
+        "type": "uint64"
+      },
+      {
+        "name": "recovery_bytes",
+        "number": 8,
+        "jsonName": "recoveryBytes",
+        "type": "uint64"
+      }
+    ],
+    "NamespaceInspection": [
+      {
+        "name": "view",
+        "number": 1,
+        "jsonName": "view",
+        "type": "ViewIdentity",
+        "wireType": ".latent.transaction.v1.ViewIdentity",
+        "optional": true
+      },
+      {
+        "name": "encoded_state_bytes",
+        "number": 2,
+        "jsonName": "encodedStateBytes",
+        "type": "uint64"
+      },
+      {
+        "name": "command_count",
+        "number": 3,
+        "jsonName": "commandCount",
+        "type": "uint64"
+      },
+      {
+        "name": "pending_effect_count",
+        "number": 4,
+        "jsonName": "pendingEffectCount",
+        "type": "uint64"
+      },
+      {
+        "name": "retained_formats",
+        "number": 5,
+        "jsonName": "retainedFormats",
+        "type": "LinkedRetention",
+        "wireType": ".latent.transaction.v1.LinkedRetention",
+        "repeated": true
+      },
+      {
+        "name": "engine_profile",
+        "number": 6,
+        "jsonName": "engineProfile",
+        "type": "string"
+      },
+      {
+        "name": "engine_profile_digest",
+        "number": 7,
+        "jsonName": "engineProfileDigest",
+        "type": "string"
+      },
+      {
+        "name": "status",
+        "number": 8,
+        "jsonName": "status",
+        "type": "NamespaceStatus",
+        "wireType": ".latent.control.v1.NamespaceStatus"
+      },
+      {
+        "name": "quota",
+        "number": 9,
+        "jsonName": "quota",
+        "type": "NamespaceQuota",
+        "wireType": ".latent.control.v1.NamespaceQuota",
+        "optional": true
+      },
+      {
+        "name": "generation",
+        "number": 10,
+        "jsonName": "generation",
+        "type": "uint64"
+      }
+    ],
+    "InspectNamespaceResponse": [
+      {
+        "name": "namespace",
+        "number": 1,
+        "jsonName": "namespace",
+        "type": "NamespaceInspection",
+        "wireType": ".latent.control.v1.NamespaceInspection",
+        "optional": true
+      }
+    ],
+    "RetryAttempt": [
+      {
+        "name": "request_id",
+        "number": 1,
+        "jsonName": "requestId",
+        "type": "string"
+      },
+      {
+        "name": "expected_abort",
+        "number": 2,
+        "jsonName": "expectedAbort",
+        "type": "AbortFence",
+        "wireType": ".latent.transaction.v1.AbortFence",
+        "optional": true
+      }
+    ],
+    "InvokeCommandRequest": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "TransactionProfile",
+        "wireType": ".latent.transaction.v1.TransactionProfile",
+        "optional": true
+      },
+      {
+        "name": "invocation",
+        "number": 2,
+        "jsonName": "invocation",
+        "type": "InvokeRequest",
+        "wireType": ".latent.invocation.v1.InvokeRequest",
+        "external": true,
+        "optional": true
+      },
+      {
+        "name": "command",
+        "number": 3,
+        "jsonName": "command",
+        "type": "CommandSelector",
+        "wireType": ".latent.transaction.v1.CommandSelector",
+        "optional": true
+      },
+      {
+        "name": "input_format",
+        "number": 4,
+        "jsonName": "inputFormat",
+        "type": "string"
+      },
+      {
+        "name": "expected_versions",
+        "number": 5,
+        "jsonName": "expectedVersions",
+        "type": "ExpectedVersion",
+        "wireType": ".latent.transaction.v1.ExpectedVersion",
+        "repeated": true
+      },
+      {
+        "name": "retry_attempt",
+        "number": 6,
+        "jsonName": "retryAttempt",
+        "type": "RetryAttempt",
+        "wireType": ".latent.transaction.v1.RetryAttempt",
+        "optional": true
+      }
+    ],
+    "InvokeCommandResponse": [
+      {
+        "name": "invocation",
+        "number": 1,
+        "jsonName": "invocation",
+        "type": "InvokeResponse",
+        "wireType": ".latent.invocation.v1.InvokeResponse",
+        "external": true,
+        "optional": true
+      },
+      {
+        "name": "command",
+        "number": 2,
+        "jsonName": "command",
+        "type": "CommandInspection",
+        "wireType": ".latent.transaction.v1.CommandInspection",
+        "optional": true
+      },
+      {
+        "name": "replayed",
+        "number": 3,
+        "jsonName": "replayed",
+        "type": "bool"
+      }
+    ],
+    "PageRequest": [
+      {
+        "name": "limit",
+        "number": 1,
+        "jsonName": "limit",
+        "type": "uint32"
+      },
+      {
+        "name": "cursor",
+        "number": 2,
+        "jsonName": "cursor",
+        "type": "bytes",
+        "optional": true
+      }
+    ],
+    "ListEffectHistoryRequest": [
+      {
+        "name": "effect",
+        "number": 1,
+        "jsonName": "effect",
+        "type": "GetEffectRequest",
+        "wireType": ".latent.transaction.v1.GetEffectRequest",
+        "optional": true
+      },
+      {
+        "name": "page",
+        "number": 2,
+        "jsonName": "page",
+        "type": "PageRequest",
+        "wireType": ".latent.transaction.v1.PageRequest",
+        "optional": true
+      }
+    ],
+    "PageResponse": [
+      {
+        "name": "next_cursor",
+        "number": 1,
+        "jsonName": "nextCursor",
+        "type": "bytes",
+        "optional": true
+      },
+      {
+        "name": "returned_count",
+        "number": 2,
+        "jsonName": "returnedCount",
+        "type": "uint32"
+      },
+      {
+        "name": "encoded_bytes",
+        "number": 3,
+        "jsonName": "encodedBytes",
+        "type": "uint64"
+      }
+    ],
+    "ListEffectHistoryResponse": [
+      {
+        "name": "receipts",
+        "number": 1,
+        "jsonName": "receipts",
+        "type": "EffectReceipt",
+        "wireType": ".latent.transaction.v1.EffectReceipt",
+        "repeated": true
+      },
+      {
+        "name": "page",
+        "number": 2,
+        "jsonName": "page",
+        "type": "PageResponse",
+        "wireType": ".latent.transaction.v1.PageResponse",
+        "optional": true
+      }
+    ],
+    "LookupCommandResponse": [
+      {
+        "name": "command",
+        "number": 1,
+        "jsonName": "command",
+        "type": "CommandInspection",
+        "wireType": ".latent.transaction.v1.CommandInspection",
+        "optional": true
+      }
+    ],
+    "LookupCommitRequest": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "TransactionProfile",
+        "wireType": ".latent.transaction.v1.TransactionProfile",
+        "optional": true
+      },
+      {
+        "name": "command",
+        "number": 2,
+        "jsonName": "command",
+        "type": "CommandSelector",
+        "wireType": ".latent.transaction.v1.CommandSelector",
+        "optional": true
+      },
+      {
+        "name": "receipt_id",
+        "number": 3,
+        "jsonName": "receiptId",
+        "type": "string"
+      },
+      {
+        "name": "authorization_publication",
+        "number": 4,
+        "jsonName": "authorizationPublication",
+        "type": "PublicationRef",
+        "wireType": ".latent.control.v1.PublicationRef",
+        "external": true,
+        "optional": true
+      }
+    ],
+    "LookupCommitResponse": [
+      {
+        "name": "command",
+        "number": 1,
+        "jsonName": "command",
+        "type": "CommandInspection",
+        "wireType": ".latent.transaction.v1.CommandInspection",
+        "optional": true
+      }
+    ],
+    "NamespaceConfiguration": [
+      {
+        "name": "state_schema",
+        "number": 1,
+        "jsonName": "stateSchema",
+        "type": "string"
+      },
+      {
+        "name": "quota",
+        "number": 2,
+        "jsonName": "quota",
+        "type": "NamespaceQuota",
+        "wireType": ".latent.control.v1.NamespaceQuota",
+        "optional": true
+      }
+    ],
+    "MutateNamespaceRequest": [
+      {
+        "name": "namespace",
+        "number": 1,
+        "jsonName": "namespace",
+        "type": "InspectNamespaceRequest",
+        "wireType": ".latent.control.v1.InspectNamespaceRequest",
+        "optional": true
+      },
+      {
+        "name": "operation_id",
+        "number": 2,
+        "jsonName": "operationId",
+        "type": "string"
+      },
+      {
+        "name": "mutation",
+        "number": 3,
+        "jsonName": "mutation",
+        "type": "NamespaceMutationKind",
+        "wireType": ".latent.control.v1.NamespaceMutationKind"
+      },
+      {
+        "name": "expected_generation",
+        "number": 4,
+        "jsonName": "expectedGeneration",
+        "type": "uint64",
+        "optional": true
+      },
+      {
+        "name": "configuration",
+        "number": 5,
+        "jsonName": "configuration",
+        "type": "NamespaceConfiguration",
+        "wireType": ".latent.control.v1.NamespaceConfiguration",
+        "optional": true
+      }
+    ],
+    "MutateNamespaceResponse": [
+      {
+        "name": "receipt",
+        "number": 1,
+        "jsonName": "receipt",
+        "type": "NamespaceOperationReceipt",
+        "wireType": ".latent.control.v1.NamespaceOperationReceipt",
+        "optional": true
+      },
+      {
+        "name": "replayed",
+        "number": 2,
+        "jsonName": "replayed",
+        "type": "bool"
+      },
+      {
+        "name": "audit_ack",
+        "number": 3,
+        "jsonName": "auditAck",
+        "type": "AuditAck",
+        "wireType": ".latent.control.v1.AuditAck",
+        "external": true,
+        "optional": true
+      }
+    ],
+    "MutateStateRequest": [
+      {
+        "name": "namespace",
+        "number": 1,
+        "jsonName": "namespace",
+        "type": "InspectNamespaceRequest",
+        "wireType": ".latent.control.v1.InspectNamespaceRequest",
+        "optional": true
+      },
+      {
+        "name": "operation_id",
+        "number": 2,
+        "jsonName": "operationId",
+        "type": "string"
+      },
+      {
+        "name": "mutation",
+        "number": 3,
+        "jsonName": "mutation",
+        "type": "StateMutationKind",
+        "wireType": ".latent.control.v1.StateMutationKind"
+      },
+      {
+        "name": "record_id",
+        "number": 4,
+        "jsonName": "recordId",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "expected_version",
+        "number": 5,
+        "jsonName": "expectedVersion",
+        "type": "bytes"
+      },
+      {
+        "name": "expected_policy_digest",
+        "number": 6,
+        "jsonName": "expectedPolicyDigest",
+        "type": "string"
+      },
+      {
+        "name": "reason",
+        "number": 7,
+        "jsonName": "reason",
+        "type": "string"
+      }
+    ],
+    "MutateStateResponse": [
+      {
+        "name": "receipt",
+        "number": 1,
+        "jsonName": "receipt",
+        "type": "StateOperationReceipt",
+        "wireType": ".latent.control.v1.StateOperationReceipt",
+        "optional": true
+      },
+      {
+        "name": "audit_ack",
+        "number": 2,
+        "jsonName": "auditAck",
+        "type": "AuditAck",
+        "wireType": ".latent.control.v1.AuditAck",
+        "external": true,
+        "optional": true
+      }
+    ],
+    "QueryRequest": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "TransactionProfile",
+        "wireType": ".latent.transaction.v1.TransactionProfile",
+        "optional": true
+      },
+      {
+        "name": "invocation",
+        "number": 2,
+        "jsonName": "invocation",
+        "type": "InvokeRequest",
+        "wireType": ".latent.invocation.v1.InvokeRequest",
+        "external": true,
+        "optional": true
+      },
+      {
+        "name": "namespace",
+        "number": 3,
+        "jsonName": "namespace",
+        "type": "NamespaceSelector",
+        "wireType": ".latent.transaction.v1.NamespaceSelector",
+        "optional": true
+      },
+      {
+        "name": "entity",
+        "number": 4,
+        "jsonName": "entity",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "minimum_view_version",
+        "number": 5,
+        "jsonName": "minimumViewVersion",
+        "type": "bytes",
+        "optional": true
+      }
+    ],
+    "QueryResponse": [
+      {
+        "name": "invocation",
+        "number": 1,
+        "jsonName": "invocation",
+        "type": "InvokeResponse",
+        "wireType": ".latent.invocation.v1.InvokeResponse",
+        "external": true,
+        "optional": true
+      },
+      {
+        "name": "view",
+        "number": 2,
+        "jsonName": "view",
+        "type": "ViewIdentity",
+        "wireType": ".latent.transaction.v1.ViewIdentity",
+        "optional": true
+      },
+      {
+        "name": "source",
+        "number": 3,
+        "jsonName": "source",
+        "type": "SourceIdentity",
+        "wireType": ".latent.transaction.v1.SourceIdentity",
+        "optional": true
+      },
+      {
+        "name": "observed_at_unix_millis",
+        "number": 4,
+        "jsonName": "observedAtUnixMillis",
+        "type": "uint64"
+      }
+    ],
+    "SelectEntityRequest": [
+      {
+        "name": "namespace",
+        "number": 1,
+        "jsonName": "namespace",
+        "type": "InspectNamespaceRequest",
+        "wireType": ".latent.control.v1.InspectNamespaceRequest",
+        "optional": true
+      },
+      {
+        "name": "prefix",
+        "number": 2,
+        "jsonName": "prefix",
+        "type": "bytes",
+        "optional": true
+      },
+      {
+        "name": "page",
+        "number": 3,
+        "jsonName": "page",
+        "type": "PageRequest",
+        "wireType": ".latent.transaction.v1.PageRequest",
+        "optional": true
+      }
+    ],
+    "SelectEntityResponse": [
+      {
+        "name": "entities",
+        "number": 1,
+        "jsonName": "entities",
+        "type": "EntityInspection",
+        "wireType": ".latent.control.v1.EntityInspection",
+        "repeated": true
+      },
+      {
+        "name": "page",
+        "number": 2,
+        "jsonName": "page",
+        "type": "PageResponse",
+        "wireType": ".latent.transaction.v1.PageResponse",
+        "optional": true
+      }
+    ]
+  },
+  "enums": {
+    "CommandCancelDisposition": {
+      "UNSPECIFIED": 0,
+      "REQUESTED": 1,
+      "ALREADY_COMMITTED": 2,
+      "ALREADY_TERMINAL": 3,
+      "NOT_FOUND": 4,
+      "RECOVERY_REQUIRED": 5
+    },
+    "CommandOutcome": {
+      "UNSPECIFIED": 0,
+      "IN_PROGRESS": 1,
+      "COMMITTED": 2,
+      "REJECTED": 3,
+      "ABORTED": 4,
+      "UNKNOWN": 5,
+      "RECOVERY_REQUIRED": 6,
+      "EXPIRED": 7
+    },
+    "EffectDisposition": {
+      "UNSPECIFIED": 0,
+      "PENDING": 1,
+      "DISPATCHING": 2,
+      "PROVIDER_ACKNOWLEDGED": 3,
+      "KNOWN_FAILURE": 4,
+      "UNCERTAIN_AFTER_DISPATCH": 5,
+      "EXPIRED": 6,
+      "POLICY_BLOCKED": 7,
+      "ADMINISTRATIVELY_TERMINATED": 8
+    },
+    "NamespaceMutationKind": {
+      "UNSPECIFIED": 0,
+      "CREATE": 1,
+      "QUIESCE": 2,
+      "RETIRE": 3,
+      "DESTROY": 4,
+      "RECREATE": 5
+    },
+    "NamespaceStatus": {
+      "UNSPECIFIED": 0,
+      "ACTIVE": 1,
+      "QUIESCING": 2,
+      "RETIRED": 3,
+      "TOMBSTONE": 4
+    },
+    "StateMutationKind": {
+      "UNSPECIFIED": 0,
+      "RETRY_KNOWN_FAILED_EFFECT": 1,
+      "TERMINATE_EFFECT": 2,
+      "PURGE_EXPIRED_PAYLOAD": 3,
+      "CHECKPOINT_NAMESPACE": 4
+    },
+    "StateOperationDisposition": {
+      "UNSPECIFIED": 0,
+      "COMMITTED": 1,
+      "CONFLICT": 2,
+      "REJECTED": 3,
+      "UNKNOWN": 4,
+      "RECOVERY_REQUIRED": 5
+    }
+  }
+}
