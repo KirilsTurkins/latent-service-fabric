@@ -1,11 +1,11 @@
 //! Shared TLS `JetStream` publication; no detached driver or automatic replay.
 #![forbid(unsafe_code)]
 mod config;
+pub mod deferred;
 mod network;
 mod protocol;
 mod provider;
 mod request;
-pub mod deferred;
 pub mod triggers;
 pub use config::{NatsConfig, NatsEndpoint, TopicMapping};
 pub use latent_capabilities::broker::events::EventError;
