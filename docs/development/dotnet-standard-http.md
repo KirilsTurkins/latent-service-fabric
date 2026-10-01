@@ -120,3 +120,17 @@ alongside its runtime source inventory. Two actual pack/private-unpack and
 missing-adapter controls pass without changing any existing execution/skip
 guard or compiler budget. Fresh exact-source NativeAOT, composition and node
 results still require review before delivery or issue closure.
+
+The separate retained
+[NativeAOT job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36816029585/job/110221158309)
+compiled and composed the closed greeting, then failed package validation with
+`component-work-limit`. The exact 2,339,629-byte component has 901 binary
+sections, 1,524 component items and 7,362 envelope type nodes. The failure was
+conservative reference accounting: every named alias charged all sibling
+exports, exceeding the unchanged 2,097,152 ceiling. Bounded named-export
+summaries preserve the selected member's transitive depth and work and the
+independent metadata ceiling. The exact retained component passes the repaired
+original preflight, full validator and value-graph checks with the pinned
+wasmparser 0.259.0 and Rust 1.97.1. Its complete graph spends 20,268 type nodes;
+14 focused binary/metadata controls pass. These are semantic-validation receipts,
+not a fresh successful package, default HTTP client or node qualification.

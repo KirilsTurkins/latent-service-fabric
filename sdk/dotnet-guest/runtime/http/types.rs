@@ -1,6 +1,5 @@
 //! The precise WASI HTTP resource surface emitted by the pinned .NET BCL.
 use super::{
-    ClosedRuntime,
     exports::wasi::{
         http::{outgoing_handler, types},
         io,
@@ -9,7 +8,8 @@ use super::{
     latent::http::streaming as raw,
     poll::Pollable,
     pump,
-    state::{Exchange, MAX_BODY, MAX_HEADER_BYTES, MAX_HEADERS, Slot},
+    state::{Exchange, Slot, MAX_BODY, MAX_HEADERS, MAX_HEADER_BYTES},
+    ClosedRuntime,
 };
 use std::{
     cell::{Cell, RefCell},
