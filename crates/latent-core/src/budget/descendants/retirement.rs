@@ -29,6 +29,8 @@ impl ParentReservation {
         }
         debug_assert_eq!(state.child_reserved_memory, 0);
         debug_assert_eq!(state.child_observed_memory, 0);
+        debug_assert_eq!(state.host_reserved_memory, 0);
+        debug_assert_eq!(state.host_observed_memory, 0);
         self.release_memory(state.own_memory_peak);
     }
 }
