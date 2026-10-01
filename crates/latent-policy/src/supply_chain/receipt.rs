@@ -1,18 +1,18 @@
 use super::config::PolicyIdentity;
 use latent_artifacts::package::{
-    EvidenceKind, PackageKind, PackageLimits, PackageSubject, artifact_blob_digest,
-    decode_referrer, package_digest,
+    artifact_blob_digest, decode_referrer, package_digest, EvidenceKind, PackageKind,
+    PackageLimits, PackageSubject,
 };
 use latent_artifacts::{
     AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits, PackageAdmissionUpload,
 };
 use latent_core::{ArtifactBlobDigest, PackageDigest, PlatformError, PlatformErrorCode};
 use latent_packaging::{
-    BundleInput, PackageBundle, PackagingLimits, SbomEvidenceLimits, SbomEvidenceRef, SbomPolicy,
-    SbomPolicyConfig, SbomPresence, evaluate_sboms, inspect_bundle,
+    evaluate_sboms, inspect_bundle, BundleInput, PackageBundle, PackagingLimits,
+    SbomEvidenceLimits, SbomEvidenceRef, SbomPolicy, SbomPolicyConfig, SbomPresence,
 };
 use latent_signing::{
-    PackageSigningSubject, ProvenanceLimits, SignatureLimits, inspect_provenance, inspect_signature,
+    inspect_provenance, inspect_signature, PackageSigningSubject, ProvenanceLimits, SignatureLimits,
 };
 use serde::{Deserialize, Serialize};
 

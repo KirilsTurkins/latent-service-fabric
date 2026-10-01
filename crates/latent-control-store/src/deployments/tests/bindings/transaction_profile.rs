@@ -24,15 +24,13 @@ fn selected_transaction_import_keeps_the_ordinary_signed_clock_plan() {
 fn selected_transaction_profile_cannot_bypass_an_ordinary_import_definition() {
     let fixture = Fixture::transactional();
     let before = fixture.store.generation();
-    assert!(
-        prepare(
-            &fixture.store,
-            fixture.broker.clone(),
-            &fixture.provider,
-            Vec::new(),
-        )
-        .is_err()
-    );
+    assert!(prepare(
+        &fixture.store,
+        fixture.broker.clone(),
+        &fixture.provider,
+        Vec::new(),
+    )
+    .is_err());
     assert_eq!(fixture.store.generation(), before);
     assert_eq!(fixture.store.binding_inventory().1, 0);
     assert_eq!(fixture.store.binding_inventory().2, 0);
@@ -52,26 +50,24 @@ fn selected_transaction_binding_restart_uses_original_profile_and_current_provid
         policies: _,
     } = fixture;
     drop(store);
-    assert!(
-        run(crate::DirectoryDeploymentRepository::open_with_catalog(
-            &roots[1].0,
-            releases.clone(),
-            crate::DirectoryDeploymentRepositoryConfig::default(),
-            releases.lifecycle_authority(),
-            Arc::new(
-                latent_manifest::RuntimeCompatibilityProfile::new(
-                    "wasmtime",
-                    "48.0.3",
-                    "x86_64-unknown-linux-gnu",
-                    &["x86_64.sse2"],
-                    64 * 1024 * 1024,
-                    100_000_000,
-                )
-                .unwrap()
-            ),
-        ))
-        .is_err()
-    );
+    assert!(run(crate::DirectoryDeploymentRepository::open_with_catalog(
+        &roots[1].0,
+        releases.clone(),
+        crate::DirectoryDeploymentRepositoryConfig::default(),
+        releases.lifecycle_authority(),
+        Arc::new(
+            latent_manifest::RuntimeCompatibilityProfile::new(
+                "wasmtime",
+                "48.0.3",
+                "x86_64-unknown-linux-gnu",
+                &["x86_64.sse2"],
+                64 * 1024 * 1024,
+                100_000_000,
+            )
+            .unwrap()
+        ),
+    ))
+    .is_err());
     let reopened = open_selected(&roots[1], &releases, package_fixture::transaction_profile());
     let definitions = reopened.binding_definitions().unwrap();
     reopened

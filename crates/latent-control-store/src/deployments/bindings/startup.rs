@@ -1,13 +1,13 @@
-use std::sync::{Arc, atomic::Ordering};
+use std::sync::{atomic::Ordering, Arc};
 
 use latent_capabilities::broker::ActivationCapabilityBroker;
 use latent_core::{PlatformError, PlatformErrorCode};
 
 use super::{
-    BindingDefinition, BindingLimits, CompilerOwner, ConfiguredBindingProvider, capacity, compile,
-    denied, model,
+    capacity, compile, denied, model, BindingDefinition, BindingLimits, CompilerOwner,
+    ConfiguredBindingProvider,
 };
-use crate::deployments::{DirectoryDeploymentRepository, compiler, observation::Work};
+use crate::deployments::{compiler, observation::Work, DirectoryDeploymentRepository};
 
 impl DirectoryDeploymentRepository {
     pub async fn activate_configured_bindings(

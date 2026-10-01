@@ -1,16 +1,16 @@
 use latent_artifacts::package::LayerRole;
 use latent_artifacts::{
-    AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits, ArtifactDescriptor,
-    CapsuleArtifact, ContractMetadataLimits, PackageAdmissionUpload, VerifiedAdmission,
-    decode_contract_metadata,
+    decode_contract_metadata, AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits,
+    ArtifactDescriptor, CapsuleArtifact, ContractMetadataLimits, PackageAdmissionUpload,
+    VerifiedAdmission,
 };
 use latent_core::{ArtifactReference, PlatformError, ReleaseDigest, TenantId};
 use latent_manifest::{JsonManifestCodec, ManifestCodec, ManifestLimits};
-use latent_packaging::{BundleInput, PackageBundle, PackagingLimits, inspect_bundle};
+use latent_packaging::{inspect_bundle, BundleInput, PackageBundle, PackagingLimits};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use super::{Inner, SupplyChainAuthority, denied, grant::Grant, invalid, receipt::Receipt};
+use super::{denied, grant::Grant, invalid, receipt::Receipt, Inner, SupplyChainAuthority};
 
 pub(super) struct Prepared {
     bundle: PackageBundle,

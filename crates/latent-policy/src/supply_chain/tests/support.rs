@@ -10,16 +10,16 @@ mod web_fixture;
 pub use web_fixture::web_input;
 
 use super::super::{SupplyChainClock, SupplyChainPolicy};
-use base64::{Engine, engine::general_purpose::STANDARD};
-use latent_artifacts::package::{PackageLimits, artifact_blob_digest};
+use base64::{engine::general_purpose::STANDARD, Engine};
+use latent_artifacts::package::{artifact_blob_digest, PackageLimits};
 use latent_artifacts::{AdmissionEvidence, PackageAdmissionUpload};
 use latent_core::{PlatformError, PublisherId};
-use latent_packaging::{PackageBundle, PackagingLimits, build_package_with_sbom};
+use latent_packaging::{build_package_with_sbom, PackageBundle, PackagingLimits};
 use latent_signing::*;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::sync::{
-    Arc,
     atomic::{AtomicU64, Ordering},
+    Arc,
 };
 
 pub const NOW: u64 = 1100;

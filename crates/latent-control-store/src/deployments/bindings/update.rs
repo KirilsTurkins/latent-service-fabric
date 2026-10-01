@@ -1,14 +1,14 @@
 use super::model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider, StoredBinding};
-use super::{CompilerOwner, capacity, compile, denied, invalid, model};
+use super::{capacity, compile, denied, invalid, model, CompilerOwner};
 use crate::deployments::{
-    DirectoryDeploymentRepository, PublicationView, PublishedCatalog, compiler, observation::Work,
-    persistence,
+    compiler, observation::Work, persistence, DirectoryDeploymentRepository, PublicationView,
+    PublishedCatalog,
 };
 use latent_capabilities::broker::ActivationCapabilityBroker;
 use latent_core::{PlatformError, PlatformErrorCode, RouteGeneration};
 use std::sync::{
-    Arc, RwLock, Weak,
     atomic::{AtomicBool, Ordering},
+    Arc, RwLock, Weak,
 };
 
 pub(super) struct WorkPermit(pub(super) Arc<AtomicBool>);
