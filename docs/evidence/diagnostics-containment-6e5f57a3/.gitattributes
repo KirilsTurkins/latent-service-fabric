@@ -1,1 +1,6 @@
-* -text
+*.log -text -diff
+*.txt -text -diff
+*.wasm -text -diff
+native-inputs.sha256 -text
+receipt.json text eol=lf
+README.md text eol=lf
