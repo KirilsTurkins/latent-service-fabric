@@ -1,5 +1,9 @@
 {
   "cases": [
+    "DirectApplicationLibraries.test_arbitrary_direct_module_coordinates_bind_actual_captured_artifacts",
+    "DirectApplicationLibraries.test_duplicate_requirement_version_drift_and_sdk_role_do_not_satisfy_the_fixture",
+    "DirectApplicationLibraries.test_root_association_and_direct_edges_cannot_be_forged",
+    "DirectApplicationLibraries.test_transitive_presence_cannot_count_as_an_independent_application_selection",
     "GoDependencies.test_empty_import_linkage_markers_are_distinct_from_native_assembly_or_preprocessor_reads",
     "GoDependencies.test_expanded_module_tampering_extra_files_or_unsafe_original_archive_fail",
     "GoDependencies.test_go_declarations_require_reviewed_common_capture_and_keep_sdk_bytes_immutable",
@@ -11,6 +15,54 @@
     "GoDependencies.test_target_tags_and_runtime_selection_are_exact_without_a_module_catalogue"
   ],
   "guards": {
+    "DirectApplicationLibraries.test_arbitrary_direct_module_coordinates_bind_actual_captured_artifacts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:64a0725615684b65be34af91757f6e3c9207c51e021847540e8e16b84e7aaa91"
+      ],
+      "skipSites": []
+    },
+    "DirectApplicationLibraries.test_duplicate_requirement_version_drift_and_sdk_role_do_not_satisfy_the_fixture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:64a0725615684b65be34af91757f6e3c9207c51e021847540e8e16b84e7aaa91"
+      ],
+      "skipSites": []
+    },
+    "DirectApplicationLibraries.test_root_association_and_direct_edges_cannot_be_forged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:64a0725615684b65be34af91757f6e3c9207c51e021847540e8e16b84e7aaa91"
+      ],
+      "skipSites": []
+    },
+    "DirectApplicationLibraries.test_transitive_presence_cannot_count_as_an_independent_application_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a074bb958ec12071f5bf031e0831014cd7d118bb32d61743c8f2214446ca0fcd",
+        "class:setup-sha256:64a0725615684b65be34af91757f6e3c9207c51e021847540e8e16b84e7aaa91"
+      ],
+      "skipSites": []
+    },
     "GoDependencies.test_empty_import_linkage_markers_are_distinct_from_native_assembly_or_preprocessor_reads": {
       "bases": [
         "unittest.TestCase"
@@ -122,6 +174,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_application_dependencies.py",
-  "reviewReason": "Bind native MVS/h1/archive/profile/offline controls and harmless Go import markers versus native instructions.",
+  "reviewReason": "Add four native direct-application-selection controls; transitive presence cannot count as a second independent library, preserving all9 accepted module/hash/offline guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

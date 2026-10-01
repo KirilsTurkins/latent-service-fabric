@@ -162,5 +162,65 @@ class GoDependencies(unittest.TestCase):
                 configure(closure, generated)
 
 
+class DirectApplicationLibraries(unittest.TestCase):
+    def setUp(self):
+        from tools.go_dependency_fixture import direct_libraries
+
+        self.select = direct_libraries
+        self.declaration = {'Module': {'Path': 'application.example.test/ordinary'},
+            'Require': [{'Path': 'unknown.example.test/chosen', 'Version': 'v3.2.1', 'Indirect': False},
+                        {'Path': 'private.example.test/independent', 'Version': 'v0.0.0', 'Indirect': False}]}
+        self.native = {'module': self.declaration['Module']['Path'], 'nodes': [
+            {'id': 'go/root', 'path': self.declaration['Module']['Path'], 'main': True},
+            {'id': 'go/chosen', 'path': 'unknown.example.test/chosen', 'version': 'v3.2.1', 'indirect': False},
+            {'id': 'go/independent', 'path': 'private.example.test/independent', 'version': 'v0.0.0', 'indirect': False}],
+            'edges': [{'owner': self.declaration['Module']['Path'], 'selected': 'go/chosen'},
+                      {'owner': self.declaration['Module']['Path'], 'selected': 'go/independent'}]}
+        self.artifacts = [{'id': 'go/chosen', 'role': 'application', 'metadata': {
+                'module': 'unknown.example.test/chosen', 'version': 'v3.2.1', 'assetType': 'selected-module-source'}},
+            {'id': 'go/independent', 'role': 'application', 'metadata': {
+                'module': 'private.example.test/independent', 'version': 'v0.0.0', 'assetType': 'local-module'}}]
+        self.required = {'unknown.example.test/chosen': ('v3.2.1', 'chosen.Width'),
+                         'private.example.test/independent': ('v0.0.0', 'independent.Prefix')}
+
+    def test_arbitrary_direct_module_coordinates_bind_actual_captured_artifacts(self):
+        rows = self.select(self.declaration, self.native, self.artifacts, self.required)
+        self.assertEqual([(row['module'], row['artifact'], row['ordinaryApi']) for row in rows], [
+            ('unknown.example.test/chosen', 'go/chosen', 'chosen.Width'),
+            ('private.example.test/independent', 'go/independent', 'independent.Prefix')])
+        self.assertTrue(all(row['selection'] == 'application-root-direct' for row in rows))
+
+    def test_transitive_presence_cannot_count_as_an_independent_application_selection(self):
+        self.declaration['Require'][0]['Indirect'] = True
+        with self.assertRaisesRegex(ValueError, 'independent direct'):
+            self.select(self.declaration, self.native, self.artifacts, self.required)
+        self.declaration['Require'][0]['Indirect'] = False
+        self.native['nodes'][1]['indirect'] = True
+        with self.assertRaisesRegex(ValueError, 'native selection is not direct'):
+            self.select(self.declaration, self.native, self.artifacts, self.required)
+
+    def test_root_association_and_direct_edges_cannot_be_forged(self):
+        self.native['module'] = 'another.example.test/application'
+        with self.assertRaisesRegex(ValueError, 'root association'):
+            self.select(self.declaration, self.native, self.artifacts, self.required)
+        self.native['module'] = self.declaration['Module']['Path']
+        self.native['edges'].pop()
+        with self.assertRaisesRegex(ValueError, 'direct root edge'):
+            self.select(self.declaration, self.native, self.artifacts, self.required)
+
+    def test_duplicate_requirement_version_drift_and_sdk_role_do_not_satisfy_the_fixture(self):
+        self.declaration['Require'].append(dict(self.declaration['Require'][0]))
+        with self.assertRaisesRegex(ValueError, 'ambiguous'):
+            self.select(self.declaration, self.native, self.artifacts, self.required)
+        self.declaration['Require'].pop()
+        self.artifacts[0]['metadata']['version'] = 'v3.2.2'
+        with self.assertRaisesRegex(ValueError, 'capture changed'):
+            self.select(self.declaration, self.native, self.artifacts, self.required)
+        self.artifacts[0]['metadata']['version'] = 'v3.2.1'
+        self.artifacts[0]['role'] = 'runtime'
+        with self.assertRaisesRegex(ValueError, 'capture changed'):
+            self.select(self.declaration, self.native, self.artifacts, self.required)
+
+
 if __name__ == '__main__':
     unittest.main()
