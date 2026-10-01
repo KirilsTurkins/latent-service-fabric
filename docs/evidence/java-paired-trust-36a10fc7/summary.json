@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "latent.java-paired.evidence-summary.v1",
+  "sourceCommit": "36a10fc7cee5318d8ceb18efd31864c028c4452f",
+  "scope": "independent-paired-signing-admission-and-direct-composed-execution-subcampaign",
+  "pairedTrustStatus": "passed",
+  "overallJavaPipeline": {
+    "status": "failed",
+    "stage": "http-profile",
+    "reason": "java-context-http-outcome"
+  },
+  "overallJavaPipelineQualified": false,
+  "trust": "isolated-short-lived-demo-only",
+  "receiptsCreateAuthority": false,
+  "pair": [
+    {
+      "buildType": "https://latent.dev/build/java-capsule/v1",
+      "builderId": "local-demo-builder-01",
+      "builderKeyFingerprint": "sha256:ab95312b6310042406cbe204a1afac2bac8fac88594a5c3c6bb94c9aab3f6bbb",
+      "componentDigest": "sha256:12d658d3be1acb712bbc054168a8f13f0ee01b3e55ad9c3f94080df3f9d27c24",
+      "name": "java-http-domain",
+      "observationDigest": "sha256:ee1a405e301e36f4d5521987faf5f188a838fc6b673e7d733df3154d12b4b5c2",
+      "packageDigest": "sha256:0c6f202f5f40f8219fd44d04e90cdb4173248262508b24f8799d7581124f0cc6",
+      "service": "examples/java-http-domain",
+      "sourceSnapshotDigest": "sha256:81493e7db1a7e64b1e57464fe78954c025ed1775f906b168cd9c449003f8abdf",
+      "world": "examples:java-http-domain/service@1.0.0"
+    },
+    {
+      "buildType": "https://latent.dev/build/java-capsule/v1",
+      "builderId": "local-demo-builder-03",
+      "builderKeyFingerprint": "sha256:27fd2a8bb717a1fea636f7257f4e6685cca5483c3575eb14c3ddfcb08d0d96f2",
+      "componentDigest": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+      "name": "java-http-adapter",
+      "observationDigest": "sha256:2ecb50449585b7d1685ce534431d23e3eea3bac2922c403afe6b7284d500d772",
+      "packageDigest": "sha256:cefe298b3aa0684efe1214465969968790eecfeb6b409726bea00daec60b1198",
+      "service": "examples/java-http-adapter",
+      "sourceSnapshotDigest": "sha256:9c4ec67562fe7ef047d5a34093d2c459cbf4b619b48cdf12a18ccc280d27a93f",
+      "world": "examples:java-http-adapter/service@1.0.0"
+    }
+  ],
+  "binaries": {
+    "latent": {
+      "sha256": "sha256:69fb78779503586d08d6544a2c12a0b25861d595b6d8d495b72099538acaaa80",
+      "bytes": 59397456
+    },
+    "latentd": {
+      "sha256": "sha256:f935f996087143dfacb6b3b618a5d49e637b69c1613598f66600b0d94743b0f1",
+      "bytes": 144864672
+    },
+    "examples/package": {
+      "sha256": "sha256:c7d9b496a0dd7101b5f7a4a258e62bc1fd012d803ea1b8357a9439e38bc447a9",
+      "bytes": 14005000
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:4b9454fd22f59b3383fa7c94de40c71423695173c862574aefd75cc53a6b339e",
+      "bytes": 6988288
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:d3e32a1597e9aa207b96173509565d1d57c0be68a4b0f2cc502dc28f88455d7f",
+      "bytes": 19751208
+    }
+  },
+  "canonicalPolicyDigests": {
+    "publisher": "sha256:d82017016fea6c4057c0ca929ece06796494520accc159101a0bca376ba19a70",
+    "builder": "sha256:d53b6ac325fd813773ace1f79b91b3be9fb5ec5af53db1a33589b3918266345e"
+  },
+  "equivalentPermutations": 3,
+  "verifierRejections": [
+    "altered-component",
+    "altered-policy",
+    "missing-provenance",
+    "noncanonical-revocation-digest",
+    "revoked-builder-key",
+    "stale-trust",
+    "wrong-builder-key",
+    "wrong-builder-source"
+  ],
+  "serverAdmissionRejections": [
+    {
+      "case": "wrong-builder-source",
+      "operationId": "paired-negative-wrong-builder-source",
+      "requestDigest": "sha256:19ea96be4f010e5558fa31576ea4de42fe4b16195f14f89050e8d67a7503aba9",
+      "disposition": "RELEASE_OPERATION_DISPOSITION_REJECTED"
+    },
+    {
+      "case": "wrong-builder-key",
+      "operationId": "paired-negative-wrong-builder-key",
+      "requestDigest": "sha256:c0e2112a42c3cdf2bf5efe8b6dde554aadaa0ddae3a239deb445d87ba1091902",
+      "disposition": "RELEASE_OPERATION_DISPOSITION_REJECTED"
+    },
+    {
+      "case": "missing-provenance",
+      "operationId": "paired-negative-missing-provenance",
+      "requestDigest": "sha256:c26f4929b7291cfd91a1ce1293a46c172cdb4ba528f9ef3da80a32f93c4e67bd",
+      "disposition": "RELEASE_OPERATION_DISPOSITION_REJECTED"
+    },
+    {
+      "case": "revoked-builder-key",
+      "operationId": "paired-negative-revoked-builder-key",
+      "requestDigest": "sha256:429b49bd287933aae33f6558dbd12dc6d8d1c037e60d4a497c0d0e1baf38509c",
+      "disposition": "RELEASE_OPERATION_DISPOSITION_REJECTED"
+    }
+  ],
+  "localPackageRejections": [
+    {
+      "case": "altered-component",
+      "requestDispatched": false,
+      "errorCode": "package-operation-failed"
+    }
+  ],
+  "retainedActualAdmissionGrants": 2,
+  "retainedGrantsExpiredAt": [
+    1790817759,
+    1790817761
+  ],
+  "fencedActionsEntered": 0,
+  "deployedPair": {
+    "domain": {
+      "componentDigest": "sha256:12d658d3be1acb712bbc054168a8f13f0ee01b3e55ad9c3f94080df3f9d27c24",
+      "packageDigest": "sha256:0c6f202f5f40f8219fd44d04e90cdb4173248262508b24f8799d7581124f0cc6",
+      "publication": {
+        "id": "publication:sha256:7630e5456a18baa309844248a4d8b1965d3fd0501ee2734d3bdc233c880b349e",
+        "tenant": "examples"
+      },
+      "deploymentId": "java-http-domain",
+      "deploymentGeneration": "2",
+      "revisionId": "revision-v1:sha256:071bfc53d549cc63f02612cead7b99b24d9bf2fcca1f47b29382f99774b536b3",
+      "profile": "wasmtime-service-values-v1"
+    },
+    "adapter": {
+      "componentDigest": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+      "packageDigest": "sha256:cefe298b3aa0684efe1214465969968790eecfeb6b409726bea00daec60b1198",
+      "publication": {
+        "id": "publication:sha256:770775a2075d2d6ef8b4cb05a8d7a1ed3251db30a367338e73c4c27a6ff47d63",
+        "tenant": "examples"
+      },
+      "deploymentId": "java-http-adapter",
+      "deploymentGeneration": "4",
+      "revisionId": "revision-v1:sha256:a8d9090362973a61886e76d3b9842ee455f35dd45c366ee1bbc7ab65ef5b894a",
+      "profile": "wasmtime-buffered-web-values-v1"
+    }
+  },
+  "directOutcome": "success",
+  "composedHttpStatus": 200,
+  "composedResponseBytes": 146,
+  "generatedClient": {
+    "schemaVersion": "latent.java-http.generated-client.v1",
+    "status": "passed",
+    "requests": 8,
+    "clientOverLimitRejected": true,
+    "nodeVersion": "v24.19.0",
+    "fullWidthPreserved": true,
+    "freshAfterRejection": true
+  },
+  "formerConstructionMistake": {
+    "role": "builder",
+    "reason": "revocation-policy-digest-mismatch",
+    "authoritativePolicyDigest": "sha256:d53b6ac325fd813773ace1f79b91b3be9fb5ec5af53db1a33589b3918266345e",
+    "suppliedRawInputDigest": "sha256:0404b6e6e61747c0a7d842dc5dd79165a457cd163d40d380238051646fc93e4f",
+    "trustCorrected": false
+  },
+  "receipts": [
+    {
+      "path": "QUALIFICATION-FAILED.json",
+      "sha256": "sha256:edfc2a7cd9d4a6725ab5aaf7fa7dc15ae462053eec4f2d55dde7cf58729d5eef",
+      "bytes": 122821
+    },
+    {
+      "path": "paired-trust/paired-trust.json",
+      "sha256": "sha256:36d84af7edb476a16d5b99eaaa4c1bdd0b1bb046a4e257482dcc8c38e234cc51",
+      "bytes": 39655
+    },
+    {
+      "path": "standalone/workflow.json",
+      "sha256": "sha256:22f1325314afb4ecf988efad17e037becb0a978eb2be5dacc2acf24aa90f0972",
+      "bytes": 9725
+    },
+    {
+      "path": "http/workflow.json",
+      "sha256": "sha256:87083bea65ead2e05d20b6fe748e3ad5017cf9906247c99bfe35c67a7ab41a23",
+      "bytes": 14968
+    },
+    {
+      "path": "builds/domain/BUILD-COMPLETE.json",
+      "sha256": "sha256:749b320fcaf8906b52bbd301682e32ef8dfe2897e609c93b186a618b4e0e4b12",
+      "bytes": 8752
+    },
+    {
+      "path": "builds/adapter/BUILD-COMPLETE.json",
+      "sha256": "sha256:57f344e9d1f34d70ba9e497c36d3dd00dd67fbd8fa6e102a9f504f215436dff2",
+      "bytes": 8755
+    },
+    {
+      "path": "releases/release-set.json",
+      "sha256": "sha256:18d6636de8893cf753e021220b6b4a32a0ac46275e86eb3a0f033ab8fb533014",
+      "bytes": 3380
+    }
+  ]
+}

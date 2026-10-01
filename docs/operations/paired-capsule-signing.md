@@ -126,3 +126,8 @@ precondition. The fixture looks up the original operation, including after
 an uncertain result, and never replays publication to obtain a different
 receipt. Failed attempts, bounded logs and exact component/source/compiler
 identities remain in the chosen fresh evidence directory.
+
+The [retained actual paired subcampaign](../evidence/java-paired-trust-36a10fc7/README.md)
+binds its original source and receipts, including the overall HTTP pipeline's
+later failed context assertion. Its passed signing/admission observations do not
+turn that complete pipeline into a successful qualification.
