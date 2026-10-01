@@ -23,7 +23,7 @@ objects, continuation arrays and events remain inside the original accounted
 linear-memory allocation. Shared runtime task/wait records retain their original
 native reservations until actual physical destruction.
 
-The pending SDK class-library implementation supplies `Executors.newSingleThreadExecutor`,
+The SDK class-library implementation supplies `Executors.newSingleThreadExecutor`,
 `newFixedThreadPool` and `newCachedThreadPool`, including ordinary `ThreadFactory` overloads. Each pool
 has its own FIFO queue and honors its requested parallelism with lazy Java worker
 fibers. Submissions reserve executor, queued-work and pending-result records;
@@ -148,8 +148,8 @@ TeaVM 0.15.0 model JARs checks both real native/callback pairs, preserved standa
 method identity and throws declarations, unexpected-shape and repeated-port
 rejection, and unchanged application class identity. Host JDK 25.0.3 passed this
 metadata control. The maintained qualifier repeats it using the pinned compiler
-toolchain. A new component and all twelve normal signed invocations are still
-required to prove this repair; the complete runtime profile remains unqualified.
+toolchain. At this checkpoint, a new component and all twelve normal signed
+invocations were still required; the complete runtime profile remains unqualified.
 
 The first pinned rebuild from source `e812437c` passed all 70 SDK helper checks
 and all twelve unchanged reference-JDK results, then failed at TeaVM's
@@ -165,7 +165,7 @@ runs the maintained async processor on both owned pairs. It checks that each
 generated Fiber bridge targets its owned callback once while the standard
 method retains the Java frame that closes its leases. This control passed on
 host JDK 25.0.3. Pinned component compilation and the twelve normal signed
-invocations remain pending after this ordering repair.
+invocations were pending at this ordering checkpoint.
 
 The next pinned rebuild from source `897695ae` passed all 72 SDK helpers and
 all twelve original reference-JDK results, then failed in the maintained
@@ -181,7 +181,7 @@ maintained native async pairs. It verifies one resumption and one original
 operation, retains both normal and exceptional monitor releases, and reproduces
 the rejected former layout. This metadata control passed on host JDK 25.0.3;
 fresh pinned component compilation and all twelve normal signed invocations
-remain required for the ownership repair.
+were still required at this ownership checkpoint.
 
 The last attempted expanded executor component passed its thread-only mode but
 failed in its signed executor mode with a closed host `resource-exhausted` cause
@@ -191,8 +191,8 @@ result lowering removes that immediate admission failure, but reaches its
 unchanged 120-second deadline during physical pool retirement before the later pump repair. The cached-mode
 attempt stopped at the missing standard TimeUnit declarations before component
 generation. The subsequent compiler repair and default-factory/wait changes
-have not completed pinned component and signed-node execution; the executor,
-root-return and cached modes remain unqualified. Reference-JDK success and successful
+had not completed pinned component and signed-node execution at that checkpoint;
+the executor, root-return and cached modes were still unqualified. Reference-JDK success and successful
 component generation do not establish their guest behavior. Complete failed
 attempts are retained separately.
 
@@ -223,8 +223,28 @@ original class, methods and application symbols. Actual locked-model controls
 check the prior missing initialization, all five repaired constructor entries,
 unchanged method owners, layout drift and repeated-port rejection. These controls
 run on host JDK 25.0.3 and also belong to the maintained pinned fiber qualifier.
-The subsequent component rebuild and all original signed modes remain pending;
+The subsequent component rebuild and all original signed modes were then pending;
 the original exception masked by cleanup may still require a separate repair.
+
+Source `896c007cf1400e912b70c236fe3035cb8f426884` subsequently passed the pinned
+Linux component preparation, all 73 SDK helper controls, the actual locked TeaVM
+model controls, and all twelve original reference-JDK cases. Component
+`sha256:9d909ffa9398cafa8b4c02222ec71eea588f308c3e0c8e85568df0c9e8794a12`
+contains 11,428,605 bytes. A fresh normal native `local_service` harness built
+from that same frozen source passed all twelve original signed/admitted
+invocations: three iterations of thread, executor, root-return, and cached-pool
+modes, each returning `42` and passing the physical retirement checks. Cold
+publication preparation took 297.52 seconds and created zero guest Stores or
+activations before the calls. Each invocation retained its original 120-second,
+10 billion fuel and 64 MiB limits; measured peak guest memory was 9,439,048 bytes.
+The native build, component and all 7,368 frozen source files were independently
+hashed, and source/component bytes remained unchanged after execution.
+
+The retained [PR #807 evidence](https://github.com/KirilsTurkins/latent-service-fabric/pull/807)
+binds this result to source `896c007c` and the component digest above. Later
+development and CI integrations still require their current checks. These small
+fixture modes establish their ordinary factory/wait behavior and retirement,
+while the complete #741 profile and published-library requirements remain open.
 
 The original thread-only pinned Linux debug experiment measured 9241560 bytes of activation peak
 memory in each run under the unchanged 67108864-byte ceiling. The first run
@@ -235,8 +255,8 @@ latency, fairness or physical memory plateaus.
 ## Remaining profile requirements
 
 CompletableFuture, work-stealing/virtual-thread factories, scheduled
-executors, recurring callbacks, actual guest qualification of cached factories,
-reset futures and duration-based TimeUnit members, full interruption and
+executors, recurring callbacks, broader cached-factory, reset-future and
+duration-based TimeUnit qualification, full interruption and
 wait/notify races, shared I/O readiness, sockets/DNS,
 cross-tenant reuse, late wakes and node stop remain open. General generated host
 I/O still uses the existing synchronous lowering and does not establish sibling
