@@ -49,15 +49,23 @@ jobs:
       - name: Verify production pages, theme and source-backed controls
         working-directory: website
         run: |
-          # The isolated two-version build owns separate outputs. Overlap it
-          # with the production browser journeys, with at most two suites active.
+          # Each suite owns separate servers, browsers and evidence directories.
+          # Run the complete five-suite matrix concurrently on the hosted VM.
           npm run test:versions &
           versions_pid=$!
+          npm run test:build &
+          build_pid=$!
+          npm run test:theme &
+          theme_pid=$!
+          npm run test:examples &
+          examples_pid=$!
+          npm run test:discovery &
+          discovery_pid=$!
           status=0
-          npm run test:build || status=$?
-          npm run test:theme || status=$?
-          npm run test:examples || status=$?
-          npm run test:discovery || status=$?
+          wait "$build_pid" || status=$?
+          wait "$theme_pid" || status=$?
+          wait "$examples_pid" || status=$?
+          wait "$discovery_pid" || status=$?
           wait "$versions_pid" || status=$?
           exit "$status"
       - name: Retain only the tested site and compact browser receipts

@@ -43,7 +43,7 @@
       },
       {
         "name": "Verify production pages, theme and source-backed controls",
-        "run": "# The isolated two-version build owns separate outputs. Overlap it\n# with the production browser journeys, with at most two suites active.\nnpm run test:versions &\nversions_pid=$!\nstatus=0\nnpm run test:build || status=$?\nnpm run test:theme || status=$?\nnpm run test:examples || status=$?\nnpm run test:discovery || status=$?\nwait \"$versions_pid\" || status=$?\nexit \"$status\"\n",
+        "run": "# Each suite owns separate servers, browsers and evidence directories.\n# Run the complete five-suite matrix concurrently on the hosted VM.\nnpm run test:versions &\nversions_pid=$!\nnpm run test:build &\nbuild_pid=$!\nnpm run test:theme &\ntheme_pid=$!\nnpm run test:examples &\nexamples_pid=$!\nnpm run test:discovery &\ndiscovery_pid=$!\nstatus=0\nwait \"$build_pid\" || status=$?\nwait \"$theme_pid\" || status=$?\nwait \"$examples_pid\" || status=$?\nwait \"$discovery_pid\" || status=$?\nwait \"$versions_pid\" || status=$?\nexit \"$status\"\n",
         "working-directory": "website"
       },
       {
@@ -63,7 +63,7 @@
   },
   "jobId": "website",
   "kind": "job",
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Preserve both builds and every browser suite; run independent servers, browser processes and evidence directories concurrently and join all five exit statuses.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/docs-site.yml"
 }

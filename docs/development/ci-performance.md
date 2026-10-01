@@ -31,8 +31,8 @@ and qualification receipts remain fresh outputs of the current run.
 
 Website builds use Docusaurus 3.10.2's stable Faster implementation. Both base
 paths, every maintained version, the isolated two-version fixture and all five
-browser suites remain required. The fixture build overlaps production browser
-journeys with at most two suites active. Source-path validation still checks
+browser suites remain required. All five suites run concurrently with separate
+servers, browser processes and evidence directories. Source-path validation still checks
 every component for symlinks, final containment, size and case; Linux's exact-case
 lookup avoids repeatedly enumerating entire directories for each document/link.
 Windows retains explicit casing checks. No validation result is cached.
