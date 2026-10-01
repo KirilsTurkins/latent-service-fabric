@@ -13,6 +13,9 @@ mod fixture;
 mod load;
 #[path = "local_service/packages.rs"]
 mod packages;
+#[path = "generic_backend/support.rs"]
+#[allow(dead_code)]
+mod support;
 
 #[tokio::test]
 async fn declared_service_import_without_a_node_adapter_has_no_execution_authority() {
@@ -46,7 +49,7 @@ async fn two_real_components_use_compiled_binding_normal_admission_and_child_acc
     let fixture = fixture::Fixture::new(2, false, true).await;
     let receipt = fixture
         .manager
-        .start(fixture.request("parent", 0))
+        .start(fixture::Fixture::request("parent", 0))
         .unwrap()
         .await;
     let success = match receipt.outcome {

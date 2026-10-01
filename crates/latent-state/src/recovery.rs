@@ -11,6 +11,7 @@ use crate::{
 };
 use latent_core::{StateNamespaceId, TenantId};
 
+pub mod maintenance;
 pub mod migration;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub mod offline;

@@ -2,6 +2,7 @@ use super::*;
 use std::fs::OpenOptions;
 
 mod measurement;
+mod reclamation;
 mod writers;
 
 #[test]
@@ -199,6 +200,105 @@ fn malformed_or_unsupported_reservations_never_publish_or_enable_readiness() {
         Err(StoreError::Invalid)
     );
     assert_eq!(reservation_key(b""), Err(StoreError::Invalid));
+}
+
+#[test]
+fn aggregate_reservations_charge_once_and_orphan_accounted_markers_refuse_every_writer() {
+    use crate::reservation::{
+        reservation_key, LogicalReservation, QUOTA_BYTES, QUOTA_MAGIC, QUOTA_PREFIX,
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("aggregate-reserved.redb");
+    let limits = StoreLimits {
+        maximum_logical_bytes: 10_000,
+        ..StoreLimits::default()
+    };
+    let store = EmbeddedStore::open_file(file(&path), limits).unwrap();
+    let marker_key = reservation_key(b"physical-command").unwrap();
+    let marker = LogicalReservation {
+        generation: 1,
+        bytes: 8_000,
+    }
+    .encode_accounted()
+    .unwrap();
+    let mut key_bytes = QUOTA_PREFIX.to_vec();
+    key_bytes.extend_from_slice(
+        &crate::namespace::namespace_record_key(
+            &latent_core::TenantId("tenant".into()),
+            &latent_core::StateNamespaceId("aggregate".into()),
+        )
+        .unwrap(),
+    );
+    key_bytes.extend_from_slice(&1u64.to_le_bytes());
+    let quota_key = RowKey {
+        family: Family::Maintenance,
+        key: key_bytes,
+    };
+    let mut quota = QUOTA_MAGIC.to_vec();
+    for amount in [1u64, 8_000, 0, 0, 0, 8_000, 8_000] {
+        quota.extend_from_slice(&amount.to_le_bytes());
+    }
+    quota.resize(QUOTA_BYTES, 0);
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![
+                RowMutation {
+                    key: marker_key.clone(),
+                    value: Some(marker.clone()),
+                },
+                RowMutation {
+                    key: quota_key.clone(),
+                    value: Some(quota.clone()),
+                },
+            ],
+        })
+        .unwrap();
+    assert_eq!(
+        store.apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: key(Family::Command, "pressure"),
+                value: Some(vec![0; 3_000])
+            },]
+        }),
+        Err(StoreError::Capacity)
+    );
+    assert_eq!(
+        store.apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: quota_key.clone(),
+                value: None
+            },]
+        }),
+        Err(StoreError::UnsupportedFormat)
+    );
+    drop(store);
+    let store = EmbeddedStore::open_file(file(&path), limits).unwrap();
+    assert_eq!(
+        store.snapshot().unwrap().get(&marker_key).unwrap(),
+        Some(marker)
+    );
+    assert_eq!(
+        store.snapshot().unwrap().get(&quota_key).unwrap(),
+        Some(quota)
+    );
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![
+                RowMutation {
+                    key: marker_key,
+                    value: None,
+                },
+                RowMutation {
+                    key: quota_key,
+                    value: None,
+                },
+            ],
+        })
+        .unwrap();
 }
 
 fn file(path: &std::path::Path) -> File {

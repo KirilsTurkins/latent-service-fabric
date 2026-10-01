@@ -153,6 +153,7 @@ pub struct EmbeddedStore {
     limits: StoreLimits,
     views: Arc<AtomicUsize>,
     quarantined: AtomicBool,
+    reclamation: AtomicBool,
 }
 impl EmbeddedStore {
     pub(crate) fn limits(&self) -> StoreLimits {
@@ -211,6 +212,7 @@ impl EmbeddedStore {
             limits,
             views: Arc::new(AtomicUsize::new(0)),
             quarantined: AtomicBool::new(false),
+            reclamation: AtomicBool::new(false),
         };
         store.verify()?;
         Ok(store)
@@ -239,6 +241,7 @@ impl EmbeddedStore {
     ) -> Result<(), StoreError> {
         let mut count = 0usize;
         let mut bytes = 0usize;
+        let mut reservations = crate::reservation::ReservationCoverage::default();
         for row in table.iter().map_err(|_| StoreError::Corrupt)? {
             let (k, v) = row.map_err(|_| StoreError::Corrupt)?;
             let k = k.value();
@@ -252,6 +255,7 @@ impl EmbeddedStore {
             }
             count = count.checked_add(1).ok_or(StoreError::Capacity)?;
             let reserved = crate::reservation::reserved_bytes(k, v)?;
+            reservations.observe(k, v, reserved)?;
             bytes = bytes
                 .checked_add(k.len() + v.len())
                 .and_then(|bytes| bytes.checked_add(reserved))
@@ -260,11 +264,14 @@ impl EmbeddedStore {
                 return Err(StoreError::Capacity);
             }
         }
-        Ok(())
+        reservations.verify()
     }
     pub fn snapshot(&self) -> Result<ReadView, StoreError> {
         if self.quarantined.load(Ordering::Acquire) {
             return Err(StoreError::Unavailable);
+        }
+        if self.reclamation.load(Ordering::SeqCst) {
+            return Err(StoreError::Capacity);
         }
         let identity = NEXT_VIEW_ID
             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
@@ -272,10 +279,17 @@ impl EmbeddedStore {
             })
             .map_err(|_| StoreError::Capacity)?;
         self.views
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |v| {
+            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| {
                 (v < self.limits.maximum_read_views).then_some(v + 1)
             })
             .map_err(|_| StoreError::Capacity)?;
+        // Admission can race with the short exclusive reclamation gate. Count
+        // the prospective native view first, then refuse before opening it if
+        // the gate won. Reclamation observes this same retained-owner count.
+        if self.reclamation.load(Ordering::SeqCst) {
+            self.views.fetch_sub(1, Ordering::AcqRel);
+            return Err(StoreError::Capacity);
+        }
         if let Ok(tx) = self.db.begin_read() {
             Ok(ReadView {
                 tx: Some(tx),
@@ -306,6 +320,31 @@ impl EmbeddedStore {
         accept: impl FnOnce() -> Result<(), E>,
     ) -> Result<(), FencedStoreError<E>> {
         self.apply_inner(batch, accept, |_| {})
+    }
+
+    /// Destructive maintenance uses the original native view owner. No read
+    /// transaction may remain alive or be admitted through the actual durable
+    /// writer fence. The caller drops its bounded planning view first; exact
+    /// row expectations still protect that plan. Expired views count until
+    /// their native transaction is physically destroyed. This never waits,
+    /// cancels readers, refunds their permits or infers retirement from time.
+    pub fn apply_reclamation_fenced<E>(
+        &self,
+        batch: AtomicBatch,
+        accept: impl FnOnce() -> Result<(), E>,
+    ) -> Result<(), FencedStoreError<E>> {
+        if self
+            .reclamation
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return Err(FencedStoreError::Store(StoreError::Capacity));
+        }
+        let _gate = ReclamationGate(&self.reclamation);
+        if self.views.load(Ordering::SeqCst) != 0 {
+            return Err(FencedStoreError::Store(StoreError::Capacity));
+        }
+        self.apply_fenced(batch, accept)
     }
 
     fn apply_with_checkpoint(
@@ -417,6 +456,13 @@ impl EmbeddedStore {
             return Err(StoreError::Capacity);
         }
         self.db.compact().map_err(|_| StoreError::Unavailable)
+    }
+}
+
+struct ReclamationGate<'a>(&'a AtomicBool);
+impl Drop for ReclamationGate<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::SeqCst);
     }
 }
 pub struct ReadView {

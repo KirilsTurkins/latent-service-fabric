@@ -25,6 +25,14 @@ signed package, current policy, original selected publication, companion and
 actual installed state and deferred HTTP providers. Successful signing alone
 does not qualify signed guest execution or durable command behavior.
 
+The artifact catalog retains the transaction manifest profile only after
+checking the exact admitted package, original capsule document and digest-bound
+`transaction-binding.json` asset. Bare component metadata keeps the stateless
+profile. Deployment decoding and receipt hashing accept finite documents from
+both supported profiles, while final catalog validation checks the deployment
+against its selected package profile and original signed ceilings. These data
+checks grant no execution, namespace, state, intent or dispatch authority.
+
 ## A fresh native clock owner
 
 `capsule_authoring fixture-state-clock <new-private-root> <node-id>` creates an
@@ -56,12 +64,13 @@ campaign must record the original signed package inputs, exact native binary
 hashes, authenticated policy mutations, retained query views, socket responses,
 provider observations and positive shutdown/retirement reports separately.
 
-The preserved production binaries built at
+The immutable production binaries built at
 `0537a6682f7a7e89c00c13d2bb327432cc3ad6cb` precede the transaction manifest
-profile propagation and the historical result-read change described in
+profile closure and the historical result-read change described in
 [Historical transaction results](../development/historical-transaction-results.md).
-The signed transaction campaign requires a new native binary containing both
-changes. The earlier binary observation remains separate evidence.
+A signed Java campaign must use new native binaries containing both changes.
+The older binaries cannot supply signed Java or positive schema/restore
+result-recovery evidence.
 
 The disposable external recipient implements the existing native
 `latent.http-effect.put-once.v1` HTTPS contract. Its bounded private records

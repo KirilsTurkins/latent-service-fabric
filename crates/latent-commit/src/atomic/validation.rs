@@ -28,6 +28,14 @@ pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
 fn validate_local(key: &RowKey, bytes: &[u8]) -> Result<(), AtomicError> {
     match key.family {
         Family::Command if key.key.starts_with(COMMAND) => {
+            if super::RetiredCommand::is_present(bytes) {
+                let floor = super::RetiredCommand::decode(bytes)?;
+                return if *key == command_row_key(floor.id()) {
+                    Ok(())
+                } else {
+                    Err(AtomicError::Corrupt)
+                };
+            }
             let record = CommandRecord::decode(bytes)?;
             if *key != command_row_key(record.id) {
                 return Err(AtomicError::Corrupt);
@@ -67,31 +75,7 @@ fn validate_local(key: &RowKey, bytes: &[u8]) -> Result<(), AtomicError> {
         }
         Family::Maintenance if key.key.starts_with(USAGE) => {
             namespace_usage_key(&key.key[USAGE.len()..])?;
-            let mut input = Decoder::new(bytes, b"LCU\0\x01", 61)?;
-            let results = input.number()?;
-            let result_bytes = input.number()?;
-            let effects = input.number()?;
-            let effect_bytes = input.number()?;
-            let payload_bytes = input.number()?;
-            let reserved = input.number()?;
-            let recovery_reserved = input.number()?;
-            input.finish()?;
-            if results > 1_000_000
-                || effects > 1_000_000
-                || [
-                    result_bytes,
-                    effect_bytes,
-                    payload_bytes,
-                    reserved,
-                    recovery_reserved,
-                ]
-                .iter()
-                .any(|v| *v > 1024 * 1024 * 1024)
-                || reserved > result_bytes
-                || recovery_reserved > reserved
-            {
-                return Err(AtomicError::Corrupt);
-            }
+            super::writer::Usage::decode(bytes)?;
         }
         Family::Maintenance if key.key.starts_with(RETRY) => {
             identity(key, RETRY)?;
@@ -102,6 +86,12 @@ fn validate_local(key: &RowKey, bytes: &[u8]) -> Result<(), AtomicError> {
             input.identity()?;
             input.identity()?;
             input.finish()?;
+        }
+        Family::Maintenance if key.key.starts_with(super::retention::RETRY_INDEX_PREFIX) => {
+            let index = super::retention::RetryIndex::decode(bytes)?;
+            if *key != index.key() {
+                return Err(AtomicError::Corrupt);
+            }
         }
         Family::Maintenance
             if key.key.starts_with(KEY_PREFIX) && key.key.len() == KEY_PREFIX.len() + 32 =>
@@ -126,21 +116,7 @@ fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), At
     validate_local(key, bytes)?;
     match key.family {
         Family::Command => {
-            let command = CommandRecord::decode(bytes)?;
-            let current_attempt = required(view, &attempt_row_key(command.id, command.attempt))?;
-            if current_attempt != bytes {
-                return Err(AtomicError::Corrupt);
-            }
-            for generation in 1..command.attempt {
-                let prior = CommandRecord::decode(&required(
-                    view,
-                    &attempt_row_key(command.id, generation),
-                )?)?;
-                if prior.outcome != Outcome::Aborted || !same_original(&prior, &command) {
-                    return Err(AtomicError::Corrupt);
-                }
-            }
-            validate_disposition(view, &command)?;
+            validate_command(view, bytes)?;
         }
         Family::Attempt => {
             let attempt = CommandRecord::decode(bytes)?;
@@ -178,20 +154,75 @@ fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), At
             let id = identity(key, KEY_PREFIX)?;
             let record = CommandRecord::decode(&required(view, &command_row_key(id))?)?;
             let reservation = LogicalReservation::decode(bytes)?;
-            if record.outcome != Outcome::Pending
+            if record.outcome != Outcome::Pending {
+                return Err(AtomicError::Corrupt);
+            }
+            let reserved = record.result_policy.reservation_for(record.accounted)?;
+            if bytes != reservation.encode_for(record.accounted)?
                 || record.attempt != reservation.generation
-                || reservation.bytes != record.result_policy.reservation()?
+                || reservation.bytes != reserved
             {
                 return Err(AtomicError::Corrupt);
             }
+        }
+        Family::Maintenance if key.key.starts_with(super::retention::RETRY_INDEX_PREFIX) => {
+            let index = super::retention::RetryIndex::decode(bytes)?;
+            let record = CommandRecord::decode(&required(
+                view,
+                &attempt_row_key(index.command, index.attempt),
+            )?)?;
+            if !record.accounted || record.attempt != index.attempt {
+                return Err(AtomicError::Corrupt);
+            }
+            let receipt = required(view, &index.retry_key())?;
+            let mut input = Decoder::new(&receipt, b"LCT\0\x01", 77)?;
+            if input.number()? != record.attempt {
+                return Err(AtomicError::Corrupt);
+            }
+            input.identity()?;
+            if input.identity()? != record.fingerprint {
+                return Err(AtomicError::Corrupt);
+            }
+            input.finish()?;
         }
         _ => {}
     }
     Ok(())
 }
 
+fn validate_command(view: &ReadView, bytes: &[u8]) -> Result<(), AtomicError> {
+    if super::RetiredCommand::is_present(bytes) {
+        return validate_floor(view, bytes);
+    }
+    let command = CommandRecord::decode(bytes)?;
+    if required(view, &attempt_row_key(command.id, command.attempt))? != bytes {
+        return Err(AtomicError::Corrupt);
+    }
+    let audit = super::retention::RetentionAudit::capture(&command)?;
+    let purged = audit.as_ref().map_or(0, |audit| audit.purged_attempts);
+    for generation in 1..=purged {
+        for key in [
+            attempt_row_key(command.id, generation),
+            result_row_key(command.id, generation),
+        ] {
+            if view.get(&key)?.is_some() {
+                return Err(AtomicError::Corrupt);
+            }
+        }
+    }
+    for generation in purged + 1..command.attempt {
+        let prior =
+            CommandRecord::decode(&required(view, &attempt_row_key(command.id, generation))?)?;
+        if prior.outcome != Outcome::Aborted || !same_original(&prior, &command) {
+            return Err(AtomicError::Corrupt);
+        }
+    }
+    validate_disposition(view, &command)
+}
+
 fn same_original(one: &CommandRecord, two: &CommandRecord) -> bool {
-    one.id == two.id
+    one.accounted == two.accounted
+        && one.id == two.id
         && one.key == two.key
         && one.fingerprint == two.fingerprint
         && one.source == two.source
@@ -210,15 +241,57 @@ fn validate_disposition(view: &ReadView, record: &CommandRecord) -> Result<(), A
     )?;
     let reservation = view.get(&reservation_key(&record.id.0)?)?;
     if record.outcome == Outcome::Pending {
-        let reservation =
-            LogicalReservation::decode(reservation.as_deref().ok_or(AtomicError::Corrupt)?)?;
-        if reservation.generation != record.attempt
-            || reservation.bytes != record.result_policy.reservation()?
+        let bytes = reservation.as_deref().ok_or(AtomicError::Corrupt)?;
+        let reservation = LogicalReservation::decode(bytes)?;
+        if bytes != reservation.encode_for(record.accounted)?
+            || reservation.generation != record.attempt
+            || reservation.bytes != record.result_policy.reservation_for(record.accounted)?
         {
             return Err(AtomicError::Corrupt);
         }
+    } else if reservation.is_some() {
+        return Err(AtomicError::Corrupt);
     }
-    for effect in &record.effects {
+    let (usage, _, bytes) = super::writer::Usage::read(view, &record.key)?;
+    if bytes.is_none() || usage.accounted != record.accounted {
+        return Err(AtomicError::Corrupt);
+    }
+    if record.accounted && record.outcome != Outcome::Pending {
+        let reserved = super::retention::RetentionAudit::capture(record)?
+            .map_or(Ok(super::retention::AUDIT_RESERVED_BYTES), |audit| {
+                audit.reservation()
+            })?;
+        let current = CommandRecord::decode(&required(view, &command_row_key(record.id))?)?;
+        if current.attempt == record.attempt && usage.reserved < reserved {
+            return Err(AtomicError::Corrupt);
+        }
+    }
+    let audit = super::retention::RetentionAudit::capture(record)?;
+    if let Some(audit) = &audit {
+        if audit.attempt == record.attempt {
+            audit.verify(record)?;
+        } else if audit.attempt < record.attempt || record.outcome != Outcome::Aborted {
+            return Err(AtomicError::Corrupt);
+        }
+    }
+    let purged = usize::try_from(
+        audit
+            .as_ref()
+            .filter(|audit| audit.attempt == record.attempt)
+            .map_or(0, |audit| audit.purged),
+    )
+    .map_err(|_| AtomicError::Corrupt)?;
+    for effect in record.effects.iter().take(purged) {
+        for key in [
+            latent_effects::dispatch_store::effect_row_key(&effect.hex())?,
+            latent_effects::dispatch_store::effect_payload_key(&effect.hex())?,
+        ] {
+            if view.get(&key)?.is_some() {
+                return Err(AtomicError::Corrupt);
+            }
+        }
+    }
+    for effect in record.effects.iter().skip(purged) {
         let bytes = required(
             view,
             &latent_effects::dispatch_store::effect_row_key(&effect.hex())?,
@@ -251,6 +324,51 @@ fn validate_disposition(view: &ReadView, record: &CommandRecord) -> Result<(), A
                 || marker.payload != identity.payload_digest
                 || marker.completed_at != record.completed_at
             {
+                return Err(AtomicError::Corrupt);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_floor(view: &ReadView, bytes: &[u8]) -> Result<(), AtomicError> {
+    let floor = super::RetiredCommand::decode(bytes)?;
+    let namespace_key = RowKey {
+        family: Family::Namespace,
+        key: latent_state::namespace::namespace_record_key(
+            &latent_core::TenantId(floor.tenant.clone()),
+            &latent_core::StateNamespaceId(floor.namespace_name.clone()),
+        )
+        .map_err(|_| AtomicError::Corrupt)?,
+    };
+    let namespace =
+        latent_state::namespace::NamespaceRecord::decode(&required(view, &namespace_key)?)
+            .map_err(|_| AtomicError::Corrupt)?;
+    if namespace.version.incarnation != floor.incarnation || namespace.pins.retained_results == 0 {
+        return Err(AtomicError::Corrupt);
+    }
+    let key =
+        super::writer::usage_row_key(&floor.tenant, &floor.namespace_name, floor.incarnation)?;
+    let (usage, _, value) = super::writer::Usage::read_row(view, key)?;
+    if value.is_none()
+        || !usage.accounted
+        || usage.results == 0
+        || usage.result_bytes < super::writer::row_charge(&command_row_key(floor.command), bytes)?
+    {
+        return Err(AtomicError::Corrupt);
+    }
+    for key in [reservation_key(&floor.command.0)?] {
+        if view.get(&key)?.is_some() {
+            return Err(AtomicError::Corrupt);
+        }
+    }
+    for generation in 1..=16 {
+        for key in [
+            attempt_row_key(floor.command, generation),
+            result_row_key(floor.command, generation),
+            super::retention::RetryIndex::row_key(floor.command, generation),
+        ] {
+            if view.get(&key)?.is_some() {
                 return Err(AtomicError::Corrupt);
             }
         }

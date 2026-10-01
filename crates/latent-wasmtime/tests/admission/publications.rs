@@ -105,24 +105,14 @@ async fn independent_ready_and_warm_owners_check_publication_at_real_guest_start
     assert_eq!(backend.cache_snapshot().entries, 2);
     let good_descriptor = new_ready.descriptor().clone();
     drop(new_ready);
-    let mut wrong = support::request(
-        good_descriptor.clone(),
-        &cancellation.id,
-        component::CONTRACT,
-        "answer",
-        b"[]",
-        support::budget(),
-    );
-    wrong.activation.resolved_revision = Some(ResolvedRevision {
-        target: wrong.activation.target.clone(),
-        revision: RevisionId("held-route".into()),
-        release: second_key.release.clone(),
-        publication: Some(first.id.clone()),
-        route_generation: RouteGeneration(1),
-        attributes: Default::default(),
-    });
-    assert!(backend.invoke(wrong, &cancellation).await.is_err());
-    assert_eq!(backend.resource_snapshot().stores_created, 0);
+    assert_wrong_publication_rejected(
+        &backend,
+        &cancellation,
+        &good_descriptor,
+        &second_key,
+        &first,
+    )
+    .await;
 
     repository
         .change_publication_lifecycle(
@@ -143,12 +133,55 @@ async fn independent_ready_and_warm_owners_check_publication_at_real_guest_start
         .is_err());
     assert_eq!(backend.resource_snapshot().stores_created, 0);
 
+    assert_fresh_owners_reuse(&backend, &repository, &second_key, &good_descriptor).await;
+    // Reusing compiled state still creates a fresh store for every actual call.
+    assert_eq!(backend.resource_snapshot().stores_created, 2);
+    assert_eq!(backend.active_instance_reservations(), 0);
+    assert_eq!(backend.compiler_snapshot().ready_preparations, 0);
+    assert_eq!(backend.compiler_snapshot().reserved_document_bytes, 0);
+    assert_eq!(backend.cache_snapshot().preparing, 0);
+    factory.quiesce_compiler().await.unwrap();
+}
+
+async fn assert_wrong_publication_rejected(
+    backend: &WasmtimeBackend,
+    cancellation: &support::Cancellation,
+    good_descriptor: &latent_executor::PreparedComponent,
+    second_key: &PreparationKey,
+    first: &PublicationRef,
+) {
+    let mut wrong = support::request(
+        good_descriptor.clone(),
+        &cancellation.id,
+        component::CONTRACT,
+        "answer",
+        b"[]",
+        support::budget(),
+    );
+    wrong.activation.resolved_revision = Some(ResolvedRevision {
+        target: wrong.activation.target.clone(),
+        revision: RevisionId("held-route".into()),
+        release: second_key.release.clone(),
+        publication: Some(first.id.clone()),
+        route_generation: RouteGeneration(1),
+        attributes: std::collections::BTreeMap::default(),
+    });
+    assert!(backend.invoke(wrong, cancellation).await.is_err());
+    assert_eq!(backend.resource_snapshot().stores_created, 0);
+}
+
+async fn assert_fresh_owners_reuse(
+    backend: &WasmtimeBackend,
+    repository: &Arc<DirectoryArtifactRepository>,
+    second_key: &PreparationKey,
+    good_descriptor: &latent_executor::PreparedComponent,
+) {
     for id in ["fresh-one", "fresh-two"] {
         let selected = backend
             .prepare_ready_from_repository(repository.clone(), second_key.clone())
             .await
             .unwrap();
-        assert_eq!(selected.descriptor(), &good_descriptor);
+        assert_eq!(selected.descriptor(), good_descriptor);
         let active = backend.materialize_ready(selected).unwrap();
         let cancellation = support::Cancellation::new(id);
         let result = backend
@@ -168,11 +201,4 @@ async fn independent_ready_and_warm_owners_check_publication_at_real_guest_start
         assert!(result.outcome.is_ok(), "{result:?}");
         assert_eq!(result.cleanup, ExecutionCleanup::Reusable);
     }
-    // Reusing compiled state still creates a fresh store for every actual call.
-    assert_eq!(backend.resource_snapshot().stores_created, 2);
-    assert_eq!(backend.active_instance_reservations(), 0);
-    assert_eq!(backend.compiler_snapshot().ready_preparations, 0);
-    assert_eq!(backend.compiler_snapshot().reserved_document_bytes, 0);
-    assert_eq!(backend.cache_snapshot().preparing, 0);
-    factory.quiesce_compiler().await.unwrap();
 }

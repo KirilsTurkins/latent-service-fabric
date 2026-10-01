@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "purpose": "source-owned-integration-lint-repair",
+  "baseSourceCommit": "391d686317375093295277d4a3e594e2ad4c5254",
+  "observedAtUtc": "2026-10-01T13:39:52.354200+00:00",
+  "changedSourceFiles": 32,
+  "originalTestFunctionCount": 52,
+  "currentTestFunctionCount": 52,
+  "testNamesAndAttributesIdentical": true,
+  "cfgAndIgnoreAttributesIdentical": true,
+  "newLintWaivers": false,
+  "existingRustSuiteCatalogUnchanged": true,
+  "checks": {
+    "pinnedRustfmtAllCheck": {
+      "passed": true,
+      "toolchain": "1.97.1"
+    },
+    "suiteInventoryAndCiProfile": {
+      "passed": true,
+      "testCount": 29
+    },
+    "readOnlyCiCoverage": {
+      "passed": true,
+      "baselineRunBlocks": 88,
+      "currentRunBlocks": 226,
+      "delegatedScriptOwners": 131
+    }
+  },
+  "nativeIntegrationQualification": {
+    "executed": false,
+    "passed": false,
+    "reason": "Shared native compiler slot is owned by the root campaign; this receipt records source and formatting verification only.",
+    "requiredCommand": "cargo clippy -p latent-wasmtime --all-targets --all-features --locked --offline --no-deps -- -D warnings"
+  },
+  "originalClippyAttempt": {
+    "path": "docs/evidence/native-wasmtime-lints409-r6/clippy-owned-r5.log",
+    "sha256": "08e7465e6a21a1b2c7ed380fb419b8800bc3f8bcbba46fa66fec53b62e9174f5",
+    "preserved": true
+  },
+  "sourceInputs": {
+    "crates/latent-wasmtime/tests/admission/packages.rs": {
+      "sha256": "3f7b09ccd24d4f14f48016bf2da0d23e29782f851b6a4840d24fab3315ba67cb",
+      "size": 6741,
+      "testNamesAndAttributes": {
+        "same_wasm_packages_and_tenants_keep_independent_enforced_runtime_grants": "#[tokio::test(flavor=\"current_thread\")]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/admission/publications.rs": {
+      "sha256": "98eb39f61fca72dbacd7d26feabee179075d2d6be29b3422feffa8751269aa22",
+      "size": 7369,
+      "testNamesAndAttributes": {
+        "independent_ready_and_warm_owners_check_publication_at_real_guest_start": "#[tokio::test(flavor=\"current_thread\")]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/async_application/web.rs": {
+      "sha256": "b6daa1e0fe99e28bc8d5b31d5c95271add00021f7c065b890e3bc9cd45018bff",
+      "size": 5554,
+      "testNamesAndAttributes": {
+        "real_web_contract_transfers_maximum_body_and_keeps_host_principal_on_reuse": "#[tokio::test]#[ignore=\"requirestheweb-contractcomponentbuiltbycontractCI\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/containment_backend.rs": {
+      "sha256": "5eaf058d0dff6a13a671a895805e132314cfa617297ac46b7b3f87fc8a096b83",
+      "size": 40531,
+      "testNamesAndAttributes": {
+        "contains_real_component_failures_and_reclaims_every_invocation_resource": "#[tokio::test(flavor=\"current_thread\")]#[ignore=\"requiresthecontainmentcomponentbuiltbytools/validate_contracts.sh\"]",
+        "healthy_activations_remain_correct_while_an_infinite_activation_times_out": "#[tokio::test(flavor=\"multi_thread\",worker_threads=4)]#[ignore=\"requiresthecontainmentcomponentbuiltbytools/validate_contracts.sh\"]",
+        "healthy_activations_remain_correct_while_another_activation_traps": "#[tokio::test(flavor=\"multi_thread\",worker_threads=4)]#[ignore=\"requiresthecontainmentcomponentbuiltbytools/validate_contracts.sh\"]",
+        "memory_pressure_stays_within_the_grant_while_healthy_activations_complete": "#[tokio::test(flavor=\"multi_thread\",worker_threads=6)]#[ignore=\"requiresthecontainmentcomponentbuiltbytools/validate_contracts.sh\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/dotnet_guest.rs": {
+      "sha256": "fbdd93d1596ba94738bdd9e8b00fc7d6c73c79e3a9988e67f0ed45d1cd4f9c3e",
+      "size": 9130,
+      "testNamesAndAttributes": {
+        "admitted_dotnet_component_preserves_values_and_drops_every_activation_heap": "#[tokio::test]#[ignore=\"Requiresthecompiled.NETqualificationcomponents\"]",
+        "diagnostic_dotnet_component_requires_only_the_declared_clock": "#[tokio::test]#[ignore=\"Requiresthecompiled.NETqualificationcomponent;diagnosticonly\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/guest_sdk.rs": {
+      "sha256": "ef5fa2ae296a730babc63a833ccb706ebb380fcfa32f99da05b4dab1bc7d8202",
+      "size": 3289,
+      "testNamesAndAttributes": {
+        "all_rust_examples_are_exact_signed_phase2_packages": "#[tokio::test]#[ignore=\"Requirescompiledguestsfromtools/build_guest_capsules.py\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/guest_sdk/blob.rs": {
+      "sha256": "bb5252a22f9e908cea718e0b670e9c62fd5ac8351fbb19c2b736242e94a73d4c",
+      "size": 5702,
+      "testNamesAndAttributes": {
+        "rust_and_c_owned_chunks_closed_handles_abandonment_and_reuse": "#[tokio::test]#[ignore=\"RequirescompiledguestSDKfixtures\"]",
+        "rust_and_c_cancel_pending_import_without_refunding_another_owner": "#[tokio::test]#[ignore=\"RequirescompiledguestSDKfixtures\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/guest_sdk/events.rs": {
+      "sha256": "47223b1c6b520f32ba11ebe626048354be1acc4abd43157ca5e8d8e9d555b4d8",
+      "size": 3294,
+      "testNamesAndAttributes": {
+        "typed_event_receipt_denial_and_uncertainty_do_not_retry": "#[tokio::test]#[ignore=\"RequirescompiledguestSDKfixtures\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/guest_sdk/metrics.rs": {
+      "sha256": "46cd64923faf805050e84eb41a83c6d15283a4aa8bc2a9442758db6ad7efe991",
+      "size": 1394,
+      "testNamesAndAttributes": {
+        "generated_metric_kinds_and_typed_failure": "#[tokio::test]#[ignore=\"RequirescompiledguestSDKfixtures\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/guest_sdk/random.rs": {
+      "sha256": "2a294b2c3b32706a83d5846668b9fe4cdd29066bc53c5bd35f15fc0b9096b0c6",
+      "size": 1051,
+      "testNamesAndAttributes": {
+        "generated_random_binding_and_reused_cell": "#[tokio::test]#[ignore=\"RequirescompiledguestSDKfixtures\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/guest_sdk/secrets.rs": {
+      "sha256": "a6aa00609d20d075bbf80f23d84ba4a18ad179abbf479b3e818c181dfc3a3297",
+      "size": 3505,
+      "testNamesAndAttributes": {
+        "secret_owner_typed_denial_cancellation_and_cell_recovery": "#[tokio::test]#[ignore=\"RequirescompiledguestSDKfixtures\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/guest_sdk/service.rs": {
+      "sha256": "7eab629a300e667ebf1c254a5c53ba2aecb778fb188645ef0bafc6a97108bebd",
+      "size": 4366,
+      "testNamesAndAttributes": {
+        "typed_service_outcomes_use_node_admission_and_reused_cells": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]#[ignore=\"RequirescompiledguestSDKfixtures\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/isolated_aot/prepared.rs": {
+      "sha256": "79236a67d0d3408a42a6e31ac0068e02a2cdba380ff83be8904d1cf83b7cfd54",
+      "size": 5966,
+      "testNamesAndAttributes": {},
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/isolated_aot/prepared_negative.rs": {
+      "sha256": "1149f2a4529003c6dde707a44ef83a7d9f02d54e2242ad4020de6c322e6c0886",
+      "size": 5983,
+      "testNamesAndAttributes": {
+        "prepared_missing_and_modified_executables_are_rejected": "#[test]",
+        "prepared_wrong_digest_profile_and_stale_identities_are_rejected": "#[test]",
+        "prepared_wrong_role_and_symlinks_are_rejected": "#[test]",
+        "replacement_after_configuration_is_rejected_and_compilation_recovers": "#[test]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/local_blobs/fixture.rs": {
+      "sha256": "cb0b0d2ad0aa01287ec24b96ca25d9193e171129fce39c62462e5307fef41b24",
+      "size": 19861,
+      "testNamesAndAttributes": {},
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/local_secrets/fixture.rs": {
+      "sha256": "83b6cf531f876904bf17be6398c259c8b9fd33c58e5c39ff739163297ab6ae6b",
+      "size": 23934,
+      "testNamesAndAttributes": {},
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/local_service.rs": {
+      "sha256": "3b16e156e171c36eb1b8b643f3cf79342fb521268b6d8f5bfdf891f3128296ee",
+      "size": 5608,
+      "testNamesAndAttributes": {
+        "declared_service_import_without_a_node_adapter_has_no_execution_authority": "#[tokio::test]",
+        "two_real_components_use_compiled_binding_normal_admission_and_child_accounting": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]",
+        "both_real_components_have_checked_packages_and_exact_async_metadata": "#[test]",
+        "asynchronous_application_export_waits_for_the_canonical_async_service_import": "#[tokio::test]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/local_service/acceptance.rs": {
+      "sha256": "a41acaa3d691be140defeca219fd39214097fff257351634a8e993737760a6f8",
+      "size": 13235,
+      "testNamesAndAttributes": {
+        "required_audit_records_real_local_acceptance_and_denies_full_sink_before_child_admission": "#[tokio::test]",
+        "oversized_input_unknown_targets_and_expired_deadline_never_start_children": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]",
+        "concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_call_grant": "#[tokio::test]",
+        "denied_service_publication_never_starts_a_child": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]",
+        "explicit_cross_tenant_policy_and_fresh_activation_identity": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]",
+        "declared_failure_is_distinct_from_a_platform_failure": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]",
+        "parent_occupying_the_only_cell_rejects_children_promptly_and_keeps_running": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]",
+        "cancellation_during_child_execution_reclaims_both_stores_and_reservations": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]",
+        "abandoning_parent_awaiter_still_drives_child_cleanup": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]",
+        "changed_route_requires_a_new_plan_and_revocation_denies_cached_target": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/local_service/fixture.rs": {
+      "sha256": "9c1b485cfab2e95402f891b757f443e40bdb3691c8083e60aab6bf0d87b0918d",
+      "size": 23775,
+      "testNamesAndAttributes": {},
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/local_service/load.rs": {
+      "sha256": "92c54b1451131f36419a8d0009d23cf8422fbb5485175aca6362e7f8d956051b",
+      "size": 4155,
+      "testNamesAndAttributes": {
+        "synthetic_profile_is_unchanged_and_observed_on_each_read": "#[test]",
+        "stale_child_load_fails_closed_before_admission_without_consumption_or_retry": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]",
+        "fresh_per_admission_fixture_load_admits_the_real_parent_and_child_once": "#[tokio::test(flavor=\"multi_thread\",worker_threads=2)]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/local_service/packages.rs": {
+      "sha256": "3b0da8f378f678768107c3ebc55351c97b8d0feb26098515080287152ac75606",
+      "size": 7414,
+      "testNamesAndAttributes": {},
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/nats_events.rs": {
+      "sha256": "654b7b2246cc9fe23bffb2eb154d4b514b8ee1398849db89cbe1b81fcb11aab8",
+      "size": 6294,
+      "testNamesAndAttributes": {
+        "real_nats_guest_ack_denial_duplicates_and_connection_reuse": "#[tokio::test]#[ignore=\"requirestools/run_nats_event_tests.pyownedpinnedTLSJetStream\"]",
+        "real_nats_credentials_tls_budget_and_retained_receipt_ownership": "#[tokio::test]#[ignore=\"requirestools/run_nats_event_tests.pyownedpinnedTLSJetStream\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/nats_events/audit.rs": {
+      "sha256": "1bb774fc9c3ff84e33b25cfe9fbbe9bc3573b5f87caec54c7d427a79c83ce97b",
+      "size": 2706,
+      "testNamesAndAttributes": {
+        "real_nats_audit_preserves_broker_ack_and_uncertainty_without_event_or_credentials": "#[tokio::test]#[ignore=\"requirestools/run_nats_event_tests.pyownedpinnedTLSJetStream\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/nats_events/faults.rs": {
+      "sha256": "6665677ffe506d446af8704625ddb7ef76e92191aa2ac41387261b64aeacd4a4",
+      "size": 3351,
+      "testNamesAndAttributes": {
+        "real_nats_lost_ack_cancelled_guest_outage_and_fresh_connection_recovery": "#[tokio::test]#[ignore=\"requirestools/run_nats_event_tests.pyownedpinnedTLSJetStream\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/nats_events/proxy.rs": {
+      "sha256": "994b8557596caf2c2ea8826b222c2d73bce4fc9d3db22c8511ca7906d843cfca",
+      "size": 8250,
+      "testNamesAndAttributes": {},
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/phase3_resource.rs": {
+      "sha256": "63a850916e2de0915a7775028c3d6601a9880d33af134d3fc593f3e1e43e5675",
+      "size": 1787,
+      "testNamesAndAttributes": {
+        "phase3_resource_small_provider_ownership_checkpoint": "#[test]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/phase3_resource/child.rs": {
+      "sha256": "f22505e2d10cda250edbaca56f6493df94f5b7615cbe522ea76004834144d3c2",
+      "size": 5505,
+      "testNamesAndAttributes": {},
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/phase3_resource/events.rs": {
+      "sha256": "633a13ec57e6b7ad1c86138a896faa06fbc7da6be0210cf0e37faf4b48af3c73",
+      "size": 7828,
+      "testNamesAndAttributes": {},
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/phase3_resource/observation.rs": {
+      "sha256": "731171171ae016f4a9fbe0b73dff1eb1425d81d0d520d9a2b7990c10e2cb649f",
+      "size": 12614,
+      "testNamesAndAttributes": {
+        "executable_identity_hashes_all_bytes_with_a_fixed_buffer": "#[test]",
+        "executable_identity_rejects_overflow_without_unbounded_reading": "#[test]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/vault_secrets/audit.rs": {
+      "sha256": "80ae454504a3e77238f6d3921f64b3911e30b81b71504066bd611d14c06510c8",
+      "size": 2259,
+      "testNamesAndAttributes": {
+        "real_vault_audit_and_status_redact_token_and_value_material": "#[tokio::test]#[ignore=\"requirestools/run_vault_secret_tests.pyownedpinnedTLSVault\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/vault_secrets/bounds.rs": {
+      "sha256": "54c84219f955631daf9dfe7747dbc96fae3fa89633a0d219a5bb02d500903c31",
+      "size": 10849,
+      "testNamesAndAttributes": {
+        "aggregate_plaintext_exhaustion_rejects_before_opening_another_connection": "#[tokio::test]",
+        "replacement_requires_a_fresh_plan_and_keeps_old_owners_until_drain": "#[tokio::test]",
+        "malformed_oversized_and_denied_responses_are_redacted_and_reclaimed": "#[tokio::test]",
+        "evicted_disclosures_keep_plaintext_charged_until_their_last_owner_drops": "#[tokio::test]",
+        "a_late_response_cannot_replace_or_disclose_an_older_latest_version": "#[tokio::test]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    },
+    "crates/latent-wasmtime/tests/vault_secrets/transport.rs": {
+      "sha256": "515446dc30e2b3c5d03669feb9d0be8c848aefb7868084b06f7d87fc69cdb741",
+      "size": 5753,
+      "testNamesAndAttributes": {
+        "real_vault_transport_cancellation_outage_tls_and_healthy_reuse": "#[tokio::test]#[ignore=\"requirestools/run_vault_secret_tests.pyownedpinnedTLSVault\"]"
+      },
+      "cfgAndIgnoreAttributesUnchanged": true
+    }
+  }
+}

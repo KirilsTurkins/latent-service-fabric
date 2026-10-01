@@ -36,6 +36,10 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/dev/latent/app/Capsule.java": read_file(ROOT / "sdk/java-guest/templates" / (template + ".java")),
                   "wit/world.wit": runtime_wit(read_file(source / "world.wit"), "service"), ".gitignore": b"/target/\n"})
+    # The declared TeaVM clocks must resolve in the captured authored world,
+    # before a compiler adds its generated runtime-support world. Carry the
+    # same captured bytes; this declaration supplies no runtime capability.
+    files["wit/deps/clock/package.wit"] = vendor["wit/platform/clock/package.wit"]
     limits = json.loads(read_file(ROOT / "examples/echo-contract/capsule.json"))["execution"]["limits"]
     limits.update(cpuFuel=1_000_000_000, memoryBytes=67_108_864, wallTimeLimitMillis=120000, logBytes=0)
     if template == "http-status": limits.update(outboundRequests=1)

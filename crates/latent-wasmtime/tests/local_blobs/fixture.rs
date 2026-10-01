@@ -305,7 +305,7 @@ impl<P: blob::BlobInvoker + Clone + 'static> Fixture<P> {
         .unwrap();
         let backend = factory.create_backend_instance();
         let mut key = factory.preparation_key(revision.release.clone());
-        key.publication = revision.publication.clone();
+        key.publication.clone_from(&revision.publication);
         let ready = backend
             .prepare_ready_from_repository(catalog.clone(), key)
             .await
@@ -388,7 +388,7 @@ impl<P: blob::BlobInvoker + Clone + 'static> Fixture<P> {
     )]
     pub async fn prepared_for(&self, revision: &ResolvedRevision) -> PreparedComponent {
         let mut key = self._factory.preparation_key(revision.release.clone());
-        key.publication = revision.publication.clone();
+        key.publication.clone_from(&revision.publication);
         self.backend
             .prepare_ready_from_repository(self.catalog.clone(), key)
             .await
@@ -510,7 +510,7 @@ pub fn install(
                 "id":"allow", "effect":"allow","principals":[{"kind":"service","subject":"generic-test"}],
                 "services":["generic"], "publications":[publication.publication().as_str()], "capability":component::CAP,
                 "operations":["create","open","write","read","seal"], "resources":{"kind":"blob","namespaces":["private"]},
-                "ceiling":{"operations":1,"inputBytes":131072,"outputBytes":65536,"wallTimeMillis":wall_millis}
+                "ceiling":{"operations":1,"inputBytes":131_072,"outputBytes":65_536,"wallTimeMillis":wall_millis}
             }]}),
         ),
         (

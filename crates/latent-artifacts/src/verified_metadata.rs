@@ -18,6 +18,7 @@ pub struct VerifiedArtifactMetadata {
     contracts: Vec<ContractDescriptor>,
     verified_digest: ReleaseDigest,
     web_execution_projection: bool,
+    transaction_execution_profile: bool,
 }
 
 impl VerifiedArtifactMetadata {
@@ -70,12 +71,44 @@ impl VerifiedArtifactMetadata {
             contracts,
             verified_digest,
             web_execution_projection: false,
+            transaction_execution_profile: false,
         }
     }
 
     pub(crate) fn with_web_execution_projection(mut self) -> Self {
         self.web_execution_projection = true;
         self
+    }
+
+    /// Set only after the repository verifies the original admitted package's
+    /// exact, digest-bound transaction companion and capsule association.
+    pub(crate) fn with_transaction_execution_profile(mut self, selected: bool) -> Self {
+        self.transaction_execution_profile = selected;
+        self
+    }
+
+    /// Immutable structural profile provenance. Runtime ABI, current admission,
+    /// namespace authority and an attached transaction are checked separately.
+    #[must_use]
+    pub const fn is_transaction_execution_profile(&self) -> bool {
+        self.transaction_execution_profile
+    }
+
+    pub fn validate_deployment(
+        &self,
+        deployment: &latent_manifest::DeploymentManifest,
+    ) -> Result<(), Vec<latent_manifest::ManifestViolation>> {
+        use latent_manifest::{
+            ManifestValidator, Phase1ManifestValidator, Phase4TransactionManifestValidator,
+        };
+        if self.transaction_execution_profile {
+            Phase4TransactionManifestValidator
+                .validate_deployment_against_capsule(deployment, &self.manifest)
+        } else if self.web_execution_projection {
+            Phase1ManifestValidator.validate_web_execution_projection(deployment, &self.manifest)
+        } else {
+            Phase1ManifestValidator.validate_deployment_against_capsule(deployment, &self.manifest)
+        }
     }
 
     #[must_use]

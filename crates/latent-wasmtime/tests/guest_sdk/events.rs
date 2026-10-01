@@ -59,7 +59,7 @@ async fn typed_event_receipt_denial_and_uncertainty_do_not_retry() {
             let f = Fixture::with_publication(
                 peer.config.clone(),
                 None,
-                Default::default(),
+                latent_capabilities::broker::pools::ProviderPoolLimits::default(),
                 Some(publication),
             )
             .await;

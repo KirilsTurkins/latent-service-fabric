@@ -5,7 +5,7 @@ use latent_control_store::deployment_operations::{
     DeploymentOperationContext, DeploymentOperationRequest, MAX_REQUEST_BYTES,
 };
 use latent_core::{DeploymentId, InvocationPrincipal};
-use latent_manifest::{ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::validate_deployment_document;
 use prost::Message;
 use std::time::{Duration, Instant};
 use tonic::{Request, Status};
@@ -119,8 +119,7 @@ pub(super) fn apply(
     let mut manifest =
         deployment_manifest_from_proto(value.deployment.expect("validated deployment"))
             .map_err(|_| Status::invalid_argument("invalid deployment representation"))?;
-    Phase1ManifestValidator
-        .validate_deployment(&manifest)
+    validate_deployment_document(&manifest)
         .map_err(|_| Status::invalid_argument("invalid deployment"))?;
     manifest.normalize_storage_fields();
     Ok(DeploymentOperationRequest::Apply {

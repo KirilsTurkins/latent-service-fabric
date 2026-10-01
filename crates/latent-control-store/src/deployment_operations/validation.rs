@@ -4,8 +4,7 @@ use super::{
 };
 use latent_core::{ArtifactBlobDigest, DeploymentId};
 use latent_manifest::{
-    __serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidator,
-    Phase1ManifestValidator,
+    __serde_json as json, validate_deployment_document, JsonManifestCodec, ManifestCodec,
 };
 pub(crate) fn token(value: &str, maximum: usize) -> Result<()> {
     if value.is_empty()
@@ -82,9 +81,7 @@ impl DeploymentOperationRequest {
                         "deployment-scope-conflict",
                     ));
                 }
-                Phase1ManifestValidator
-                    .validate_deployment(manifest)
-                    .map_err(|_| invalid())?;
+                validate_deployment_document(manifest).map_err(|_| invalid())?;
             }
             Self::Delete {
                 expected_generation: 0,

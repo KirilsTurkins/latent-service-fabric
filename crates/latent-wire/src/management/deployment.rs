@@ -11,7 +11,7 @@ mod tests;
 
 use latent_control_store::{DeploymentPageRequest, VersionedDeployment};
 use latent_core::{DeploymentId, ServiceId};
-use latent_manifest::{ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::validate_deployment_document;
 use tonic::{Request, Response, Status};
 
 use super::errors::platform_status;
@@ -68,8 +68,7 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
         let mut manifest =
             deployment_manifest_from_proto(request.deployment.expect("validated deployment"))
                 .map_err(|_| Status::invalid_argument("invalid deployment representation"))?;
-        Phase1ManifestValidator
-            .validate_deployment(&manifest)
+        validate_deployment_document(&manifest)
             .map_err(|_| Status::invalid_argument("invalid Phase 1 deployment"))?;
         // Use the catalog codec's exact normalization before binding an audit
         // attempt. This preserves accepted uppercase digests and unordered sets.
