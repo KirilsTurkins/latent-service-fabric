@@ -246,5 +246,74 @@ class FinalComponentInspection(unittest.TestCase):
         self.assertEqual(first, second)
 
 
+class SharedPackageAssembly(unittest.TestCase):
+    def test_all_six_builders_execute_shared_package_assembly_with_final_inspection(self):
+        import importlib
+        from tools import rust_capsule_build as shared
+
+        class InspectedCommands:
+            def run(self, *args):
+                return encode(graph(imports=()))
+
+        builders = {"rust": "tools.rust_capsule_build", "c": "tools.c_capsule_build",
+                    "java": "tools.java_capsule_build", "dotnet": "tools.dotnet_guest.build",
+                    "go": "tools.go_capsule_build", "typescript": "tools.typescript_guest.build"}
+        for language, module_name in builders.items():
+            with self.subTest(language=language), tempfile.TemporaryDirectory() as directory:
+                module = importlib.import_module(module_name)
+                self.assertIs(module.package_inputs, shared.package_inputs)
+                self.assertTrue(set(build.RECIPE) <= set(module.RECIPE))
+                output = Path(directory)
+                component = b"controlled component bytes; wasm-tools boundary is mocked"
+                source = b"captured source inventory"
+                (output / "component.wasm").write_bytes(component)
+                (output / "source-inputs.json").write_bytes(source)
+                surface = {"imports": [], "exports": ["examples:hello/service@1.0.0"]}
+                inspected = build.inspect(InspectedCommands(), Path("wasm-tools"), output, surface)
+                files = {"sdk-lock.json": encode({"language": language}),
+                         "vendor/lsf/Cargo.toml": b'[workspace.package]\nversion="0.1.0-alpha.5"\n',
+                         "wit/application.wit": b"package examples:hello@1.0.0; interface service {}"}
+                project = {"name": "package-fixture", "tenant": "examples", "service": "examples/package-fixture",
+                           "world": "examples:hello/service@1.0.0", "version": "1.0.0", "limits": {}}
+                module.package_inputs(output, project, surface, files, component)
+                package = json.loads((output / "package-source.json").read_bytes())
+                layers = {item["path"]: item for item in package["layers"]}
+                self.assertEqual(layers["compatibility-report.json"]["role"], "asset")
+                self.assertEqual(layers["component.wasm"]["role"], "component")
+                self.assertEqual(layers["capsule.json"]["role"], "capsule-manifest")
+                self.assertEqual(layers["contracts.json"]["role"], "contracts")
+                self.assertEqual(layers["wit-lock.json"]["role"], "wit-lock")
+                self.assertEqual((output / "wit/application.wit").read_bytes(), files["wit/application.wit"])
+                report = c.validate(json.loads((output / "compatibility-report.json").read_bytes()))
+                self.assertEqual(report["language"], language)
+                self.assertEqual(report["componentDigest"], inspected["componentDigest"])
+                self.assertEqual(report["sourceDigest"], digest(source))
+                self.assertIn("lifecycle-unproven", [row["classification"] for row in report["findings"]])
+                deployment = json.loads((output / "deployment.json").read_bytes())
+                self.assertEqual(deployment["spec"]["grants"], [])
+
+    def test_changed_component_after_inspection_cannot_produce_package_source(self):
+        from tools.rust_capsule_build import package_inputs
+
+        class InspectedCommands:
+            def run(self, *args):
+                return encode(graph(imports=()))
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            component = b"component inspected before changed bytes"
+            (output / "component.wasm").write_bytes(component)
+            surface = {"imports": [], "exports": ["examples:hello/service@1.0.0"]}
+            build.inspect(InspectedCommands(), Path("wasm-tools"), output, surface)
+            files = {"sdk-lock.json": encode({"language": "rust"}),
+                     "vendor/lsf/Cargo.toml": b'[workspace.package]\nversion="0.1.0-alpha.5"\n'}
+            project = {"name": "package-fixture", "tenant": "examples", "service": "examples/package-fixture",
+                       "world": "examples:hello/service@1.0.0", "version": "1.0.0", "limits": {}}
+            with self.assertRaisesRegex(DevError, "stale-inspection"):
+                package_inputs(output, project, surface, files, b"changed component bytes")
+            self.assertFalse((output / "package-source.json").exists())
+            self.assertFalse((output / "BUILD-COMPLETE.json").exists())
+
+
 if __name__ == "__main__":
     unittest.main()
