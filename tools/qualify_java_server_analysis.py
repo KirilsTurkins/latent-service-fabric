@@ -31,6 +31,28 @@ public final class Server {
 '''
 HANDLER = 'exchange -> { exchange.sendResponseHeaders(200, -1); exchange.close(); }'
 REGISTER = 'server.createContext("/hey", ' + HANDLER + ');'
+RAW_HTTP_LOOP = '''package dev.latent.app;
+import java.net.ServerSocket;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+public final class Server {
+    static int handled;
+    public static void main(String[] arguments) throws Exception {
+        try (var listener = new ServerSocket(8080)) {
+            while (true) {
+                try (var connection = listener.accept()) {
+                    var lines = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.US_ASCII));
+                    if ("GET /hey HTTP/1.1".equals(lines.readLine())) {
+                        connection.getOutputStream().write("HTTP/1.1 200 OK\\r\\nContent-Length: 4\\r\\n\\r\\nHey!".getBytes(StandardCharsets.US_ASCII));
+                    }
+                    handled++;
+                }
+            }
+        }
+    }
+}
+'''
 REFERENCE = '''import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -124,6 +146,8 @@ public final class Router { public static void install(HttpServer server) {
             ("encoded-context-path", source(REGISTER.replace('"/hey"', '"/a%2Fb"')), None, "context-path-outside-canonical-profile"),
             ("source-dns-address", source().replace("new InetSocketAddress(8080)", 'new InetSocketAddress("example.invalid", 8080)'), None, "constant-wildcard-or-ipv4-loopback-required"),
             ("live-context-mutation", source(after=REGISTER.replace('"/hey"', '"/later"')), None, "live-context-mutation-unsupported"),
+            ("identified-raw-http-accept-loop", RAW_HTTP_LOOP, None, "raw-accept-loop-has-no-finite-http-handler-boundary"),
+            ("unused-raw-accept-does-not-block-server", source(extra="static void unused() throws Exception { new java.net.ServerSocket(8080).accept(); }"), None, None),
         ]
         observed = []
         for name, content, additional, blocked in cases:
@@ -139,6 +163,9 @@ public final class Router { public static void install(HttpServer server) {
             result = json.loads(raw)
             if result.get("status") != ("blocked" if blocked else "observed"): raise ValueError("analysis outcome mismatch")
             if blocked and result["diagnostics"][0]["code"] != blocked: raise ValueError("analysis producer diagnostic mismatch")
+            if blocked and (not isinstance(result["diagnostics"][0].get("source"), dict)
+                    or result["diagnostics"][0]["source"].get("path") != "src/dev/latent/app/Server.java"):
+                raise ValueError("analysis blocker lacks captured source attribution")
             if not blocked and result["plan"]["endpoints"][0]["contexts"][0]["path"] != "/hey": raise ValueError("analysis changed captured context")
             if canary.exists(): raise ValueError("application initialization executed on compiler host")
             observed.append({"case": name, "status": result["status"], "code": blocked})

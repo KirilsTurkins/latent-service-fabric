@@ -119,7 +119,7 @@ remain non-atomic.
 ## Qualification and raw socket boundary
 
 `tools/qualify_java_server_analysis.py --output <fresh-directory>` executes 16
-native kernel cases, 13 real javac AST vectors and seven real JDK reference
+native kernel cases, 15 real javac AST vectors and seven real JDK reference
 requests. It observes that an application static initializer never executes on
 the compiler host. Those checks do not prove signed component admission, real
 LSF listener dispatch, dormant Store ownership, cancellation, disconnect or
@@ -129,5 +129,11 @@ A literal `ServerSocket.accept` loop returns a byte connection, not a handler
 registration. This profile cannot identify an arbitrary protocol boundary or
 retain/escape an unmodified infinite accept loop without changing its observable
 control flow. The exact blockers are missing finite HTTP handler association,
-continuation lifetime and code after accept/request handling. No socket loop is
-silently certified by HttpServer compilation.
+continuation lifetime and code after accept/request handling. The maintained AST
+suite includes an explicitly identified HTTP `/hey` accept loop with response
+bytes and a counter after each request. Its source-attributed diagnostic is
+`raw-accept-loop-has-no-finite-http-handler-boundary`: identifying those bytes
+does not supply a finite handler export or preserve the loop's continuation and
+counter across fresh activations. An unused accept method does not block an
+otherwise supported HttpServer registration. No socket loop is silently certified
+by HttpServer compilation.

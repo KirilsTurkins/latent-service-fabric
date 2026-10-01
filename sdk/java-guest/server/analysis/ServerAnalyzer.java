@@ -139,6 +139,9 @@ public final class ServerAnalyzer {
             Element symbol = element(child(at, invocation.getMethodSelect()));
             if (!(symbol instanceof ExecutableElement method)) throw fail("unresolved-invocation", at);
             String api = owner(method), name = method.getSimpleName().toString();
+            if (api.equals("java.net.ServerSocket") && name.equals("accept")) {
+                throw fail("raw-accept-loop-has-no-finite-http-handler-boundary", at);
+            }
             Object receiver = UNKNOWN;
             if (invocation.getMethodSelect() instanceof MemberSelectTree select) {
                 receiver = evaluate(child(child(at, select), select.getExpression()), values);
@@ -216,7 +219,12 @@ public final class ServerAnalyzer {
         new TreePathScanner<Void, Void>() {
             @Override public Void visitMethodInvocation(MethodInvocationTree tree, Void unused) {
                 tick(getCurrentPath());
-                if (registrationMethod(element(child(getCurrentPath(), tree.getMethodSelect())), new HashSet<>())) {
+                Element symbol = element(child(getCurrentPath(), tree.getMethodSelect()));
+                if (symbol instanceof ExecutableElement method && owner(method).equals("java.net.ServerSocket")
+                        && method.getSimpleName().contentEquals("accept")) {
+                    throw fail("raw-accept-loop-has-no-finite-http-handler-boundary", getCurrentPath());
+                }
+                if (registrationMethod(symbol, new HashSet<>())) {
                     throw fail("dynamic-registration-control-flow-unsupported", getCurrentPath());
                 }
                 return super.visitMethodInvocation(tree, unused);

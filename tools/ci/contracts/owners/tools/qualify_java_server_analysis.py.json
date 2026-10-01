@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_server_analysis.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed bounded actual pinned JDK AST/kernel/reference checks; no signed component or shared listener authority assertion.",
+  "reviewReason": "Keep pinned AST and JDK/kernel checks; add source-attributed identified HTTP accept-loop and unused-source boundary controls",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "20082bdedbddb9e8c30dc522ed2fca27735ed6026d761baba59f7adbe5b29773"
+  "sha256": "ccba5c5ad0b9cfc7f35d924d7e898ff0ce68bb17b442376eb86f5e96cbc2d59a"
 }
