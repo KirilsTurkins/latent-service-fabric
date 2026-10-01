@@ -6,7 +6,7 @@ use std::time::Instant;
 pub(super) struct Journal {
     pub(super) handle: AuditHandle,
     worker: AuditWorker,
-    _dir: tempfile::TempDir,
+    dir: tempfile::TempDir,
 }
 impl Journal {
     pub(super) fn new(maximum_records: usize) -> Self {
@@ -22,7 +22,7 @@ impl Journal {
         Self {
             handle,
             worker,
-            _dir: dir,
+            dir,
         }
     }
     fn stop(&mut self) {
@@ -44,7 +44,7 @@ impl Journal {
         loop {
             match self.handle.query(request.clone(), deadline) {
                 Err(error) if error.message == "audit-busy" && Instant::now() < deadline => {
-                    tokio::task::yield_now().await
+                    tokio::task::yield_now().await;
                 }
                 result => return result.unwrap().wait().await.unwrap(),
             }
@@ -267,7 +267,7 @@ async fn accepted_provider_with_failed_terminal_record_is_not_reported_as_denied
         .unwrap();
     // Make the next journal staging path unusable after the attempt is durable
     // and the provider has accepted. This works even for root-runner tests.
-    std::fs::create_dir(journal._dir.path().join("audit/record.next")).unwrap();
+    std::fs::create_dir(journal.dir.path().join("audit/record.next")).unwrap();
     let mut response = call.complete(b"secret-value").unwrap();
     assert_eq!(
         response.finish_audit().await,
@@ -280,9 +280,9 @@ async fn accepted_provider_with_failed_terminal_record_is_not_reported_as_denied
     assert_eq!(response.bytes(), b"secret-value");
     assert!(journal.handle.snapshot().recovery_pending);
     journal.stop();
-    std::fs::remove_dir(journal._dir.path().join("audit/record.next")).unwrap();
+    std::fs::remove_dir(journal.dir.path().join("audit/record.next")).unwrap();
     let (handle, worker) = DirectoryPhase2AuditJournal::open(
-        journal._dir.path().join("audit"),
+        journal.dir.path().join("audit"),
         AuditLimits {
             maximum_records: 32,
             ..Default::default()
