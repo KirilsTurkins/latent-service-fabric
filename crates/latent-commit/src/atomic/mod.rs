@@ -16,8 +16,9 @@ pub use record::{
     SourceIdentity,
 };
 pub use retention::{
-    MaintenanceClock, MaintenanceProgress, ResultMaintenanceOwner, RetentionAction,
-    RetentionProgress, RetentionRequest, RetiredCommand,
+    FloorReleaseRequest, MaintenanceClock, MaintenanceCompactionScope, MaintenanceProgress,
+    PreparedFloorRelease, ResultMaintenanceOwner, RetentionAction, RetentionProgress,
+    RetentionRequest, RetiredCommand,
 };
 pub use validation::{validate_linked_row, validate_row, validate_view};
 pub use writer::{
@@ -95,6 +96,22 @@ impl Identity {
     #[must_use]
     pub const fn bytes(self) -> [u8; 32] {
         self.0
+    }
+    /// Parse a bounded descriptive identity; this supplies no execution grant.
+    pub fn parse_hex(value: &str) -> Result<Self, AtomicError> {
+        if value.len() != 64 {
+            return Err(AtomicError::Invalid);
+        }
+        let digit = |byte| match byte {
+            b'0'..=b'9' => Ok(byte - b'0'),
+            b'a'..=b'f' => Ok(byte - b'a' + 10),
+            _ => Err(AtomicError::Invalid),
+        };
+        let mut bytes = [0u8; 32];
+        for (slot, pair) in bytes.iter_mut().zip(value.as_bytes().chunks_exact(2)) {
+            *slot = digit(pair[0])? * 16 + digit(pair[1])?;
+        }
+        Ok(Self(bytes))
     }
     #[must_use]
     pub fn hex(self) -> String {

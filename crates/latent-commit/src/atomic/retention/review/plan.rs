@@ -52,6 +52,57 @@ impl Plan {
         })?;
         self.mutation(key, new)
     }
+    pub fn append(&mut self, batch: AtomicBatch) -> Result<(), AtomicError> {
+        if batch.expectations.len() > 512 || batch.mutations.len() > 512 {
+            return Err(AtomicError::Limit);
+        }
+        let mut bytes = self.bytes;
+        let mut expectations = self.batch.expectations.len();
+        for (index, row) in batch.expectations.iter().enumerate() {
+            if batch.expectations[..index]
+                .iter()
+                .any(|old| old.key == row.key)
+            {
+                return Err(AtomicError::Corrupt);
+            }
+            if let Some(old) = self
+                .batch
+                .expectations
+                .iter()
+                .find(|old| old.key == row.key)
+            {
+                if old.value != row.value {
+                    return Err(AtomicError::Corrupt);
+                }
+            } else {
+                expectations += 1;
+                bytes = append_charge(bytes, &row.key, row.value.as_deref())?;
+            }
+        }
+        for (index, row) in batch.mutations.iter().enumerate() {
+            if self.batch.mutations.iter().any(|old| old.key == row.key)
+                || batch.mutations[..index]
+                    .iter()
+                    .any(|old| old.key == row.key)
+            {
+                return Err(AtomicError::Corrupt);
+            }
+            bytes = append_charge(bytes, &row.key, row.value.as_deref())?;
+        }
+        if expectations > 512 || self.batch.mutations.len() + batch.mutations.len() > 512 {
+            return Err(AtomicError::Limit);
+        }
+        // Validation above has no mutation or large clone. Once it succeeds,
+        // moving the already bounded rows cannot leave a partial composed plan.
+        for row in batch.expectations {
+            if !self.batch.expectations.iter().any(|old| old.key == row.key) {
+                self.batch.expectations.push(row);
+            }
+        }
+        self.batch.mutations.extend(batch.mutations);
+        self.bytes = bytes;
+        Ok(())
+    }
     fn charge(&mut self, key: &RowKey, value: Option<&[u8]>) -> Result<(), AtomicError> {
         self.bytes = self
             .bytes
@@ -64,6 +115,18 @@ impl Plan {
         }
         Ok(())
     }
+}
+
+fn append_charge(bytes: usize, key: &RowKey, value: Option<&[u8]>) -> Result<usize, AtomicError> {
+    let next = bytes
+        .checked_add(key.key.len() + value.map_or(0, <[u8]>::len))
+        .ok_or(AtomicError::Limit)?;
+    if u64::try_from(next).map_err(|_| AtomicError::Limit)?
+        > ResultMaintenanceOwner::RETAINED_BYTES / 2
+    {
+        return Err(AtomicError::Limit);
+    }
+    Ok(next)
 }
 
 pub(super) fn progress(

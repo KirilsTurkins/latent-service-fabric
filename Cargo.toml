@@ -100,3 +100,15 @@ pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
+
+# Tests retain unoptimized workspace code, debug assertions and overflow checks.
+# Optimize the third-party compiler/validator used by real component fixtures;
+# otherwise compiling the same Angular guest dominates correctness execution.
+[profile.dev.package.cranelift-codegen]
+opt-level = 3
+
+[profile.dev.package.regalloc2]
+opt-level = 3
+
+[profile.dev.package.wasmparser]
+opt-level = 3

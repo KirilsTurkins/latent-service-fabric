@@ -3,8 +3,10 @@ mod clock;
 mod operation;
 mod plan;
 mod purge;
+mod release;
 mod retired;
 mod retry_index;
+pub use release::{FloorReleaseRequest, PreparedFloorRelease};
 pub use retired::RetiredCommand;
 pub(in crate::atomic) use retry_index::{RetryIndex, RETRY_INDEX_PREFIX};
 

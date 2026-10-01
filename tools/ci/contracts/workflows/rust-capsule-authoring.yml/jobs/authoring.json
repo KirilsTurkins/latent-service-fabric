@@ -3,12 +3,6 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0,
-      "CARGO_PROFILE_TEST_DEBUG": 0
-    },
     "name": "Standalone Rust capsule authoring",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -29,6 +23,21 @@
         "with": {
           "components": "rustfmt,clippy",
           "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -91,7 +100,7 @@
   },
   "jobId": "authoring",
   "kind": "job",
-  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution; CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Integration preserves both required command sets.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

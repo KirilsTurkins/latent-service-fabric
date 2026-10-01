@@ -7,8 +7,12 @@ pub(crate) fn validate_view(view: &ReadView) -> Result<(), StoreError> {
     latent_effects::dispatch_store::DispatchCatalog::validate_view(view)
 }
 
-fn foreign(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+pub(super) fn foreign(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     let row = latent_state::session::validate_row(view, key, bytes);
+    if row != Err(StoreError::UnsupportedFormat) {
+        return row;
+    }
+    let row = latent_wire::phase4::StateManagementBackend::validate_operation_row(view, key, bytes);
     if row != Err(StoreError::UnsupportedFormat) {
         return row;
     }

@@ -57,6 +57,19 @@ impl RetiredCommand {
     pub const fn retired_at(&self) -> u64 {
         self.retired_at
     }
+    /// Descriptive namespace association from the already validated floor.
+    /// This grants no replay, result visibility or destructive permission.
+    #[must_use]
+    pub fn belongs_to_namespace(
+        &self,
+        tenant: &latent_core::TenantId,
+        namespace: &latent_core::StateNamespaceId,
+        incarnation: u64,
+    ) -> bool {
+        self.tenant == tenant.0
+            && self.namespace_name == namespace.0
+            && self.incarnation == incarnation
+    }
     pub fn namespace_identity(key: &CommandKey) -> Result<Identity, AtomicError> {
         Ok(Identity::derive(
             b"lsf-retired-namespace-v1\0",
