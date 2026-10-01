@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_cargo_evaluate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.",
+  "reviewReason": "Consume both independently captured redacted streams for unchanged exact-case coverage; keep raw stdout as exclusive artifact inventory authority",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8d63f26a44ec0bb57f30cc469d55cc95cb05cc57d026a68e29300129654d1cfe"
+  "sha256": "3444bca90744167e2ed1025ff67a003c391eb79f33598f81942939e1d0b253b6"
 }

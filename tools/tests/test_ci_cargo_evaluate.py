@@ -68,6 +68,7 @@ class EvaluationTests(unittest.TestCase):
             observed.append((invocation.name, kwargs.get("inventory"), dict(kwargs["environment"])))
             output.mkdir(parents=True)
             (output / "cargo.log").write_text("synthetic test output")
+            (output / "cargo-diagnostics.log").write_text("synthetic separate diagnostic")
             return {"invocation": {"name": invocation.name}, "units": [{"identity": "unit"}],
                     "builtArtifactRecords": 1, "freshArtifactRecords": 0}
 
@@ -113,6 +114,36 @@ class EvaluationTests(unittest.TestCase):
         self.assertFalse(record["passed"])
         self.assertTrue(record["samples"][0]["passed"])
         self.assertFalse(record["samples"][1]["passed"])
+
+    def test_execution_coverage_preserves_both_streams_and_record_boundaries(self):
+        from tools import run_aot_tests
+        self.output.mkdir()
+        count = len(run_aot_tests.SUPERVISOR_CASES)
+        marker = f"test result: ok. {count} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
+        (self.output / "cargo.log").write_text(marker, encoding="utf-8")
+        records = "\n".join(f"LSF_AOT_CASE {outcome} {name}"
+                            for name in sorted(run_aot_tests.SUPERVISOR_CASES)
+                            for outcome in ("started", "passed"))
+        diagnostics = self.output / "cargo-diagnostics.log"
+        diagnostics.write_text(records, encoding="utf-8")
+        selected = evaluation.execution_text(self.output)
+        run_aot_tests.validate_case_coverage(selected, "aot_supervisor")
+        self.assertEqual(selected.splitlines()[0], marker)
+        for changed in (records + "\nLSF_AOT_CASE passed oversized",
+                        records.replace("LSF_AOT_CASE passed oversized", "LSF_AOT_CASE invalid oversized"),
+                        records.replace("LSF_AOT_CASE passed oversized\n", "")):
+            diagnostics.write_text(changed, encoding="utf-8")
+            with self.assertRaises(ValueError):
+                run_aot_tests.validate_case_coverage(evaluation.execution_text(self.output), "aot_supervisor")
+
+    def test_missing_or_unbounded_stream_cannot_silently_drop_case_evidence(self):
+        self.output.mkdir()
+        (self.output / "cargo.log").write_text("complete stdout", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "cargo-execution-stream"):
+            evaluation.execution_text(self.output)
+        (self.output / "cargo-diagnostics.log").write_text("stderr evidence", encoding="utf-8")
+        with mock.patch.object(evaluation.observations, "MAX_BYTES", 1), self.assertRaisesRegex(ValueError, "cargo-execution-stream"):
+            evaluation.execution_text(self.output)
 
 
 class DependencyArchiveTests(unittest.TestCase):

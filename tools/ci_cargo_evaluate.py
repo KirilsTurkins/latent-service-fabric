@@ -132,6 +132,20 @@ def overlaps(observed: list[dict]) -> dict:
             "interpretation": "shared artifacts are reuse, not equivalent check/clippy/test coverage"}
 
 
+def execution_text(output: Path) -> str:
+    """Reconcile case evidence from both independently captured, redacted streams."""
+    streams = []
+    for name in ("cargo.log", "cargo-diagnostics.log"):
+        path = output / name
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > observations.MAX_BYTES:
+            raise ValueError("missing-or-unbounded-cargo-execution-stream")
+        streams.append(path.read_text(encoding="utf-8"))
+    # A diagnostic write must not splice a stdout record. Cargo JSON inventory
+    # still comes exclusively from raw stdout in the observer; the custom AOT
+    # harness deliberately emits its required case records on stderr.
+    return "\n".join(streams)
+
+
 def evaluate(repo: Path, output: Path, configuration: str) -> dict:
     repo = repo.resolve()
     target = repo / "target"
@@ -207,7 +221,7 @@ def evaluate(repo: Path, output: Path, configuration: str) -> dict:
                         sample["aotPreparationSeconds"] = time.monotonic() - start
                     if recipe == "test":
                         for invocation, owner in zip(ci_cargo.RECIPES[recipe], (None, "explicit-doctests", "signing-compatibility"), strict=True):
-                            raw = (sample_output / invocation.name / "cargo.log").read_text()
+                            raw = execution_text(sample_output / invocation.name)
                             if owner is None:
                                 discovery.validate_custom_execution(data, raw)
                             else:

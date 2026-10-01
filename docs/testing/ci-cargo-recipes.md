@@ -247,6 +247,24 @@ retained in [run 36834225838](https://github.com/KirilsTurkins/latent-service-fa
 They are not complete-suite or performance samples. Native split-write and
 descendant/overflow controls cover the repair; a fresh full replay is required.
 
+The next [full replay, 36856156214](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36856156214)
+used `bba4f0f6079d75d52f6b74aec82f6cbdb4061a85`. Its current configuration
+completed discovery with 2,980 active cases and completed the workspace-test,
+doctest and signing command invocations, then failed the independent supervisor
+case-coverage check before saving or restoring a warm cache. The supervisor
+intentionally writes its required `LSF_AOT_CASE` records to stderr; the
+evaluation had consumed only the isolated stdout log. The retained failed
+artifact is `11164108076`, SHA-256
+`6cbb75c2f607df5107b31d4421354726525175c53e3edef4f2380804dd03c81c`.
+
+The evaluator now supplies both independently captured, redacted streams to
+the original exact-case validator, with a newline separating record boundaries.
+Artifact inventory still comes exclusively from raw stdout. Missing or
+unbounded streams, extra/invalid/duplicate case records and incomplete selections
+remain failures. A native owned-process control verifies actual stderr writes,
+unchanged stdout inventory, redaction and physical cleanup; these collector
+controls are separate from a completed full Rust recipe qualification.
+
 ```sh
 python3 tools/ci_cargo_observe.py workspace-check --output "$RUNNER_TEMP/cargo-observations"
 python3 tools/ci_cargo_probe.py --include-msrv --output "$RUNNER_TEMP/cargo-probe"

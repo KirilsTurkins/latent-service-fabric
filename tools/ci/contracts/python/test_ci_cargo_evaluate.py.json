@@ -11,6 +11,8 @@
     "EvaluationTests.test_changed_warm_suite_identity_is_failure_not_faster_result",
     "EvaluationTests.test_cold_and_two_warm_rows_run_every_recipe_and_revalidate_handoffs",
     "EvaluationTests.test_discovery_comparison_excludes_time_not_case_identity",
+    "EvaluationTests.test_execution_coverage_preserves_both_streams_and_record_boundaries",
+    "EvaluationTests.test_missing_or_unbounded_stream_cannot_silently_drop_case_evidence",
     "EvaluationTests.test_never_deletes_preexisting_or_linked_target",
     "EvaluationTests.test_report_directory_must_survive_private_target_resets"
   ],
@@ -107,7 +109,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a51bfb835bece668e46ed7310d7602ebcb4a2dd334713c1458d0ded2683b0c4c",
-        "class:setup-sha256:ee64d82f1704b9733abb4fb88637b3348c59363ba5c4092a6897a720dc6543ee"
+        "class:setup-sha256:f9cbf998c00fd17ccba5b38b3f9de900107a4542ac2839bb8c9da047f1abbbdd"
       ],
       "skipSites": []
     },
@@ -119,7 +121,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a51bfb835bece668e46ed7310d7602ebcb4a2dd334713c1458d0ded2683b0c4c",
-        "class:setup-sha256:ee64d82f1704b9733abb4fb88637b3348c59363ba5c4092a6897a720dc6543ee"
+        "class:setup-sha256:f9cbf998c00fd17ccba5b38b3f9de900107a4542ac2839bb8c9da047f1abbbdd"
       ],
       "skipSites": []
     },
@@ -131,7 +133,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a51bfb835bece668e46ed7310d7602ebcb4a2dd334713c1458d0ded2683b0c4c",
-        "class:setup-sha256:ee64d82f1704b9733abb4fb88637b3348c59363ba5c4092a6897a720dc6543ee"
+        "class:setup-sha256:f9cbf998c00fd17ccba5b38b3f9de900107a4542ac2839bb8c9da047f1abbbdd"
       ],
       "skipSites": []
     },
@@ -143,7 +145,31 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a51bfb835bece668e46ed7310d7602ebcb4a2dd334713c1458d0ded2683b0c4c",
-        "class:setup-sha256:ee64d82f1704b9733abb4fb88637b3348c59363ba5c4092a6897a720dc6543ee"
+        "class:setup-sha256:f9cbf998c00fd17ccba5b38b3f9de900107a4542ac2839bb8c9da047f1abbbdd"
+      ],
+      "skipSites": []
+    },
+    "EvaluationTests.test_execution_coverage_preserves_both_streams_and_record_boundaries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a51bfb835bece668e46ed7310d7602ebcb4a2dd334713c1458d0ded2683b0c4c",
+        "class:setup-sha256:f9cbf998c00fd17ccba5b38b3f9de900107a4542ac2839bb8c9da047f1abbbdd"
+      ],
+      "skipSites": []
+    },
+    "EvaluationTests.test_missing_or_unbounded_stream_cannot_silently_drop_case_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a51bfb835bece668e46ed7310d7602ebcb4a2dd334713c1458d0ded2683b0c4c",
+        "class:setup-sha256:f9cbf998c00fd17ccba5b38b3f9de900107a4542ac2839bb8c9da047f1abbbdd"
       ],
       "skipSites": []
     },
@@ -155,7 +181,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a51bfb835bece668e46ed7310d7602ebcb4a2dd334713c1458d0ded2683b0c4c",
-        "class:setup-sha256:ee64d82f1704b9733abb4fb88637b3348c59363ba5c4092a6897a720dc6543ee"
+        "class:setup-sha256:f9cbf998c00fd17ccba5b38b3f9de900107a4542ac2839bb8c9da047f1abbbdd"
       ],
       "skipSites": []
     },
@@ -167,13 +193,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a51bfb835bece668e46ed7310d7602ebcb4a2dd334713c1458d0ded2683b0c4c",
-        "class:setup-sha256:ee64d82f1704b9733abb4fb88637b3348c59363ba5c4092a6897a720dc6543ee"
+        "class:setup-sha256:f9cbf998c00fd17ccba5b38b3f9de900107a4542ac2839bb8c9da047f1abbbdd"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_ci_cargo_evaluate.py",
-  "reviewReason": "PR #729: preserve all current CI obligations and add bounded manual Cargo observations, link-free dependency snapshots, and unchanged native regression guards.",
+  "reviewReason": "Explicit fixture guard review: the only inherited replay fixture AST change creates a separate synthetic stderr log for the new mandatory dual-stream reader. All existing cases, bases, decorators, skip sites and skip/raise guards are preserved; no case is skipped or waived. Add complete stderr coverage and missing/unbounded stream controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

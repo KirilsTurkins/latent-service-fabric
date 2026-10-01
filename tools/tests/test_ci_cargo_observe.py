@@ -180,6 +180,32 @@ class NativeObservationTests(unittest.TestCase):
         self.assertTrue(record["stageDiagnostic"]["child"]["cleanupAcknowledged"])
 
 
+    def test_native_stderr_case_records_validate_without_polluting_json_handoff(self):
+        from tools import ci_cargo_evaluate, run_aot_tests
+        invocation = ci_cargo.RECIPES["prepare"][1]
+        inventory = self.root / "target/cases-inventory.jsonl"
+        raw = stream()
+        count = len(run_aot_tests.SUPERVISOR_CASES)
+        marker = f"test result: ok. {count} passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
+        records = "\n".join(f"LSF_AOT_CASE {outcome} {name}"
+                            for name in sorted(run_aot_tests.SUPERVISOR_CASES)
+                            for outcome in ("started", "passed")) + "\n"
+        code = ("import os; os.write(1," + repr(raw + marker.encode() + b"\n") + "); "
+                "os.write(2," + repr(records.encode() + b"token=private-case-observer-canary\n") + ")")
+        destination = self.root / "target/cases-observation"
+        with mock.patch.object(observe, "observed_argv", return_value=[sys.executable, "-c", code]), \
+             mock.patch.object(observe.TestRun, "source_identity"):
+            record = observe.observe(invocation, repo=self.root, output=destination, inventory=inventory, timeout=10)
+        self.assertTrue(record["passed"])
+        self.assertTrue(record["stageDiagnostic"]["child"]["cleanupAcknowledged"])
+        self.assertEqual(len(inventory.read_text().splitlines()), 2)
+        self.assertNotIn("LSF_AOT_CASE", inventory.read_text())
+        text = ci_cargo_evaluate.execution_text(destination)
+        self.assertNotIn("private-case-observer-canary", text)
+        run_aot_tests.validate_case_coverage(text, "aot_supervisor")
+        observe.ci_cargo.validate_inventory(inventory)
+
+
 class ProbeArchiveTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
