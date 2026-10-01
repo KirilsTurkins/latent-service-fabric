@@ -52,6 +52,10 @@ impl AcceptedPublish {
         qualified: &mut bool,
     ) -> crate::Result<PublishReceipt> {
         self.request.checkpoint()?;
+        self.request
+            .grant()
+            .check_current(self.time.observe())
+            .map_err(|_| EventError::PermissionDenied)?;
         let auth = network::current(&self.inner.credentials[self.credential])?;
         let mut connection = network::connect_to(
             Dial {
@@ -88,6 +92,11 @@ impl AcceptedPublish {
         let publish_inbox = inbox(&self.inner)?;
         protocol::subscribe(connection.resource(), &self.request, &publish_inbox).await?;
         network::check_current(&self.inner.credentials[self.credential], &auth.stamp)?;
+        self.request.checkpoint()?;
+        self.request
+            .grant()
+            .check_current(self.time.observe())
+            .map_err(|_| EventError::PermissionDenied)?;
         let receipt = protocol::publish(
             connection.resource(),
             &self.request,
