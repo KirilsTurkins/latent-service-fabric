@@ -10,6 +10,7 @@ fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_un
     rule.protected_credential_reference = "rotated-secret".into();
     rule.ceiling.maximum_response_bytes = 128;
     rule.ceiling.attempt_timeout_millis = 50;
+    rule.ceiling.maximum_age_millis = 500;
     owner.publish(rule).unwrap();
     context
         .accept_with(&authority, 1, time(102), |grant| {
@@ -20,6 +21,10 @@ fn final_adapter_admission_refreshes_credential_and_narrows_original_deadline_un
             assert_eq!(grant.credential_epoch(), 2);
             assert_eq!(grant.protected_credential_reference(), "rotated-secret");
             assert_eq!(grant.ceiling().maximum_response_bytes, 128);
+            assert_eq!(grant.ceiling().maximum_age_millis, 500);
+            assert_eq!(grant.committed_at_millis(), 100);
+            assert_eq!(grant.expires_at_millis(), 1100);
+            assert_eq!(grant.expires_at_millis(), authority.expires_at_millis());
             assert!(grant.deadline() <= deadline);
             assert!(matches!(
                 owner.0.state.try_lock(),
