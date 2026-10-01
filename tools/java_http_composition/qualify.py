@@ -266,11 +266,16 @@ def run_node(binaries, releases, output, *, http, former_profile=False, frontend
                     result["ordinaryContextImport"] = context.ordinary_import(client, targets, releases, publications, host)
                     adapter_inspection = inspection.selected(client, releases, publications, "adapter")
                     result["targetInspection"]["beforeServicePolicyChange"] = adapter_inspection
+                    if frontend is not None:
+                        changed_schedule, result["compositionPreflightServicePolicyChange"] = frontend.schedule(client, releases,
+                            evidence / "composition-preflight-service-policy-change", {
+                                "domain": inspection.selected(client, releases, publications, "domain"),
+                                "adapter": adapter_inspection}, config)
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
                     result["targetInspection"]["triggerOnlyOldPlan"] = inspection.stale_policy(client, "adapter", adapter_inspection)
                     if frontend is not None:
-                        schedule.changed_authority()
+                        changed_schedule.changed_authority()
                     result["triggerOnlyRebinding"] = rebind(client, targets, releases, publications)
                     impersonation = invoke(client, targets, "adapter", "handle", web_request(host), "java-trigger-impersonation")
                     require(decoded(impersonation)[0]["status"] == 403, "java-operator-impersonated-original-http-trigger")
