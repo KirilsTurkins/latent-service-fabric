@@ -179,31 +179,45 @@
   "retainedLogs": {
     "build.log": {
       "bytes": 249225,
-      "sha256": "1f4c4158e126d6e212417c666e7d586f6d18c371afd9379faacca0e68c952ec3"
+      "sha256": "1f4c4158e126d6e212417c666e7d586f6d18c371afd9379faacca0e68c952ec3",
+      "trackedArchive": "build.log.gz",
+      "archiveSha256": "bcbc64928b2fbc8962e4a34863d4fa3ea3885f10bfdde68a8b2ccc55aced09b8"
     },
     "container.log": {
       "bytes": 7482,
-      "sha256": "174a83e17f99e483c90d07fd3a3a6f1fe59b44f0cd6ffb7bcbff9aafae875e13"
+      "sha256": "174a83e17f99e483c90d07fd3a3a6f1fe59b44f0cd6ffb7bcbff9aafae875e13",
+      "trackedArchive": "container.log.gz",
+      "archiveSha256": "3f3033d1ba89fc89b545f72129f6fe49d01e2e6cf2862019e33ab791409927d5"
     },
     "ownership-tests.log": {
       "bytes": 55091,
-      "sha256": "2778917c76821e4ea58c525b84458d14e84aa9f6219cf75f31ea4638874d52b4"
+      "sha256": "2778917c76821e4ea58c525b84458d14e84aa9f6219cf75f31ea4638874d52b4",
+      "trackedArchive": "ownership-tests.log.gz",
+      "archiveSha256": "3e8ddc3de0e3c737e34392c2c498171d2bfb74e8a29abf7d3b26c7289e5edae7"
     },
     "canonical-tests.log": {
       "bytes": 913,
-      "sha256": "501c5cd5593e112ac98f04ce672bad7641f5c863b2536ace179ca4c84fef6b82"
+      "sha256": "501c5cd5593e112ac98f04ce672bad7641f5c863b2536ace179ca4c84fef6b82",
+      "trackedArchive": "canonical-tests.log.gz",
+      "archiveSha256": "752e110d3504e6c082bf661fb794121d182d98c630f1367ff38022a4de93f6bc"
     },
     "clippy.log": {
       "bytes": 50353,
-      "sha256": "ca58284a1d8f68963e13b4bc80426c4f215c6526a7dfbb3b3c35210191cbb99f"
+      "sha256": "ca58284a1d8f68963e13b4bc80426c4f215c6526a7dfbb3b3c35210191cbb99f",
+      "trackedArchive": "clippy.log.gz",
+      "archiveSha256": "85d8e4f870524a987e8de34b620ff3199fe048b2090a6f556e4eff253bbbb040"
     },
     "export.log": {
       "bytes": 1010,
-      "sha256": "870b6708c2b65de9f981242b3e370aa6784bf81691da3e2938171c8867074a49"
+      "sha256": "870b6708c2b65de9f981242b3e370aa6784bf81691da3e2938171c8867074a49",
+      "trackedArchive": "export.log.gz",
+      "archiveSha256": "54617f6f805ab9c2e768f632074b65cc1ba07f89e712855d24f7f1153bc9fae9"
     },
     "export-r2.log": {
       "bytes": 984,
-      "sha256": "01249103b5c12ecc67b60f45e3a33f07beff06a6efd08b0b1908293040c57f99"
+      "sha256": "01249103b5c12ecc67b60f45e3a33f07beff06a6efd08b0b1908293040c57f99",
+      "trackedArchive": "export-r2.log.gz",
+      "archiveSha256": "3c2d4caeb621206e8e567ca9a1c8d4e7fca3e79f67897928fce169d0251adb19"
     },
     "native.sh": {
       "bytes": 2023,
