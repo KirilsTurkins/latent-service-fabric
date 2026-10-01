@@ -2,6 +2,160 @@ use super::*;
 use latent_core::ErrorDetail;
 
 #[test]
+fn guest_host_failure_projects_only_closed_code_without_changing_known_outcome() {
+    for code in [
+        PlatformErrorCode::Unavailable,
+        PlatformErrorCode::DeadlineExceeded,
+        PlatformErrorCode::Cancelled,
+        PlatformErrorCode::ResourceExhausted,
+        PlatformErrorCode::PermissionDenied,
+        PlatformErrorCode::Unauthenticated,
+        PlatformErrorCode::InvalidArgument,
+        PlatformErrorCode::NotFound,
+        PlatformErrorCode::AlreadyExists,
+        PlatformErrorCode::IncompatibleContract,
+        PlatformErrorCode::StateConflict,
+        PlatformErrorCode::DependencyFailed,
+        PlatformErrorCode::GuestTrap,
+        PlatformErrorCode::CorruptArtifact,
+        PlatformErrorCode::RouteUnavailable,
+        PlatformErrorCode::AdmissionRejected,
+        PlatformErrorCode::Internal,
+    ] {
+        let error = PlatformError {
+            code: PlatformErrorCode::GuestTrap,
+            message: "private provider /private/path".into(),
+            retryable: false,
+            details: vec![
+                ErrorDetail {
+                    kind: "activation.guest-trap".into(),
+                    fields: [("cell_id".into(), "private-cell".into())].into(),
+                },
+                ErrorDetail {
+                    kind: "activation.guest-host-failure".into(),
+                    fields: [
+                        ("code".into(), code.wire_code().into()),
+                        ("retryable".into(), "true".into()),
+                        ("provider".into(), "private-provider".into()),
+                        ("backtrace".into(), "private-backtrace".into()),
+                        ("capabilityFailure".into(), "private-cause".into()),
+                    ]
+                    .into(),
+                },
+            ],
+        };
+        let data = json!({"terminalState":"guest_trap", "consumption":{
+            "cpuFuel":"70119", "peakMemoryBytes":"2424832"}});
+        let outcome = crate::output::Outcome::platform_failure(data.clone(), &error);
+        assert_eq!(outcome.exit_code(), 4);
+        assert_eq!(
+            outcome.document("invoke"),
+            json!({
+                "schemaVersion":"latent.cli.result.v1", "command":"invoke",
+                "category":"platform-failure", "data":data,
+                "error":{"code":"guest-trap", "message":"The platform reported a failure.",
+                    "retryable":false, "details":[{"kind":"activation.guest-host-failure",
+                        "fields":{"code":code.wire_code()}}]},
+                "requestDispatched":false, "outcomeKnown":true
+            })
+        );
+        assert!(!outcome.document("invoke").to_string().contains("private"));
+    }
+}
+
+#[test]
+fn guest_host_failure_drops_unknown_codes_arbitrary_fields_and_oversized_details() {
+    for (kind, fields) in [
+        ("activation.guest-host-failure", [("code", "Unavailable")]),
+        ("activation.guest-host-failure", [("code", "unavailable ")]),
+        ("activation.guest-host-failure", [("code", " unavailable")]),
+        ("activation.guest-host-failure", [("code", "unavailable\n")]),
+        (
+            "activation.guest-host-failure",
+            [("code", "unavailable/private")],
+        ),
+        ("activation.guest-host-failure", [("code", "private")]),
+        ("activation.guest-host-failure", [("code", "")]),
+        (
+            "activation.guest-host-failure",
+            [("capabilityFailure", "unavailable")],
+        ),
+        (
+            "activation.guest-host-failure/private",
+            [("code", "unavailable")],
+        ),
+    ] {
+        let error = PlatformError {
+            code: PlatformErrorCode::GuestTrap,
+            message: "private".into(),
+            retryable: false,
+            details: vec![ErrorDetail {
+                kind: kind.into(),
+                fields: fields
+                    .into_iter()
+                    .map(|(key, value)| (key.into(), value.into()))
+                    .collect(),
+            }],
+        };
+        let public = platform_value(&error);
+        assert_eq!(public["details"], json!([]));
+        assert_eq!(public["code"], "guest-trap");
+        assert_eq!(public["retryable"], false);
+        assert!(!public.to_string().contains("private"));
+    }
+    for fields in [
+        [("code".into(), "private".repeat(172))].into(),
+        [
+            ("code".into(), "unavailable".into()),
+            ("provider".into(), "private".repeat(172)),
+        ]
+        .into(),
+    ] {
+        let error = PlatformError {
+            code: PlatformErrorCode::GuestTrap,
+            message: "private".into(),
+            retryable: false,
+            details: vec![ErrorDetail {
+                kind: "activation.guest-host-failure".into(),
+                fields,
+            }],
+        };
+        assert_eq!(platform_value(&error)["details"], json!([]));
+    }
+}
+
+#[test]
+fn guest_host_failure_never_makes_ambiguous_transport_outcome_known() {
+    let error = proto::PlatformError {
+        code: "guest-trap".into(),
+        message: "private provider context".into(),
+        retryable: false,
+        detail_items: vec![proto::ErrorDetail {
+            kind: "activation.guest-host-failure".into(),
+            fields: [
+                ("code".into(), "resource-exhausted".into()),
+                ("provider".into(), "private".into()),
+            ]
+            .into(),
+        }],
+    };
+    let status = Status::with_details(Code::Internal, "private", error.encode_to_vec().into());
+    let failure = Failure::from_status(&status);
+    assert_eq!(failure.category, Category::PlatformError);
+    assert!(!failure.outcome_known);
+    assert!(failure.request_dispatched);
+    assert_eq!(failure.error["code"], "guest-trap");
+    assert_eq!(failure.error["retryable"], false);
+    assert_eq!(
+        failure.error["details"],
+        json!([{
+            "kind":"activation.guest-host-failure", "fields":{"code":"resource-exhausted"}
+        }])
+    );
+    assert!(!failure.error.to_string().contains("private"));
+}
+
+#[test]
 fn currentness_diagnostic_never_changes_mutation_certainty_or_exposes_peer_text() {
     for reason in latent_core::error::ADMISSION_CURRENTNESS_REASONS
         .iter()
