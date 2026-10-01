@@ -66,14 +66,13 @@ admission and leaves shutdown conservative while real buffers retire.
 
 ## Evidence and integration boundary
 
-Pinned Rust 1.97.1 Windows: all 102 core library cases and strict production-library
-Clippy passed, including ten native-capacity cases. They exercise separate
+Pinned Rust 1.97.1 Windows: all 102 core library cases and strict all-target,
+all-feature core Clippy passed, including ten native-capacity cases. They exercise separate
 ordinary/recovery quotas, actual response allocation, finite buffer shells,
 concurrent aliases, original deadlines, finalized activation ledgers, an actual
 paused buffer destructor, wait detachment, sticky drain and poisoned acceptance.
-Strict all-target core Clippy also surfaced three existing test-style diagnostics
-in deadline_wait_observer, publication and transaction_contract; those files were
-left with their owners. The new capacity source has no remaining reported lint.
+Three test-only string/binding changes preserve existing core regression
+semantics while allowing the complete strict core check to pass.
 
 The real protected Linux saturation case and application integration checks
 remain pending shared Docker filesystem recovery. The node coordinator and
