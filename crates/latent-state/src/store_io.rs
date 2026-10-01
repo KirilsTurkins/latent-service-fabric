@@ -24,7 +24,7 @@ mod worker;
 pub use drain::StoreIoDrain;
 pub use job::StoreIoJob;
 pub use retained::StoreIoRetained;
-pub use retirement::StoreIoRetirement;
+pub use retirement::{StoreIoRetirement, StoreIoRetirementWitness};
 pub use startup::{StoreIoReady, StoreIoStartup};
 pub use types::{
     StoreIoAdmissionError, StoreIoEnginePhase, StoreIoError, StoreIoKind, StoreIoLimits,

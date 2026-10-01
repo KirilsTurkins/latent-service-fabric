@@ -38,6 +38,9 @@ fn native_retirement_remains_charged_and_on_worker_through_paused_destructor() {
     );
     PollProbe::default().pending(drain.as_mut());
     assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
+    let witness = retained.retirement_witness().unwrap();
+    assert!(retained.retirement_witness().is_none());
+    assert!(!witness.has_retired());
     let mut retired = Box::pin(retained.retire());
     let (_, ticket) = ready(&receiver);
     assert_ne!(
@@ -46,6 +49,7 @@ fn native_retirement_remains_charged_and_on_worker_through_paused_destructor() {
     );
     let during = owner.snapshot().unwrap();
     PollProbe::default().pending(retired.as_mut());
+    assert!(!witness.has_retired());
     assert_eq!(during.physical_owners, 1);
     assert_eq!(during.accepted, 1);
     assert!(during.retained_bytes >= 256);
@@ -54,6 +58,7 @@ fn native_retirement_remains_charged_and_on_worker_through_paused_destructor() {
     assert!(!wait(drain).clean);
     rendezvous.release(ticket).unwrap();
     wait(retired);
+    assert!(witness.has_retired());
     let report = wait(
         owner
             .drain_async(

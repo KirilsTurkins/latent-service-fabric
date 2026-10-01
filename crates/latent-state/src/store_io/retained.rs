@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use super::job::Reservation;
-use super::retirement::{RetirementSignal, StoreIoRetirement};
+use super::retirement::{RetirementSignal, StoreIoRetirement, StoreIoRetirementWitness};
 use super::state::{Control, Retirement};
 use super::{StoreIoError, StoreIoOwner};
 
@@ -26,6 +26,7 @@ struct Retained<S, T> {
     value: Option<T>,
     reservation: PhysicalReservation<S>,
     retired: Arc<RetirementSignal>,
+    witness_issued: bool,
 }
 
 impl<S: Send + 'static, T: Send + 'static> Retirement for Retained<S, T> {
@@ -34,6 +35,7 @@ impl<S: Send + 'static, T: Send + 'static> Retirement for Retained<S, T> {
             value,
             reservation,
             retired,
+            witness_issued: _,
         } = *self;
         // Native handle destruction precedes physical ownership/byte refund.
         drop(value);
@@ -77,6 +79,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
                 bytes,
             }),
             retired: Arc::new(RetirementSignal::default()),
+            witness_issued: false,
         });
         Ok(StoreIoRetained {
             control: Arc::clone(control),
@@ -86,6 +89,17 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
 }
 
 impl<S: Send + 'static, T: Send + 'static> StoreIoRetained<S, T> {
+    /// Issue at most one non-clone observer across all moves of this resource.
+    /// It shares pre-reserved metadata and leaves the single receipt waiter free.
+    pub fn retirement_witness(&mut self) -> Option<StoreIoRetirementWitness> {
+        let retained = self.retained.as_mut().expect("affine resource owner");
+        if retained.witness_issued {
+            return None;
+        }
+        retained.witness_issued = true;
+        Some(StoreIoRetirementWitness::new(Arc::clone(&retained.retired)))
+    }
+
     /// Enqueue the pre-reserved cleanup and observe actual worker retirement.
     /// A receipt that is dropped never refunds or cancels accepted destruction.
     pub fn retire(mut self) -> StoreIoRetirement {
