@@ -219,3 +219,14 @@ the store and preserves its pin for recovery. This protects against overlapping
 dispatcher startup without introducing another engine or process registry.
 The actual Linux registration lifecycle test and all 74 state cases passed,
 along with strict all-target/all-feature Clippy on the pinned image above.
+
+Before a host moves a view through a cancellable read call, it may capture
+`view.retirement_witness()`. One non-clone status witness is issued for the
+entire affine view lifetime. `has_retired()` becomes true only after the native
+destructor and physical reservation release, including a detached `with_view`
+response. It uses the pre-reserved retirement signal and no waiter, so the
+existing `retire()` receipt remains the single bounded future observer. The
+generic paused-destructor test verifies this distinction; the real Linux test
+drops an accepted paused read's response, closes admission, and proves the view
+and root remain owned until actual fixed-worker retirement. All 75 state cases
+and strict combined state/effects Clippy passed on the pinned Linux image.

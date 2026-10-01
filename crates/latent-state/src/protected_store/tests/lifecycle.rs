@@ -1,6 +1,49 @@
 use super::*;
 
 #[test]
+fn detached_view_response_witness_waits_for_actual_native_retirement_after_close() {
+    let (_root, config) = fixture();
+    let owner = start(config.clone());
+    let mut view = wait(owner.open_view().unwrap()).unwrap().unwrap();
+    let witness = view.retirement_witness().unwrap();
+    assert!(view.retirement_witness().is_none());
+    let gates = Rendezvous::new(1);
+    let worker_gates = gates.clone();
+    let (notice, receiver) = mpsc::channel();
+    let operation = owner
+        .with_view(view, 1024, move |native| {
+            let (registration, mut tracked) = worker_gates.track(vec![0_u8; 1024]).unwrap();
+            tracked.commit(Stage::Entered).unwrap();
+            wait(async {
+                let mut pause = Box::pin(tracked.pause());
+                PollProbe::default().pending(pause.as_mut());
+                let ticket = worker_gates.blocked(registration, Stage::Entered).unwrap();
+                notice.send(ticket).unwrap();
+                pause.await;
+            });
+            native.get(&key(Family::State, "missing"))
+        })
+        .unwrap();
+    let ticket = receiver.recv_timeout(WATCHDOG).unwrap();
+    drop(operation);
+    owner.close();
+    assert!(!witness.has_retired());
+    assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
+    assert_eq!(owner.snapshot().unwrap().active_reads, 1);
+    assert_eq!(
+        failed_start(config.clone()),
+        ProtectedStoreError::Store(StoreError::Unavailable)
+    );
+    gates.release(ticket).unwrap();
+    let report = finish(&owner);
+    assert!(report.clean);
+    assert!(witness.has_retired());
+    assert_eq!(report.snapshot.physical_owners, 0);
+    let reopened = start(config);
+    assert!(finish(&reopened).clean);
+}
+
+#[test]
 fn dispatcher_registration_is_exclusive_across_ready_aliases_until_actual_retirement() {
     let (_root, config) = fixture();
     let owner = start(config.clone());
