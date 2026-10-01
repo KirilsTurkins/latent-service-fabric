@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Extend the C entrypoint to run the reviewed real captured dependency qualifier",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e3bf612fe3b91c639865d52f421bdfda8e80c9aa1a7ee39334b08c041abf8ab7"
+  "sha256": "ed16a471b547775fea60b7823dc7f10a1cde646bbad439beb0cda42ed0881cb5"
 }
