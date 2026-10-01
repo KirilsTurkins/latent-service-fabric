@@ -154,14 +154,23 @@
       "artifactExpiresAt": "2026-10-08T01:21:27Z",
       "artifactMetadataUrl": "https://api.github.com/repos/KirilsTurkins/latent-service-fabric/actions/artifacts/11136015330",
       "report": "dotnet/report.json",
-      "reportDigest": "sha256:6dc8a2df1c1715a94145698dc9b0d3e4cb681cac626a4068a0d7cf94eff82def",
-      "reportBytes": 7961,
+      "reportDigest": "sha256:e909e730e5b612f9ca911ae772e8850d486f19d21a25cd10dd3caabd7db5e802",
+      "reportBytes": 8073,
       "componentDigest": "sha256:b1ebaac9ad16f96b6597c1a9a98d49396e2aaf363dd08205f939f64ed101cc49",
       "componentBytes": 2613507,
       "semanticSurfaceDigest": "sha256:50e0f628f99462a4200248f8dcacb797d813af4e139f535917f42a8d79a4d3b9",
       "compilerDefinitionQualified": true,
       "runtimeExecutionQualified": false,
-      "externalClientExecutionQualified": false
+      "externalClientExecutionQualified": false,
+      "reportRepresentation": {
+        "format": "algorithm-tagged-public-binding-sha256-v1",
+        "originalReportDigest": "sha256:6dc8a2df1c1715a94145698dc9b0d3e4cb681cac626a4068a0d7cf94eff82def",
+        "originalReportBytes": 7961,
+        "transformedFields": [
+          "details.bindings.bindings.authoritativeWitSha256",
+          "details.bindings.bindings.outputs.*"
+        ]
+      }
     }
   },
   "preparation": {

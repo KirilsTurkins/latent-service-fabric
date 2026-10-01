@@ -8,8 +8,12 @@ retained source archives have digest
 `sha256:af80fff1466f574c388b83868687c792a976fc8722191b6f9bcfb34877b34f35`.
 
 [The observation index](observation.json) records the exact job, artifact,
-report, component, source and profile digests. The reports below are the original
-CI bytes. The original artifact digests were checked against GitHub metadata;
+report, component, source and profile digests. The reports below preserve the CI
+observations. The .NET report labels its public binding file checksums with
+`sha256:`; its index retains the original report digest and byte count alongside
+the displayed report digest. Removing only those prefixes reproduces the
+original report bytes. The other five reports are the original CI bytes.
+The original artifact digests were checked against GitHub metadata;
 component bytes and shared source files were independently hashed after download.
 This observation does not qualify a later source revision.
 

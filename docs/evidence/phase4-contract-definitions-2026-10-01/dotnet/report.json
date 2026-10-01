@@ -48,25 +48,25 @@
   "details": {
     "bindings": {
       "bindings": {
-        "authoritativeWitSha256": "a28b9ea705c67320e794e3d79b659f348ec2e360effa5eb6386238f368bcc16d",
+        "authoritativeWitSha256": "sha256:a28b9ea705c67320e794e3d79b659f348ec2e360effa5eb6386238f368bcc16d",
         "canonicalAbi": "stackful",
         "generator": "wit-bindgen-cli 0.62.0",
         "outputs": {
-          "Service.cs": "e17fdd04a991f737b6cbc171f3827997c566a002c1b339f7f647d2fd8a25e531",
-          "ServiceWorld.wit.Exports.tests.transactionContract.ApiExportsInterop.cs": "ab60d155e1a3a03935a5c6bb010ef54fd34d3fb33887a5b22ab73ea3a8defa44",
-          "ServiceWorld.wit.Exports.tests.transactionContract.IApiExports.cs": "ae8127daa34f6f310ad42507703c41aea9a72a8e291a344f34139afed692ac25",
-          "ServiceWorld.wit.Imports.latent.clock.IMonotonicImports.cs": "ec57bc4a0c360b41c61d2aa30b863b7910c7700ce5bc24a676358e9371ca3432",
-          "ServiceWorld.wit.Imports.latent.clock.IWallImports.cs": "efe8ded95b6f8633863b15dad3eae83f7408c77c79d6587ef915816c18a187d8",
-          "ServiceWorld.wit.Imports.latent.clock.MonotonicImportsInterop.cs": "9f99c65f739eb1c749c8c81309fc0241bbcfe8e72ab4ccb0f10f38aff0ae170b",
-          "ServiceWorld.wit.Imports.latent.clock.WallImportsInterop.cs": "0c1e18732df7eb1dd98d014cc6c8b5730bb6375fed09827fa4ee204a48dc4b6e",
-          "ServiceWorld.wit.Imports.latent.intents.IStagingImports.cs": "1df43b8c859e47492aa8de8173df17d9c10db178f72a9787295cfcdb7e256370",
-          "ServiceWorld.wit.Imports.latent.intents.StagingImportsInterop.cs": "8aec935503fa7778e551e0f8efad9819de92babe8d5d870f034c85f4f4d8cea2",
-          "ServiceWorld.wit.Imports.latent.random.IRandomImports.cs": "50cd9ee942f38d45546cd0a06a2802884ee87fb134b61b6c66498330b9d22fd0",
-          "ServiceWorld.wit.Imports.latent.random.RandomImportsInterop.cs": "4280d01e4d15b3a03fd92df00b01768c65926cd4fe35b3babfa5bdd3ecebfe87",
-          "ServiceWorld.wit.Imports.latent.state.IKeyValueImports.cs": "607a551d6e145f6b27d2e3a46b4f08cc97d5974faeb91f4ab055552b09c7b67f",
-          "ServiceWorld.wit.Imports.latent.state.KeyValueImportsInterop.cs": "bf8fd8cfc2d332ba52b8496f8106de3e8114a87ba6f17faeb9225d1a8e485214",
-          "ServiceWorld_component_type.wit": "588c7e03afc95eeeff4c776bf92b4a14b8b2976efbeb70cad13c4925a2d51975",
-          "ServiceWorld_wasm_import_linkage_attribute.cs": "dfdfb9754adc8bdeb9d8b68834e0555af8668b03ad4648a2efee5a7dd0a5dea5"
+          "Service.cs": "sha256:e17fdd04a991f737b6cbc171f3827997c566a002c1b339f7f647d2fd8a25e531",
+          "ServiceWorld.wit.Exports.tests.transactionContract.ApiExportsInterop.cs": "sha256:ab60d155e1a3a03935a5c6bb010ef54fd34d3fb33887a5b22ab73ea3a8defa44",
+          "ServiceWorld.wit.Exports.tests.transactionContract.IApiExports.cs": "sha256:ae8127daa34f6f310ad42507703c41aea9a72a8e291a344f34139afed692ac25",
+          "ServiceWorld.wit.Imports.latent.clock.IMonotonicImports.cs": "sha256:ec57bc4a0c360b41c61d2aa30b863b7910c7700ce5bc24a676358e9371ca3432",
+          "ServiceWorld.wit.Imports.latent.clock.IWallImports.cs": "sha256:efe8ded95b6f8633863b15dad3eae83f7408c77c79d6587ef915816c18a187d8",
+          "ServiceWorld.wit.Imports.latent.clock.MonotonicImportsInterop.cs": "sha256:9f99c65f739eb1c749c8c81309fc0241bbcfe8e72ab4ccb0f10f38aff0ae170b",
+          "ServiceWorld.wit.Imports.latent.clock.WallImportsInterop.cs": "sha256:0c1e18732df7eb1dd98d014cc6c8b5730bb6375fed09827fa4ee204a48dc4b6e",
+          "ServiceWorld.wit.Imports.latent.intents.IStagingImports.cs": "sha256:1df43b8c859e47492aa8de8173df17d9c10db178f72a9787295cfcdb7e256370",
+          "ServiceWorld.wit.Imports.latent.intents.StagingImportsInterop.cs": "sha256:8aec935503fa7778e551e0f8efad9819de92babe8d5d870f034c85f4f4d8cea2",
+          "ServiceWorld.wit.Imports.latent.random.IRandomImports.cs": "sha256:50cd9ee942f38d45546cd0a06a2802884ee87fb134b61b6c66498330b9d22fd0",
+          "ServiceWorld.wit.Imports.latent.random.RandomImportsInterop.cs": "sha256:4280d01e4d15b3a03fd92df00b01768c65926cd4fe35b3babfa5bdd3ecebfe87",
+          "ServiceWorld.wit.Imports.latent.state.IKeyValueImports.cs": "sha256:607a551d6e145f6b27d2e3a46b4f08cc97d5974faeb91f4ab055552b09c7b67f",
+          "ServiceWorld.wit.Imports.latent.state.KeyValueImportsInterop.cs": "sha256:bf8fd8cfc2d332ba52b8496f8106de3e8114a87ba6f17faeb9225d1a8e485214",
+          "ServiceWorld_component_type.wit": "sha256:588c7e03afc95eeeff4c776bf92b4a14b8b2976efbeb70cad13c4925a2d51975",
+          "ServiceWorld_wasm_import_linkage_attribute.cs": "sha256:dfdfb9754adc8bdeb9d8b68834e0555af8668b03ad4648a2efee5a7dd0a5dea5"
         },
         "schemaVersion": "latent.dotnet.bindings.v1",
         "world": "tests:transaction-contract/service@1.0.0"

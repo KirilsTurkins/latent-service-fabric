@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_transaction_contracts.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Use exact maintained Rust binary selection and captured managed SDK context; preserve all pinned versions and compiler qualification gates",
+  "reviewReason": "Label only known public .NET binding SHA256 fields after exact compiler and reproducibility qualification; preserve raw compiler inventory and all tool/profile gates",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3521315ab0f94e3ee9db24c6669c690847854dd4e5f2c8329a0a4239e2867b01"
+  "sha256": "946d67e50de7f52cc21b727c1147b08ef2f868a0efe295d4f7100a5bd6759db7"
 }
