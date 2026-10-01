@@ -5,7 +5,12 @@
     "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed",
     "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough",
     "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source",
-    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt"
+    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt",
+    "WallFacetCompositionTests.test_changed_wall_facet_bytes_fail_before_composer_execution",
+    "WallFacetCompositionTests.test_duplicate_clock_export_requires_exact_named_wall_facet",
+    "WallFacetCompositionTests.test_member_coverage_accepts_only_the_same_named_wall_override",
+    "WallFacetCompositionTests.test_named_wall_facet_replaces_only_one_exact_closed_clock_edge",
+    "WallFacetCompositionTests.test_wall_name_does_not_authorize_different_ports_versions_or_extra_authority"
   ],
   "guards": {
     "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution": {
@@ -79,10 +84,70 @@
         "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
       ],
       "skipSites": []
+    },
+    "WallFacetCompositionTests.test_changed_wall_facet_bytes_fail_before_composer_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:49c4fbc4189c9d72236491a93c6e80c64fe712430640c69d6fd0f5dcb93b712b"
+      ],
+      "skipSites": []
+    },
+    "WallFacetCompositionTests.test_duplicate_clock_export_requires_exact_named_wall_facet": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:49c4fbc4189c9d72236491a93c6e80c64fe712430640c69d6fd0f5dcb93b712b"
+      ],
+      "skipSites": []
+    },
+    "WallFacetCompositionTests.test_member_coverage_accepts_only_the_same_named_wall_override": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:49c4fbc4189c9d72236491a93c6e80c64fe712430640c69d6fd0f5dcb93b712b"
+      ],
+      "skipSites": []
+    },
+    "WallFacetCompositionTests.test_named_wall_facet_replaces_only_one_exact_closed_clock_edge": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:49c4fbc4189c9d72236491a93c6e80c64fe712430640c69d6fd0f5dcb93b712b"
+      ],
+      "skipSites": []
+    },
+    "WallFacetCompositionTests.test_wall_name_does_not_authorize_different_ports_versions_or_extra_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7",
+        "class:setup-sha256:49c4fbc4189c9d72236491a93c6e80c64fe712430640c69d6fd0f5dcb93b712b"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_exact_composition.py",
-  "reviewReason": "Add six exact-interface composition controls after the actual pinned WAC semver duplicate-argument failure; preserve all historical authoring and entropy cases.",
+  "reviewReason": "Retain all six inherited exact-edge controls and their guards. Add five named wall-facet controls requiring an actual raw wall dependency, exact wall host import/export identities, only the closed primary clock override, unchanged secure RNG edges, validated bytes and normal WAC type checks.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

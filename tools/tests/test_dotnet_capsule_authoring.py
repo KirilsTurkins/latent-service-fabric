@@ -189,6 +189,41 @@ class RuntimeProfileTests(unittest.TestCase):
                 with self.subTest(path=path), self.assertRaisesRegex(ValueError, "vendored SDK changed"):
                     validate({**original, name: original[name] + b"\n// changed backend source\n"})
 
+    def test_actual_default_http_wall_dependency_requires_exact_declared_clock(self):
+        emitted = [*sorted(self.runtime.WASI_HTTP_IMPORTS), self.runtime.WASI_WALL]
+        declared = [self.runtime.CLOCK, self.runtime.HTTP, self.runtime.ACTIVATION]
+        with self.assertRaisesRegex(ValueError, "http-wall-clock-requires-declaration"):
+            self.runtime.select(declared, emitted)
+        with self.assertRaisesRegex(ValueError, "http-wall-clock-requires-declaration"):
+            self.runtime.additional(declared, emitted)
+        declared.append(self.runtime.WALL)
+        self.assertEqual(self.runtime.select(declared, emitted), "http")
+        self.assertEqual(self.runtime.additional(declared, emitted), ("wall",))
+
+    def test_retained_closed_wall_dependency_does_not_create_clock_authority(self):
+        emitted = [self.runtime.WASI_WALL, *sorted(self.runtime.WASI_HTTP_IMPORTS)]
+        declared = [self.runtime.CLOCK]
+        self.assertEqual(self.runtime.select(declared, emitted), "closed")
+        self.assertEqual(self.runtime.additional(declared, emitted), ())
+        self.assertEqual(self.runtime.additional([*declared, self.runtime.WALL], emitted), ("wall",))
+        self.assertEqual(self.runtime.additional([*declared, self.runtime.WALL], []), ())
+        # The historical direct SDK path still has no activation declaration.
+        self.assertEqual(self.runtime.select([*declared, self.runtime.HTTP], emitted), "closed")
+
+    def test_wall_facet_preserves_independently_declared_entropy_and_exact_versions(self):
+        declared = [self.runtime.CLOCK, self.runtime.HTTP, self.runtime.ACTIVATION,
+                    self.runtime.WALL, self.runtime.RANDOM]
+        emitted = [*sorted(self.runtime.WASI_HTTP_IMPORTS), self.runtime.WASI_WALL,
+                   *sorted(self.runtime.WASI_INSECURE_IMPORTS)]
+        self.assertEqual(self.runtime.additional(declared, emitted), ("entropy", "wall"))
+        for changed in ("latent:clock/wall@0.1.1", "latent:clock/wall@0.2.0"):
+            with self.subTest(changed=changed), self.assertRaisesRegex(ValueError, "unsupported-wall-clock-version"):
+                self.runtime.select([self.runtime.CLOCK, changed], [])
+        with self.assertRaisesRegex(ValueError, "unsupported-wasi-import"):
+            self.runtime.select(declared, ["wasi:clocks/wall-clock@0.2.0"])
+        with self.assertRaisesRegex(ValueError, "undeclared-emitted-import"):
+            self.runtime.select([self.runtime.CLOCK], [self.runtime.WALL])
+
 
 class AuditDrainTests(unittest.TestCase):
     def setUp(self):

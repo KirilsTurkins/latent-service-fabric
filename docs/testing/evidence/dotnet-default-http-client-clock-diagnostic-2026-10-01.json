@@ -1,0 +1,279 @@
+{
+  "kind": "private-original-default-http-client-clock-diagnostic",
+  "normalQualification": false,
+  "defaultHttpClientQualified": false,
+  "normalFailedReceipt": "dotnet-default-http-client-node-2026-10-01.json",
+  "sourceRevision": "1cf21f0f4c76e0a58d16666d60373ce576653578",
+  "sourceTree": "6a42a5d50efb3c91e4cd57878da28c5a21d183c2",
+  "application": {
+    "size": 748,
+    "sha256": "77a90ce137454808a119bb89e50a855dc007b17560432d290c34d900f1eda6af",
+    "construction": "new System.Net.Http.HttpClient()",
+    "injectedHandlerSchedulerOrApplicationPump": false
+  },
+  "unchangedComponent": {
+    "name": "unchanged-default-http-client",
+    "digest": "sha256:67163cf647fbb51d9ede807598c393bcd0d800bcf05f21fcedba3d8e01dfb0e8",
+    "size": 6299761
+  },
+  "limits": {
+    "cpuFuel": 1000000000,
+    "memoryBytes": 134217728,
+    "wallTimeMillis": 120000,
+    "outboundRequests": 1,
+    "producerCpu": 2,
+    "producerMemoryBytes": 4294967296,
+    "maximumProducerSeconds": 900
+  },
+  "privateDerivation": {
+    "changes": {
+      "crates/latent-wasmtime/src/config/engine.rs": {
+        "originalSha256": "8821b141d34f56e4779c86a9bebddd048281644baaba68e8c71960b3fb28b676",
+        "derivedSha256": "2730b015a8b6a7ece005966235ff363d6f74b31e42801017758cfbca8e997984",
+        "derivedBytes": 6115
+      },
+      "crates/latent-wasmtime/src/containment.rs": {
+        "originalSha256": "ee416ec8ec11e74de5f4b4176adcf5597727e722eb1f2dfdfa3a3886c1b026d8",
+        "derivedSha256": "de4d1e06202896422e698209ef1a3567d5fbfd17c5252ab71297fae10238b6b6",
+        "derivedBytes": 21020
+      }
+    },
+    "purpose": "Enable bounded original trap frames before the unchanged runtime failure classifier; no grant, provider, scheduling, guest budget or component change.",
+    "maximumFrames": 128,
+    "maximumFunctionNameCharacters": 256,
+    "trackedInputsBefore": 7394,
+    "trackedInputsAfter": 7394,
+    "privateLatentd": {
+      "bytes": 145892840,
+      "sha256": "f8a8c169e47d095839458f06d447368c005f8bdcf7fde16aba6ada85d7f080bf"
+    },
+    "buildCommandMaximumSeconds": 600,
+    "buildCommandSeconds": 47.656038386000546,
+    "buildExitCode": 0,
+    "originalCold600SecondDeadlineAndIncorrectDiagnosticTypeAttemptsRetained": true
+  },
+  "outcome": {
+    "terminalState": "guest_trap",
+    "errorCode": "guest-trap",
+    "consumption": {
+      "blobReadBytes": "0",
+      "blobWriteBytes": "0",
+      "childCalls": 0,
+      "cpuFuel": "51271650",
+      "effectCount": 0,
+      "logBytes": "0",
+      "outboundRequests": 0,
+      "peakMemoryBytes": "55902208",
+      "stateReadBytes": "0",
+      "stateWriteBytes": "0",
+      "wallTimeMicros": "72707"
+    },
+    "trap": "UnreachableCodeReached",
+    "frames": [
+      {
+        "functionIndex": 322,
+        "moduleOffset": 102672,
+        "functionOffset": 1,
+        "name": "_RNvCs9wFQrvczXsK_7___rustc12___rust_abort"
+      },
+      {
+        "functionIndex": 306,
+        "moduleOffset": 96103,
+        "functionOffset": 1,
+        "name": "_RNvCs9wFQrvczXsK_7___rustc18___rust_start_panic"
+      },
+      {
+        "functionIndex": 318,
+        "moduleOffset": 97147,
+        "functionOffset": 5,
+        "name": "_RNvCs9wFQrvczXsK_7___rustc10rust_panic"
+      },
+      {
+        "functionIndex": 316,
+        "moduleOffset": 97119,
+        "functionOffset": 330,
+        "name": "_RNvNtCsdl5sGgnNXvY_3std9panicking15panic_with_hook"
+      },
+      {
+        "functionIndex": 314,
+        "moduleOffset": 96545,
+        "functionOffset": 92,
+        "name": "_RNCNvNtCsdl5sGgnNXvY_3std9panicking13panic_handler0B5_"
+      },
+      {
+        "functionIndex": 313,
+        "moduleOffset": 96443,
+        "functionOffset": 3,
+        "name": "_RINvNtNtCsdl5sGgnNXvY_3std3sys9backtrace26___rust_end_short_backtraceNCNvNtB6_9panicking13panic_handler0zEB6_"
+      },
+      {
+        "functionIndex": 328,
+        "moduleOffset": 105629,
+        "functionOffset": 48,
+        "name": "_RNvCs9wFQrvczXsK_7___rustc17rust_begin_unwind"
+      },
+      {
+        "functionIndex": 362,
+        "moduleOffset": 109233,
+        "functionOffset": 63,
+        "name": "_RNvNtCsdkdt1aaAg1T_4core9panicking9panic_fmt"
+      },
+      {
+        "functionIndex": 170,
+        "moduleOffset": 73310,
+        "functionOffset": 16,
+        "name": "_RNvXsf_Csa9Tc6Kee53E_19dotnet_http_runtimeNtB5_13ClosedRuntimeNtNtNtNtNtB5_7exports4wasi6clocks10wall_clock5Guest3now"
+      },
+      {
+        "functionIndex": 195,
+        "moduleOffset": 74481,
+        "functionOffset": 11,
+        "name": "wasi:clocks/wall-clock@0.2.6#now"
+      },
+      {
+        "functionIndex": 100,
+        "moduleOffset": 25403,
+        "functionOffset": 45,
+        "name": ""
+      },
+      {
+        "functionIndex": 39,
+        "moduleOffset": 6281075,
+        "functionOffset": 5,
+        "name": ""
+      },
+      {
+        "functionIndex": 5837,
+        "moduleOffset": 2056375,
+        "functionOffset": 22,
+        "name": "wall_clock_now"
+      },
+      {
+        "functionIndex": 5767,
+        "moduleOffset": 2047338,
+        "functionOffset": 29,
+        "name": "gettimeofday"
+      },
+      {
+        "functionIndex": 768,
+        "moduleOffset": 510774,
+        "functionOffset": 32,
+        "name": "SystemNative_GetSystemTimeAsTicks"
+      },
+      {
+        "functionIndex": 4711,
+        "moduleOffset": 1686323,
+        "functionOffset": 23,
+        "name": "S_P_CoreLib_System_DateTime__get_UtcNow"
+      },
+      {
+        "functionIndex": 2290,
+        "moduleOffset": 831696,
+        "functionOffset": 56,
+        "name": "S_P_CoreLib_System_Threading_TimerQueue___cctor"
+      },
+      {
+        "functionIndex": 2226,
+        "moduleOffset": 808223,
+        "functionOffset": 330,
+        "name": "S_P_CoreLib_System_Runtime_CompilerServices_ClassConstructorRunner__EnsureClassConstructorRun"
+      },
+      {
+        "functionIndex": 1355,
+        "moduleOffset": 532206,
+        "functionOffset": 19,
+        "name": "S_P_CoreLib_System_Runtime_CompilerServices_ClassConstructorRunner__CheckStaticClassConstructionReturnNonGCStaticBase"
+      },
+      {
+        "functionIndex": 1058,
+        "moduleOffset": 519308,
+        "functionOffset": 27,
+        "name": "__GetGCStaticBase_S_P_CoreLib_System_Threading_TimerQueue"
+      },
+      {
+        "functionIndex": 3508,
+        "moduleOffset": 1231227,
+        "functionOffset": 242,
+        "name": "S_P_CoreLib_System_Threading_CancellationTokenSource__CancelAfter_1"
+      },
+      {
+        "functionIndex": 2544,
+        "moduleOffset": 911723,
+        "functionOffset": 120,
+        "name": "S_P_CoreLib_System_Threading_CancellationTokenSource__CancelAfter"
+      },
+      {
+        "functionIndex": 4055,
+        "moduleOffset": 1442512,
+        "functionOffset": 242,
+        "name": "System_Net_Http_System_Net_Http_HttpClient__PrepareCancellationTokenSource"
+      },
+      {
+        "functionIndex": 2510,
+        "moduleOffset": 901136,
+        "functionOffset": 89,
+        "name": "System_Net_Http_System_Net_Http_HttpClient__SendAsync_2"
+      },
+      {
+        "functionIndex": 1351,
+        "moduleOffset": 530364,
+        "functionOffset": 323,
+        "name": "Capsule_ServiceWorld_wit_Exports_examples_greeting_ApiExportsImpl__Greet"
+      },
+      {
+        "functionIndex": 3308,
+        "moduleOffset": 1155204,
+        "functionOffset": 245,
+        "name": "Capsule_ServiceWorld_wit_Exports_examples_greeting_ApiExportsInterop__wasmExportGreet"
+      }
+    ],
+    "stderrBytes": 4057,
+    "stderrSha256": "5442bf26bfbae54be3b694b6abc5e36a9f895cbdd9427190f97afc68c79c2fa8"
+  },
+  "measuredFirstBlocker": {
+    "adapter": "dotnet-http-runtime closed wall clock",
+    "interface": "wasi:clocks/wall-clock@0.2.6",
+    "operation": "now",
+    "hostWallDeclaredOrGranted": false,
+    "callChain": [
+      "HttpClient.SendAsync",
+      "HttpClient.PrepareCancellationTokenSource",
+      "CancellationTokenSource.CancelAfter",
+      "TimerQueue static initializer",
+      "DateTime.UtcNow",
+      "SystemNative_GetSystemTimeAsTicks",
+      "gettimeofday",
+      "wasi:clocks/wall-clock@0.2.6#now",
+      "ClosedRuntime wall-clock Guest::now panic"
+    ],
+    "qualifiedDefaultTaskTimerOrThreadPool": false
+  },
+  "cleanup": {
+    "node": {
+      "closed": true,
+      "reaped": true
+    },
+    "peer": {
+      "schemaVersion": "latent.provider-peer.failure.v1",
+      "exitedBeforeCleanup": false,
+      "closed": true,
+      "reaped": true,
+      "observationAvailable": true,
+      "observationError": "none",
+      "cleanupError": "none",
+      "exitCode": -9,
+      "diagnostic": "none"
+    }
+  },
+  "redaction": {
+    "publishedFields": "Public source symbols, numeric frames, finite counters and hashes only.",
+    "privateOperatorKeysCertificatesConfigurationsAndNodeStatePublished": false
+  },
+  "pending": [
+    "Compile the optional exact declared wall facet and inspect actual imports.",
+    "Rebuild the unchanged ordinary application with a fresh captured source contract declaring wall-clock authority.",
+    "Fresh normal signed-node proof with exact wall provider binding and grant, plus zero-work missing-wall denial.",
+    "Genuine pending CLR Task, timer, ThreadPool, cancellation and physical retirement qualification under issue746.",
+    "Complete standard default-client HTTP acceptance under issue693 and common conformance under issue680."
+  ]
+}

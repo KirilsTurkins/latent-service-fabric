@@ -248,8 +248,37 @@ one-billion-fuel, 128 MiB and 120-second limits. Node and peer were reaped.
 
 The [failed normal-node receipt](../testing/evidence/dotnet-default-http-client-node-2026-10-01.json)
 binds the exact 6,299,761-byte component, native binaries, original application,
-limits, admission, negative controls and cleanup. Its trap cause remains
-unidentified. Adding explicit noncrypto entropy does not establish a successful
+limits, admission, negative controls and cleanup. The normal receipt contains
+the typed failure without a stack. Adding explicit noncrypto entropy does not establish a successful
 default client, ordinary Task/ThreadPool behavior or complete HTTP conformance.
 The full private source/component/node backup is retained separately; its
 operator keys are excluded from published evidence.
+
+A subsequent [private diagnostic of the unchanged component](../testing/evidence/dotnet-default-http-client-clock-diagnostic-2026-10-01.json)
+captured 26 bounded frames before the original failure classifier. The first
+blocker is the closed `wasi:clocks/wall-clock@0.2.6#now` implementation:
+`HttpClient.SendAsync` initializes its timeout cancellation source, which reaches
+`TimerQueue`, `DateTime.UtcNow` and the denied wall clock. This run kept the
+original guest limits, admitted declarations and component bytes; it consumed
+51,271,650 fuel and 55,902,208 peak bytes, with zero HTTP effects. The private
+observer has a separate source and binary identity. Its node was reaped; its
+peer was forcibly reaped, so this receipt does not prove a clean peer shutdown.
+
+The optional `wall` facet maps that exact WASI operation through the existing
+`latent:clock/wall@0.1.0` `now-unix-millis` operation. Selection requires the
+authoritative source declaration and an actual emitted wall-clock dependency;
+an actual default-BCL HTTP profile containing that dependency rejects a missing
+declaration. The node still needs its independently installed wall-clock
+provider, configuration identity and explicit grant. The host's millisecond
+precision is retained in the WASI datetime. The composer replaces only the
+primary adapter's exact closed wall-clock edge, with the named facet's validated
+interface; all other duplicate exports remain rejected.
+
+The closed primary adapters still deny wall-clock calls, and the historical
+direct SDK HTTP path retains its independent selection. Compiler capture,
+managed distribution and private staging retain the fifth adapter and its
+source. The selector and composition controls are source evidence. Actual
+adapter compilation, a fresh normally signed invocation and a missing-wall
+zero-work denial remain required. This clock mapping does not qualify genuine
+CLR Task, timer callback or ThreadPool progress under #746, or the remaining
+default-client and common HTTP criteria under #693 and #680.

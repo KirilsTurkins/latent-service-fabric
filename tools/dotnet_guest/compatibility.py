@@ -38,13 +38,22 @@ def members(graph: dict, direction: str) -> dict:
     return result
 
 
-def coverage(raw: dict, adapter: dict, *, additional_adapters=()) -> dict:
+def coverage(raw: dict, adapter: dict, *, additional_adapters=(), additional_names=()) -> dict:
     """Member presence is a necessary check; WAC still checks all type signatures."""
     required, supplied = members(raw, 'imports'), members(adapter, 'exports')
     require(len(additional_adapters) <= 4, 'dotnet-runtime-additional-adapter-limit')
-    for graph in additional_adapters:
+    require(not additional_names or (len(additional_names) == len(additional_adapters)
+            and len(set(additional_names)) == len(additional_names)), 'dotnet-runtime-additional-adapter-name')
+    from tools.dotnet_guest.runtime import WASI_WALL, wall_override
+    primary_exports = set(supplied)
+    for index, graph in enumerate(additional_adapters):
         exports = members(graph, 'exports')
-        require(not set(exports) & set(supplied), 'dotnet-runtime-duplicate-adapter-export')
+        names = interface_names(graph)
+        replace_wall = bool(additional_names) and wall_override(additional_names[index], required,
+            primary_exports, names['imports'], names['exports'])
+        overlap = set(exports) & set(supplied)
+        require(not overlap or (replace_wall and overlap == {WASI_WALL}),
+                'dotnet-runtime-duplicate-adapter-export')
         supplied.update(exports)
     require(len(supplied) <= 256 and sum(len(row['functions']) + len(row['types'])
             for row in supplied.values()) <= 4096, 'dotnet-runtime-member-limit')
@@ -88,7 +97,8 @@ def inspect(compiler, raw: Path, *, additional_adapters=()) -> dict:
         extra.append({'name': name, 'componentDigest': digest(body), 'witDigest': digest(graph), 'witSource': source})
         original.append((path, body))
         (compiler.commands.output / source).write_bytes(graph)
-    value = coverage(decode(raw_graph, MAX_GRAPH), decode(adapter_graph, MAX_GRAPH), additional_adapters=graphs)
+    value = coverage(decode(raw_graph, MAX_GRAPH), decode(adapter_graph, MAX_GRAPH),
+                     additional_adapters=graphs, additional_names=[row['name'] for row in extra])
     require(read_file(raw, 64 * 1024 * 1024) == raw_bytes
             and read_file(compiler.runtime, 64 * 1024 * 1024) == adapter_bytes, 'dotnet-runtime-coverage-stale-input')
     require(all(read_file(path, 64 * 1024 * 1024) == body for path, body in original),
@@ -139,7 +149,7 @@ def retain_failure(output: Path) -> None:
         graphs.append(decode(graph, MAX_GRAPH))
     actual = coverage(decode(read_file(output / 'native-aot-raw.wit.json', MAX_GRAPH), MAX_GRAPH),
                       decode(read_file(output / 'closed-runtime-adapter.wit.json', MAX_GRAPH), MAX_GRAPH),
-                      additional_adapters=graphs)
+                      additional_adapters=graphs, additional_names=[row['name'] for row in extra])
     require(all(actual[key] == value[key] for key in actual), 'dotnet-runtime-coverage-stale-receipt')
     source = output / 'source-inputs.json'
     if not source.exists():

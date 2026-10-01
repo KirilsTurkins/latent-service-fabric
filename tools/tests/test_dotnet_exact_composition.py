@@ -156,5 +156,91 @@ class ExactCompositionTests(unittest.TestCase):
             self.assertEqual(len(calls), 1)
 
 
+class WallFacetCompositionTests(unittest.TestCase):
+    def fixture(self, root, *, name="wall", imports=None, exports=None, raw_wall=True, primary_wall=True):
+        from tools.dotnet_guest.runtime import WALL, WASI_WALL
+        compiler, paths, evidence, component, coverage, calls, protected = ExactCompositionTests().fixture(
+            root, required=WASI_WALL)
+        raw = graph(imports=[CLOCK, SECURE, *([WASI_WALL] if raw_wall else [])])
+        primary = graph(imports=[CLOCK], exports=[SECURE, *([WASI_WALL] if primary_wall else [])])
+        facet = graph(imports=[WALL] if imports is None else imports,
+                      exports=[WASI_WALL] if exports is None else exports)
+        for source, value in (("native-aot-raw.wit.json", raw),
+                              ("closed-runtime-adapter.wit.json", primary),
+                              ("additional-runtime-" + name + ".wit.json", facet)):
+            (evidence / source).write_bytes(json.dumps(value).encode())
+        coverage["rawWitDigest"] = digest((evidence / "native-aot-raw.wit.json").read_bytes())
+        coverage["runtimeWitDigest"] = digest((evidence / "closed-runtime-adapter.wit.json").read_bytes())
+        coverage["additionalAdapters"] = [{"name": name, "witSource": "additional-runtime-" + name + ".wit.json",
+            "componentDigest": digest(paths["entropy"].read_bytes()),
+            "witDigest": digest((evidence / ("additional-runtime-" + name + ".wit.json")).read_bytes())}]
+        return compiler, paths, evidence, component, coverage, calls, protected, (raw, primary, facet)
+
+    def test_named_wall_facet_replaces_only_one_exact_closed_clock_edge(self):
+        from tools.dotnet_guest.runtime import WASI_WALL
+        with tempfile.TemporaryDirectory() as temporary:
+            compiler, paths, evidence, component, coverage, calls, protected, _graphs = self.fixture(Path(temporary))
+            result = compose_exact(compiler, paths["raw"], component, coverage,
+                                   additional_adapters=[("wall", paths["entropy"])])
+            source = (evidence / "runtime-composition.wac").read_bytes()
+            self.assertEqual(source.count((json.dumps(WASI_WALL) + ": runtime1").encode()), 1)
+            self.assertIn((json.dumps(SECURE) + ": runtime0").encode(), source)
+            self.assertEqual(result["explicitFacetOverrides"], [
+                {"interface": WASI_WALL, "fromAdapter": "primary", "toAdapter": "wall"}])
+            self.assertEqual(result["unmodifiedHostImports"], [CLOCK])
+            self.assertEqual(len(calls), 1)
+            self.assertIn(paths["raw"], protected)
+            self.assertNotIn("--no-validate", calls[0][2])
+            self.assertEqual(source, (component.parent / "runtime-composition.wac").read_bytes())
+
+    def test_wall_name_does_not_authorize_different_ports_versions_or_extra_authority(self):
+        from tools.dotnet_guest.runtime import WALL, WASI_WALL
+        changes = [{"imports": [CLOCK]}, {"imports": [WALL, RANDOM]},
+                   {"imports": ["latent:clock/wall@0.1.1"]},
+                   {"exports": ["wasi:clocks/wall-clock@0.2.0"]},
+                   {"exports": [WASI_WALL, SECURE]}, {"raw_wall": False}, {"primary_wall": False}]
+        for changed in changes:
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temporary:
+                compiler, paths, _evidence, component, coverage, calls, _protected, _graphs = self.fixture(
+                    Path(temporary), **changed)
+                with self.assertRaisesRegex(ValueError, "wall-facet-shape"):
+                    compose_exact(compiler, paths["raw"], component, coverage,
+                                  additional_adapters=[("wall", paths["entropy"])])
+                self.assertEqual(calls, [])
+                self.assertFalse(component.exists())
+
+    def test_duplicate_clock_export_requires_exact_named_wall_facet(self):
+        for name in ("entropy", "wall-clock", "primary"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                compiler, paths, _evidence, component, coverage, calls, _protected, _graphs = self.fixture(
+                    Path(temporary), name=name)
+                with self.assertRaisesRegex(ValueError, "duplicate-export"):
+                    compose_exact(compiler, paths["raw"], component, coverage,
+                                  additional_adapters=[(name, paths["entropy"])])
+                self.assertEqual(calls, [])
+
+    def test_member_coverage_accepts_only_the_same_named_wall_override(self):
+        from tools.dotnet_guest.compatibility import coverage as member_coverage
+        with tempfile.TemporaryDirectory() as temporary:
+            *_values, graphs = self.fixture(Path(temporary))
+            raw, primary, facet = graphs
+            result = member_coverage(raw, primary, additional_adapters=[facet], additional_names=["wall"])
+            self.assertEqual(result["gaps"], [])
+            for names in ((), ("entropy",)):
+                with self.subTest(names=names), self.assertRaisesRegex(ValueError, "duplicate-adapter-export"):
+                    member_coverage(raw, primary, additional_adapters=[facet], additional_names=names)
+            with self.assertRaisesRegex(ValueError, "additional-adapter-name"):
+                member_coverage(raw, primary, additional_adapters=[facet, facet], additional_names=["wall", "wall"])
+
+    def test_changed_wall_facet_bytes_fail_before_composer_execution(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            compiler, paths, _evidence, component, coverage, calls, _protected, _graphs = self.fixture(Path(temporary))
+            paths["entropy"].write_bytes(b"changed selected wall facet")
+            with self.assertRaisesRegex(ValueError, "stale-inspection"):
+                compose_exact(compiler, paths["raw"], component, coverage,
+                              additional_adapters=[("wall", paths["entropy"])])
+            self.assertEqual(calls, [])
+
+
 if __name__ == "__main__":
     unittest.main()

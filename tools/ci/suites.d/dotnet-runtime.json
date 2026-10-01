@@ -38,6 +38,25 @@
       "source": "examples/dotnet_http_runtime.rs",
       "target": "dotnet-http-runtime",
       "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latent-toolchain-smoke.example.dotnet-wall-clock-runtime",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "tools/toolchain-smoke/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latent-toolchain-smoke",
+      "platforms": ["linux-x86_64"],
+      "prerequisites": ["pinned Rust toolchain", "successful source-matched Cargo artifact inventory"],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/dotnet_wall_clock_runtime.rs",
+      "target": "dotnet-wall-clock-runtime",
+      "timeoutSeconds": 900
     }
   ]
 }
