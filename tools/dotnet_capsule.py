@@ -17,6 +17,7 @@ from tools.build_observation import build_environment
 from tools.dotnet_guest.project import create
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
+from tools.dotnet_guest.runtime import ADAPTERS
 
 
 def install(directory: Path, wasi_sdk: Path):
@@ -56,11 +57,14 @@ def install(directory: Path, wasi_sdk: Path):
         "-p:NuGetAudit=false", "-nodeReuse:false")
     command.run("closed-runtime-compile", "cargo", "build", "--quiet", "--locked",
         "--manifest-path", ROOT / "tools/toolchain-smoke/Cargo.toml", "-p", "latent-toolchain-smoke",
-        "--example", "dotnet-closed-runtime", "--target", "wasm32-unknown-unknown", "--release", "--target-dir", target)
-    command.run("closed-runtime-component", wasm, "component", "new",
-        target / "wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm", "-o", directory / "runtime.wasm")
+        *(argument for example, _binary in ADAPTERS.values() for argument in ("--example", example)),
+        "--target", "wasm32-unknown-unknown", "--release", "--target-dir", target)
+    for profile, (example, binary) in ADAPTERS.items():
+        command.run(profile + "-runtime-component", wasm, "component", "new",
+            target / "wasm32-unknown-unknown/release/examples" / (example.replace("-", "_") + ".wasm"),
+            "-o", directory / binary)
     if runtime_inputs(ROOT) != before:
-        raise ValueError("closed runtime sources changed during compilation")
+        raise ValueError("runtime sources changed during compilation")
     (directory / "runtime-inputs.json").write_bytes(before)
     from tools.dotnet_guest.composer import install as install_composer
     install_composer(directory, sdk, command)

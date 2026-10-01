@@ -19,7 +19,14 @@
     "DotnetAuthoringTests.test_names_and_existing_directories_are_rejected",
     "DotnetAuthoringTests.test_nuget_uses_verified_content_identity_not_raw_signed_zip_hash",
     "DotnetAuthoringTests.test_public_contract_rejection_precedes_compiler_work",
-    "DotnetAuthoringTests.test_sdk_capture_cannot_drift"
+    "DotnetAuthoringTests.test_sdk_capture_cannot_drift",
+    "RuntimeProfileTests.test_http_profile_requires_both_exact_declared_capabilities",
+    "RuntimeProfileTests.test_opaque_stream_authority_cannot_enable_standard_http",
+    "RuntimeProfileTests.test_retained_http_imports_do_not_create_network_authority",
+    "RuntimeProfileTests.test_runtime_capture_rejects_modified_backend_sources",
+    "RuntimeProfileTests.test_source_ambient_authority_and_changed_profile_versions_are_rejected",
+    "RuntimeProfileTests.test_undeclared_emitted_lsf_authority_is_rejected",
+    "RuntimeProfileTests.test_unknown_wasi_versions_and_sockets_are_rejected"
   ],
   "guards": {
     "AuditDrainTests.test_busy_to_idle_observations_are_only_bounded_read_only_calls": {
@@ -261,10 +268,94 @@
         "class:setup-sha256:4fa072a14e3a1d67e343e90848e02f22a7a29740470682374d503f781d42544f"
       ],
       "skipSites": []
+    },
+    "RuntimeProfileTests.test_http_profile_requires_both_exact_declared_capabilities": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f197261ae549b5a6e0ff543dd5330bf75c07ca7b06b3dd8aac458bedb47249",
+        "class:setup-sha256:d01f5489f538f2e3107e97d1be6461b3410b095052cdb3e36d09639b277ac75a"
+      ],
+      "skipSites": []
+    },
+    "RuntimeProfileTests.test_opaque_stream_authority_cannot_enable_standard_http": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f197261ae549b5a6e0ff543dd5330bf75c07ca7b06b3dd8aac458bedb47249",
+        "class:setup-sha256:d01f5489f538f2e3107e97d1be6461b3410b095052cdb3e36d09639b277ac75a"
+      ],
+      "skipSites": []
+    },
+    "RuntimeProfileTests.test_retained_http_imports_do_not_create_network_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f197261ae549b5a6e0ff543dd5330bf75c07ca7b06b3dd8aac458bedb47249",
+        "class:setup-sha256:d01f5489f538f2e3107e97d1be6461b3410b095052cdb3e36d09639b277ac75a"
+      ],
+      "skipSites": []
+    },
+    "RuntimeProfileTests.test_runtime_capture_rejects_modified_backend_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f197261ae549b5a6e0ff543dd5330bf75c07ca7b06b3dd8aac458bedb47249",
+        "class:setup-sha256:d01f5489f538f2e3107e97d1be6461b3410b095052cdb3e36d09639b277ac75a"
+      ],
+      "skipSites": []
+    },
+    "RuntimeProfileTests.test_source_ambient_authority_and_changed_profile_versions_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f197261ae549b5a6e0ff543dd5330bf75c07ca7b06b3dd8aac458bedb47249",
+        "class:setup-sha256:d01f5489f538f2e3107e97d1be6461b3410b095052cdb3e36d09639b277ac75a"
+      ],
+      "skipSites": []
+    },
+    "RuntimeProfileTests.test_undeclared_emitted_lsf_authority_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f197261ae549b5a6e0ff543dd5330bf75c07ca7b06b3dd8aac458bedb47249",
+        "class:setup-sha256:d01f5489f538f2e3107e97d1be6461b3410b095052cdb3e36d09639b277ac75a"
+      ],
+      "skipSites": []
+    },
+    "RuntimeProfileTests.test_unknown_wasi_versions_and_sockets_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87f197261ae549b5a6e0ff543dd5330bf75c07ca7b06b3dd8aac458bedb47249",
+        "class:setup-sha256:d01f5489f538f2e3107e97d1be6461b3410b095052cdb3e36d09639b277ac75a"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_capsule_authoring.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Preserve all 20 accepted authoring guards and add seven new runtime profile controls with imports scoped to their own fixture",
   "schemaVersion": "latent.ci.contracts.v1"
 }

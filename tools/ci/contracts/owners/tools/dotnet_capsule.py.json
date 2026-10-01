@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review separate NuGet resolve candidate, exact executable approval, checksum-pinned composer resource alias fix and unchanged source-only entrypoints.",
+  "reviewReason": "Preserve native NuGet capture, exact generator approval and selected composer while installing all three reviewed runtime adapters",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "76ffaeeb71248112109bdc8331076a169881e711464e07f6b43e0011d2fb8815"
+  "sha256": "b4c6f8b848f11e2bc36b29d262d99445d3294f52cd5601be193c3dad9778c6a7"
 }

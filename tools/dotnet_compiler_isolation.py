@@ -87,6 +87,24 @@ class DotnetIsolation(Isolation):
         return {path.name: identity for path, identity in self.argument_files.items()}
 
 
+def stage_adapters(runtimes: dict[str, Path], destination: Path) -> dict[str, Path]:
+    """Capture the finite SDK adapter family inside the compiler namespace."""
+    from tools.dotnet_guest.runtime import ADAPTERS
+    if set(runtimes) != set(ADAPTERS):
+        raise DependencyError('dotnet-runtime-adapters-not-captured')
+    before = {name: read_bytes(path, 64 * 1024 * 1024) for name, path in runtimes.items()}
+    destination.mkdir()
+    result = {}
+    for name, source in runtimes.items():
+        path = destination / ADAPTERS[name][1]
+        shutil.copyfile(source, path)
+        if (read_bytes(source, 64 * 1024 * 1024) != before[name]
+                or read_bytes(path, 64 * 1024 * 1024) != before[name]):
+            raise DependencyError('dotnet-runtime-adapter-input-mutated')
+        result[name] = path
+    return result
+
+
 def stage(compiler, workspace: Path) -> DotnetIsolation:
     """Build a compiler distribution containing only selected SDK inputs."""
     root = workspace / 'captured-dotnet-tools'
@@ -116,11 +134,10 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
         shutil.copytree(source, destination, symlinks=True)
     selected['sdk-nuget-packages'] = packages
     selected['wasi-sdk'] = compiler.wasi_sdk
-    adapter = root / 'closed-runtime'
-    adapter.mkdir()
-    shutil.copyfile(compiler.runtime, adapter / 'runtime.wasm')
-    compiler.runtime = adapter / 'runtime.wasm'
-    selected['closed-runtime-adapter'] = adapter
+    adapter = root / 'runtime-adapters'
+    compiler.runtimes = stage_adapters(compiler.runtimes, adapter)
+    compiler.runtime = compiler.runtimes['closed']
+    selected['runtime-adapters'] = adapter
     composer = root / 'component-composer'
     shutil.copytree(compiler.roots['component-composer'], composer)
     selected['component-composer'] = composer

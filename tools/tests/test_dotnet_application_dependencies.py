@@ -446,5 +446,63 @@ class NugetGeneratedOutputs(unittest.TestCase):
                 verify(output, approval)
 
 
+class RuntimeAdapterCapture(unittest.TestCase):
+    def family(self, root):
+        from tools.dotnet_guest.runtime import ADAPTERS
+        source = root / 'installed'
+        source.mkdir()
+        result = {}
+        for name, (_example, filename) in ADAPTERS.items():
+            result[name] = source / filename
+            result[name].write_bytes(('captured-' + name).encode())
+        return result
+
+    def test_all_three_runtime_adapters_are_captured_under_the_owned_namespace(self):
+        from tools.dotnet_compiler_isolation import stage_adapters
+        from tools.dotnet_guest.runtime import ADAPTERS
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original = self.family(root)
+            destination = root / 'private-adapters'
+            captured = stage_adapters(original, destination)
+            self.assertEqual(set(captured), set(ADAPTERS))
+            for name, path in captured.items():
+                self.assertEqual(path, destination / ADAPTERS[name][1])
+                self.assertEqual(path.read_bytes(), original[name].read_bytes())
+                self.assertTrue(path.is_relative_to(destination))
+                self.assertNotEqual(path, original[name])
+
+    def test_missing_or_additional_runtime_profiles_fail_before_staging(self):
+        from tools.dotnet_compiler_isolation import stage_adapters
+        for changed in ('missing', 'additional'):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                original = self.family(root)
+                if changed == 'missing':
+                    del original['http']
+                else:
+                    original['unattributed'] = original['closed']
+                destination = root / 'private-adapters'
+                with self.assertRaisesRegex(DependencyError, 'adapters-not-captured'):
+                    stage_adapters(original, destination)
+                self.assertFalse(destination.exists())
+
+    def test_changed_source_during_capture_cannot_publish_an_adapter_family(self):
+        from unittest.mock import patch
+        import shutil
+        from tools.dotnet_compiler_isolation import stage_adapters
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original = self.family(root)
+            copy = shutil.copyfile
+            def changed_copy(source, destination):
+                result = copy(source, destination)
+                source.write_bytes(b'changed-after-capture')
+                return result
+            with patch('tools.dotnet_compiler_isolation.shutil.copyfile', side_effect=changed_copy):
+                with self.assertRaisesRegex(DependencyError, 'adapter-input-mutated'):
+                    stage_adapters(original, root / 'private-adapters')
+
+
 if __name__ == '__main__':
     unittest.main()

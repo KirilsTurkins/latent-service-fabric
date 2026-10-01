@@ -6,6 +6,7 @@ import re
 import tomllib
 from tools.rust_capsule_project import (ROOT, TEMPLATES, TUTORIALS, decode_json, digest,
     fresh, inventory, read_file, snapshot)
+from tools.dotnet_guest.runtime import EXAMPLES
 
 CLOCK = "latent:clock/monotonic@0.1.0"
 
@@ -38,7 +39,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
                    "sdk/dotnet-guest/capabilities", "wit/platform"):
         vendor.update({folder + "/" + path: data for path, data in snapshot(ROOT / folder).items()})
     for path in ("Cargo.toml", "Cargo.lock", "tools/toolchain.toml", "LICENSE", "NOTICE",
-                 "tools/toolchain-smoke/examples/dotnet_closed_runtime.rs", "tools/dotnet_guest_bindings.py",
+                 "tools/toolchain-smoke/Cargo.toml", *EXAMPLES, "tools/dotnet_guest_bindings.py",
                  "sdk/dotnet-guest/component-composer.json",
                  "sdk/dotnet-guest/global.json", "sdk/dotnet-guest/nuget.config",
                  "sdk/dotnet-guest/probes/smoke/Smoke.csproj", "sdk/dotnet-guest/probes/smoke/packages.lock.json"):

@@ -11,6 +11,8 @@ import tempfile
 from tools.build_observation import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.dotnet_guest.sdk import install as install_sdk
+from tools.dotnet_guest import runtime
+from tools.guest_compatibility_build import interface_names
 
 SDK_VERSION = "10.0.100"
 COMPONENT_VERSION = "0.8.0-preview00011"
@@ -19,7 +21,7 @@ COMPONENT_VERSION = "0.8.0-preview00011"
 def runtime_inputs(root: Path) -> bytes:
     files = {"sdk/dotnet-guest/runtime/" + name: value
              for name, value in snapshot(root / "sdk/dotnet-guest/runtime").items()}
-    for name in ("Cargo.toml", "Cargo.lock", "tools/toolchain-smoke/examples/dotnet_closed_runtime.rs"):
+    for name in ("Cargo.toml", "Cargo.lock", "tools/toolchain-smoke/Cargo.toml", *runtime.EXAMPLES):
         files[name] = read_file(root / name)
     return inventory(files)
 
@@ -113,9 +115,9 @@ class Compiler:
                 "29.0", "wasi-libc: ac020b86fd44", "llvm: 222fc11f2b8f", "llvm-version: 21.1.4", "config: f992bcc08219"]:
             raise ValueError("WASI SDK compiler version drift")
         self.roots["wasi-sdk"] = self.wasi_sdk
-        self.runtime = tools / "runtime.wasm"
+        self.runtimes = {name: tools / filename for name, (_example, filename) in runtime.ADAPTERS.items()}
         if read_file(tools / "runtime-inputs.json") != runtime_inputs(vendor):
-            raise ValueError("installed closed runtime source capture differs from the project SDK")
+            raise ValueError("installed runtime source capture differs from the project SDK")
         from tools.dotnet_guest.composer import observed as observed_composer, selection as composer_selection
         bundled_composer = tools / "packages/bytecodealliance.componentize.dotnet.wasm.sdk" / COMPONENT_VERSION / "tools/linux-x64/wac"
         self.wac = observed_composer(tools, self.sdk)
@@ -126,9 +128,11 @@ class Compiler:
             'selected': file_identity(self.wac, 'component-composer'), 'selection': composer_selection(self.sdk)}]
         if commands.run('component-composer-version', self.wac, '--version').strip() != b'wac-cli 0.10.1':
             raise ValueError('unreviewed component composer version')
+        self.runtime = self.runtimes["closed"]
         self.materials = [file_identity(path, name) for name, path in (
-            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen), ("closed-runtime", self.runtime),
-            ('component-composer', self.wac))]
+            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen),
+            *((runtime.ADAPTERS[name][0].removeprefix("dotnet-"), path)
+              for name, path in self.runtimes.items()), ('component-composer', self.wac))]
         self.before = tree_identity(self.roots)
         if captured:
             from tools.dotnet_compiler_isolation import stage
@@ -166,6 +170,9 @@ class Compiler:
             raise ValueError('NativeAOT-output-outside-captured-build-workspace')
         output.mkdir()
         command, source = self.commands, work / "wit"
+        declared = interface_names(json.loads(self.run("declared-runtime-wit", self.wasm,
+            "component", "wit", source, "--json")), world)["imports"]
+        runtime.select(declared, [])
         generated = output / "generated"
         binding = work / "vendor/lsf/tools/dotnet_guest_bindings.py"
         self.run("bindings", self.python, "-I", "-B", binding, "c-sharp", source, "--world", world,
@@ -263,24 +270,41 @@ class Compiler:
         if len(actual) != 1 or json.loads(read_file(actual[0], 16 * 1024 * 1024))["outputs"] != receipt["outputs"]:
             raise ValueError("actual NativeAOT binding inputs differ from independent drift generation")
         raw = project / "bin/Release/net10.0/wasi-wasm/publish/Capsule.wasm"
+        actual = interface_names(json.loads(self.run("native-runtime-wit", self.wasm,
+            "component", "wit", raw, "--json")))["imports"]
+        profile = runtime.select(declared, actual)
+        adapter = self.runtimes[profile]
+        selection = {"schemaVersion": "latent.dotnet.runtime.v1", "profile": profile,
+            "declaredImports": declared, "emittedImports": actual,
+            "rawComponent": file_identity(raw, "raw-native-aot-component", 64 * 1024 * 1024),
+            "adapter": file_identity(adapter, runtime.ADAPTERS[profile][0].removeprefix("dotnet-"))}
+        write_json(command.output / "runtime-profile.json", selection)
         component = output / "component.wasm"
         from tools.dotnet_guest.compatibility import inspect as inspect_runtime
+        self.runtime = adapter
         inspect_runtime(self, raw)
-        self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", self.runtime, "-o", component)
+        self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter, "-o", component)
         self.run("validate", self.wasm, "validate", component)
+        final = interface_names(json.loads(self.run("runtime-final-wit", self.wasm,
+            "component", "wit", component, "--json")))["imports"]
+        if not set(final) <= set(declared):
+            raise ValueError("runtime adapter introduced undeclared authority:" +
+                             ",".join(sorted(set(final) - set(declared))))
         surface = self.run("surface", self.wasm, "component", "wit", component).decode()
         if "import wasi:" in surface or "wasi_snapshot_preview1" in surface:
             raise ValueError("ambient WASI import survived the closed runtime composition")
         (output / "component.wit").write_text(surface, encoding="utf-8")
         return component, {"bindings": receipt, "capabilities": facades,
+            "runtimeProfile": selection,
             "filesDigest": digest(json.dumps(receipt["outputs"], sort_keys=True).encode())}
 
     def check_unchanged(self):
         if tree_identity(self.roots) != self.before:
             raise ValueError("observed .NET compiler inputs changed during build")
         after = [file_identity(path, name) for name, path in (
-            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen), ("closed-runtime", self.runtime),
-            ('component-composer', self.wac))]
+            ("dotnet", self.dotnet), ("wasm-tools", self.wasm), ("wit-bindgen", self.bindgen),
+            *((runtime.ADAPTERS[name][0].removeprefix("dotnet-"), path)
+              for name, path in self.runtimes.items()), ('component-composer', self.wac))]
         if after != self.materials:
             raise ValueError(".NET compiler or runtime adapter changed during build")
         if self.isolation:

@@ -11,6 +11,7 @@ For current runtime behavior, use [the architecture overview](../architecture/ov
 - [Native release gate](native-release-gate.md): installation and release qualification.
 - [Website publication](website-publication.md): building and deploying the reviewed site.
 - [Roadmap](../roadmap.md): planned work and dependency order.
+- [NativeAOT standard HTTP implementation](dotnet-standard-http.md): source profiles, ownership and outstanding component qualification.
 
 ## Historical reports
 

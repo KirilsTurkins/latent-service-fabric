@@ -165,6 +165,22 @@ bench = false
 doc = false
 
 [[example]]
+name = "dotnet-http-runtime"
+path = "examples/dotnet_http_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "dotnet-activation-runtime"
+path = "examples/dotnet_activation_runtime.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
 name = "tutorial-greeting"
 path = "examples/tutorial_greeting/component.rs"
 crate-type = ["cdylib"]
