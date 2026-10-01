@@ -95,6 +95,9 @@ pub(super) async fn resume_with_current_authority(
     let request = request(&observed, "approved-restored-resume");
     let mut revoked = fixture.rule.clone();
     revoked.enabled = false;
+    revoked.policy_revision = revoked.policy_revision.checked_add(1).unwrap();
+    let mut enabled = fixture.rule.clone();
+    enabled.policy_revision = revoked.policy_revision.checked_add(1).unwrap();
     fixture.authority.publish(revoked).unwrap();
     assert_eq!(
         source
@@ -109,7 +112,7 @@ pub(super) async fn resume_with_current_authority(
         HistoryStatus::ReconciliationRequired
     );
     assert_eq!(endpoint.counter(), 1);
-    fixture.authority.publish(fixture.rule.clone()).unwrap();
+    fixture.authority.publish(enabled).unwrap();
     // Backward local time does not expire identity/history or permit resume.
     fixture.clock.0.store(99, Ordering::SeqCst);
     assert_eq!(
