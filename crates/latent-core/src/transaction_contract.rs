@@ -295,7 +295,7 @@ mod tests {
             assert_eq!(value.validate(), Err(ContractError::InvalidPresentValue));
         }
         value.media_type = "application/octet-stream".into();
-        value.metadata = vec![("x".into(), "".into()), ("x".into(), "a".into())];
+        value.metadata = vec![("x".into(), String::new()), ("x".into(), "a".into())];
         assert_eq!(value.validate(), Err(ContractError::Duplicate));
     }
 

@@ -266,7 +266,7 @@ state/effects Clippy passed, including four deterministic physical recovery
 schedules. A fifth focused portable schedule passed after adding isolation from
 an ordinary paused native destructor. They demonstrate ordinary saturation, retained detached buffers,
 finite recovery caps and unavailable/invalid configuration, and read progress
-past an actual live writer without a second write. The fifth registered case
+past an actual live writer without a second write. The sixth registered case
 uses the real protected Linux engine and verifies the committed row while all
 three ordinary workers and their queue are paused. Its Linux execution is pending
 the shared Docker filesystem recovery. This admission port does not by itself
