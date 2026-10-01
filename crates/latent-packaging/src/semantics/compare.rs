@@ -70,8 +70,7 @@ pub(super) fn worlds(
             .imports
             .get(name)
             .ok_or_else(|| incompatible("component-world-identity-mismatch"))?;
-        let profile = latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(name)
+        let profile = super::host::specification(name)
             .ok_or_else(|| incompatible("unsupported-host-import"))?;
         compare.asynchronous = profile.asynchronous;
         compare.resources = profile.resource_types();

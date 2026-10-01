@@ -30,8 +30,8 @@ use latent_core::{
     RouteGeneration,
 };
 use latent_manifest::{
-    DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidator, ManifestViolation,
-    Phase1ManifestValidator,
+    DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidationProfile,
+    ManifestValidator, ManifestViolation,
 };
 use latent_routing::{
     InvocationTarget, ResolvedBinding, ResolvedRevision, RouteCompiler, RouteResolver,
@@ -72,6 +72,8 @@ impl latent_routing::ActivationCatalogSource for DirectoryDeploymentRepository {
 /// Bounds retained desired state, serialized state, and weighted index entries.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DirectoryDeploymentRepositoryConfig {
+    /// Trusted host selection; current runtime and publication checks still apply.
+    pub manifest_profile: latent_manifest::ManifestValidationProfile,
     pub max_deployments: usize,
     pub max_state_bytes: usize,
     pub max_route_entries: usize,
@@ -84,6 +86,7 @@ pub struct DirectoryDeploymentRepositoryConfig {
 impl Default for DirectoryDeploymentRepositoryConfig {
     fn default() -> Self {
         Self {
+            manifest_profile: latent_manifest::ManifestValidationProfile::default(),
             max_deployments: 100_000,
             max_state_bytes: 64 * 1024 * 1024,
             max_route_entries: 1_000_000,
@@ -1066,14 +1069,24 @@ impl RouteResolver for PinnedRouteResolver {
 pub fn deployment_revision_id(
     deployment: &DeploymentManifest,
 ) -> Result<RevisionId, PlatformError> {
-    deployment_revision_id_observed(deployment, &mut Work::default())
+    deployment_revision_id_with_profile(deployment, ManifestValidationProfile::default())
+}
+
+/// Descriptive revision hashing under an explicit trusted compatibility profile.
+/// The original deployment bytes and every identity/precondition remain bound.
+pub fn deployment_revision_id_with_profile(
+    deployment: &DeploymentManifest,
+    profile: ManifestValidationProfile,
+) -> Result<RevisionId, PlatformError> {
+    deployment_revision_id_observed(deployment, &mut Work::default(), profile)
 }
 
 fn deployment_revision_id_observed(
     deployment: &DeploymentManifest,
     work: &mut Work,
+    profile: ManifestValidationProfile,
 ) -> Result<RevisionId, PlatformError> {
-    Phase1ManifestValidator
+    profile
         .validate_deployment(deployment)
         .map_err(manifest_error)?;
     let mut identity = deployment.clone();

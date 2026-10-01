@@ -80,6 +80,8 @@ pub struct PackagingLimits {
     pub package: PackageLimits,
     pub semantics: SemanticLimits,
     pub sbom: SbomLimits,
+    /// Trusted build/admission configuration; never supplied by package metadata.
+    pub manifest_profile: latent_manifest::ManifestValidationProfile,
 }
 
 impl PackagingLimits {
