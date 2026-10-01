@@ -19,3 +19,15 @@ Captured compilation requires the managed Linux host with Bubblewrap and the pin
 The existing Wasm target and panic-abort profile remain authoritative. This ingestion path does not qualify a new standard-library, threading, executor or networking implementation; those changes require the exact runtime/profile and actual component evidence. Source-only builds retain their existing behavior. Final WIT inspection, signing/admission and invocation budgets remain independent of successful capture. The builder binds `application-dependencies.json`, `cargo-inputs.json` and `rust-compiler-inputs.json` and rechecks them before accepting the component.
 
 Current controls cover path relocation, graph closure, executable denial, owned offline Cargo configuration and native source-only regressions. Cold resolver, signed third-party/transitive/resource execution and the full panic/fuel/cancellation/runtime matrix still require retained actual qualification receipts.
+
+When captured application build scripts or proc macros are present, the first
+build retains `executable-input-approval-request.json` and fails before executing
+them. Review its exact source, recipe, compiler distribution, executable graph and
+namespace specification, then pass its `identity` with `--executable-approval` on
+the standalone build. For the packaged frontend, add the same flag and identity
+to the maintained Rust adapter's `build.argv` in `latent.project.json`, then run
+the existing `dev trust` and `dev build` commands. The changed argv changes recipe
+trust and cache identity; the compiler independently recalculates the request and
+rejects a stale or mismatched identity. Approval is not inherited from capture,
+package names, a previous source snapshot or ordinary recipe trust. Unsupported
+frontend adapters reject this flag before any build execution.
