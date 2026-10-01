@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.composition.support.v1",
   "inputVersion": "latent.composition.v1",
-  "sourceRevision": "e7eb1e4e6f44fb5a38d7d41c87ad99a21a0b97fb",
+  "sourceRevision": "d4cf6b74a1a89c7f780bd0b6ec903aeca40ce4c5",
   "selectionRule": "first-matching-row-after-closed-input-and-Java-interface-ambiguity-checks",
   "unlistedCombination": "selected-combination-needs-source-matched-owner-evidence",
   "unlistedState": "untested",
@@ -98,6 +98,11 @@
       "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",
       "digest": "sha256:2f062d6af24f7dd09d94060c766705d8398cab549c71885db5e51269e7a6094e",
       "commit": "9c8d836c6ac950c27b2d8add4fbd7e150fd55c7d"
+    },
+    "browser-response-ownership": {
+      "path": "contracts/http/browser-response-ownership-v1.json",
+      "digest": "sha256:b00795bf709c37d153af0bd6d445415ba6bd2fb47310b4c47ee1c3d2d951e2a3",
+      "commit": "241c3bb61c42e37cb70f878edc74bbe1009e94df"
     }
   },
   "axes": {
@@ -197,7 +202,8 @@
   "immutableTargetTypes": {
     "capsule": {
       "publicationId": "publication:sha256:64-lowercase-hex",
-      "revision": "revision-v1:sha256:64-lowercase-hex"
+      "revision": "revision-v1:sha256:64-lowercase-hex",
+      "deploymentGeneration": "positive-u64-decimal-string"
     },
     "static": {
       "publicationId": "publication:sha256:64-lowercase-hex",
@@ -239,7 +245,11 @@
       "maximumNames": 64,
       "maximumNameBytes": 64,
       "dynamicOutputRequiresExecution": true,
-      "sourceCommit": "6bea7e454e5b8f5bb9c450244804a8d27f526742"
+      "sourceCommit": "241c3bb61c42e37cb70f878edc74bbe1009e94df",
+      "tableDigest": "sha256:b00795bf709c37d153af0bd6d445415ba6bd2fb47310b4c47ee1c3d2d951e2a3",
+      "sources": [
+        "browser-response-ownership"
+      ]
     }
   },
   "rows": [

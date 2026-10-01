@@ -26,6 +26,9 @@ values. Recognition by the host ABI does not install a provider or grant a call.
 Provider selections use the actual provider profile, configuration digest and
 optional epoch, plus exact binding identity/digest and selected policy identities.
 No registration ID, credential, principal or deployment protocol is invented.
+Capsule targets pin a positive `deploymentGeneration` alongside the original
+deployment ID, publication and revision. A refreshed deployment under the same
+name cannot satisfy the old selection. Static targets pin their web generation.
 
 The schema is complemented by
 [the stdlib semantic helper](../../tools/dev_workflow/composition_contract.py):

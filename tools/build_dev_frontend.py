@@ -70,7 +70,7 @@ def preflight_smoke_cases() -> tuple:
         imports=["latent:context/context@0.1.0"],
         exports=[{"contract": "example:packaging/app@1.0.0", "functions": ["run"]}],
         target={"service": "packaging-test", "route": "packaging-test", "revision": "revision-v1:" + identity,
-            "publicationId": "publication:" + identity, "deploymentId": "packaging-test",
+            "publicationId": "publication:" + identity, "deploymentId": "packaging-test", "deploymentGeneration": "1",
             "contract": "example:packaging/app@1.0.0", "function": "run"},
         budget={name: None if name == "wallTimeLimitMillis" else "1" for name in (
             "cpuFuel", "memoryBytes", "wallTimeLimitMillis", "childCalls", "outboundRequests",

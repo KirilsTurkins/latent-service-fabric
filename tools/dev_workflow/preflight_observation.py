@@ -178,6 +178,7 @@ def _snapshot(value, component, tenant):
 def _component(component, snapshot, value, checks, add):
     identity = component["target"]
     selected = [row for row in snapshot["candidates"] if row["deploymentId"] == identity["deploymentId"]
+                and row["deploymentGeneration"] == identity["deploymentGeneration"]
                 and row["revisionId"] == identity["revision"] and row["publication"] is not None
                 and row["publication"]["id"] == identity["publicationId"]]
     if len(selected) != 1:

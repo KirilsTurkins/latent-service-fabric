@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bundle four canonical preflight contracts as immutable ZIP and PyInstaller data snapshots; execute finite actual native structural preflight smoke outside checkout without controller state; preserve every existing build and license obligation.",
+  "reviewReason": "Retain all build obligations and three real native structural preflight smokes; the context capsule smoke now includes its original positive deployment generation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "89423bc82d7e7a634a3daae3e955dc9a1f5cfe8b7462482b391b122933b1b87b"
+  "sha256": "591b59f4235b885584f677504d743eac2acf56ec6c616e906bcb2d5e394faed0"
 }

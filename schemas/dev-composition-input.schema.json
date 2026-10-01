@@ -63,10 +63,11 @@
     },
     "target": {
       "type": "object", "additionalProperties": false,
-      "required": ["service", "route", "revision", "publicationId", "deploymentId", "contract", "function"],
+      "required": ["service", "route", "revision", "publicationId", "deploymentId", "deploymentGeneration", "contract", "function"],
       "properties": {
         "service": {"$ref": "#/$defs/identity"}, "route": {"$ref": "#/$defs/identity"}, "revision": {"$ref": "#/$defs/revisionId"},
         "publicationId": {"$ref": "#/$defs/publicationId"}, "deploymentId": {"$ref": "#/$defs/identity"},
+        "deploymentGeneration": {"$ref": "#/$defs/positiveU64"},
         "contract": {"$ref": "#/$defs/contract"}, "function": {"$ref": "#/$defs/identity"}
       }
     },

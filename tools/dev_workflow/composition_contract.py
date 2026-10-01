@@ -93,6 +93,9 @@ def validate_semantics(value):
         else:
             require(re.fullmatch(r"revision-v1:sha256:[0-9a-f]{64}", item["target"]["revision"]),
                     "preflight-revision-identity-required")
+            _uint(item["target"]["deploymentGeneration"])
+            require(int(item["target"]["deploymentGeneration"]) > 0,
+                    "preflight-deployment-generation-required")
         _unique(item["imports"], "preflight-duplicate-import")
         _unique((row["contract"] for row in item["exports"]), "preflight-duplicate-export")
         for exported in item["exports"]:

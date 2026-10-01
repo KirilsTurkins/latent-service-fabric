@@ -89,11 +89,11 @@ def _component(value):
     require(value["witShape"] in {"nested-values-v1", "static-assets-v1", "resources", "futures", "streams", "unknown"},
             "preflight-unsupported-shape-selection")
     selector = {"publicationId", "webGeneration"} if static else {
-        "service", "route", "revision", "publicationId", "deploymentId", "contract", "function"}
+        "service", "route", "revision", "publicationId", "deploymentId", "deploymentGeneration", "contract", "function"}
     target = members(value["target"], selector)
     for name, selected in target.items():
-        if name == "webGeneration":
-            require(uint(selected) > 0, "preflight-static-generation-required")
+        if name in {"webGeneration", "deploymentGeneration"}:
+            require(uint(selected) > 0, "preflight-target-generation-required")
         else:
             contract(selected) if name == "contract" else atom(selected)
     imports = _array(value["imports"], 64, "preflight-import-count")

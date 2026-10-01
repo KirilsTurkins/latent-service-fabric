@@ -24,7 +24,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -36,7 +36,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -48,7 +48,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -60,7 +60,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -72,7 +72,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -84,7 +84,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -96,7 +96,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -108,7 +108,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -120,7 +120,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -132,7 +132,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -144,7 +144,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -156,7 +156,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -168,7 +168,7 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     },
@@ -180,13 +180,13 @@
       "decorators": [],
       "skipSites": [],
       "fixtureGuards": [
-        "module:setup-sha256:d442aed33210dd34aafc259036b46cc32a633efecacf2d49f6f6366787263c90",
+        "module:setup-sha256:691874211360220f3a957f053b83d142c5346eb613f01c6ddc0157603db2b242",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_composition_preflight.py",
-  "reviewReason": "Explicit review of bounded typeImports fixture data; all fourteen historical cases, class fixtures and no-skip guards retained",
+  "reviewReason": "Explicit review: pin the original positive deployment generation in the shared input fixture; retain every historical case, class fixture, decorator and no-skip guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

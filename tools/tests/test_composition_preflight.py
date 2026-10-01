@@ -26,7 +26,7 @@ def component(identifier="domain", *, imported=False):
     return {"id": identifier, "packageDigest": sha("1"), "componentDigest": sha("2"), "releaseDigest": sha("2"),
             "contractMetadataDigest": sha("3"), "language": "java", "witShape": "nested-values-v1", "publicationKind": "capsule",
             "target": {"service": "examples/math", "route": "math-route", "revision": "revision-v1:" + sha("4"),
-                       "publicationId": "publication:" + sha("5"), "deploymentId": "math-deployment", "contract": MATH, "function": "add"},
+                       "publicationId": "publication:" + sha("5"), "deploymentId": "math-deployment", "deploymentGeneration": "4", "contract": MATH, "function": "add"},
             "imports": [SERVICE] if imported else [], "exports": [{"contract": MATH, "functions": ["add"]}],
             "budget": {name: "100" for name in preflight.BUDGETS}, "engineConfigurationDigest": ENGINE}
 
@@ -216,6 +216,7 @@ class CompositionPreflight(unittest.TestCase):
 
     def test_stale_publication_package_and_actual_surface_fail(self):
         changes = [lambda row: row.update(publication={"tenant": "examples", "id": "publication:" + sha("b")}),
+                   lambda row: row.update(deploymentGeneration="5"),
                    lambda row: row.update(packageDigest=sha("b")),
                    lambda row: row["preparation"].update(exports=[{"contract": MATH, "function": "subtract"}])]
         for change in changes:

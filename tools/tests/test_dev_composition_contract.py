@@ -24,7 +24,7 @@ def composition():
     component = {"id": "domain", "packageDigest": SHA, "componentDigest": SHA, "releaseDigest": SHA,
         "contractMetadataDigest": SHA, "language": "java", "witShape": "nested-values-v1", "publicationKind": "capsule",
         "target": {"service": "examples/domain", "route": "domain", "revision": "revision-v1:" + SHA,
-            "publicationId": "publication:" + SHA, "deploymentId": "domain", "contract": "examples:domain/api@1.0.0", "function": "run"},
+            "publicationId": "publication:" + SHA, "deploymentId": "domain", "deploymentGeneration": "1", "contract": "examples:domain/api@1.0.0", "function": "run"},
         "imports": [], "exports": [{"contract": "examples:domain/api@1.0.0", "functions": ["run"]}],
         "budget": {name: None if name == "wallTimeLimitMillis" else "0" for name in BUDGET_FIELDS}}
     return {"schemaVersion": "latent.composition.v1", "tenant": "examples",
@@ -117,6 +117,8 @@ class DevCompositionContractTests(unittest.TestCase):
             lambda row: row["components"][0].update(publicationKind="web-application"),
             lambda row: row["components"][0]["target"].update(publicationId=SHA),
             lambda row: row["components"][0]["target"].update(revision="latest"),
+            lambda row: row["components"][0]["target"].update(deploymentGeneration="0"),
+            lambda row: row["components"][0]["target"].pop("deploymentGeneration"),
             lambda row: row["nodeProfile"].update(javaGuest=None),
         ):
             bad = composition()
