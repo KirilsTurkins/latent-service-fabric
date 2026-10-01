@@ -16,7 +16,9 @@ python3 tools/validate_repository.py
 python3 tools/validate_foundation.py
 # Unit fixtures own temporary inputs; they can overlap the independent native
 # contract build. Always join the complete suite, including on a build failure.
-python3 -m unittest discover -s tools/tests &
+# Bash background jobs inherit SIGINT ignored. Restore Python's foreground
+# handler so the process-ownership suite exercises real interrupt cleanup.
+python3 -c 'import runpy, signal; signal.signal(signal.SIGINT, signal.default_int_handler); runpy.run_module("unittest", run_name="__main__")' discover -s tools/tests &
 python_suite_pid=$!
 trap 'validation_status=$?; wait "$python_suite_pid" || validation_status=$?; exit "$validation_status"' EXIT
 

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/validate_contracts.sh",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Join every Python case and scope out only the new correctness-build environment for the frozen measurement collector; preserve its inherited-override rejection policy.",
+  "reviewReason": "Restore foreground SIGINT semantics for the complete background Python suite; join every case and preserve the frozen collector build environment.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6785eb07fa34437e3fb450d8a5a81de9ec339de03f73c2c742acbe2d6fb228ad"
+  "sha256": "39ea3b171b9faed4e3bb2dea020ba1110b9e54e4af3e82cd37aaaa3c0096ca30"
 }
