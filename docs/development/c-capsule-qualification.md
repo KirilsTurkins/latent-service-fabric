@@ -156,7 +156,34 @@ first maintained replay passed its controls but retained an unconfirmed
 deadline receipt; the corrected receipt classification and final replay remain
 separate observations.
 
-This local experiment did not execute the full maintained SDK gate or all six
-printed guide steps. Those stages remain required at the delivery source,
-together with current remote CI and complete #684 acceptance reconciliation.
-No release was published.
+Those earlier component/control experiments did not execute the full maintained
+SDK gate or all six printed guide steps. A later complete maintained replay at
+`6f8d5537383d238fa795eba4435505bb7912e8e7` passed in 332.404 seconds: all six
+source/static component builds, all ten guest SDK capability/ownership cases,
+both normal signed-node workflows with 27 invocations each, and every one of
+the six printed Bash guide steps. The native tools were built from that same
+source; all 7,292 tracked frozen files were checked, and the maintained helper
+inputs and native binary digests remained equal before and after qualification.
+The guide completed in 24.392 seconds. The machine-readable observation retains
+the full qualification, source, tool, binary, component, node and guide receipt
+identities, together with each successful command's duration and exit status.
+
+This complete replay reused the preceding attempt's owned native build cache
+after checking the exact source inputs. Every maintained command ran again;
+the original 900-second overall and 600-second command limits remained in
+force. It used two CPUs, 4 GiB and 512 process slots. Unlike the earlier
+release-only node experiments, these node workflows ran through the maintained
+compiler host with explicit grants and normal signed/admitted release inputs.
+Compiler build stages retained their ordinary capture isolation and offline
+policy.
+
+Both earlier complete attempts remain recorded. The first stopped before native
+compilation because the copied offline registry index lacked `base64`; an
+explicit locked acquisition populated only the owned cache. The second passed
+the six component builds, all ten SDK tests and the source-library signed node,
+then exhausted the original overall deadline at `static-library-sign-demo`.
+Neither failure changed a test, tool pin or deadline.
+
+Current remote CI and complete #684 acceptance reconciliation remain required,
+including the full C dependency edit/test/watch and private capture workflows.
+No release was published; newcomer review #345 remains separate.

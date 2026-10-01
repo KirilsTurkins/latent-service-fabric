@@ -738,9 +738,346 @@
     }
   ],
   "remainingAcceptance": [
-    "full-maintained-SDK-and-printed-guide-qualification-at-delivery-source",
     "all-current-remote-CI",
-    "parent-issue-acceptance-reconciliation"
+    "parent-issue-acceptance-reconciliation",
+    "complete-C-authoring-dependency-edit-test-watch-and-private-capture-flows"
   ],
-  "releasePublication": "not-performed"
+  "releasePublication": "not-performed",
+  "fullMaintainedQualification": {
+    "status": "passed-at-recorded-inputs",
+    "source": "6f8d5537383d238fa795eba4435505bb7912e8e7",
+    "sourceIdentityDigest": "sha256:69c9fe7cd4b42a439e959e0acd712456b7144fcb9f5191e43d9895e63a33a530",
+    "frozenArchive": {
+      "sha256": "sha256:5fe56783b5807cd2e7c72b0940c73c2c578acef271a3ac5c1a418071128c96dc",
+      "bytes": 551424000,
+      "checkedTrackedFiles": 7292
+    },
+    "receipt": {
+      "sha256": "sha256:17448f526375e0d9cac0c225b28ed7b1bec33a8d4f89bbe821da961eebf1d553",
+      "bytes": 19031
+    },
+    "completionReceipt": {
+      "sha256": "sha256:d290adc760825ae79d0c1717525d0467963a9222af117381f04761b83387f2f9",
+      "bytes": 516
+    },
+    "seconds": 332.403583,
+    "nativeBuildCache": "prior-owned-exact-source-cache",
+    "allMaintainedCommandsReexecuted": true,
+    "commandLimits": {
+      "overallSeconds": 900,
+      "perCommandSeconds": 600
+    },
+    "tools": [
+      {
+        "name": "cargo",
+        "digest": "sha256:828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+        "size": 42839824
+      },
+      {
+        "name": "rustc",
+        "digest": "sha256:d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+        "size": 645000
+      },
+      {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      }
+    ],
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:1d9cbcc4cbf735793b71ed419c268a3eacd38d83d10b98586bb13a68f26005c0",
+        "bytes": 63896216
+      },
+      "latentd": {
+        "sha256": "sha256:75abaf78f4ffbbb609e04b824df94b702d4d59441a5fd88075d147a3174ca96d",
+        "bytes": 165886640
+      },
+      "examples/package": {
+        "sha256": "sha256:a8b55844b16fbd69313380bfb4af21ce5215320f41c48a27ede80645dd7d614b",
+        "bytes": 19596104
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:d1ecf87536744cae83375197e995f670a22b0822940f1e446e0aea2bea8a1a66",
+        "bytes": 7929280
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:0a7f494a937f846ee9c591c9bf973a8d113115b45ce288b3e2f15a672ae111d2",
+        "bytes": 24531648
+      }
+    },
+    "sourceInputs": {
+      "before": {
+        "sha256": "sha256:69c9fe7cd4b42a439e959e0acd712456b7144fcb9f5191e43d9895e63a33a530",
+        "bytes": 25877
+      },
+      "after": {
+        "sha256": "sha256:69c9fe7cd4b42a439e959e0acd712456b7144fcb9f5191e43d9895e63a33a530",
+        "bytes": 25877
+      },
+      "unchanged": true
+    },
+    "builds": {
+      "greeting": {
+        "componentDigest": "sha256:719f53b92257f0cf6680719685ec18a21c26451b10f1212a7ddc82cdc0242313",
+        "buildSeconds": 31.834027,
+        "packageAssembled": true
+      },
+      "word-count": {
+        "componentDigest": "sha256:34a514b02ef2f161512ff2f2b392570a22c4783afabc00e9091c80e5a260ca5e",
+        "buildSeconds": 22.027207,
+        "packageAssembled": true
+      },
+      "shipping": {
+        "componentDigest": "sha256:ecb9fdd2bfec2e4fad9d6b9ae5a4e7f88740200047f1872431b966d0a50d3ebc",
+        "buildSeconds": 24.393748,
+        "packageAssembled": true
+      },
+      "http-status": {
+        "componentDigest": "sha256:88f6b5c21b01873b8a7a40c649012331cfdb03b5a7fd264c5c1c24222ada48e8",
+        "buildSeconds": 26.813618,
+        "packageAssembled": true
+      },
+      "recovery": {
+        "componentDigest": "sha256:4739b6508b6d939c61476905fa4cbf79dead333c04c02e04ff2eca37573d0f8e",
+        "buildSeconds": 27.582325,
+        "packageAssembled": true
+      },
+      "greeting-static": {
+        "componentDigest": "sha256:021f341a0b3f09581275c7e4b5933fea14f44c641b585bc9de7e73780bc83034",
+        "buildSeconds": 33.356196,
+        "packageAssembled": true
+      }
+    },
+    "applicationDependencies": {
+      "formatVersion": 1,
+      "thirdParty": "zserge/jsmn/1.1.0",
+      "thirdPartyDigest": "sha256:1ed6154dedf009212a08a397e9c4ed50a0ce31d5a8301bb294e137ae3188c13b",
+      "developerOwned": "developer-owned/qualification/1",
+      "directApplicationCalls": [
+        "zserge/jsmn/1.1.0",
+        "developer-owned/qualification/1"
+      ],
+      "transitiveCalls": [
+        "developer-owned/qualification/1 -> zserge/jsmn/1.1.0"
+      ],
+      "resourceDigest": "sha256:fc9519a8958152b8d82a052b717393ab625fafa402213920ef6d1fbf6f4f9a68",
+      "offlineOriginals": "unavailable-after-capture",
+      "sourceDigest": "sha256:7255cfd5f1c44aca47828ea9fe2f987b5afa33c9afca00a025fe728733675dc6"
+    },
+    "staticApplicationDependencies": {
+      "formatVersion": 1,
+      "archiveProfileDigest": "sha256:501189ce10e78c6c0a7a9ffe6e4ec0877c76968263b5de52753f205b8b4fe092",
+      "sourceLibraryInventoryDigest": "sha256:868e92dbf4f39fa93b4e41f7464b9989bd9ecb5119a7027626ae0d4e46f4b344",
+      "libraryIdentity": "outside-c-catalogue/library/2026.10",
+      "archiveDigest": "sha256:f4cf905ddb989557d68080065cc303c8ce715750609b2cf90b0d70b42b57c7c1",
+      "lockDigest": "sha256:b060695f9137cc368d6cc415619d20bcec7e437c11dee88a564b0cdd19abf187",
+      "originalHeaderAndResource": "unavailable-after-capture",
+      "directApplicationCalls": [
+        "zserge/jsmn/1.1.0",
+        "outside-c-catalogue/library/2026.10"
+      ]
+    },
+    "guestSdkTests": {
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0,
+      "cases": [
+        "all_rust_examples_are_exact_signed_phase2_packages",
+        "blob::rust_and_c_cancel_pending_import_without_refunding_another_owner",
+        "blob::rust_and_c_owned_chunks_closed_handles_abandonment_and_reuse",
+        "events::typed_event_receipt_denial_and_uncertainty_do_not_retry",
+        "http::buffered_http_success_and_denial_use_the_real_provider",
+        "metrics::generated_metric_kinds_and_typed_failure",
+        "random::generated_random_binding_and_reused_cell",
+        "secrets::secret_owner_typed_denial_cancellation_and_cell_recovery",
+        "service::typed_service_outcomes_use_node_admission_and_reused_cells",
+        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop"
+      ],
+      "stdout": {
+        "sha256": "sha256:8cb7ae6d43c7b47f07e598ec411cf0f879d19aad739e38a7c0dbc2844347627b",
+        "bytes": 83538
+      },
+      "stderr": {
+        "sha256": "sha256:27ddab15ac74290887a2492c84fff44f72dcdccb0e09a071da055179f0f2b1d6",
+        "bytes": 171
+      }
+    },
+    "signedNodes": {
+      "source": {
+        "status": "passed",
+        "invocations": 27,
+        "categories": {
+          "success": 18,
+          "declared-error": 4,
+          "platform-failure:guest-trap": 1,
+          "platform-failure:resource-exhausted": 2,
+          "platform-failure:deadline-exceeded": 1,
+          "platform-failure:cancelled": 1
+        },
+        "liveOwnerCounters": {
+          "activeConnections": 0,
+          "activeRpcs": 0,
+          "activeControlJobs": 0,
+          "activeActivations": 0,
+          "cancellationRegistrations": 0,
+          "observerCorrelations": 0,
+          "quotaReservations": 0,
+          "queuedReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "activeLeases": 0,
+          "queuedActivations": 0,
+          "quarantinedCells": 0,
+          "activeBackendInvocations": 0,
+          "instanceReservations": 0,
+          "preparingComponents": 0,
+          "preparingSourceBytes": 0,
+          "preparingMetadataBytes": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveTemporaryBuffers": 0,
+          "liveCancellationProbes": 0
+        },
+        "cleanShutdown": true,
+        "epochHelperJoined": true,
+        "telemetryHistory": {
+          "retainedEntries": 844,
+          "flushed": true
+        },
+        "receipt": {
+          "sha256": "sha256:b0bc8164604110b26dd9b6f71399f76773e01562160b88dece550dc2fe588901",
+          "bytes": 248801
+        }
+      },
+      "static": {
+        "status": "passed",
+        "invocations": 27,
+        "categories": {
+          "success": 18,
+          "declared-error": 4,
+          "platform-failure:guest-trap": 1,
+          "platform-failure:resource-exhausted": 2,
+          "platform-failure:deadline-exceeded": 1,
+          "platform-failure:cancelled": 1
+        },
+        "liveOwnerCounters": {
+          "activeConnections": 0,
+          "activeRpcs": 0,
+          "activeControlJobs": 0,
+          "activeActivations": 0,
+          "cancellationRegistrations": 0,
+          "observerCorrelations": 0,
+          "quotaReservations": 0,
+          "queuedReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "activeLeases": 0,
+          "queuedActivations": 0,
+          "quarantinedCells": 0,
+          "activeBackendInvocations": 0,
+          "instanceReservations": 0,
+          "preparingComponents": 0,
+          "preparingSourceBytes": 0,
+          "preparingMetadataBytes": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveTemporaryBuffers": 0,
+          "liveCancellationProbes": 0
+        },
+        "cleanShutdown": true,
+        "epochHelperJoined": true,
+        "telemetryHistory": {
+          "retainedEntries": 844,
+          "flushed": true
+        },
+        "receipt": {
+          "sha256": "sha256:7eefd50df2efe8bd6a3db1592ec00bcce19018e690a6dd5939e78391277cbd4d",
+          "bytes": 248828
+        }
+      }
+    },
+    "nodeEnvironment": "maintained compiler host, normal signed/admitted node with explicit provider grants",
+    "guide": {
+      "status": "passed",
+      "sourceDigest": "sha256:75adb605b2f094837deaddfe13d0b28b5a3b452351c1397e7a2d735e4d7eda00",
+      "bashSteps": 6,
+      "commands": [
+        {
+          "stage": "printed-guide",
+          "exitCode": 0,
+          "seconds": 24.392028
+        }
+      ]
+    },
+    "commands": [
+      {
+        "stage": "host-build",
+        "exitCode": 0,
+        "seconds": 0.512301
+      },
+      {
+        "stage": "c-scope-compile",
+        "exitCode": 0,
+        "seconds": 18.239821
+      },
+      {
+        "stage": "c-scope-runtime",
+        "exitCode": 0,
+        "seconds": 0.011741
+      },
+      {
+        "stage": "build-sdk-guests",
+        "exitCode": 0,
+        "seconds": 27.592279
+      },
+      {
+        "stage": "sdk-runtime-tests",
+        "exitCode": 0,
+        "seconds": 32.062717
+      },
+      {
+        "stage": "sign-demo",
+        "exitCode": 0,
+        "seconds": 0.809782
+      },
+      {
+        "stage": "static-library-sign-demo",
+        "exitCode": 0,
+        "seconds": 0.901249
+      }
+    ],
+    "retainedEarlierAttempts": [
+      {
+        "attempt": 1,
+        "stage": "host-build",
+        "outcome": "offline-native-index-missing-base64-before-compilation",
+        "receipt": {
+          "sha256": "sha256:9083a9cb4d197152b47d5fd34c16a3164a59b9ad91d24ffca4ecec7ac783b468",
+          "bytes": 312
+        },
+        "qualificationReceipt": {
+          "sha256": "sha256:7861b766cf08ed940ea324c2e98f4284ca8080034cc5772f9fdaa517c106aea3",
+          "bytes": 931
+        }
+      },
+      {
+        "attempt": 2,
+        "stage": "static-library-sign-demo",
+        "outcome": "original-overall-deadline-exhausted-after-sdk-and-source-node-pass",
+        "receipt": {
+          "sha256": "sha256:bd17495c0b1b3efbeb9620332f4beb521e1fad45b74fc10b772e8ecef2cfe2f5",
+          "bytes": 313
+        },
+        "qualificationReceipt": {
+          "sha256": "sha256:42391baeae9717abe573af0b7676245712a4ad7efbc050934bc032b688ad82a3",
+          "bytes": 17883
+        }
+      }
+    ],
+    "releasePublication": "not-performed",
+    "newcomerReview345": "pending-human-review"
+  }
 }
