@@ -2,11 +2,78 @@
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from tools import build_java_guest_capsules as sdk
 from tools import qualify_java_capsules as qualification
+from tools import qualify_java_fibers as fibers
+
+
+class ThrowableModelIntegrity(unittest.TestCase):
+    @staticmethod
+    def fixture(root):
+        compiler = SimpleNamespace(sdk=root / "sdk", directory=root / "compiler", run=Mock())
+        names = ("teavm-classlib", "teavm-core", "teavm-extension-spi", "teavm-interop",
+                 "teavm-relocated-libs-asm", "teavm-relocated-libs-asm-analysis",
+                 "teavm-relocated-libs-asm-commons", "teavm-relocated-libs-asm-tree", "teavm-relocated-libs-hppc")
+        artifacts, jars = [], []
+        for name in names:
+            raw = name.encode()
+            jar = compiler.directory / "gradle-home/caches/modules-2/files-2.1/org.teavm" / name / "0.15.0/hash" / (name + "-0.15.0.jar")
+            jar.parent.mkdir(parents=True)
+            jar.write_bytes(raw)
+            jars.append(jar)
+            artifacts.append({"path": "org/teavm/" + name + "/0.15.0/" + jar.name,
+                              "sha256": fibers.digest(raw), "size": len(raw)})
+        lock = compiler.sdk / "feasibility/dependencies.lock.json"
+        lock.parent.mkdir(parents=True)
+        lock.write_text(json.dumps({"artifacts": artifacts}))
+        return compiler, jars, lock
+
+    def test_changed_locked_jar_cannot_enter_host_model_compilation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = self.fixture(root)
+            jars[0].write_bytes(b"X" + jars[0].read_bytes()[1:])
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.throwable_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_missing_ambiguous_and_duplicate_tooling_fail_before_compilation(self):
+        for defect in ("missing", "ambiguous", "duplicate-lock"):
+            with self.subTest(defect=defect), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler, jars, lock = self.fixture(root)
+                if defect == "missing": jars[0].unlink()
+                elif defect == "ambiguous":
+                    duplicate = jars[0].parent.parent / "other-hash" / jars[0].name
+                    duplicate.parent.mkdir()
+                    duplicate.write_bytes(jars[0].read_bytes())
+                else:
+                    document = json.loads(lock.read_bytes())
+                    document["artifacts"][-1] = document["artifacts"][0]
+                    lock.write_text(json.dumps(document))
+                with self.assertRaises(ValueError): fibers.throwable_model_control(compiler, root / "model")
+                compiler.run.assert_not_called()
+
+    def test_model_uses_only_sdk_control_and_verified_tooling(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = self.fixture(root)
+            compiler.run.return_value = ("THROWABLE_INITIALIZATION_CONTROL PASS constructors=5;original-negative;"
+                "real-array-initializer;method-owners;layout-and-repeated-port-negatives;application-identity\n")
+            report = fibers.throwable_model_control(compiler, root / "model")
+            self.assertEqual(len(report["jarDigests"]), 9)
+            self.assertEqual(compiler.run.call_count, 2)
+            first, second = compiler.run.call_args_list
+            self.assertEqual(first.args[:3], ("throwable-model-compile", "javac", "-proc:none"))
+            self.assertEqual(first.args[-2:], (
+                compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java",
+                compiler.sdk / "fibers/conformance/compiler/ThrowableInitializationControl.java"))
+            self.assertEqual(second.args[-1], "dev.latent.guest.runtime.compiler.ThrowableInitializationControl")
 
 
 class PackagingTools(unittest.TestCase):

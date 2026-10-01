@@ -86,12 +86,10 @@ completion. A root-return mode supplies idle and pending pools without applicati
 shutdown glue. Every invocation checks real Store, broker, activation and cell
 reclamation. The unchanged application source runs all three modes in each of
 three separate reference-JDK processes; only the reference harness terminates its
-ordinary process-owned pools. The last attempted expanded executor component
-failed in its signed guest run. The subsequent monitor-continuation changes have
-not yet completed pinned component and signed-node execution; the executor and
-root-return modes remain unqualified. Reference-JDK success and successful
-component generation do not establish their guest behavior. Complete failed
-attempts are retained separately.
+ordinary process-owned pools. The expanded executor mode still fails in its
+signed guest run and root-return remains unqualified. Reference-JDK success and
+successful component generation do not establish their guest behavior. Complete
+failed attempts are retained separately.
 
 The retained expanded component `b15ce736` was replayed without changing its
 bytes or its original 10 billion fuel, 64 MiB and 120-second limits. A bounded
@@ -104,8 +102,24 @@ the prior source exposes the queued-work park, while 96 completed model
 activations settle their 256 original model owners once, and a busy pool still
 parks with its pending owners retained. These controls use synthetic host and
 continuation entry seams on JDK 25.0.3; they establish the pump ordering, not
-full guest thread or runtime qualification. Recompiling the pinned component and
-executing all original signed numeric modes after this repair remain pending.
+full guest thread or runtime qualification.
+
+The repaired SDK was then compiled through the unchanged pinned JDK 25.0.4.1,
+Gradle 9.1.0 and WASI SDK 29 tools. Component `2a541dcf` validates and the same
+application passes all nine reference-JDK numeric controls. A normal native
+runtime rebuilt from the exact source passes mode 0, but mode 1 traps after
+63,498 microseconds with 6,085,988 fuel and 9,373,512 peak bytes under the original
+limits. Private bounded numeric stack readers locate a NullPointerException in
+Throwable.addSuppressed during dispatch cleanup. The locked TeaVM classlib model
+confirms that all five real Throwable constructors omit the suppressed-array
+initializer which exists in their unused fakeInit counterparts. The SDK now
+initializes that exact maintained field in the real constructors, preserving the
+original class, methods and application symbols. Actual locked-model controls
+check the prior missing initialization, all five repaired constructor entries,
+unchanged method owners, layout drift and repeated-port rejection. These controls
+run on host JDK 25.0.3 and also belong to the maintained pinned fiber qualifier.
+The subsequent component rebuild and all original signed modes remain pending;
+the original exception masked by cleanup may still require a separate repair.
 
 The original thread-only pinned Linux debug experiment measured 9241560 bytes of activation peak
 memory in each run under the unchanged 67108864-byte ceiling. The first run

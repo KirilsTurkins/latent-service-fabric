@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Owned thread and pending executor controls retain original reference-JDK results and qualify source attribution independently of package directories",
+  "reviewReason": "Owned thread and executor controls preserve the original reference-JDK modes and run real locked Throwable constructor models with tooling integrity and unchanged application identities",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8f2f7118d6444f4ebaa6aed05144c7377217379af5b3d9d379cdf977a6358ede"
+  "sha256": "404f0da69de725721afac06a2b42b4a64ca2dda8418c176635a33d9555e94f49"
 }
