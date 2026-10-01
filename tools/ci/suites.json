@@ -4768,6 +4768,9 @@
         "protected_store::tests::validation::coherent_cross_family_validation_holds_readiness_and_exclusive_physical_owner",
         "protected_store::tests::validation::incoherent_logical_links_fail_before_ready_and_preserve_every_existing_row",
         "protected_store::tests::validation::unsupported_nonempty_logical_families_fail_readiness_without_data_reset",
+        "recovery::tests::actual_staging_and_completed_restore_guard_block_admission_and_original_namespace_dispatch",
+        "recovery::tests::recovery_guard_codec_refuses_unknown_phase_zero_proof_truncation_and_foreign_rows",
+        "recovery::tests::reviewed_global_guard_keeps_paused_history_and_current_scope_checks_independent",
         "session::tests::attempted_overwrites_reads_and_open_cursors_remain_bounded",
         "session::tests::blind_writers_and_delete_recreate_cannot_reuse_a_version",
         "session::tests::byte_limited_pages_require_continuation_and_never_omit_an_entry",
@@ -4818,7 +4821,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 114,
+      "minimumCases": 117,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
