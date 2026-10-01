@@ -148,6 +148,10 @@ class CacheIdentityTests(unittest.TestCase):
             "${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}")
         for option in ("cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
             self.assertIs(native["with"][option], False)
+        self.assertEqual(native["with"]["prefix-key"], "lsf-ci-dependencies-v3-contract-profiles")
+        self.assertIs(native["with"]["cache-targets"], False)
+        self.assertEqual(native["with"]["cache-directories"].splitlines(), [
+            "target/debug", "target/release", "target/wasm32-unknown-unknown", "target/wasm32-wasip2"])
 
     def test_ci_symbols_are_removed_without_disabling_correctness_guards(self):
         from tools.ci_lane_inventory import workflow_model
