@@ -677,6 +677,7 @@ class RepositoryMigrationTests(unittest.TestCase):
             ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": ["python3 tools/run_optimization_benchmarks.py --profile smoke"],
             ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": [
                 "npm run test:build", "npm run test:theme", "npm run test:examples", "npm run test:versions", "npm run test:discovery", 'wait "$versions_pid"', 'exit "$status"'],
+            ".github/workflows/docs-site.yml:website:Install the pinned test browser and its OS prerequisites": ["npm run browser:install"],
             ".github/workflows/typescript-guest.yml:boundary:Install pinned component validator": ['test "$(wasm-tools --version | cut -d \' \' -f 1,2)" = \'wasm-tools 1.254.0\''],
             ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": [
                 "cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go",
