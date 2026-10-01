@@ -1,5 +1,37 @@
 use super::*;
 
+#[test]
+fn original_queued_deadline_narrows_context_and_grant_without_late_reopening() {
+    let (owner, _, authority) = setup();
+    let mut context = owner.accept(&authority, 1, time(101)).unwrap();
+    let original = context
+        .deadline()
+        .checked_sub(Duration::from_millis(1))
+        .unwrap();
+    context.restrict_deadline(original).unwrap();
+    context
+        .restrict_deadline(original + Duration::from_secs(1))
+        .unwrap();
+    assert_eq!(context.deadline(), original);
+    let grant = context
+        .accept_with(&authority, 1, time(102), |grant| grant)
+        .unwrap();
+    assert!(grant.deadline() <= original);
+    assert_eq!(
+        context.restrict_deadline(original + Duration::from_secs(2)),
+        Err(AuthorityError::Stale)
+    );
+    context.retire().unwrap();
+    assert_eq!(grant.check_current(time(103)), Err(AuthorityError::Stale));
+    let mut expired = owner.accept(&authority, 1, time(104)).unwrap();
+    assert_eq!(
+        expired.restrict_deadline(Instant::now()),
+        Err(AuthorityError::Expired)
+    );
+    expired.retire().unwrap();
+    assert_eq!(owner.owners().unwrap().physical, 0);
+}
+
 mod lookup;
 
 #[test]

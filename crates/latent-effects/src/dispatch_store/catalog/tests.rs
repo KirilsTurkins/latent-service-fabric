@@ -1,3 +1,4 @@
+use latent_state::embedded::RowKey;
 use std::fs::OpenOptions;
 
 use crate::payload::tests as payload_fixture;
@@ -5,6 +6,72 @@ use crate::payload::tests as payload_fixture;
 use super::*;
 
 mod validation;
+
+fn physical_dispatch_rows(store: &EmbeddedStore) -> Vec<(RowKey, Vec<u8>)> {
+    let view = store.snapshot().unwrap();
+    [
+        Family::Outbox,
+        Family::PayloadReference,
+        Family::Attempt,
+        Family::Maintenance,
+    ]
+    .into_iter()
+    .flat_map(|family| {
+        view.scan_after(family, b"", None, 64, 1024 * 1024)
+            .unwrap()
+            .rows
+    })
+    .collect()
+}
+
+#[test]
+fn original_native_claim_fence_rejection_preserves_due_payload_and_every_attempt_row() {
+    let fixture = Fixture::new();
+    let due = seed(fixture.store(), 'a');
+    let epoch = DispatchCatalog::begin_exclusive_epoch(fixture.store(), time(100), None).unwrap();
+    let before = physical_dispatch_rows(fixture.store());
+    assert!(matches!(
+        DispatchCatalog::claim_fenced(fixture.store(), epoch, &due, time(101), || Err(
+            AuthorityError::Expired
+        )),
+        Err(DispatchStoreError::Authority(AuthorityError::Expired))
+    ));
+    assert_eq!(physical_dispatch_rows(fixture.store()), before);
+    assert_eq!(record(fixture.store(), &due.effect).attempts(), 0);
+    let claim =
+        DispatchCatalog::claim_fenced(fixture.store(), epoch, &due, time(102), || Ok(())).unwrap();
+    assert_eq!(claim.attempt.attempt(), 1);
+}
+
+#[test]
+fn original_native_send_fence_rejection_never_publishes_a_send_marker_or_receipt() {
+    let fixture = Fixture::new();
+    let due = seed(fixture.store(), 'b');
+    let epoch = DispatchCatalog::begin_exclusive_epoch(fixture.store(), time(100), None).unwrap();
+    let claim = DispatchCatalog::claim(fixture.store(), epoch, &due, time(101)).unwrap();
+    let before = physical_dispatch_rows(fixture.store());
+    assert!(matches!(
+        DispatchCatalog::begin_send_fenced(
+            fixture.store(),
+            epoch,
+            &claim.attempt,
+            time(102),
+            || Err(AuthorityError::PolicyBlocked)
+        ),
+        Err(DispatchStoreError::Authority(AuthorityError::PolicyBlocked))
+    ));
+    assert_eq!(physical_dispatch_rows(fixture.store()), before);
+    assert!(!record(fixture.store(), &due.effect).send_started());
+    DispatchCatalog::begin_send_fenced(
+        fixture.store(),
+        epoch,
+        &claim.attempt,
+        time(103),
+        || Ok(()),
+    )
+    .unwrap();
+    assert!(record(fixture.store(), &due.effect).send_started());
+}
 
 struct Fixture {
     directory: tempfile::TempDir,
