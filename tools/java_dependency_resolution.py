@@ -15,6 +15,7 @@ from tools.application_dependency_store import DependencyError, Store, read_byte
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.build_snapshot import canonical, digest
+from tools.java_resource_artifacts import capture_resources, release_profile
 from tools.rust_capsule_project import ROOT
 
 DECLARATIONS = "java-dependencies.json"
@@ -29,6 +30,7 @@ def declarations(value: dict) -> dict:
             or len(value["dependencies"]) + len(value["localJars"]) > 256 or not value["repositories"]):
         raise DependencyError("java-dependency-declarations")
     metadata(value["selection"])
+    release_profile(value["selection"].get("release", 25))
     for row in value["dependencies"]:
         if (set(row) != {"group", "name", "version", "scope", "exclusions"}
                 or not all(isinstance(row[key], str) and TOKEN.fullmatch(row[key]) for key in ("group", "name", "version"))
@@ -198,6 +200,7 @@ def resolve(project: Path, candidate: Path, *, gradle: str = "gradle") -> dict:
                 "source": {"path": store.path(identity["digest"]).relative_to(project).as_posix()},
                 "dependencies": row["dependencies"], "metadata": {"ecosystem": "captured-local-jar", "scope": "runtime"}})
             identities[row["id"]] = identity
+        artifacts = capture_resources(project, store, artifacts)
         if read_bytes(project / DECLARATIONS) != declaration_bytes or digest(read_bytes(Path(resolver_path))) != resolver_digest:
             raise DependencyError("java-resolution-input-mutated")
         native = {"formatVersion": 1, "resolver": {"name": "gradle", "version": pins["sdk"]["gradle"],

@@ -11,11 +11,13 @@ from tools.application_dependencies import Closure
 from tools.build_snapshot import canonical, digest
 
 
-def selected_entries(payload: bytes, release: int) -> dict[str, bytes]:
+def entry_selection(payload: bytes, release: int) -> tuple[dict[str, bytes], dict[str, dict]]:
+    if type(release) is not int or release < 9:
+        raise DependencyError("java-release-selection-invalid")
     entries = archive_files(payload, "zip")
     manifest = entries.get("META-INF/MANIFEST.MF", b"").decode("utf-8", "strict")
     multi = any(line.lower().strip() == "multi-release: true" for line in manifest.splitlines())
-    selected, versions = {}, {}
+    selected, versions, origins = {}, {}, {}
     for name, data in entries.items():
         if name.startswith("META-INF/versions/"):
             pieces = name.split("/", 3)
@@ -30,6 +32,7 @@ def selected_entries(payload: bytes, release: int) -> dict[str, bytes]:
             version, target = 0, name
         if version >= versions.get(target, -1):
             selected[target], versions[target] = data, version
+            origins[target] = {"originalEntry": name, "selectedVersion": version}
     for name, data in selected.items():
         if name.startswith("META-INF/services/org.teavm."):
             # TeaVM discovers compiler extension services from its application
@@ -47,7 +50,17 @@ def selected_entries(payload: bytes, release: int) -> dict[str, bytes]:
             # Reachability is not inferred from a filename. Preserve it and let
             # the runtime compatibility report classify reachable JNI use.
             continue
-    return dict(sorted(selected.items()))
+    return dict(sorted(selected.items())), {name: origins[name] for name in sorted(selected)}
+
+
+def selected_entries(payload: bytes, release: int) -> dict[str, bytes]:
+    return entry_selection(payload, release)[0]
+
+
+def per_jar_metadata(name: str) -> bool:
+    return (name == "META-INF/MANIFEST.MF" or name == "module-info.class"
+            or name.startswith("META-INF/") and name.endswith((".SF", ".RSA", ".DSA", ".EC"))
+            or name.upper().startswith(("META-INF/LICENSE", "META-INF/NOTICE")))
 
 
 def deterministic_jar(files: dict[str, bytes]) -> bytes:
@@ -78,9 +91,7 @@ def classpath(closure: Closure | None, destination: Path, *, release: int = 25) 
         for name, data in selected.items():
             # Signature/manifest/module metadata identifies its own JAR rather
             # than an application classpath lookup; retain in each artifact.
-            per_jar = (name == "META-INF/MANIFEST.MF" or name == "module-info.class"
-                       or name.startswith("META-INF/") and name.endswith((".SF", ".RSA", ".DSA", ".EC"))
-                       or name.upper().startswith(("META-INF/LICENSE", "META-INF/NOTICE")))
+            per_jar = per_jar_metadata(name)
             if not per_jar:
                 if name in owners:
                     raise DependencyError("java-duplicate-class-or-resource")

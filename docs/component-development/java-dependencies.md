@@ -68,6 +68,24 @@ signatures apply to original bytes only. Selected JARs compile through the actua
 TeaVM C/component pipeline with `-proc:none`. The recipe rechecks both original
 closure bytes and selected JARs before issuing a successful build receipt.
 
+Resolution also captures every selected classpath lookup resource as a separate
+`resource` artifact. Its parent JAR retains a graph edge and records the original
+JAR digest, logical lookup name, original ZIP entry and selected multi-release
+version. The child owns the exact raw bytes, digest and size; a whole-JAR digest
+cannot stand in for a resource digest. Re-resolve and review older resource locks
+that lack these children before building them with this recipe.
+
+Package assembly verifies the child bytes against the selected original JAR,
+materialized closure and captured store. Only those verified bytes enter resource
+asset layers and `resource-index.json`, which binds the source inventory,
+dependency lock and resulting component. Resource names, count, per-file bytes
+and aggregate bytes have fixed limits; ambiguous names and duplicate lookup
+resources fail. The index preserves opaque bytes and grants no filesystem or
+scratch access. This packaging observation does not establish Java runtime
+lookup. TeaVM's C class-library resource implementation and ordinary
+`Class.getResourceAsStream`/`ClassLoader.getResourceAsStream` calls still require
+emitted-component qualification.
+
 This delivers captured JAR ingestion; it does not independently qualify every
 Java library API. Actual classpath lookup, reflection/native/runtime compatibility,
 signed-node library execution and resource/cleanup acceptance still require

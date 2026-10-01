@@ -12,6 +12,7 @@ from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.application_dependencies import prepare
 from tools.java_application_dependencies import classpath
+from tools.java_resource_artifacts import packaged_resources
 from tools.rust_capsule_build import Commands, package_inputs
 from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inventory,
                                         read_file, read_json, snapshot, write_json)
@@ -20,6 +21,7 @@ BUILD_TYPE = "https://latent.dev/build/java-capsule/v1"
 RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py",
           "tools/application_dependency_tools.py", "tools/java_application_dependencies.py", "tools/java_dependency_resolution.py",
+          "tools/java_resource_artifacts.py",
           "tools/java_guest/compiler.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
@@ -77,6 +79,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     raise ValueError("captured Java builds require the verified offline compiler cache")
                 application_jars, application_inventory = classpath(closure, temporary / "selected-application-jars")
                 write_json(output / "java-classpath.json", application_inventory)
+                additional_resources, resource_sources = packaged_resources(closure, application_inventory, files)
                 stage = "compiler-inputs"
                 compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
                     sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
@@ -112,11 +115,13 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 for name in ("contracts.json", "wit-lock.json", "surface.json"):
                     (output / name).write_bytes(read_file(derived / name))
                 package_files = dict(files)
+                package_files.update(resource_sources)
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
                 surface = read_json(derived / "surface.json")
                 stage = "compatibility"
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
-                package_inputs(output, project, surface, package_files, component)
+                package_inputs(output, project, surface, package_files, component,
+                               additional_resources=additional_resources)
                 if packager is not None:
                     stage = "package"
                     commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
