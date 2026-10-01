@@ -75,6 +75,7 @@ impl CommandHostSelection {
 }
 struct SessionPayload {
     session: StateSession,
+    view_token: Vec<u8>,
     intents: Vec<CapturedIntent>,
     memory: Arc<HostMemoryReservation>,
 }
@@ -91,6 +92,7 @@ pub struct StateTransactionHost {
     activation: ActivationId,
     mode: Mode,
     scope: StateScope,
+    view_token: Vec<u8>,
     authorization: Arc<StateAuthorization>,
     store: Arc<ProtectedStoreOwner>,
     session: Mutex<Option<OwnedSession>>,

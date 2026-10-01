@@ -53,6 +53,20 @@ physical retirement. Replays require current result-read authority and never
 open a second command host. Fresh queries open a frozen read-only snapshot and
 create no Command, Attempt, Result or Outbox rows.
 
+Each query exposes the 67-byte token captured from its actual native snapshot.
+The token binds tenant, namespace, entity, schema and recovery history as well
+as the original unsigned incarnation and generation. A minimum from a future
+generation conflicts; a token from another schema or recovery history refuses
+without refreshing the original request. A restored global guard awaiting
+review denies queries and Pending admission without quarantining a healthy
+physical store.
+
+Command/result format 3 retains that same original opaque history token in the
+complete terminal envelope. Later namespace changes and reopening cannot
+replace it. Formats 1 and 2 explicitly reject because they omit this history.
+No-state rejection and technical-abort envelopes compare both the exact
+namespace-history row and the original absent or reviewed recovery guard.
+
 The original activation handle invokes native completion after actual guest
 cleanup and accounting observation, before publishing its terminal journal
 entry or removing its cancellation registration. Accounting stays frozen; a
@@ -72,20 +86,17 @@ results survive a later cleanup failure. A failed activation can expose a
 noncommit proof only after actual guest, native view and attempt owners retire;
 an uncertain native outcome remains recovery-required.
 
-The pinned Linux node library campaign passed all 82 cases, including five
-tests against the real protected store, policy repository and role owner for
-Pending ordering, success, rejection, read-only queries, revocation and source
-rejection. These native tests do not execute guest components. Issue #388 still
-requires the bounded completion driver, global admission, audit reservations
-and current-authorized transport response release around the actual activation
-manager. The six-language signed component campaign, RPC/HTTP delivery and
-crash/restart qualification remain required; this page does not record them as
-passing.
+The integrated pinned Linux campaign passed 267 library cases: State126,
+Commit49 and Node92. The original activation, cancellation, namespace, atomic
+and cleanup schedules remain required. Three new node schedules cover actual
+future minimums, changed schema/recovery histories and paused restore admission.
+Node all-target/all-feature Clippy completed without transaction-runtime
+warnings. These native tests do not execute guest components.
 
-Four additional original-cancellation and affine-completion cases are
-registered (86 total Linux node cases), with 110 core cases including the
-retained-authority boundaries. The integrated library and test targets compile
-on Windows, and all ten portable cancellation tests passed, including the
-original cancellation/commit acceptance race and accepted-but-unknown result.
-The new native completion cases still require the pinned Linux
-run; the earlier 82-case result does not qualify these new paths.
+The same protected store and dispatcher must bind the original global native
+capacity owner before the first command. Physical views, writer callbacks and
+actual response owners retain the finite prepaid reservation after a lost
+waiter and ledger finalization. Ordinary standalone/RPC composition, authorized
+response-frame release, technical-abort/replay composition, audit reservations,
+all six signed guest components and crash/restart qualification remain required
+for #388 and the wider gate.

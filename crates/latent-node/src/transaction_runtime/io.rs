@@ -30,6 +30,7 @@ impl StateTransactionHost {
         effects: Option<EffectAuthorityOwner>,
         time: Arc<dyn CommandTimeSource>,
         conditions: Vec<Precondition>,
+        minimum_view: Option<Vec<u8>>,
     ) -> Result<Arc<Self>, StateFailure> {
         let configured = super::initialization::configuration(
             &authorization,
@@ -92,7 +93,10 @@ impl StateTransactionHost {
                 selected,
                 limits,
                 mode,
-                &conditions,
+                &super::initialization::ViewPreconditions {
+                    records: &conditions,
+                    minimum: minimum_view.as_deref(),
+                },
                 &auth,
                 memory,
             )
@@ -126,15 +130,12 @@ impl StateTransactionHost {
                 return Err(error);
             }
         };
+        let view_token = owned.payload.view_token.clone();
         let (context, info, work) = command.map_or((None, None, None), |mut command| {
-            let version = authorization.namespace.record().version;
-            let mut bytes = Vec::with_capacity(16);
-            bytes.extend_from_slice(&version.incarnation.to_le_bytes());
-            bytes.extend_from_slice(&version.generation.to_le_bytes());
             command.info.view = latent_executor::transaction::ViewIdentity {
                 namespace: scope.namespace.0.clone(),
                 incarnation: scope.incarnation.to_string(),
-                version: bytes,
+                version: view_token.clone(),
                 state_schema: scope.state_schema.clone(),
             };
             (
@@ -147,6 +148,7 @@ impl StateTransactionHost {
             activation,
             mode,
             scope,
+            view_token,
             authorization,
             store,
             session: Mutex::new(Some(owned)),

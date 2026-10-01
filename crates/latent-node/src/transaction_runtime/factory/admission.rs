@@ -181,11 +181,20 @@ impl NativeTransactionAdmission {
             mode.then(|| self.owners.effects.clone()),
             Arc::clone(&self.owners.time),
             selection.expected_versions,
+            selection.minimum_view_version,
         )
         .await
-        .map_err(|_| {
+        .map_err(|failure| {
             error(
-                latent_core::PlatformErrorCode::Unavailable,
+                match failure {
+                    latent_executor::transaction::StateFailure::Conflict => {
+                        latent_core::PlatformErrorCode::StateConflict
+                    }
+                    latent_executor::transaction::StateFailure::PermissionDenied => {
+                        latent_core::PlatformErrorCode::PermissionDenied
+                    }
+                    _ => latent_core::PlatformErrorCode::Unavailable,
+                },
                 "transaction-host-unavailable",
             )
         })?;
@@ -221,6 +230,15 @@ impl NativeTransactionAdmission {
             .with_store(StoreIoKind::Read, 8192, move |store| {
                 let _retention = retention;
                 let view = store.snapshot()?;
+                match latent_state::recovery::require_ready(&view) {
+                    Ok(()) => {}
+                    Err(latent_state::embedded::StoreError::Unavailable) => {
+                        return Ok(Err(
+                            latent_state::namespace::NamespaceError::RecoveryRequired,
+                        ));
+                    }
+                    Err(error) => return Err(error),
+                }
                 Ok(NamespaceCatalog::read_in(&view, &tenant, &namespace))
             })
             .map_err(|_| atomic(latent_commit::atomic::AtomicError::RecoveryRequired))?
@@ -228,7 +246,12 @@ impl NativeTransactionAdmission {
             .map_err(|_| atomic(latent_commit::atomic::AtomicError::RecoveryRequired))?
             .map_err(|_| atomic(latent_commit::atomic::AtomicError::RecoveryRequired))?;
         result
-            .map_err(|_| authorization::denied())?
+            .map_err(|failure| match failure {
+                latent_state::namespace::NamespaceError::RecoveryRequired => {
+                    atomic(AtomicError::RecoveryRequired)
+                }
+                _ => authorization::denied(),
+            })?
             .ok_or_else(authorization::denied)
     }
     fn seal(
@@ -413,27 +436,6 @@ fn check_view(
     let record = namespace.record();
     if record.version.incarnation != selection.incarnation || record.state_schema != schema {
         return Err(authorization::denied());
-    }
-    if let Some(minimum) = &selection.minimum_view_version {
-        let incarnation = u64::from_le_bytes(
-            minimum[..8]
-                .try_into()
-                .map_err(|_| authorization::denied())?,
-        );
-        let generation = u64::from_le_bytes(
-            minimum[8..]
-                .try_into()
-                .map_err(|_| authorization::denied())?,
-        );
-        if incarnation != record.version.incarnation
-            || generation == 0
-            || generation > record.version.generation
-        {
-            return Err(error(
-                latent_core::PlatformErrorCode::StateConflict,
-                "query-view-unavailable",
-            ));
-        }
     }
     Ok(())
 }

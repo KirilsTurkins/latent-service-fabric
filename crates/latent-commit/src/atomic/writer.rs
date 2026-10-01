@@ -43,17 +43,39 @@ pub struct CompleteEnvelope {
     batch: AtomicBatch,
     authorities: Vec<DurableEffectAuthority>,
 }
+
+/// A bounded closed observation of the namespace expectation in an actually
+/// prepared complete envelope. This is not a grant or a durable disposition.
+pub struct EnvelopeNamespaceExpectation {
+    expected: ExpectedRow,
+    outcome: Outcome,
+}
+impl EnvelopeNamespaceExpectation {
+    #[must_use]
+    pub fn is_technical_abort(&self) -> bool {
+        self.outcome == Outcome::Aborted
+    }
+    #[must_use]
+    pub fn matches(&self, expected: &ExpectedRow) -> bool {
+        self.expected.key == expected.key && self.expected.value == expected.value
+    }
+
+    #[must_use]
+    pub fn retained_bytes(&self) -> usize {
+        self.expected.key.key.len() + self.expected.value.as_ref().map_or(0, Vec::len) + 256
+    }
+}
 pub enum PreparedDisposition {
     Confirmed {
-        command: CommandRecord,
-        result: DurableResult,
+        command: Box<CommandRecord>,
+        result: Box<DurableResult>,
     },
     KnownNotCommitted {
-        command: AdmittedCommand,
+        command: Box<AdmittedCommand>,
         reason: AtomicError,
     },
     RecoveryRequired {
-        identity: CommandRecord,
+        identity: Box<CommandRecord>,
     },
 }
 
@@ -114,6 +136,7 @@ impl PreparedAdmission {
             outcome: Outcome::Pending,
             completed_at: 0,
             committed_version: None,
+            committed_view_token: vec![],
             result_digest: Identity([0; 32]),
             effects: vec![],
             inbox: input.inbox,
@@ -311,6 +334,7 @@ impl PreparedAdmission {
         record.outcome = Outcome::Pending;
         record.completed_at = 0;
         record.committed_version = None;
+        record.committed_view_token.clear();
         record.clock_floor = time.unix_millis;
         record.result_digest = Identity([0; 32]);
         record.effects.clear();
@@ -431,6 +455,53 @@ pub struct StagedIntent {
 }
 
 impl CompleteEnvelope {
+    /// The coordinator moves this affine guard into the one accepted native
+    /// writer. Decoding metadata cannot construct it or assert retirement.
+    pub fn physical_work(&self) -> Result<super::PhysicalAttemptWork, AtomicError> {
+        self.claim.physical_work()
+    }
+    /// State-only/no-intent commands need no effect authority owner. They still
+    /// use the same complete atomic namespace/state/result/command envelope.
+    pub fn success_without_intents(
+        view: &ReadView,
+        claim: AdmittedCommand,
+        state: Option<StatePlan>,
+        value: Value,
+        time: CommandTime,
+    ) -> Result<Self, AtomicError> {
+        let version = next_namespace_version(view, &claim.record)?;
+        let token = disposition_view_token(view, &claim.record, state.as_ref(), version)?;
+        let result = DurableResult::new(
+            &claim.record,
+            Outcome::Committed,
+            None,
+            value,
+            version,
+            token,
+        )?;
+        Self::prepare(view, claim, state, result, vec![], vec![], time, None)
+    }
+
+    pub fn namespace_expectation(&self) -> Result<EnvelopeNamespaceExpectation, AtomicError> {
+        let key = RowKey {
+            family: Family::Namespace,
+            key: namespace_record_key(
+                &TenantId(self.terminal.key.tenant.clone()),
+                &StateNamespaceId(self.terminal.key.namespace.clone()),
+            )
+            .map_err(|_| AtomicError::Invalid)?,
+        };
+        let mut matching = self.batch.expectations.iter().filter(|row| row.key == key);
+        let expected = matching.next().ok_or(AtomicError::Invalid)?.clone();
+        if matching.next().is_some() || expected.value.is_none() {
+            return Err(AtomicError::Invalid);
+        }
+        Ok(EnvelopeNamespaceExpectation {
+            expected,
+            outcome: self.terminal.outcome,
+        })
+    }
+
     pub fn success(
         view: &ReadView,
         claim: AdmittedCommand,
@@ -464,7 +535,15 @@ impl CompleteEnvelope {
             return Err(AtomicError::Limit);
         }
         let version = next_namespace_version(view, &claim.record)?;
-        let result = DurableResult::new(&claim.record, Outcome::Committed, None, value, version)?;
+        let token = disposition_view_token(view, &claim.record, state.as_ref(), version)?;
+        let result = DurableResult::new(
+            &claim.record,
+            Outcome::Committed,
+            None,
+            value,
+            version,
+            token,
+        )?;
         let mut authorities = Vec::with_capacity(intents.len());
         let mut effect_rows = Vec::with_capacity(intents.len() * 3);
         for (sequence, intent) in intents.into_iter().enumerate() {
@@ -537,8 +616,15 @@ impl CompleteEnvelope {
         time: CommandTime,
     ) -> Result<Self, AtomicError> {
         let version = next_namespace_version(view, &claim.record)?;
-        let result =
-            DurableResult::new(&claim.record, Outcome::Rejected, Some(code), value, version)?;
+        let token = disposition_view_token(view, &claim.record, None, version)?;
+        let result = DurableResult::new(
+            &claim.record,
+            Outcome::Rejected,
+            Some(code),
+            value,
+            version,
+            token,
+        )?;
         Self::prepare(view, claim, None, result, vec![], vec![], time, None)
     }
     /// Private physical retirement evidence permits terminal technical metadata,
@@ -566,8 +652,15 @@ impl CompleteEnvelope {
             metadata: vec![],
         };
         let version = next_namespace_version(view, &claim.record)?;
-        let result =
-            DurableResult::new(&claim.record, Outcome::Aborted, Some(code), value, version)?;
+        let token = disposition_view_token(view, &claim.record, None, version)?;
+        let result = DurableResult::new(
+            &claim.record,
+            Outcome::Aborted,
+            Some(code),
+            value,
+            version,
+            token,
+        )?;
         Self::prepare(view, claim, None, result, vec![], vec![], time, Some(proof))
     }
     #[must_use]
@@ -597,8 +690,8 @@ impl CompleteEnvelope {
             Ok(()) => {
                 self.claim.physical.phase.store(TERMINAL, Ordering::Release);
                 PreparedDisposition::Confirmed {
-                    command: self.terminal,
-                    result: self.result,
+                    command: Box::new(self.terminal),
+                    result: Box::new(self.result),
                 }
             }
             Err(FencedStoreError::Store(
@@ -607,11 +700,11 @@ impl CompleteEnvelope {
             )) => {
                 self.claim.physical.phase.store(UNKNOWN, Ordering::Release);
                 PreparedDisposition::RecoveryRequired {
-                    identity: self.claim.record.clone(),
+                    identity: Box::new(self.claim.record.clone()),
                 }
             }
             Err(error) => PreparedDisposition::KnownNotCommitted {
-                command: self.claim,
+                command: Box::new(self.claim),
                 reason: fenced_error(error),
             },
         }
@@ -646,11 +739,17 @@ impl CompleteEnvelope {
                 .checked_add(1)
                 .ok_or(AtomicError::Limit)?,
         };
-        if result.committed_version != version {
+        if result.committed_version != version
+            || result.committed_view_token
+                != disposition_view_token(view, &claim.record, state.as_ref(), version)?
+        {
             return Err(AtomicError::Invalid);
         }
         terminal.outcome = result.outcome;
         terminal.committed_version = Some(version);
+        terminal
+            .committed_view_token
+            .clone_from(&result.committed_view_token);
         terminal.completed_at = time.unix_millis;
         terminal.clock_floor = time.unix_millis;
         terminal.result_digest = result.digest;
@@ -814,6 +913,10 @@ impl CompleteEnvelope {
             }
             state.append_to(&mut batch, pins)?;
         } else {
+            let scope = super::record::record_scope(&terminal)?;
+            let captured = latent_state::session::version::capture_view(view, &scope)?;
+            batch.expectations.push(captured.history_expectation());
+            batch.expectations.push(captured.recovery_expectation());
             namespace.pins = pins;
             namespace.version.generation = namespace
                 .version
@@ -910,6 +1013,25 @@ pub(super) fn next_namespace_version(
             .checked_add(1)
             .ok_or(AtomicError::Limit)?,
     })
+}
+
+pub(super) fn disposition_view_token(
+    view: &ReadView,
+    record: &CommandRecord,
+    state: Option<&StatePlan>,
+    version: latent_state::namespace::NamespaceVersion,
+) -> Result<Vec<u8>, AtomicError> {
+    let scope = super::record::record_scope(record)?;
+    let mut actual = latent_state::session::version::capture_view(view, &scope)?.identity();
+    actual.namespace = version;
+    if let Some(state) = state {
+        if state.view_identity() != actual || state.scope() != &scope {
+            return Err(AtomicError::Invalid);
+        }
+        Ok(state.view_token()?)
+    } else {
+        Ok(actual.token(&scope)?)
+    }
 }
 
 fn namespace(

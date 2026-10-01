@@ -236,8 +236,8 @@ async fn publish(
                 cleanup_failure = Some(StateFailure::Unavailable);
             }
             CommandCompletionDisposition::Durable {
-                command,
-                result: Box::new(result),
+                command: *command,
+                result,
                 retained: Arc::clone(&host.memory),
                 retained_native: host.authorization.retention.clone(),
                 cleanup_failure,
@@ -247,7 +247,7 @@ async fn publish(
             drop(command);
             retired(&host, identity, retirement, reason).await
         }
-        PreparedDisposition::RecoveryRequired { identity } => recovery(&host, identity).await,
+        PreparedDisposition::RecoveryRequired { identity } => recovery(&host, *identity).await,
     }
 }
 
@@ -264,7 +264,7 @@ fn publish_fenced(
         latent_commit::atomic::Outcome::Rejected => ActivationTerminalState::Rejected,
         _ => {
             return PreparedDisposition::RecoveryRequired {
-                identity: envelope.command().clone(),
+                identity: Box::new(envelope.command().clone()),
             }
         }
     };

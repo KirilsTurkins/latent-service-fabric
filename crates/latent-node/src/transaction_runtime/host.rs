@@ -32,14 +32,10 @@ impl StateTransactionHost {
         Ok(())
     }
     pub(super) fn identity(&self) -> ViewIdentity {
-        let version = self.authorization.namespace.record().version;
-        let mut bytes = Vec::with_capacity(16);
-        bytes.extend_from_slice(&version.incarnation.to_le_bytes());
-        bytes.extend_from_slice(&version.generation.to_le_bytes());
         ViewIdentity {
             namespace: self.scope.namespace.0.clone(),
             incarnation: self.scope.incarnation.to_string(),
-            version: bytes,
+            version: self.view_token.clone(),
             state_schema: self.scope.state_schema.clone(),
         }
     }

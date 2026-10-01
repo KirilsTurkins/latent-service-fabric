@@ -7,6 +7,8 @@ pub mod entity_lanes;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
 pub mod protected_store;
+/// Original restored history remains paused until an authorized review.
+pub mod recovery;
 /// Logical disposition capacity charged in the same physical atomic store.
 pub mod reservation;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.

@@ -74,12 +74,17 @@ pub(super) fn configuration(
     Ok((mode, limits, retained_bytes))
 }
 
+pub(super) struct ViewPreconditions<'a> {
+    pub records: &'a [Precondition],
+    pub minimum: Option<&'a [u8]>,
+}
+
 pub(super) fn initialize(
     view: &ReadView,
     selected: StateScope,
     limits: SessionLimits,
     mode: Mode,
-    conditions: &[Precondition],
+    preconditions: &ViewPreconditions<'_>,
     auth: &StateAuthorization,
     memory: Arc<HostMemoryReservation>,
 ) -> Result<Result<SessionPayload, StateFailure>, StoreError> {
@@ -111,8 +116,16 @@ pub(super) fn initialize(
         // view version or silently refresh the command's original observation.
         return Ok(Err(StateFailure::Conflict));
     }
+    if let Some(minimum) = preconditions.minimum {
+        if let Err(error) = session
+            .view_identity()
+            .require_minimum(session.scope(), minimum)
+        {
+            return Ok(Err(state_error(error, false)));
+        }
+    }
     if mode == Mode::Command {
-        if let Err(error) = session.check_preconditions(view, conditions, |_, _| {
+        if let Err(error) = session.check_preconditions(view, preconditions.records, |_, _| {
             auth.authorize("get", 0, 0, || Ok(()))
                 .map_err(|_| StateError::PermissionDenied)
         }) {
@@ -125,8 +138,13 @@ pub(super) fn initialize(
     if let Err(error) = charge(&auth.budget, (0, 0), session.charged_bytes()) {
         return Ok(Err(error));
     }
+    let view_token = match session.view_token() {
+        Ok(token) => token,
+        Err(error) => return Ok(Err(state_error(error, false))),
+    };
     Ok(Ok(SessionPayload {
         session,
+        view_token,
         intents: Vec::with_capacity(128),
         memory,
     }))

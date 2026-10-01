@@ -2,6 +2,7 @@
 //! the six authored Wasmtime components have a separate execution campaign.
 mod capacity;
 mod fixture;
+mod history;
 
 use super::*;
 use crate::TransactionActivationAdmission;
@@ -135,7 +136,10 @@ async fn native_fresh_query_is_read_only_and_creates_no_command_journal() {
         host.put(b"counter".to_vec(), value(b"denied")).await,
         Err(StateFailure::WrongMode)
     );
-    assert_eq!(host.view_identity().unwrap().version.len(), 16);
+    assert_eq!(
+        host.view_identity().unwrap().version.len(),
+        latent_state::session::version::VIEW_TOKEN_BYTES
+    );
     let TransactionAdmissionResult::Query { host } = admission.take_result().unwrap().unwrap()
     else {
         panic!("query host absent");

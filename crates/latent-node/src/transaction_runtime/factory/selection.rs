@@ -153,10 +153,9 @@ impl TransactionSelection {
             || mode != self.client_key.is_some()
             || (!mode && (!self.expected_versions.is_empty() || self.retry.is_some()))
             || (mode && self.minimum_view_version.is_some())
-            || self
-                .minimum_view_version
-                .as_ref()
-                .is_some_and(|bytes| bytes.len() != 16)
+            || self.minimum_view_version.as_ref().is_some_and(|bytes| {
+                bytes.len() != latent_state::session::version::VIEW_TOKEN_BYTES
+            })
         {
             return Err(super::authorization::denied());
         }

@@ -57,6 +57,18 @@ impl Fixture {
         ActivationEnvelope,
         ActivationBudget,
     ) {
+        self.invocation_with_minimum(query, key, None)
+    }
+    pub fn invocation_with_minimum(
+        &self,
+        query: bool,
+        key: &str,
+        minimum: Option<Vec<u8>>,
+    ) -> (
+        Arc<NativeTransactionAdmission>,
+        ActivationEnvelope,
+        ActivationBudget,
+    ) {
         let resources = ResourceBudget {
             cpu_fuel: 1_000_000,
             memory_bytes: 64 * 1024 * 1024,
@@ -148,7 +160,7 @@ impl Fixture {
                 },
                 client_key: (!query).then(|| key.into()),
                 expected_versions: Vec::new(),
-                minimum_view_version: None,
+                minimum_view_version: minimum,
                 input_format: "raw-v1".into(),
                 retry: None,
             },
