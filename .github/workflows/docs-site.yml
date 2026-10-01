@@ -10,8 +10,9 @@ jobs:
   website:
     name: Static site, examples and browser journeys
     runs-on: ubuntu-24.04
-    # Cover both base-path builds and browser matrices for multiple release snapshots.
-    timeout-minutes: 30
+    # The complete matrix can reach its final five-minute browser journey after
+    # 27 minutes. Leave time for that bounded check and receipt upload/cleanup.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
