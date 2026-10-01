@@ -1820,6 +1820,8 @@
         "runtime::control::tests::persisted_pause_survives_new_exclusive_owner_epoch_and_restore_review_is_sticky",
         "runtime::control::tests::request_bounds_and_generation_exhaustion_reject_before_staging",
         "runtime::control::tests::resume_stays_paused_through_the_final_fence_until_actual_engine_durability",
+        "runtime::reconciliation::tests::original_attempt_payload_and_version_bind_positive_confirmation",
+        "runtime::reconciliation::tests::provider_confirmation_bounds_reject_arbitrary_text_and_unknown_versions",
         "runtime::tests::admission::command_role_generation_restore_review_and_close_reject_final_writer_callback",
         "runtime::tests::admission::detached_command_writer_keeps_role_until_actual_fence_rejection_and_buffer_drop",
         "runtime::tests::admission::original_command_guard_prevents_new_node_epoch_until_positive_retirement",

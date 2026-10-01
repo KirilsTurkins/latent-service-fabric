@@ -7,6 +7,7 @@ mod config;
 pub mod control;
 mod driver;
 mod owner;
+mod reconciliation;
 mod state;
 mod store;
 mod worker;
@@ -21,6 +22,10 @@ pub use control::{
     PreparedDispatcherControl,
 };
 pub use owner::DispatcherOwner;
+pub use reconciliation::{
+    ProviderConfirmation, ProviderReconciliationOutcome, ProviderReconciliationReason,
+    ProviderReconciliationRequest,
+};
 pub use state::{DispatcherShutdown, DispatcherSnapshot};
 pub use store::{RequiredProfilePage, RequiredProfileRow};
 
