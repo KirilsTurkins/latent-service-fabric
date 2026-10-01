@@ -42,7 +42,7 @@ def inputs(language="rust"):
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "c_application_dependencies.py", "c_static_symbols.py", "c_static_archive_build.py",
-                    "captured_compiler_isolation.py", "c_dependency_fixture.py")
+                    "captured_compiler_isolation.py", "c_dependency_fixture.py", "c_dependency_controls.py")
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",

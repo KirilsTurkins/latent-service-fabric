@@ -81,8 +81,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_c_static_symbols tools.tests.test_captured_compiler_isolation
+          LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_c_static_symbols tools.tests.test_captured_compiler_isolation tools.tests.test_application_dependency_tools
           python3 tools/qualify_c_capsules.py --application-dependencies --static-application-dependencies --output "$RUNNER_TEMP/c-application-library"
+      - name: Qualify actual C archive and isolated generated-header rejection controls
+        run: |
+          python3 tools/c_dependency_controls.py --project "$RUNNER_TEMP/c-application-library/projects/greeting" --output "$RUNNER_TEMP/c-dependency-controls"
       - name: Retain compiler and ownership results including failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -102,5 +105,6 @@ jobs:
             ${{ runner.temp }}/c-capsule-authoring/guide/logs/**
             ${{ runner.temp }}/c-capsule-authoring/guide/projects/results/**
             ${{ runner.temp }}/c-application-library/**
+            ${{ runner.temp }}/c-dependency-controls/**
           if-no-files-found: warn
           retention-days: 7

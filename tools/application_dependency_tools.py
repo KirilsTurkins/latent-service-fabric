@@ -11,7 +11,7 @@ import shutil
 import sys
 
 from tools.application_dependency_store import DependencyError, directory_files, read_bytes, regular_path
-from tools.build_process import run_bounded_result
+from tools.build_process import BuildProcessError, run_bounded_result
 from tools.build_snapshot import canonical, digest
 
 
@@ -72,6 +72,12 @@ def execute(executable: Path, arguments: list[str], inputs: Path, outputs: Path,
         if specification(executable, arguments, inputs, tool_version=tool_version, environment=environment) != selected:
             raise DependencyError("dependency-generator-input-mutated")
         return record
+    except BuildProcessError as error:
+        # These capture failures are returned only after the owned runner's
+        # cleanup completes. Cleanup/ownership errors retain the unconfirmed state.
+        if str(error) in {"command-deadline", "command-output-limit"}:
+            record.update(cleanup="reaped", failureReason=str(error))
+        raise
     finally:
         with receipt.open("xb") as stream:
             stream.write(canonical(record) + b"\n")

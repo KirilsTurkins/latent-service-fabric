@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/c_dependency_controls.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed actual C object, closure, isolated generator, credential and descendant-cleanup qualification with original finite limits",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6035d9f396f48bdb624155ce29457b24641048133216d80d05d0827bbdeaa926"
+}

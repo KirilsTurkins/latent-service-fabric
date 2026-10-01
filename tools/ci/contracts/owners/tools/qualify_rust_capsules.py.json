@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review finite isolated source/static C archive production, validation of all core members and strong definitions, direct third-party and developer calls, immutable resource recapture and separate signed node qualification; retain all historical commands/cases/guards.",
+  "reviewReason": "Bind the maintained C control helper to the exact C qualification input identity; preserve other language helpers and existing gates",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "aac198796d794a59cc11c9b033acb8c815d7692b3aacc05a1dd8b80181b70638"
+  "sha256": "91ae35a274140767c6ed41ff744cfe876be838c35f067784e9e61bb913dafff0"
 }
