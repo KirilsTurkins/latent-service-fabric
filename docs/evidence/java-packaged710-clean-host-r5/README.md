@@ -44,8 +44,14 @@ and separately signed release identities. All four were newly built for R5;
 the earlier C4 campaign's artifacts were not reused. Unsigned build receipts
 retain their original `trustEvaluated: false` and `executionAuthorized: false`.
 
-The complete 547,924-byte original observation is retained privately with SHA256
+The completed campaign originally produced a 547,924-byte private observation
+with SHA256
 `3bc5f9d85d5b0445f41a976c1a2ede895c17b9b5d0baaf8f901ad59d2b2ec73b`.
+After its original output directory disappeared, that full private file could
+not be located in the remaining owned paths. The
+[current storage observation](storage-availability.json) records that boundary;
+the historical receipts, original identity and committed public observations
+remain unchanged.
 [preflight-observations.json](preflight-observations.json) and
 [runtime-observations.json](runtime-observations.json) contain explicit public
 projections of its original observations, without guest payloads, signing keys
@@ -64,7 +70,7 @@ remaining runtime budgets stay caller-dependent and invocation-dependent.
 | 4. Hop principals, budgets and deadlines | Both positive reports describe the actual adapter-to-domain service edge, host-derived Service caller, non-forwarded claims, maximum declared shares and original parent/child deadline ceiling. Future remaining share is explicitly invocation-dependent; caller grant ceiling is unchecked. |
 | 5. Coherent current state and change refusal | Reports retain actual catalog, policy, route and binding generations and preparation engine identity. Rechecking the original intent after policy change refuses the observation. Restoring authority leaves the original compiled plan stale; an explicit new deployment operation and rebind restore execution. |
 | 6. Default bounded read-only preparation | The actual delivered checks never grant authority, reserve a cell or enable traffic. Source tests verify that ordinary inspection uses the original ready owner without guest execution. Controlled node setup and the separately recorded invocations belong to this explicit disposable qualification campaign. |
-| 7. Bounded safe results | Actual versioned machine reports preserve finite evidence levels, failure reasons, safe selected identities and currentness caveats. Unsupported/unclassified/untested/not-checked states remain distinct. The host-only full receipt is hash-anchored; public projections omit payloads and credentials. |
+| 7. Bounded safe results | Actual versioned machine reports preserve finite evidence levels, failure reasons, safe selected identities and currentness caveats. Unsupported/unclassified/untested/not-checked states remain distinct. The original full receipt identity remains hash-anchored; committed public projections retain the measured cases and omit payloads and credentials. |
 | 8. Real failures and composed success | The same signed domain is rejected under the former profile with original required **159,384,064** bytes versus bound **67,108,864**, exposed through supported target inspection and the authorized activation tree. Current preparation succeeds. Ordinary context is rejected, wrong trigger/provider/wire/stale selections fail, missing/revoked grants produce HTTP 403, and fresh composition plus explicit rebind produce HTTP 200. |
 | 9. Versioned evidence-backed support matrix | Both delivered frontend paths return the exact authenticated embedded `composition-support-v1.json` identity and preserve its bounded qualified combinations. Existing loader/source tests guard immutable source fingerprints and visibly untested combinations. |
 | 10. Both delivered workflows, independent artifacts | All 18 cases use the original authenticated native frontend outside the checkout, through its installed workspace and explicit operator command. The two independent Java source/package identities are frozen before the actual inspection and execution. |
