@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_guest_bindings.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve exact transaction Value byte-array pin signatures and reject generator drift with a focused regression",
+  "reviewReason": "Prove exact selected-world linker metadata against the authoritative nominal types and async signatures; unchanged single-world contracts and physical output ownership remain required",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e1a814df8cbf4cd3c5faed50305b67dd07a0bc611cdc00f353e27d3b770d64f4"
+  "sha256": "d9f5f4e183a39e0cdc3d845dbe4b2b48ca2fd82e6070df9abfbb4000aa4aafb9"
 }
