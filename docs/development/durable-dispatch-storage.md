@@ -62,6 +62,15 @@ cannot overwrite an active or terminal disposition. Qualified retries alone add
 another due row under the same stable effect/payload/provider identity. Unsafe
 retry proofs preserve the actual uncertain receipt.
 
+The fixed provider worker retains its affine `DispatchContext` through actual
+provider cleanup. `accept_with` rechecks the current rule under its short no-I/O
+fence and passes a sealed owned `DispatchGrant` to synchronous reviewed adapter
+admission. It refreshes the credential reference/epoch, narrows ceilings and
+preserves the original deadline. The adapter returns an owned accepted operation
+that starts I/O only when driven after its durable send marker; policy locks are
+released before storage/network I/O. Revocation before admission prevents the
+adapter callback and does not refund the existing physical owner.
+
 Claim also reserves 70 KiB of logical capacity and installs the future history
 row. Every engine writer counts that reserved capacity. Completion replaces the
 actual history placeholder and releases the reservation in the same transaction;

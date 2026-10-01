@@ -6,6 +6,9 @@
 //! one short acceptance/revocation fence. This owner contains no activation,
 //! execution cell, guest store, reusable credential, or application timer.
 
+mod grant;
+pub use grant::DispatchGrant;
+
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -518,6 +521,7 @@ impl EffectAuthorityOwner {
             profile: authority.profile.clone(),
             scope: authority.scope.clone(),
             effect: authority.link.effect.clone(),
+            attempt,
             ceiling,
             credential_epoch,
             reference,
@@ -582,6 +586,7 @@ pub struct DispatchContext {
     scope: EffectScope,
     profile: DispatchProfile,
     effect: String,
+    attempt: u32,
     ceiling: DispatchCeiling,
     credential_epoch: u64,
     reference: String,
