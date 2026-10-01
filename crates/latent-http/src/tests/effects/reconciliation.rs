@@ -25,7 +25,7 @@ async fn qualified_tls_delivery_and_equal_key_replay_mutate_remote_durable_count
     assert_eq!(changed.receipt.disposition, Disposition::KnownFailed);
     assert!(changed.retry.is_none());
     assert_eq!(endpoint.attempts(), (3, 0));
-    assert_eq!(fixture.http.pools.snapshot().unwrap().connections, 0);
+    assert_eq!(fixture.snapshot().await.connections, 0);
     fixture.finish().await;
     endpoint.finish(1).await;
 }

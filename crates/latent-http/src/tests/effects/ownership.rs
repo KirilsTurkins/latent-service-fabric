@@ -5,14 +5,14 @@ use tokio::net::TcpListener;
 async fn unpolled_acceptance_releases_prepaid_buffers_and_never_opens_a_socket() {
     let endpoint = Endpoint::new(Arc::new(Clock(AtomicU64::new(100))), Fault::Normal).await;
     let fixture = Fixture::new(endpoint.port, endpoint.root_certificate.clone(), 2000).await;
-    let before = fixture.http.pools.snapshot().unwrap();
+    let before = fixture.snapshot().await;
     let (authority, payload, mut record) = fixture.retained(30, b"not yet committed to send");
     let (context, _attempt, operation) = fixture.accepted(&authority, payload, &mut record);
-    assert!(fixture.http.pools.snapshot().unwrap().metadata_bytes > before.metadata_bytes);
+    assert!(fixture.snapshot().await.metadata_bytes > before.metadata_bytes);
     assert_eq!(endpoint.attempts(), (0, 0));
     drop(operation); // No poll and no send marker: known nonexecution.
     context.retire().unwrap();
-    assert_eq!(fixture.http.pools.snapshot().unwrap(), before);
+    assert_eq!(fixture.snapshot().await, before);
     fixture.finish().await;
     endpoint.finish(0).await;
 }
@@ -171,10 +171,10 @@ async fn caller_loss_during_send_or_read_keeps_physical_owner_until_real_socket_
         watched(ready).await.unwrap();
         drop(completion); // Simulate caller cancellation; it owns no provider future.
         assert_eq!(fixture.authority.owners().unwrap().physical, 1);
-        assert_eq!(fixture.http.pools.snapshot().unwrap().connections, 1);
+        assert_eq!(fixture.snapshot().await.connections, 1);
         assert_eq!(watched(physical).await.unwrap(), Disposition::Uncertain);
         watched(server).await.unwrap();
-        assert_eq!(fixture.http.pools.snapshot().unwrap().connections, 0);
+        assert_eq!(fixture.snapshot().await.connections, 0);
         fixture.finish().await;
     }
 }

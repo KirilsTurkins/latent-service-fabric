@@ -173,6 +173,26 @@ impl Fixture {
             .unwrap();
     }
 
+    pub async fn snapshot(&self) -> latent_capabilities::broker::pools::ProviderPoolSnapshot {
+        watched(async {
+            loop {
+                match self.http.pools.snapshot() {
+                    Ok(snapshot) => return snapshot,
+                    Err(error)
+                        if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                            && error.message == "capability-busy" =>
+                    {
+                        // Wait only for the pool's bookkeeping lock. This
+                        // never resubmits an accepted provider operation.
+                        tokio::task::yield_now().await;
+                    }
+                    Err(error) => panic!("provider snapshot failed: {error:?}"),
+                }
+            }
+        })
+        .await
+    }
+
     pub async fn finish(self) {
         self.secrets.close();
         drop(self.adapter);
