@@ -126,6 +126,25 @@ class FrontendDependencyInputs(unittest.TestCase):
                 with self.assertRaisesRegex(DependencyError, 'ambiguous-application-lock'):
                     inputs.capture_source(self.app, 'rust')
 
+    def test_inner_descriptor_cannot_redirect_the_approved_application_root(self):
+        original_sdk = (self.app / 'sdk-lock.json').read_bytes()
+        nested = self.app / 'nested-unapproved-application'
+        nested.mkdir()
+        (nested / 'src').mkdir()
+        (nested / 'src/unapproved.txt').write_bytes(b'must-not-replace-the-approved-application')
+        for language in ('rust', 'c', 'go', 'java', 'typescript', 'dotnet'):
+            value, _declaration, _lock = self.capture(language)
+            value['build']['workingDirectory'] = nested.name
+            (self.app / inputs.DESCRIPTOR).write_bytes(common.encode(value))
+            for requested in (self.owner, self.app):
+                with self.subTest(language=language, requested=requested):
+                    with self.assertRaisesRegex(DependencyError, 'ambiguous-project-descriptor'):
+                        inputs.application_root(requested, language)
+                    with self.assertRaisesRegex(DependencyError, 'ambiguous-project-descriptor'):
+                        inputs.capture_source(requested, language)
+        self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), original_sdk)
+        self.assertFalse((nested / dependencies.MANIFEST).exists())
+
     def test_missing_reviewed_lock_stale_manifest_and_declared_trust_are_rejected(self):
         value, declaration, _lock = self.capture()
         raw = (self.owner / dependencies.LOCK).read_bytes()

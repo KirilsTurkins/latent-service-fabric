@@ -32,8 +32,9 @@ under the descriptor's exact `build.workingDirectory` (normally `app/`). Native
 lock paths in the outer manifest are relative to that outer project, for example
 `app/Cargo.lock` or `app/packages.lock.json`. The build receipt preserves those
 original paths and projects their exact bytes to the application's owned build
-directory. An inner dependency manifest or lock is rejected as an ambiguous
-selection.
+directory. An inner dependency manifest, lock or project descriptor is rejected
+as an ambiguous selection. A second descriptor cannot redirect the approved
+application directory.
 
 The common recipe helper verifies the descriptor association and captured graph
 before materialization. It binds the outer manifest, lock, descriptor and native
