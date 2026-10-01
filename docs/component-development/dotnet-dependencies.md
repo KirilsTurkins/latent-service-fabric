@@ -64,3 +64,23 @@ epoch, and grants only `bytes` for that service and publication: at most 16
 operations, eight input bytes, 4096 output bytes and five seconds. Existing
 authoring defaults and other languages keep their original grants. This setup
 retains ordinary secure-random denial and records no random payload bytes.
+
+When an additional adapter is selected, the compiler connects every actual WASI
+import once by its complete interface name. It retains the bounded
+`runtime-composition.wac` source and `runtime-composition.json` receipt and binds
+both into build materials. The original raw component, inspected graphs and
+selected adapters must match before and after the owned composer runs. The
+reviewed WAC binary still checks actual signatures and resource identities;
+application host imports pass through to normal admission and grants.
+
+The [entropy build and exact composition observation](../testing/evidence/dotnet-memorypack-entropy-composition-2026-10-01.json)
+records an offline four-adapter rebuild and unchanged MemoryPack NativeAOT
+success. Its original full builder failed because pinned WAC `plug` assigned
+both compatible insecure-random exports to one `0.2.6` input. The
+[pinned plug implementation](https://github.com/bytecodealliance/wac/blob/v0.10.1/crates/wac-graph/src/plug.rs)
+tries compatible exports after exact matches. A separate exact-edge probe on
+the untouched raw component and adapters passed normal WAC composition and
+Wasm validation, with only the declared clock and random imports. It preserves
+both reviewed insecure-random versions and keeps secure-random denial. This
+probe qualifies the composition mechanism; a fresh complete maintained build,
+signing and normal-node library/resource run remain required.

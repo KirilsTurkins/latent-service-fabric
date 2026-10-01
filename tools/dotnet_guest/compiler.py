@@ -305,9 +305,12 @@ class Compiler:
         write_json(command.output / "runtime-profile.json", selection)
         component = output / "component.wasm"
         self.runtime = adapter
-        inspect_runtime(self, raw, additional_adapters=additional)
-        self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter,
-            *(argument for _name, path in additional for argument in ("--plug", path)), "-o", component)
+        coverage = inspect_runtime(self, raw, additional_adapters=additional)
+        if additional:
+            from tools.dotnet_guest.composer import compose_exact
+            compose_exact(self, raw, component, coverage, additional_adapters=additional)
+        else:
+            self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter, "-o", component)
         self.run("validate", self.wasm, "validate", component)
         final = interface_names(json.loads(self.run("runtime-final-wit", self.wasm,
             "component", "wit", component, "--json")))["imports"]

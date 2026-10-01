@@ -227,7 +227,9 @@ class SeparateEntropySelection(unittest.TestCase):
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
         compiler, work, output = fixture.application(fixture.root, emitted=[runtime.CLOCK,
-            "wasi:random/random@0.2.6", "wasi:random/insecure@0.2.0"], final=[runtime.CLOCK, runtime.RANDOM])
+            "wasi:random/random@0.2.6", "wasi:random/insecure@0.2.6"], final=[runtime.CLOCK, runtime.RANDOM])
+        compiler.generated_materials = []
+        compiler.wac.write_bytes(b"owned unit-boundary component composer")
         original_run, plugs = compiler.run, []
         def run(stage, executable, *arguments):
             if stage == "declared-runtime-wit":
@@ -235,7 +237,7 @@ class SeparateEntropySelection(unittest.TestCase):
             if stage == "closed-runtime-adapter-wit":
                 return canonical(self.graph(exports=["wasi:random/random@0.2.6"]))
             if stage == "additional-runtime-entropy-wit":
-                return canonical(self.graph(imports=[runtime.RANDOM], exports=["wasi:random/insecure@0.2.0"]))
+                return canonical(self.graph(imports=[runtime.RANDOM], exports=sorted(runtime.WASI_INSECURE_IMPORTS)))
             if stage == "closed-runtime-composition":
                 plugs.extend(arguments)
             return original_run(stage, executable, *arguments)
@@ -245,9 +247,15 @@ class SeparateEntropySelection(unittest.TestCase):
             component, result = compiler.compile(work, "examples:greeting/service@1.0.0", output)
         prepare.assert_called_once_with(compiler, [runtime.CLOCK, runtime.RANDOM], output / "project", output)
         self.assertTrue(component.is_file())
-        self.assertEqual(plugs.count("--plug"), 2)
-        self.assertIn(compiler.runtimes["closed"], plugs)
-        self.assertIn(compiler.runtimes["entropy"], plugs)
+        self.assertEqual(plugs[0], "compose")
+        self.assertEqual(plugs.count("--dep"), 3)
+        self.assertIn("lsf:adapter0=" + str(compiler.runtimes["closed"]), plugs)
+        self.assertIn("lsf:adapter1=" + str(compiler.runtimes["entropy"]), plugs)
+        source = (fixture.evidence / "runtime-composition.wac").read_text()
+        self.assertEqual(source.count('"wasi:random/insecure@0.2.6": runtime1'), 1)
+        self.assertNotIn('"wasi:random/insecure@0.2.0":', source)
+        materials = {row["name"] for row in compiler.generated_materials}
+        self.assertEqual(materials, {"runtime-composition", "runtime-composition-source"})
         self.assertEqual(result["runtimeProfile"]["profile"], "closed")
         self.assertEqual(result["runtimeProfile"]["additionalAdapters"][0]["name"], "noncrypto-entropy")
         receipt = json.loads((fixture.evidence / "closed-runtime-coverage.json").read_bytes())
