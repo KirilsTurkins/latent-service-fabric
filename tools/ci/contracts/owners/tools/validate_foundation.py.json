@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/validate_foundation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Count foundation recipes only in the exact complete required matrix with their owned lane conditions; retain every locked scope check and reject exclusions, missing lanes and failure masking.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c5af2d5733ff8af9cd38b86192584344709d717ae8bfa4becd284f895e29ac35"
+  "sha256": "4063f60f07d8f27b8e2a19ebaddefb725d966ed282d8411a97502b7923ee9411"
 }
