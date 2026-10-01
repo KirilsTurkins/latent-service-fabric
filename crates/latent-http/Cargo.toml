@@ -12,6 +12,7 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-effects = { path = "../latent-effects" }
 latent-network = { path = "../latent-network" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }
@@ -36,6 +37,8 @@ webpki-roots = "=1.0.9"
 zeroize = { version = "=1.9.0", features = ["alloc"] }
 
 [dev-dependencies]
+latent-commit = { path = "../latent-commit" }
+latent-state = { path = "../latent-state" }
 latent-secrets = { path = "../latent-secrets" }
 rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }
 tempfile.workspace = true

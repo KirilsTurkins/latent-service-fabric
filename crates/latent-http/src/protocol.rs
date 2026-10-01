@@ -6,8 +6,8 @@ use crate::{dns::Answers, network::Network, HttpError, HttpProviderConfig, HttpR
 pub use body::{ProtocolBody, ProtocolPage, MAXIMUM_PROTOCOL_BODY_BYTES, PROTOCOL_PAGE_BYTES};
 use latent_capabilities::broker::{
     pools::{
-        InstalledProvider, MaintenanceRequest, PoolAdmission, PoolCall, ProviderClient,
-        ProviderMaintenance, ProviderMetadata, ProviderPools,
+        DeferredRequest, InstalledProvider, MaintenanceRequest, PoolAdmission, PoolCall,
+        ProviderClient, ProviderMaintenance, ProviderMetadata, ProviderPools,
     },
     CapabilitySession,
 };
@@ -18,12 +18,14 @@ use zeroize::Zeroizing;
 pub enum ProtocolScope<'a> {
     Invocation(&'a PoolCall),
     Maintenance(&'a MaintenanceRequest),
+    Deferred(&'a DeferredRequest),
 }
 impl ProtocolScope<'_> {
     pub(crate) fn checkpoint(self) -> Result<(), HttpError> {
         match self {
             Self::Invocation(call) => call.io().checkpoint()?,
             Self::Maintenance(request) => request.checkpoint()?,
+            Self::Deferred(request) => request.checkpoint()?,
         }
         Ok(())
     }
@@ -38,6 +40,7 @@ impl ProtocolScope<'_> {
                 self.checkpoint()?;
                 Ok(value)
             }
+            Self::Deferred(request) => Ok(request.wait_for(future).await?),
         }
     }
 }
@@ -85,6 +88,48 @@ struct Inner {
     _metadata: ProviderMetadata,
 }
 impl ProtocolTransport {
+    pub(crate) fn from_http_provider(provider: &crate::provider::Inner) -> Result<Self, HttpError> {
+        let metadata = provider.pools.reserve_protocol_metadata(
+            65536
+                + 3 * provider
+                    .config
+                    .extra_roots
+                    .iter()
+                    .map(Vec::capacity)
+                    .sum::<usize>(),
+        )?;
+        let mut config = provider.config.clone();
+        if config.destinations.len() != 1 {
+            return Err(HttpError::InvalidRequest);
+        }
+        config.destinations[0].allowed_request_headers.clear();
+        config.destinations[0].redirect_destinations.clear();
+        config.limits.maximum_redirects = 0;
+        let HttpResolution::Static { addresses } = &config.destinations[0].resolution else {
+            return Err(HttpError::InvalidRequest);
+        };
+        Ok(Self {
+            inner: Arc::new(Inner {
+                answers: Answers::from_static(addresses)?,
+                config,
+                pools: Arc::clone(&provider.pools),
+                client: provider.client(0)?,
+                tls: Arc::clone(&provider.tls),
+                _metadata: metadata,
+            }),
+        })
+    }
+
+    pub(crate) fn deferred(
+        &self,
+        grant: latent_effects::authority::DispatchGrant,
+        memory_bytes: usize,
+    ) -> Result<DeferredRequest, HttpError> {
+        self.inner
+            .pools
+            .deferred(&self.inner.client, grant, 2, memory_bytes)
+            .map_err(Into::into)
+    }
     pub fn new(
         pools: Arc<ProviderPools>,
         provider: &InstalledProvider,
@@ -143,6 +188,35 @@ impl ProtocolTransport {
         maximum_response_bytes: usize,
         consume: &mut (dyn FnMut(&[u8]) -> Result<(), HttpError> + Send),
     ) -> Result<ProtocolResponse, ProtocolFailure> {
-        exchange::run(&self.inner, scope, request, maximum_response_bytes, consume).await
+        exchange::run(
+            &self.inner,
+            scope,
+            request,
+            maximum_response_bytes,
+            consume,
+            &mut || Ok(()),
+        )
+        .await
+    }
+
+    /// The trusted deferred adapter rechecks its credential/time immediately
+    /// after TLS setup and before the first possible HTTP request write.
+    pub(crate) async fn exchange_fenced(
+        &self,
+        scope: ProtocolScope<'_>,
+        request: ProtocolRequest,
+        maximum_response_bytes: usize,
+        consume: &mut (dyn FnMut(&[u8]) -> Result<(), HttpError> + Send),
+        before_write: &mut (dyn FnMut() -> Result<(), HttpError> + Send),
+    ) -> Result<ProtocolResponse, ProtocolFailure> {
+        exchange::run(
+            &self.inner,
+            scope,
+            request,
+            maximum_response_bytes,
+            consume,
+            before_write,
+        )
+        .await
     }
 }
