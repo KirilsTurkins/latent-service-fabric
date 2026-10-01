@@ -28,11 +28,14 @@ def layout(project: Path, language: str) -> tuple[Path, Path, bytes | None]:
     """Find an exact descriptor/application association, never a sibling capture."""
     from tools.dev_workflow import common, project as frontend
     requested = regular_path(project)
+    selected = None
     for ordinal, root in enumerate((requested, *requested.parents)):
         if ordinal > 32:
             break
         if not os.path.lexists(root / DESCRIPTOR):
             continue
+        if selected is not None:
+            raise DependencyError('dependency-frontend-ambiguous-project-descriptor')
         raw = read_bytes(root / DESCRIPTOR, common.MAX_DOCUMENT)
         descriptor = frontend.validate(common.decode(raw))
         if descriptor['language'] != language:
@@ -40,8 +43,10 @@ def layout(project: Path, language: str) -> tuple[Path, Path, bytes | None]:
         app = regular_path(root / descriptor['build']['workingDirectory'])
         if app == root or not app.is_relative_to(root) or requested not in {root, app}:
             raise DependencyError('dependency-frontend-application-layout')
-        return root, app, raw
-    return requested, requested, None
+        if os.path.lexists(app / DESCRIPTOR):
+            raise DependencyError('dependency-frontend-ambiguous-project-descriptor')
+        selected = root, app, raw
+    return selected or (requested, requested, None)
 
 
 def application_root(project: Path, language: str) -> Path:
