@@ -85,6 +85,11 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
                            "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate"}
         self.assertTrue(expected["latent:state/key-value@0.2.0"].isdisjoint(host_operations))
         expected["latent:state/key-value@0.2.0"].update(host_operations)
+        # Dispatch is a separately authorized native purpose. The frozen guest
+        # staging interface still exposes only stage; it grants no dispatch.
+        intent_host_operations = {"dispatch"}
+        self.assertTrue(expected["latent:intents/staging@0.1.0"].isdisjoint(intent_host_operations))
+        expected["latent:intents/staging@0.1.0"].update(intent_host_operations)
         self.assertEqual(actual, expected)
         constraints = SCHEMAS["capability-policy"]["$defs"]["rule"]["allOf"]
         self.assertEqual({v["if"]["properties"]["capability"]["const"]:
