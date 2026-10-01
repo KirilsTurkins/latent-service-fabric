@@ -25,9 +25,19 @@ PACKAGE_REQUIRED = frozenset({"observation.json", "package-source.json", "echo-c
     "capsule.json", "contracts.json", "wit-lock.json", "wit/context.wit", "wit/echo.wit", "wit/log.wit"})
 PACKAGE_OPTIONAL = frozenset({"sbom-inputs.json"})
 
+# Pinned wasm-tools 1.254.0 output from the maintained legacy Echo component.
+# rust-cache 6323deb misidentifies interface/deps as a Cargo profile, removes
+# component.wit, then stops at its absent build directory. Only these exact
+# generated dependency bytes may authenticate that otherwise incomplete owner.
+LEGACY_CACHE_WIT = {
+    "interface/deps/context.wit": "sha256:e905b8170d726917e488987b8eff711ba94f30bd52fa53c9ea86c40e1795e99a",
+    "interface/deps/echo.wit": "sha256:4139d4e54438a9c3eabbb5fb7a3cf7f93b4df7badcb75cd1d7c562992d179c68",
+    "interface/deps/log.wit": "sha256:b54ae8bf25c912a2c12be5321b7e32b395cf5e56a449620682eeaf169bcdf341",
+}
+
 
 def _inventory(directory: Path, required: frozenset[str], optional: frozenset[str],
-               allowed_directories: set[str]) -> bool:
+               allowed_directories: set[str], retained_profile: dict[str, str] | None = None) -> bool:
     pending = [directory]
     files = set()
     entries = 0
@@ -59,6 +69,12 @@ def _inventory(directory: Path, required: frozenset[str], optional: frozenset[st
     # files has no fixture metadata or payload to authenticate. Unknown paths,
     # links, special files and entry limits were still checked above.
     if not files:
+        return False
+    if retained_profile is not None and files == set(retained_profile):
+        for name, expected in retained_profile.items():
+            actual = file_identity(directory / name, "cached-generated-wit", 256 * 1024)
+            if actual["digest"] != expected:
+                raise SnapshotError("validator cached fixture dependency bytes have changed")
         return False
     if not required <= files:
         raise SnapshotError("validator fixture is incomplete")
@@ -110,7 +126,8 @@ def _recognized(directory: Path, package: bool) -> None:
                         and row.get("name") == "dependency-inventory"] != [identity]):
                 raise SnapshotError("validator fixture dependency inventory association has changed")
     else:
-        if not _inventory(directory, LEGACY_REQUIRED, LEGACY_OPTIONAL, {"interface", "interface/deps"}):
+        if not _inventory(directory, LEGACY_REQUIRED, LEGACY_OPTIONAL, {"interface", "interface/deps"},
+                          LEGACY_CACHE_WIT):
             return
         marker = _metadata(directory, "build.json")
         if (type(marker.get("schemaVersion")) is not int or marker["schemaVersion"] != 1
