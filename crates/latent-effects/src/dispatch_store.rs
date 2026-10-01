@@ -16,6 +16,7 @@ const DUE_FORMAT: &[u8; 5] = b"LDI\0\x01";
 mod catalog;
 mod codec;
 pub mod control;
+pub mod effect_management;
 pub use catalog::{
     ClaimedEffect, DispatchCatalog, DispatchCounts, DispatchEpoch, DuePage, HistoryPage,
 };
@@ -125,6 +126,9 @@ pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
                 || key.key.starts_with(control::CONTROL_RECEIPT_PREFIX) =>
         {
             control::ControlCatalog::validate_row(key, bytes)?;
+        }
+        Family::Maintenance if effect_management::EffectManagementCatalog::owns_row(key) => {
+            effect_management::EffectManagementCatalog::validate_row(key, bytes)?;
         }
         _ => return codec::validate_row(key, bytes),
     }
