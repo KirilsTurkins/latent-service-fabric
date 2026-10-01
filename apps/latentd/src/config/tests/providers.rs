@@ -1,5 +1,6 @@
 use serde_json::{json, Value};
 
+mod activation_runtime;
 mod http_streaming;
 
 fn document() -> Value {

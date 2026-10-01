@@ -1,5 +1,8 @@
 {
   "cases": [
+    "ActivationRuntimeProviderSchema.test_documented_runtime_has_exact_interface_and_explicit_separate_limits",
+    "ActivationRuntimeProviderSchema.test_runtime_cannot_override_profile_authority_executor_or_contract_version",
+    "ActivationRuntimeProviderSchema.test_runtime_rejects_missing_null_noninteger_and_unbounded_categories",
     "NodeProvidersSchema.test_documented_blob_and_shared_real_workflow_http_configuration",
     "NodeProvidersSchema.test_guest_secrets_only_accept_bounded_file_references_and_no_plaintext",
     "NodeProvidersSchema.test_local_service_configuration_has_no_remote_or_publication_grant_override",
@@ -10,6 +13,42 @@
     "StreamingProviderSchema.test_null_unknown_missing_and_unbounded_stream_limits_are_rejected"
   ],
   "guards": {
+    "ActivationRuntimeProviderSchema.test_documented_runtime_has_exact_interface_and_explicit_separate_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
+        "class:setup-sha256:01d950088431a3dddcf3f7a73370c53d7f565350561ecb9b54648b3cd70892c1"
+      ],
+      "skipSites": []
+    },
+    "ActivationRuntimeProviderSchema.test_runtime_cannot_override_profile_authority_executor_or_contract_version": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
+        "class:setup-sha256:01d950088431a3dddcf3f7a73370c53d7f565350561ecb9b54648b3cd70892c1"
+      ],
+      "skipSites": []
+    },
+    "ActivationRuntimeProviderSchema.test_runtime_rejects_missing_null_noninteger_and_unbounded_categories": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:72e5660aae2da52302e7725e2ac2c39d20db695cf442cacec9a27ccfc5bd3a32",
+        "class:setup-sha256:01d950088431a3dddcf3f7a73370c53d7f565350561ecb9b54648b3cd70892c1"
+      ],
+      "skipSites": []
+    },
     "NodeProvidersSchema.test_documented_blob_and_shared_real_workflow_http_configuration": {
       "bases": [
         "unittest.TestCase"
@@ -109,6 +148,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_node_providers_schema.py",
-  "reviewReason": "Add three closed streaming-HTTP node schema controls and preserve existing provider cases, setup guards and execution.",
+  "reviewReason": "Add explicit finite activation runtime installation schema controls while retaining every existing provider case and guard",
   "schemaVersion": "latent.ci.contracts.v1"
 }
