@@ -14,6 +14,7 @@ mod providers;
 mod rollouts;
 mod shutdown;
 mod start;
+mod startup_observation;
 pub mod state;
 mod telemetry;
 pub mod transport;
@@ -44,6 +45,7 @@ pub use policies::PolicyShutdownReport;
 pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
+pub use startup_observation::StartupFailureReport;
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.
 #[derive(Default)]
