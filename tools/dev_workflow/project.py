@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
-from . import paths, snapshot
+from . import dependencies, paths, snapshot
 from .common import TRANSACTION_HOST_ABI, MAX_DOCUMENT, decode, digest, encode, guest_host_abi, identifier, integer, members, require, sha
 
 LANGUAGES = {"rust": 544, "c": 545, "typescript": 546, "go": 547, "java": 548, "dotnet": 549}
@@ -12,7 +12,9 @@ LANGUAGES = {"rust": 544, "c": 545, "typescript": 546, "go": 547, "java": 548, "
 
 def validate(value: dict) -> dict:
     members(value, {"schemaVersion", "name", "tenant", "service", "language", "template", "hostAbi",
-                    "inputRoots", "exclude", "build", "artifacts", "scenarios"})
+                    "inputRoots", "exclude", "build", "artifacts", "scenarios"}, {"dependencyInputs"})
+    if "dependencyInputs" in value:
+        dependencies.validate(value["dependencyInputs"])
     require(value["schemaVersion"] == "latent.dev.project.v1", "project-version")
     for key in ("name", "tenant"):
         identifier(value[key])
@@ -89,11 +91,12 @@ def validate(value: dict) -> dict:
 
 def load(root: Path) -> tuple[dict, str]:
     raw = paths.read(root, "latent.project.json", MAX_DOCUMENT)
-    return validate(decode(raw)), digest(raw)
+    descriptor = validate(decode(raw))
+    return validate(dependencies.bind(root, descriptor)), digest(raw)
 
 
 def trust_identity(project: dict) -> str:
-    # Source edits can reuse trust; any recipe/tool/path/ABI change invalidates it.
+    # Source edits can reuse trust; recipe/tool/path/ABI/dependency changes cannot.
     return digest(encode(validate(project)))
 
 

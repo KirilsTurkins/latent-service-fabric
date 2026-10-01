@@ -7,11 +7,12 @@ from pathlib import Path
 import platform
 import time
 
-from . import build_artifacts, build_cache, diagnostics, paths, process, project, snapshot, state, tool_inventory
+from . import build_artifacts, build_cache, dependencies, diagnostics, paths, process, project, snapshot, state, tool_inventory
 from .common import DevError, decode, encode, members, require
 
 
 def unchanged(source: Path, descriptor: dict, record: dict) -> None:
+    dependencies.verify(source, descriptor)
     observed, _content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))
     require(observed == record, "source-or-generated-bindings-changed-during-build")
 
