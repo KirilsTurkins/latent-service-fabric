@@ -214,6 +214,74 @@ impl NamespaceAuthority {
         &self.ownership
     }
 
+    /// Consume only the actual host claim's one namespace advance. The original
+    /// retained decision, gate, caller and deadline survive unchanged. Raw rows
+    /// or decoded receipts cannot supply the affine claim required here.
+    pub fn rebind_command_after_claim(
+        &self,
+        store: &PolicyStore,
+        claim: &latent_commit::atomic::AdmittedCommand,
+        original: &NamespaceRead,
+        namespace: &NamespaceRead,
+    ) -> Result<Self, PlatformError> {
+        use latent_commit::atomic::Outcome;
+        let command = claim.record();
+        let ownership = &self.ownership;
+        let mut expected = original.record().clone();
+        if self.mode != Mode::Command
+            || expected.version != self.version
+            || expected.tenant != ownership.tenant
+            || expected.id.0 != ownership.namespace
+            || expected.version.incarnation != ownership.incarnation
+            || expected.status != NamespaceStatus::Active
+            || Instant::now() >= self.deadline
+            || command.outcome() != Outcome::Pending
+            || command.key().tenant != ownership.tenant.0
+            || command.key().namespace != ownership.namespace
+            || command.key().incarnation != ownership.incarnation.to_string()
+            || command.key().entity != ownership.entity
+            || command.key().recovery_scope != ownership.caller.scope
+            || command.result_read_policy() != ownership.result_policy
+            || command.source().publication != self.publication
+            || command.source().state_schema != expected.state_schema
+        {
+            return Err(denied());
+        }
+        self.gate.check()?;
+        expected.version.generation = expected
+            .version
+            .generation
+            .checked_add(1)
+            .ok_or_else(denied)?;
+        expected.pins.retained_results = expected
+            .pins
+            .retained_results
+            .checked_add(1)
+            .ok_or_else(denied)?;
+        if &expected != namespace.record() {
+            return Err(denied());
+        }
+        store.with_retained_decision(&self.initial, &mut |actual, _| {
+            self.check_target(actual, "acquire-command")?;
+            self.lifecycle
+                .with_current(namespace, true, || Ok(()))
+                .map_err(|_| denied())
+        })?;
+        Ok(Self {
+            initial: Arc::clone(&self.initial),
+            ownership: self.ownership.clone(),
+            publication: self.publication.clone(),
+            version: expected.version,
+            activation: self.activation.clone(),
+            mode: Mode::Command,
+            ceiling: self.ceiling,
+            deadline: self.deadline,
+            gate: Arc::clone(&self.gate),
+            selection: self.selection.clone(),
+            lifecycle: Arc::clone(&self.lifecycle),
+        })
+    }
+
     /// Reobserve the current row for an originally sealed read-result owner.
     /// This preserves its actual retained decision, scope and original deadline;
     /// it cannot acquire command authority or reopen an accepted command gate.
@@ -359,6 +427,48 @@ impl NamespaceAuthority {
             operation,
             namespace,
         })
+    }
+
+    /// Accept only the namespace expectation from an actual prepared complete
+    /// envelope. The original policy/lifecycle/cancellation fence still applies.
+    pub fn prepare_envelope_commit_io<'owner>(
+        &'owner self,
+        store: &'owner PolicyStore,
+        operation: &'owner SealedPolicyDecision<'owner>,
+        namespace: &'owner NamespaceRead,
+        envelope: &latent_commit::atomic::EnvelopeNamespaceExpectation,
+    ) -> Result<CommitIoAcceptance<'owner>, PlatformError> {
+        if self.mode != Mode::Command
+            || envelope.is_technical_abort()
+            || !envelope.matches(&namespace.expectation())
+        {
+            return Err(denied());
+        }
+        Ok(CommitIoAcceptance {
+            authority: self,
+            store,
+            operation,
+            namespace,
+        })
+    }
+
+    /// Terminal technical metadata requires the lower owner's positive physical
+    /// retirement proof and explicit current command-control permission. This
+    /// read/control owner never reopens or accepts the original command gate.
+    pub fn accept_terminal_abort(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        envelope: &latent_commit::atomic::EnvelopeNamespaceExpectation,
+    ) -> Result<(), PlatformError> {
+        if self.mode != Mode::Inspection
+            || !envelope.is_technical_abort()
+            || !envelope.matches(&namespace.expectation())
+        {
+            return Err(denied());
+        }
+        self.with_operation(store, operation, namespace, "cancel-command", || Ok(()))
     }
 
     fn same_result_scope(&self, historical: &ResultOwnership) -> bool {

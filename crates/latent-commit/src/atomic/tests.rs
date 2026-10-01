@@ -17,6 +17,7 @@ use latent_state::{
 use std::fs::OpenOptions;
 use writer::{inspect, RetryRequest, StagedIntent};
 mod captured;
+mod view_tokens;
 
 fn time(now: u64) -> CommandTime {
     CommandTime {
@@ -1124,6 +1125,14 @@ fn terminal_namespace_version_codec_rejects_forgery_absence_and_legacy_format() 
         incarnation: 1,
         generation: u64::MAX,
     });
+    let scope = super::record::record_scope(&maximum).unwrap();
+    let mut identity = latent_state::session::version::ViewIdentity::from_token(
+        &scope,
+        &maximum.committed_view_token,
+    )
+    .unwrap();
+    identity.namespace = maximum.committed_version.unwrap();
+    maximum.committed_view_token = identity.token(&scope).unwrap();
     assert_eq!(
         CommandRecord::decode(&maximum.encode().unwrap()).unwrap(),
         maximum

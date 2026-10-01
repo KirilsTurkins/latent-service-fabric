@@ -11,6 +11,7 @@ description = "Single-node activation lifecycle orchestration and node contracts
 workspace = true
 
 [dependencies]
+base64.workspace = true
 latent-activation = { path = "../latent-activation" }
 latent-admission = { path = "../latent-admission" }
 latent-artifacts = { path = "../latent-artifacts" }

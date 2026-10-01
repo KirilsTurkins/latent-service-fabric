@@ -38,19 +38,24 @@ impl TransactionAdmissionControl {
         self.cancellation
             .bind_commit_gate(authorization.cancellation())
     }
+
+    #[must_use]
+    pub(crate) fn token(&self) -> crate::CancellationToken {
+        self.cancellation.token()
+    }
 }
 
 /// An existing command completes from current authorized durable state. It
 /// never supplies another execution host or schedules another application call.
 pub enum TransactionAdmission {
     Execute(TransactionExecution),
-    Existing(TransactionCompletion),
+    Existing(Box<TransactionCompletion>),
 }
 
 /// Host completion is called only after the backend's actual teardown (or a
 /// positively never-started path). It owns any remaining native retirement.
 pub trait TransactionCompletionHook: Send + Sync {
-    fn complete<'a>(&'a self, outcome: ActivationOutcome) -> BoxFuture<'a, TransactionCompletion>;
+    fn complete(&self, outcome: ActivationOutcome) -> BoxFuture<'_, TransactionCompletion>;
 }
 
 pub struct TransactionExecution {

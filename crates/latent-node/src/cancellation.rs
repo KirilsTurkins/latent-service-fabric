@@ -106,6 +106,7 @@ impl ActivationCancellationRegistry {
 
     /// Cancels a registered activation. Repeated requests are accepted and do
     /// not replace the first reason.
+    #[must_use]
     pub fn cancel(
         &self,
         activation_id: &ActivationId,
@@ -239,6 +240,12 @@ pub struct CancellationHandle {
 }
 
 impl CancellationHandle {
+    #[must_use]
+    pub(crate) fn token(&self) -> CancellationToken {
+        CancellationToken {
+            state: Arc::clone(&self.state),
+        }
+    }
     pub(crate) fn bind_commit_gate(
         &self,
         gate: latent_capabilities::namespace::CommitCancellation,
