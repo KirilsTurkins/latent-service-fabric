@@ -264,6 +264,11 @@
         }
       },
       {
+        "if": "github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'standalone'",
+        "name": "Seed the minimal runtime dependency graph in the complete native cache writer",
+        "run": "python3 tools/test.py prepare --suite selection.echo-runtime --inventory \"$RUNNER_TEMP/lsf-cache-echo-runtime.jsonl\" --context ci"
+      },
+      {
         "if": "github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements')",
         "name": "Remove validated echo fixtures before dependency cache pruning",
         "run": "python3 tools/reset_validation_echo.py --target-root target"

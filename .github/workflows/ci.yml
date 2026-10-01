@@ -919,6 +919,9 @@ jobs:
             target/capsules/echo/sha256.txt
           if-no-files-found: error
           retention-days: 14
+      - name: Seed the minimal runtime dependency graph in the complete native cache writer
+        if: github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'standalone'
+        run: python3 tools/test.py prepare --suite selection.echo-runtime --inventory "$RUNNER_TEMP/lsf-cache-echo-runtime.jsonl" --context ci
       - name: Remove validated echo fixtures before dependency cache pruning
         if: github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements')
         run: python3 tools/reset_validation_echo.py --target-root target

@@ -25,6 +25,7 @@
       "Retain Phase 1 measurement collector smoke diagnostics": "always() && matrix.lane == 'measurements'",
       "Retain bounded conformance and provider diagnostics": "always() && (matrix.lane == 'standalone' || matrix.lane == 'sdk-provider')",
       "Retain optimization benchmark smoke evidence": "always() && matrix.lane == 'optimization'",
+      "Seed the minimal runtime dependency graph in the complete native cache writer": "github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'standalone'",
       "Upload echo capsule build evidence": "matrix.lane == 'runtime'",
       "Validate contracts, echo component, and generated bindings": "matrix.lane != 'optimization'",
       "Validate standalone optimization benchmark smoke": "matrix.lane == 'optimization'"

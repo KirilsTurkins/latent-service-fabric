@@ -70,6 +70,10 @@ Pruning removes non-Cargo files but can leave empty directory trees; restoring a
 empty echo fixture correctly fails its ownership/completeness guard. The native
 and frozen-collector v3 caches exclude those roots before archiving. Incomplete,
 foreign or changed fixtures still fail the unchanged validated reset helper.
+The standalone writer also prepares the actual minimal echo runtime inventory
+before saving, so the native cache contains both the smaller runtime and broader
+node/CLI dependency feature graphs. This extra preparation runs only on trusted
+development pushes; test results and inventories are excluded from the archive.
 
 CI disables incremental compilation and debug symbols for correctness builds.
 Workspace code remains unoptimized; debug assertions and overflow checks are

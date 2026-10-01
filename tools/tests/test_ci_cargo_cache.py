@@ -161,6 +161,10 @@ class CacheIdentityTests(unittest.TestCase):
             "github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements')")
         self.assertEqual(cleanup["run"], "python3 tools/reset_validation_echo.py --target-root target")
         self.assertIs(steps[-1], cleanup)
+        producer = next(step for step in steps if step.get("name") == "Seed the minimal runtime dependency graph in the complete native cache writer")
+        self.assertEqual(producer["if"], "github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'standalone'")
+        self.assertEqual(producer["run"], 'python3 tools/test.py prepare --suite selection.echo-runtime --inventory "$RUNNER_TEMP/lsf-cache-echo-runtime.jsonl" --context ci')
+        self.assertLess(steps.index(producer), steps.index(cleanup))
         self.assertLess(next(index for index, step in enumerate(steps) if step.get("name") == "Upload echo capsule build evidence"), steps.index(cleanup))
 
     def test_ci_symbols_are_removed_without_disabling_correctness_guards(self):
