@@ -1,8 +1,41 @@
-//! Forward only the existing closed currentness vocabulary from host traps.
+//! Forward only closed host-failure and currentness vocabulary from host traps.
 //! This observation never changes the outer failure, retryability or authority.
 
-use latent_core::{error::ADMISSION_CURRENTNESS_REASONS, ErrorDetail, Metadata};
+use latent_core::{error::ADMISSION_CURRENTNESS_REASONS, ErrorDetail, Metadata, PlatformErrorCode};
 use latent_executor::GuestTrap;
+
+pub(super) fn host_failure_detail(trap: &GuestTrap) -> Option<ErrorDetail> {
+    if trap.code != "guest-runtime-error" {
+        return None;
+    }
+    // This private metadata is emitted from a typed HostCapabilityFailure. Map
+    // its exact closed enum spelling to stable wire vocabulary; never forward
+    // arbitrary strings from an engine/backend, provider or guest exception.
+    let code = match trap.metadata.get("capabilityFailure")?.as_str() {
+        "Unavailable" => PlatformErrorCode::Unavailable,
+        "DeadlineExceeded" => PlatformErrorCode::DeadlineExceeded,
+        "Cancelled" => PlatformErrorCode::Cancelled,
+        "ResourceExhausted" => PlatformErrorCode::ResourceExhausted,
+        "PermissionDenied" => PlatformErrorCode::PermissionDenied,
+        "Unauthenticated" => PlatformErrorCode::Unauthenticated,
+        "InvalidArgument" => PlatformErrorCode::InvalidArgument,
+        "NotFound" => PlatformErrorCode::NotFound,
+        "AlreadyExists" => PlatformErrorCode::AlreadyExists,
+        "IncompatibleContract" => PlatformErrorCode::IncompatibleContract,
+        "StateConflict" => PlatformErrorCode::StateConflict,
+        "DependencyFailed" => PlatformErrorCode::DependencyFailed,
+        "GuestTrap" => PlatformErrorCode::GuestTrap,
+        "CorruptArtifact" => PlatformErrorCode::CorruptArtifact,
+        "RouteUnavailable" => PlatformErrorCode::RouteUnavailable,
+        "AdmissionRejected" => PlatformErrorCode::AdmissionRejected,
+        "Internal" => PlatformErrorCode::Internal,
+        _ => return None,
+    };
+    Some(ErrorDetail {
+        kind: "activation.guest-host-failure".into(),
+        fields: Metadata::from([("code".into(), code.wire_code().into())]),
+    })
+}
 
 pub(super) fn currentness_detail(trap: &GuestTrap) -> Option<ErrorDetail> {
     if trap.code != "guest-runtime-error" {
@@ -34,7 +67,7 @@ pub(super) fn currentness_detail(trap: &GuestTrap) -> Option<ErrorDetail> {
 mod tests {
     use super::*;
     use latent_activation::ActivationOutcome;
-    use latent_core::{ActivationTerminalState, BudgetConsumption, PlatformErrorCode};
+    use latent_core::{ActivationTerminalState, BudgetConsumption};
     use latent_executor::GuestOutcome;
 
     fn mapped(trap_code: &str, metadata: Metadata) -> latent_core::PlatformError {
@@ -91,7 +124,7 @@ mod tests {
                 ("guest-value".into(), "private-input".into()),
             ]);
             let error = mapped("guest-runtime-error", metadata);
-            assert_eq!(error.details.len(), 2);
+            assert_eq!(error.details.len(), 3);
             assert_eq!(error.details[1].kind, "admission.currentness");
             assert_eq!(
                 error.details[1].fields,
@@ -141,11 +174,88 @@ mod tests {
                 ("capabilityFailure".into(), host_code.into()),
                 ("admissionCurrentnessReason".into(), reason.into()),
             ]);
-            assert_eq!(mapped(trap_code, metadata).details.len(), 1);
+            let error = mapped(trap_code, metadata);
+            assert!(!error
+                .details
+                .iter()
+                .any(|detail| detail.kind == "admission.currentness"));
+            assert!(error.details.iter().all(|detail| matches!(
+                detail.kind.as_str(),
+                "activation.guest-trap" | "activation.guest-host-failure"
+            )));
         }
         assert_eq!(
             mapped("guest-runtime-error", Metadata::new()).details.len(),
             1
         );
+    }
+
+    #[test]
+    fn host_failure_codes_keep_terminal_semantics_without_private_metadata() {
+        for code in [
+            PlatformErrorCode::Unavailable,
+            PlatformErrorCode::DeadlineExceeded,
+            PlatformErrorCode::Cancelled,
+            PlatformErrorCode::ResourceExhausted,
+            PlatformErrorCode::PermissionDenied,
+            PlatformErrorCode::Unauthenticated,
+            PlatformErrorCode::InvalidArgument,
+            PlatformErrorCode::NotFound,
+            PlatformErrorCode::AlreadyExists,
+            PlatformErrorCode::IncompatibleContract,
+            PlatformErrorCode::StateConflict,
+            PlatformErrorCode::DependencyFailed,
+            PlatformErrorCode::GuestTrap,
+            PlatformErrorCode::CorruptArtifact,
+            PlatformErrorCode::RouteUnavailable,
+            PlatformErrorCode::AdmissionRejected,
+            PlatformErrorCode::Internal,
+        ] {
+            let metadata = Metadata::from([
+                ("capabilityFailure".into(), format!("{code:?}")),
+                ("classification".into(), "private-engine-class".into()),
+                ("trap".into(), "private-value".into()),
+                ("provider".into(), "private-token".into()),
+                ("admissionCurrentnessReason".into(), "private-reason".into()),
+            ]);
+            let error = mapped("guest-runtime-error", metadata);
+            assert_eq!(error.details.len(), 2);
+            assert_eq!(error.details[1].kind, "activation.guest-host-failure");
+            assert_eq!(
+                error.details[1].fields,
+                Metadata::from([("code".into(), code.wire_code().into())])
+            );
+        }
+    }
+
+    #[test]
+    fn host_failure_metadata_requires_exact_known_code_and_runtime_trap() {
+        for trap_code in [
+            "guest-trap",
+            "guest-runtime-error-unknown",
+            "unrecognized",
+            "",
+        ] {
+            let metadata = Metadata::from([("capabilityFailure".into(), "Unavailable".into())]);
+            assert_eq!(mapped(trap_code, metadata).details.len(), 1);
+        }
+        for value in [
+            "unavailable",
+            "Unavailable ",
+            " Unavailable",
+            "Unavailable\n",
+            "Unavailable/private",
+            "private",
+            "",
+        ] {
+            let metadata = Metadata::from([("capabilityFailure".into(), value.into())]);
+            assert_eq!(mapped("guest-runtime-error", metadata).details.len(), 1);
+        }
+        for metadata in [
+            Metadata::from([("capabilityFailure".into(), "private".repeat(1024))]),
+            Metadata::from([("capabilityFailure/private".into(), "Unavailable".into())]),
+        ] {
+            assert_eq!(mapped("guest-runtime-error", metadata).details.len(), 1);
+        }
     }
 }

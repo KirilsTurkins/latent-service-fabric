@@ -507,21 +507,31 @@ impl WasmtimeBackend {
             self.config.value_codec_limits,
         )?;
 
-        let capabilities = self
-            .shared
-            .capabilities
-            .as_ref()
-            .map(|owner| {
-                let publication = runtime.eligibility.as_ref().ok_or_else(|| {
-                    platform_error(
-                        PlatformErrorCode::PermissionDenied,
-                        "capability publication owner required",
-                        false,
-                    )
-                })?;
-                owner.open_session(&request, cancellation, publication, accounting.deadline())
-            })
-            .transpose()?;
+        let capabilities = if let Some(owner) = &self.shared.capabilities {
+            let publication = runtime.eligibility.as_ref().ok_or_else(|| {
+                platform_error(
+                    PlatformErrorCode::PermissionDenied,
+                    "capability publication owner required",
+                    false,
+                )
+            })?;
+            match self
+                .capability_session(
+                    owner,
+                    &request,
+                    cancellation,
+                    publication,
+                    accounting.deadline(),
+                    &stop,
+                )
+                .await?
+            {
+                Ok(session) => Some(session),
+                Err(outcome) => return Ok(outcome),
+            }
+        } else {
+            None
+        };
         *capability_observer = capabilities
             .as_ref()
             .map(latent_capabilities::broker::CapabilitySession::observer);
@@ -569,6 +579,11 @@ impl WasmtimeBackend {
                 .as_micros(),
         )
         .unwrap_or(u64::MAX);
+        let lifecycle_error = store
+            .data_mut()
+            .runtime
+            .as_mut()
+            .and_then(|runtime| runtime.finalize().err());
         let (consumption, accounting_error) =
             invocation_accounting(&mut store, wall_time_micros, timing);
         let memory_exhausted = call_result
@@ -580,6 +595,32 @@ impl WasmtimeBackend {
         let encoded = call_result.as_ref().ok().map(|()| {
             values::encode_result(&function.results, &output, self.config.value_codec_limits)
         });
+        // Capture the execution winner before cleanup signals unfinished child
+        // owners. Cleanup cancellation cannot replace an existing trap, resource
+        // failure, or bounded lifecycle failure with a different terminal cause.
+        let outcome =
+            if call_result.is_ok() && accounting_error.is_none() && lifecycle_error.is_some() {
+                drop(call_result);
+                drop(encoded);
+                Ok(GuestOutcome::Trapped {
+                    trap: latent_executor::GuestTrap {
+                        code: "runtime-lifecycle-unproven".into(),
+                        message: "runtime-lifecycle-unproven".into(),
+                        guest_backtrace: Vec::new(),
+                        metadata: Metadata::new(),
+                    },
+                    consumption,
+                })
+            } else {
+                classify_call_result(
+                    call_result,
+                    encoded,
+                    &stop,
+                    memory_exhausted,
+                    consumption,
+                    accounting_error,
+                )
+            };
         // Cleanup order is intentional: after the guest call and its
         // component-model post-return complete, the actual component instance,
         // store/host state, temporary input, and all activation-owned guards
@@ -594,16 +635,7 @@ impl WasmtimeBackend {
         drop(temporary_buffer_guard);
         timing.activation_resource_reclamation_micros = elapsed_micros(reclamation_started);
 
-        let outcome = reclamation::finish(runtime, instance_permit, timing, || {
-            classify_call_result(
-                call_result,
-                encoded,
-                &stop,
-                memory_exhausted,
-                consumption,
-                accounting_error,
-            )
-        });
+        let outcome = reclamation::finish(runtime, instance_permit, timing, || outcome);
 
         let reusable_proof_started = Instant::now();
         drop(stop);
@@ -692,6 +724,7 @@ impl WasmtimeBackend {
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
         host_state.currentness_read_wait = self.shared.currentness_read_wait.clone();
+        host_state.runtime_stop = Some(Arc::clone(stop));
         if self.config.java_guest {
             host_state.limiter.reserve_exception_heap()?;
         }
@@ -947,6 +980,17 @@ impl ExecutionBackend for WasmtimeBackend {
 }
 
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
+    if error.chain().any(|cause| {
+        matches!(
+            cause.downcast_ref::<latent_core::BudgetError>(),
+            Some(latent_core::BudgetError::Exhausted {
+                dimension: latent_core::BudgetDimension::MemoryBytes,
+                ..
+            })
+        )
+    }) {
+        return true;
+    }
     let message = error.to_string().to_ascii_lowercase();
     message.contains("aggregate linear-memory budget exceeded")
         || message.contains("memory minimum size")

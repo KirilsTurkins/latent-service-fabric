@@ -53,7 +53,7 @@ def authenticate(config, temporary, *, target='windows-x86_64'):
     manifest = read_json(root / 'developer-bundle.json')
     require(manifest['sourceCommit'] == config['sourceCommit'] and manifest['version'] == config['version']
             and manifest['target'] == target and manifest['schemaVersion'] == 'latent.dev.bundle.v1'
-            and manifest['hostAbi'] == 'lsf-host-abi-phase3-v4' and manifest['protocol'] == 'latent.dev.protocol.v1',
+            and manifest['hostAbi'] == 'lsf-host-abi-phase3-v5' and manifest['protocol'] == 'latent.dev.protocol.v1',
             'frontend-identity-or-target')
     archive = manifest['archive']
     require(re.fullmatch(r'[A-Za-z0-9._-]+\.zip', archive['name']), 'frontend-archive-name')

@@ -97,6 +97,7 @@ pub(super) fn class(value: ResourceTarget<'_>) -> AuditCapabilityResourceClass {
         ResourceTarget::Random => AuditCapabilityResourceClass::Random,
         ResourceTarget::Log { .. } => AuditCapabilityResourceClass::Log,
         ResourceTarget::Http { .. } => AuditCapabilityResourceClass::Http,
+        ResourceTarget::Stream { .. } => AuditCapabilityResourceClass::Stream,
         ResourceTarget::Blob { .. } => AuditCapabilityResourceClass::Blob,
         ResourceTarget::Secrets { .. } => AuditCapabilityResourceClass::Secrets,
         ResourceTarget::Events { .. } => AuditCapabilityResourceClass::Events,
@@ -119,6 +120,7 @@ pub(super) fn bounded_resource(value: ResourceTarget<'_>) -> bool {
                 && path.len() <= 2048
         }
         ResourceTarget::Blob { namespace } => namespace.len() <= 128,
+        ResourceTarget::Stream { endpoint } => endpoint.validate().is_ok(),
         ResourceTarget::Secrets { reference } => reference.len() <= 128,
         ResourceTarget::Events { subject } => subject.len() <= 128,
         ResourceTarget::Telemetry { name } => name.len() <= 128,
@@ -165,6 +167,15 @@ pub(in crate::broker) fn request_digest(
         ResourceTarget::Blob { namespace } => {
             part(b"blob");
             part(namespace.as_bytes());
+        }
+        ResourceTarget::Stream { endpoint } => {
+            part(b"stream");
+            part(endpoint.host.as_bytes());
+            part(&endpoint.port.to_le_bytes());
+            part(match endpoint.transport {
+                latent_policy::capability::StreamTransport::Tcp => b"tcp",
+                latent_policy::capability::StreamTransport::HostTls => b"host-tls",
+            });
         }
         ResourceTarget::Secrets { reference } => {
             part(b"secrets");

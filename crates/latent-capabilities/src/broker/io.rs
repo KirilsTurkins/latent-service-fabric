@@ -478,6 +478,18 @@ impl IoLease {
     }
 }
 impl IoCall {
+    pub fn recheck_authority(&self) -> Result<(), PlatformError> {
+        self.checkpoint()?;
+        let mut state = self
+            .operation
+            .execution
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let Authority::Running(call) = &mut state.authority else {
+            return Err(denied());
+        };
+        call.recheck_authority()
+    }
     #[must_use]
     pub fn job_waiter(&self) -> IoJobWaiter {
         IoJobWaiter {

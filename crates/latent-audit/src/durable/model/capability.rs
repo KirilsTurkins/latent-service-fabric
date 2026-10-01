@@ -12,6 +12,7 @@ pub enum AuditCapabilityResourceClass {
     Random,
     Log,
     Http,
+    Stream,
     Blob,
     Secrets,
     Events,
@@ -133,7 +134,7 @@ impl AuditCapabilityContext {
             }
             AuditProviderOutcome::HostCompleted => matches!(
                 self.resource_class,
-                R::Context | R::Clock | R::Random | R::Log | R::Telemetry
+                R::Context | R::Clock | R::Random | R::Log | R::Telemetry | R::Stream
             ),
         }
     }
@@ -169,10 +170,16 @@ impl AuditCapabilityContext {
         codec::token(&self.operation, 64)?;
         let expected = match self.resource_class {
             AuditCapabilityResourceClass::Context => "latent:context/",
+            AuditCapabilityResourceClass::Clock
+                if self.capability == "latent:runtime/activation@0.1.0" =>
+            {
+                "latent:runtime/"
+            }
             AuditCapabilityResourceClass::Clock => "latent:clock/",
             AuditCapabilityResourceClass::Random => "latent:random/",
             AuditCapabilityResourceClass::Log => "latent:log/",
             AuditCapabilityResourceClass::Http => "latent:http/",
+            AuditCapabilityResourceClass::Stream => "latent:network/",
             AuditCapabilityResourceClass::Blob => "latent:blob/",
             AuditCapabilityResourceClass::Secrets => "latent:secrets/",
             AuditCapabilityResourceClass::Events => "latent:events/",
