@@ -6378,6 +6378,7 @@
         "engine_profiles::foreign_profile_prepared_ownership_is_rejected_before_native_instantiation",
         "engine_profiles::insufficient_native_memory_pool_rejects_without_leaking_prepared_or_active_owners",
         "host_abi::forged_or_stale_host_profile_descriptors_cannot_reuse_preparation",
+        "host_abi::outbound_proposal_and_wasi_sockets_are_not_ambient_authority",
         "host_abi::recognized_provider_imports_fail_preparation_without_installed_owners",
         "owned_preparation::dropped_and_unwinding_pending_guests_preserve_unsampled_fuel_and_memory",
         "owned_preparation::foreign_factory_changed_descriptor_and_foreign_guard_fail_before_store_creation",
@@ -6487,7 +6488,7 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 46,
+      "minimumCases": 47,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
