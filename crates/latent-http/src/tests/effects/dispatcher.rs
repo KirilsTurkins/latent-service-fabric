@@ -11,14 +11,14 @@ use latent_state::{
 };
 use std::{fs, os::unix::fs::PermissionsExt};
 
-struct Store {
-    _root: tempfile::TempDir,
-    config: ProtectedStoreConfig,
-    owner: Arc<ProtectedStoreOwner>,
+pub(super) struct Store {
+    pub(super) _root: tempfile::TempDir,
+    pub(super) config: ProtectedStoreConfig,
+    pub(super) owner: Arc<ProtectedStoreOwner>,
 }
 
 impl Store {
-    async fn new() -> Self {
+    pub(super) async fn new() -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, std::path::PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
@@ -68,7 +68,7 @@ impl Store {
             .unwrap();
     }
 
-    async fn record(&self, authority: &DurableEffectAuthority) -> EffectRecord {
+    pub(super) async fn record(&self, authority: &DurableEffectAuthority) -> EffectRecord {
         let key = effect_row_key(&authority.link().effect).unwrap();
         self.owner
             .with_store(StoreIoKind::Read, 128 * 1024, move |store| {
@@ -80,11 +80,11 @@ impl Store {
             .unwrap()
     }
 
-    async fn finish(self) {
+    pub(super) async fn finish(self) {
         self.close().await;
     }
 
-    async fn close(&self) {
+    pub(super) async fn close(&self) {
         let deadline = Instant::now() + Duration::from_secs(5);
         let report = self
             .owner
@@ -111,7 +111,7 @@ impl Store {
     }
 }
 
-fn config(paused: bool) -> DispatcherConfig {
+pub(super) fn config(paused: bool) -> DispatcherConfig {
     DispatcherConfig {
         workers: 1,
         queued_jobs: 1,
