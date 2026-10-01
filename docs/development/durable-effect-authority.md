@@ -157,3 +157,29 @@ All 97 effect library cases and strict all-target/all-feature Clippy passed on
 the pinned Linux Rust 1.97.1 image. The two new cases use real shared native
 reservations to check replacement refusal, retained grant capacity after
 positive context retirement, and exact owner quarantine after unexpected drop.
+
+## Fresh provider receipt lookup
+
+`accept_lookup` retains current management operator/publication/result-read
+authorization and the original finite request deadline separately from the old
+execution decision. It creates the immutable `ReconcileOnly` purpose. A regular
+provider send must call `require_execution` before allocating or admitting work;
+lookup permission never supplies redrive, absence or nonexecution proof.
+
+The retained provider rule must still describe the exact original profile,
+destination, payload and attempt. Original credential rotation, decoder changes,
+current byte limits, clock continuity and management permission are rechecked
+before acceptance and protocol I/O. Execution expiry remains descriptive original
+history and is never extended. A positive lookup depends on the provider's own
+finite original receipt-retention contract; absent/expired/ambiguous status
+remains uncertain. The current gate uses Policy -> Namespace -> Effects -> Native
+order, without disk/network I/O, audit flush or await inside the fence.
+
+Four authority schedules verify revoked/expired execution versus fresh lookup,
+original management withdrawal/native expiry, exact provider/credential/payload
+association and missing current-fence rejection. These are authority schedules;
+the concrete authenticated management and native provider schedules establish
+their separate production boundaries.
+
+All 101 effect library cases and strict all-target/all-feature effect Clippy
+passed on the pinned Linux Rust 1.97.1 image after this source addition.
