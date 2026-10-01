@@ -148,6 +148,7 @@ jobs:
         language: [rust, c, java, dotnet, go, typescript]
     env:
       LSF_DEV_LANGUAGE: ${{ matrix.language }}
+      LSF_DEV_COMPILER_CACHE: ${{ runner.temp }}/compiler-archives
     permissions:
       contents: read
       id-token: write
@@ -169,7 +170,7 @@ jobs:
         id: compiler-cache
         uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
-          path: ${{ runner.temp }}/compiler-archives
+          path: ${{ env.LSF_DEV_COMPILER_CACHE }}
           key: compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}
       - name: Stage the pinned relocatable Python prefix
         run: |
@@ -188,7 +189,7 @@ jobs:
         if: steps.compiler-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
-          path: ${{ runner.temp }}/compiler-archives
+          path: ${{ env.LSF_DEV_COMPILER_CACHE }}
           key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
       - name: Compile actual projects with isolated tools and separate operator packaging
         run: python tools/run_dev_guest_tools_tests.py --language "$LSF_DEV_LANGUAGE" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output "$RUNNER_TEMP/dev-projects"
