@@ -1,6 +1,8 @@
 use serde::Serialize;
 mod metrics;
 pub use metrics::MetricObservation;
+#[path = "providers/http/factory.rs"]
+mod deferred_http;
 
 pub(in crate::standalone) struct ProviderServices {
     pub audit: latent_audit::AuditHandle,

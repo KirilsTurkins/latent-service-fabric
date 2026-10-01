@@ -4,6 +4,7 @@ mod config;
 mod credentials;
 mod destination;
 mod dns;
+pub mod deferred;
 mod execute;
 mod headers;
 mod network;
