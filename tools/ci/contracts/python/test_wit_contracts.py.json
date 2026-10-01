@@ -4,7 +4,8 @@
     "WitContractTests.test_example_package_is_staged_with_platform_dependencies",
     "WitContractTests.test_interface_item_names_are_unique",
     "WitContractTests.test_staging_rejects_source_and_platform_overlaps_before_mutation",
-    "WitContractTests.test_versioned_runtime_worlds_stage_only_their_selected_package_versions"
+    "WitContractTests.test_versioned_runtime_worlds_stage_only_their_selected_package_versions",
+    "WitContractTests.test_versioned_type_uses_stage_exact_transitive_state_dependency"
   ],
   "guards": {
     "WitContractTests.test_duplicate_detector_catches_type_function_collision": {
@@ -66,10 +67,22 @@
         "class:setup-sha256:e5947d82f663d2200b2be4ceec9653519360a794b744f8bef4d64fc7834f159f"
       ],
       "skipSites": []
+    },
+    "WitContractTests.test_versioned_type_uses_stage_exact_transitive_state_dependency": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:13db9647c538b30255e3abf158bab7456f3e054547d4ac65e06c2fe76b41bb41",
+        "class:setup-sha256:e5947d82f663d2200b2be4ceec9653519360a794b744f8bef4d64fc7834f159f"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_wit_contracts.py",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add exact current intents dependency and transitive WIT use-type regression; preserve every prior case and execution guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
