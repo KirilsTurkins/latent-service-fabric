@@ -89,11 +89,13 @@ def _trigger(trigger, components, profile, checks, add):
     valid = (component["publicationKind"] == "static-site") if kind == "static" else exports(component, trigger["contract"], trigger["function"])
     if kind == "http":
         valid = valid and trigger["contract"] == WEB_CONTRACT and trigger["function"] == "handle"
+        bounds = support_matrix()["bufferedHttpLimits"]
         add(checks, "structural", "passed" if profile["id"] == "http-java-v1" else "failed", "http-ingress-profile-required", component=component["id"])
-        add(checks, "structural", "passed" if uint(profile["maximumWirePayloadBytes"]) >= 2 * 1024 * 1024 else "failed",
+        add(checks, "structural", "passed" if uint(profile["maximumWirePayloadBytes"]) >= uint(bounds["minimumWirePayloadBytes"]) else "failed",
             "http-minimum-wire-payload", component=component["id"])
-        add(checks, "structural", "passed" if uint(profile["maximumRequestBodyBytes"]) <= 65536
-            and uint(profile["maximumResponseBodyBytes"]) <= 65536 else "unsupported", "buffered-http-body-profile", component=component["id"])
+        add(checks, "structural", "passed" if uint(profile["maximumRequestBodyBytes"]) <= uint(bounds["maximumRequestBodyBytes"])
+            and uint(profile["maximumResponseBodyBytes"]) <= uint(bounds["maximumResponseBodyBytes"])
+            else "unsupported", "buffered-http-body-profile", component=component["id"])
     if kind != "static" and component["publicationKind"] == "static-site":
         valid = False
     add(checks, "structural", "passed" if valid else "failed", "trigger-contract-publication-match", component=component["id"])

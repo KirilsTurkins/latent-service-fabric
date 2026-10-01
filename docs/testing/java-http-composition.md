@@ -77,6 +77,18 @@ these qualification executables solely for the consented reproduction.
 Compilation receives no signing keys. Failed attempts keep their original
 `BUILD-FAILED.json`, `QUALIFICATION-FAILED.json`, node receipts and bounded logs.
 
+To exercise the delivered native `latent-dev` frontend against this same running
+standalone node, add `--native-frontend /absolute/path/latent-dev` and
+`--native-frontend-build-receipt /absolute/path/build.json`. The original native
+build receipt must match the binary digest and the four current packaged
+preflight resources. The owner freezes declarations from the original signed
+OCI layers and independent build metadata, then uses the supported target RPC
+to pin the selected publication, deployment generation, engine and provider
+policies. It retains native positive, finite negative, former-profile allocation
+and original-policy-change checks before asserting their outcomes. These
+read-only observations grant no execution authority. Provisioned workspace
+qualification uses its separate native installer owner.
+
 The workflow exercises direct versus composed typed values, selected public
 routes, denied/missing grants, full-width values and UTF-8, declared errors and
 Java exceptions, malformed/over-limit strings/lists/records, fresh invocation

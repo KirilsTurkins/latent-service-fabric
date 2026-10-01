@@ -103,6 +103,11 @@
       "path": "contracts/http/browser-response-ownership-v1.json",
       "digest": "sha256:b00795bf709c37d153af0bd6d445415ba6bd2fb47310b4c47ee1c3d2d951e2a3",
       "commit": "241c3bb61c42e37cb70f878edc74bbe1009e94df"
+    },
+    "http-ingress-bounds": {
+      "path": "crates/latent-ingress/src/http.rs",
+      "digest": "sha256:6c0511c60c0397abb3b0a43535fe463d9e07b27ef79379222db6fe0f45ccd179",
+      "commit": "e4c754fac57fa9d568637348a0abd7410dd3d182"
     }
   },
   "axes": {
@@ -178,6 +183,12 @@
         "ready-inspection"
       ]
     }
+  },
+  "bufferedHttpLimits": {
+    "minimumWirePayloadBytes": "2097152",
+    "maximumRequestBodyBytes": "65536",
+    "maximumResponseBodyBytes": "262144",
+    "sources": ["http-ingress-bounds", "node-composition"]
   },
   "resourceBudgetTypes": {
     "u32DecimalStrings": [

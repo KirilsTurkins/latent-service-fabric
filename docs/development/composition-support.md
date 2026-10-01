@@ -26,6 +26,10 @@ values. Recognition by the host ABI does not install a provider or grant a call.
 Provider selections use the actual provider profile, configuration digest and
 optional epoch, plus exact binding identity/digest and selected policy identities.
 No registration ID, credential, principal or deployment protocol is invented.
+The source-backed buffered HTTP profile requires at least 2 MiB of wire payload
+capacity. Its request body ceiling is 64 KiB and its response body ceiling is
+256 KiB, matching the ingress owner's separate constants. These declarations
+add no buffer reservation and do not change the running node's limits.
 Capsule targets pin a positive `deploymentGeneration` alongside the original
 deployment ID, publication and revision. A refreshed deployment under the same
 name cannot satisfy the old selection. Static targets pin their web generation.

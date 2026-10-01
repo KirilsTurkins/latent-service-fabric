@@ -176,7 +176,7 @@ def canary(client, targets, publications, releases, host):
             "inspectionAfterRollback": final_inspection}
 
 
-def run_node(binaries, releases, output, *, http, former_profile=False):
+def run_node(binaries, releases, output, *, http, former_profile=False, frontend=None):
     evidence = fresh(output)
     result = {"schemaVersion": "latent.java-http.node.v1", "status": "in-progress", "httpEnabled": http,
               "formerProfileReproduction": former_profile}
@@ -224,6 +224,10 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     require(preparation["stateName"] == "rejected" and preparation["diagnostic"] == diagnostic,
                         "java-former-profile-original-preparation-inspection")
                     result["formerProfileTargetInspection"] = inspected
+                    if frontend is not None:
+                        schedule, result["compositionPreflight"] = frontend.schedule(client, releases,
+                            evidence / "composition-preflight", {"domain": inspected}, config, former=True)
+                        schedule.former_profile()
                 else:
                     result["standaloneStatus"] = invoke(client, targets, "domain", "status", [], "java-standalone-status")
                     require(decoded(result["standaloneStatus"])[0][0]["sequence"] == "18446744073709551615",
@@ -243,6 +247,12 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     result["targetInspection"] = {"domain": domain_inspection, "adapter": adapter_inspection,
                         "authority": inspection.authority(client),
                         "ordinaryHttpBinding": inspection.ordinary_http_binding(client, host, domain_inspection)}
+                    if frontend is not None:
+                        schedule, result["compositionPreflight"] = frontend.schedule(client, releases,
+                            evidence / "composition-preflight", {"domain": domain_inspection,
+                                "adapter": adapter_inspection}, config)
+                        schedule.current()
+                        schedule.negatives()
                     result["composed"] = fresh_status(client, targets, host, "java-domain-direct-composed")
                     generated_client = run_bounded_result(["node", "--dns-result-order=ipv4first",
                         str(ROOT / "examples/java-http-composition/client-test.mjs"), "http://" + host,
@@ -257,6 +267,8 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
                     service_generation = service_grant(client, node, publications,
                         generation=service_generation, trigger_only=True)
                     result["targetInspection"]["triggerOnlyOldPlan"] = inspection.stale_policy(client, "adapter", adapter_inspection)
+                    if frontend is not None:
+                        schedule.changed_authority()
                     result["triggerOnlyRebinding"] = rebind(client, targets, releases, publications)
                     impersonation = invoke(client, targets, "adapter", "handle", web_request(host), "java-trigger-impersonation")
                     require(decoded(impersonation)[0]["status"] == 403, "java-operator-impersonated-original-http-trigger")
@@ -311,7 +323,7 @@ def run_node(binaries, releases, output, *, http, former_profile=False):
     return result
 
 
-def qualify(output, wasi_sdk, target):
+def qualify(output, wasi_sdk, target, *, frontend=None):
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "java-http-linux-python313-required")
     output = fresh(output)
     def inputs():
@@ -322,7 +334,8 @@ def qualify(output, wasi_sdk, target):
             "fixture": inventory(ROOT / "examples/java-http-composition"),
             "javaSdk": inventory(ROOT / "sdk/java-guest"), "wit": inventory(ROOT / "wit/platform"),
             "helpers": inventory(ROOT / "tools/java_http_composition"),
-            "generator": inventory(ROOT / "tools/java_http_generation")}
+            "generator": inventory(ROOT / "tools/java_http_generation"),
+            "compositionProbe": inventory(ROOT / "tools/composition_probe")}
     before = inputs()
     binaries = {name: target / "debug" / name for name in (
         "latent", "latentd", "examples/package", "examples/capsule_contracts", "examples/capsule_authoring")}
@@ -334,6 +347,8 @@ def qualify(output, wasi_sdk, target):
             "actualApplicationCheckout": "d38e168c7bfc270e5e257f6b2c3b591dca24e104",
             "outcome": "recorded-http-503-not-reexecuted", "privateApplicationQualification": "unavailable"},
         "releasePublication": "not-performed"}
+    if frontend is not None:
+        result["nativeFrontendBuild"] = frontend.observation
     stage = "java-builds"
     try:
         built = compile_pair(output, wasi_sdk, binaries)
@@ -353,11 +368,13 @@ def qualify(output, wasi_sdk, target):
         result["pairedTrust"] = trust.qualify(binaries, output / "releases", output / "paired-trust")
         stage = "former-http-global-profile"
         result["formerProfile"] = run_node(binaries, output / "releases", output / "former-profile", http=False,
-                                            former_profile=True)
+                                            former_profile=True, frontend=frontend)
         stage = "standalone-profile"
         result["standalone"] = run_node(binaries, output / "releases", output / "standalone", http=False)
         stage = "http-profile"
-        result["http"] = run_node(binaries, output / "releases", output / "http", http=True)
+        result["http"] = run_node(binaries, output / "releases", output / "http", http=True, frontend=frontend)
+        if frontend is not None:
+            frontend.unchanged()
         require(before == inputs()
             and identities == {name: file_identity(path) for name, path in binaries.items()}
             and signed_inputs == inventory(output / "releases", maximum_bytes=128 * 1024 * 1024),
@@ -376,8 +393,18 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--wasi-sdk", type=Path, required=True)
     parser.add_argument("--target", type=Path, default=Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")))
+    parser.add_argument("--native-frontend", type=Path,
+                        help="Delivered native latent-dev executable for actual standalone preflight checks")
+    parser.add_argument("--native-frontend-build-receipt", type=Path,
+                        help="Original build.json for the selected native executable")
     args = parser.parse_args()
-    qualify(args.output.resolve(), args.wasi_sdk.resolve(), args.target.resolve())
+    require((args.native_frontend is None) == (args.native_frontend_build_receipt is None),
+            "java-native-frontend-and-build-receipt-required-together")
+    frontend = None
+    if args.native_frontend is not None:
+        from tools.java_http_composition.preflight import NativeFrontend
+        frontend = NativeFrontend(args.native_frontend.resolve(), args.native_frontend_build_receipt.resolve())
+    qualify(args.output.resolve(), args.wasi_sdk.resolve(), args.target.resolve(), frontend=frontend)
 
 
 if __name__ == "__main__":

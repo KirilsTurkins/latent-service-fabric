@@ -136,6 +136,21 @@ class CompositionPreflight(unittest.TestCase):
             preflight.run(value)
 
     def test_payload_trigger_export_and_context_rejections_are_distinct(self):
+        bounded = composition()
+        bounded["components"][0]["target"].update(contract=preflight.WEB_CONTRACT, function="handle")
+        bounded["components"][0]["exports"] = [{"contract": preflight.WEB_CONTRACT, "functions": ["handle"]}]
+        bounded["triggers"] = [{"kind": "http", "component": "domain", "contract": preflight.WEB_CONTRACT, "function": "handle"}]
+        bounded["nodeProfile"]["maximumResponseBodyBytes"] = "262144"
+        accepted = preflight.run(bounded)
+        self.assertTrue(accepted["passed"])
+        self.assertIn("buffered-http-body-profile", codes(accepted, "passed"))
+        for field, maximum in (("maximumRequestBodyBytes", 65536), ("maximumResponseBodyBytes", 262144)):
+            too_large = copy.deepcopy(bounded)
+            too_large["nodeProfile"][field] = str(maximum + 1)
+            with self.subTest(field=field):
+                rejected = preflight.run(too_large)
+                self.assertFalse(rejected["passed"])
+                self.assertIn("buffered-http-body-profile", codes(rejected, "unsupported"))
         value = composition()
         value["triggers"] = [{"kind": "http", "component": "domain", "contract": preflight.WEB_CONTRACT, "function": "handle"}]
         value["nodeProfile"]["maximumWirePayloadBytes"] = "1048576"
