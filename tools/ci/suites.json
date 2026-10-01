@@ -40,151 +40,6 @@
     "latent-scheduler",
     "latent-telemetry"
   ],
-  "fixtureRecipes": {
-    "angular-renderer": {
-      "commands": [
-        {
-          "argv": [
-            "npm",
-            "ci",
-            "--ignore-scripts",
-            "--no-audit",
-            "--no-fund"
-          ],
-          "cwd": "examples/renderer-profile",
-          "timeoutSeconds": 600
-        },
-        {
-          "argv": [
-            "npm",
-            "run",
-            "build"
-          ],
-          "cwd": "examples/renderer-profile",
-          "timeoutSeconds": 600
-        },
-        {
-          "argv": [
-            "python3",
-            "tools/build_angular_renderer.py"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 1200
-        }
-      ],
-      "outputs": {
-        "component": {
-          "environment": "LSF_ANGULAR_COMPONENT",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "path": "examples/renderer-profile/dist/runtime/application.wasm"
-        },
-        "private-renderer": {
-          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "path": "examples/renderer-profile/dist/runtime/renderer.wasm"
-        }
-      },
-      "tools": [
-        "cargo",
-        "rustc",
-        "node",
-        "npm",
-        "wasm-tools"
-      ]
-    },
-    "echo-capsule": {
-      "commands": [
-        {
-          "argv": [
-            "python3",
-            "tools/build_echo_capsule.py"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 1800
-        }
-      ],
-      "outputs": {
-        "echo-build": {
-          "kind": "json",
-          "maximumBytes": 1048576,
-          "path": "{target}/capsules/echo/build.json"
-        },
-        "echo-capsule": {
-          "environment": "LSF_ECHO_CAPSULE",
-          "kind": "json",
-          "maximumBytes": 1048576,
-          "path": "{target}/capsules/echo/capsule.json"
-        },
-        "echo-component": {
-          "environment": "LSF_ECHO_COMPONENT",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "path": "{target}/capsules/echo/echo-capsule.wasm"
-        }
-      },
-      "tools": [
-        "cargo",
-        "rustc",
-        "wasm-tools"
-      ]
-    },
-    "oversized-log": {
-      "commands": [
-        {
-          "argv": [
-            "cargo",
-            "build",
-            "-p",
-            "latent-toolchain-smoke",
-            "--example",
-            "oversized-log-capsule",
-            "--target",
-            "wasm32-unknown-unknown",
-            "--release",
-            "--locked"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 900
-        },
-        {
-          "argv": [
-            "wasm-tools",
-            "component",
-            "new",
-            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
-            "-o",
-            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 60
-        },
-        {
-          "argv": [
-            "wasm-tools",
-            "validate",
-            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-          ],
-          "cwd": ".",
-          "timeoutSeconds": 60
-        }
-      ],
-      "outputs": {
-        "oversized-log-component": {
-          "environment": "LSF_OVERSIZED_LOG_COMPONENT",
-          "kind": "wasm",
-          "maximumBytes": 33554432,
-          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
-        }
-      },
-      "tools": [
-        "cargo",
-        "rustc",
-        "wasm-tools"
-      ]
-    }
-  },
   "forbiddenFastDependencies": [
     "latent-testkit",
     "latent-wasmtime",
@@ -196,159 +51,7 @@
   "narrowPackages": [
     "latent-effects"
   ],
-  "processContracts": {
-    "angular-renderer": {
-      "caseFilters": {
-        "latentd.lib.latentd": "actual_angular_http_"
-      },
-      "fixtures": [
-        "angular-renderer"
-      ],
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest",
-          "component",
-          "private-renderer"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [],
-        "tools": [
-          "git",
-          "rustc"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-wasmtime.test.angular-renderer",
-        "latentd.lib.latentd"
-      ],
-      "timeoutSeconds": 840
-    },
-    "oci-registry": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [
-          {
-            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-            "type": "docker-image"
-          }
-        ],
-        "tools": [
-          "git",
-          "rustc",
-          "docker",
-          "openssl"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-oci.test.registry"
-      ],
-      "timeoutSeconds": 240
-    },
-    "oci-web": {
-      "platforms": [
-        "linux-x86_64"
-      ],
-      "prerequisites": {
-        "accounting": [
-          "owned-descendants"
-        ],
-        "artifacts": [
-          "test-manifest",
-          "component"
-        ],
-        "filesystem": [
-          "private-mode",
-          "atomic-replace",
-          "fsync",
-          "file-lock"
-        ],
-        "services": [
-          {
-            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
-            "type": "docker-image"
-          }
-        ],
-        "tools": [
-          "git",
-          "rustc",
-          "docker",
-          "openssl"
-        ],
-        "versionScopes": [
-          "python"
-        ]
-      },
-      "suiteIds": [
-        "latent-policy.lib.latent-policy"
-      ],
-      "timeoutSeconds": 240
-    }
-  },
   "recipes": {
-    "core-host": {
-      "build": [
-        "cargo",
-        "test",
-        "-p",
-        "latent-core",
-        "--lib",
-        "--all-features",
-        "--locked",
-        "--no-run",
-        "--message-format=json,json-render-diagnostics"
-      ],
-      "features": "all (including default)",
-      "profile": "debug",
-      "target": "host"
-    },
-    "echo-runtime": {
-      "build": [
-        "cargo",
-        "test",
-        "-p",
-        "latent-wasmtime",
-        "--test",
-        "echo_backend",
-        "--all-features",
-        "--locked",
-        "--no-run",
-        "--message-format=json,json-render-diagnostics"
-      ],
-      "features": "all (including default)",
-      "profile": "debug",
-      "target": "host"
-    },
     "explicit-doctests": {
       "expectedResultCounts": [
         1,
@@ -417,6 +120,39 @@
       "features": "all (including default)",
       "profile": "debug",
       "target": "host"
+    },
+    "echo-runtime": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-wasmtime",
+        "--test",
+        "echo_backend",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
+    },
+    "core-host": {
+      "build": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-core",
+        "--lib",
+        "--all-features",
+        "--locked",
+        "--no-run",
+        "--message-format=json,json-render-diagnostics"
+      ],
+      "features": "all (including default)",
+      "profile": "debug",
+      "target": "host"
     }
   },
   "rendererPackages": [
@@ -473,26 +209,8 @@
       "testThreads": 1,
       "timeoutSeconds": 300
     },
-    "echo-runtime": {
-      "exact": false,
-      "executionOnly": true,
-      "filter": "",
-      "ignored": true,
-      "names": [
-        "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
-        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
-        "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
-        "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
-      ],
-      "resourceClass": "runtime-bounded",
-      "runner": "ci_rust_artifacts",
-      "suite": "latent-wasmtime.test.echo-backend",
-      "testThreads": 1,
-      "timeoutSeconds": 900
-    },
     "metadata-working-set": {
       "exact": true,
-      "executionOnly": true,
       "filter": "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set",
       "ignored": true,
       "names": [
@@ -503,7 +221,8 @@
       "runner": "ci_rust_artifacts",
       "suite": "latent-control-store.lib.latent-control-store",
       "testThreads": 1,
-      "timeoutSeconds": 930
+      "timeoutSeconds": 930,
+      "executionOnly": true
     },
     "nats-events": {
       "exact": false,
@@ -656,6 +375,23 @@
       "suite": "latent-wasmtime.test.vault-secrets",
       "testThreads": 1,
       "timeoutSeconds": 300
+    },
+    "echo-runtime": {
+      "exact": false,
+      "filter": "",
+      "ignored": true,
+      "names": [
+        "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
+        "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
+        "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latent-wasmtime.test.echo-backend",
+      "testThreads": 1,
+      "timeoutSeconds": 900,
+      "executionOnly": true
     }
   },
   "sourceRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -6788,8 +6524,6 @@
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
-      "expectedIgnored": [],
       "id": "latent-wasmtime.test.aot-sandbox",
       "ignoredLeaves": [
         "actual_built_angular_application_renders_fresh_hydration_and_rejects_excess_data",
@@ -6909,37 +6643,12 @@
       "sourceSha256": "2715e19a626446efff35a2c03623b2d2f78fa4143eab62422e1f265181b4c83f",
       "successMarker": "AOT sandbox: 12 unprivileged real-entry probes and exact-policy syscall probe passed",
       "target": "aot_sandbox",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
-      "expectedCases": [],
-      "expectedCustomCases": [
-        "active-shutdown",
-        "cancel-running-prefix",
-        "diagnostic-overflow",
-        "fragmented-success",
-        "healthy-after-failures",
-        "inherited-descriptor",
-        "last-owner-drop",
-        "launch-mismatch",
-        "malformed-readiness",
-        "nonzero-exit",
-        "oversized",
-        "probe-launch-mismatch",
-        "probe-stalled-launch",
-        "readiness-malformed",
-        "readiness-relative-path",
-        "readiness-success",
-        "readiness-wrong-digest",
-        "running-deadline",
-        "stalled-launch",
-        "trailing",
-        "truncated-body",
-        "truncated-header",
-        "zero"
-      ],
-      "expectedIgnored": [],
       "id": "latent-wasmtime.test.aot-supervisor",
       "ignoredLeaves": [
         "actual_built_angular_application_renders_fresh_hydration_and_rejects_excess_data",
@@ -7059,7 +6768,34 @@
       "sourceSha256": "4c1a85079da0baefb6178caa493f15aed5a528e6cc88808d2e75c56fc91149fb",
       "successMarker": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out",
       "target": "aot_supervisor",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "expectedCustomCases": [
+        "active-shutdown",
+        "cancel-running-prefix",
+        "diagnostic-overflow",
+        "fragmented-success",
+        "healthy-after-failures",
+        "inherited-descriptor",
+        "last-owner-drop",
+        "launch-mismatch",
+        "malformed-readiness",
+        "nonzero-exit",
+        "oversized",
+        "probe-launch-mismatch",
+        "probe-stalled-launch",
+        "readiness-malformed",
+        "readiness-relative-path",
+        "readiness-success",
+        "readiness-wrong-digest",
+        "running-deadline",
+        "stalled-launch",
+        "trailing",
+        "truncated-body",
+        "truncated-header",
+        "zero"
+      ],
+      "expectedCases": [],
+      "expectedIgnored": []
     },
     {
       "boundary": "runtime",
@@ -7298,11 +7034,6 @@
     },
     {
       "boundary": "runtime",
-      "caseFixtures": {
-        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel": [
-          "oversized-log"
-        ]
-      },
       "expectedCases": [
         "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary",
         "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
@@ -7314,9 +7045,6 @@
         "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel",
         "owned_phase_zero_preparation_preserves_success_and_declared_error_framing",
         "prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance"
-      ],
-      "fixtures": [
-        "echo-capsule"
       ],
       "id": "latent-wasmtime.test.echo-backend",
       "ignoredLeaves": [
@@ -7341,7 +7069,15 @@
       "resourceClass": "runtime-bounded",
       "source": "tests/echo_backend.rs",
       "target": "echo_backend",
-      "timeoutSeconds": 900
+      "timeoutSeconds": 900,
+      "fixtures": [
+        "echo-capsule"
+      ],
+      "caseFixtures": {
+        "oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel": [
+          "oversized-log"
+        ]
+      }
     },
     {
       "boundary": "runtime",
@@ -9383,5 +9119,269 @@
       "target": "standalone_shutdown",
       "timeoutSeconds": 900
     }
-  ]
+  ],
+  "processContracts": {
+    "angular-renderer": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component",
+          "private-renderer"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [],
+        "tools": [
+          "git",
+          "rustc"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-wasmtime.test.angular-renderer",
+        "latentd.lib.latentd"
+      ],
+      "timeoutSeconds": 840,
+      "caseFilters": {
+        "latentd.lib.latentd": "actual_angular_http_"
+      },
+      "fixtures": [
+        "angular-renderer"
+      ]
+    },
+    "oci-registry": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-oci.test.registry"
+      ],
+      "timeoutSeconds": 240
+    },
+    "oci-web": {
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": {
+        "accounting": [
+          "owned-descendants"
+        ],
+        "artifacts": [
+          "test-manifest",
+          "component"
+        ],
+        "filesystem": [
+          "private-mode",
+          "atomic-replace",
+          "fsync",
+          "file-lock"
+        ],
+        "services": [
+          {
+            "image": "ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395",
+            "type": "docker-image"
+          }
+        ],
+        "tools": [
+          "git",
+          "rustc",
+          "docker",
+          "openssl"
+        ],
+        "versionScopes": [
+          "python"
+        ]
+      },
+      "suiteIds": [
+        "latent-policy.lib.latent-policy"
+      ],
+      "timeoutSeconds": 240
+    }
+  },
+  "fixtureRecipes": {
+    "echo-capsule": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "python3",
+            "tools/build_echo_capsule.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1800
+        }
+      ],
+      "outputs": {
+        "echo-component": {
+          "path": "{target}/capsules/echo/echo-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ECHO_COMPONENT"
+        },
+        "echo-capsule": {
+          "path": "{target}/capsules/echo/capsule.json",
+          "kind": "json",
+          "maximumBytes": 1048576,
+          "environment": "LSF_ECHO_CAPSULE"
+        },
+        "echo-build": {
+          "path": "{target}/capsules/echo/build.json",
+          "kind": "json",
+          "maximumBytes": 1048576
+        }
+      }
+    },
+    "oversized-log": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "build",
+            "-p",
+            "latent-toolchain-smoke",
+            "--example",
+            "oversized-log-capsule",
+            "--target",
+            "wasm32-unknown-unknown",
+            "--release",
+            "--locked"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 900
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "component",
+            "new",
+            "{target}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm",
+            "-o",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        },
+        {
+          "argv": [
+            "wasm-tools",
+            "validate",
+            "{target}/capsules/oversized-log/oversized-log-capsule.wasm"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 60
+        }
+      ],
+      "outputs": {
+        "oversized-log-component": {
+          "path": "{target}/capsules/oversized-log/oversized-log-capsule.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_OVERSIZED_LOG_COMPONENT"
+        }
+      }
+    },
+    "angular-renderer": {
+      "tools": [
+        "cargo",
+        "rustc",
+        "node",
+        "npm",
+        "wasm-tools"
+      ],
+      "commands": [
+        {
+          "argv": [
+            "npm",
+            "ci",
+            "--ignore-scripts",
+            "--no-audit",
+            "--no-fund"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "cwd": "examples/renderer-profile",
+          "timeoutSeconds": 600
+        },
+        {
+          "argv": [
+            "python3",
+            "tools/build_angular_renderer.py"
+          ],
+          "cwd": ".",
+          "timeoutSeconds": 1200
+        }
+      ],
+      "outputs": {
+        "component": {
+          "path": "examples/renderer-profile/dist/runtime/application.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_COMPONENT"
+        },
+        "private-renderer": {
+          "path": "examples/renderer-profile/dist/runtime/renderer.wasm",
+          "kind": "wasm",
+          "maximumBytes": 33554432,
+          "environment": "LSF_ANGULAR_PRIVATE_COMPONENT"
+        }
+      }
+    }
+  }
 }
