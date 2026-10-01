@@ -131,3 +131,6 @@ The [retained actual paired subcampaign](../evidence/java-paired-trust-36a10fc7/
 binds its original source and receipts, including the overall HTTP pipeline's
 later failed context assertion. Its passed signing/admission observations do not
 turn that complete pipeline into a successful qualification.
+The [fresh source-66 paired record](../evidence/java-paired-trust-66f2a031/README.md)
+adds actual builder-identity revocation and host-derived child grant observations,
+while preserving its separate later context fixture failure.
