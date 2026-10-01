@@ -26,9 +26,30 @@ pub struct OfflineRecoveryStartup {
 
 impl OfflineRecoverySource {
     pub fn start(
+        config: ProtectedStoreConfig,
+        tenant: String,
+        codecs: Arc<dyn RecoveryCodecs>,
+    ) -> Result<OfflineRecoveryStartup, OfflineRecoveryError> {
+        Self::start_mode(config, tenant, codecs, false)
+    }
+
+    /// Deliberate administrative opening of paused restored history. Actual
+    /// exclusive root ownership still retires every normal physical owner.
+    /// This exposes only installed review ports, never ordinary business work.
+    /// Incomplete staged restore remains refused and requires recovery.
+    pub fn start_review(
+        config: ProtectedStoreConfig,
+        tenant: String,
+        codecs: Arc<dyn RecoveryCodecs>,
+    ) -> Result<OfflineRecoveryStartup, OfflineRecoveryError> {
+        Self::start_mode(config, tenant, codecs, true)
+    }
+
+    fn start_mode(
         mut config: ProtectedStoreConfig,
         tenant: String,
         codecs: Arc<dyn RecoveryCodecs>,
+        review: bool,
     ) -> Result<OfflineRecoveryStartup, OfflineRecoveryError> {
         crate::namespace::identity(&tenant)
             .map_err(|_| OfflineRecoveryError::InvalidConfiguration)?;
@@ -54,9 +75,25 @@ impl OfflineRecoverySource {
             config,
             codecs.scratch_bytes(),
             move |view| {
-                super::super::require_ready(view)?;
-                super::super::snapshot::capture_namespaces(view, &validation_tenant)?;
-                validator.validate_view(view)?;
+                if review {
+                    if super::super::RecoveryGuard::capture(view)?.is_some_and(|guard| {
+                        guard.status() == super::super::RecoveryStatus::Staging
+                    }) {
+                        return Err(crate::embedded::StoreError::Unavailable);
+                    }
+                    super::super::snapshot::capture_namespaces_for_review(
+                        view,
+                        &validation_tenant,
+                    )?;
+                } else {
+                    super::super::require_ready(view)?;
+                    super::super::snapshot::capture_namespaces(view, &validation_tenant)?;
+                }
+                validator
+                    .validate_view(view)?
+                    .inventory
+                    .require_decoders(validator.installed_formats())
+                    .map_err(|_| crate::embedded::StoreError::UnsupportedFormat)?;
                 Ok(())
             },
         )

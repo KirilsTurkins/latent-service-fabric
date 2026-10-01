@@ -66,3 +66,34 @@ closed fixture inputs. Real command/result/inbox/effect closure and the case
 where a remote effect succeeded after a pending backup require the composed
 transaction and qualified transport owners; this fixture does not certify them.
 Backups contain sensitive application data and are never public test artifacts.
+# Explicit review and resume
+
+`OfflineRecoverySource::start_review` opens an existing root exclusively for
+administration after real normal owners retire. It can inspect paused restored
+history, but refuses an incomplete `Staging` restore. It exposes no command,
+query, consumer delivery, maintenance or effect dispatch port. Ordinary backup
+startup still requires all relevant namespaces to be quiesced.
+
+The installed `RecoveryCodecs` owner must authorize `inspect_namespace`, review
+the actual linked inventory and recovery window through `review_reconciliation`,
+and recheck present authority and conservative clock continuity at its final
+no-I/O `accept_reconciliation` fence. These new review callbacks default to
+refusal. Global review leaves each namespace paused.
+
+`resume_namespace` separately requires an authenticated operator, exact current
+opaque namespace view token, immutable review digest and original namespace
+scope. Its installed review sees the actual namespace, schema/recovery epochs,
+global guard and any original receipt. The final `accept_namespace_resume`
+callback rechecks current authority immediately before the physical commit.
+The atomic envelope compares the exact namespace, history, guard and receipt
+rows, then activates the namespace and history without changing incarnation,
+schema/recovery epochs, pins or historical command/effect identities.
+
+The bounded `NRS1` operation receipt uses an independent decoder identity
+`lsf.namespace-resume.v1` in the retained checkpoint inventory. A retry with the
+same operator/operation and exact inputs returns the original namespace/version
+and token after current authorization. It does not reactivate a namespace that
+was subsequently quiesced, substitute its latest generation, or renew any grant.
+Changed inputs conflict. Management/CLI wiring, migration, and approved external
+effect reconciliation remain separate required work; review acceptance is never
+an automatic redrive instruction.

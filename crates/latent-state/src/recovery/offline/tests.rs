@@ -3,11 +3,12 @@ use crate::{
     embedded::{AtomicBatch, ExpectedRow, Family, RowMutation},
     namespace::{
         catalog::NamespaceCatalog,
-        compatibility::{RetainedInventory, SchemaId},
+        compatibility::{RetainedCount, RetainedInventory, SchemaId},
         namespace_record_key, NamespacePins, NamespaceQuota, NamespaceRecord, NamespaceTransition,
     },
     recovery::{
         restore::RestoreRequest,
+        resume::{NamespaceResumeObservation, NamespaceResumeReceipt, NamespaceResumeRequest},
         snapshot::{NamespaceSnapshot, RequiredArtifact},
         RecoveryStatus,
     },
@@ -52,7 +53,9 @@ impl RecoveryCodecs for Codecs {
         4 * 1024 * 1024
     }
     fn installed_formats(&self) -> &[RetainedFormat] {
-        &[]
+        static FORMATS: std::sync::LazyLock<Vec<RetainedFormat>> =
+            std::sync::LazyLock::new(|| vec![super::super::resume::retained_format()]);
+        &FORMATS
     }
     fn validate_row(
         &self,
@@ -62,6 +65,10 @@ impl RecoveryCodecs for Codecs {
     ) -> Result<(), StoreError> {
         if *key == super::super::guard_key() {
             RecoveryGuard::validate_row(key, value)
+        } else if key.family == Family::Maintenance
+            && key.key.starts_with(super::super::resume::RECEIPT_PREFIX)
+        {
+            NamespaceResumeReceipt::validate_row(key, value)
         } else if key.family == Family::Namespace {
             NamespaceCatalog::validate_row(key, value).map_err(|_| StoreError::Corrupt)
         } else {
@@ -69,12 +76,27 @@ impl RecoveryCodecs for Codecs {
         }
     }
     fn validate_view(&self, view: &ReadView) -> Result<SnapshotClosure, StoreError> {
+        let mut inventory = RetainedInventory::default();
         for family in super::super::snapshot::FAMILIES {
             let mut resume = None;
             loop {
                 let page = view.scan_after(family, b"", resume.as_deref(), 128, 4 * 1024 * 1024)?;
                 for (key, value) in page.rows {
                     self.validate_row(view, &key, &value)?;
+                    if key.family == Family::Maintenance
+                        && key.key.starts_with(super::super::resume::RECEIPT_PREFIX)
+                    {
+                        inventory
+                            .observe(
+                                super::super::resume::retained_format(),
+                                RetainedCount {
+                                    rows: 1,
+                                    bytes: (key.key.len() + value.len()) as u64,
+                                    unresolved: 0,
+                                },
+                            )
+                            .map_err(|_| StoreError::Capacity)?;
+                    }
                 }
                 resume = page.resume;
                 if resume.is_none() {
@@ -83,7 +105,7 @@ impl RecoveryCodecs for Codecs {
             }
         }
         Ok(SnapshotClosure {
-            inventory: RetainedInventory::default(),
+            inventory,
             required_artifacts: vec![artifact()],
         })
     }
@@ -137,6 +159,77 @@ impl RecoveryCodecs for Codecs {
     ) -> Result<(), StoreError> {
         self.authorize_inspection(view, request)
     }
+    fn review_reconciliation(
+        &self,
+        view: &ReadView,
+        request: &RecoveryReviewRequest,
+    ) -> Result<(), StoreError> {
+        self.accept_reconciliation(request)?;
+        self.validate_view(view)?;
+        let actual = RecoveryGuard::capture(view)?.ok_or(StoreError::Corrupt)?;
+        if actual.snapshot_digest() != request.expected_guard.snapshot_digest()
+            || actual.window_digest() != request.expected_guard.window_digest()
+        {
+            return Err(StoreError::Conflict);
+        }
+        Ok(())
+    }
+    fn accept_reconciliation(&self, request: &RecoveryReviewRequest) -> Result<(), StoreError> {
+        if self.denied.load(Ordering::Acquire)
+            || request.operator_id != "operator"
+            || request.review_digest != [70; 32]
+        {
+            return Err(StoreError::Unavailable);
+        }
+        Ok(())
+    }
+    fn review_namespace_resume(
+        &self,
+        view: &ReadView,
+        request: &NamespaceResumeRequest,
+        observed: NamespaceResumeObservation<'_>,
+    ) -> Result<(), StoreError> {
+        self.accept_namespace_resume(request)?;
+        self.validate_view(view)?;
+        assert_eq!(observed.namespace.tenant, request.scope.tenant);
+        assert_eq!(observed.history.incarnation, request.scope.incarnation);
+        if let Some((gates, notice)) = &self.pause {
+            let (registration, mut tracked) = gates.track(()).unwrap();
+            tracked.commit(Stage::Entered).unwrap();
+            wait(async {
+                let mut pause = Box::pin(tracked.pause());
+                PollProbe::default().pending(pause.as_mut());
+                notice
+                    .send(gates.blocked(registration, Stage::Entered).unwrap())
+                    .unwrap();
+                pause.await;
+            });
+        }
+        Ok(())
+    }
+    fn accept_namespace_resume(&self, request: &NamespaceResumeRequest) -> Result<(), StoreError> {
+        if self.denied.load(Ordering::Acquire)
+            || request.operator_id != "operator"
+            || request.review_digest != [71; 32]
+        {
+            return Err(StoreError::Unavailable);
+        }
+        Ok(())
+    }
+    fn authorize_namespace_inspection(
+        &self,
+        _: &ReadView,
+        operator_id: &str,
+        namespace: &StateNamespaceId,
+    ) -> Result<(), StoreError> {
+        if self.denied.load(Ordering::Acquire)
+            || operator_id != "operator"
+            || namespace.0 != "business"
+        {
+            return Err(StoreError::Unavailable);
+        }
+        Ok(())
+    }
 }
 
 fn artifact() -> RequiredArtifact {
@@ -164,7 +257,7 @@ fn metadata() -> SnapshotMetadata {
         operation_id: "backup-original".into(),
         operator_id: "operator".into(),
         runtime_digest: [90; 32],
-        decoder_formats: vec![],
+        decoder_formats: vec![super::super::resume::retained_format()],
         required_artifacts: vec![artifact()],
     }
 }
@@ -642,4 +735,318 @@ fn lost_backup_waiter_keeps_actual_worker_bytes_and_exclusive_root_until_physica
     source.reap_retired_threads().unwrap();
     let reopened = offline(original.path(), codecs());
     close(&reopened);
+}
+
+fn restored_for_review() -> (tempfile::TempDir, RecoveryGuard, Vec<u8>) {
+    let original = root();
+    let backup = root();
+    let destination = root();
+    let owner = populated_owner(original.path());
+    finish(&owner);
+    let source = offline(original.path(), codecs());
+    let path = SnapshotFile {
+        root: backup.path().into(),
+        file_name: "review-checkpoint".into(),
+    };
+    let snapshot = wait(
+        source
+            .backup_to(path.clone(), metadata(), Instant::now() + WATCHDOG)
+            .unwrap(),
+    )
+    .unwrap();
+    let (namespace, history) = snapshot.manifest.namespaces[0].decode().unwrap();
+    let scope = StateScope {
+        tenant: namespace.tenant,
+        namespace: namespace.id,
+        incarnation: namespace.version.incarnation,
+        state_schema: namespace.state_schema,
+        entity: None,
+        mode: StateMode::Command,
+    };
+    let old_token = crate::session::version::ViewIdentity {
+        namespace: namespace.version,
+        epochs: history.epochs,
+    }
+    .token(&scope)
+    .unwrap();
+    let mut proposed = request(path, destination.path(), snapshot.snapshot_digest);
+    let inspection = wait(
+        source
+            .inspect_restore(proposed.clone(), Instant::now() + WATCHDOG)
+            .unwrap(),
+    )
+    .unwrap();
+    proposed.review.window_acknowledgement = inspection.window.digest().unwrap();
+    let receipt = wait(
+        source
+            .restore_to(proposed, Instant::now() + WATCHDOG)
+            .unwrap(),
+    )
+    .unwrap();
+    close(&source);
+    (destination, receipt.guard, old_token)
+}
+
+fn review_source(path: &Path, decoder: Arc<Codecs>) -> OfflineRecoverySource {
+    wait(
+        OfflineRecoverySource::start_review(
+            ProtectedStoreConfig::bounded_linux(path.to_path_buf()),
+            "tenant".into(),
+            decoder,
+        )
+        .unwrap(),
+    )
+    .unwrap()
+}
+
+#[test]
+fn protected_review_requires_explicit_reconciliation_and_namespace_resume_and_replays_original_receipt(
+) {
+    let (destination, guard, old_token) = restored_for_review();
+    let decoder = codecs();
+    let source = review_source(destination.path(), decoder.clone());
+    let observed = wait(
+        source
+            .inspect_namespace(
+                "operator".into(),
+                StateNamespaceId("business".into()),
+                Instant::now() + WATCHDOG,
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(observed.history.epochs.recovery, 2);
+    let request = NamespaceResumeRequest {
+        scope: observed.scope(),
+        operation_id: "resume-actual".into(),
+        operator_id: "operator".into(),
+        expected_view: observed.view_token().unwrap(),
+        review_digest: [71; 32],
+    };
+    assert_eq!(
+        wait(
+            source
+                .resume_namespace(request.clone(), Instant::now() + WATCHDOG)
+                .unwrap()
+        )
+        .err(),
+        Some(OfflineRecoveryError::Review(StoreError::Unavailable))
+    );
+    let mut review = RecoveryReviewRequest {
+        operator_id: "operator".into(),
+        expected_guard: guard,
+        review_digest: [69; 32],
+    };
+    assert_eq!(
+        wait(
+            source
+                .review_reconciliation(review.clone(), Instant::now() + WATCHDOG)
+                .unwrap()
+        )
+        .err(),
+        Some(OfflineRecoveryError::Review(StoreError::Unavailable))
+    );
+    review.review_digest = [70; 32];
+    let accepted = wait(
+        source
+            .review_reconciliation(review.clone(), Instant::now() + WATCHDOG)
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(accepted.status(), RecoveryStatus::ReviewAccepted);
+    let observed = wait(
+        source
+            .inspect_namespace(
+                "operator".into(),
+                StateNamespaceId("business".into()),
+                Instant::now() + WATCHDOG,
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        observed.namespace.status,
+        crate::namespace::NamespaceStatus::Quiescing
+    );
+    assert_eq!(
+        observed.history.status,
+        crate::namespace::history::HistoryStatus::ReconciliationRequired
+    );
+    let receipt = wait(
+        source
+            .resume_namespace(request.clone(), Instant::now() + WATCHDOG)
+            .unwrap(),
+    )
+    .unwrap();
+    let original_receipt = receipt.encode().unwrap();
+    close(&source);
+    assert_normal_resumed_namespace(destination.path(), &receipt, request.clone(), old_token);
+    assert_recovery_replay(
+        destination.path(),
+        decoder,
+        request,
+        original_receipt,
+        review,
+        accepted,
+    );
+}
+
+fn assert_normal_resumed_namespace(
+    path: &Path,
+    receipt: &NamespaceResumeReceipt,
+    request: NamespaceResumeRequest,
+    old_token: Vec<u8>,
+) {
+    // Ordinary data access occurs only after physical administrative retirement.
+    let validator = codecs();
+    let owner = wait(
+        ProtectedStoreOwner::start_validated_view(
+            ProtectedStoreConfig::bounded_linux(path.into()),
+            validator.scratch_bytes(),
+            move |view| {
+                super::super::require_ready(view)?;
+                validator.validate_view(view)?;
+                Ok(())
+            },
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let current_token = wait(
+        owner
+            .with_store(StoreIoKind::Read, 1024 * 1024, move |store| {
+                let view = store.snapshot()?;
+                let session = StateSession::open(
+                    &view,
+                    request.scope.clone(),
+                    SessionLimits::default(),
+                    |_, _| Ok(()),
+                )
+                .unwrap();
+                assert_eq!(
+                    session
+                        .view_identity()
+                        .require_minimum(&request.scope, &old_token),
+                    Err(crate::session::StateError::RecoveryRequired)
+                );
+                Ok(session.view_token().unwrap())
+            })
+            .unwrap(),
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(current_token, receipt.view_token().unwrap());
+    finish(&owner);
+}
+
+fn assert_recovery_replay(
+    path: &Path,
+    decoder: Arc<Codecs>,
+    request: NamespaceResumeRequest,
+    original_receipt: Vec<u8>,
+    review: RecoveryReviewRequest,
+    accepted: RecoveryGuard,
+) {
+    let source = review_source(path, decoder.clone());
+    let mut replay = request;
+    // The observation before resume is the exact input to the original decision.
+    assert_eq!(
+        wait(
+            source
+                .resume_namespace(replay.clone(), Instant::now() + WATCHDOG)
+                .unwrap()
+        )
+        .unwrap()
+        .encode()
+        .unwrap(),
+        original_receipt
+    );
+    assert_eq!(
+        wait(
+            source
+                .review_reconciliation(review, Instant::now() + WATCHDOG)
+                .unwrap()
+        )
+        .unwrap(),
+        accepted
+    );
+    decoder.denied.store(true, Ordering::Release);
+    assert_eq!(
+        wait(
+            source
+                .resume_namespace(replay.clone(), Instant::now() + WATCHDOG)
+                .unwrap()
+        )
+        .err(),
+        Some(OfflineRecoveryError::Review(StoreError::Unavailable))
+    );
+    decoder.denied.store(false, Ordering::Release);
+    replay.review_digest = [72; 32];
+    assert_eq!(
+        wait(
+            source
+                .resume_namespace(replay, Instant::now() + WATCHDOG)
+                .unwrap()
+        )
+        .err(),
+        Some(OfflineRecoveryError::Review(StoreError::Conflict))
+    );
+    close(&source);
+}
+
+#[test]
+fn protected_namespace_resume_rechecks_revocation_after_review_at_real_writer_fence() {
+    let original = root();
+    let owner = populated_owner(original.path());
+    finish(&owner);
+    let gates = Rendezvous::new(1);
+    let (notice, receiver) = mpsc::channel();
+    let decoder = Arc::new(Codecs {
+        denied: AtomicBool::new(false),
+        missing: AtomicBool::new(false),
+        pause: Some((gates.clone(), notice)),
+    });
+    let source = review_source(original.path(), decoder.clone());
+    let observed = wait(
+        source
+            .inspect_namespace(
+                "operator".into(),
+                StateNamespaceId("business".into()),
+                Instant::now() + WATCHDOG,
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    let request = NamespaceResumeRequest {
+        scope: observed.scope(),
+        operation_id: "resume-revoked".into(),
+        operator_id: "operator".into(),
+        expected_view: observed.view_token().unwrap(),
+        review_digest: [71; 32],
+    };
+    let operation = source
+        .resume_namespace(request, Instant::now() + WATCHDOG)
+        .unwrap();
+    let ticket = receiver.recv_timeout(WATCHDOG).unwrap();
+    assert_eq!(source.snapshot().unwrap().active_writes, 1);
+    decoder.denied.store(true, Ordering::Release);
+    gates.release(ticket).unwrap();
+    assert_eq!(
+        wait(operation).err(),
+        Some(OfflineRecoveryError::Review(StoreError::Unavailable))
+    );
+    decoder.denied.store(false, Ordering::Release);
+    let actual = wait(
+        source
+            .inspect_namespace(
+                "operator".into(),
+                StateNamespaceId("business".into()),
+                Instant::now() + WATCHDOG,
+            )
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(actual.namespace, observed.namespace);
+    assert_eq!(actual.view_token().unwrap(), observed.view_token().unwrap());
+    close(&source);
 }

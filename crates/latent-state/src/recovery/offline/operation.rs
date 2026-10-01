@@ -30,7 +30,7 @@ type PhysicalResult<T> = Result<Result<T, OfflineRecoveryError>, ProtectedStoreE
 
 #[must_use = "dropping the waiter does not cancel accepted physical recovery work"]
 pub struct OfflineOperation<T> {
-    inner: StoreIoJob<PhysicalResult<T>>,
+    pub(super) inner: StoreIoJob<PhysicalResult<T>>,
 }
 impl<T> Future for OfflineOperation<T> {
     type Output = Result<T, OfflineRecoveryError>;
@@ -46,9 +46,9 @@ impl<T> Future for OfflineOperation<T> {
     }
 }
 
-struct Busy(Arc<AtomicBool>);
+pub(super) struct Busy(Arc<AtomicBool>);
 impl Busy {
-    fn accept(source: &OfflineRecoverySource) -> Result<Self, OfflineRecoveryError> {
+    pub(super) fn accept(source: &OfflineRecoverySource) -> Result<Self, OfflineRecoveryError> {
         source
             .busy
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)

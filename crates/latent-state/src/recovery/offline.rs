@@ -4,6 +4,7 @@
 
 mod file;
 mod operation;
+mod review;
 mod startup;
 
 pub use operation::OfflineOperation;
@@ -11,6 +12,10 @@ pub use startup::OfflineRecoveryStartup;
 
 use super::{
     restore::{RestoreRequest, RestoreWindow},
+    resume::{
+        NamespaceRecoveryView, NamespaceResumeObservation, NamespaceResumeReceipt,
+        NamespaceResumeRequest,
+    },
     snapshot::{RequiredArtifact, SnapshotClosure, SnapshotMetadata, SnapshotReceipt},
     RecoveryGuard,
 };
@@ -59,6 +64,48 @@ pub trait RecoveryCodecs: Send + Sync + 'static {
         window: &RestoreWindow,
         request: &OfflineRestoreRequest,
     ) -> Result<(), StoreError>;
+
+    /// Review the actual linked restored inventory, recovery/data-loss window,
+    /// present grants and conservative clock continuity. No external redrive.
+    fn review_reconciliation(
+        &self,
+        _view: &ReadView,
+        _request: &RecoveryReviewRequest,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+    /// Short no-I/O currentness check at the actual irreversible writer fence.
+    fn accept_reconciliation(&self, _request: &RecoveryReviewRequest) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+    fn review_namespace_resume(
+        &self,
+        _view: &ReadView,
+        _request: &NamespaceResumeRequest,
+        _observed: NamespaceResumeObservation<'_>,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+    /// Must recheck current permission, revocation, clock and lifecycle state;
+    /// installed review evidence alone cannot authorize a later commit.
+    fn accept_namespace_resume(&self, _request: &NamespaceResumeRequest) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+    fn authorize_namespace_inspection(
+        &self,
+        _view: &ReadView,
+        _operator_id: &str,
+        _namespace: &latent_core::StateNamespaceId,
+    ) -> Result<(), StoreError> {
+        Err(StoreError::Unavailable)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RecoveryReviewRequest {
+    pub operator_id: String,
+    pub expected_guard: RecoveryGuard,
+    pub review_digest: [u8; 32],
 }
 
 #[derive(Debug, Clone)]
@@ -112,6 +159,29 @@ pub struct OfflineRecoverySource {
 }
 
 impl OfflineRecoverySource {
+    pub fn inspect_namespace(
+        &self,
+        operator_id: String,
+        namespace: latent_core::StateNamespaceId,
+        deadline: Instant,
+    ) -> Result<OfflineOperation<NamespaceRecoveryView>, OfflineRecoveryError> {
+        review::inspect_namespace(self, operator_id, namespace, deadline)
+    }
+    pub fn review_reconciliation(
+        &self,
+        request: RecoveryReviewRequest,
+        deadline: Instant,
+    ) -> Result<OfflineOperation<RecoveryGuard>, OfflineRecoveryError> {
+        review::reconcile(self, request, deadline)
+    }
+
+    pub fn resume_namespace(
+        &self,
+        request: NamespaceResumeRequest,
+        deadline: Instant,
+    ) -> Result<OfflineOperation<NamespaceResumeReceipt>, OfflineRecoveryError> {
+        review::resume(self, request, deadline)
+    }
     pub fn inspect_restore(
         &self,
         request: OfflineRestoreRequest,

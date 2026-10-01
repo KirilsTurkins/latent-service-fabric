@@ -484,6 +484,24 @@ pub(super) fn capture_namespaces(
     view: &ReadView,
     tenant: &str,
 ) -> Result<Vec<NamespaceSnapshot>, StoreError> {
+    capture_namespace_rows(view, tenant, true)
+}
+
+/// Administrative inventory on an exclusively owned, retired engine. Reading
+/// active metadata here does not open any business admission or dispatch port.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn capture_namespaces_for_review(
+    view: &ReadView,
+    tenant: &str,
+) -> Result<Vec<NamespaceSnapshot>, StoreError> {
+    capture_namespace_rows(view, tenant, false)
+}
+
+fn capture_namespace_rows(
+    view: &ReadView,
+    tenant: &str,
+    require_quiesced: bool,
+) -> Result<Vec<NamespaceSnapshot>, StoreError> {
     let page = view.scan_after(
         Family::Namespace,
         b"ns-v1\0",
@@ -498,7 +516,9 @@ pub(super) fn capture_namespaces(
     for (key, bytes) in page.rows {
         NamespaceCatalog::validate_row(&key, &bytes).map_err(|_| StoreError::Corrupt)?;
         let record = NamespaceRecord::decode(&bytes).map_err(|_| StoreError::Corrupt)?;
-        if record.tenant.0 != tenant || record.status == NamespaceStatus::Active {
+        if record.tenant.0 != tenant
+            || (require_quiesced && record.status == NamespaceStatus::Active)
+        {
             return Err(StoreError::Conflict);
         }
         let (history, _) = NamespaceHistory::capture(view, &record)?;
