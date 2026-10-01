@@ -36,7 +36,11 @@ and audited reconciliation operations; #397 remains open for those operations.
 
 The host supplies a trusted clock sample and boot identity. Ordinary steps
 require the recorded boot, nonregressing monotonic and wall clocks, an elapsed
-interval of at most 60 seconds, and at most one second of wall/monotonic drift.
+interval of at most 60 seconds, and at most one second of wall/monotonic drift
+both since the prior step and cumulatively since the authorized anchor. The
+146-byte maximum version-2 progress record persists that anchor through restart;
+repeated small wall-only jumps cannot reset the drift tolerance. Older progress
+encodings refuse explicitly rather than inventing an approved clock anchor.
 Unknown continuity, boot changes, regressions, large jumps and overflow hold
 reclamation. A delayed operator schedule needs an explicit new anchor.
 

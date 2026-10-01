@@ -1235,6 +1235,7 @@
         "atomic::tests::reserved_result_row_allows_terminal_rejection_and_inbox_at_full_row_capacity",
         "atomic::tests::result_expiry_keeps_protected_identity_and_read_permission_is_current",
         "atomic::tests::retention_cases::clocks::boot_recovery_requires_exact_authorized_anchor_and_does_not_extend_original_horizons",
+        "atomic::tests::retention_cases::clocks::repeated_small_wall_only_jumps_hold_response_expiry_across_progress_reopen",
         "atomic::tests::retention_cases::clocks::uncertain_boot_regression_forward_jump_and_overflow_hold_all_retained_responses",
         "atomic::tests::retention_cases::corrupt_missing_payload_dependency_refuses_reclamation_without_advancing_progress",
         "atomic::tests::retention_cases::current_policy_revocation_at_retention_fence_keeps_body_and_progress_unchanged",
@@ -1271,7 +1272,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-commit/Cargo.toml",
-      "minimumCases": 44,
+      "minimumCases": 45,
       "mode": "libtest",
       "package": "latent-commit",
       "platforms": [
