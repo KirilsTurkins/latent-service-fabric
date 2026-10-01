@@ -5,6 +5,16 @@
       "cancel-in-progress": true,
       "group": "java-guest-feasibility-${{ github.ref }}"
     },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
     "name": "Java guest authoring",
     "on": {
       "pull_request": {
@@ -33,7 +43,7 @@
   "requiredJobs": [
     "compiler-component"
   ],
-  "reviewReason": "Review maintained typed Java composition minimizations and exact generated client evidence",
+  "reviewReason": "Retain maintained typed Java composition and exact generated client evidence alongside the reviewed CI performance workflow environment; preserve every execution obligation and correctness guard.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
