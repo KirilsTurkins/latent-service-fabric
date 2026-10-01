@@ -114,7 +114,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
                 surface = read_json(derived / "surface.json")
                 stage = "compatibility"
-                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
+                    host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
                 package_inputs(output, project, surface, package_files, component)
                 if packager is not None:
                     stage = "package"
