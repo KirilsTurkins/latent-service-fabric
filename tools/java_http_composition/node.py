@@ -10,7 +10,7 @@ import socket
 import time
 
 from tools.guest_runtime_profiles import profiles
-from tools.phase2_operator_process import require, read_json, write_json
+from tools.phase2_operator_process import Process, require, read_json, write_json
 from tools.phase2_operator_scenario import NODE_ID, configure_node
 from tools.run_security_profile_workflow import replace_config
 from tools.rust_capsule_node import deploy
@@ -161,10 +161,26 @@ def invoke(client, targets, name, function, arguments, activation, *, route_name
     budget = client.directory / (activation + "-budget.json")
     write_json(budget, targets[name]["budget"] if budget_override is None else budget_override)
     extra = ("--route", targets[name]["name"]) if route_name else ()
-    result = client.call("--rpc-timeout-ms", "120000", "invoke", "--service", DOMAIN if name == "domain" else ADAPTER,
+    count = getattr(client, "java_invocations", 0)
+    require(count < 64, "java-http-invocation-count")
+    client.java_invocations = count + 1
+    argv = [client.executable, "--output", "json", "--config", str(client.config), "--profile", "operator",
+        "--rpc-timeout-ms", "120000", "invoke", "--service", DOMAIN if name == "domain" else ADAPTER,
         "--contract", DOMAIN_CONTRACT if name == "domain" else WEB_CONTRACT, "--function", function,
-        "--activation-id", activation, "--input", source, "--budget", budget, "--budget-profile", "phase3",
-        *extra, *context_flags, codes=codes)
+        "--activation-id", activation, "--input", str(source), "--budget", str(budget), "--budget-profile", "phase3",
+        *extra, *context_flags]
+    began = time.monotonic_ns()
+    process = Process(argv, client.directory, client.environment, client.cancellation, maximum=65536)
+    try:
+        completed = process.complete(min(client.deadline, time.monotonic() + 123))
+    finally:
+        process.close()
+    result = json.loads(completed.stdout)
+    require(result["schemaVersion"] == "latent.cli.result.v1" and completed.returncode in codes,
+        "java-http-invocation-outcome")
+    write_json(client.evidence / (activation + ".json"), {"response": result,
+        "rpcTimeoutMillis": 120000, "processTimeoutMillis": 123000,
+        "elapsedNanos": str(time.monotonic_ns() - began), "processReaped": process.owner.finished})
     return result
 
 
