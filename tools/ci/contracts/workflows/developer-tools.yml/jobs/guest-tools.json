@@ -291,7 +291,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain all compiler, signed-node, native resource and cleanup checks; scope runner.temp compiler cache to the build step and cache action inputs permitted by GitHub Actions",
+  "reviewReason": "Preserve all compiler, signed-node, native resource and cleanup checks; runner.temp remains scoped to the compiler assembly step and cache inputs with independent archive verification.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
