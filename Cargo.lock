@@ -1817,6 +1817,7 @@ dependencies = [
  "latent-core",
  "latent-executor",
  "latent-manifest",
+ "latent-policy",
  "latent-routing",
  "latent-scheduler",
  "latent-telemetry",
