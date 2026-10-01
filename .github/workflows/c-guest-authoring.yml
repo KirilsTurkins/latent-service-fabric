@@ -66,6 +66,8 @@ jobs:
           echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
       - name: Qualify proposed transaction shapes with the maintained async C compiler
         run: python3 tools/qualify_transaction_contracts.py --language c --output "$RUNNER_TEMP/transaction-contract-c"
+      - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
+        run: python3 tools/compile_transaction_guests.py --language c --output "$RUNNER_TEMP/transaction-guests-c"
       - name: Build and execute signed C and Rust capability packages
         env:
           LSF_GUEST_CAPSULES: ${{ runner.temp }}/c-guest-capsules
@@ -86,6 +88,20 @@ jobs:
         with:
           name: c-guest-ownership-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/transaction-guests-c/**/report.json
+            ${{ runner.temp }}/transaction-guests-c/**/source-inputs.json
+            ${{ runner.temp }}/transaction-guests-c/**/recipe-inputs.json
+            ${{ runner.temp }}/transaction-guests-c/**/source.tar.gz
+            ${{ runner.temp }}/transaction-guests-c/**/component.wasm
+            ${{ runner.temp }}/transaction-guests-c/**/component.wit
+            ${{ runner.temp }}/transaction-guests-c/**/compiler-inputs.json
+            ${{ runner.temp }}/transaction-guests-c/**/logs/**
+            ${{ runner.temp }}/transaction-guests-c/**/compiler/*.log
+            ${{ runner.temp }}/transaction-guests-c/**/compiler/*.command.json
+            ${{ runner.temp }}/transaction-guests-c/**/compiled/generated/**
+            ${{ runner.temp }}/transaction-guests-c/**/compiled/bindings/**
+            ${{ runner.temp }}/transaction-guests-c/**/bindings/**
+            ${{ runner.temp }}/transaction-guests-c/**/compiled/raw-generated-bindings.json
             ${{ runner.temp }}/transaction-contract-c/report.json
             ${{ runner.temp }}/transaction-contract-c/source.tar.gz
             ${{ runner.temp }}/transaction-contract-c/component.wit

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/compile_transaction_guests.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain actual authored transaction compiler source, recipe, binding and failure evidence separately from node execution",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "884b621796445429b29258651b7d6252c5db98aa264d4f9f50673a493d99068f"
+}

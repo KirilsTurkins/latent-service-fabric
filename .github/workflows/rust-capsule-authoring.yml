@@ -79,6 +79,8 @@ jobs:
           python3 tools/generate_transaction_contracts.py --check
           python3 tools/qualify_transaction_contracts.py --language rust --output "$RUNNER_TEMP/transaction-contract-rust"
           cargo test --locked -p latent-wasmtime --lib values::tests::transactions -- --nocapture
+      - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
+        run: python3 tools/compile_transaction_guests.py --language rust --output "$RUNNER_TEMP/transaction-guests-rust"
       - name: Execute complete outside-checkout authoring qualification
         run: python3 tools/qualify_rust_capsules.py --output "$RUNNER_TEMP/rust-capsule-authoring"
       - name: Exercise developer cache with the actual operator and compiled Rust package inputs
@@ -97,6 +99,20 @@ jobs:
         with:
           name: rust-capsule-authoring-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/transaction-guests-rust/**/report.json
+            ${{ runner.temp }}/transaction-guests-rust/**/source-inputs.json
+            ${{ runner.temp }}/transaction-guests-rust/**/recipe-inputs.json
+            ${{ runner.temp }}/transaction-guests-rust/**/source.tar.gz
+            ${{ runner.temp }}/transaction-guests-rust/**/component.wasm
+            ${{ runner.temp }}/transaction-guests-rust/**/component.wit
+            ${{ runner.temp }}/transaction-guests-rust/**/compiler-inputs.json
+            ${{ runner.temp }}/transaction-guests-rust/**/logs/**
+            ${{ runner.temp }}/transaction-guests-rust/**/compiler/*.log
+            ${{ runner.temp }}/transaction-guests-rust/**/compiler/*.command.json
+            ${{ runner.temp }}/transaction-guests-rust/**/compiled/generated/**
+            ${{ runner.temp }}/transaction-guests-rust/**/compiled/bindings/**
+            ${{ runner.temp }}/transaction-guests-rust/**/bindings/**
+            ${{ runner.temp }}/transaction-guests-rust/**/compiled/raw-generated-bindings.json
             ${{ runner.temp }}/transaction-contract-rust/report.json
             ${{ runner.temp }}/transaction-contract-rust/source.tar.gz
             ${{ runner.temp }}/transaction-contract-rust/component.wit
