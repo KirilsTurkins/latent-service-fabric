@@ -6,11 +6,13 @@ mod captured;
 mod codec;
 mod ownership;
 mod record;
+mod retention;
 mod validation;
 mod writer;
 pub use captured::{CapturedIntent, IntentCaptureContext};
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
 pub use record::{CommandRecord, DurableResult, InboxIdentity, SourceIdentity};
+pub use retention::{MaintenanceClock, MaintenanceProgress, ResultMaintenanceOwner};
 pub use validation::{validate_linked_row, validate_row, validate_view};
 pub use writer::{
     inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, PreparedAdmission,

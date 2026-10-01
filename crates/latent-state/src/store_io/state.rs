@@ -6,7 +6,8 @@ use std::time::Instant;
 use latent_core::ActivationClock;
 
 use super::{
-    StoreIoEnginePhase, StoreIoError, StoreIoKind, StoreIoLimits, StoreIoShutdown, StoreIoSnapshot,
+    StoreIoEnginePhase, StoreIoError, StoreIoKind, StoreIoLimits, StoreIoRecoveryCapacity,
+    StoreIoShutdown, StoreIoSnapshot,
 };
 
 pub(super) enum Bootstrap {
@@ -28,6 +29,7 @@ pub(super) type Finalizer<S> = Box<dyn FnOnce(&S) -> Result<(), StoreIoError> + 
 
 pub(super) struct QueuedWork<S> {
     pub kind: StoreIoKind,
+    pub recovery: bool,
     pub work: Box<dyn Work<S>>,
 }
 
@@ -37,6 +39,11 @@ pub(super) struct State<S> {
     pub retirements: VecDeque<Box<dyn Retirement>>,
     pub physical_owners: usize,
     pub accepted: usize,
+    pub recovery_capacity: Option<StoreIoRecoveryCapacity>,
+    pub recovery_accepted: usize,
+    pub recovery_bytes: u64,
+    pub recovery_running: usize,
+    pub recovery_reads: usize,
     pub retained_bytes: u64,
     pub active_reads: usize,
     pub active_writes: usize,
@@ -66,6 +73,11 @@ impl<S> State<S> {
             retirements,
             physical_owners: 0,
             accepted: 0,
+            recovery_capacity: None,
+            recovery_accepted: 0,
+            recovery_bytes: 0,
+            recovery_running: 0,
+            recovery_reads: 0,
             retained_bytes,
             active_reads: 0,
             active_writes: 0,
@@ -86,6 +98,10 @@ impl<S> State<S> {
     }
 
     pub fn admit(&self, bytes: u64) -> Result<(), StoreIoError> {
+        self.admit_class(bytes, false)
+    }
+
+    pub fn admit_class(&self, bytes: u64, recovery: bool) -> Result<(), StoreIoError> {
         if self.closed {
             return Err(StoreIoError::AdmissionClosed);
         }
@@ -94,6 +110,42 @@ impl<S> State<S> {
         }
         if self.accepted >= self.limits.accepted_jobs {
             return Err(StoreIoError::AcceptedFull);
+        }
+        if recovery {
+            let reserve = self.recovery_capacity.ok_or(StoreIoError::InvalidLimits)?;
+            if self.queue.iter().filter(|job| job.recovery).count() >= reserve.queued_jobs {
+                return Err(StoreIoError::QueueFull);
+            }
+            if self.recovery_accepted >= reserve.accepted_jobs {
+                return Err(StoreIoError::AcceptedFull);
+            }
+            if bytes > reserve.job_bytes {
+                return Err(StoreIoError::JobTooLarge);
+            }
+            if self
+                .recovery_bytes
+                .checked_add(bytes)
+                .is_none_or(|sum| sum > reserve.retained_bytes)
+            {
+                return Err(StoreIoError::ByteBudget);
+            }
+        } else if let Some(reserve) = self.recovery_capacity {
+            if self.queue.iter().filter(|job| !job.recovery).count()
+                >= self.limits.queued_jobs - reserve.queued_jobs
+            {
+                return Err(StoreIoError::QueueFull);
+            }
+            if self.accepted - self.recovery_accepted
+                >= self.limits.accepted_jobs - reserve.accepted_jobs
+            {
+                return Err(StoreIoError::AcceptedFull);
+            }
+            if (self.retained_bytes - self.recovery_bytes)
+                .checked_add(bytes)
+                .is_none_or(|sum| sum > self.limits.retained_bytes - reserve.retained_bytes)
+            {
+                return Err(StoreIoError::ByteBudget);
+            }
         }
         if bytes > self.limits.job_bytes {
             return Err(StoreIoError::JobTooLarge);
@@ -108,22 +160,51 @@ impl<S> State<S> {
         Ok(())
     }
 
-    pub fn can_run(&self, kind: StoreIoKind) -> bool {
+    pub fn can_run(&self, kind: StoreIoKind, recovery: bool) -> bool {
+        if recovery
+            && self
+                .recovery_capacity
+                .is_none_or(|reserve| self.recovery_running >= reserve.workers)
+        {
+            return false;
+        }
+        if !recovery
+            && self.recovery_capacity.is_some_and(|reserve| {
+                self.active_reads + self.active_writes - self.recovery_running
+                    >= self.limits.workers - reserve.workers
+            })
+        {
+            return false;
+        }
         match kind {
-            StoreIoKind::Read => self.active_reads < self.limits.active_reads,
+            StoreIoKind::Read => {
+                if !recovery
+                    && self.recovery_capacity.is_some_and(|reserve| {
+                        self.active_reads - self.recovery_reads
+                            >= self.limits.active_reads - reserve.workers
+                    })
+                {
+                    return false;
+                }
+                self.active_reads < self.limits.active_reads
+            }
             StoreIoKind::Write => self.active_writes < self.limits.active_writes,
         }
     }
 
-    pub fn running(&mut self, kind: StoreIoKind, enter: bool) {
+    pub fn running(&mut self, kind: StoreIoKind, enter: bool, recovery: bool) {
         let count = match kind {
             StoreIoKind::Read => &mut self.active_reads,
             StoreIoKind::Write => &mut self.active_writes,
         };
         if enter {
             *count += 1;
+            self.recovery_running += usize::from(recovery);
+            self.recovery_reads += usize::from(recovery && kind == StoreIoKind::Read);
         } else {
             *count -= 1;
+            self.recovery_running -= usize::from(recovery);
+            self.recovery_reads -= usize::from(recovery && kind == StoreIoKind::Read);
         }
     }
 

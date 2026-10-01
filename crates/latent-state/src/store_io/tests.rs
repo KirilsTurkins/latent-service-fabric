@@ -12,6 +12,7 @@ use super::*;
 
 mod initialization;
 mod ownership;
+mod recovery;
 mod retirement;
 mod shutdown;
 
