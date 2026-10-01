@@ -14,12 +14,14 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, fresh,
                                         inventory, decode_json, read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
+from tools import guest_compatibility_build
 
 BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
           "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
           "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
           "tools/stage_runtime_wit.py")
+RECIPE += guest_compatibility_build.RECIPE
 
 
 class Commands:
@@ -162,6 +164,8 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
               ("capsule.json", "capsule-manifest", "application/vnd.latent.capsule.manifest.v1+json"),
               ("contracts.json", "contracts", "application/vnd.latent.contracts.v1+json"),
               ("wit-lock.json", "wit-lock", "application/vnd.latent.wit-lock.v1+json")]
+    guest_compatibility_build.package_report(output, files, component)
+    layers.append(("compatibility-report.json", "asset", "application/vnd.latent.guest.compatibility.v1+json"))
     for name, data in files.items():
         if name.startswith("wit/") and name.endswith(".wit"):
             path = output / name
@@ -254,7 +258,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
-            package_inputs(output, project, read_json(derived / "surface.json"), files, component)
+            surface = read_json(derived / "surface.json")
+            stage = "compatibility"
+            guest_compatibility_build.inspect(commands, paths["wasm-tools"], output, surface)
+            package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
@@ -296,4 +303,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
                    "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
                    "commands": commands.records if commands else []})
+        guest_compatibility_build.failure_report(output, "rust", stage)
         raise
