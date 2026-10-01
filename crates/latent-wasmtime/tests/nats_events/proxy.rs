@@ -84,7 +84,7 @@ impl Proxy {
             loop {
                 tokio::select! {
                     _=&mut stopped=>break,
-                    result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+                    result=children.join_next(),if !children.is_empty()=>{result.unwrap().unwrap();},
                     result=listener.accept(),if accepted<16=>{
                         let (socket,_)=result.unwrap();accepted+=1;
                         if fault.load(Ordering::Acquire)==REFUSE {drop(socket);continue;}

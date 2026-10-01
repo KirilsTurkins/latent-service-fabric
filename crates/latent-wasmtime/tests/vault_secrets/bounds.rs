@@ -16,8 +16,8 @@ async fn aggregate_plaintext_exhaustion_rejects_before_opening_another_connectio
     let first = f.provider.read(&session, "allowed".into()).unwrap();
     tokio::pin!(first);
     tokio::select! {
-        _ = server.event.notified() => (),
-        _ = tokio::time::sleep(Duration::from_secs(1)) => panic!("server request deadline"),
+        () = server.event.notified() => (),
+        () = tokio::time::sleep(Duration::from_secs(1)) => panic!("server request deadline"),
         _ = &mut first => panic!("held response completed"),
     }
     assert_eq!(
@@ -119,31 +119,7 @@ async fn replacement_requires_a_fresh_plan_and_keeps_old_owners_until_drain() {
         )
     };
     assert!(compile().is_err()); // Existing binding still authorizes epoch one.
-    let expected = f
-        .policies
-        .get(
-            "tests",
-            latent_policy::capability::RecordKind::ProviderBinding,
-            "binding",
-            8192,
-            Instant::now() + Duration::from_secs(1),
-        )
-        .unwrap()
-        .value()
-        .as_ref()
-        .unwrap()
-        .revision;
-    f.policies.mutate(latent_policy::capability::MutationRequest {
-        tenant: "tests", actor: "operator", id: "binding",
-        kind: latent_policy::capability::RecordKind::ProviderBinding,
-        operation_id: "replace-vault-binding", expected_revision: expected,
-        document: Some(&serde_json::to_vec(&serde_json::json!({
-            "formatVersion":1,"tenant":"tests","capability":component::CAP,
-            "providerProfile":latent_vault::VAULT_SECRETS_PROFILE,
-            "configurationDigest":reference.configuration_digest(),"configurationEpoch":2,
-            "restriction":{"operations":[]}
-        })).unwrap()),
-    }, Instant::now() + Duration::from_secs(1), |_| Ok(())).unwrap();
+    replace_binding(&f, &reference);
     let plan = compile().unwrap();
     let (request, control) = f.request("fresh-provider-generation", 0);
     let session = f
@@ -261,8 +237,8 @@ async fn a_late_response_cannot_replace_or_disclose_an_older_latest_version() {
     let older = f.provider.read(&session, "allowed".into()).unwrap();
     tokio::pin!(older);
     tokio::select! {
-        _ = server.event.notified() => (),
-        _ = tokio::time::sleep(Duration::from_secs(1)) => panic!("server request deadline"),
+        () = server.event.notified() => (),
+        () = tokio::time::sleep(Duration::from_secs(1)) => panic!("server request deadline"),
         _ = &mut older => panic!("held first response completed"),
     }
     let newer = f
@@ -300,4 +276,35 @@ async fn a_late_response_cannot_replace_or_disclose_an_older_latest_version() {
     setup::idle(&f).await;
     shutdown(&f).await;
     server.close().await;
+}
+
+fn replace_binding(
+    f: &Fixture<VaultSecretProvider>,
+    reference: &latent_capabilities::broker::ProviderReference,
+) {
+    let expected = f
+        .policies
+        .get(
+            "tests",
+            latent_policy::capability::RecordKind::ProviderBinding,
+            "binding",
+            8192,
+            Instant::now() + Duration::from_secs(1),
+        )
+        .unwrap()
+        .value()
+        .as_ref()
+        .unwrap()
+        .revision;
+    f.policies.mutate(latent_policy::capability::MutationRequest {
+        tenant: "tests", actor: "operator", id: "binding",
+        kind: latent_policy::capability::RecordKind::ProviderBinding,
+        operation_id: "replace-vault-binding", expected_revision: expected,
+        document: Some(&serde_json::to_vec(&serde_json::json!({
+            "formatVersion":1,"tenant":"tests","capability":component::CAP,
+            "providerProfile":latent_vault::VAULT_SECRETS_PROFILE,
+            "configurationDigest":reference.configuration_digest(),"configurationEpoch":2,
+            "restriction":{"operations":[]}
+        })).unwrap()),
+    }, Instant::now() + Duration::from_secs(1), |_| Ok(())).unwrap();
 }

@@ -47,7 +47,7 @@ fn phase3_resource_small_provider_ownership_checkpoint() {
     child_runtime.block_on(async {
         tokio::time::timeout(
             std::time::Duration::from_secs(30),
-            child::measure(&mut observations),
+            Box::pin(child::measure(&mut observations)),
         )
         .await
         .expect("finite two-worker child-call resource checkpoint");

@@ -1,6 +1,5 @@
 use super::package;
 #[path = "../local_service/component.rs"]
-#[allow(dead_code)]
 mod component;
 #[path = "../local_service/fixture.rs"]
 #[allow(dead_code)]
@@ -15,13 +14,13 @@ use latent_core::TenantId;
 async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fixture::Fixture {
     let caller_name = format!("{language}-service");
     let callee_name = format!("{language}-callee");
-    let caller = package::bundle(&package::input(&caller_name));
-    let callee = package::bundle(&package::input(&callee_name));
+    let caller_bundle = package::bundle(&package::input(&caller_name));
+    let callee_bundle = package::bundle(&package::input(&callee_name));
     let signers = package::Signers::new(&package::observation(&caller_name).build_type);
     let mut uploads = vec![];
     for (name, bundle) in [
-        (caller_name.as_str(), &caller),
-        (callee_name.as_str(), &callee),
+        (caller_name.as_str(), &caller_bundle),
+        (callee_name.as_str(), &callee_bundle),
     ] {
         let observation = package::observation(name);
         uploads.push(signers.upload(bundle, &observation));
@@ -36,7 +35,14 @@ async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fix
             .await
             .unwrap();
     }
-    fixture::Fixture::with_packages(2, false, permit, None, Some((catalog, caller, callee))).await
+    fixture::Fixture::with_packages(
+        2,
+        false,
+        permit,
+        None,
+        Some((catalog, caller_bundle, callee_bundle)),
+    )
+    .await
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -45,9 +51,9 @@ async fn typed_service_outcomes_use_node_admission_and_reused_cells() {
     for language in super::languages() {
         for permit in [true, false] {
             let root = tempfile::tempdir().unwrap();
-            let f = configured(root.path(), permit, language).await;
+            let f = Box::pin(configured(root.path(), permit, language)).await;
             for (index, (which, expected)) in [(0, 42), (1, 10), (0, 42)].into_iter().enumerate() {
-                let mut request = f.request(&format!("sdk-service-{index}"), which);
+                let mut request = fixture::Fixture::request(&format!("sdk-service-{index}"), which);
                 request.input = serde_json::to_vec(&serde_json::json!([which, "", "0"])).unwrap();
                 // Fixed numeric snapshots distinguish caller/child cache reuse
                 // from new worker activity without retaining any guest input.

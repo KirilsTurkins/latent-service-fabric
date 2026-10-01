@@ -1,5 +1,6 @@
 //! These tiny files test input selection only; they are never approved as workers.
 use std::fs;
+use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
@@ -131,7 +132,6 @@ fn replacement_after_configuration_is_rejected_and_compilation_recovers() {
     .unwrap();
     // Appending bytes preserves a runnable ELF, but changes its exact identity.
     // Rename a private replacement after configuration; never mutate shared input.
-    use std::io::Write;
     let replacement = directory.path().join("replacement");
     fs::copy(support::executable(), &replacement).unwrap();
     fs::set_permissions(&replacement, fs::Permissions::from_mode(0o700)).unwrap();

@@ -14,7 +14,11 @@ use fixture::*;
 #[ignore = "Requires compiled guest SDK fixtures"]
 async fn rust_and_c_owned_chunks_closed_handles_abandonment_and_reuse() {
     for language in super::languages() {
-        let (_root, f) = configured(&format!("{language}-blob"), Default::default()).await;
+        let (_root, f) = configured(
+            &format!("{language}-blob"),
+            latent_capabilities::broker::pools::ProviderPoolLimits::default(),
+        )
+        .await;
         for (which, expected) in [(0, 4), (1, 1), (2, 10), (3, 3), (0, 4)] {
             let (mut request, control) = f.request("sdk-blob", 0, 0);
             input(&mut request, which, "", 0);
