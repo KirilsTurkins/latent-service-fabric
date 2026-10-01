@@ -5,7 +5,7 @@ import secrets
 import re
 from pathlib import Path
 
-from . import state
+from . import operation_observation, state
 from .common import DevError, digest, encode, members, require
 
 MAX_HISTORY = 32
@@ -46,12 +46,16 @@ class Journal:
             error = result.get("error")
             code = error.get("code") if isinstance(error, dict) else None
             category = result.get("category")
-            state.atomic(self.root, "last-operation-observation.json", {
+            observation = {
                 "id": operation["id"], "kind": operation["kind"], "resultSha256": digest(encode(result)),
                 "outcomeKnown": False, "requestDispatched": result.get("requestDispatched") is True,
                 "category": category if category in {"transport-failure", "platform-failure", "not-found"} else "unknown",
                 "code": code if isinstance(code, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code) else None,
-            })
+            }
+            detail = operation_observation.currentness(result)
+            if detail is not None:
+                observation["failureDetail"] = detail
+            state.atomic(self.root, "last-operation-observation.json", observation)
             raise DevError("operation-outcome-uncertain-use-recover", uncertain=True)
         if operation["kind"] == "policy" and result.get("category") == "success":
             from .policy_operations import confirm

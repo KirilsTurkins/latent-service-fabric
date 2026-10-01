@@ -119,6 +119,23 @@ the HTTP provider defaults to 32 KiB buffers. The control now configures 8 KiB
 HTTP body buffers on that same original I/O runtime; a rerun of the corrected
 success leg remains pending.
 
+The current provider PR's 2026-10-01 Go tool-bundle run tested merge source
+`6bfe58c57920b3c0da09fa42b78490b4e2a3c409`. Its three ordinary greeting
+scenarios passed. The missing-grant scenario then received an unresolved
+`unavailable` response while switching the deployment; recovery observed an
+unknown original receipt and retained that operation without another mutation.
+The node subsequently reported clean physical provider shutdown. The uploaded
+report retained a response digest but omitted its typed failure detail, so this
+does not establish a clock-lease or authority-contention cause.
+
+Future controller observations retain `failureDetail` only for one exact
+`admission.currentness` detail with a recognized public reason and Boolean
+retryability. Arbitrary messages, payloads, extra fields and unknown reasons are
+excluded. All 66 recovery, HTTP-fixture and new observation controls pass on
+Linux, including all 12 currentness reasons and both retryability values. This
+diagnostic neither settles the original operation nor authorizes a mutation
+retry; the original pending identity and receipt-recovery rules are unchanged.
+
 Open delivery gates include #737's explicit review, protected node/operator
 end-to-end qualification and live rotation workflow (#739), full adversarial
 socket/uncertainty and measured native
