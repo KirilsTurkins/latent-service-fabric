@@ -11,6 +11,8 @@ use crate::{
 };
 use latent_core::{StateNamespaceId, TenantId};
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub mod offline;
 pub mod restore;
 pub mod snapshot;
 

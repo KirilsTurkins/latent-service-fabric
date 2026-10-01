@@ -275,45 +275,20 @@ pub fn export_snapshot(
         deadline,
     };
     sink.write(MAGIC)?;
-    let mut rows = 0u64;
-    let mut logical_bytes = 0u64;
-    let mut rows_hash = Sha256::new();
-    for family in FAMILIES {
-        let mut resume = None;
-        loop {
-            checkpoint(deadline)?;
-            let page = view.scan_after(family, b"", resume.as_deref(), 128, PAGE_BYTES)?;
-            for (key, value) in page.rows {
-                rows = rows.checked_add(1).ok_or(StoreError::Capacity)?;
-                logical_bytes = logical_bytes
-                    .checked_add(
-                        u64::try_from(key.key.len() + value.len() + 1)
-                            .map_err(|_| StoreError::Capacity)?,
-                    )
-                    .ok_or(StoreError::Capacity)?;
-                if rows > SNAPSHOT_ROWS || logical_bytes > SNAPSHOT_LOGICAL_BYTES {
-                    return Err(StoreError::Capacity);
-                }
-                let header = row_header(&key, &value)?;
-                for bytes in [&header[..], &key.key, &value] {
-                    rows_hash.update(bytes);
-                    sink.write(bytes)?;
-                }
-            }
-            match page.resume {
-                Some(next) => resume = Some(next),
-                None => break,
-            }
+    let observed = visit_view(&view, deadline, |header, key, value| {
+        for bytes in [&header[..], &key.key, value] {
+            sink.write(bytes)?;
         }
-    }
+        Ok(())
+    })?;
     let manifest = SnapshotManifest {
         format: "latent.offline-snapshot.v1".into(),
         engine: ENGINE.into(),
         metadata,
         namespaces,
-        rows,
-        logical_bytes,
-        rows_digest: rows_hash.finalize().into(),
+        rows: observed.rows,
+        logical_bytes: observed.logical_bytes,
+        rows_digest: observed.digest,
         inventory: inventory
             .entries()
             .iter()
@@ -339,6 +314,58 @@ pub fn export_snapshot(
         manifest_digest,
         file_bytes: sink.bytes,
         manifest,
+    })
+}
+
+pub(super) struct RowSummary {
+    pub rows: u64,
+    pub logical_bytes: u64,
+    pub digest: [u8; 32],
+}
+
+/// The same bounded canonical row walk backs export and exact recovery-window
+/// capture, including attempt/inbox/clock changes without namespace increments.
+pub(super) fn visit_view(
+    view: &ReadView,
+    deadline: Instant,
+    mut visit: impl FnMut(&[u8; 8], &RowKey, &[u8]) -> Result<(), StoreError>,
+) -> Result<RowSummary, StoreError> {
+    validate_deadline(deadline)?;
+    let mut rows = 0u64;
+    let mut logical_bytes = 0u64;
+    let mut rows_hash = Sha256::new();
+    for family in FAMILIES {
+        let mut resume = None;
+        loop {
+            checkpoint(deadline)?;
+            let page = view.scan_after(family, b"", resume.as_deref(), 128, PAGE_BYTES)?;
+            for (key, value) in page.rows {
+                rows = rows.checked_add(1).ok_or(StoreError::Capacity)?;
+                logical_bytes = logical_bytes
+                    .checked_add(
+                        u64::try_from(key.key.len() + value.len() + 1)
+                            .map_err(|_| StoreError::Capacity)?,
+                    )
+                    .ok_or(StoreError::Capacity)?;
+                if rows > SNAPSHOT_ROWS || logical_bytes > SNAPSHOT_LOGICAL_BYTES {
+                    return Err(StoreError::Capacity);
+                }
+                let header = row_header(&key, &value)?;
+                for bytes in [&header[..], &key.key, &value] {
+                    rows_hash.update(bytes);
+                }
+                visit(&header, &key, &value)?;
+            }
+            match page.resume {
+                Some(next) => resume = Some(next),
+                None => break,
+            }
+        }
+    }
+    Ok(RowSummary {
+        rows,
+        logical_bytes,
+        digest: rows_hash.finalize().into(),
     })
 }
 
