@@ -28,6 +28,10 @@ func validateRequest(request any, maximum int) error {
 		if !validIdentity(value.ActivationId) {
 			return errShape
 		}
+	case profile.InspectHttpTargetRequest:
+		if !targetRequestValid(value) {
+			return errShape
+		}
 	case profile.GetPolicyRequest:
 		if !validKind(value.RecordKind) || !validIdentity(value.Id) {
 			return errShape
@@ -88,6 +92,10 @@ func validateResponse(response, request any, state *callState) error {
 		return state.fail(profile.FailureCategoryDecode, "response contradicts the bounded profile")
 	}
 	switch value := response.(type) {
+	case *profile.InspectHttpTargetResponse:
+		if !targetResponseValid(value, request.(profile.InspectHttpTargetRequest)) {
+			return invalid()
+		}
 	case *profile.InvokeResponse:
 		if !recordActivation(value.ActivationId, state) || value.Consumption == nil ||
 			present(value.Success != nil, value.DeclaredError != nil, value.PlatformFailure != nil) != 1 {

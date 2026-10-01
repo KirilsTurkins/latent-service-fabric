@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review feature-gated old-profile reproduction build while retaining all Java authoring qualification stages",
+  "reviewReason": "Retain all Java authoring stages and feature-gated former-profile reproduction; review the added bounded buffered-web response grammar and authoritative table vectors.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "96c17f5f07af7940bff5ccc6250334cc57282281823fec417221480406a3f72a"
+  "sha256": "169bd341f815b93c3011ad7e8c828dcd7bf854ecb2bb422440bbedd937addcf4"
 }

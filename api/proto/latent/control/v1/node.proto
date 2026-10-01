@@ -3,6 +3,7 @@ syntax = "proto3";
 package latent.control.v1;
 
 import "latent/control/v1/common.proto";
+import "latent/control/v1/release.proto";
 
 message CellCapacity {
   string class = 1;
@@ -204,6 +205,8 @@ service NodeService {
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
   // Tenant-scoped operator inspection. Never invokes, cancels or fetches results.
   rpc InspectActivationTree(InspectActivationTreeRequest) returns (InspectActivationTreeResponse);
+  // Descriptive typed/HTTP target inspection. No invocation or trigger mutation.
+  rpc InspectHttpTarget(InspectHttpTargetRequest) returns (InspectHttpTargetResponse);
 }
 
 enum DiagnosticStage {
@@ -249,7 +252,7 @@ message ActivationDiagnostic {
   DiagnosticStage stage = 2;
   DiagnosticReason reason = 3;
   optional DiagnosticProfile profile = 4;
-  // Exact producer profile SHA-256, lowercase hex; no user-supplied labels.
+  // Exact producer profile digest bytes, lowercase hex; no user-supplied labels.
   optional string profile_digest = 5;
   optional uint64 configured_bound = 6;
   optional uint64 calculated_requirement = 7;
@@ -304,4 +307,154 @@ message InspectActivationTreeResponse {
   bool cursor_expired = 5;
   // Always true: volatile bounded retention cannot certify a complete graph.
   bool retained_history_only = 6;
+}
+
+enum TargetObservationState {
+  TARGET_OBSERVATION_STATE_UNSPECIFIED = 0;
+  TARGET_OBSERVATION_STATE_COHERENT = 1;
+  TARGET_OBSERVATION_STATE_STALE = 2;
+  TARGET_OBSERVATION_STATE_UNAVAILABLE = 3;
+}
+
+enum TargetReason {
+  TARGET_REASON_UNSPECIFIED = 0;
+  TARGET_REASON_CURRENT = 1;
+  TARGET_REASON_EXPORT_ABSENT = 2;
+  TARGET_REASON_ZERO_ROUTING_WEIGHT = 3;
+  TARGET_REASON_PUBLICATION_UNAVAILABLE = 4;
+  TARGET_REASON_BINDING_PLAN_UNAVAILABLE = 5;
+  TARGET_REASON_POLICY_CHANGED = 6;
+  TARGET_REASON_PROVIDER_UNAVAILABLE = 7;
+  TARGET_REASON_INSPECTION_UNAVAILABLE = 8;
+  TARGET_REASON_UNMANAGED_PUBLICATION = 9;
+  TARGET_REASON_HTTP_INCOMPATIBLE = 10;
+}
+
+enum TargetPreparationState {
+  TARGET_PREPARATION_STATE_UNSPECIFIED = 0;
+  TARGET_PREPARATION_STATE_READY = 1;
+  TARGET_PREPARATION_STATE_REJECTED = 2;
+  TARGET_PREPARATION_STATE_UNAVAILABLE = 3;
+  TARGET_PREPARATION_STATE_NOT_REQUESTED = 4;
+}
+
+message InspectHttpTargetRequest {
+  string service = 1;
+  string contract = 2;
+  string function = 3;
+  optional string route = 4;
+  optional string revision_id = 5;
+  optional PublicationRef publication = 6;
+  // Selects for this supported hypothetical routing context only. It never
+  // assigns an activation ID or predicts another request's generated context.
+  optional string routing_key = 7;
+  bool include_preparation = 8;
+  // Zero selects 10 seconds; positive values are bounded to 30 seconds and
+  // clamped by the original transport deadline. No materialization occurs.
+  uint64 maximum_wait_millis = 9;
+}
+
+message TargetDependency {
+  string capability = 1;
+  // Closed producer codes, never provider messages, URLs or credentials.
+  string state = 2;
+  string policy_identity_digest = 3;
+  uint64 provider_configuration_epoch = 4;
+  TargetDependencyRevision binding = 5;
+  repeated TargetDependencyRevision policies = 6;
+  string provider_profile = 7;
+  string configuration_digest = 8;
+}
+
+message TargetDependencyRevision {
+  string id = 1;
+  string digest = 2;
+  uint64 revision = 3;
+}
+
+message PreparedTargetExport {
+  string contract = 1;
+  string function = 2;
+}
+
+message TargetPreparation {
+  TargetPreparationState state = 1;
+  optional ActivationDiagnostic diagnostic = 2;
+  optional DiagnosticProfile profile = 3;
+  optional string engine_version = 4;
+  optional string engine_configuration_digest = 5;
+  optional string target_triple = 6;
+  optional string cpu_feature_set = 7;
+  // lsf-wasmtime-preparation-metadata-v2. Engine-owned metadata identity,
+  // independently of signed package/capsule/contract document digests.
+  optional string sealed_metadata_fingerprint = 8;
+  // Total actual interface imports: callable imports plus type_imports.
+  optional uint64 import_count = 9;
+  optional uint64 function_count = 10;
+  optional uint64 hostcall_fuel = 11;
+  optional uint64 maximum_lifted_bytes = 12;
+  optional uint64 maximum_type_nodes = 13;
+  optional ResourceBudget declared_budget = 14;
+  // Actual callable host/provider interface imports; not authority by themselves.
+  repeated string imports = 15;
+  repeated PreparedTargetExport exports = 16;
+  // Actual bounded, validated resource-free type-only interfaces. No callable
+  // provider binding or execution authority is implied by this collection.
+  repeated string type_imports = 17;
+}
+
+message TargetCandidate {
+  string deployment_id = 1;
+  uint64 deployment_generation = 2;
+  string revision_id = 3;
+  string component_digest = 4;
+  optional PublicationRef publication = 5;
+  // Absence preserves a legacy deployment manifest selector even when the
+  // immutable compiled revision captured an exact publication.
+  optional PublicationRef requested_publication = 6;
+  optional string package_digest = 7;
+  optional uint64 publication_generation = 8;
+  uint32 routing_weight = 9;
+  bool export_compatible = 10;
+  bool http_compatible = 11;
+  bool eligible = 12;
+  repeated TargetReason reasons = 13;
+  repeated TargetDependency dependencies = 14;
+  TargetPreparation preparation = 15;
+  // Only an actual verified package association supplies this closed kind.
+  // Missing for legacy package-free publications; no kind is inferred from ABI.
+  optional string publication_kind = 16;
+  repeated InspectedHttpBinding http_bindings = 17;
+}
+
+message InspectedHttpBinding {
+  string id = 1;
+  // Actual immutable HTTP trigger object generation, independent of the
+  // compiled capability binding generation on the enclosing observation.
+  uint64 generation = 2;
+  uint64 selected_deployment_generation = 3;
+  // Closed codes: configured-current or deployment-changed. Neither implies
+  // current caller permission or that a provider/guest was run.
+  string state = 4;
+}
+
+message InspectHttpTargetResponse {
+  uint32 schema_version = 1;
+  string tenant = 2;
+  string service = 3;
+  string contract = 4;
+  string function = 5;
+  string route = 6;
+  TargetObservationState state = 7;
+  uint64 catalog_transaction = 8;
+  uint64 route_generation = 9;
+  // Managed capability plans share their compiled route generation. This is
+  // not an independent HTTP trigger-object generation.
+  uint64 binding_generation = 10;
+  optional uint64 policy_store_generation = 11;
+  repeated TargetCandidate candidates = 12;
+  optional string selected_revision_id = 13;
+  // Always false: management authority is not caller-specific business-call
+  // authorization. Current grants must be enforced at actual operation use.
+  bool live_grants_checked = 14;
 }

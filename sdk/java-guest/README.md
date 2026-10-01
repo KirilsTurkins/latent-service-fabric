@@ -92,6 +92,39 @@ announce an early refund. Cancellation does not prove an external effect was
 undone. Secret and private wire buffers are explicitly cleared where owned;
 applications must not copy them into immutable strings or logs.
 
+## Inbound buffered web responses (development)
+
+`BufferedWebResponseValidator` inspects an application's inbound
+`latent:web/application@0.1.0` response before returning its generated record.
+It is distinct from the outbound HTTP provider capability above. Its
+`latent.browser.response-ownership.v1` helper covers status/body rules, bounded
+lowercase header grammar, host-reserved/credential/framing collisions, redirects,
+identity encoding, strict HTTPS cookies and UTF-8 HTML. It performs no IO and
+grants no platform authority.
+
+```java
+import dev.latent.guest.BufferedWebResponseValidator;
+import dev.latent.guest.BufferedWebResponseValidator.*;
+
+byte[] body = "{\"ok\":true}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+BufferedWebResponseValidator.requireValid(Method.POST, Scheme.HTTPS, 200,
+    java.util.List.of(new Header("cache-control", "no-store".getBytes(java.nio.charset.StandardCharsets.US_ASCII))),
+    "application/json", body, null);
+```
+
+Pass the actual request method/scheme and actual current response fields;
+nullable media/representation length mean omitted typed fields. Reuse the
+decoded body bytes when constructing the generated response. `validate` returns
+a fixed `Reason` and `requireValid` throws its fixed code, with no raw header,
+token or body. The host remains authoritative and rejects invalid output with an
+empty `no-store` 502. It consumes application cache inputs but keeps dynamic
+browser/proxy output `no-store`. See the complete
+[header ownership and referrer decision](../../docs/security/browser-boundary.md#response-headers).
+
+The maintained authoring qualification compiles this SDK helper, exercises its
+negative responses and compares every ownership field/prefix/limit to the shared
+native contract. JVM checks alone are not signed-node or browser proof.
+
 ## Execution and memory boundaries
 
 An operator must enable `engine.javaGuest: true`. It installs a separately

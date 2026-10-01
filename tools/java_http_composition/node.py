@@ -19,7 +19,9 @@ from tools.static_api.node import policy
 TENANT = "examples"
 DOMAIN = "examples/java-http-domain"
 ADAPTER = "examples/java-http-adapter"
+CONTEXT_REQUIRED = "examples/java-http-context-required"
 DOMAIN_CONTRACT = "examples:java-http-domain/api@1.0.0"
+CONTEXT_CONTRACT = "examples:java-http-context-required/api@1.0.0"
 WEB_CONTRACT = "latent:web/application@0.1.0"
 SERVICE_CAPABILITY = "latent:service/invoke@0.1.0"
 CHILD_SUBJECT = f"service:{len(TENANT)}:{TENANT}:{len(ADAPTER)}:{ADAPTER}"
@@ -30,6 +32,12 @@ def configure(directory: Path, releases: Path, *, http=True, former_profile=Fals
     require(not former_profile or not http, "java-former-profile-no-http")
     config = configure_node(directory, releases, TENANT)
     value = read_json(config)
+    # Public qualification credentials exercise tenant and management scope.
+    # They are bounded test inputs, never guest context or production tokens.
+    from tools.java_http_composition.inspection import WRONG_TENANT_TOKEN, INVOKER_TOKEN
+    value["credentials"] += [
+        {"token": WRONG_TENANT_TOKEN, "subject": "other-workflow-operator", "tenant": "other-examples", "role": "operator"},
+        {"token": INVOKER_TOKEN, "subject": "ordinary-workflow-invoker", "tenant": TENANT, "role": "invoke"}]
     value["engine"] = {"javaGuest": True}
     value["execution"].update(maximumWallTimeMillis=120000)
     value["limits"] = {"maximumComponentBytes": 32 * 1024 * 1024,
@@ -51,7 +59,7 @@ def configure(directory: Path, releases: Path, *, http=True, former_profile=Fals
     for name, (contract, _profile, _operation, _kind) in profiles("java").items():
         value["providers"][name] = {"identity": {"id": name, "tenant": TENANT,
                                                "service": "runtime-host", "epoch": 1}}
-        for service in (ADAPTER, DOMAIN):
+        for service in (ADAPTER, DOMAIN, CONTEXT_REQUIRED):
             value["providers"]["bindings"].append({"name": name + "-" + service.rsplit("/", 1)[1],
                 "tenant": TENANT, "consumerService": service, "providerService": "runtime-host",
                 "contract": contract, "providerBinding": name + "-installed"})
@@ -88,7 +96,7 @@ def grant(client, node, releases, publications, *, child_trigger=False):
                 {"kind": "administrator", "subject": "workflow-operator"},
                 {"kind": "trigger", "subject": "java-http-ingress"},
                 {"kind": "service", "subject": CHILD_SUBJECT}],
-            "services": [ADAPTER, DOMAIN], "publications": sorted(publications.values()), "capability": contract,
+            "services": [ADAPTER, DOMAIN, CONTEXT_REQUIRED], "publications": sorted(publications.values()), "capability": contract,
             "operations": [operation], "resources": {"kind": kind},
             "ceiling": {"operations": 4096, "inputBytes": 0, "outputBytes": 32768, "wallTimeMillis": 5000}}]})
         grants.append({"capability": contract, "policy": name + "-allow"})
@@ -133,9 +141,14 @@ def route(client, host, publication, *, path="/api", function="handle"):
             "metadata": {"name": name, "tenant": TENANT}, "spec": {"target": target,
             "configuration": {"profile": "buffered-v1", "scheme": "http", "host": host,
                               "path": path, "pathMatch": "prefix", "method": method}}})
-        client.call("trigger", "apply", source, "--operation-id", f"java-trigger-{client.calls}",
+        operation = f"java-trigger-{client.calls}"
+        applied = client.call("trigger", "apply", source, "--operation-id", operation,
             "--expected-generation", state["trigger"]["generation"] if state["trigger"] else 0,
-            "--expected-state-version", state["stateVersion"])
+            "--expected-state-version", state["stateVersion"], codes=(0, 2, 4, 5, 6))
+        recovered = client.call("trigger", "operation", operation)
+        require(applied["category"] == "success" and applied["outcomeKnown"]
+            and recovered["outcomeKnown"] and recovered["data"]["receipt"] == applied["data"]["receipt"],
+            "java-http-original-trigger-operation-recovery")
     return target
 
 
@@ -153,20 +166,23 @@ def request(host, path="/api/status", *, method="GET", value=None, headers=None,
         connection.close()
 
 
-def invoke(client, targets, name, function, arguments, activation, *, route_name=True, codes=(0,)):
+def invoke(client, targets, name, function, arguments, activation, *, route_name=True, codes=(0,), budget_override=None,
+           context_flags=()):
     source = client.directory / (activation + ".json")
     write_json(source, arguments)
     budget = client.directory / (activation + "-budget.json")
-    write_json(budget, targets[name]["budget"])
+    write_json(budget, targets[name]["budget"] if budget_override is None else budget_override)
     extra = ("--route", targets[name]["name"]) if route_name else ()
     count = getattr(client, "java_invocations", 0)
     require(count < 64, "java-http-invocation-count")
     client.java_invocations = count + 1
+    service, contract = {"domain": (DOMAIN, DOMAIN_CONTRACT), "adapter": (ADAPTER, WEB_CONTRACT),
+                         "context-required": (CONTEXT_REQUIRED, CONTEXT_CONTRACT)}[name]
     argv = [client.executable, "--output", "json", "--config", str(client.config), "--profile", "operator",
-        "--rpc-timeout-ms", "120000", "invoke", "--service", DOMAIN if name == "domain" else ADAPTER,
-        "--contract", DOMAIN_CONTRACT if name == "domain" else WEB_CONTRACT, "--function", function,
+        "--rpc-timeout-ms", "120000", "invoke", "--service", service,
+        "--contract", contract, "--function", function,
         "--activation-id", activation, "--input", str(source), "--budget", str(budget), "--budget-profile", "phase3",
-        *extra]
+        *extra, *context_flags]
     began = time.monotonic_ns()
     process = Process(argv, client.directory, client.environment, client.cancellation, maximum=65536)
     try:

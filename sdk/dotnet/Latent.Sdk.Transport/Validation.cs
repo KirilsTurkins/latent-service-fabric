@@ -13,6 +13,7 @@ public sealed partial class BoundedClient
     {
         switch (request)
         {
+            case Profile.InspectHttpTargetRequest target: ValidateTargetRequest(target); break;
             case Profile.InvokeRequest invoke:
                 Require(invoke.Target is not null && invoke.Budget is not null && Text(invoke.MediaType, 128) && invoke.Metadata is not null &&
                     OptionalText(invoke.ActivationId, 256) && OptionalText(invoke.RootActivationId, 256) && OptionalText(invoke.ParentActivationId, 256) &&
@@ -54,6 +55,7 @@ public sealed partial class BoundedClient
         Profile.OutcomeKnowledge outcome = Profile.OutcomeKnowledge.Observed;
         switch (response)
         {
+            case Profile.InspectHttpTargetResponse target: ValidateTargetResponse(target, (Profile.InspectHttpTargetRequest)request); break;
             case Profile.InvokeResponse invocation:
                 Require(Text(invocation.ActivationId, 256) && invocation.Consumption is not null &&
                     Count(invocation.Success, invocation.DeclaredError, invocation.PlatformFailure) == 1 &&

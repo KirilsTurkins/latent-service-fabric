@@ -173,6 +173,17 @@ static void policy(const latent_profile_get_policy_result *result, const latent_
     record->generation = result->value.policy.generation;
 }
 
+static void target(const latent_profile_inspect_http_target_result *result, const latent_profile_client_failure *error, void *data) {
+    observed *record = data;
+    assert((result == NULL) != (error == NULL));
+    if (failure(record,error)) return;
+    metadata(record,&result->metadata);
+    assert(result->value.catalog_transaction == UINT64_MAX && result->value.candidates_count == 1);
+    assert(result->value.candidates[0].reasons_count == 1 && result->value.candidates[0].reasons[0] == 777);
+    assert(!result->value.live_grants_checked && !result->value.has_selected_revision_id);
+    record->count = result->value.candidates_count;
+}
+
 static void policies(const latent_profile_list_policies_result *result, const latent_profile_client_failure *error, void *data) {
     observed *record = data;
     assert((result == NULL) != (error == NULL));
@@ -422,6 +433,28 @@ static void management(void) {
     tree_record = (observed){0};
     assert(api->inspect_activation_tree(client, &tree_request, NULL, tree, &tree_record) == NULL);
     assert(tree_record.failed && !tree_record.dispatched);
+    char target_service[] = "service-a";
+    latent_profile_inspect_http_target_request target_request = {.service={target_service,strlen(target_service)}, .contract=TEXT("domain:api/contract@1.0.0"),
+        .function=TEXT("get"), .has_revision_id=true, .revision_id=TEXT("revision-a"), .include_preparation=true};
+    observed target_record={0};
+    latent_profile_call *target_call=api->inspect_http_target(client,&target_request,NULL,target,&target_record);
+    assert(target_call != NULL);
+    memset(target_service,'x',strlen(target_service));
+    wait_for(owner,&target_record);
+    assert(!target_record.failed && target_record.count==1);
+    api->release_call(target_call);
+    target_request.service=TEXT("service-a");
+    const latent_string invalid_target_functions[]={TEXT("foreign"),TEXT("drift")};
+    for (size_t index=0; index<2; ++index) {
+        target_request.function=invalid_target_functions[index]; target_record=(observed){0};
+        target_call=api->inspect_http_target(client,&target_request,NULL,target,&target_record);
+        wait_for(owner,&target_record);
+        assert(target_record.failed && target_record.dispatched && target_record.category==LATENT_PROFILE_FAILURE_CATEGORY_DECODE);
+        api->release_call(target_call);
+    }
+    target_request.maximum_wait_millis=30001; target_record=(observed){0};
+    assert(api->inspect_http_target(client,&target_request,NULL,target,&target_record)==NULL);
+    assert(target_record.failed && !target_record.dispatched);
     latent_profile_list_policies_request page = {.record_kind = 1, .has_page = true, .page = {.page_size = 1}};
     observed record = {0};
     latent_profile_call *call = api->list_policies(client, &page, NULL, policies, &record);
@@ -725,6 +758,6 @@ int main(int argc, char **argv) {
     completion_and_allocation_bounds();
     allocation_failures();
     assert(file_descriptors() == descriptors);
-    puts("C HTTP/2/protobuf: nine RPCs, bounded inspection, future diagnostic enums, ownership, exact u64, audit absence/future, recovery, limits, deadlines, no retry, shutdown races passed");
+    puts("C HTTP/2/protobuf: ten RPCs, bounded target/tree inspection, future diagnostic enums, ownership, exact u64, audit absence/future, recovery, limits, deadlines, no retry, shutdown races passed");
     return 0;
 }

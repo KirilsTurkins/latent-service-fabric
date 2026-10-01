@@ -179,14 +179,14 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
                 long remaining = TimeUnit.MILLISECONDS.toNanos(millis) - (System.nanoTime() - started);
                 if (remaining <= 0) return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.DEADLINE, identity)));
                 Deadline deadline = Deadline.after(remaining, TimeUnit.NANOSECONDS);
-                int requestLimit = request instanceof Management.ListCapabilitiesRequest || request instanceof Management.InspectActivationTreeRequest ? Math.min(8192, config.requestBytes)
+                int requestLimit = request instanceof Management.ListCapabilitiesRequest || request instanceof Management.InspectActivationTreeRequest || request instanceof Management.InspectHttpTargetRequest ? Math.min(8192, config.requestBytes)
                         : method.getFullMethodName().contains("PolicyService/") ? Math.min(131072, config.requestBytes) : config.requestBytes;
                 Protocol.sourceSize(request, requestLimit + 4096L, 0);
                 Protocol.request(request, config.tenant);
                 WireRequest wire = encode.apply(request);
                 if (wire.getSerializedSize() > requestLimit) return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.LIMIT, identity)));
                 Request captured = snapshot.apply(wire);
-                int responseLimit = request instanceof Management.InspectActivationTreeRequest ? Math.min(65536, config.responseBytes)
+                int responseLimit = request instanceof Management.InspectActivationTreeRequest || request instanceof Management.InspectHttpTargetRequest ? Math.min(65536, config.responseBytes)
                         : request instanceof Management.ListCapabilitiesRequest ? Math.min(131072, config.responseBytes)
                         : method.getFullMethodName().contains("PolicyService/") ? Math.min(1048576, config.responseBytes) : config.responseBytes;
                 var checked = method.toBuilder().setResponseMarshaller(Protocol.marshaller(prototype, responseLimit)).build();
@@ -348,6 +348,9 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
     }
     @Override public CompletableFuture<Management.ClientResponse<Management.InspectActivationTreeResponse>> inspectActivationTree(Management.InspectActivationTreeRequest request, Management.CallOptions options) {
         return call(request, options, Wire::toWire, Wire::fromWire, NodeServiceGrpc.getInspectActivationTreeMethod(), Node.InspectActivationTreeResponse.getDefaultInstance(), Wire::fromWire);
+    }
+    @Override public CompletableFuture<Management.ClientResponse<Management.InspectHttpTargetResponse>> inspectHttpTarget(Management.InspectHttpTargetRequest request, Management.CallOptions options) {
+        return call(request, options, Wire::toWire, Wire::fromWire, NodeServiceGrpc.getInspectHttpTargetMethod(), Node.InspectHttpTargetResponse.getDefaultInstance(), Wire::fromWire);
     }
     @Override public CompletableFuture<Management.ClientResponse<Management.ListPoliciesResponse>> listPolicies(Management.ListPoliciesRequest request, Management.CallOptions options) {
         return call(request, options, Wire::toWire, Wire::fromWire, PolicyServiceGrpc.getListPoliciesMethod(), PolicyOuterClass.ListPoliciesResponse.getDefaultInstance(), Wire::fromWire);

@@ -107,7 +107,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Retain bounded compiler packaging and paired Java signing verifier admission logs while preserving all historical steps",
+  "reviewReason": "Retain all bounded Java packaging logs for actual independently built compatible revision and live drain qualification with unchanged historical coverage",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

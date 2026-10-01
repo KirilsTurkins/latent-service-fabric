@@ -93,6 +93,7 @@ final class Protocol {
 
     static void request(Object value, String tenant) {
         switch (value) {
+            case Management.InspectHttpTargetRequest request -> TargetInspection.request(request, tenant);
             case Management.InvokeRequest request -> {
                 require(request.target().isPresent());
                 var target = request.target().get();
@@ -204,6 +205,7 @@ final class Protocol {
     static boolean response(Object value, Object request, String tenant, Management.RequestIdentity recovery) {
         activation(value).ifPresent(identity -> require(recovery.activationId().map(identity::equals).orElse(true)));
         switch (value) {
+            case Management.InspectHttpTargetResponse response -> TargetInspection.response(response, (Management.InspectHttpTargetRequest)request, tenant);
             case Management.InvokeResponse response -> {
                 require(identity(response.activationId()) && response.consumption().isPresent());
                 require((response.success().isPresent() ? 1 : 0) + (response.declaredError().isPresent() ? 1 : 0)

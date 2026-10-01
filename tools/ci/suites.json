@@ -1164,14 +1164,15 @@
         "broker::tests::unpolled_calls_reserve_nothing_and_revocation_denies_before_dispatch",
         "broker::tests::unused_multi_dimension_reservations_refund_together_without_refunding_other_work",
         "broker::tests::web_imports::ordinary_capsule_context_still_requires_its_provider_binding",
-        "broker::tests::web_imports::web_context_is_distinct_from_exact_provider_imports"
+        "broker::tests::web_imports::web_context_is_distinct_from_exact_provider_imports",
+        "broker::tests::diagnostics::bounded_binding_projection_reserves_no_call_and_rejects_before_copying"
       ],
       "expectedIgnored": [],
       "id": "latent-capabilities.lib.latent-capabilities",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 124,
+      "minimumCases": 125,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -1541,7 +1542,11 @@
         "deployments::tests::weighting_is_deterministic_order_independent_and_restart_stable",
         "http_routes::tests::exact_publication_selector_survives_manifest_codec_and_canonical_matching",
         "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny",
-        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations"
+        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations",
+        "deployments::tests::target_inspection::target_candidates_use_existing_tenant_indexes_and_never_fetch_or_change_state",
+        "deployments::tests::target_inspection::changed_target_snapshot_is_stale_and_exact_filters_never_pick_another_revision",
+        "deployments::tests::target_inspection::inspection_candidate_and_physical_read_owner_limits_fail_closed",
+        "deployments::tests::http::target_inspection::inspection_reads_actual_http_object_generations_without_replaying_original_operations"
       ],
       "expectedIgnored": [
         "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set"
@@ -1552,7 +1557,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 247,
+      "minimumCases": 251,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
@@ -4294,14 +4299,15 @@
         "protobuf_receipts_unknown_enums_and_assigned_identity_remain_lossless",
         "typed_rpc_errors_cursor_rejection_and_not_found_remain_separate",
         "uncertain_mutation_recovers_original_receipt_without_automatic_replay",
-        "unsupported_wire_text_fails_explicitly_without_losing_recovery_identity"
+        "unsupported_wire_text_fails_explicitly_without_losing_recovery_identity",
+        "target_inspection_uses_generated_rpc_and_preserves_original_bounded_selectors"
       ],
       "expectedIgnored": [],
       "id": "latent-sdk.test.profile-transport",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "sdk/rust/Cargo.toml",
-      "minimumCases": 11,
+      "minimumCases": 12,
       "mode": "libtest",
       "package": "latent-sdk",
       "platforms": [
@@ -7470,14 +7476,16 @@
         "triggers::audit_recovery::trigger_audit_recovery_requires_an_exact_committed_receipt",
         "triggers::trigger_rpc_authentication_atomic_crud_receipts_and_audit",
         "triggers::trigger_rpc_requires_audit_and_preflights_response_capacity_before_commit",
-        "inspection::activations::tree_requires_trusted_tenant_authority_and_reports_missing_history_honestly"
+        "inspection::activations::tree_requires_trusted_tenant_authority_and_reports_missing_history_honestly",
+        "inspection::targets::targets_require_authenticated_management_scope_and_bounded_exact_selectors",
+        "inspection::targets::target_rpc_returns_coherent_candidate_identity_without_invocation_or_receipts"
       ],
       "expectedIgnored": [],
       "id": "latent-wire.test.management-service",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 45,
+      "minimumCases": 47,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -7700,14 +7708,17 @@
         "package::registry::tests::pull_pins_tag_once_exports_exact_evidence_and_releases_all_owners",
         "args::tests::activation_tree_has_one_bounded_page_without_cancellation_authority",
         "args::tests::activation_roots_preserves_exact_time_without_minting_an_activation_identity",
-        "management::tests::activation_tree_preserves_future_enums_numeric_presence_and_history_gaps"
+        "management::tests::activation_tree_preserves_future_enums_numeric_presence_and_history_gaps",
+        "management::target_inspection::tests::target_json_preserves_exact_u64_absence_and_future_reason_values",
+        "management::target_inspection::tests::target_reply_rejects_foreign_scope_selector_drift_and_unmeasured_ready_claims",
+        "management::target_inspection::tests::target_command_has_finite_wait_and_exact_publication_grammar"
       ],
       "expectedIgnored": [],
       "id": "latent.lib.latent",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 133,
+      "minimumCases": 136,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
