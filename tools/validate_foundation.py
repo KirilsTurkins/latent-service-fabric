@@ -233,7 +233,7 @@ def validate_cargo_workflow(workflow: str) -> None:
         # conditional recipe only in this complete, failure-propagating matrix.
         required_matrix = (
             job.get("strategy") == {"fail-fast": "false", "matrix": {"lane": [
-                "checks", "tests", "provider", "renderer-public", "renderer-angular", "publications", "angular-t1"]}}
+                "checks", "tests", "qualification", "provider", "renderer-public", "renderer-angular", "publications", "angular-t1"]}}
             and job.get("continue-on-error", "false") == "false"
             and job.get("if") == "needs.profile.outputs.profile == 'full'"
         )
