@@ -1206,6 +1206,8 @@
         "durable::tests::close_retains_live_attempt_and_accepts_its_prepaid_known_outcome",
         "durable::tests::deadlines_include_empty_end_cursor_and_final_read_boundary",
         "durable::tests::durable_attempt_outcome_reopen_and_page_lease",
+        "durable::tests::effect_management::approved_effect_actions_use_real_critical_audit_and_keep_exact_target_after_restart",
+        "durable::tests::effect_management::effect_audit_rejects_wrong_scope_missing_target_generation_and_reassigned_original",
         "durable::tests::expected_rollout_revision_is_distinct_from_other_generations",
         "durable::tests::first_start_creates_bounded_private_ancestors_without_following_links",
         "durable::tests::invalid_limits_reject_without_root_creation",
@@ -1240,7 +1242,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-audit/Cargo.toml",
-      "minimumCases": 42,
+      "minimumCases": 44,
       "mode": "libtest",
       "package": "latent-audit",
       "platforms": [
