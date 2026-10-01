@@ -7,6 +7,11 @@
 
 mod lease;
 mod public_error;
+mod state_management;
+pub use state_management::{
+    StateManagementAdmission, StateManagementBackend, StateManagementBinding,
+    StateManagementReservation, StateManagementServices,
+};
 #[cfg(test)]
 mod tests;
 
