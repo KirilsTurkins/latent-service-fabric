@@ -84,3 +84,16 @@ Wasm validation, with only the declared clock and random imports. It preserves
 both reviewed insecure-random versions and keeps secure-random denial. This
 probe qualifies the composition mechanism; a fresh complete maintained build,
 signing and normal-node library/resource run remain required.
+
+The subsequent [maintained offline build and normal node observation](../testing/evidence/dotnet-memorypack-entropy-node-2026-10-01.json)
+passed the complete repaired build, final integrity checks, signing and normal
+admission with the unchanged application and selected library bytes. Ordinary
+embedded-resource lookup and generated MemoryPack serialization returned the
+expected Ada and Unicode results. Missing entropy was denied with zero guest
+fuel, memory and effects before an explicit grant. The declared-error path,
+1000-fuel exhaustion and fresh successful invocation passed. The first node
+shutdown reported clean provider, compiler, Store and activation ownership.
+The persisted-node restart then failed with `startup-unavailable`, before the
+recovery invocation or original dormant-growth samples. That failure is retained
+in the same observation; full recovery, resource-limit and ticket acceptance
+remain open.
