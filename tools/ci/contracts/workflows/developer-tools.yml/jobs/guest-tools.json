@@ -3,17 +3,31 @@
   "before": {},
   "coverage": {},
   "definition": {
+    "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
+    "name": "Guest tool bundle and maintained application builds (${{ matrix.language }})",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 60,
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "language": [
+          "rust",
+          "c",
+          "java",
+          "dotnet",
+          "go",
+          "typescript"
+        ]
+      }
+    },
     "env": {
       "LSF_DEV_LANGUAGE": "${{ matrix.language }}"
     },
-    "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
-    "name": "Guest tool bundle and maintained application builds (${{ matrix.language }})",
     "permissions": {
-      "attestations": "write",
       "contents": "read",
-      "id-token": "write"
+      "id-token": "write",
+      "attestations": "write"
     },
-    "runs-on": "ubuntu-24.04",
     "steps": [
       {
         "uses": "actions/checkout",
@@ -40,12 +54,16 @@
         }
       },
       {
-        "id": "compiler-cache",
+        "name": "Select the runner-owned compiler archive cache",
+        "run": "printf 'LSF_DEV_COMPILER_CACHE=%s\\n' \"$RUNNER_TEMP/compiler-archives\" >> \"$GITHUB_ENV\""
+      },
+      {
         "name": "Restore untrusted pinned compiler archives",
+        "id": "compiler-cache",
         "uses": "actions/cache/restore",
         "with": {
-          "key": "compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}",
-          "path": "${{ runner.temp }}/compiler-archives"
+          "path": "${{ env.LSF_DEV_COMPILER_CACHE }}",
+          "key": "compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}"
         }
       },
       {
@@ -53,19 +71,16 @@
         "run": "image='python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419'\ncontainer=$(docker create \"$image\")\ntrap 'docker rm \"$container\"' EXIT\nprefix=\"$RUNNER_TEMP/guest-tools-cpython\"\nmkdir \"$prefix\"\ndocker cp \"$container:/usr/local/.\" \"$prefix\"\nprintf 'LSF_DEV_PYTHON_PREFIX=%s\\n' \"$prefix\" >> \"$GITHUB_ENV\"\n"
       },
       {
-        "env": {
-          "LSF_DEV_COMPILER_CACHE": "${{ runner.temp }}/compiler-archives"
-        },
         "name": "Assemble pinned compiler tools and maintained templates",
         "run": "python tools/build_dev_guest_tools.py --language \"$LSF_DEV_LANGUAGE\" --output target/dev-tools --python-prefix \"$LSF_DEV_PYTHON_PREFIX\" --node-tests"
       },
       {
-        "if": "steps.compiler-cache.outputs.cache-hit != 'true'",
         "name": "Save independently verified compiler archive bytes",
+        "if": "steps.compiler-cache.outputs.cache-hit != 'true'",
         "uses": "actions/cache/save",
         "with": {
-          "key": "${{ steps.compiler-cache.outputs.cache-primary-key }}",
-          "path": "${{ runner.temp }}/compiler-archives"
+          "path": "${{ env.LSF_DEV_COMPILER_CACHE }}",
+          "key": "${{ steps.compiler-cache.outputs.cache-primary-key }}"
         }
       },
       {
@@ -73,140 +88,140 @@
         "run": "python tools/run_dev_guest_tools_tests.py --language \"$LSF_DEV_LANGUAGE\" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-projects\""
       },
       {
-        "if": "matrix.language == 'typescript'",
         "uses": "actions/setup-node",
+        "if": "matrix.language == 'typescript'",
         "with": {
           "node-version": "24.19.0"
         }
       },
       {
-        "if": "matrix.language == 'typescript'",
         "name": "Qualify the static site and TypeScript API in Chromium",
+        "if": "matrix.language == 'typescript'",
         "run": "npm ci --ignore-scripts --no-audit --no-fund --prefix tools/static_api\nnode tools/static_api/node_modules/playwright-core/cli.js install --with-deps chromium\npython tools/static_api/ci.py --bin target/dev-tools/source-node/bin --signer target/dev-tools/payload/sdk/bin/capsule-test-signer --build \"$RUNNER_TEMP/dev-projects/static-api/build\" --browser-tools tools/static_api --output \"$RUNNER_TEMP/dev-projects/static-api\"\n"
       },
       {
-        "if": "matrix.language == 'rust'",
         "name": "Compare explicit clock fixtures on signed nodes and the Linux portable host",
+        "if": "matrix.language == 'rust'",
         "run": "cargo --config .cargo/managed-guest.toml build --locked -p latent-portable-test-host\npython -c \"import shutil; shutil.copy2('target/debug/latent-portable-test-host','target/dev-tools/clock-host')\"\npython tools/dev_clock_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-clock-fixtures\"\npython tools/dev_failure_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-failure-fixtures\"\npython tools/dev_http_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-http-fixtures\"\npython tools/dev_blob_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-blob-fixtures\"\npython tools/dev_secret_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-secret-fixtures\"\npython tools/dev_metric_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --portable-host target/dev-tools/clock-host --output \"$RUNNER_TEMP/dev-metric-fixtures\"\npython tools/dev_local_service_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-local-service-fixtures\"\npython tools/dev_event_fixture_probe.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-event-fixtures\"\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dev_recovery_ci.py --probe isolation --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-workspace-isolation\"\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dev_recovery_ci.py --probe watch --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-watch-fixtures\"\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dev_recovery_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-recovery-fixtures\"\n"
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual watch failure, revision and revocation observations",
+        "if": "always() && matrix.language == 'rust'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-watch-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-watch-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual workspace isolation and expired original receipt observations",
+        "if": "always() && matrix.language == 'rust'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-workspace-isolation-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-workspace-isolation/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain authenticated immediate-event protocol and cleanup receipts",
+        "if": "always() && matrix.language == 'rust'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-event-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-event-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual clock fixtures and node comparison receipts",
+        "if": "always() && matrix.language == 'rust'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-clock-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-clock-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain authored failures and actual running cancellation",
+        "if": "always() && matrix.language == 'rust'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-failure-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-failure-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain original-operation recovery and authority receipts",
         "uses": "actions/upload-artifact",
+        "if": "always() && matrix.language == 'rust'",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-recovery-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-recovery-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain authenticated HTTP fixture and comparison receipts",
         "uses": "actions/upload-artifact",
+        "if": "always() && matrix.language == 'rust'",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-http-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-http-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual immutable-blob ownership and restart receipts",
         "uses": "actions/upload-artifact",
+        "if": "always() && matrix.language == 'rust'",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-blob-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-blob-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual scoped secret disclosure and cleanup receipts",
         "uses": "actions/upload-artifact",
+        "if": "always() && matrix.language == 'rust'",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-secret-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-secret-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual metric exports and joined-owner cleanup receipts",
         "uses": "actions/upload-artifact",
+        "if": "always() && matrix.language == 'rust'",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-metric-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-metric-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && matrix.language == 'rust'",
         "name": "Retain actual local caller and callee receipts",
         "uses": "actions/upload-artifact",
+        "if": "always() && matrix.language == 'rust'",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-local-service-fixtures-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-local-service-fixtures/",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       },
@@ -214,84 +229,70 @@
         "name": "Retain identical applications for both native execution hosts",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "developer-${{ matrix.language }}-applications-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-projects/",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
       {
-        "if": "matrix.language == 'c'",
         "name": "Compile maintained C provider fixtures for native execution",
+        "if": "matrix.language == 'c'",
         "run": "python tools/build_portable_c_guests.py --tool-root target/dev-tools/payload --output target/dev-c-portable/providers\npython -c \"from pathlib import Path; import os,shutil; shutil.copytree(Path(os.environ['RUNNER_TEMP'])/'dev-projects', 'target/dev-c-portable/applications')\"\n"
       },
       {
-        "if": "matrix.language == 'c'",
         "name": "Retain exact C components and shared scenarios",
+        "if": "matrix.language == 'c'",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "developer-c-portable-inputs-${{ github.sha }}",
           "path": "target/dev-c-portable/",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
       {
-        "id": "attest",
-        "if": "github.event_name != 'pull_request'",
         "name": "Attest guest tool candidate without release authority",
+        "if": "github.event_name != 'pull_request'",
+        "id": "attest",
         "uses": "actions/attest-build-provenance",
         "with": {
           "subject-path": "target/dev-tools/candidate/SHA256SUMS"
         }
       },
       {
+        "name": "Retain offline guest tool attestation",
+        "if": "github.event_name != 'pull_request'",
         "env": {
           "BUNDLE_PATH": "${{ steps.attest.outputs.bundle-path }}"
         },
-        "if": "github.event_name != 'pull_request'",
-        "name": "Retain offline guest tool attestation",
         "run": "install -m 0644 \"$BUNDLE_PATH\" target/dev-tools/candidate/attestation.json"
       },
       {
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "developer-${{ matrix.language }}-tools-candidate-${{ github.sha }}",
           "path": "target/dev-tools/candidate/",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
       {
-        "if": "always()",
         "name": "Retain compiler and application evidence",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "developer-${{ matrix.language }}-builds-${{ github.sha }}",
           "path": "${{ runner.temp }}/dev-projects/\ntarget/dev-tools/logs/\ntarget/dev-tools/managed-dependencies/*.log\ntarget/dev-tools/managed-dependencies/*.json\ntarget/dev-tools/managed-dependencies/logs/\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "strategy": {
-      "fail-fast": false,
-      "matrix": {
-        "language": [
-          "rust",
-          "c",
-          "java",
-          "dotnet",
-          "go",
-          "typescript"
-        ]
-      }
-    },
-    "timeout-minutes": 60
+    ]
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain all compiler, signed-node, native resource and cleanup checks; scope runner.temp compiler cache to the build step and cache action inputs permitted by GitHub Actions",
+  "reviewReason": "Preserve incoming six-language SDK and transaction compiler lanes; resolve the runner-owned cache only after runner allocation at step execution.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

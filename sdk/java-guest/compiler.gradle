@@ -13,6 +13,7 @@ java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
 tasks.withType(JavaCompile).configureEach {
     options.release = 25
     options.encoding = 'UTF-8'
+    options.compilerArgs.add('-proc:none')
 }
 configurations.configureEach {
     resolutionStrategy.failOnDynamicVersions()
@@ -23,6 +24,8 @@ configurations.configureEach {
     }
 }
 dependencies { implementation teavm.libs.interop }
+dependencies { implementation fileTree(dir: 'captured-application/jars', include: '*.jar') }
+sourceSets.main.resources.srcDir('captured-application/resources')
 teavm {
     c {
         mainClass = 'dev.latent.generated.Bindings'
