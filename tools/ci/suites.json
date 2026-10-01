@@ -3481,6 +3481,8 @@
     {
       "boundary": "runtime",
       "expectedCases": [
+        "authoring::inputs::tests::diagnostic_asset_inventory_cannot_cover_replaced_bytes",
+        "authoring::inputs::tests::diagnostic_assets_preserve_checked_component_and_wit_inventory",
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
         "authoring::policy::tests::demo_publisher_and_builder_proof_age_ceilings_remain_independent",
         "fixture_tls::tests::fixture_tls_is_fresh_private_and_never_replaces_an_existing_identity"
@@ -3490,7 +3492,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 3,
+      "minimumCases": 5,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
