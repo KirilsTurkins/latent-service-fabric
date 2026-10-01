@@ -107,10 +107,28 @@ pub fn derive_capsule_contracts(
     };
     let (resolve, selected) = sources::resolve(&lock, files, bounds)?;
     let surface = compare::surface(&resolve, selected, bounds)?;
+    // An explicit exact-versioned transaction import selects source inspection
+    // only. Received packages still require the closed companion, and runtime
+    // use requires a separately installed host and current admission.
+    let host_profile = if surface.imports.keys().any(|name| {
+        matches!(
+            name.as_str(),
+            "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
+        )
+    }) {
+        latent_core::PHASE4_HOST_ABI_V1
+    } else {
+        latent_core::PHASE3_HOST_ABI_CURRENT
+    };
     // Self-comparison traverses the complete export type graph, including the
     // definitions behind named records, before the legacy projection is made.
-    compare::worlds(&resolve, &surface, &resolve, &surface, bounds)?;
-    host::validate(&resolve, &surface.imports, bounds)?;
+    if host_profile == latent_core::PHASE3_HOST_ABI_CURRENT {
+        compare::worlds(&resolve, &surface, &resolve, &surface, bounds)?;
+        host::validate(&resolve, &surface.imports, bounds)?;
+    } else {
+        compare::worlds_for_profile(&resolve, &surface, &resolve, &surface, bounds, host_profile)?;
+        host::validate_for_profile(&resolve, &surface.imports, bounds, host_profile)?;
+    }
     let descriptors = projection::generate(&resolve, selected, bounds)?;
     let contracts = encode_contract_metadata(&descriptors, ContractMetadataLimits::default())?;
     if contracts.len() > bounds.max_summary_bytes {
@@ -123,7 +141,7 @@ pub fn derive_capsule_contracts(
         imports: surface
             .imports
             .into_keys()
-            .filter(|name| host::recognizes(name))
+            .filter(|name| host_profile.interface(name).is_some())
             .collect(),
         exports: surface.exports.into_keys().collect(),
     })

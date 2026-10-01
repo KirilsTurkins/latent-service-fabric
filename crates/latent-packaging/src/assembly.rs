@@ -22,7 +22,7 @@ pub fn build_package(
     mut input: PackageInput,
     limits: PackagingLimits,
 ) -> Result<PackageBundle, PlatformError> {
-    validate_inputs(&input, limits)?;
+    validate_inputs(&input, &limits)?;
     input.layers.sort_by(|a, b| a.path.cmp(&b.path));
     let initial = configuration(&input);
     // Full path/role/count/name validation before metadata conversion or receipt cloning.
@@ -40,7 +40,7 @@ pub fn build_package(
         })
         .collect::<Vec<_>>();
     if input.kind == PackageKind::Capsule {
-        capsule::canonicalize(&initial, &mut input.layers, limits)?;
+        capsule::canonicalize(&initial, &mut input.layers, &limits)?;
     }
     let normalized = configuration(&input);
     for (identity, output) in identities.iter_mut().zip(&normalized.layers) {
@@ -104,7 +104,7 @@ pub fn build_package(
 
 pub(crate) fn validate_inputs(
     input: &PackageInput,
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<(), PlatformError> {
     crate::input::check_header(
         &input.name,

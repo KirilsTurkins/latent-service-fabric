@@ -431,6 +431,14 @@ async fn plan<'a>(
     let mut local_targets = Vec::new();
     let mut invocation_targets = Vec::new();
     for interface in surface.capability_imports() {
+        if surface.activation_scoped_import(interface) {
+            // Recheck exact pinned ABI shapes, but create no provider binding
+            // or synthetic grant. The retained publication remains in the plan;
+            // namespace, caller and state/intents purpose authorization attach
+            // to the original activation through transaction admission.
+            latent_packaging::compile_host_binding(consumer, interface, comparison)?;
+            continue;
+        }
         let d = definition(record, definitions, interface)?;
         let provider = selected(d, owner)?;
         let is_invocation = interface == SERVICE_INVOCATION_CAPABILITY

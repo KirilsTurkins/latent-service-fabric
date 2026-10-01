@@ -118,7 +118,11 @@ impl WasmtimeBackend {
         timing.component_post_return_micros = elapsed_micros(component_post_return_started);
 
         let encoded = call_result.as_ref().ok().map(|()| {
-            values::encode_result(&function.results, &output, runtime.surface.value_codec_limits)
+            values::encode_result(
+                &function.results,
+                &output,
+                runtime.surface.value_codec_limits,
+            )
         });
         // Cleanup order is intentional: after the guest call and its
         // component-model post-return complete, the actual component instance,

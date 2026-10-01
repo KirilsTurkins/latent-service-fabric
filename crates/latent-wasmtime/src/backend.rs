@@ -647,17 +647,27 @@ impl WasmtimeBackend {
         imports: &[latent_executor::BoundImport],
         required: &BTreeSet<String>,
     ) -> Result<(), PlatformError> {
-        // Validated component surfaces admit at most the four known host
-        // interfaces. Count each required contract exactly once without a
-        // temporary allocated set, preserving arbitrary binding order.
-        if imports.len() != required.len()
-            || !required.iter().all(|name| {
-                imports
-                    .iter()
-                    .filter(|import| import.contract == *name)
-                    .count()
-                    == 1
-            })
+        // Fixed transaction hosts attach through invocation_transaction after
+        // this check. Prepared surface validation already requires the explicit
+        // Phase 4 installation and exact own/borrow/async shapes. They receive
+        // no provider handles; every ordinary host still needs its exact binding.
+        let provider_import = |name: &str| {
+            !matches!(
+                name,
+                crate::surface::transaction::STATE | crate::surface::transaction::INTENTS
+            )
+        };
+        if imports.len() != required.iter().filter(|name| provider_import(name)).count()
+            || !required
+                .iter()
+                .filter(|name| provider_import(name))
+                .all(|name| {
+                    imports
+                        .iter()
+                        .filter(|import| import.contract == *name)
+                        .count()
+                        == 1
+                })
             || imports.iter().any(|import| import.opaque_handle.is_empty())
         {
             return Err(platform_error(

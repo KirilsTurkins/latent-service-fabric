@@ -39,6 +39,9 @@ impl Fixture {
     pub fn with_structural_values() -> Self {
         Self::create(false, Default::default(), true)
     }
+    pub fn with_transaction_hosts() -> Self {
+        Self::create_with_bundle(false, Default::default(), consumer_with_transaction_hosts())
+    }
     pub fn with_plan_limit(maximum_plans: usize) -> Self {
         Self::create(
             false,
@@ -54,8 +57,18 @@ impl Fixture {
         limits: latent_capabilities::broker::CapabilityBrokerLimits,
         structural_values: bool,
     ) -> Self {
+        Self::create_with_bundle(
+            local,
+            limits,
+            consumer_package_with_values(structural_values),
+        )
+    }
+    fn create_with_bundle(
+        local: bool,
+        limits: latent_capabilities::broker::CapabilityBrokerLimits,
+        bundle: latent_packaging::PackageBundle,
+    ) -> Self {
         let roots = [TempRoot::new(), TempRoot::new(), TempRoot::new()];
-        let bundle = consumer_package_with_values(structural_values);
         let mut bundles = vec![bundle];
         if local {
             bundles.push(super::local::package());
@@ -227,6 +240,91 @@ impl Fixture {
             )
             .unwrap();
     }
+}
+
+fn consumer_with_transaction_hosts() -> latent_packaging::PackageBundle {
+    let mut input = transaction_input();
+    package_fixture::mutate_json(&mut input, "capsule.json", |manifest| {
+        manifest["metadata"]
+            .as_object_mut()
+            .unwrap()
+            .remove("tenant");
+    });
+    latent_packaging::build_package(input, Default::default()).unwrap()
+}
+
+pub(super) fn transaction_input() -> latent_packaging::PackageInput {
+    let mut input = package_fixture::capsule(Default::default());
+    let source = std::str::from_utf8(package_fixture::component::SERVICE_WIT).unwrap()
+        .replace("world service {", "world service { import latent:state/key-value@0.2.0; import latent:intents/staging@0.1.0;");
+    let state = latent_core::PHASE4_HOST_ABI_V1
+        .interface("latent:state/key-value@0.2.0")
+        .unwrap()
+        .wit;
+    let intents = latent_core::PHASE4_HOST_ABI_V1
+        .interface("latent:intents/staging@0.1.0")
+        .unwrap()
+        .wit;
+    let files = std::collections::BTreeMap::from([
+        (
+            "wit/clock.wit".into(),
+            package_fixture::component::CLOCK_WIT,
+        ),
+        ("wit/service.wit".into(), source.as_bytes()),
+        ("wit/state.wit".into(), state.as_bytes()),
+        ("wit/intents.wit".into(), intents.as_bytes()),
+    ]);
+    let derived = latent_packaging::derive_capsule_contracts(
+        "tests:packaging/service@1.0.0",
+        &files,
+        Default::default(),
+    )
+    .unwrap();
+    for layer in &mut input.layers {
+        match layer.path.as_str() {
+            "wit/service.wit" => layer.bytes = source.as_bytes().to_vec(),
+            "contracts.json" => layer.bytes = derived.contracts().to_vec(),
+            "wit-lock.json" => {
+                layer.bytes = latent_artifacts::package::encode_wit_lock(
+                    derived.wit_lock(),
+                    Default::default(),
+                )
+                .unwrap()
+            }
+            _ => (),
+        }
+    }
+    for (path, bytes) in [
+        ("wit/state.wit", state.as_bytes()),
+        ("wit/intents.wit", intents.as_bytes()),
+    ] {
+        input.layers.push(package_fixture::layer(
+            path,
+            latent_artifacts::package::LayerRole::Asset,
+            "text/plain",
+            bytes.to_vec(),
+        ));
+    }
+    package_fixture::mutate_json(&mut input, "capsule.json", |manifest| {
+        manifest["metadata"]["name"] = json!("packaging");
+        for name in [
+            "latent:state/key-value@0.2.0",
+            "latent:intents/staging@0.1.0",
+        ] {
+            manifest["imports"]
+                .as_array_mut()
+                .unwrap()
+                .push(json!({"contract":name,"optional":false}));
+        }
+    });
+    let companion = json!({"apiVersion":"latent.dev/v1","kind":"TransactionBinding","capsule":"packaging", "deployment":"consumer","binding":"transaction-owner","profile":"lsf-transaction-v1","hostAbiDigest":latent_manifest::phase4_host_abi_digest(),"namespace":"aggregate","stateSchema":format!("sha256:{}","a".repeat(64)),"operations":[{"operation":"inspect","mode":"strict-command","inputFormat":"lsf-wit-values-v1","resultFormat":"lsf-wit-values-v1"}]});
+    input.layers.push(package_fixture::layer(
+        "transaction-binding.json",
+        latent_artifacts::package::LayerRole::Asset,
+        "application/vnd.latent.transaction-binding.v1+json",
+        serde_json::to_vec(&companion).unwrap(),
+    ));
+    input
 }
 fn deadline() -> Instant {
     Instant::now() + Duration::from_secs(10)

@@ -25,7 +25,7 @@ pub fn decode_package_source(
     validate_package_json(bytes, limits.package)?;
     let source: PackageSource =
         serde_json::from_slice(bytes).map_err(|_| crate::invalid("invalid-package-source-json"))?;
-    validate_source(&source, limits)?;
+    validate_source(&source, &limits)?;
     Ok(source)
 }
 
@@ -36,7 +36,7 @@ pub fn read_package_input(
     source: &PackageSource,
     limits: PackagingLimits,
 ) -> Result<PackageInput, PlatformError> {
-    validate_source(source, limits)?;
+    validate_source(source, &limits)?;
     let root = super::open_root(root)?;
     let mut layers = Vec::with_capacity(source.layers.len());
     let mut remaining = limits.package.max_total_layer_bytes;
@@ -65,7 +65,7 @@ pub fn read_package_input(
     })
 }
 
-fn validate_source(source: &PackageSource, limits: PackagingLimits) -> Result<(), PlatformError> {
+fn validate_source(source: &PackageSource, limits: &PackagingLimits) -> Result<(), PlatformError> {
     crate::input::check_header(
         &source.name,
         &source.version,

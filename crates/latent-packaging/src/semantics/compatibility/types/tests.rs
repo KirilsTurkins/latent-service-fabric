@@ -28,6 +28,7 @@ fn inspect(host: bool, replacement: &str) -> latent_contracts::StructuralReport 
         right: &right,
         analysis: &mut analysis,
         resources: host,
+        host_profile: latent_core::PHASE3_HOST_ABI_CURRENT,
     }
     .interface(old, new, INTERFACE, false)
     .unwrap();
