@@ -29,7 +29,7 @@ def path_name(value: str) -> str:
             or value.startswith("/") or len(value.split("/")) > 32):
         raise DependencyError("dependency-path-invalid")
     for part in value.split("/"):
-        if (not re.fullmatch(r"[A-Za-z0-9_@+.,() -]{1,128}", part) or part in {".", ".."}
+        if (not re.fullmatch(r"[A-Za-z0-9_@+.,() \[\]-]{1,128}", part) or part in {".", ".."}
                 or part.endswith((".", " ")) or DEVICE.fullmatch(part)):
             raise DependencyError("dependency-path-invalid")
     return value
@@ -153,13 +153,15 @@ class Entries:
         self.files[name] = data
 
 
-def directory_files(root: Path) -> dict[str, bytes]:
+def directory_files(root: Path, *, exclude: tuple[str, ...] = ()) -> dict[str, bytes]:
     root = regular_path(root)
     entries = Entries()
     pending = [root]
     while pending:
         parent = pending.pop()
         for path in sorted(parent.iterdir()):
+            if parent == root and path.name in exclude:
+                continue
             regular_path(path)
             name = path.relative_to(root).as_posix()
             if path.is_dir():
