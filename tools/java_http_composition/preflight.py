@@ -80,7 +80,8 @@ class NativeFrontend:
             and self.build_identity == file_identity(self.build_receipt, 262144),
             "java-native-frontend-original-build-changed")
 
-    def schedule(self, client, releases, output, snapshots, node_config, *, former=False):
+    def schedule(self, client, releases, output, snapshots, node_config, *, former=False,
+                 state_root=None, workspace=None):
         self.unchanged()
         output = fresh(output)
         settings = read_json(node_config)
@@ -100,8 +101,10 @@ class NativeFrontend:
         original = freeze(releases.parent / "builds", releases, snapshots, output, profile,
                           grant_digest=grant_digest)
         write_json(output / "native-frontend-build-observation.json", self.observation)
-        frontend = Frontend(self.binary, self.binary_identity["sha256"], output, client)
+        frontend = Frontend(self.binary, self.binary_identity["sha256"], output, client,
+                            state_root=state_root, workspace=workspace)
         schedule = Schedule(frontend, original)
-        return schedule, {"frontendBuild": self.observation, "entry": "standalone",
+        return schedule, {"frontendBuild": self.observation,
+            "entry": "workspace" if workspace is not None else "standalone",
             "contractSource": "original-signed-OCI-layers-and-independent-build",
             "cases": frontend.cases, "executionQualified": False}

@@ -29,7 +29,8 @@
               "all",
               "windows",
               "windows-recovery",
-              "linux"
+              "linux",
+              "java-composition"
             ],
             "required": true,
             "type": "choice"
@@ -60,11 +61,12 @@
   },
   "requiredJobs": [
     "conductor-contracts",
+    "java-composition",
     "linux",
     "support",
     "windows"
   ],
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Add explicit approved Java composition platform while preserving every existing packaged schedule and gate",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-packaged-qualification.yml"
 }

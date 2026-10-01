@@ -1,0 +1,71 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "if": "inputs.platform == 'java-composition'",
+    "name": "Actual packaged Java composition and live preflight",
+    "needs": "support",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "packaged-qualification-support",
+          "path": "${{ runner.temp }}/packaged-support"
+        }
+      },
+      {
+        "env": {
+          "GH_TOKEN": "${{ github.token }}"
+        },
+        "id": "selected-archives",
+        "name": "Download only selected Linux frontend, Java tools and native runtime",
+        "run": "python3 -B - <<'PY'\nfrom pathlib import Path\nimport json, os, re, subprocess\nsupport = Path(os.environ['RUNNER_TEMP']) / 'packaged-support'\nselected = json.loads((support / 'selection.json').read_bytes())\nsha = selected['sourceCommit']\nassert re.fullmatch(r'[a-f0-9]{40}', sha)\ntarget = Path(os.environ['RUNNER_TEMP']) / 'packaged-java-candidates'\ntarget.mkdir()\nselected['artifacts'] = {}\nfor name, kind, artifact in (\n    ('linux', 'developer', 'developer-linux-candidate-' + sha),\n    ('java', 'developer', 'developer-java-tools-candidate-' + sha),\n    ('native', 'runtime', 'native-runtime-candidate-development-test-' + sha)):\n    destination = target / name\n    subprocess.run(['gh', 'run', 'download', str(selected['candidateRuns'][kind]['id']),\n        '--repo', 'KirilsTurkins/latent-service-fabric', '--name', artifact, '--dir', str(destination)],\n        check=True, timeout=300)\n    selected['artifacts'][name] = str(destination)\nverifier = support / 'gh-linux'\nverifier.chmod(0o700)\nselected['trust'] = {\n    'developerPolicy': str(support / 'developer-policy.json'),\n    'runtimePolicy': str(support / 'runtime-policy.json'),\n    'trustedRoot': str(support / 'trusted_root.jsonl'),\n    'trustedRootSha256': selected['verificationInputs']['trustedRootSha256'],\n    'hostVerifier': str(verifier), 'guestVerifier': str(verifier),\n    'hostVerifierSha256': selected['verificationInputs']['verifierSha256']['linux'],\n    'guestVerifierSha256': selected['verificationInputs']['verifierSha256']['linux']}\n(support / 'java-inputs.json').write_text(json.dumps(selected), encoding='utf-8')\nPY\n"
+      },
+      {
+        "id": "conductor-contracts",
+        "name": "Check original package rejection and bounded process contracts",
+        "run": "python3 -B -m unittest tools.tests.test_dev_packaged_probe"
+      },
+      {
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONUTF8": "1"
+        },
+        "id": "live-java-composition",
+        "name": "Exercise authenticated frontend workspaces and explicit standalone operator",
+        "run": "python3 -B tools/qualify_packaged_java_composition.py \\\n  --inputs \"$RUNNER_TEMP/packaged-support/java-inputs.json\" \\\n  --output \"$RUNNER_TEMP/packaged-java-composition\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Preserve bounded original success or failure evidence",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "packaged-java-composition-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/packaged-support/selection.json\n${{ runner.temp }}/packaged-support/java-inputs.json\n${{ runner.temp }}/packaged-java-composition/observation.json\n${{ runner.temp }}/packaged-java-composition/authenticated-frontend/authenticated-frontend.json\n${{ runner.temp }}/packaged-java-composition/builds/\n${{ runner.temp }}/packaged-java-composition/compiler-logs/\n${{ runner.temp }}/packaged-java-composition/releases/\n${{ runner.temp }}/packaged-java-composition/*-profile/preflight-*/\n${{ runner.temp }}/packaged-java-composition/*-profile/client/controls/\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 120
+  },
+  "jobId": "java-composition",
+  "kind": "job",
+  "reviewReason": "Retain bounded original compiler logs from genuine owned build attempts alongside the new Java composition job evidence",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/developer-packaged-qualification.yml"
+}

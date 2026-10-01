@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_packaged_java_composition.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review the bounded approved-candidate Java composition conductor entrypoint",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "368031298391a27098b77011245e2967bda31187160ed22d0cc5801a52a64c33"
+}

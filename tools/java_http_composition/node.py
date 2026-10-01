@@ -227,7 +227,7 @@ def web_request(host, path="/api/status", *, method="get", body=""):
 def idle(client):
     end = min(client.deadline, time.monotonic() + 10)
     for _ in range(128):
-        inventory = client.call("node", "get", NODE_ID)["data"]["inventory"]
+        inventory = client.call("node", "get", getattr(client, "node_id", NODE_ID))["data"]["inventory"]
         cells = inventory["cellCapacity"]
         if all(int(row["active"]) == int(row["quarantined"]) == int(row["queueDepth"]) == 0 for row in cells):
             require(all(int(v) == 0 for v in inventory["quotas"]["usage"].values()), "java-composition-quota-retained")

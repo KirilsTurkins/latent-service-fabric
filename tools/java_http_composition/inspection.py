@@ -28,7 +28,7 @@ def arguments(name, *, route=True, publication=None, revision=None, routing_key=
 
 
 def owners(client):
-    inventory = client.call("node", "get", NODE_ID)["data"]["inventory"]
+    inventory = client.call("node", "get", getattr(client, "node_id", NODE_ID))["data"]["inventory"]
     return {"cells": [{key: row[key] for key in ("active", "quarantined", "queueDepth")}
                       for row in inventory["cellCapacity"]], "quotas": inventory["quotas"]["usage"]}
 
