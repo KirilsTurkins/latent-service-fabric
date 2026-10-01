@@ -391,6 +391,7 @@ class CompletionRegressionTests(unittest.TestCase):
             plan = local.plan_suite(ROOT, ECHO,
                 "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary")
             with patch.object(local.shutil, "which", side_effect=lambda tool: None if tool == "wasm-tools" else tool), \
+                    patch.object(local, "_fixture_presence", return_value=False), \
                     patch.object(local, "run_bounded", side_effect=AssertionError("partial preparation")):
                 with self.assertRaisesRegex(local.LocalTestError, "wasm-tools"):
                     local.prepare(ROOT, plan, Path(directory) / "test.jsonl")
@@ -608,8 +609,8 @@ class ReviewRegressionTests(unittest.TestCase):
         script = (ROOT / "tools/validate_contracts.sh").read_text()
         # Isolate the script-owned handoff from unrelated WIT/provider builders.
         # Neither its cleanup nor its inventory path is reimplemented here.
-        prelude = script.split("python3 tools/validate_repository.py", 1)[0]
-        assignment = next(line for line in script.splitlines() if line.startswith("ECHO_INVENTORY="))
+        prelude = script.split('case "${VALIDATION_LANE}" in\n  all|python)', 1)[0]
+        assignment = next(line.lstrip() for line in script.splitlines() if line.lstrip().startswith("ECHO_INVENTORY="))
         plan = local.plan_suite(ROOT, "selection.echo-runtime")
         for target in (None, "relative-target", "external"):
             with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:

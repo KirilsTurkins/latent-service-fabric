@@ -58,24 +58,28 @@ def _provider_cases(data: dict) -> list[str]:
     return values
 
 
-def _renderer_cases(data: dict) -> list[str]:
+def _renderer_cases(data: dict, part: str = "both") -> list[str]:
+    require(part in {"both", "public", "angular"}, "invalid-fixture", "renderer-part-contract")
     rows = {row["id"]: row for row in data["suites"]}
     selected = data["selections"]["browser-boundary"]
     require(selected["runner"] == "ci_rust_artifacts", "invalid-fixture", "browser-selection-contract")
-    values = list(selected["names"])
+    values = list(selected["names"]) if part != "angular" else []
     process = data["processContracts"]["angular-renderer"]
     for key, selected_cases in registry.process_cases(data, "angular-renderer").items():
         require(rows[key]["recipe"] == "workspace-all-features",
                 "invalid-fixture", "renderer-suite-contract")
-        values.extend(selected_cases)
+        if part != "angular":
+            values.extend(selected_cases)
     for key in ("latent-packaging.test.angular-build", "latent-wasmtime.test.angular-build"):
         build = rows[key]
         require(build["expectedIgnored"], "invalid-fixture", "angular-build-suite-contract")
-        values.extend(build["expectedIgnored"])
+        if part != "public":
+            values.extend(build["expectedIgnored"])
     policy_cases = [name for name in rows["latent-policy.lib.latent-policy"]["expectedIgnored"]
                     if "supply_chain::tests::web::angular_build::" in name]
     require(len(policy_cases) == 1, "invalid-fixture", "angular-policy-case-contract")
-    values.extend(policy_cases)
+    if part != "public":
+        values.extend(policy_cases)
     return values
 
 
@@ -140,8 +144,8 @@ def provider(run: TestRun, manifest: Path, data: dict) -> tuple[list[str], list[
     return PROVIDER_STEPS, selected
 
 
-def renderer(run: TestRun, manifest: Path, data: dict) -> tuple[list[str], list[str]]:
-    selected = _renderer_cases(data)
+def renderer(run: TestRun, manifest: Path, data: dict, part: str = "both") -> tuple[list[str], list[str]]:
+    selected = _renderer_cases(data, part)
     node = shutil.which("node")
     npm = shutil.which("npm")
     chrome = shutil.which("google-chrome")
@@ -152,89 +156,94 @@ def renderer(run: TestRun, manifest: Path, data: dict) -> tuple[list[str], list[
     assert node and npm and chrome and objcopy
 
     profile = ROOT / "examples/renderer-profile"
-    component = Path(os.environ["RUNNER_TEMP"]) / "browser-component/application.wasm"
-    require(component.is_file(), "invalid-fixture", "browser-component-not-prepared")
-    run.artifact("browser-component", component)
+    if part != "angular":
+        component = Path(os.environ["RUNNER_TEMP"]) / "browser-component/application.wasm"
+        require(component.is_file(), "invalid-fixture", "browser-component-not-prepared")
+        run.artifact("browser-component", component)
 
     _command(run, [npm, "ci", "--ignore-scripts", "--no-audit", "--no-fund"],
              stage="renderer-npm-prepare", cwd=profile, timeout=360)
-    _command(run, [npm, "run", "build"], stage="renderer-profile-build", cwd=profile, timeout=360)
-    _command(run, [node, "node-candidate.mjs"], stage="renderer-node-candidate", cwd=profile, timeout=120)
-    _command(run, [str(ROOT / "target/debug/latent-renderer-profile"),
-                   "dist/renderer.wasm", "dist/wasmtime-rendered.html"],
-             stage="renderer-ssr", cwd=profile, timeout=480)
-    _command(run, [node, "hydrate.mjs", chrome], stage="renderer-profile-hydration",
-             cwd=profile, timeout=120)
+    if part != "angular":
+        _command(run, [npm, "run", "build"], stage="renderer-profile-build", cwd=profile, timeout=360)
+        _command(run, [node, "node-candidate.mjs"], stage="renderer-node-candidate", cwd=profile, timeout=120)
+        _command(run, [str(ROOT / "target/debug/latent-renderer-profile"),
+                       "dist/renderer.wasm", "dist/wasmtime-rendered.html"],
+                 stage="renderer-ssr", cwd=profile, timeout=480)
+        _command(run, [node, "hydrate.mjs", chrome], stage="renderer-profile-hydration",
+                 cwd=profile, timeout=120)
 
-    _command(run, [node, "--test", "tools/tests/browser_hydration.test.mjs",
-                   "tools/tests/browser_application.test.mjs"],
-             stage="renderer-browser-unit", timeout=120)
-    browser = Path(os.environ["RUNNER_TEMP"]) / "browser-boundary"
-    _command(run, [node, "tools/browser-boundary/build.mjs",
-                   "examples/renderer-profile", str(browser)],
-             stage="renderer-browser-build", timeout=240)
-    browser_env = dict(
-        os.environ,
-        LSF_WEB_COMPONENT=str(component),
-        LSF_BROWSER_BUILD=str(browser),
-        LSF_BROWSER_NODE=node,
-        LSF_BROWSER_CHROME=chrome,
-        LSF_BROWSER_TOOLCHAIN=str(profile),
-    )
-    _command(run, [sys.executable, "tools/ci_rust_artifacts.py",
-                   "--inventory", str(manifest), "--suite", "browser-boundary"],
-             stage="renderer-browser-boundary", timeout=360, env=browser_env)
+        _command(run, [node, "--test", "tools/tests/browser_hydration.test.mjs",
+                       "tools/tests/browser_application.test.mjs"],
+                 stage="renderer-browser-unit", timeout=120)
+        browser = Path(os.environ["RUNNER_TEMP"]) / "browser-boundary"
+        _command(run, [node, "tools/browser-boundary/build.mjs",
+                       "examples/renderer-profile", str(browser)],
+                 stage="renderer-browser-build", timeout=240)
+        browser_env = dict(
+            os.environ,
+            LSF_WEB_COMPONENT=str(component),
+            LSF_BROWSER_BUILD=str(browser),
+            LSF_BROWSER_NODE=node,
+            LSF_BROWSER_CHROME=chrome,
+            LSF_BROWSER_TOOLCHAIN=str(profile),
+        )
+        _command(run, [sys.executable, "tools/ci_rust_artifacts.py",
+                       "--inventory", str(manifest), "--suite", "browser-boundary"],
+                 stage="renderer-browser-boundary", timeout=360, env=browser_env)
 
-    _command(run, [sys.executable, "tools/build_angular_renderer.py"],
-             stage="renderer-public-fixture", timeout=480)
-    public_component = ROOT / "examples/renderer-profile/dist/runtime/application.wasm"
-    _command(run, [sys.executable, "tools/run_angular_renderer_tests.py",
-                   "--test-manifest", str(manifest), "--component", str(public_component),
-                   "--diagnostic-root", str(Path(os.environ["RUNNER_TEMP"]) / "owned-renderer")],
-             stage="renderer-generic-cells", timeout=840)
+        _command(run, [sys.executable, "tools/build_angular_renderer.py"],
+                 stage="renderer-public-fixture", timeout=480)
+        public_component = ROOT / "examples/renderer-profile/dist/runtime/application.wasm"
+        _command(run, [sys.executable, "tools/run_angular_renderer_tests.py",
+                       "--test-manifest", str(manifest), "--component", str(public_component),
+                       "--diagnostic-root", str(Path(os.environ["RUNNER_TEMP"]) / "owned-renderer")],
+                 stage="renderer-generic-cells", timeout=840)
 
-    fault = _command(run, [sys.executable, "tools/run_angular_renderer_tests.py",
-                          "--test-manifest", str(manifest), "--component", str(public_component),
-                          "--inject-failure", "after-discovery",
-                          "--diagnostic-root", str(Path(os.environ["RUNNER_TEMP"]) / "owned-renderer-fault")],
-                     stage="renderer-negative-control", timeout=240, check=False)
-    require(fault.returncode == 1, "assertion-failure", "renderer-fault-control-did-not-fail")
-    _command(run, [sys.executable, "tools/check_owned_diagnostics.py",
-                   str(Path(os.environ["RUNNER_TEMP"]) / "owned-renderer-fault"),
-                   "--suite", "angular-renderer", "--reason", "injected-after-discovery"],
-             stage="renderer-negative-control-proof", timeout=60)
+        fault = _command(run, [sys.executable, "tools/run_angular_renderer_tests.py",
+                              "--test-manifest", str(manifest), "--component", str(public_component),
+                              "--inject-failure", "after-discovery",
+                              "--diagnostic-root", str(Path(os.environ["RUNNER_TEMP"]) / "owned-renderer-fault")],
+                         stage="renderer-negative-control", timeout=240, check=False)
+        require(fault.returncode == 1, "assertion-failure", "renderer-fault-control-did-not-fail")
+        _command(run, [sys.executable, "tools/check_owned_diagnostics.py",
+                       str(Path(os.environ["RUNNER_TEMP"]) / "owned-renderer-fault"),
+                       "--suite", "angular-renderer", "--reason", "injected-after-discovery"],
+                 stage="renderer-negative-control-proof", timeout=60)
 
-    build_env = dict(os.environ, LSF_ANGULAR_TOOLCHAIN=str(profile))
-    _command(run, [sys.executable, "-m", "unittest",
-                   "tools.tests.test_build_angular_package",
-                   "tools.tests.test_build_inventory",
-                   "tools.tests.test_web_admission_schemas",
-                   "tools.tests.test_angular_build_runner"],
-             stage="renderer-build-contracts", timeout=180, env=build_env)
+    if part != "public":
+        build_env = dict(os.environ, LSF_ANGULAR_TOOLCHAIN=str(profile))
+        _command(run, [sys.executable, "-m", "unittest",
+                       "tools.tests.test_build_angular_package",
+                       "tools.tests.test_build_inventory",
+                       "tools.tests.test_web_admission_schemas",
+                       "tools.tests.test_angular_build_runner"],
+                 stage="renderer-build-contracts", timeout=180, env=build_env)
 
-    assembler = Path(os.environ["RUNNER_TEMP"]) / "lsf-angular-package-assembler"
-    _command(run, [objcopy, "--strip-debug", str(ROOT / "target/debug/latent"), str(assembler)],
-             stage="renderer-package-assembler", timeout=60)
-    run.artifact("angular-package-assembler", assembler, 1024 * 1024 * 1024)
-    angular_root = Path(os.environ["RUNNER_TEMP"]) / "angular-build"
-    build = angular_root / "actual"
-    _command(run, [sys.executable, "tools/build_angular_package.py",
-                   "--input-root", "examples/angular-application",
-                   "--toolchain-root", "examples/renderer-profile",
-                   "--cli", str(assembler),
-                   "--target-root", str(angular_root),
-                   "--output", str(build),
-                   "--cargo-target-dir", str(ROOT / "target"),
-                   "--repository", "https://example.com/source"],
-             stage="renderer-angular-package", timeout=780)
-    html = angular_root / "rendered.html"
-    _command(run, [sys.executable, "tools/run_angular_build_tests.py",
-                   "--test-manifest", str(manifest), "--build", str(build), "--html", str(html)],
-             stage="renderer-angular-runtime", timeout=780)
-    _command(run, [node, "tools/check_angular_hydration.mjs",
-                   "examples/renderer-profile", str(build), str(html), chrome],
-             stage="renderer-angular-hydration", timeout=180)
-    return RENDERER_STEPS, selected
+        assembler = Path(os.environ["RUNNER_TEMP"]) / "lsf-angular-package-assembler"
+        _command(run, [objcopy, "--strip-debug", str(ROOT / "target/debug/latent"), str(assembler)],
+                 stage="renderer-package-assembler", timeout=60)
+        run.artifact("angular-package-assembler", assembler, 1024 * 1024 * 1024)
+        angular_root = Path(os.environ["RUNNER_TEMP"]) / "angular-build"
+        build = angular_root / "actual"
+        _command(run, [sys.executable, "tools/build_angular_package.py",
+                       "--input-root", "examples/angular-application",
+                       "--toolchain-root", "examples/renderer-profile",
+                       "--cli", str(assembler),
+                       "--target-root", str(angular_root),
+                       "--output", str(build),
+                       "--cargo-target-dir", str(ROOT / "target"),
+                       "--repository", "https://example.com/source"],
+                 stage="renderer-angular-package", timeout=780)
+        html = angular_root / "rendered.html"
+        _command(run, [sys.executable, "tools/run_angular_build_tests.py",
+                       "--test-manifest", str(manifest), "--build", str(build), "--html", str(html)],
+                 stage="renderer-angular-runtime", timeout=780)
+        _command(run, [node, "tools/check_angular_hydration.mjs",
+                       "examples/renderer-profile", str(build), str(html), chrome],
+                 stage="renderer-angular-hydration", timeout=180)
+    steps = RENDERER_STEPS[:4] if part == "public" else (
+        RENDERER_STEPS[4:] if part == "angular" else RENDERER_STEPS)
+    return steps, selected
 
 
 def write_receipt(path: Path, value: dict) -> None:
@@ -250,7 +259,7 @@ def write_receipt(path: Path, value: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=("provider", "renderer"), required=True)
+    parser.add_argument("--lane", choices=("provider", "renderer", "renderer-public", "renderer-angular"), required=True)
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -275,7 +284,8 @@ def main() -> int:
             if args.lane == "provider":
                 steps, selected = provider(run, manifest, data)
             else:
-                steps, selected = renderer(run, manifest, data)
+                part = {"renderer-public": "public", "renderer-angular": "angular"}.get(args.lane, "both")
+                steps, selected = renderer(run, manifest, data, part)
     except BaseException as caught:
         error = caught
 
