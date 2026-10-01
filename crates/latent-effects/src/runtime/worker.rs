@@ -6,6 +6,7 @@ use crate::dispatch_store::{DispatchCatalog, DispatchEpoch, DispatchStoreError};
 use latent_state::protected_store::ProtectedStoreOwner;
 use latent_state::store_io::StoreIoKind;
 
+use super::capacity::AttemptCapacity;
 use super::state::{ActiveGuard, Shared};
 use super::store::{self, Candidate};
 use super::{AdapterOutcome, DeferredEffectAdapter, DispatcherError, EffectTimeSource};
@@ -26,6 +27,7 @@ pub(super) struct ReceiptWork {
     pub attempt: crate::dispatch::AttemptIdentity,
     pub outcome: AdapterOutcome,
     pub completed: tokio::sync::oneshot::Sender<Result<(), DispatcherError>>,
+    pub capacity: Arc<AttemptCapacity>,
 }
 
 struct Prepared {
@@ -33,9 +35,16 @@ struct Prepared {
     accepted: Result<latent_core::BoxFuture<'static, AdapterOutcome>, AdapterOutcome>,
 }
 
-pub(super) fn run(services: &Services, candidate: Candidate, mut guard: ActiveGuard) {
+pub(super) fn run(
+    services: &Services,
+    candidate: Candidate,
+    mut guard: ActiveGuard,
+    capacity: Arc<AttemptCapacity>,
+) {
     guard.start();
-    let result = services.runtime.block_on(execute(services, candidate));
+    let result = services
+        .runtime
+        .block_on(execute(services, candidate, capacity));
     if let Err(error) = result {
         services.shared.fail(error);
     }
@@ -44,8 +53,12 @@ pub(super) fn run(services: &Services, candidate: Candidate, mut guard: ActiveGu
     guard.retire();
 }
 
-async fn execute(services: &Services, candidate: Candidate) -> Result<(), DispatcherError> {
-    if !services.shared.available() {
+async fn execute(
+    services: &Services,
+    candidate: Candidate,
+    capacity: Arc<AttemptCapacity>,
+) -> Result<(), DispatcherError> {
+    if !services.shared.available() || capacity.check().is_err() {
         return Ok(());
     }
     let time = services.time.observe();
@@ -54,13 +67,13 @@ async fn execute(services: &Services, candidate: Candidate) -> Result<(), Dispat
         .iter()
         .find(|adapter| adapter.profile() == candidate.authority.profile())
     else {
-        return block(services, candidate, time).await;
+        return block(services, candidate, time, capacity).await;
     };
-    let pin = match services.store.reserve_operation() {
+    let pin = match services.store.reserve_operation_retaining(capacity.clone()) {
         Err(error) if super::driver::backpressure(error.into()) => return Ok(()),
         result => result?,
     };
-    let context = match services
+    let mut context = match services
         .authority
         .accept(&candidate.authority, candidate.attempt, time)
     {
@@ -70,7 +83,7 @@ async fn execute(services: &Services, candidate: Candidate) -> Result<(), Dispat
             | AuthorityError::UnsupportedFormat
             | AuthorityError::Expired,
         ) => {
-            let result = block(services, candidate, time).await;
+            let result = block(services, candidate, time, Arc::clone(&capacity)).await;
             pin.retire().await;
             return result;
         }
@@ -83,6 +96,14 @@ async fn execute(services: &Services, candidate: Candidate) -> Result<(), Dispat
             return Err(error.into());
         }
     };
+    if context.restrict_deadline(capacity.deadline()).is_err() {
+        context.retire()?;
+        pin.retire().await;
+        return Ok(());
+    }
+    context
+        .retain_owner(capacity.clone())
+        .map_err(|_| DispatcherError::InvalidConfiguration)?;
     let context = Arc::new(Mutex::new(Some(context)));
     let prepared = prepare(
         services,
@@ -90,9 +111,32 @@ async fn execute(services: &Services, candidate: Candidate) -> Result<(), Dispat
         Arc::clone(adapter),
         Arc::clone(&context),
         time,
+        Arc::clone(&capacity),
     )
     .await;
-    let outcome = match prepared {
+    let outcome = run_prepared(services, prepared).await;
+    let retired = context
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .take()
+        .expect("owned physical context")
+        .retire()
+        .map_err(DispatcherError::from);
+    let result = match outcome {
+        Ok(Some((attempt, outcome))) => record(services, attempt, outcome, capacity).await,
+        Ok(None) => Ok(()),
+        Err(error) => Err(error),
+    };
+    pin.retire().await;
+    retired?;
+    result
+}
+
+async fn run_prepared(
+    services: &Services,
+    prepared: Result<Prepared, DispatcherError>,
+) -> Result<Option<(crate::dispatch::AttemptIdentity, AdapterOutcome)>, DispatcherError> {
+    match prepared {
         Ok(prepared) => {
             {
                 let mut state = services
@@ -127,22 +171,7 @@ async fn execute(services: &Services, candidate: Candidate) -> Result<(), Dispat
         ) => Ok(None),
         Err(error) if super::driver::backpressure(error) => Ok(None),
         Err(error) => Err(error),
-    };
-    let retired = context
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
-        .take()
-        .expect("owned physical context")
-        .retire()
-        .map_err(DispatcherError::from);
-    let result = match outcome {
-        Ok(Some((attempt, outcome))) => record(services, attempt, outcome).await,
-        Ok(None) => Ok(()),
-        Err(error) => Err(error),
-    };
-    pin.retire().await;
-    retired?;
-    result
+    }
 }
 
 async fn prepare(
@@ -151,15 +180,29 @@ async fn prepare(
     adapter: Arc<dyn DeferredEffectAdapter>,
     worker_context: Arc<Mutex<Option<crate::authority::DispatchContext>>>,
     time: crate::authority::EffectTime,
+    capacity: Arc<AttemptCapacity>,
 ) -> Result<Prepared, DispatcherError> {
     let clock = Arc::clone(&services.time);
     let epoch = services.epoch;
-    store::call(
+    let shared = Arc::clone(&services.shared);
+    let original = Arc::clone(&capacity);
+    store::call_retaining(
         &services.store,
         StoreIoKind::Write,
-        8 * 1024 * 1024,
+        super::capacity::PREPARATION_BYTES,
+        capacity,
         move |store| {
-            let claim = DispatchCatalog::claim(store, epoch, &candidate.due, time)?;
+            let accept = || {
+                let state = shared
+                    .state
+                    .lock()
+                    .map_err(|_| AuthorityError::Unavailable)?;
+                if state.closed || state.paused || state.failure.is_some() {
+                    return Err(AuthorityError::PolicyBlocked);
+                }
+                original.check()
+            };
+            let claim = DispatchCatalog::claim_fenced(store, epoch, &candidate.due, time, accept)?;
             let crate::dispatch_store::ClaimedEffect {
                 authority,
                 attempt,
@@ -172,16 +215,25 @@ async fn prepare(
                 .as_mut()
                 .expect("owned physical context")
                 .accept_with(&authority, attempt.attempt(), time, |grant| {
-                    adapter.accept(grant, payload, attempt.clone())
+                    original.accept_provider(|| adapter.accept(grant, payload, attempt.clone()))
                 });
             let accepted = match accepted {
-                Ok(Ok(future)) => {
+                Ok(Ok(Ok(future))) => {
                     // Same accepted storage job owns claim/admission/send-marker:
                     // queue pressure cannot strand an admitted unpolled operation.
-                    DispatchCatalog::begin_send(store, epoch, &attempt, time)?;
-                    Ok(future)
+                    match DispatchCatalog::begin_send_fenced(store, epoch, &attempt, time, accept) {
+                        Ok(()) => Ok(future),
+                        Err(DispatchStoreError::Authority(error)) => {
+                            drop(future); // Proven unpolled: provider buffers retire before receipt.
+                            Err(AdapterOutcome {
+                                receipt: negative(error, time.unix_millis, true),
+                                retry: None,
+                            })
+                        }
+                        Err(error) => return Err(error),
+                    }
                 }
-                Ok(Err(error)) => Err(AdapterOutcome {
+                Ok(Ok(Err(error))) => Err(AdapterOutcome {
                     receipt: negative(error, time.unix_millis, false),
                     retry: matches!(
                         error,
@@ -189,7 +241,7 @@ async fn prepare(
                     )
                     .then_some((RetryProof::KnownNonexecution, 100)),
                 }),
-                Err(error) => Err(AdapterOutcome {
+                Ok(Err(error)) | Err(error) => Err(AdapterOutcome {
                     receipt: negative(error, time.unix_millis, true),
                     retry: None,
                 }),
@@ -204,6 +256,7 @@ async fn record(
     services: &Services,
     attempt: crate::dispatch::AttemptIdentity,
     outcome: AdapterOutcome,
+    capacity: Arc<AttemptCapacity>,
 ) -> Result<(), DispatcherError> {
     let time = services.time.observe();
     let mut receipt = outcome.receipt;
@@ -224,6 +277,7 @@ async fn record(
             attempt,
             outcome: AdapterOutcome { receipt, retry },
             completed,
+            capacity,
         })
         .await
         .map_err(|_| DispatcherError::AdmissionClosed)?;
@@ -269,12 +323,14 @@ async fn block(
     services: &Services,
     candidate: Candidate,
     time: crate::authority::EffectTime,
+    capacity: Arc<AttemptCapacity>,
 ) -> Result<(), DispatcherError> {
     let epoch = services.epoch;
-    match store::call(
+    match store::call_retaining(
         &services.store,
         StoreIoKind::Write,
         1024 * 1024,
+        capacity,
         move |store| DispatchCatalog::block_eligible(store, epoch, &candidate.due, time),
     )
     .await

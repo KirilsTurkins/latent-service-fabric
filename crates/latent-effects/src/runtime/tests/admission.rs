@@ -7,10 +7,10 @@ use latent_core::native_capacity::{
 async fn command_capacity_projection_retains_exact_installed_global_owner_and_rejects_substitution()
 {
     let fixture = Fixture::new().await;
-    let mut owner = fixture.start(config(), vec![], None).await.unwrap();
+    let mut owner = fixture.start_unbound(config(), vec![], None).await.unwrap();
     let source = owner.command_admission_source();
     let source_clone = source.clone();
-    let capacity = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+    let capacity = fixture.capacity.clone();
     let foreign = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
     assert!(matches!(
         source.native_capacity(),
@@ -64,7 +64,7 @@ async fn command_capacity_projection_retains_exact_installed_global_owner_and_re
 #[tokio::test]
 async fn first_command_capture_permanently_seals_unbound_capacity_after_actual_role_retirement() {
     let fixture = Fixture::new().await;
-    let mut owner = fixture.start(config(), vec![], None).await.unwrap();
+    let mut owner = fixture.start_unbound(config(), vec![], None).await.unwrap();
     let source = owner.command_admission_source();
     source.capture().unwrap().retire();
     assert_eq!(owner.snapshot().unwrap().command_owners, 0);

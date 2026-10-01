@@ -1,6 +1,6 @@
 use super::*;
 
-fn block_storage(fixture: &Fixture, gates: &Rendezvous) -> Vec<PauseTicket> {
+pub(super) fn block_storage(fixture: &Fixture, gates: &Rendezvous) -> Vec<PauseTicket> {
     let (notice, receiver) = std::sync::mpsc::channel();
     for kind in [StoreIoKind::Write, StoreIoKind::Read, StoreIoKind::Read] {
         let gates = gates.clone();
@@ -69,6 +69,11 @@ async fn full_native_queue_retains_one_bounded_receipt_and_root_pin_until_actual
     })
     .await;
     assert_eq!(adapter.physical.load(Ordering::SeqCst), 0);
+    assert_eq!(fixture.capacity.snapshot().unwrap().ordinary.slots, 1);
+    assert!(
+        fixture.capacity.snapshot().unwrap().ordinary.bytes
+            >= super::super::capacity::ATTEMPT_NATIVE_BYTES
+    );
     let during = dispatcher.snapshot().unwrap();
     assert_eq!(during.accepted_effects, 1);
     assert_eq!(during.active_jobs, 1);
@@ -88,4 +93,5 @@ async fn full_native_queue_retains_one_bounded_receipt_and_root_pin_until_actual
     );
     assert_eq!(adapter.sent.load(Ordering::SeqCst), 1);
     fixture.finish().await;
+    assert!(fixture.capacity.snapshot().unwrap().physically_retired());
 }

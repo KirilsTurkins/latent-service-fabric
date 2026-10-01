@@ -250,7 +250,10 @@ impl Drop for CommandAdmission {
     }
 }
 
-fn check(services: &Services, state: &super::state::State) -> Result<(), DispatcherError> {
+pub(super) fn check(
+    services: &Services,
+    state: &super::state::State,
+) -> Result<(), DispatcherError> {
     if state.closed
         || state.scheduling_retired
         || state.pending_control.is_some()
