@@ -1,4 +1,5 @@
 """Binary-identity guard tests; mocked builds are not execution evidence."""
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -26,7 +27,7 @@ class ThrowableModelIntegrity(unittest.TestCase):
             jar.write_bytes(raw)
             jars.append(jar)
             artifacts.append({"path": "org/teavm/" + name + "/0.15.0/" + jar.name,
-                              "sha256": fibers.digest(raw), "size": len(raw)})
+                              "sha256": hashlib.sha256(raw).hexdigest(), "size": len(raw)})
         lock = compiler.sdk / "feasibility/dependencies.lock.json"
         lock.parent.mkdir(parents=True)
         lock.write_text(json.dumps({"artifacts": artifacts}))
@@ -41,6 +42,17 @@ class ThrowableModelIntegrity(unittest.TestCase):
                 fibers.throwable_model_control(compiler, root / "model")
             compiler.run.assert_not_called()
             self.assertFalse((root / "model").exists())
+
+    def test_capsule_digest_prefix_cannot_replace_maven_inventory_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, lock = self.fixture(root)
+            document = json.loads(lock.read_bytes())
+            for item in document["artifacts"]: item["sha256"] = "sha256:" + item["sha256"]
+            lock.write_text(json.dumps(document))
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.throwable_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
 
     def test_missing_ambiguous_and_duplicate_tooling_fail_before_compilation(self):
         for defect in ("missing", "ambiguous", "duplicate-lock"):

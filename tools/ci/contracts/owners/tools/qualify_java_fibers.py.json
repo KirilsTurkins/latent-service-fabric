@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Owned thread and executor controls preserve the original reference-JDK modes and run real locked Throwable constructor models with tooling integrity and unchanged application identities",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "404f0da69de725721afac06a2b42b4a64ca2dda8418c176635a33d9555e94f49"
+  "sha256": "ecc79b5139fecc0e52889eebaadf740458b33af6b5b10e86b76ec3b08d48a09e"
 }
