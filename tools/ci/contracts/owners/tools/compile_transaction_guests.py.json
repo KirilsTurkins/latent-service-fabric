@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review the explicit Java-only three-schema put-once compiler path while retaining default authored builds and bounded unsigned receipts.",
+  "reviewReason": "Preserve the default and three-schema compiler plans; add the exclusive Java post-stage single-component plan with original source and diagnostic receipt identities",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "839d995e264f03c942e9750f92f79d8085a00e7356b468927ad6b509e36a48e9"
+  "sha256": "ecc484a5a994f8185b1c2e6e927c42fa103858b0ce89d15ca4f8e3bb835b4705"
 }

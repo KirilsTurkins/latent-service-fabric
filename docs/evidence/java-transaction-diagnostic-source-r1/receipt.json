@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "latent.java.transaction-diagnostic-jvm.v1",
+  "evidenceKind": "helper-JVM-semantics",
+  "passed": true,
+  "vectors": [
+    "ordinary",
+    "trap",
+    "reused",
+    "ordinary"
+  ],
+  "tools": {
+    "java": {
+      "path": "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-diagnostics709\\target\\tools\\temurin25\\jdk-25.0.4.1+1\\bin\\java.exe",
+      "sha256": "5808527e3dfc4eb285c7664ba356bc267055ef906e83ed4660d9f7976da7349b"
+    },
+    "javac": {
+      "path": "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-diagnostics709\\target\\tools\\temurin25\\jdk-25.0.4.1+1\\bin\\javac.exe",
+      "sha256": "1c4b1f0ed250fdf08ac324a4beae89d8405d408fd9880f69a6283eb256ba80f9"
+    }
+  },
+  "sources": {
+    "examples/java-transaction-schema/TransactionDiagnostics.java": "0c6998436a4fc0e937ff54017a2ecfaa2d0471ab507965a04436b89619a785e1",
+    "examples/java-transaction-schema/DiagnosticVectors.java": "b49ac5b9b25fb5b6c56238a9d1a9443253ad0510bbfdc4f2b109354197aca74c"
+  },
+  "commands": [
+    {
+      "name": "javac-version",
+      "command": [
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-diagnostics709\\target\\tools\\temurin25\\jdk-25.0.4.1+1\\bin\\javac.exe",
+        "--version"
+      ],
+      "exitCode": 0,
+      "seconds": 1.078565
+    },
+    {
+      "name": "java-version",
+      "command": [
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-diagnostics709\\target\\tools\\temurin25\\jdk-25.0.4.1+1\\bin\\java.exe",
+        "--version"
+      ],
+      "exitCode": 0,
+      "seconds": 0.698715
+    },
+    {
+      "name": "compile",
+      "command": [
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-diagnostics709\\target\\tools\\temurin25\\jdk-25.0.4.1+1\\bin\\javac.exe",
+        "-d",
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-java718\\target\\java-transaction-diagnostic-vectors-r1\\classes",
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-java718\\examples\\java-transaction-schema\\TransactionDiagnostics.java",
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-java718\\examples\\java-transaction-schema\\DiagnosticVectors.java"
+      ],
+      "exitCode": 0,
+      "seconds": 1.848705
+    },
+    {
+      "name": "vector-0-ordinary",
+      "command": [
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-diagnostics709\\target\\tools\\temurin25\\jdk-25.0.4.1+1\\bin\\java.exe",
+        "-cp",
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-java718\\target\\java-transaction-diagnostic-vectors-r1\\classes",
+        "dev.latent.app.DiagnosticVectors",
+        "ordinary"
+      ],
+      "exitCode": 0,
+      "seconds": 0.718144
+    },
+    {
+      "name": "vector-1-trap",
+      "command": [
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-diagnostics709\\target\\tools\\temurin25\\jdk-25.0.4.1+1\\bin\\java.exe",
+        "-cp",
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-java718\\target\\java-transaction-diagnostic-vectors-r1\\classes",
+        "dev.latent.app.DiagnosticVectors",
+        "trap"
+      ],
+      "exitCode": 0,
+      "seconds": 0.714868
+    },
+    {
+      "name": "vector-2-reused",
+      "command": [
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-diagnostics709\\target\\tools\\temurin25\\jdk-25.0.4.1+1\\bin\\java.exe",
+        "-cp",
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-java718\\target\\java-transaction-diagnostic-vectors-r1\\classes",
+        "dev.latent.app.DiagnosticVectors",
+        "reused"
+      ],
+      "exitCode": 0,
+      "seconds": 0.507645
+    },
+    {
+      "name": "vector-3-ordinary",
+      "command": [
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-diagnostics709\\target\\tools\\temurin25\\jdk-25.0.4.1+1\\bin\\java.exe",
+        "-cp",
+        "C:\\Users\\turkins\\Desktop\\latent-fabric-fb2-java718\\target\\java-transaction-diagnostic-vectors-r1\\classes",
+        "dev.latent.app.DiagnosticVectors",
+        "ordinary"
+      ],
+      "exitCode": 0,
+      "seconds": 0.501022
+    }
+  ],
+  "componentCompiled": false,
+  "signedNodeExecutionQualified": false,
+  "stateExecutionQualified": false,
+  "fuelExhaustionQualified": false,
+  "cancellationQualified": false,
+  "wasmtimeFreshInstanceQualified": false
+}

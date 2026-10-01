@@ -29,9 +29,15 @@ from tools.transaction_guest_variants import HTTP, LANGUAGES, SOURCES, create as
 WORLD = "examples:transactional-aggregate/service@1.0.0"
 VARIANTS = ("aggregate", "forbidden-http")
 JAVA_SCHEMA_VARIANTS = ("put-once-legacy-v1", "put-once-compatible-v2", "put-once-writer-v2")
+JAVA_DIAGNOSTIC_VARIANT = "put-once-diagnostics"
 
 
 def authored_project(language: str, variant: str, output: Path) -> Path:
+    if variant == JAVA_DIAGNOSTIC_VARIANT:
+        if language != "java":
+            raise ValueError("Java post-stage diagnostics require the Java compiler")
+        from tools.java_transaction_diagnostics import create
+        return create(output)
     if variant in JAVA_SCHEMA_VARIANTS:
         if language != "java":
             raise ValueError("Java schema qualification requires the Java compiler")
@@ -151,11 +157,15 @@ def compile_project(language: str, work: Path, output: Path, command: Commands,
 
 
 def compile_guests(language: str, output: Path, *, tools: Path | None = None, wasi_sdk: Path | None = None,
-                   java_schema_put_once: bool = False) -> None:
+                   java_schema_put_once: bool = False, java_post_stage_diagnostic: bool = False) -> None:
     if type(java_schema_put_once) is not bool or (java_schema_put_once and language != "java"):
         raise ValueError("Java schema qualification requires an explicit Java compiler selection")
+    if (type(java_post_stage_diagnostic) is not bool
+            or (java_post_stage_diagnostic and (language != "java" or java_schema_put_once))):
+        raise ValueError("post-stage diagnostic qualification requires the exclusive explicit Java compiler")
     output = fresh(output)
-    variants = (*VARIANTS, *JAVA_SCHEMA_VARIANTS) if java_schema_put_once else VARIANTS
+    variants = ((JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
+                else (*VARIANTS, *JAVA_SCHEMA_VARIANTS) if java_schema_put_once else VARIANTS)
     for variant in variants:
         current = fresh(output / variant)
         report = {"schemaVersion": "latent.transaction-guest.compiler.v1", "language": language,
@@ -173,13 +183,16 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
                      "go": "tools.go_capsule_build", "java": "tools.java_capsule_build", "dotnet": "tools.dotnet_guest.build"}[language]
             import importlib
             recipe = (*importlib.import_module(owner).RECIPE, "tools/compile_transaction_guests.py", "tools/transaction_guest_variants.py")
-            if variant in JAVA_SCHEMA_VARIANTS:
+            if variant in JAVA_SCHEMA_VARIANTS or variant == JAVA_DIAGNOSTIC_VARIANT:
                 recipe += ("tools/java_transaction_schema.py", "examples/java-transaction-schema/AggregateCodec.java",
                            "contracts/state/application-aggregate-v1.schema.json",
                            "contracts/state/application-aggregate-v2.schema.json")
                 report.update(applicationVariant=variant.removeprefix("put-once-"), effect="put-once",
                               applicationSchemaInputDigest=digest(captured["application-schema-inputs.json"]),
                               deferredHttpRequirementsDigest=digest(captured["deferred-http-requirements.json"]))
+            if variant == JAVA_DIAGNOSTIC_VARIANT:
+                recipe += ("tools/java_transaction_diagnostics.py", "examples/java-transaction-schema/TransactionDiagnostics.java")
+                report["diagnosticInputDigest"] = digest(captured["transaction-diagnostic-inputs.json"])
             recipe_inputs = inventory({name: read_file(ROOT / name) for name in recipe})
             (current / "recipe-inputs.json").write_bytes(recipe_inputs)
             report["recipeDigest"] = digest(recipe_inputs)
@@ -205,7 +218,8 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             component, details = compile_project(language, work, current, command, tools=tools, wasi_sdk=wasi_sdk)
             command.run("validate-authored-component", wasm, "validate", "--features", "all", component)
             actual = surface(json.loads(command.run("actual-component-wit", wasm, "component", "wit", component, "--json")))
-            check_surface(expected, actual, "aggregate" if variant in JAVA_SCHEMA_VARIANTS else variant)
+            check_surface(expected, actual, "aggregate" if variant in JAVA_SCHEMA_VARIANTS
+                          or variant == JAVA_DIAGNOSTIC_VARIANT else variant)
             if any(read_file(work / name) != raw for name, raw in captured.items()):
                 raise ValueError("captured guest source changed during compilation")
             if inventory({name: read_file(ROOT / name) for name in recipe}) != recipe_inputs:
@@ -230,9 +244,12 @@ def main() -> None:
     parser.add_argument("--wasi-sdk", type=Path)
     parser.add_argument("--java-schema-put-once", action="store_true",
                         help="also compile all three captured Java schema/deferred-HTTP variants without node-execution claims")
+    parser.add_argument("--java-post-stage-diagnostic", action="store_true",
+                        help="compile only the separate captured Java post-stage fault variant without node-execution claims")
     arguments = parser.parse_args()
     compile_guests(arguments.language, arguments.output, tools=arguments.tools, wasi_sdk=arguments.wasi_sdk,
-                   java_schema_put_once=arguments.java_schema_put_once)
+                   java_schema_put_once=arguments.java_schema_put_once,
+                   java_post_stage_diagnostic=arguments.java_post_stage_diagnostic)
 
 
 if __name__ == "__main__":

@@ -22,6 +22,31 @@ def contract():
 
 
 class TransactionGuestCompilerTests(unittest.TestCase):
+    def test_post_stage_diagnostic_mode_is_java_only_exclusive_and_retains_its_failed_capture(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "uncreated"
+            for language in ("rust", "c", "go", "dotnet", "typescript", "future"):
+                with self.subTest(language=language), self.assertRaisesRegex(ValueError, "exclusive explicit Java compiler"):
+                    compile_guests(language, output, java_post_stage_diagnostic=True)
+                self.assertFalse(output.exists())
+            for value in (1, 0, None, "true"):
+                with self.subTest(value=value), self.assertRaisesRegex(ValueError, "exclusive explicit Java compiler"):
+                    compile_guests("java", output, java_post_stage_diagnostic=value)
+                self.assertFalse(output.exists())
+            with self.assertRaisesRegex(ValueError, "exclusive explicit Java compiler"):
+                compile_guests("java", output, java_post_stage_diagnostic=True, java_schema_put_once=True)
+            self.assertFalse(output.exists())
+            with patch("tools.compile_transaction_guests.authored_project", side_effect=ValueError("original-diagnostic-capture-failed")):
+                with self.assertRaisesRegex(ValueError, "original-diagnostic-capture-failed"):
+                    compile_guests("java", output, java_post_stage_diagnostic=True)
+            self.assertEqual({path.name for path in output.iterdir()}, {"put-once-diagnostics"})
+            report = json.loads((output / "put-once-diagnostics/report.json").read_bytes())
+            self.assertEqual(report["variant"], "put-once-diagnostics")
+            self.assertFalse(report["compiled"])
+            self.assertFalse(report["signedNodeExecutionQualified"])
+            self.assertFalse(report["admissionRejectionQualified"])
+            self.assertEqual(report["reason"], "original-diagnostic-capture-failed")
+
     def test_authored_surface_keeps_declared_results_and_canonical_async_owners(self):
         expected = contract()
         check_surface(expected, copy.deepcopy(expected), "aggregate")

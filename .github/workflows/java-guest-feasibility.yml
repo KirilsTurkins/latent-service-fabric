@@ -48,6 +48,12 @@ jobs:
             apps crates sdk/java-guest sdk/rust tools wit/platform schemas examples \
             docs/component-development .cargo Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE \
             .github/workflows/java-guest-feasibility.yml
+      - name: Retain the exact application schemas for the separate diagnostic source
+        id: transaction-diagnostic-schema-source
+        run: |
+          git archive --format=tar.gz -o "$RUNNER_TEMP/java-transaction-diagnostic-schemas.tar.gz" HEAD \
+            contracts/state/application-aggregate-v1.schema.json \
+            contracts/state/application-aggregate-v2.schema.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: java-feasibility-source-${{ github.sha }}
@@ -61,6 +67,9 @@ jobs:
         run: |
           python3 -m pip install --requirement tools/requirements.lock
           python3 -m unittest discover -s sdk/java-guest/tests -v
+      - name: Check exclusive post-stage diagnostic inputs and retained compiler plans
+        id: transaction-diagnostic-source-tests
+        run: python3 -m unittest tools.tests.test_java_transaction_diagnostics tools.tests.test_transaction_guest_compilers
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
@@ -102,6 +111,20 @@ jobs:
             | tee "$RUNNER_TEMP/java-aggregate-encoding/vectors.log"
       - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
         run: python3 tools/compile_transaction_guests.py --language java --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guests-java"
+      - name: Check explicit post-stage diagnostic helpers without claiming transaction execution
+        id: transaction-diagnostic-vectors
+        shell: bash
+        run: |
+          set -euo pipefail
+          javac -d "$RUNNER_TEMP/java-aggregate-encoding" \
+            examples/java-transaction-schema/TransactionDiagnostics.java \
+            examples/java-transaction-schema/DiagnosticVectors.java
+          for vector in ordinary trap reused ordinary; do
+            java -cp "$RUNNER_TEMP/java-aggregate-encoding" dev.latent.app.DiagnosticVectors "$vector"
+          done | tee "$RUNNER_TEMP/java-aggregate-encoding/diagnostic-vectors.log"
+      - name: Compile the separate Java post-stage fault capsule without claiming host execution
+        id: transaction-diagnostic-component
+        run: python3 tools/compile_transaction_guests.py --language java --java-post-stage-diagnostic --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guest-diagnostic-java"
       - name: Compile real Java sources and retain the first incompatible stage
         run: python3 sdk/java-guest/tools/feasibility.py --output "$RUNNER_TEMP/java-guest-feasibility" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Minimize supported Java WIT composition with the actual parser and C ABI
@@ -131,6 +154,18 @@ jobs:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
             ${{ runner.temp }}/java-aggregate-encoding/vectors.log
+            ${{ runner.temp }}/java-transaction-diagnostic-schemas.tar.gz
+            ${{ runner.temp }}/java-aggregate-encoding/diagnostic-vectors.log
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/report.json
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/source-inputs.json
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/recipe-inputs.json
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/source.tar.gz
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/component.wasm
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/component.wit
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler-inputs.json
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/logs/**
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.log
+            ${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.command.json
             ${{ runner.temp }}/transaction-guests-java/**/report.json
             ${{ runner.temp }}/transaction-guests-java/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-java/**/recipe-inputs.json
