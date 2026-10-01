@@ -8919,7 +8919,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 265,
+      "minimumCases": 268,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
