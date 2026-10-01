@@ -4,6 +4,7 @@
 //! Scope descriptors and cursors never grant policy or commit authority.
 
 mod codec;
+pub(crate) mod offline;
 mod validation;
 pub mod version;
 use crate::{

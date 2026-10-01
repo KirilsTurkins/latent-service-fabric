@@ -62,7 +62,7 @@ impl ProtectedStoreConfig {
         }
     }
 
-    pub(super) fn validate(&self) -> Result<u64, ProtectedStoreError> {
+    pub(crate) fn validate(&self) -> Result<u64, ProtectedStoreError> {
         let invalid = || ProtectedStoreError::InvalidConfiguration;
         let name = &self.file_name;
         if !self.root.is_absolute()

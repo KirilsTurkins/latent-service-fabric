@@ -1,0 +1,62 @@
+{
+  "latent-state": {
+    "cases": 153,
+    "registeredIgnored": [],
+    "listSha256": "e9ef72d843299c701d380d5fc8a8dae99ccf5a668ca40e155dc8c1e8b255e2d2",
+    "testSha256": "9d69f9038a07efe7c625cc3fc7575af8a0ca4ab9941ce15f14687c0708a7fff7"
+  },
+  "latent-protected-files": {
+    "cases": 19,
+    "registeredIgnored": [
+      "tests::unexpected_file_and_directory_owners_are_rejected"
+    ],
+    "listSha256": "847d011162bcf4ab8045dbe4bceb6da8442a9ddacfae16d997d076631889289f",
+    "testSha256": "8eda224c5dfb5a6784b9791d8e9b3984c1be537c15f9dd77215f2500ca296fd9"
+  },
+  "source": {
+    "source": "0c9a700eb809158e73633a35b29ba6bcc3f3512a",
+    "sourceArchiveSha256": "e30fc611fb991c2e4b618a43f2e2b86b6b979f8d2b0879fc0add17ac7aaaa616",
+    "toolImage": "sha256:808682d39104dc67ea35b407841aa8ecd4d5662bb8fa8df09e78cecdf4cacde7",
+    "scope": [
+      "latent-state",
+      "latent-protected-files"
+    ],
+    "qualification": "native Linux x86_64/ext4 reviewed recovery/resume and fixed aggregate migration ports only; synthetic package reviewer, no Java/node/retained-effect reconciliation qualification"
+  },
+  "clippySha256": "e7e1842ffecf2138c5c272d1056fdb389fcad52260a7456617a8a4cde517fd25",
+  "binaries": [
+    {
+      "file": "latent_state-1d1882b485da920f",
+      "sha256": "c5c114e8dee5ba73592aae23b41d38554500b3ef830d92c7954062584c47b06a",
+      "bytes": 20128464,
+      "observedExecutable": "/target/debug/deps/latent_state-1d1882b485da920f"
+    },
+    {
+      "file": "latent_protected_files-4305848268c8e578",
+      "sha256": "42654e2601dd873364ea108ca154163282df1156f6cd8cac120a5bd998142da0",
+      "bytes": 1783024,
+      "observedExecutable": "/target/debug/deps/latent_protected_files-4305848268c8e578"
+    }
+  ],
+  "schema": "latent.recovery.native-evidence.v1",
+  "platform": {
+    "target": "x86_64-unknown-linux-gnu",
+    "rust": "1.97.1",
+    "filesystemMagic": "ef53"
+  },
+  "registeredSuiteSha256": "808473ea88bc7f1d6bb5ec2e028f627529fa57fae0a27503c8f516e6e8f88b19",
+  "syntheticReviewedPackage": {
+    "packageDigest": "5353535353535353535353535353535353535353535353535353535353535353",
+    "proofDigest": "5454545454545454545454545454545454545454545454545454545454545454",
+    "compiledCapsule": false,
+    "signedAdmission": false
+  },
+  "scopeBoundary": [
+    "actual protected checkpoint and exclusive fixed storage worker",
+    "durable paused migration stage; actual engine retirement and reopen before explicit completion",
+    "actual count8 to AG0200/count12 media change, stable business identity and recovery epoch",
+    "interrupted stage blocks namespace resume; completed migration remains paused for separately reviewed resume",
+    "exact current checkpoint/linked-row and final irreversible authority fences",
+    "no actual Java capsule, deployment/canary integration, management CLI or retained effect/inbox reconciliation qualification"
+  ]
+}

@@ -161,6 +161,30 @@ impl<S> Future for StoreIoStartup<S> {
 }
 
 impl<S: Send + Sync + 'static> StoreIoReady<S> {
+    pub fn install_recovery_capacity(
+        &self,
+        reserve: super::StoreIoRecoveryCapacity,
+    ) -> Result<(), StoreIoError> {
+        self.owner.install_recovery_capacity(reserve)
+    }
+
+    pub fn recovery_snapshot(&self) -> Result<super::StoreIoRecoverySnapshot, StoreIoError> {
+        self.owner.recovery_snapshot()
+    }
+
+    pub fn submit_recovery<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        bytes: u64,
+        operation: impl FnOnce(&S) -> T + Send + 'static,
+    ) -> Result<StoreIoJob<T>, StoreIoError> {
+        self.owner
+            .submit_recovery(kind, bytes, move |slot| {
+                operation(slot.get().expect("initialized store owner"))
+            })
+            .map_err(|error| error.reason)
+    }
+
     pub(crate) fn failure_gate(&self) -> impl Fn(StoreIoError) + Send + Sync + 'static {
         let control = Arc::clone(&self.owner.inner.control);
         move |error| control.fail(error)

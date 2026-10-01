@@ -217,6 +217,60 @@ fn restore_review_refuses_unacknowledged_wrong_runtime_scope_stale_window_and_ch
 }
 
 #[test]
+fn recovery_window_acknowledges_non_namespace_rows_and_preserves_original_deadline() {
+    let fixture = fixture();
+    let (_, snapshot) = export(&fixture);
+    let before = fixture.store.snapshot().unwrap();
+    let acknowledgement = request(&before, &snapshot);
+    let captured = RestoreWindow::capture(&before, &snapshot).unwrap();
+    let (record, initial) = captured.namespaces()[0].current.decode().unwrap();
+    let key = history_key(&record.tenant, &record.id, record.version.incarnation).unwrap();
+    drop(before);
+    fixture
+        .store
+        .apply(AtomicBatch {
+            expectations: vec![ExpectedRow {
+                key: key.clone(),
+                value: None,
+            }],
+            mutations: vec![RowMutation {
+                key,
+                value: Some(initial.encode().unwrap()),
+            }],
+        })
+        .unwrap();
+    let current = fixture.store.snapshot().unwrap();
+    let changed = RestoreWindow::capture(&current, &snapshot).unwrap();
+    assert_eq!(
+        changed.namespaces()[0].current.decode().unwrap().0.version,
+        record.version
+    );
+    assert_ne!(
+        changed.digest().unwrap(),
+        acknowledgement.window_acknowledgement
+    );
+    assert_eq!(
+        RestorePlan::prepare_until(
+            &current,
+            snapshot.clone(),
+            &acknowledgement,
+            deadline(),
+            |_, _| panic!("changed linked rows reused an old acknowledgement")
+        )
+        .err(),
+        Some(StoreError::Conflict)
+    );
+    let fresh = request(&current, &snapshot);
+    assert_eq!(
+        RestorePlan::prepare_until(&current, snapshot, &fresh, Instant::now(), |_, _| panic!(
+            "expired operation reached review"
+        ))
+        .err(),
+        Some(StoreError::SnapshotExpired)
+    );
+}
+
+#[test]
 fn interrupted_restore_leaves_durable_staging_and_never_changes_current_store_or_completes_recovery(
 ) {
     let fixture = fixture();
@@ -318,4 +372,55 @@ fn restore_quota_existing_destination_and_inconsistent_linked_inventory_refuse_b
             .status(),
         super::super::RecoveryStatus::Staging
     );
+}
+
+#[test]
+fn checked_restore_fences_each_durable_write_and_preserves_failed_staging_without_touching_source()
+{
+    let fixture = fixture();
+    let (bytes, snapshot) = export(&fixture);
+    let current = fixture.store.snapshot().unwrap();
+    let approved = request(&current, &snapshot);
+    for failure_at in [1, 2, 4] {
+        let plan =
+            RestorePlan::prepare(&current, snapshot.clone(), &approved, |_, _| Ok(())).unwrap();
+        let (_directory, fresh) = destination(StoreLimits::default());
+        let mut checks = 0;
+        let result = plan.execute_checked(
+            &mut Cursor::new(&bytes),
+            &fresh,
+            deadline(),
+            RestoreChecks {
+                row: |key: &RowKey, value: &[u8]| validate_row(&current, key, value),
+                view: |view: &ReadView| closure(view, &fixture.metadata),
+                fence: || {
+                    checks += 1;
+                    if checks == failure_at {
+                        Err(StoreError::Unavailable)
+                    } else {
+                        Ok(())
+                    }
+                },
+            },
+        );
+        assert_eq!(
+            result.err(),
+            Some(if failure_at == 1 {
+                StoreError::Unavailable
+            } else {
+                StoreError::CommitUncertain
+            })
+        );
+        let guard = RecoveryGuard::capture(&fresh.snapshot().unwrap()).unwrap();
+        if failure_at == 1 {
+            assert!(guard.is_none());
+        } else {
+            assert_eq!(
+                guard.unwrap().status(),
+                super::super::RecoveryStatus::Staging
+            );
+        }
+    }
+    drop(current);
+    assert_eq!(export(&fixture).1.snapshot_digest, snapshot.snapshot_digest);
 }

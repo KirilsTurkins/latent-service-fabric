@@ -22,7 +22,7 @@ impl StoreIoKind {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct StoreIoRecoveryLimits {
     /// Included in total fixed workers; ordinary jobs cannot occupy these workers.
     pub workers: usize,
