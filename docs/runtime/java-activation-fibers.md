@@ -90,10 +90,11 @@ completion. A root-return mode supplies idle and pending pools without applicati
 shutdown glue. Every invocation checks real Store, broker, activation and cell
 reclamation. The unchanged application source runs all three modes in each of
 three separate reference-JDK processes; only the reference harness terminates its
-ordinary process-owned pools. The expanded executor mode still fails in its
-signed guest run and root-return remains unqualified. Reference-JDK success and
-successful component generation do not establish their guest behavior. Complete
-failed attempts are retained separately.
+ordinary process-owned pools. All nine original signed activations now pass,
+including independent executor pools and root-return cleanup. The later expanded
+four-mode future profile remains unqualified. Reference-JDK success and
+component generation alone do not establish guest behavior. Complete failed
+attempts are retained separately.
 
 The retained expanded component `b15ce736` was replayed without changing its
 bytes or its original 10 billion fuel, 64 MiB and 120-second limits. A bounded
@@ -143,9 +144,23 @@ The standard-enum method port passes an actual byte-verified nine-JAR model
 control on pinned JDK 25.0.4.1, including original missing declarations, maintained
 and SDK model ownership, resolved standard references, and layout rejection.
 Its source conversion control matches the same pinned JDK in 1,661 cases.
-The Java SDK helper suite passes 61 tests on Linux. These are source and compiler
-model controls; a new component build and complete original signed-mode replay
-remain required before the executor profile is qualified.
+The Java SDK helper suite passes 61 tests on Linux.
+
+The subsequent pinned rebuild at source `8943a364` emitted component
+`7014861a8a908b8500ebe26b228c10f3a9fb645cf603b95e2d4644c180a98643`,
+11,095,730 bytes, with the original application and compiler inputs unchanged.
+The normal native runtime was rebuilt from that exact source after all 7,358
+tracked inputs were refreshed without changing their bytes. All nine original
+signed/admitted activations returned 42 under the unchanged 10 billion fuel,
+64 MiB and 120-second limits. Each reached zero live Stores, instance
+reservations, active activations, cancellation registrations, and broker calls,
+sessions, handles, results and buffer bytes. Peak guest memory was 9,373,512
+bytes for every invocation. The cold first activation took 94.333 seconds;
+warm executor activations took 72.397 to 82.777 milliseconds. Exact source,
+component and log identities and all nine measurements are retained in the
+[executor evidence](java-activation-executors-evidence.json). This establishes
+the original finite fixture; full standard-library behavior, provider-I/O
+coexistence and physical memory plateaus still require qualification.
 
 The original thread-only pinned Linux debug experiment measured 9241560 bytes of activation peak
 memory in each run under the unchanged 67108864-byte ceiling. The first run
