@@ -2088,14 +2088,23 @@
         "ownership::cancellation_retains_every_actual_owner_until_cleanup_and_allows_later_reuse",
         "ownership::completed_application_is_not_a_completed_delivery_and_disconnect_keeps_charge",
         "ownership::disconnect_and_absolute_deadline_wake_waiters_without_early_refunds",
-        "ownership::pool_intersects_slot_and_byte_caps_and_rejects_without_an_unbounded_queue"
+        "ownership::pool_intersects_slot_and_byte_caps_and_rejects_without_an_unbounded_queue",
+        "transaction::closed_route_scope_rejects_unknown_keys_missing_links_and_noncanonical_incarnation",
+        "transaction::command_mapping_retains_original_key_path_precondition_with_credential_rotation",
+        "transaction::duplicates_and_ambiguous_preconditions_fail_before_invocation",
+        "transaction::queries_ignore_valid_command_keys_and_require_full_original_minimum_view",
+        "transaction::result_requests_cannot_select_guest_inputs_or_preconditions",
+        "transaction::retry_requires_explicit_complete_original_fence_and_separate_request_identity",
+        "transaction::revoked_delivery_refuses_to_poll_an_already_pending_write_again",
+        "transaction::transaction_delivery_owns_fixed_media_head_length_and_no_historical_headers",
+        "transaction::transaction_mapping_retains_exchange_until_actual_delivery_or_drop"
       ],
       "expectedIgnored": [],
       "id": "latent-ingress.test.http",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-ingress/Cargo.toml",
-      "minimumCases": 16,
+      "minimumCases": 25,
       "mode": "libtest",
       "package": "latent-ingress",
       "platforms": [
@@ -2714,6 +2723,7 @@
         "races::concurrent_starts_cannot_replace_the_same_identity_owner",
         "transaction::namespace_admission_runs_on_the_original_ledger_before_any_preparation_or_cell",
         "transaction::ordinary_admission_cannot_install_state_by_selecting_a_transaction_entry_point",
+        "transaction::result_lookup_uses_original_admission_without_component_preparation_or_guest_work",
         "transport_cleanup::acknowledged_disconnects_reuse_the_same_capacity_without_explicit_cancel_events",
         "transport_cleanup::exact_expiry_and_explicit_cancel_keep_priority_over_transport_and_success",
         "transport_cleanup::marking_an_already_completed_handle_cannot_stop_its_reused_id",
@@ -2728,7 +2738,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 64,
+      "minimumCases": 65,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -6085,7 +6095,9 @@
         "values::tests::transactions::transaction_owned_signatures_fit_the_existing_http_preparation_profile",
         "values::tests::transactions::transaction_resources_need_an_explicit_allowlist_and_nested_pages_reject",
         "values::tests::web::buffered_http_goldens_round_trip_through_the_actual_wit_type_plan",
-        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults"
+        "values::tests::web::buffered_http_maximum_body_fits_explicit_codec_profile_without_raising_global_defaults",
+        "values::tests::canonical::prepared_parameter_types_define_canonical_record_and_tagged_business_input",
+        "values::tests::canonical::canonical_parameters_retain_changed_values_presence_and_original_codec_limits"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -6098,7 +6110,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 340,
+      "minimumCases": 342,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

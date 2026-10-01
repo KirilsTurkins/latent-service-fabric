@@ -69,7 +69,7 @@ impl PreparedReadiness {
                     ownership,
                 })),
             },
-            legacy => Err(Self(legacy)),
+            legacy @ Ownership::Legacy(_) => Err(Self(legacy)),
         }
     }
 
@@ -80,7 +80,7 @@ impl PreparedReadiness {
     pub(crate) fn into_activation(self) -> Result<PreparedActivation, Self> {
         match self.0 {
             Ownership::Legacy(activation) => Ok(activation),
-            backend => Err(Self(backend)),
+            backend @ Ownership::Backend { .. } => Err(Self(backend)),
         }
     }
 }

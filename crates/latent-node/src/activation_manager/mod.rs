@@ -47,7 +47,8 @@ pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
 pub use transaction::{
     TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
-    TransactionCompletion, TransactionCompletionHook, TransactionDisposition, TransactionExecution,
+    TransactionAdmissionKind, TransactionCompletion, TransactionCompletionHook,
+    TransactionDisposition, TransactionExecution,
 };
 pub use transport_stop::ActivationTransportInterruption;
 use transport_stop::TransportStop;

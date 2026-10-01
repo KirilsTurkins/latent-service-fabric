@@ -1,5 +1,5 @@
 use super::{
-    bounded::{BoundedList, BoundedText, Optional},
+    bounded::{BoundedList, BoundedText, Decimal, Optional},
     cache::{CacheRequest, Pending},
     codec,
     model::{Profile, ResponseData},
@@ -8,6 +8,16 @@ use super::{
 };
 use latent_core::PlatformErrorCode;
 use std::sync::Arc;
+
+/// The trusted adapter retains its current-purpose authority through each
+/// actual transport poll. The callback is synchronous and performs no native
+/// storage operation or activation budget consumption.
+pub trait DeliveryFence: Send + Sync {
+    fn with_current(
+        &self,
+        action: &mut dyn FnMut() -> Result<(), HttpError>,
+    ) -> Result<(), HttpError>;
+}
 
 #[derive(Clone, Copy)]
 pub enum Outcome<'a> {
@@ -37,6 +47,7 @@ pub struct Delivery {
     written: usize,
     pending: Option<Pending>,
     pub(super) cache_age: Option<String>,
+    fence: Option<Arc<dyn DeliveryFence>>,
     // Payload/header allocations must be freed before their capacity is refunded.
     lease: Arc<Lease>,
 }
@@ -79,7 +90,65 @@ impl Delivery {
             written: 0,
             pending: None,
             cache_age: None,
+            fence: None,
         })
+    }
+    pub(super) fn transaction(
+        lease: Arc<Lease>,
+        method: Method,
+        status: u16,
+        body: Vec<u8>,
+        fence: Arc<dyn DeliveryFence>,
+    ) -> Result<Self, HttpError> {
+        if !matches!(status, 200 | 202 | 409 | 410 | 422 | 503)
+            || body.len() > super::MAX_RESPONSE_BODY
+        {
+            return Err(HttpError::InvalidResponse);
+        }
+        let length = body.len() as u64;
+        let delivery = Self {
+            response: ResponseData {
+                profile: Profile::BufferedV1,
+                status,
+                headers: BoundedList(Vec::new()),
+                media_type: Optional::Some(BoundedText(
+                    "application/vnd.latent.transaction-http.v1+json".into(),
+                )),
+                representation_length: Optional::Some(Decimal(length)),
+                body: super::body::Body(if method == Method::Head {
+                    Vec::new()
+                } else {
+                    body
+                }),
+            },
+            cause: DeliveryCause::Application,
+            method,
+            headers_written: false,
+            written: 0,
+            pending: None,
+            cache_age: None,
+            fence: Some(fence),
+            lease,
+        };
+        delivery.with_current(|| ())?;
+        Ok(delivery)
+    }
+    /// Run exactly one short transport poll under the retained authority. A
+    /// pending write must enter this check again when the socket wakes it.
+    pub fn with_current<T>(&self, action: impl FnOnce() -> T) -> Result<T, HttpError> {
+        let Some(fence) = &self.fence else {
+            self.lease.check()?;
+            return Ok(action());
+        };
+        let mut action = Some(action);
+        let mut result = None;
+        fence.with_current(&mut || {
+            self.lease.check()?;
+            let run = action.take().ok_or(HttpError::IncompleteDelivery)?;
+            result = Some(run());
+            Ok(())
+        })?;
+        result.ok_or(HttpError::Forbidden)
     }
     pub(super) fn stage(&mut self, request: CacheRequest, wire: &[u8]) {
         self.pending = request.stage(self, wire);
@@ -93,7 +162,7 @@ impl Delivery {
         self.cause
     }
     pub fn enforce_browser_profile(&mut self, scheme: super::Scheme) -> Result<(), HttpError> {
-        self.lease.check()?;
+        self.with_current(|| ())?;
         if self.headers_written || self.written != 0 {
             return Err(HttpError::IncompleteDelivery);
         }
@@ -147,7 +216,7 @@ impl Delivery {
     }
     /// Called only after the bounded transport has completed its header write.
     pub fn mark_headers_written(&mut self) -> Result<(), HttpError> {
-        self.lease.check()?;
+        self.with_current(|| ())?;
         if self.headers_written {
             return Err(HttpError::IncompleteDelivery);
         }
@@ -155,12 +224,12 @@ impl Delivery {
         Ok(())
     }
     pub fn remaining_body(&self) -> Result<&[u8], HttpError> {
-        self.lease.check()?;
+        self.with_current(|| ())?;
         Ok(&self.response.body.0[self.written..])
     }
     /// Advance only by the successful byte count returned by a transport write.
     pub fn advance(&mut self, written: usize) -> Result<(), HttpError> {
-        self.lease.check()?;
+        self.with_current(|| ())?;
         if !self.headers_written || written > self.response.body.0.len() - self.written {
             return Err(HttpError::IncompleteDelivery);
         }
@@ -169,7 +238,7 @@ impl Delivery {
     }
     /// Records completed local writes, not peer receipt or browser processing.
     pub fn finish(mut self) -> Result<Delivered, HttpError> {
-        self.lease.check()?;
+        self.with_current(|| ())?;
         if !self.headers_written || self.written != self.response.body.0.len() {
             return Err(HttpError::IncompleteDelivery);
         }

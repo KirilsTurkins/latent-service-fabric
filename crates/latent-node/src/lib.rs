@@ -23,7 +23,8 @@ pub use activation_manager::{
     ActivationTransportInterruption, InboundActivationReservation, LocalActivationDependencies,
     LocalActivationManager, LocalActivationManagerConfig, LocalActivationServices,
     TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
-    TransactionCompletion, TransactionCompletionHook, TransactionDisposition, TransactionExecution,
+    TransactionAdmissionKind, TransactionCompletion, TransactionCompletionHook,
+    TransactionDisposition, TransactionExecution,
 };
 pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,

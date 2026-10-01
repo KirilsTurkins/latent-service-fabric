@@ -69,6 +69,15 @@ pub enum TransactionAdmission {
     Existing(Box<TransactionCompletion>),
 }
 
+/// The trusted binding distinguishes an application from a read-only lookup.
+/// A lookup can complete only from existing durable state and cannot supply an
+/// execution host, prepared component or scheduled guest.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TransactionAdmissionKind {
+    Application,
+    ResultLookup,
+}
+
 /// Host completion is called only after the backend's actual teardown (or a
 /// positively never-started path). It owns any remaining native retirement.
 pub trait TransactionCompletionHook: Send + Sync {
@@ -104,6 +113,26 @@ impl TransactionExecution {
 /// and retains the original physical owners. Implementations cannot replace
 /// this activation's accepted source, budget or monotonic deadline.
 pub trait TransactionActivationAdmission: Send + Sync {
+    fn kind(&self) -> TransactionAdmissionKind {
+        TransactionAdmissionKind::Application
+    }
+
+    /// Validate the current installed scope and caller before reading or
+    /// preparing guest code. This phase cannot claim a command or certify raw
+    /// business bytes; admission repeats the check after typed canonicalization.
+    fn preflight<'a>(
+        &'a self,
+        _envelope: &'a ActivationEnvelope,
+        _budget: &'a ActivationBudget,
+    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+        Box::pin(async {
+            Err(super::control::error(
+                latent_core::PlatformErrorCode::IncompatibleContract,
+                "transaction preflight unavailable",
+            ))
+        })
+    }
+
     /// Queries need no command gate. Command implementations retain the actual
     /// control and bind their original sealed gate before publishing a claim.
     fn bind_control(&self, _control: TransactionAdmissionControl) -> Result<(), PlatformError> {

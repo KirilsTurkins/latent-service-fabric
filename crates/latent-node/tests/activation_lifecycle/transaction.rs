@@ -4,7 +4,10 @@ use super::{
 };
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{ActivationBudget, BoxFuture, BudgetProfile, PlatformError, PlatformErrorCode};
-use latent_node::{TransactionActivationAdmission, TransactionAdmission};
+use latent_node::{
+    TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionKind,
+    TransactionCompletion,
+};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
@@ -12,11 +15,11 @@ use std::sync::{
 
 struct DeniedAdmission(AtomicUsize);
 impl TransactionActivationAdmission for DeniedAdmission {
-    fn admit<'a>(
+    fn preflight<'a>(
         &'a self,
         envelope: &'a ActivationEnvelope,
         budget: &'a ActivationBudget,
-    ) -> BoxFuture<'a, Result<TransactionAdmission, PlatformError>> {
+    ) -> BoxFuture<'a, Result<(), PlatformError>> {
         Box::pin(async move {
             assert_eq!(budget.profile(), BudgetProfile::Phase4);
             assert!(envelope.resolved_revision.is_some());
@@ -28,6 +31,77 @@ impl TransactionActivationAdmission for DeniedAdmission {
             ))
         })
     }
+
+    fn admit<'a>(
+        &'a self,
+        envelope: &'a ActivationEnvelope,
+        budget: &'a ActivationBudget,
+    ) -> BoxFuture<'a, Result<TransactionAdmission, PlatformError>> {
+        Box::pin(async move {
+            assert_eq!(budget.profile(), BudgetProfile::Phase4);
+            assert!(envelope.resolved_revision.is_some());
+            assert_eq!(budget.granted().cpu_fuel, envelope.budget.cpu_fuel);
+            Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "current namespace authority denied",
+            ))
+        })
+    }
+}
+
+struct ExistingLookup(AtomicUsize);
+impl TransactionActivationAdmission for ExistingLookup {
+    fn kind(&self) -> TransactionAdmissionKind {
+        TransactionAdmissionKind::ResultLookup
+    }
+
+    fn admit<'a>(
+        &'a self,
+        envelope: &'a ActivationEnvelope,
+        budget: &'a ActivationBudget,
+    ) -> BoxFuture<'a, Result<TransactionAdmission, PlatformError>> {
+        Box::pin(async move {
+            assert_eq!(budget.profile(), BudgetProfile::Phase4);
+            assert!(envelope.resolved_revision.is_some());
+            self.0.fetch_add(1, Ordering::Relaxed);
+            Ok(TransactionAdmission::Existing(Box::new(
+                TransactionCompletion::ordinary(ActivationOutcome::Failed {
+                    terminal_state: latent_core::ActivationTerminalState::Rejected,
+                    error: error(PlatformErrorCode::NotFound, "original-command-not-found"),
+                    consumption: latent_core::BudgetConsumption::default(),
+                }),
+            )))
+        })
+    }
+}
+
+#[tokio::test]
+async fn result_lookup_uses_original_admission_without_component_preparation_or_guest_work() {
+    let harness = Harness::transaction_profile();
+    let lookup = Arc::new(ExistingLookup(AtomicUsize::new(0)));
+    let receipt = finish(
+        harness
+            .manager
+            .start_transaction_with_deadline(request("finite-result-lookup"), None, lookup.clone())
+            .expect("accepted original identity"),
+    )
+    .await;
+    let ActivationOutcome::Failed { error, .. } = receipt.outcome else {
+        panic!("original lookup failure")
+    };
+    assert_eq!(error.code, PlatformErrorCode::NotFound);
+    assert_eq!(lookup.0.load(Ordering::Relaxed), 1);
+    assert!(receipt.transaction.is_none());
+    assert_eq!(harness.backend.preparation_calls.load(Ordering::Relaxed), 0);
+    assert_eq!(
+        harness
+            .backend
+            .materialization_calls
+            .load(Ordering::Relaxed),
+        0
+    );
+    assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 0);
+    harness.assert_idle();
 }
 
 #[tokio::test]

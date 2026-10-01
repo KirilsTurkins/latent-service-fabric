@@ -853,6 +853,25 @@ impl WasmtimeBackend {
 }
 
 impl ExecutionBackend for WasmtimeBackend {
+    fn canonicalize_transaction_input<'a>(
+        &'a self,
+        ready: latent_executor::PreparedReadiness,
+        envelope: &'a latent_activation::ActivationEnvelope,
+        budget: &'a latent_core::ActivationBudget,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            (
+                latent_executor::PreparedReadiness,
+                latent_executor::CanonicalTransactionInput,
+            ),
+            PlatformError,
+        >,
+    > {
+        Box::pin(self.canonicalize_readiness_input(ready, envelope, budget, wait))
+    }
+
     fn prepare_ready_from_repository<'a>(
         &'a self,
         repository: Arc<dyn ArtifactRepository>,

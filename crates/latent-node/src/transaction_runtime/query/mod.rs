@@ -27,3 +27,6 @@ fn failure(error: StateFailure) -> PlatformError {
         details: Vec::new(),
     }
 }
+/// Descriptive token for the exact observed view. It never asserts commitment
+/// and grants no namespace or result-read authority.
+pub const VIEW_METADATA: &str = "lsf-query-view-token";

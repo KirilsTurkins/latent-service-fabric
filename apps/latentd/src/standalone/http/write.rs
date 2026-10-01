@@ -1,5 +1,5 @@
 use latent_ingress::http::{browser, Delivery, Scheme};
-use std::io;
+use std::{future::Future, io, task::Poll};
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 pub(super) async fn delivery<W: AsyncWrite + Unpin>(
@@ -36,8 +36,8 @@ pub(super) async fn delivery<W: AsyncWrite + Unpin>(
     if head.len() > super::head::MAX_HEAD {
         return Err(io::ErrorKind::InvalidData.into());
     }
-    socket.write_all(&head).await?;
-    socket.flush().await?;
+    current(&delivery, socket.write_all(&head)).await?;
+    current(&delivery, socket.flush()).await?;
     delivery
         .mark_headers_written()
         .map_err(|_| io::ErrorKind::TimedOut)?;
@@ -48,19 +48,35 @@ pub(super) async fn delivery<W: AsyncWrite + Unpin>(
         if remaining.is_empty() {
             break;
         }
-        let n = socket
-            .write(&remaining[..remaining.len().min(16 * 1024)])
-            .await?;
+        let n = current(
+            &delivery,
+            socket.write(&remaining[..remaining.len().min(16 * 1024)]),
+        )
+        .await?;
         if n == 0 {
             return Err(io::ErrorKind::WriteZero.into());
         }
         // TLS write accepts plaintext into its own finite buffer. Advance the
         // delivery only after flushing the corresponding encrypted socket writes.
-        socket.flush().await?;
+        current(&delivery, socket.flush()).await?;
         delivery.advance(n).map_err(|_| io::ErrorKind::TimedOut)?;
     }
     delivery.finish().map_err(|_| io::ErrorKind::TimedOut)?;
     Ok(())
+}
+
+async fn current<T>(
+    delivery: &Delivery,
+    future: impl Future<Output = io::Result<T>>,
+) -> io::Result<T> {
+    tokio::pin!(future);
+    std::future::poll_fn(
+        |context| match delivery.with_current(|| future.as_mut().poll(context)) {
+            Ok(poll) => poll,
+            Err(error) => Poll::Ready(Err(io::Error::new(io::ErrorKind::PermissionDenied, error))),
+        },
+    )
+    .await
 }
 pub(super) async fn error<W: AsyncWrite + Unpin>(
     socket: &mut W,

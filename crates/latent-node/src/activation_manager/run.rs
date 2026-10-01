@@ -124,39 +124,36 @@ impl Inner {
         let transport = Arc::clone(&lifecycle.transport_stop);
         self.check_run_start(lifecycle, &token)?;
         let child_control = lifecycle.child_control.take();
-        let permit = if child_control.is_some() {
-            None
-        } else if let Some(permit) = lifecycle.inbound_permit.take() {
-            Some(permit)
-        } else {
-            let wait = super::admission_wait::Window::new(
+        let permit = self
+            .initial_permit(
+                &mut envelope,
+                lifecycle,
                 &token,
-                lifecycle
-                    .incoming_deadline
-                    .map(|deadline| deadline.monotonic()),
-                &self.clock,
+                child_control.is_some(),
                 &transport,
-            );
-            let catalog = self.dependencies.catalog.pin()?;
-            let resolved = wait
-                .check(|| catalog.resolve(&envelope.target, Some(&envelope.activation_id.0)))
-                .await?;
-            Some(
-                wait.check(|| {
-                    self.resolve_and_admit_input(
-                        &mut envelope,
-                        lifecycle,
-                        &token,
-                        None,
-                        None,
-                        Some((resolved.clone(), catalog.clone())),
-                    )
-                    .map(|admitted| admitted.0)
-                })
-                .await?,
             )
-        };
+            .await?;
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
+        bind_transaction_control(&envelope, lifecycle, &budget)?;
+        if lifecycle
+            .transaction_admission
+            .as_ref()
+            .is_some_and(|admission| {
+                admission.kind() == super::TransactionAdmissionKind::ResultLookup
+            })
+        {
+            return admit_transaction(&envelope, lifecycle, &budget)
+                .await?
+                .ok_or_else(|| {
+                    error(
+                        PlatformErrorCode::PermissionDenied,
+                        "result lookup cannot execute",
+                    )
+                });
+        }
+        let transaction_ready = self
+            .prepare_transaction_input(&mut envelope, lifecycle, &token, &budget, &transport)
+            .await?;
         if let Some(outcome) = admit_transaction(&envelope, lifecycle, &budget).await? {
             return Ok(outcome);
         }
@@ -166,16 +163,13 @@ impl Inner {
         let expiry = budget.deadline().monotonic();
         // Keep the original admission reservation and deadline while code is
         // prepared. A cold request does not occupy an execution cell.
-        let (key, ready) = self
-            .prepare_ready(&envelope, &token, &budget, &transport)
-            .await?;
-        let control = child_control.unwrap_or_else(|| {
-            Arc::new(ActivationControl::new(
-                lifecycle.registration(),
-                transport.clone(),
-                budget.profile().supports_descendants(),
-            ))
-        });
+        let (key, ready) = if let Some(ready) = transaction_ready {
+            ready
+        } else {
+            self.prepare_ready(&envelope, &token, &budget, &transport)
+                .await?
+        };
+        let control = child_control.unwrap_or_else(|| root_control(lifecycle, &transport, &budget));
         let scheduled = if let Some(permit) = permit {
             if budget.profile().supports_descendants() {
                 budget.enable_descendants(permit.delegation_limits(), control.clone())?;
@@ -222,7 +216,49 @@ impl Inner {
             .await
     }
 
-    fn check_run_start(
+    async fn initial_permit(
+        &self,
+        envelope: &mut ActivationEnvelope,
+        lifecycle: &mut Lifecycle,
+        token: &CancellationToken,
+        child: bool,
+        transport: &super::TransportStop,
+    ) -> Result<Option<AdmissionPermit>, PlatformError> {
+        Ok(if child {
+            None
+        } else if let Some(permit) = lifecycle.inbound_permit.take() {
+            Some(permit)
+        } else {
+            let wait = super::admission_wait::Window::new(
+                token,
+                lifecycle
+                    .incoming_deadline
+                    .map(|deadline| deadline.monotonic()),
+                &self.clock,
+                transport,
+            );
+            let catalog = self.dependencies.catalog.pin()?;
+            let resolved = wait
+                .check(|| catalog.resolve(&envelope.target, Some(&envelope.activation_id.0)))
+                .await?;
+            Some(
+                wait.check(|| {
+                    self.resolve_and_admit_input(
+                        envelope,
+                        lifecycle,
+                        token,
+                        None,
+                        None,
+                        Some((resolved.clone(), catalog.clone())),
+                    )
+                    .map(|admitted| admitted.0)
+                })
+                .await?,
+            )
+        })
+    }
+
+    pub(super) fn check_run_start(
         &self,
         lifecycle: &Lifecycle,
         token: &CancellationToken,
@@ -428,6 +464,18 @@ impl Inner {
     }
 }
 
+fn root_control(
+    lifecycle: &Lifecycle,
+    transport: &Arc<super::transport_stop::TransportStop>,
+    budget: &ActivationBudget,
+) -> Arc<ActivationControl> {
+    Arc::new(ActivationControl::new(
+        lifecycle.registration(),
+        Arc::clone(transport),
+        budget.profile().supports_descendants(),
+    ))
+}
+
 async fn admit_transaction(
     envelope: &ActivationEnvelope,
     lifecycle: &mut Lifecycle,
@@ -436,20 +484,7 @@ async fn admit_transaction(
     let Some(admission) = &lifecycle.transaction_admission else {
         return Ok(None);
     };
-    if budget.profile() != latent_core::BudgetProfile::Phase4
-        || envelope.parent_activation_id.is_some()
-        || budget.granted().child_calls != 0
-        || budget.granted().outbound_requests != 0
-    {
-        return Err(error(
-            PlatformErrorCode::PermissionDenied,
-            "strict transaction admission required",
-        ));
-    }
-    admission.bind_control(super::TransactionAdmissionControl::new(
-        lifecycle.registration().handle(),
-        budget.clone(),
-    ))?;
+    let lookup = admission.kind() == super::TransactionAdmissionKind::ResultLookup;
     let execution = match admission.admit(envelope, budget).await? {
         super::TransactionAdmission::Execute(execution) => execution,
         super::TransactionAdmission::Existing(completion) => {
@@ -463,7 +498,10 @@ async fn admit_transaction(
     // the positively never-created guest path still awaits native retirement.
     lifecycle.transaction_hook = Some(execution.completion);
     lifecycle.transaction_host = Some(host.clone());
-    if host.activation_id() != &envelope.activation_id || !host.budget().is_same_instance(budget) {
+    if lookup
+        || host.activation_id() != &envelope.activation_id
+        || !host.budget().is_same_instance(budget)
+    {
         return Err(error(
             PlatformErrorCode::PermissionDenied,
             "transaction admission owner mismatch",
@@ -481,6 +519,31 @@ async fn admit_transaction(
         lifecycle.registration().handle().bind_commit_gate(gate)?;
     }
     Ok(None)
+}
+
+fn bind_transaction_control(
+    envelope: &ActivationEnvelope,
+    lifecycle: &Lifecycle,
+    budget: &ActivationBudget,
+) -> Result<(), PlatformError> {
+    let Some(admission) = &lifecycle.transaction_admission else {
+        return Ok(());
+    };
+    if budget.profile() != latent_core::BudgetProfile::Phase4
+        || envelope.parent_activation_id.is_some()
+        || budget.granted().child_calls != 0
+        || budget.granted().outbound_requests != 0
+    {
+        return Err(error(
+            PlatformErrorCode::PermissionDenied,
+            "strict transaction admission required",
+        ));
+    }
+    admission.bind_control(super::TransactionAdmissionControl::new(
+        lifecycle.registration().handle(),
+        budget.clone(),
+    ))?;
+    Ok(())
 }
 
 fn retain_selection(

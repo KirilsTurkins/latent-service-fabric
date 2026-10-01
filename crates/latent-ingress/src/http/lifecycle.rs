@@ -152,6 +152,104 @@ impl Request {
             bytes,
         })
     }
+
+    /// Maps original transport facts for a fixed direct application binding.
+    /// The original exchange continues to own all retained input allocations.
+    /// The prepared component later canonicalizes these bytes before any claim.
+    pub fn into_transaction(
+        mut self,
+        route: &super::transaction::TransactionRoute,
+    ) -> Result<(Invocation, super::transaction::TransactionRequest), HttpError> {
+        use super::transaction::{self, RouteMode, TransactionRequest, VERSION_TOKEN_BYTES};
+        self.lease.check()?;
+        route.require_method(self.data.method)?;
+        let id = transaction::singleton(&self.data.headers, "idempotency-key")?;
+        if let Some(id) = id {
+            transaction::identifier(id).map_err(|_| HttpError::InvalidHeaders)?;
+        }
+        let expected = transaction::singleton(&self.data.headers, "if-match")?;
+        let minimum = transaction::singleton(&self.data.headers, "if-state-view")?;
+        let retry = transaction::command_retry(
+            route.mode(),
+            transaction::singleton(&self.data.headers, "command-retry-key")?,
+            transaction::singleton(&self.data.headers, "command-abort-fence")?,
+        )?;
+        let mut preconditions = Vec::new();
+        let mut minimum_view = None;
+        let client_key = if route.mode() == RouteMode::Query {
+            None
+        } else {
+            Some(id.ok_or(HttpError::InvalidHeaders)?.to_owned())
+        };
+        let bytes = match route.mode() {
+            RouteMode::Command => {
+                if self.data.media_type.as_ref().map(String::as_str)
+                    != Some(super::VALUE_MEDIA_TYPE)
+                    || self.data.body.0.is_empty()
+                    || self.data.query.as_ref().is_some()
+                    || minimum.is_some()
+                {
+                    return Err(HttpError::InvalidFraming);
+                }
+                if let Some(expected) = expected {
+                    preconditions.push(transaction::original_precondition(
+                        expected,
+                        route.precondition_key().ok_or(HttpError::InvalidHeaders)?,
+                    )?);
+                }
+                std::mem::take(&mut self.data.body.0)
+            }
+            RouteMode::Query => {
+                if !self.data.body.0.is_empty()
+                    || expected.is_some()
+                    || self.data.media_type.as_ref().is_some()
+                {
+                    return Err(HttpError::InvalidFraming);
+                }
+                if let Some(minimum) = minimum {
+                    let version = transaction::decode_canonical(
+                        minimum,
+                        VERSION_TOKEN_BYTES,
+                        Some(VERSION_TOKEN_BYTES),
+                    )?;
+                    if !version.starts_with(b"NV\x02") {
+                        return Err(HttpError::InvalidHeaders);
+                    }
+                    minimum_view = Some(version);
+                }
+                transaction::query_input(self.data.query.as_ref().map(String::as_str))?
+            }
+            RouteMode::Result => {
+                if !self.data.body.0.is_empty()
+                    || self.data.query.as_ref().is_some()
+                    || expected.is_some()
+                    || minimum.is_some()
+                    || self.data.media_type.as_ref().is_some()
+                {
+                    return Err(HttpError::InvalidFraming);
+                }
+                b"[]".to_vec()
+            }
+        };
+        let facts = TransactionRequest {
+            client_key,
+            preconditions,
+            minimum_view,
+            business_path: self.data.path,
+            business_query: None,
+            method: self.data.method,
+            retry,
+        };
+        Ok((
+            Invocation {
+                lease: self.lease,
+                context: self.context,
+                method: self.data.method,
+                bytes,
+            },
+            facts,
+        ))
+    }
 }
 
 /// The adapter retains this owner until the normal activation has retired its
@@ -164,6 +262,16 @@ pub struct Invocation {
     pub(super) lease: Arc<Lease>,
 }
 impl Invocation {
+    /// Host-owned transaction framing cannot replay arbitrary guest HTTP
+    /// headers, cookies, credentials or cache state from a historical result.
+    pub fn complete_transaction(
+        self,
+        status: u16,
+        body: Vec<u8>,
+        fence: Arc<dyn super::DeliveryFence>,
+    ) -> Result<Delivery, HttpError> {
+        Delivery::transaction(self.lease.clone(), self.method, status, body, fence)
+    }
     #[must_use]
     pub fn input(&self) -> &[u8] {
         &self.bytes
@@ -207,6 +315,7 @@ impl Invocation {
             media_type: super::VALUE_MEDIA_TYPE,
         })?;
         delivery.cache_age = Some(hit.age().to_string());
+        drop(hit);
         Ok(delivery)
     }
 }

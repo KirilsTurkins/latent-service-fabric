@@ -7,6 +7,7 @@ use wasmtime::{Config, Engine};
 use super::*;
 
 mod bounds;
+mod canonical;
 mod composites;
 mod differential;
 #[cfg(target_os = "linux")]
