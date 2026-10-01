@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::sync::Arc;
 
 use super::job::Reservation;
@@ -24,6 +25,7 @@ impl<S> Drop for PhysicalReservation<S> {
 
 struct Retained<S, T> {
     value: Option<T>,
+    owner: Option<Arc<dyn Any + Send + Sync>>,
     reservation: PhysicalReservation<S>,
     retired: Arc<RetirementSignal>,
     witness_issued: bool,
@@ -33,12 +35,14 @@ impl<S: Send + 'static, T: Send + 'static> Retirement for Retained<S, T> {
     fn retire(self: Box<Self>) {
         let Self {
             value,
+            owner,
             reservation,
             retired,
             witness_issued: _,
         } = *self;
         // Native handle destruction precedes physical ownership/byte refund.
         drop(value);
+        drop(owner);
         drop(reservation);
         retired.complete();
     }
@@ -74,6 +78,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         state.retained_bytes += bytes;
         let retained = Box::new(Retained {
             value: None,
+            owner: None,
             reservation: PhysicalReservation(Reservation {
                 control: Arc::clone(control),
                 bytes,
@@ -90,6 +95,23 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
 }
 
 impl<S: Send + 'static, T: Send + 'static> StoreIoRetained<S, T> {
+    /// Bind one original capacity/authority keeper before native allocation and
+    /// submission. The caller pre-reserves its own keeper metadata. Retirement
+    /// destroys the actual native value before dropping this owner, then releases
+    /// the storage reservation and completes the existing retirement signal.
+    /// A rejected keeper is returned unchanged and cannot replace an earlier one.
+    pub fn retain_owner(
+        &mut self,
+        owner: Arc<dyn Any + Send + Sync>,
+    ) -> Result<(), Arc<dyn Any + Send + Sync>> {
+        let retained = self.retained.as_mut().expect("affine resource owner");
+        if retained.value.is_some() || retained.owner.is_some() {
+            return Err(owner);
+        }
+        retained.owner = Some(owner);
+        Ok(())
+    }
+
     /// Issue at most one non-clone observer across all moves of this resource.
     /// It shares pre-reserved metadata and leaves the single receipt waiter free.
     pub fn retirement_witness(&mut self) -> Option<StoreIoRetirementWitness> {

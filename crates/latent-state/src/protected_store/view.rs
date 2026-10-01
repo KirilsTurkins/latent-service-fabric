@@ -1,4 +1,5 @@
-use std::sync::OnceLock;
+use std::any::Any;
+use std::sync::{Arc, OnceLock};
 
 use super::physical::PhysicalStore;
 use super::{ProtectedStoreError, ProtectedStoreOwner};
@@ -36,11 +37,35 @@ impl ProtectedStoreOwner {
         &self,
     ) -> Result<StoreIoJob<Result<ProtectedStoreView, ProtectedStoreError>>, ProtectedStoreError>
     {
+        self.open_view_with_owner(None)
+    }
+
+    /// Retain the original request/global capacity keeper through actual native
+    /// view destruction, including detached job responses and retirement after
+    /// logical close. It is bound before any worker can open or publish the view.
+    pub fn open_view_retaining(
+        &self,
+        owner: Arc<dyn Any + Send + Sync>,
+    ) -> Result<StoreIoJob<Result<ProtectedStoreView, ProtectedStoreError>>, ProtectedStoreError>
+    {
+        self.open_view_with_owner(Some(owner))
+    }
+
+    fn open_view_with_owner(
+        &self,
+        owner: Option<Arc<dyn Any + Send + Sync>>,
+    ) -> Result<StoreIoJob<Result<ProtectedStoreView, ProtectedStoreError>>, ProtectedStoreError>
+    {
         self.available()?;
         let mut retained = self
             .ready
             .reserve_retained::<ReadView>(8192)
             .map_err(ProtectedStoreError::Io)?;
+        if let Some(owner) = owner {
+            retained.retain_owner(owner).map_err(|_| {
+                ProtectedStoreError::Io(crate::store_io::StoreIoError::RecoveryRequired)
+            })?;
+        }
         self.ready
             .submit(StoreIoKind::Read, 0, move |store| {
                 store.check()?;
