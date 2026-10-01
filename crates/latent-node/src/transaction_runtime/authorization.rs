@@ -4,7 +4,7 @@ use latent_capabilities::namespace::{NamespaceAuthority, INTENT_CONTRACT, STATE_
 use latent_core::{ActivationBudget, InvocationPrincipal, PlatformError, PlatformErrorCode};
 use latent_policy::capability::{
     CallRestrictions, CapabilityCeiling, EvaluationInput, GrantRestriction, PolicyStore,
-    ResourceTarget,
+    ResourceTarget, SealedPolicyDecision,
 };
 use latent_state::namespace::catalog::NamespaceRead;
 use std::{sync::Arc, time::Instant};
@@ -29,9 +29,10 @@ pub struct StateAuthorization {
     principal: InvocationPrincipal,
     service: String,
     publication: ReleaseUseEligibility,
-    state: PolicyCallBinding,
-    intents: Option<PolicyCallBinding>,
+    state: Arc<PolicyCallBinding>,
+    intents: Option<Arc<PolicyCallBinding>>,
     pub(super) budget: ActivationBudget,
+    pub(super) role: Option<Arc<super::command_role::CommandRole>>,
 }
 impl StateAuthorization {
     pub(super) fn publication(&self) -> &str {
@@ -48,8 +49,8 @@ impl StateAuthorization {
         principal: InvocationPrincipal,
         service: String,
         publication: ReleaseUseEligibility,
-        state: PolicyCallBinding,
-        intents: Option<PolicyCallBinding>,
+        state: Arc<PolicyCallBinding>,
+        intents: Option<Arc<PolicyCallBinding>>,
         budget: ActivationBudget,
     ) -> Result<Self, PlatformError> {
         let scope = authority.ownership();
@@ -97,7 +98,13 @@ impl StateAuthorization {
             state,
             intents,
             budget,
+            role: None,
         })
+    }
+
+    pub(super) fn with_command_role(mut self, role: Arc<super::command_role::CommandRole>) -> Self {
+        self.role = Some(role);
+        self
     }
 
     pub(super) fn authorize(
@@ -107,6 +114,24 @@ impl StateAuthorization {
         output_bytes: usize,
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.with_decision(operation, input_bytes, output_bytes, |decision| {
+            self.authority.with_operation(
+                &self.policy,
+                decision,
+                &self.namespace,
+                operation,
+                action,
+            )
+        })
+    }
+
+    pub(super) fn with_decision<T>(
+        &self,
+        operation: &str,
+        input_bytes: usize,
+        output_bytes: usize,
+        action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
+    ) -> Result<T, PlatformError> {
         let intent = operation == "stage";
         let binding = if intent {
             self.intents.as_ref().ok_or_else(denied)?
@@ -186,8 +211,11 @@ impl StateAuthorization {
             // The audit-enabled runtime must install an actual reservation owner.
             return Err(denied());
         }
-        self.authority
-            .with_operation(&self.policy, &decision, &self.namespace, operation, action)
+        action(&decision)
+    }
+
+    pub(super) fn policy(&self) -> &PolicyStore {
+        &self.policy
     }
 }
 pub(super) fn denied() -> PlatformError {

@@ -1824,6 +1824,8 @@ dependencies = [
  "latent-scheduler",
  "latent-state",
  "latent-telemetry",
+ "serde_json",
+ "tempfile",
  "tokio",
 ]
 

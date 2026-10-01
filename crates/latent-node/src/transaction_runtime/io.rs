@@ -18,35 +18,57 @@ use std::sync::{
 impl StateTransactionHost {
     #[allow(
         clippy::too_many_arguments,
-        reason = "Admission supplies the actual independent owners"
+        clippy::too_many_lines,
+        reason = "Keep every native error exit beside its retirement or quarantine proof"
     )]
     pub async fn open(
         store: Arc<ProtectedStoreOwner>,
         authorization: Arc<StateAuthorization>,
         activation: ActivationId,
         scope: StateScope,
-        command: Option<CommandHostSelection>,
+        mut command: Option<CommandHostSelection>,
         effects: Option<EffectAuthorityOwner>,
         time: Arc<dyn CommandTimeSource>,
         conditions: Vec<Precondition>,
     ) -> Result<Arc<Self>, StateFailure> {
-        let (mode, limits, retained_bytes) = super::initialization::configuration(
+        let configured = super::initialization::configuration(
             &authorization,
             &activation,
             &scope,
             command.as_ref(),
             &conditions,
-        )?;
-        let budget = &authorization.budget;
-        let memory = Arc::new(
-            budget
-                .reserve_host_memory(retained_bytes)
-                .map_err(|_| StateFailure::ReadBudgetExhausted)?,
         );
-        let operation = store.reserve_operation().map_err(protected_error)?;
-        let opened = store
-            .open_view()
-            .map_err(protected_error)?
+        let (mode, limits, retained_bytes) = match configured {
+            Ok(configuration) => configuration,
+            Err(error) => {
+                retire_unstarted(command.take());
+                return Err(error);
+            }
+        };
+        let budget = &authorization.budget;
+        let memory = if let Ok(memory) = budget.reserve_host_memory(retained_bytes) {
+            Arc::new(memory)
+        } else {
+            retire_unstarted(command.take());
+            return Err(StateFailure::ReadBudgetExhausted);
+        };
+        let retained_memory = Arc::clone(&memory);
+        let operation = match store.reserve_operation() {
+            Ok(operation) => operation,
+            Err(error) => {
+                retire_unstarted(command.take());
+                return Err(protected_error(error));
+            }
+        };
+        let opening = match store.open_view() {
+            Ok(opening) => opening,
+            Err(error) => {
+                operation.retire().await;
+                retire_unstarted(command.take());
+                return Err(protected_error(error));
+            }
+        };
+        let opened = opening
             .await
             .map_err(|_| StateFailure::Unavailable)?
             .map_err(protected_error);
@@ -80,15 +102,23 @@ impl StateTransactionHost {
             Ok((view, Ok(Err(error)))) => {
                 view.retire().await;
                 operation.retire().await;
+                retire_unstarted(command.take());
                 return Err(error);
             }
             Ok((view, Err(error))) => {
                 view.retire().await;
                 operation.retire().await;
+                retire_unstarted(command.take());
                 return Err(protected_error(error));
             }
             Err(error) => {
                 operation.retire().await;
+                // A rejected/detached job may already own native retirement.
+                // Its actual issued witness, never the waiter's failure, is
+                // the only permission to retire this physical attempt guard.
+                if witness.has_retired() {
+                    retire_unstarted(command.take());
+                }
                 return Err(error);
             }
         };
@@ -127,6 +157,7 @@ impl StateTransactionHost {
             effects,
             time,
             retained_bytes,
+            memory: retained_memory,
         }))
     }
 
@@ -198,6 +229,12 @@ impl StateTransactionHost {
             .authorize(operation, 0, 0, || Ok(()))
             .map_err(|_| StateFailure::PermissionDenied)?;
         result
+    }
+}
+
+fn retire_unstarted(command: Option<CommandHostSelection>) {
+    if let Some(command) = command {
+        command.work.retire();
     }
 }
 pub(super) fn charge(

@@ -1,9 +1,20 @@
 //! Activation-scoped native state sessions over the existing protected owner.
 mod authorization;
+mod command_role;
+mod completion;
+mod factory;
 mod host;
 mod initialization;
 mod io;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod tests;
 pub use authorization::{PolicyCallBinding, StateAuthorization};
+pub use command_role::PendingCommandAdmission;
+pub use completion::{CommandCompletion, CommandCompletionDisposition};
+pub use factory::{
+    NativeTransactionAdmission, TransactionAdmissionOwners, TransactionAdmissionResult,
+    TransactionInstallation, TransactionSelection,
+};
 
 use latent_commit::atomic::{
     AdmittedCommand, CapturedIntent, CommandTime, IntentCaptureContext, PhysicalAttemptWork,
@@ -92,6 +103,7 @@ pub struct StateTransactionHost {
     effects: Option<EffectAuthorityOwner>,
     time: Arc<dyn CommandTimeSource>,
     retained_bytes: u64,
+    memory: Arc<HostMemoryReservation>,
 }
 
 /// Only host coordination receives the affine view and staged state/intent
@@ -132,13 +144,34 @@ impl StateTransactionHost {
             .physical
             .lock()
             .map_err(|_| StateFailure::Unavailable)?
-            .take()
-            .ok_or(StateFailure::HandleClosed)?;
+            .take();
+        let Some(physical) = physical else {
+            // The issued witness is positive and the affine physical owner was
+            // already retired. Re-observation cannot refund a second charge.
+            return Ok(());
+        };
         physical.operation.retire().await;
         if let Some(work) = physical.work {
             work.retire();
         }
         Ok(())
+    }
+
+    pub(super) fn retire_command_role(&self) -> Result<(), latent_commit::atomic::AtomicError> {
+        if !self.guest_closed.load(std::sync::atomic::Ordering::Acquire)
+            || !self.witness.has_retired()
+            || self
+                .physical
+                .lock()
+                .map_err(|_| latent_commit::atomic::AtomicError::RecoveryRequired)?
+                .is_some()
+        {
+            return Err(latent_commit::atomic::AtomicError::RecoveryRequired);
+        }
+        self.authorization
+            .role
+            .as_ref()
+            .map_or(Ok(()), |role| role.retire())
     }
 
     /// Seal only after actual guest references are severed. The returned native

@@ -44,9 +44,29 @@ intersects it with current authority without extending its original lifetime.
 A narrower rule after preparation prevents writer acceptance. Audit-required
 profiles currently fail closed until a real audit reservation owner is installed.
 
-These ports are an intermediate implementation of issue #388. The complete
-state runtime must still supply authenticated companion selection, original
-durable command admission, final envelope acceptance, physical cleanup and
-current-authorized response release across the existing activation manager. The
-six-language signed component campaign, RPC/HTTP delivery and crash/restart
-qualification remain required; this page does not record them as passing.
+`NativeTransactionAdmission` accepts only a trusted installation with verified
+publication metadata, its exact deployment and companion policy bindings. It
+checks the selected source and current policy before native lookup. Commands
+retain the protected node's actual role guard, publish Pending before opening
+guest state, and carry that same guard through final writer acceptance and
+physical retirement. Replays require current result-read authority and never
+open a second command host. Fresh queries open a frozen read-only snapshot and
+create no Command, Attempt, Result or Outbox rows.
+
+`CommandCompletion` publishes a successful state/result/intent envelope under
+the original role, current policy, namespace lifecycle, effect authority and
+cancellation fences. Declared rejection first retires the discarded business
+state and intents, then publishes only its terminal result. Known durable
+results survive a later cleanup failure. A failed activation can expose a
+noncommit proof only after actual guest, native view and attempt owners retire;
+an uncertain native outcome remains recovery-required.
+
+The pinned Linux node library campaign passed all 82 cases, including five
+tests against the real protected store, policy repository and role owner for
+Pending ordering, success, rejection, read-only queries, revocation and source
+rejection. These native tests do not execute guest components. Issue #388 still
+requires the bounded completion driver, global admission, audit reservations
+and current-authorized transport response release around the actual activation
+manager. The six-language signed component campaign, RPC/HTTP delivery and
+crash/restart qualification remain required; this page does not record them as
+passing.
