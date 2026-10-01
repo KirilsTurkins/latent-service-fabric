@@ -3,11 +3,6 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "env": {
-      "CARGO_BUILD_JOBS": 2,
-      "CARGO_INCREMENTAL": 0,
-      "CARGO_PROFILE_DEV_DEBUG": 0
-    },
     "name": "TypeScript guest value and ownership boundary",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -52,7 +47,15 @@
       {
         "uses": "Swatinem/rust-cache",
         "with": {
-          "key": "typescript-guest-runtime-optimized-compiler"
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -64,8 +67,14 @@
         "run": "python3 tools/typescript_capsule.py install-tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
         "name": "Install pinned component validator",
-        "run": "cargo install --locked wasm-tools --version 1.254.0"
+        "run": "test \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'"
       },
       {
         "name": "Compile the real async-boundary diagnostic",
@@ -112,7 +121,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Preserve every historical source-only command verbatim; append mandatory captured npm namespace controls and independent signed library/resource qualification, retaining both evidence directories.",
+  "reviewReason": "Preserve every historical source-only command and mandatory captured npm namespace control and independent signed library/resource qualification, retaining both evidence directories; share pruned dependencies, retain correctness guards and overlap independent checks.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
