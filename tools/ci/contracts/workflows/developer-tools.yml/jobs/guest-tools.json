@@ -60,7 +60,7 @@
         "run": "python tools/build_dev_guest_tools.py --language \"$LSF_DEV_LANGUAGE\" --output target/dev-tools --python-prefix \"$LSF_DEV_PYTHON_PREFIX\" --node-tests"
       },
       {
-        "if": "steps.compiler-cache.outputs.cache-hit != 'true'",
+        "if": "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/development' && steps.compiler-cache.outputs.cache-hit != 'true'",
         "name": "Save independently verified compiler archive bytes",
         "uses": "actions/cache/save",
         "with": {
@@ -291,7 +291,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Scope runner.temp to the compiler assembly step env and cache action inputs, where GitHub permits the runner context; preserve the archive directory, independently reverified restore/save behavior and every historical run block.",
+  "reviewReason": "Retain the reviewed runner.temp scope at the compiler assembly step and cache action inputs, together with the development CI dependency caches and overlap of independent checks; preserve every historical execution obligation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
