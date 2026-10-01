@@ -38,7 +38,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use latent_core::{BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest};
 use latent_manifest::{
-    JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator,
+    JsonManifestCodec, ManifestCodec, ManifestValidationProfile, ManifestValidator,
 };
 
 use crate::preparation::{repository_stamp, RepositoryEpoch};
@@ -86,6 +86,8 @@ const DEFAULT_MAX_RECOVERY_DIRECTORIES: usize = 1_000_000;
 /// metadata and component reads are also bounded before allocation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DirectoryArtifactRepositoryConfig {
+    /// Trusted host compatibility selection; default publication stays stateless.
+    pub manifest_profile: ManifestValidationProfile,
     /// Conservative shared-file plus publication-link storage exposure ceiling.
     pub max_storage_bytes: u64,
     pub max_content_index_bytes: usize,
@@ -107,6 +109,7 @@ pub struct DirectoryArtifactRepositoryConfig {
 impl Default for DirectoryArtifactRepositoryConfig {
     fn default() -> Self {
         Self {
+            manifest_profile: ManifestValidationProfile::default(),
             max_storage_bytes: 4 * 1024 * 1024 * 1024,
             max_content_index_bytes: 64 * 1024 * 1024,
             max_content_blobs: 1_000_000,
@@ -172,7 +175,7 @@ pub struct DirectoryArtifactRepository {
     config: DirectoryArtifactRepositoryConfig,
     lifecycle_limits: crate::LifecycleLimits,
     codec: JsonManifestCodec,
-    validator: Phase1ManifestValidator,
+    validator: ManifestValidationProfile,
     index: RwLock<CatalogIndex>,
     pagination_fingerprint: RandomState,
     preparation_epoch: Arc<RepositoryEpoch>,
@@ -306,7 +309,7 @@ impl DirectoryArtifactRepository {
             config,
             lifecycle_limits,
             codec: JsonManifestCodec::default(),
-            validator: Phase1ManifestValidator::new(),
+            validator: config.manifest_profile,
             index: RwLock::new(CatalogIndex::default()),
             pagination_fingerprint: RandomState::new(),
             preparation_epoch: Arc::new(RepositoryEpoch),

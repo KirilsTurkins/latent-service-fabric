@@ -30,7 +30,7 @@ impl DirectoryDeploymentRepository {
                 .saturating_mul(4)
                 .saturating_add(MAX_OPERATION_SCRATCH_BYTES + 4096),
         )?;
-        let request = request.normalize()?;
+        let request = request.normalize_with_profile(self.config.manifest_profile)?;
         self.validate_target(&request.context().tenant, request.id())?;
         let digest = request.normalized_digest()?;
         let previous = self.read_publication();

@@ -983,6 +983,8 @@
         "local_repository::tests::root_is_exclusively_owned_before_cleanup_and_rebuild",
         "local_repository::tests::separate_recovery_scan_bound_is_enforced",
         "local_repository::tests::sha256_matches_known_vector",
+        "local_repository::tests::transaction_profile::transaction_catalog_requires_explicit_profile_on_publication_and_recovery",
+        "local_repository::tests::transaction_profile::transaction_catalog_selection_never_converts_unsupported_networking_into_eligibility",
         "local_repository::tests::verified_metadata::checked_constructor_rejects_wrong_bytes_and_size_and_preserves_canonical_actual_digest",
         "local_repository::tests::verified_metadata::full_fetch_streamed_metadata_and_checked_constructor_agree_after_restart",
         "local_repository::tests::verified_metadata::streamed_metadata_detects_truncation_growth_and_equal_length_corruption",
@@ -1082,7 +1084,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 260,
+      "minimumCases": 262,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -1687,6 +1689,7 @@
         "deployments::tests::bindings::slow_preparation::slow_control_package_preparation_renews_before_plan_and_releases_cancelled_owners",
         "deployments::tests::bindings::slow_preparation::slow_startup_package_preparation_never_renews_control_authority",
         "deployments::tests::bindings::startup::configured_provider_restart_preserves_exact_versions_and_durable_bytes",
+        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations",
         "deployments::tests::bindings::startup::startup_cannot_silently_replace_durable_bindings_or_install_foreign_provider_owners",
         "deployments::tests::compiler_publisher_and_coalescing_source_enforce_complete_generations",
         "deployments::tests::concurrent_snapshot_replacement_never_exposes_half_a_batch",
@@ -1832,6 +1835,8 @@
         "deployments::tests::supply_chain::revoked_unchanged_metadata_cannot_be_reapplied_or_reopened_as_current",
         "deployments::tests::supply_chain::whole_generation_checks_distinct_grants_under_one_non_reentrant_authority",
         "deployments::tests::tenants_and_named_routes_never_cross_boundaries",
+        "deployments::tests::transaction_profile::managed_transaction_deployment_retains_original_request_preconditions_and_replay",
+        "deployments::tests::transaction_profile::transaction_route_publication_and_restart_use_selected_profile_without_changing_revision_identity",
         "deployments::tests::verified_metadata::checked_metadata_still_requires_deployment_compatibility_validation",
         "deployments::tests::verified_metadata::compilation_uses_verified_metadata_once_per_release_and_preserves_routes",
         "deployments::tests::verified_metadata::default_metadata_fetch_verifies_fresh_bytes_length_and_requested_identity",
@@ -1853,8 +1858,7 @@
         "deployments::tests::versioned::versioned_apply_compares_caller_preconditions_and_returns_normalized_committed_state",
         "deployments::tests::weighting_is_deterministic_order_independent_and_restart_stable",
         "http_routes::tests::exact_publication_selector_survives_manifest_codec_and_canonical_matching",
-        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny",
-        "deployments::tests::bindings::startup::configured_startup_does_not_accept_arbitrary_local_adapter_registrations"
+        "http_routes::tests::unsupported_contracts_ambiguous_paths_unpinned_targets_and_unbounded_native_storage_deny"
       ],
       "expectedIgnored": [
         "deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set"
@@ -1865,7 +1869,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 246,
+      "minimumCases": 248,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [
@@ -2388,14 +2392,20 @@
         "runtime_compatibility::tests::renderer_requirements_are_explicit_immutable_and_separate_from_host_capacity",
         "runtime_compatibility::tests::requirement_shapes_and_typed_spare_capacities_fail_closed",
         "transaction_binding::tests::companion_round_trip_is_exact_and_does_not_grant_link_authority",
-        "transaction_binding::tests::malformed_present_values_unknown_modes_and_stale_profile_reject"
+        "transaction_binding::tests::malformed_present_values_unknown_modes_and_stale_profile_reject",
+        "validation_profile::tests::configured_node_preserves_supported_stateless_capsules_and_their_existing_validation",
+        "validation_profile::tests::original_stateless_validation_rejects_state_requests_while_selected_profile_accepts",
+        "validation_profile::tests::selected_profile_retains_tenant_service_release_and_budget_ceiling_checks",
+        "validation_profile::tests::selection_requires_exact_accounting_preparation_abi_and_digest",
+        "validation_profile::tests::supported_http_is_descriptive_but_raw_network_wrong_versions_and_optional_state_reject",
+        "validation_profile::tests::transaction_execution_remains_finite_unsnapshotted_and_without_immediate_effect_budget"
       ],
       "expectedIgnored": [],
       "id": "latent-manifest.lib.latent-manifest",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-manifest/Cargo.toml",
-      "minimumCases": 11,
+      "minimumCases": 17,
       "mode": "libtest",
       "package": "latent-manifest",
       "platforms": [
@@ -3627,6 +3637,8 @@
         "semantics::host::tests::blob_v2_rejects_resource_ownership_and_async_substitutions",
         "semantics::host::tests::buffered_and_streaming_package_versions_coexist_without_aliasing",
         "semantics::host::tests::exact_resource_identity_ownership_and_async_shapes_are_required",
+        "semantics::host::tests::phase4_resources_are_never_accepted_as_application_export_authority",
+        "semantics::host::tests::phase4_state_and_intents_require_exact_shared_resource_ownership_and_async_shapes",
         "semantics::host::tests::resource_permission_is_not_a_general_application_value_profile",
         "semantics::lexical::tests::lexical_bounds_precede_recursive_source_parsing",
         "semantics::metadata::tests::package_docs_are_bounded_before_upstream_serde_allocation",
@@ -3671,7 +3683,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 72,
+      "minimumCases": 74,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [

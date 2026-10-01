@@ -17,10 +17,7 @@ use std::sync::Arc;
 
 use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility, VerifiedArtifactMetadata};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration};
-use latent_manifest::{
-    __serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidator,
-    Phase1ManifestValidator,
-};
+use latent_manifest::{__serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidator};
 
 use super::observation::{count, Work};
 use super::pagination::DeploymentIndex;
@@ -475,7 +472,8 @@ async fn compile_catalog_inner(
         // The existing per-version allowance also covers bounded record/order slots.
         let mut records = vec![None; deployments.len()];
         for (position, deployment, publication) in ordered {
-            Phase1ManifestValidator
+            config
+                .manifest_profile
                 .validate_deployment(deployment)
                 .map_err(manifest_error)?;
             let equal_prior = compatible
@@ -632,10 +630,12 @@ async fn compile_catalog_inner(
                 }
             }
             if artifact.is_web_execution_projection() {
-                Phase1ManifestValidator
+                config
+                    .manifest_profile
                     .validate_web_execution_projection(deployment, artifact.manifest())
             } else {
-                Phase1ManifestValidator
+                config
+                    .manifest_profile
                     .validate_deployment_against_capsule(deployment, artifact.manifest())
             }
             .map_err(manifest_error)?;
@@ -762,7 +762,7 @@ async fn compile_catalog_inner(
             let revision_id = if let Some(record) = derivation_reuse {
                 record.revision.clone()
             } else {
-                deployment_revision_id_observed(deployment, work)?
+                deployment_revision_id_observed(deployment, work, config.manifest_profile)?
             };
             admission::charge_policy(&revision_id, deployment, &mut metadata_budget)?;
             if !revision_ids.insert(revision_id.clone()) {
