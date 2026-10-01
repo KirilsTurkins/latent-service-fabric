@@ -42,8 +42,12 @@
         "uses": "dtolnay/rust-toolchain"
       },
       {
+        "name": "Install captured Go compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
         "name": "Install the locked compiler and generator",
-        "run": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ncargo install --locked wasm-tools --version 1.254.0\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ncargo install --locked wasm-tools --version 1.254.0\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Retain pinned reproduction tools",
@@ -68,11 +72,19 @@
       },
       {
         "name": "Check standalone project source boundaries and closed provenance",
-        "run": "python3 -m pip install -r tools/requirements.lock\nLSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_capsule_authoring tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation tools.tests.test_build_provenance_schemas\n"
+        "run": "python3 -m pip install -r tools/requirements.lock\npython3 -m unittest tools.tests.test_go_capsule_authoring tools.tests.test_build_provenance_schemas\n"
+      },
+      {
+        "name": "Test captured Go native graphs and namespace",
+        "run": "LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation\n"
       },
       {
         "name": "Qualify editable projects, all SDK owners, enforced node and printed guide",
-        "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-authoring\""
+        "run": "python3 tools/qualify_go_capsules.py --output \"$RUNNER_TEMP/go-capsule-authoring\"\n"
+      },
+      {
+        "name": "Qualify captured Go libraries in signed components",
+        "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
       {
         "if": "always()",
@@ -81,7 +93,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "go-guest-upstream-${{ github.sha }}",
-          "path": "${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-authoring/\n",
+          "path": "${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-capsule-dependencies/**\n${{ runner.temp }}/go-capsule-authoring/\n",
           "retention-days": 7
         }
       }
@@ -90,7 +102,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Add required captured Go namespace and signed native module/embed qualification while retaining all prior gates.",
+  "reviewReason": "Preserve every historical source-only run block verbatim; append captured library, approval and namespace checks and retain both evidence directories.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
