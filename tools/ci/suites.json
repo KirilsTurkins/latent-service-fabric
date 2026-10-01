@@ -3731,6 +3731,10 @@
       "boundary": "runtime",
       "expectedCases": [
         "rooted::tests::content_or_permission_change_after_open_is_rejected",
+        "rooted::tests::mutable_engine_file_creation_and_reopen_never_truncate_existing_bytes",
+        "rooted::tests::mutable_engine_files_reject_unsafe_names_types_links_permissions_and_lengths",
+        "rooted::tests::mutable_file_fence_detects_permission_growth_and_ancestor_substitution",
+        "rooted::tests::mutable_file_fence_detects_same_name_replacement_and_wrong_root",
         "rooted::tests::replacement_and_removal_during_read_never_return_old_bytes",
         "rooted::tests::retained_root_rejects_ancestor_replacement_and_permission_changes",
         "rooted::tests::rooted_reads_reject_unbounded_names_types_links_and_sizes",
@@ -3754,7 +3758,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-protected-files/Cargo.toml",
-      "minimumCases": 14,
+      "minimumCases": 18,
       "mode": "libtest",
       "package": "latent-protected-files",
       "platforms": [
