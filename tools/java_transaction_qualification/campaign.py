@@ -125,6 +125,7 @@ class Campaign:
                          self.proposals["deploymentGrants"], self.configuration.authority)
         before = lifecycle.inspect_namespace(self.client, publication)
         view, initial = self.query(0)
+        self.initial_view = view["state-view"]
         require(initial["key-version"] == {"none": None}, "fresh-namespace-key-is-absent")
         self.query(0, original_key="query-is-not-a-command")
         after = lifecycle.inspect_namespace(self.client, publication)
@@ -138,6 +139,7 @@ class Campaign:
         self._compatible(publication)
         self._ambiguous_restart()
         self._retained_cancellation()
+        self._unsigned_boundary()
         self.client.evidence.passed("fresh-java-invocations", {"httpRequests": self.transport.requests,
             "originalSourceDigest": self.items[legacy].source_digest,
             "freshInvocationGuard": "original-enter-counter", "guestCompilerInvoked": False})
@@ -167,6 +169,9 @@ class Campaign:
             body=command_input(2), condition=condition), {409})
         http.replay(value, self.original(key))
         self.query(1)
+        minimum, _ = self.query(1, minimum=self.initial_view)
+        self.client.evidence.passed("fresh-query-original-minimum", {"requestedMinimum": self.initial_view,
+            "freshObservedSnapshot": minimum})
 
     def _rejection(self, publication):
         _, current = self.query(1)
@@ -261,6 +266,11 @@ class Campaign:
             rpc_result(record, retained, original_publication, key)
             self.client.evidence.passed("compatible-original-" + ("commit" if key.endswith("1") else "rejection"),
                                         {"currentPublication": publication, "original": retained, "inspection": record})
+        duplicate = self.result(self.socket("command", original_key="java-original-1",
+            body=command_input(1, reverse=True), condition='"absent"'))
+        http.replay(self.originals["java-original-1"], duplicate)
+        self.client.evidence.passed("compatible-original-command-duplicate", {
+            "currentPublication": publication, "retainedOriginalResult": duplicate})
         self.query(3)
 
     def _ambiguous_restart(self):
@@ -306,3 +316,18 @@ class Campaign:
         http.replay(original, self.original(key))
         self.query(4)
         self.client.evidence.passed("cancellation-after-commit", result)
+
+    def _unsigned_boundary(self):
+        publication = self.publications["put-once-compatible-v2"]
+        _, current = self.query(4)
+        key = "java-original-unsigned-boundary"
+        value = self.result(self.socket("command", original_key=key,
+            body=command_input(2**32 - 1), condition=precondition(current)))
+        require(value["disposition"] == "committed" and http.aggregate(value)["count"] == str(2**32 + 3),
+                "actual-u32-maximum-input-and-u64-state-result")
+        self.wait_effect(publication, key, value)
+        self.originals[key] = value
+        fresh, aggregate = self.query(2**32 + 3)
+        require("some" in aggregate["key-version"], "actual-present-native-key-version")
+        self.client.evidence.passed("unsigned-input-wide-state-result", {"original": value, "freshQuery": fresh,
+            "u32Input": 2**32 - 1, "u64Result": str(2**32 + 3), "u64MaximumQualified": False})

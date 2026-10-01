@@ -122,7 +122,12 @@ The campaign checks real command/query/scan sockets, lost response recovery,
 canonical duplicate input, changed input under the original command ID,
 declared rejection replay after a later business change, stale edit and caller
 and tenant isolation, current read revocation/restoration, and compatible
-publication cutover. It then crashes its own reserved node leader only after
+publication cutover, including a duplicate submitted through the new publication.
+A fresh query supplies an original minimum view after a committed change; its
+response must describe the newly captured coherent view. A maximum unsigned
+32-bit input must produce the exact wider unsigned 64-bit state value. That case
+does not qualify the unsigned 64-bit maximum. The campaign crashes its own
+reserved node leader only after
 proven commitment and actual uncertain dispatch with durable recipient
 acceptance. Restart must preserve the original result, effect, receipt and
 retention horizon. External recipient acceptance never establishes LSF
