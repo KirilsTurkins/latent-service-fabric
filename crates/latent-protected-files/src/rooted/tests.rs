@@ -99,11 +99,13 @@ fn mutable_engine_file_creation_and_reopen_never_truncate_existing_bytes() {
     let dir = root();
     let root = ProtectedRoot::open(dir.path()).unwrap();
     let (mut file, fence) = root.open_mutable_file("state.redb", 4096, true).unwrap();
+    assert!(fence.was_created());
     file.write_all(b"retained-database").unwrap();
     file.sync_all().unwrap();
     root.check_mutable_file(&fence).unwrap();
     drop(file);
     let (mut file, new_fence) = root.open_mutable_file("state.redb", 4096, true).unwrap();
+    assert!(!new_fence.was_created());
     file.rewind().unwrap();
     let mut bytes = Vec::new();
     file.read_to_end(&mut bytes).unwrap();
@@ -121,6 +123,7 @@ fn exclusive_offline_output_refuses_existing_failed_files_and_unsafe_names_witho
         assert!(root.create_mutable_file(name, 4096).is_err());
     }
     let (mut output, fence) = root.create_mutable_file("snapshot", 4096).unwrap();
+    assert!(fence.was_created());
     output.write_all(b"partial-sensitive-snapshot").unwrap();
     output.sync_all().unwrap();
     root.check_mutable_file(&fence).unwrap();

@@ -23,6 +23,29 @@ database locking. Filesystem qualification, persisted formats, bounded workers,
 startup readiness and uncertain-write recovery remain the storage owner's
 responsibility; a valid descriptor alone is not state readiness.
 
+## Fresh transaction owner initialization
+
+The protected mutable-file fence records whether the original `openat` actually
+performed an exclusive create. A reopened zero-length file does not carry that
+fact. The storage owner issues one affine `FreshStoreInitialization` only when
+both its engine file and exclusive owner-lock file were newly created and the
+actual shared records table is empty. The witness remains borrowed from that
+same engine on the existing fixed writer; it cannot be constructed from a path,
+configuration flag, clock sample or decoded record.
+
+Dispatcher startup consumes this witness once. An initial protected checkpoint
+must have owner epoch one, and the actual continuous time must cover its original
+clock floor. A failed attempt does not restore the witness. Reopened, restored
+or nonempty stores continue to require their original retained owner record and
+checkpoint floors. A missing owner row or lost engine file under an existing
+owner lock does not establish a fresh database. This initialization path grants
+no namespace, caller, staging, dispatch or command authority.
+
+The new native fixtures cover fresh start, physical retirement and reopening,
+one-use consumption, retained family rows, lost anchors, missing owner rows,
+higher checkpoint epochs, future floors and clock discontinuity. Their Linux
+execution is tracked separately from portable compiler and engine checks.
+
 ## Validation
 
 The registered `latent-protected-files` library suite contains 18 tests. On
