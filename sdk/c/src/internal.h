@@ -13,30 +13,34 @@
 #define LSF_MAX_TIMEOUT 300000u
 
 typedef enum lsf_operation {
-    LSF_INVOKE, LSF_CANCEL, LSF_GET_ACTIVATION, LSF_GET_POLICY,
-    LSF_LIST_POLICIES, LSF_LIST_CAPABILITIES, LSF_APPLY_POLICY, LSF_GET_POLICY_OPERATION
+    LSF_INVOKE, LSF_CANCEL, LSF_GET_ACTIVATION, LSF_INSPECT_ACTIVATION_TREE, LSF_GET_POLICY,
+    LSF_LIST_POLICIES, LSF_LIST_CAPABILITIES, LSF_APPLY_POLICY, LSF_GET_POLICY_OPERATION, LSF_INSPECT_HTTP_TARGET
 } lsf_operation;
 
 typedef union lsf_callback {
     latent_profile_invoke_callback invoke;
     latent_profile_cancel_callback cancel;
     latent_profile_get_activation_callback get_activation;
+    latent_profile_inspect_activation_tree_callback inspect_activation_tree;
     latent_profile_get_policy_callback get_policy;
     latent_profile_list_policies_callback list_policies;
     latent_profile_list_capabilities_callback list_capabilities;
     latent_profile_apply_policy_callback apply_policy;
     latent_profile_get_policy_operation_callback get_policy_operation;
+    latent_profile_inspect_http_target_callback inspect_http_target;
 } lsf_callback;
 
 typedef union lsf_result {
     latent_profile_invoke_result invoke;
     latent_profile_cancel_result cancel;
     latent_profile_get_activation_result get_activation;
+    latent_profile_inspect_activation_tree_result inspect_activation_tree;
     latent_profile_get_policy_result get_policy;
     latent_profile_list_policies_result list_policies;
     latent_profile_list_capabilities_result list_capabilities;
     latent_profile_apply_policy_result apply_policy;
     latent_profile_get_policy_operation_result get_policy_operation;
+    latent_profile_inspect_http_target_result inspect_http_target;
 } lsf_result;
 
 struct latent_profile_client { latent_transport *owner; };
@@ -70,6 +74,13 @@ struct latent_profile_call {
     size_t policy_id_length;
     int32_t record_kind;
     uint32_t page_size;
+    char inspection_service[513];
+    size_t inspection_service_length;
+    bool inspection_roots;
+    bool inspection_has_from;
+    uint64_t inspection_from;
+    latent_profile_inspect_http_target_request target_inspection;
+    char target_selector_text[7][513];
     uint32_t header_blocks;
     uint32_t header_count;
     size_t header_bytes;
@@ -124,6 +135,8 @@ bool lsf_channel_step(latent_transport *owner, uint32_t wait_millis);
 bool lsf_channel_submit(latent_profile_call *call);
 bool lsf_request_valid(latent_profile_call *call, const void *request);
 bool lsf_response_valid(latent_profile_call *call);
+bool lsf_target_request_valid(latent_profile_call *call, const latent_profile_inspect_http_target_request *request);
+bool lsf_target_response_valid(const latent_profile_call *call, const latent_profile_inspect_http_target_response *response);
 void lsf_finish_response(latent_profile_call *call);
 void lsf_unsupported(latent_profile_call *call, const char *field, latent_string value);
 

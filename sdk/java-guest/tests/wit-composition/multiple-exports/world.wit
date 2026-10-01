@@ -1,0 +1,4 @@
+package examples:multiple-exports@1.0.0;
+interface first { one: func() -> string; }
+interface second { two: func() -> u64; }
+world service { export first; export second; }

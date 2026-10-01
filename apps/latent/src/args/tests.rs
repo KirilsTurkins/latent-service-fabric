@@ -7,6 +7,36 @@ fn parse(arguments: &[&str]) -> Cli {
 }
 
 #[test]
+fn activation_tree_has_one_bounded_page_without_cancellation_authority() {
+    let cli = parse(&[
+        "latent",
+        "activation",
+        "tree",
+        "child-a",
+        "--page-size",
+        "128",
+        "--page-token",
+        "opaque-scoped",
+    ]);
+    assert!(cli.validate().is_ok());
+    let Command::Activation(ActivationCommand::Tree(args)) = cli.command else {
+        panic!("tree command")
+    };
+    assert_eq!(args.id, "child-a");
+    assert_eq!(args.page_size, 128);
+    assert_eq!(args.page_token.as_deref(), Some("opaque-scoped"));
+    assert!(Cli::try_parse_from([
+        "latent",
+        "activation",
+        "tree",
+        "child-a",
+        "--page-size",
+        "129"
+    ])
+    .is_err());
+}
+
+#[test]
 fn grammar_has_consistent_leaf_help_and_local_validation_needs_no_profile() {
     Cli::command().debug_assert();
     for command in [
@@ -20,6 +50,28 @@ fn grammar_has_consistent_leaf_help_and_local_validation_needs_no_profile() {
     let cli = parse(&["latent", "validate", "capsule", "capsule.json"]);
     assert!(cli.config.is_none());
     assert!(cli.validate().is_ok());
+}
+
+#[test]
+fn activation_roots_preserves_exact_time_without_minting_an_activation_identity() {
+    let cli = parse(&[
+        "latent",
+        "activation",
+        "roots",
+        "--service",
+        "examples/java-http-adapter",
+        "--from-unix-millis",
+        "18446744073709551615",
+        "--page-size",
+        "32",
+    ]);
+    assert!(cli.validate().is_ok());
+    let Command::Activation(ActivationCommand::Roots(args)) = cli.command else {
+        panic!("roots command")
+    };
+    assert_eq!(args.from_unix_millis, Some(u64::MAX));
+    assert_eq!(args.service, "examples/java-http-adapter");
+    assert_eq!(args.page_size, 32);
 }
 
 #[test]

@@ -16,7 +16,7 @@ internal static partial class Program
         while (root is not null && !File.Exists(Path.Combine(root.FullName, "sdk/profile/fixtures.json"))) root = root.Parent;
         using JsonDocument fixtures = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root!.FullName, "sdk/profile/fixtures.json")));
         FileDescriptor[] sources = [Latent.Control.V1.CommonReflection.Descriptor, Latent.Control.V1.PolicyReflection.Descriptor,
-            Latent.Control.V1.CapabilityReflection.Descriptor, Latent.Invocation.V1.InvocationReflection.Descriptor];
+            Latent.Control.V1.CapabilityReflection.Descriptor, Latent.Control.V1.NodeReflection.Descriptor, Latent.Control.V1.ReleaseReflection.Descriptor, Latent.Invocation.V1.InvocationReflection.Descriptor];
         Dictionary<string, MessageDescriptor> messages = sources.SelectMany(source => source.MessageTypes).GroupBy(message => message.Name).ToDictionary(group => group.Key, group => group.First());
         int count = 0;
         foreach (JsonElement scenario in fixtures.RootElement.GetProperty("cases").EnumerateArray())
@@ -40,7 +40,7 @@ internal static partial class Program
             catch (Exception failure) { throw new InvalidOperationException("shared fixture failed: " + scenario.GetProperty("name").GetString(), failure); }
             count++;
         }
-        Check(count == 49, "not all shared protobuf fixtures executed");
+        Check(count == 61, "not all shared protobuf fixtures executed");
         Console.WriteLine($"PASS SharedVectors: {count} authoritative protobuf cases");
     }
 

@@ -32,6 +32,85 @@ const (
 	CapabilityPolicyRecordKindProviderBinding CapabilityPolicyRecordKind = 2
 )
 
+type DiagnosticStage int32
+
+const (
+	DiagnosticStageUnspecified      DiagnosticStage = 0
+	DiagnosticStageAdmission        DiagnosticStage = 1
+	DiagnosticStageQueue            DiagnosticStage = 2
+	DiagnosticStagePreparation      DiagnosticStage = 3
+	DiagnosticStageBinding          DiagnosticStage = 4
+	DiagnosticStageExecution        DiagnosticStage = 5
+	DiagnosticStageProvider         DiagnosticStage = 6
+	DiagnosticStageCleanup          DiagnosticStage = 7
+	DiagnosticStageOutputValidation DiagnosticStage = 8
+)
+
+type DiagnosticReason int32
+
+const (
+	DiagnosticReasonUnspecified                 DiagnosticReason = 0
+	DiagnosticReasonSignatureAllocationLimit    DiagnosticReason = 1
+	DiagnosticReasonValueAllocationLimit        DiagnosticReason = 2
+	DiagnosticReasonUnsupportedComponentSurface DiagnosticReason = 3
+	DiagnosticReasonUnsupportedEngineProfile    DiagnosticReason = 4
+	DiagnosticReasonProviderAbsent              DiagnosticReason = 5
+	DiagnosticReasonBindingAbsent               DiagnosticReason = 6
+	DiagnosticReasonAdmissionDenied             DiagnosticReason = 7
+	DiagnosticReasonGrantDenied                 DiagnosticReason = 8
+	DiagnosticReasonQueuePressure               DiagnosticReason = 9
+	DiagnosticReasonGuestMemoryExhausted        DiagnosticReason = 10
+	DiagnosticReasonGuestFuelExhausted          DiagnosticReason = 11
+	DiagnosticReasonGuestResourceExhausted      DiagnosticReason = 12
+	DiagnosticReasonProviderTimeout             DiagnosticReason = 13
+	DiagnosticReasonDeadlineExceeded            DiagnosticReason = 14
+	DiagnosticReasonCancelled                   DiagnosticReason = 15
+	DiagnosticReasonHttpResponseRejected        DiagnosticReason = 16
+)
+
+type DiagnosticProfile int32
+
+const (
+	DiagnosticProfileUnspecified                 DiagnosticProfile = 0
+	DiagnosticProfileWasmtimeServiceValuesV1     DiagnosticProfile = 1
+	DiagnosticProfileWasmtimeBufferedWebValuesV1 DiagnosticProfile = 2
+)
+
+type TargetObservationState int32
+
+const (
+	TargetObservationStateUnspecified TargetObservationState = 0
+	TargetObservationStateCoherent    TargetObservationState = 1
+	TargetObservationStateStale       TargetObservationState = 2
+	TargetObservationStateUnavailable TargetObservationState = 3
+)
+
+type TargetReason int32
+
+const (
+	TargetReasonUnspecified            TargetReason = 0
+	TargetReasonCurrent                TargetReason = 1
+	TargetReasonExportAbsent           TargetReason = 2
+	TargetReasonZeroRoutingWeight      TargetReason = 3
+	TargetReasonPublicationUnavailable TargetReason = 4
+	TargetReasonBindingPlanUnavailable TargetReason = 5
+	TargetReasonPolicyChanged          TargetReason = 6
+	TargetReasonProviderUnavailable    TargetReason = 7
+	TargetReasonInspectionUnavailable  TargetReason = 8
+	TargetReasonUnmanagedPublication   TargetReason = 9
+	TargetReasonHttpIncompatible       TargetReason = 10
+)
+
+type TargetPreparationState int32
+
+const (
+	TargetPreparationStateUnspecified  TargetPreparationState = 0
+	TargetPreparationStateReady        TargetPreparationState = 1
+	TargetPreparationStateRejected     TargetPreparationState = 2
+	TargetPreparationStateUnavailable  TargetPreparationState = 3
+	TargetPreparationStateNotRequested TargetPreparationState = 4
+)
+
 type FailureCategory int32
 
 const (
@@ -328,6 +407,150 @@ type PublicationRef struct {
 	Tenant string
 }
 
+type ActivationDiagnostic struct {
+	SchemaVersion         uint32
+	Stage                 DiagnosticStage
+	Reason                DiagnosticReason
+	Profile               *DiagnosticProfile
+	ProfileDigest         *string
+	ConfiguredBound       *uint64
+	CalculatedRequirement *uint64
+	FixedBytes            *uint64
+	LiftingFuel           *uint64
+	LiftMultiplier        *uint64
+}
+
+type ActivationTreeNode struct {
+	ActivationId                string
+	ParentActivationId          *string
+	RootActivationId            string
+	Phase                       string
+	TerminalState               *string
+	LastUpdatedUnixMillis       uint64
+	Diagnostic                  *ActivationDiagnostic
+	PrincipalKind               string
+	CallerService               *string
+	GrantedBudget               *ResourceBudget
+	EffectiveDeadlineUnixMillis *uint64
+	DiagnosticIsTerminal        bool
+	TargetService               string
+	ReceivedAtUnixMillis        uint64
+}
+
+type InspectActivationTreeRequest struct {
+	ActivationId   string
+	Page           *PageRequest
+	Service        *string
+	FromUnixMillis *uint64
+}
+
+type InspectActivationTreeResponse struct {
+	SchemaVersion       uint32
+	Nodes               []ActivationTreeNode
+	Page                *PageResponse
+	HistoryAvailable    bool
+	CursorExpired       bool
+	RetainedHistoryOnly bool
+}
+
+type InspectHttpTargetRequest struct {
+	Service            string
+	Contract           string
+	Function           string
+	Route              *string
+	RevisionId         *string
+	Publication        *PublicationRef
+	RoutingKey         *string
+	IncludePreparation bool
+	MaximumWaitMillis  uint64
+}
+
+type TargetDependencyRevision struct {
+	Id       string
+	Digest   string
+	Revision uint64
+}
+
+type TargetDependency struct {
+	Capability                 string
+	State                      string
+	PolicyIdentityDigest       string
+	ProviderConfigurationEpoch uint64
+	Binding                    *TargetDependencyRevision
+	Policies                   []TargetDependencyRevision
+	ProviderProfile            string
+	ConfigurationDigest        string
+}
+
+type PreparedTargetExport struct {
+	Contract string
+	Function string
+}
+
+type TargetPreparation struct {
+	State                     TargetPreparationState
+	Diagnostic                *ActivationDiagnostic
+	Profile                   *DiagnosticProfile
+	EngineVersion             *string
+	EngineConfigurationDigest *string
+	TargetTriple              *string
+	CpuFeatureSet             *string
+	SealedMetadataFingerprint *string
+	ImportCount               *uint64
+	FunctionCount             *uint64
+	HostcallFuel              *uint64
+	MaximumLiftedBytes        *uint64
+	MaximumTypeNodes          *uint64
+	DeclaredBudget            *ResourceBudget
+	Imports                   []string
+	Exports                   []PreparedTargetExport
+	TypeImports               []string
+}
+
+type InspectedHttpBinding struct {
+	Id                           string
+	Generation                   uint64
+	SelectedDeploymentGeneration uint64
+	State                        string
+}
+
+type TargetCandidate struct {
+	DeploymentId          string
+	DeploymentGeneration  uint64
+	RevisionId            string
+	ComponentDigest       string
+	Publication           *PublicationRef
+	RequestedPublication  *PublicationRef
+	PackageDigest         *string
+	PublicationGeneration *uint64
+	RoutingWeight         uint32
+	ExportCompatible      bool
+	HttpCompatible        bool
+	Eligible              bool
+	Reasons               []TargetReason
+	Dependencies          []TargetDependency
+	Preparation           *TargetPreparation
+	PublicationKind       *string
+	HttpBindings          []InspectedHttpBinding
+}
+
+type InspectHttpTargetResponse struct {
+	SchemaVersion         uint32
+	Tenant                string
+	Service               string
+	Contract              string
+	Function              string
+	Route                 string
+	State                 TargetObservationState
+	CatalogTransaction    uint64
+	RouteGeneration       uint64
+	BindingGeneration     uint64
+	PolicyStoreGeneration *uint64
+	Candidates            []TargetCandidate
+	SelectedRevisionId    *string
+	LiveGrantsChecked     bool
+}
+
 type PublicationIdentity struct {
 	Publication     PublicationRef
 	ComponentDigest string
@@ -379,11 +602,13 @@ type ClientProfile interface {
 	Invoke(ctx context.Context, request InvokeRequest, options CallOptions) (ClientResponse[InvokeResponse], error)
 	Cancel(ctx context.Context, request CancelRequest, options CallOptions) (ClientResponse[CancelResponse], error)
 	GetActivation(ctx context.Context, request GetActivationRequest, options CallOptions) (ClientResponse[ActivationStatus], error)
+	InspectActivationTree(ctx context.Context, request InspectActivationTreeRequest, options CallOptions) (ClientResponse[InspectActivationTreeResponse], error)
 	GetPolicy(ctx context.Context, request GetPolicyRequest, options CallOptions) (ClientResponse[GetPolicyResponse], error)
 	ListPolicies(ctx context.Context, request ListPoliciesRequest, options CallOptions) (ClientResponse[ListPoliciesResponse], error)
 	ListCapabilities(ctx context.Context, request ListCapabilitiesRequest, options CallOptions) (ClientResponse[ListCapabilitiesResponse], error)
 	ApplyPolicy(ctx context.Context, request ApplyPolicyRequest, options CallOptions) (ClientResponse[ApplyPolicyResponse], error)
 	GetPolicyOperation(ctx context.Context, request GetPolicyOperationRequest, options CallOptions) (ClientResponse[GetPolicyOperationResponse], error)
+	InspectHttpTarget(ctx context.Context, request InspectHttpTargetRequest, options CallOptions) (ClientResponse[InspectHttpTargetResponse], error)
 }
 
 func (failure *ClientFailure) Error() string { return failure.Message }

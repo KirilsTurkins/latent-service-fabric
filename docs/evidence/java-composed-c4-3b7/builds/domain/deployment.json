@@ -1,0 +1,40 @@
+{
+  "apiVersion": "latent.dev/v1alpha1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "java-http-domain",
+    "tenant": "examples"
+  },
+  "spec": {
+    "service": "examples/java-http-domain",
+    "release": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+    "route": {
+      "weight": 10000
+    },
+    "grants": [],
+    "resources": {
+      "cpuFuel": 10000000000,
+      "memoryBytes": 67108864,
+      "wallTimeLimitMillis": 120000,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 0,
+      "effectCount": 0
+    },
+    "availability": {
+      "minimumCachedCopies": 1,
+      "minimumZones": 1
+    },
+    "placement": {
+      "trustClass": "internal",
+      "architectures": [
+        "x86_64",
+        "aarch64"
+      ]
+    }
+  }
+}

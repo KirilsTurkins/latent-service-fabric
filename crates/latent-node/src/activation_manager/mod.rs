@@ -330,6 +330,14 @@ impl LocalActivationManager {
                 "activation request builder panicked",
             )
         })??;
+        if envelope.parent_activation_id.is_some()
+            || envelope.root_activation_id != envelope.activation_id
+        {
+            return Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "activation lineage requires a trusted broker",
+            ));
+        }
         let activation_id = envelope.activation_id.clone();
         let (journal, cancellation) = self.inner.journal.begin_with(&envelope, || {
             self.inner.cancellations.register(activation_id.clone())

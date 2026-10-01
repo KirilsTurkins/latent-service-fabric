@@ -1,0 +1,386 @@
+{
+  "schemaVersion": "latent.java-http.scoped-evidence.v1",
+  "status": "passed",
+  "scope": "synthetic-signed-Java-build-and-standalone-former-profile-composed-HTTP-context-canary-qualification",
+  "productionTrustEstablished": false,
+  "reportingPrivateIntegrationExecuted": false,
+  "packagedNativeFrontendQualified": false,
+  "transactionalJavaExecutionQualified": false,
+  "nativeRuntimeSourceCommit": "66f2a031a32f268604a340204a4e7fd0270af3b7",
+  "javaBuildSourceCommit": "c4e8c6c0fe31565ee67db8f699c727bcfdcfa4e9",
+  "qualifierSourceCommit": "3b7d579e2a856896c6c3947e11045692dec2ec47",
+  "compiledRustSourcesChangedBetweenNativeAndGuestBuild": false,
+  "nativeBuildRepeated": false,
+  "binaries": {
+    "latent": {
+      "sha256": "sha256:69fb78779503586d08d6544a2c12a0b25861d595b6d8d495b72099538acaaa80",
+      "bytes": 59397456
+    },
+    "latentd": {
+      "sha256": "sha256:f935f996087143dfacb6b3b618a5d49e637b69c1613598f66600b0d94743b0f1",
+      "bytes": 144864672
+    },
+    "examples/package": {
+      "sha256": "sha256:c7d9b496a0dd7101b5f7a4a258e62bc1fd012d803ea1b8357a9439e38bc447a9",
+      "bytes": 14005000
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:4b9454fd22f59b3383fa7c94de40c71423695173c862574aefd75cc53a6b339e",
+      "bytes": 6988288
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:d3e32a1597e9aa207b96173509565d1d57c0be68a4b0f2cc502dc28f88455d7f",
+      "bytes": 19751208
+    }
+  },
+  "independentJavaBuilds": {
+    "domain": {
+      "sourceDigest": "sha256:5d38bbe8a9948c03acb313d580a50bbd0f0a7295bf821fa2eeab5fffe9cd0f4e",
+      "componentDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+      "sdkBindingDigest": "sha256:2169fcfc2ea3622c4c9a52e33cb080c160e1440d8d41994d2cf57f8e23d2be18",
+      "observationDigest": "sha256:3eca89e3c53055c0be4ca2c396db67e19a51f8f0bf26646be0b3c46064362f53",
+      "packageAssembled": true,
+      "buildSeconds": 39.12722
+    },
+    "context-required": {
+      "sourceDigest": "sha256:11a7c8bf0d35fdf665c865dac36d8d023a6c20146b8cf75a2ad72dbe54a4e9b2",
+      "componentDigest": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+      "sdkBindingDigest": "sha256:616954e5600279f9a3650e517ac2806f79ba0faa1192639195386ce0a85fe653",
+      "observationDigest": "sha256:85591a2cbe6dbe243c053d5c227c3a03e0507a6b66e65d6eeeaccfa6d4a39336",
+      "packageAssembled": true,
+      "buildSeconds": 33.204674
+    },
+    "adapter": {
+      "sourceDigest": "sha256:13106f3ddafa80a6b41b8ea88f89024dc1220196d0e87592359e8bc7c7b0e91e",
+      "componentDigest": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+      "sdkBindingDigest": "sha256:79cd66a93329b1bc60975a682ed6f9bf2e47a5a7ee9cfdae0be7758058db4cbe",
+      "observationDigest": "sha256:c581fb8c55d27e17b73e1927734a9de24af767598cc1123282ba5e60a1c2374e",
+      "packageAssembled": true,
+      "buildSeconds": 54.820891
+    },
+    "adapter-next": {
+      "sourceDigest": "sha256:39c3839e5b9b63610c28281e122bd66be289b1431dd205cac5718b1afe981dd8",
+      "componentDigest": "sha256:4344aa85da161e33b8906ee4a5c2db272358ca52116f191e5d9ce61eb041d562",
+      "sdkBindingDigest": "sha256:79cd66a93329b1bc60975a682ed6f9bf2e47a5a7ee9cfdae0be7758058db4cbe",
+      "observationDigest": "sha256:8317b0c0bbaedcf9b3715113feab5da356817a3da5c8b40c4b8cb76a293b3d58",
+      "packageAssembled": true,
+      "buildSeconds": 48.732534
+    }
+  },
+  "originalFailedAggregate": {
+    "path": "original-fresh-guests-failed.json",
+    "status": "failed",
+    "reason": "java-canary-live-sample-attribution",
+    "qualified": false
+  },
+  "currentSuccessfulCampaign": {
+    "path": "actual-http-campaign-passed.json",
+    "status": "passed",
+    "componentsAndSignedReleasesReused": true,
+    "changedSources": [
+      "tools/java_http_composition/qualify.py"
+    ]
+  },
+  "pairedTrust": {
+    "path": "paired-trust.json",
+    "status": "passed",
+    "permutations": 3,
+    "verifierNegatives": 9,
+    "admissionCases": 6,
+    "staleProofs": 2
+  },
+  "formerProfile": {
+    "path": "former-profile.json",
+    "status": "passed",
+    "diagnostic": {
+      "calculatedRequirement": "159384064",
+      "configuredBound": "67108864",
+      "fixedBytes": "512",
+      "liftMultiplier": "76",
+      "liftingFuel": "2097152",
+      "profile": 1,
+      "profileDigest": "b51a2759041b40b873273d72a444fe21ac4679054d26a79fd756d3515ab4660d",
+      "reason": 1,
+      "reasonName": "DIAGNOSTIC_REASON_SIGNATURE_ALLOCATION_LIMIT",
+      "schemaVersion": 1,
+      "stage": 3,
+      "stageName": "DIAGNOSTIC_STAGE_PREPARATION"
+    }
+  },
+  "standalone": {
+    "path": "standalone.json",
+    "status": "passed"
+  },
+  "generatedClient": {
+    "schemaVersion": "latent.java-http.generated-client.v1",
+    "status": "passed",
+    "requests": 8,
+    "clientOverLimitRejected": true,
+    "nodeVersion": "v24.19.0",
+    "fullWidthPreserved": true,
+    "freshAfterRejection": true
+  },
+  "context": {
+    "status": "passed",
+    "guestContextImport": "omitted-ordinary-profile",
+    "sourceActorObservations": "unavailable-to-ordinary-guest",
+    "absentChildDeadline": {
+      "parentGranted": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 4,
+        "cpuFuel": "10000000000",
+        "effectCount": 0,
+        "logBytes": "0",
+        "memoryBytes": "134217728",
+        "outboundRequests": 0,
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeLimitMillis": "120000"
+      },
+      "childGranted": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "4997195424",
+        "effectCount": 0,
+        "logBytes": "0",
+        "memoryBytes": "62324736",
+        "outboundRequests": 0,
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeLimitMillis": "29995"
+      },
+      "parentEffectiveDeadlineUnixMillis": "1790826655044",
+      "childEffectiveDeadlineUnixMillis": "1790826625048",
+      "remainingCpuEffectObserved": true
+    },
+    "presentChildDeadline": {
+      "parentGranted": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 4,
+        "cpuFuel": "10000000000",
+        "effectCount": 0,
+        "logBytes": "0",
+        "memoryBytes": "134217728",
+        "outboundRequests": 0,
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeLimitMillis": "120000"
+      },
+      "childGranted": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "4997188224",
+        "effectCount": 0,
+        "logBytes": "0",
+        "memoryBytes": "62324736",
+        "outboundRequests": 0,
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeLimitMillis": "29995"
+      },
+      "parentEffectiveDeadlineUnixMillis": "1790826655098",
+      "childEffectiveDeadlineUnixMillis": "1790826597108",
+      "remainingCpuEffectObserved": true
+    },
+    "reducedParent": {
+      "parentGranted": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 2,
+        "cpuFuel": "9999900000",
+        "effectCount": 0,
+        "logBytes": "0",
+        "memoryBytes": "100663296",
+        "outboundRequests": 0,
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeLimitMillis": "60000"
+      },
+      "childGranted": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "4997184258",
+        "effectCount": 0,
+        "logBytes": "0",
+        "memoryBytes": "45547520",
+        "outboundRequests": 0,
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeLimitMillis": "29996"
+      },
+      "parentEffectiveDeadlineUnixMillis": "1790826655229",
+      "childEffectiveDeadlineUnixMillis": "1790826625232",
+      "remainingCpuEffectObserved": true
+    },
+    "wrongGrantHttpStatus": 500,
+    "ordinaryContextImportStage": "invocation",
+    "ordinaryContextImportStatus": "rejected",
+    "oversizedMetadata": {
+      "requestedUtf8Bytes": 37017,
+      "maximumCliMetadataUtf8Bytes": 32768,
+      "rejectedBeforeDispatch": true
+    }
+  },
+  "canary": {
+    "assessment": {
+      "admittedTerminal": "10",
+      "failures": "0",
+      "reason": "CANARY_DECISION_REASON_HEALTHY",
+      "selected": "10",
+      "slow": "0",
+      "successes": "10",
+      "verdict": "CANARY_VERDICT_HEALTHY"
+    },
+    "selected": "16",
+    "terminal": "16",
+    "unattributed": "0",
+    "durationMillis": "15000",
+    "promoteOperation": {
+      "action": "ROLLOUT_ACTION_PROMOTE",
+      "actor": {
+        "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+        "subject": "workflow-operator"
+      },
+      "basePublicationId": "publication:sha256:f4f33809859155954b87db3478debd81252862c9a8cbed7da7d80ca0098dc815",
+      "canaryDecision": {
+        "baseline": {
+          "admitted": "6",
+          "admittedTerminal": "6",
+          "cancelled": "0",
+          "deadlineExceeded": "0",
+          "domainError": "0",
+          "latencyBuckets": [
+            "0",
+            "0",
+            "0",
+            "0",
+            "6",
+            "0",
+            "0",
+            "0",
+            "0"
+          ],
+          "platformError": "0",
+          "selected": "6",
+          "success": "6"
+        },
+        "candidate": {
+          "admitted": "10",
+          "admittedTerminal": "10",
+          "cancelled": "0",
+          "deadlineExceeded": "0",
+          "domainError": "0",
+          "latencyBuckets": [
+            "0",
+            "0",
+            "0",
+            "0",
+            "10",
+            "0",
+            "0",
+            "0",
+            "0"
+          ],
+          "platformError": "0",
+          "selected": "10",
+          "success": "10"
+        },
+        "controlDigest": "sha256:34d6325878206844db5300b02dc21a3467a4771a5d9b41ea7c9a5874ed643f14",
+        "evidenceDigest": "sha256:0f96048286551c2333478ada2d8558afeda1d311e0b9d3da10ed18f3c984c544",
+        "formatVersion": 1,
+        "observedMillis": "15000",
+        "policyDigest": "sha256:77f4e16d329a14bbbcdddcd98491bdea56265ad437ae93d007c3a59923a3e02c",
+        "windowEpoch": "1"
+      },
+      "candidatePublicationId": "publication:sha256:f977e6d15d306a323deeb9da42424cf9763b52ef98f23377f9bd31acaa2b5392",
+      "completedAtUnixMillis": "1790826620255",
+      "expectedRevision": "1",
+      "operationId": "java-canary-promote",
+      "outcome": "ROLLOUT_OPERATION_OUTCOME_COMMITTED",
+      "planDigest": "sha256:bcdeb3a6b7c43bdab17811b21bfe8ba11aa24538053f4762bc5d635f5d5e0fae",
+      "reason": "ROLLOUT_REASON_COMPLETED",
+      "receiptDigest": "sha256:9ebb9d3de0c8b12f0122b3d5b7c6b00d4c3bf973861e7694aafcc95faada253f",
+      "requestDigest": "sha256:3d4765ca2f74d63450b2587ecdcedd42d909f0ab84def689d9bfc2cfa493456c",
+      "revision": "2",
+      "rollbackTarget": null,
+      "rolloutId": "java-http-canary",
+      "routeGeneration": "13",
+      "state": "ROLLOUT_STATE_COMPLETED",
+      "stateVersion": "23",
+      "step": 1,
+      "tenant": "examples"
+    },
+    "rollbackOperation": {
+      "action": "ROLLOUT_ACTION_ROLLBACK",
+      "actor": {
+        "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+        "subject": "workflow-operator"
+      },
+      "basePublicationId": "publication:sha256:f4f33809859155954b87db3478debd81252862c9a8cbed7da7d80ca0098dc815",
+      "canaryDecision": null,
+      "candidatePublicationId": "publication:sha256:f977e6d15d306a323deeb9da42424cf9763b52ef98f23377f9bd31acaa2b5392",
+      "completedAtUnixMillis": "1790826621604",
+      "expectedRevision": "2",
+      "operationId": "java-canary-rollback",
+      "outcome": "ROLLOUT_OPERATION_OUTCOME_COMMITTED",
+      "planDigest": "sha256:bcdeb3a6b7c43bdab17811b21bfe8ba11aa24538053f4762bc5d635f5d5e0fae",
+      "reason": "ROLLOUT_REASON_ROLLBACK_APPLIED",
+      "receiptDigest": "sha256:5fe6c8a3b4f65b180ce82b583d747aa6e93616ad3b0bb17dafd04662c4fd93cf",
+      "requestDigest": "sha256:ba49404381935867dbe06d3582359e744a535de56d6abe1f45cee8712558e5c6",
+      "revision": "3",
+      "rollbackTarget": {
+        "formatVersion": 1,
+        "historicalRouteGeneration": "11",
+        "manifestDigest": "sha256:8672a0a0aabeed6a2954363a2ad13d2704c73cb04ab48c66256208bfa9d4e28c"
+      },
+      "rolloutId": "java-http-canary",
+      "routeGeneration": "14",
+      "state": "ROLLOUT_STATE_ROLLED_BACK",
+      "stateVersion": "24",
+      "step": 1,
+      "tenant": "examples"
+    },
+    "staleTriggerStatus": 503,
+    "quotaBeforePromotion": {
+      "activeActivations": 2,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "14997234909",
+      "reservedMemoryBytes": "196542464"
+    },
+    "quotaAfterPromotion": {
+      "activeActivations": 2,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "14997234909",
+      "reservedMemoryBytes": "196542464"
+    },
+    "quotaAfterPhysicalRelease": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    },
+    "finalQuota": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    }
+  },
+  "actualInspection": {
+    "initialTargets": [
+      "domain",
+      "adapter"
+    ],
+    "liveGrantsChecked": false,
+    "wrongTenantPrivateCandidates": 0,
+    "invokeOnlyInspectionDenied": "permission-denied",
+    "canaryCandidateCount": 2,
+    "implicitCanarySelection": null,
+    "explicitSupportedRoutingSelection": "revision-v1:sha256:b88970f2ea73950094d79ec676e873757dfd565b4c58b83a0ef09f04f73e0207"
+  }
+}

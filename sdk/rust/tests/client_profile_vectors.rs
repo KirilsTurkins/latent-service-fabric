@@ -6,6 +6,555 @@ use std::collections::BTreeMap;
 #[test]
 fn shared_profile_vectors() {
     {
+        let value = ActivationDiagnostic {
+            schema_version: 1_u32,
+            stage: DiagnosticStage(3),
+            reason: DiagnosticReason(1),
+            ..Default::default()
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "diagnostic-absent-profile-and-bound.schema_version"
+        );
+        assert_eq!(
+            value.stage.0, 3,
+            "diagnostic-absent-profile-and-bound.stage"
+        );
+        assert_eq!(
+            value.reason.0, 1,
+            "diagnostic-absent-profile-and-bound.reason"
+        );
+        assert!(
+            value.profile.is_none(),
+            "diagnostic-absent-profile-and-bound.profile.presence"
+        );
+        assert!(
+            value.profile_digest.is_none(),
+            "diagnostic-absent-profile-and-bound.profile_digest.presence"
+        );
+        assert!(
+            value.configured_bound.is_none(),
+            "diagnostic-absent-profile-and-bound.configured_bound.presence"
+        );
+        assert!(
+            value.calculated_requirement.is_none(),
+            "diagnostic-absent-profile-and-bound.calculated_requirement.presence"
+        );
+        assert!(
+            value.fixed_bytes.is_none(),
+            "diagnostic-absent-profile-and-bound.fixed_bytes.presence"
+        );
+        assert!(
+            value.lifting_fuel.is_none(),
+            "diagnostic-absent-profile-and-bound.lifting_fuel.presence"
+        );
+        assert!(
+            value.lift_multiplier.is_none(),
+            "diagnostic-absent-profile-and-bound.lift_multiplier.presence"
+        );
+    }
+    {
+        let value = ActivationDiagnostic {
+            schema_version: 1_u32,
+            stage: DiagnosticStage(2_147_483_647),
+            reason: DiagnosticReason(-1),
+            profile: Some(DiagnosticProfile(999)),
+            profile_digest: Some(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            ),
+            configured_bound: Some(0_u64),
+            calculated_requirement: Some(18_446_744_073_709_551_615_u64),
+            fixed_bytes: Some(9_223_372_036_854_775_808_u64),
+            lifting_fuel: Some(0_u64),
+            lift_multiplier: Some(18_446_744_073_709_551_615_u64),
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "diagnostic-unknown-enums-and-present-zero.schema_version"
+        );
+        assert_eq!(
+            value.stage.0, 2_147_483_647,
+            "diagnostic-unknown-enums-and-present-zero.stage"
+        );
+        assert_eq!(
+            value.reason.0, -1,
+            "diagnostic-unknown-enums-and-present-zero.reason"
+        );
+        assert!(
+            value.profile.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.profile.presence"
+        );
+        assert_eq!(
+            value.profile.unwrap().0,
+            999,
+            "diagnostic-unknown-enums-and-present-zero.profile"
+        );
+        assert!(
+            value.profile_digest.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.profile_digest.presence"
+        );
+        assert_eq!(
+            value.profile_digest.as_deref().unwrap(),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "diagnostic-unknown-enums-and-present-zero.profile_digest"
+        );
+        assert!(
+            value.configured_bound.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.configured_bound.presence"
+        );
+        assert_eq!(
+            value.configured_bound.unwrap(),
+            0_u64,
+            "diagnostic-unknown-enums-and-present-zero.configured_bound"
+        );
+        assert!(
+            value.calculated_requirement.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.calculated_requirement.presence"
+        );
+        assert_eq!(
+            value.calculated_requirement.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "diagnostic-unknown-enums-and-present-zero.calculated_requirement"
+        );
+        assert!(
+            value.fixed_bytes.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.fixed_bytes.presence"
+        );
+        assert_eq!(
+            value.fixed_bytes.unwrap(),
+            9_223_372_036_854_775_808_u64,
+            "diagnostic-unknown-enums-and-present-zero.fixed_bytes"
+        );
+        assert!(
+            value.lifting_fuel.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.lifting_fuel.presence"
+        );
+        assert_eq!(
+            value.lifting_fuel.unwrap(),
+            0_u64,
+            "diagnostic-unknown-enums-and-present-zero.lifting_fuel"
+        );
+        assert!(
+            value.lift_multiplier.is_some(),
+            "diagnostic-unknown-enums-and-present-zero.lift_multiplier.presence"
+        );
+        assert_eq!(
+            value.lift_multiplier.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "diagnostic-unknown-enums-and-present-zero.lift_multiplier"
+        );
+    }
+    {
+        let value = InspectActivationTreeRequest {
+            activation_id: "activation-a".into(),
+            ..Default::default()
+        };
+        assert_eq!(
+            value.activation_id, "activation-a",
+            "activation-tree-default-page.activation_id"
+        );
+        assert!(
+            value.page.is_none(),
+            "activation-tree-default-page.page.presence"
+        );
+        assert!(
+            value.service.is_none(),
+            "activation-tree-default-page.service.presence"
+        );
+        assert!(
+            value.from_unix_millis.is_none(),
+            "activation-tree-default-page.from_unix_millis.presence"
+        );
+    }
+    {
+        let value = InspectActivationTreeRequest {
+            activation_id: String::new(),
+            page: Some(PageRequest {
+                page_size: 128_u32,
+                ..Default::default()
+            }),
+            service: Some("examples/java-http-adapter".into()),
+            from_unix_millis: Some(18_446_744_073_709_551_615_u64),
+        };
+        assert_eq!(
+            value.activation_id, "",
+            "activation-roots-service-time-selector.activation_id"
+        );
+        assert!(
+            value.page.is_some(),
+            "activation-roots-service-time-selector.page.presence"
+        );
+        assert_eq!(
+            value.page.as_ref().unwrap().page_size,
+            128_u32,
+            "activation-roots-service-time-selector.page.page_size"
+        );
+        assert!(
+            value.page.as_ref().unwrap().page_token.is_none(),
+            "activation-roots-service-time-selector.page.page_token.presence"
+        );
+        assert!(
+            value.service.is_some(),
+            "activation-roots-service-time-selector.service.presence"
+        );
+        assert_eq!(
+            value.service.as_deref().unwrap(),
+            "examples/java-http-adapter",
+            "activation-roots-service-time-selector.service"
+        );
+        assert!(
+            value.from_unix_millis.is_some(),
+            "activation-roots-service-time-selector.from_unix_millis.presence"
+        );
+        assert_eq!(
+            value.from_unix_millis.unwrap(),
+            18_446_744_073_709_551_615_u64,
+            "activation-roots-service-time-selector.from_unix_millis"
+        );
+    }
+    {
+        let value = InspectActivationTreeResponse {
+            schema_version: 1_u32,
+            nodes: vec![ActivationTreeNode {
+                activation_id: "host-generated-root".into(),
+                root_activation_id: "host-generated-root".into(),
+                phase: "running".into(),
+                last_updated_unix_millis: 0_u64,
+                principal_kind: "trigger".into(),
+                diagnostic_is_terminal: false,
+                target_service: "examples/java-http-adapter".into(),
+                received_at_unix_millis: 18_446_744_073_709_551_615_u64,
+                ..Default::default()
+            }],
+            page: Some(PageResponse {
+                ..Default::default()
+            }),
+            history_available: true,
+            cursor_expired: false,
+            retained_history_only: true,
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "activation-root-real-ingress-identity.schema_version"
+        );
+        assert_eq!(
+            value.nodes.len(),
+            1,
+            "activation-root-real-ingress-identity.nodes.count"
+        );
+        assert_eq!(
+            value.nodes[0].activation_id, "host-generated-root",
+            "activation-root-real-ingress-identity.nodes.0.activation_id"
+        );
+        assert!(
+            value.nodes[0].parent_activation_id.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.parent_activation_id.presence"
+        );
+        assert_eq!(
+            value.nodes[0].root_activation_id, "host-generated-root",
+            "activation-root-real-ingress-identity.nodes.0.root_activation_id"
+        );
+        assert_eq!(
+            value.nodes[0].phase, "running",
+            "activation-root-real-ingress-identity.nodes.0.phase"
+        );
+        assert!(
+            value.nodes[0].terminal_state.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.terminal_state.presence"
+        );
+        assert_eq!(
+            value.nodes[0].last_updated_unix_millis, 0_u64,
+            "activation-root-real-ingress-identity.nodes.0.last_updated_unix_millis"
+        );
+        assert!(
+            value.nodes[0].diagnostic.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.diagnostic.presence"
+        );
+        assert_eq!(
+            value.nodes[0].principal_kind, "trigger",
+            "activation-root-real-ingress-identity.nodes.0.principal_kind"
+        );
+        assert!(
+            value.nodes[0].caller_service.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.caller_service.presence"
+        );
+        assert!(
+            value.nodes[0].granted_budget.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.granted_budget.presence"
+        );
+        assert!(
+            value.nodes[0].effective_deadline_unix_millis.is_none(),
+            "activation-root-real-ingress-identity.nodes.0.effective_deadline_unix_millis.presence"
+        );
+        assert!(
+            !value.nodes[0].diagnostic_is_terminal,
+            "activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal"
+        );
+        assert_eq!(
+            value.nodes[0].target_service, "examples/java-http-adapter",
+            "activation-root-real-ingress-identity.nodes.0.target_service"
+        );
+        assert_eq!(
+            value.nodes[0].received_at_unix_millis, 18_446_744_073_709_551_615_u64,
+            "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis"
+        );
+        assert!(
+            value.page.is_some(),
+            "activation-root-real-ingress-identity.page.presence"
+        );
+        assert!(
+            value.page.as_ref().unwrap().next_page_token.is_none(),
+            "activation-root-real-ingress-identity.page.next_page_token.presence"
+        );
+        assert!(
+            value.history_available,
+            "activation-root-real-ingress-identity.history_available"
+        );
+        assert!(
+            !value.cursor_expired,
+            "activation-root-real-ingress-identity.cursor_expired"
+        );
+        assert!(
+            value.retained_history_only,
+            "activation-root-real-ingress-identity.retained_history_only"
+        );
+    }
+    {
+        let value = InspectActivationTreeResponse {
+            schema_version: 1_u32,
+            nodes: vec![],
+            page: Some(PageResponse {
+                ..Default::default()
+            }),
+            history_available: false,
+            cursor_expired: true,
+            retained_history_only: true,
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "activation-tree-expired-is-not-absence-proof.schema_version"
+        );
+        assert_eq!(
+            value.nodes.len(),
+            0,
+            "activation-tree-expired-is-not-absence-proof.nodes.count"
+        );
+        assert!(
+            value.page.is_some(),
+            "activation-tree-expired-is-not-absence-proof.page.presence"
+        );
+        assert!(
+            value.page.as_ref().unwrap().next_page_token.is_none(),
+            "activation-tree-expired-is-not-absence-proof.page.next_page_token.presence"
+        );
+        assert!(
+            !value.history_available,
+            "activation-tree-expired-is-not-absence-proof.history_available"
+        );
+        assert!(
+            value.cursor_expired,
+            "activation-tree-expired-is-not-absence-proof.cursor_expired"
+        );
+        assert!(
+            value.retained_history_only,
+            "activation-tree-expired-is-not-absence-proof.retained_history_only"
+        );
+    }
+    {
+        let value = InspectActivationTreeResponse {
+            schema_version: 1_u32,
+            nodes: vec![ActivationTreeNode {
+                activation_id: "child-a".into(),
+                parent_activation_id: Some("root-a".into()),
+                root_activation_id: "root-a".into(),
+                phase: "received".into(),
+                terminal_state: Some("resource_exhausted".into()),
+                last_updated_unix_millis: 18_446_744_073_709_551_615_u64,
+                diagnostic: Some(ActivationDiagnostic {
+                    schema_version: 1_u32,
+                    stage: DiagnosticStage(3),
+                    reason: DiagnosticReason(1),
+                    profile: Some(DiagnosticProfile(1)),
+                    configured_bound: Some(16_777_216_u64),
+                    calculated_requirement: Some(67_108_864_u64),
+                    ..Default::default()
+                }),
+                principal_kind: "service".into(),
+                caller_service: Some("adapter".into()),
+                diagnostic_is_terminal: true,
+                target_service: String::new(),
+                received_at_unix_millis: 0_u64,
+                ..Default::default()
+            }],
+            page: Some(PageResponse {
+                next_page_token: Some("opaque-scoped-cursor".into()),
+            }),
+            history_available: true,
+            cursor_expired: false,
+            retained_history_only: true,
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "activation-tree-failed-preparation-before-guest.schema_version"
+        );
+        assert_eq!(
+            value.nodes.len(),
+            1,
+            "activation-tree-failed-preparation-before-guest.nodes.count"
+        );
+        assert_eq!(
+            value.nodes[0].activation_id, "child-a",
+            "activation-tree-failed-preparation-before-guest.nodes.0.activation_id"
+        );
+        assert!(
+            value.nodes[0].parent_activation_id.is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id.presence"
+        );
+        assert_eq!(
+            value.nodes[0].parent_activation_id.as_deref().unwrap(),
+            "root-a",
+            "activation-tree-failed-preparation-before-guest.nodes.0.parent_activation_id"
+        );
+        assert_eq!(
+            value.nodes[0].root_activation_id, "root-a",
+            "activation-tree-failed-preparation-before-guest.nodes.0.root_activation_id"
+        );
+        assert_eq!(
+            value.nodes[0].phase, "received",
+            "activation-tree-failed-preparation-before-guest.nodes.0.phase"
+        );
+        assert!(
+            value.nodes[0].terminal_state.is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state.presence"
+        );
+        assert_eq!(
+            value.nodes[0].terminal_state.as_deref().unwrap(),
+            "resource_exhausted",
+            "activation-tree-failed-preparation-before-guest.nodes.0.terminal_state"
+        );
+        assert_eq!(
+            value.nodes[0].last_updated_unix_millis, 18_446_744_073_709_551_615_u64,
+            "activation-tree-failed-preparation-before-guest.nodes.0.last_updated_unix_millis"
+        );
+        assert!(
+            value.nodes[0].diagnostic.is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.presence"
+        );
+        assert_eq!(
+            value.nodes[0].diagnostic.as_ref().unwrap().schema_version,
+            1_u32,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.schema_version"
+        );
+        assert_eq!(
+            value.nodes[0].diagnostic.as_ref().unwrap().stage.0,
+            3,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.stage"
+        );
+        assert_eq!(
+            value.nodes[0].diagnostic.as_ref().unwrap().reason.0,
+            1,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.reason"
+        );
+        assert!(
+            value.nodes[0]
+                .diagnostic
+                .as_ref()
+                .unwrap()
+                .profile
+                .is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile.presence"
+        );
+        assert_eq!(
+            value.nodes[0]
+                .diagnostic
+                .as_ref()
+                .unwrap()
+                .profile
+                .unwrap()
+                .0,
+            1,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile"
+        );
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().profile_digest.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.profile_digest.presence");
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().configured_bound.is_some(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound.presence");
+        assert_eq!(
+            value.nodes[0]
+                .diagnostic
+                .as_ref()
+                .unwrap()
+                .configured_bound
+                .unwrap(),
+            16_777_216_u64,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.configured_bound"
+        );
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().calculated_requirement.is_some(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement.presence");
+        assert_eq!(value.nodes[0].diagnostic.as_ref().unwrap().calculated_requirement.unwrap(), 67_108_864_u64, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.calculated_requirement");
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().fixed_bytes.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.fixed_bytes.presence");
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().lifting_fuel.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lifting_fuel.presence");
+        assert!(value.nodes[0].diagnostic.as_ref().unwrap().lift_multiplier.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic.lift_multiplier.presence");
+        assert_eq!(
+            value.nodes[0].principal_kind, "service",
+            "activation-tree-failed-preparation-before-guest.nodes.0.principal_kind"
+        );
+        assert!(
+            value.nodes[0].caller_service.is_some(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.caller_service.presence"
+        );
+        assert_eq!(
+            value.nodes[0].caller_service.as_deref().unwrap(),
+            "adapter",
+            "activation-tree-failed-preparation-before-guest.nodes.0.caller_service"
+        );
+        assert!(
+            value.nodes[0].granted_budget.is_none(),
+            "activation-tree-failed-preparation-before-guest.nodes.0.granted_budget.presence"
+        );
+        assert!(value.nodes[0].effective_deadline_unix_millis.is_none(), "activation-tree-failed-preparation-before-guest.nodes.0.effective_deadline_unix_millis.presence");
+        assert!(
+            value.nodes[0].diagnostic_is_terminal,
+            "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal"
+        );
+        assert_eq!(
+            value.nodes[0].target_service, "",
+            "activation-tree-failed-preparation-before-guest.nodes.0.target_service"
+        );
+        assert_eq!(
+            value.nodes[0].received_at_unix_millis, 0_u64,
+            "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis"
+        );
+        assert!(
+            value.page.is_some(),
+            "activation-tree-failed-preparation-before-guest.page.presence"
+        );
+        assert!(
+            value.page.as_ref().unwrap().next_page_token.is_some(),
+            "activation-tree-failed-preparation-before-guest.page.next_page_token.presence"
+        );
+        assert_eq!(
+            value
+                .page
+                .as_ref()
+                .unwrap()
+                .next_page_token
+                .as_deref()
+                .unwrap(),
+            "opaque-scoped-cursor",
+            "activation-tree-failed-preparation-before-guest.page.next_page_token"
+        );
+        assert!(
+            value.history_available,
+            "activation-tree-failed-preparation-before-guest.history_available"
+        );
+        assert!(
+            !value.cursor_expired,
+            "activation-tree-failed-preparation-before-guest.cursor_expired"
+        );
+        assert!(
+            value.retained_history_only,
+            "activation-tree-failed-preparation-before-guest.retained_history_only"
+        );
+    }
+    {
         let value = InvokeRequest {
             target: Some(InvocationTarget {
                 tenant: "tenant-a".into(),
@@ -3859,6 +4408,452 @@ fn shared_profile_vectors() {
             value.package_digest,
             "sha256:2222222222222222222222222222222222222222222222222222222222222222",
             "publication-other-tenant-same-package.package_digest"
+        );
+    }
+    {
+        let value = InspectHttpTargetRequest{service: "service-a".into(), contract: "latent:web/application@0.1.0".into(), function: "handle".into(), route: Some("web".into()), revision_id: Some("revision-a".into()), publication: Some(PublicationRef{id: "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), tenant: "tenant-a".into()}), routing_key: Some("reviewed-key".into()), include_preparation: true, maximum_wait_millis: 30_000_u64};
+        assert_eq!(
+            value.service, "service-a",
+            "target-inspection-exact-bounded-publication-selector.service"
+        );
+        assert_eq!(
+            value.contract, "latent:web/application@0.1.0",
+            "target-inspection-exact-bounded-publication-selector.contract"
+        );
+        assert_eq!(
+            value.function, "handle",
+            "target-inspection-exact-bounded-publication-selector.function"
+        );
+        assert!(
+            value.route.is_some(),
+            "target-inspection-exact-bounded-publication-selector.route.presence"
+        );
+        assert_eq!(
+            value.route.as_deref().unwrap(),
+            "web",
+            "target-inspection-exact-bounded-publication-selector.route"
+        );
+        assert!(
+            value.revision_id.is_some(),
+            "target-inspection-exact-bounded-publication-selector.revision_id.presence"
+        );
+        assert_eq!(
+            value.revision_id.as_deref().unwrap(),
+            "revision-a",
+            "target-inspection-exact-bounded-publication-selector.revision_id"
+        );
+        assert!(
+            value.publication.is_some(),
+            "target-inspection-exact-bounded-publication-selector.publication.presence"
+        );
+        assert_eq!(
+            value.publication.as_ref().unwrap().id,
+            "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "target-inspection-exact-bounded-publication-selector.publication.id"
+        );
+        assert_eq!(
+            value.publication.as_ref().unwrap().tenant,
+            "tenant-a",
+            "target-inspection-exact-bounded-publication-selector.publication.tenant"
+        );
+        assert!(
+            value.routing_key.is_some(),
+            "target-inspection-exact-bounded-publication-selector.routing_key.presence"
+        );
+        assert_eq!(
+            value.routing_key.as_deref().unwrap(),
+            "reviewed-key",
+            "target-inspection-exact-bounded-publication-selector.routing_key"
+        );
+        assert!(
+            value.include_preparation,
+            "target-inspection-exact-bounded-publication-selector.include_preparation"
+        );
+        assert_eq!(
+            value.maximum_wait_millis, 30_000_u64,
+            "target-inspection-exact-bounded-publication-selector.maximum_wait_millis"
+        );
+    }
+    {
+        let value = InspectHttpTargetResponse{schema_version: 1_u32, tenant: "tenant-a".into(), service: "service-a".into(), contract: "latent:web/application@0.1.0".into(), function: "handle".into(), route: "web".into(), state: TargetObservationState(1), catalog_transaction: 18_446_744_073_709_551_615_u64, route_generation: 18_446_744_073_709_551_615_u64, binding_generation: 18_446_744_073_709_551_615_u64, policy_store_generation: Some(0_u64), candidates: vec![TargetCandidate{deployment_id: "deployment-a".into(), deployment_generation: 18_446_744_073_709_551_615_u64, revision_id: "revision-a".into(), component_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), publication: Some(PublicationRef{id: "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), tenant: "tenant-a".into()}), requested_publication: Some(PublicationRef{id: "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(), tenant: "tenant-a".into()}), package_digest: Some("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()), publication_generation: Some(18_446_744_073_709_551_615_u64), routing_weight: 100_u32, export_compatible: true, http_compatible: true, eligible: true, reasons: vec![TargetReason(1)], dependencies: vec![TargetDependency{capability: "latent:runtime/clocks@0.1.0".into(), state: "configured-current".into(), policy_identity_digest: "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee".into(), provider_configuration_epoch: 18_446_744_073_709_551_615_u64, binding: Some(TargetDependencyRevision{id: "binding-a".into(), digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), revision: 18_446_744_073_709_551_615_u64}), policies: vec![TargetDependencyRevision{id: "policy-a".into(), digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(), revision: 0_u64}], provider_profile: "host-runtime-v1".into(), configuration_digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()}], preparation: Some(TargetPreparation{state: TargetPreparationState(1), profile: Some(DiagnosticProfile(2)), engine_version: Some("wasmtime-42".into()), engine_configuration_digest: Some("blake3:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc".into()), target_triple: Some("x86_64-unknown-linux-gnu".into()), cpu_feature_set: Some("baseline".into()), sealed_metadata_fingerprint: Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()), import_count: Some(2_u64), function_count: Some(1_u64), hostcall_fuel: Some(18_446_744_073_709_551_615_u64), maximum_lifted_bytes: Some(67_108_864_u64), maximum_type_nodes: Some(65_536_u64), declared_budget: Some(ResourceBudget{cpu_fuel: 18_446_744_073_709_551_615_u64, memory_bytes: 18_446_744_073_709_551_615_u64, child_calls: 4_294_967_295_u32, outbound_requests: 0_u32, state_read_bytes: 18_446_744_073_709_551_615_u64, state_write_bytes: 0_u64, blob_read_bytes: 0_u64, blob_write_bytes: 0_u64, log_bytes: 0_u64, effect_count: 0_u32, wall_time_limit_millis: Some(0_u64)}), imports: vec!["latent:runtime/clocks@0.1.0".into()], exports: vec![PreparedTargetExport{contract: "latent:web/application@0.1.0".into(), function: "handle".into()}], type_imports: vec!["examples:java-http-domain/types@1.0.0".into()], ..Default::default()}), publication_kind: Some("capsule".into()), http_bindings: vec![InspectedHttpBinding{id: "trigger-a".into(), generation: 18_446_744_073_709_551_615_u64, selected_deployment_generation: 18_446_744_073_709_551_615_u64, state: "configured-current".into()}]}], selected_revision_id: Some("revision-a".into()), live_grants_checked: false};
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "target-inspection-ready-keeps-full-width-owner-identities.schema_version"
+        );
+        assert_eq!(
+            value.tenant, "tenant-a",
+            "target-inspection-ready-keeps-full-width-owner-identities.tenant"
+        );
+        assert_eq!(
+            value.service, "service-a",
+            "target-inspection-ready-keeps-full-width-owner-identities.service"
+        );
+        assert_eq!(
+            value.contract, "latent:web/application@0.1.0",
+            "target-inspection-ready-keeps-full-width-owner-identities.contract"
+        );
+        assert_eq!(
+            value.function, "handle",
+            "target-inspection-ready-keeps-full-width-owner-identities.function"
+        );
+        assert_eq!(
+            value.route, "web",
+            "target-inspection-ready-keeps-full-width-owner-identities.route"
+        );
+        assert_eq!(
+            value.state.0, 1,
+            "target-inspection-ready-keeps-full-width-owner-identities.state"
+        );
+        assert_eq!(
+            value.catalog_transaction, 18_446_744_073_709_551_615_u64,
+            "target-inspection-ready-keeps-full-width-owner-identities.catalog_transaction"
+        );
+        assert_eq!(
+            value.route_generation, 18_446_744_073_709_551_615_u64,
+            "target-inspection-ready-keeps-full-width-owner-identities.route_generation"
+        );
+        assert_eq!(
+            value.binding_generation, 18_446_744_073_709_551_615_u64,
+            "target-inspection-ready-keeps-full-width-owner-identities.binding_generation"
+        );
+        assert!(value.policy_store_generation.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.policy_store_generation.presence");
+        assert_eq!(
+            value.policy_store_generation.unwrap(),
+            0_u64,
+            "target-inspection-ready-keeps-full-width-owner-identities.policy_store_generation"
+        );
+        assert_eq!(
+            value.candidates.len(),
+            1,
+            "target-inspection-ready-keeps-full-width-owner-identities.candidates.count"
+        );
+        assert_eq!(
+            value.candidates[0].deployment_id, "deployment-a",
+            "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.deployment_id"
+        );
+        assert_eq!(value.candidates[0].deployment_generation, 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.deployment_generation");
+        assert_eq!(
+            value.candidates[0].revision_id, "revision-a",
+            "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.revision_id"
+        );
+        assert_eq!(value.candidates[0].component_digest, "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.component_digest");
+        assert!(value.candidates[0].publication.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication.presence");
+        assert_eq!(
+            value.candidates[0].publication.as_ref().unwrap().id,
+            "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication.id"
+        );
+        assert_eq!(value.candidates[0].publication.as_ref().unwrap().tenant, "tenant-a", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication.tenant");
+        assert!(value.candidates[0].requested_publication.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.requested_publication.presence");
+        assert_eq!(value.candidates[0].requested_publication.as_ref().unwrap().id, "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.requested_publication.id");
+        assert_eq!(value.candidates[0].requested_publication.as_ref().unwrap().tenant, "tenant-a", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.requested_publication.tenant");
+        assert!(value.candidates[0].package_digest.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.package_digest.presence");
+        assert_eq!(
+            value.candidates[0].package_digest.as_deref().unwrap(),
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.package_digest"
+        );
+        assert!(value.candidates[0].publication_generation.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication_generation.presence");
+        assert_eq!(value.candidates[0].publication_generation.unwrap(), 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication_generation");
+        assert_eq!(
+            value.candidates[0].routing_weight, 100_u32,
+            "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.routing_weight"
+        );
+        assert!(value.candidates[0].export_compatible, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.export_compatible");
+        assert!(value.candidates[0].http_compatible, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_compatible");
+        assert!(
+            value.candidates[0].eligible,
+            "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.eligible"
+        );
+        assert_eq!(
+            value.candidates[0].reasons.len(),
+            1,
+            "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.reasons.count"
+        );
+        assert_eq!(
+            value.candidates[0].reasons[0].0, 1,
+            "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.reasons.0"
+        );
+        assert_eq!(value.candidates[0].dependencies.len(), 1, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.count");
+        assert_eq!(value.candidates[0].dependencies[0].capability, "latent:runtime/clocks@0.1.0", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.capability");
+        assert_eq!(value.candidates[0].dependencies[0].state, "configured-current", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.state");
+        assert_eq!(value.candidates[0].dependencies[0].policy_identity_digest, "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policy_identity_digest");
+        assert_eq!(value.candidates[0].dependencies[0].provider_configuration_epoch, 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.provider_configuration_epoch");
+        assert!(value.candidates[0].dependencies[0].binding.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.binding.presence");
+        assert_eq!(value.candidates[0].dependencies[0].binding.as_ref().unwrap().id, "binding-a", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.binding.id");
+        assert_eq!(value.candidates[0].dependencies[0].binding.as_ref().unwrap().digest, "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.binding.digest");
+        assert_eq!(value.candidates[0].dependencies[0].binding.as_ref().unwrap().revision, 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.binding.revision");
+        assert_eq!(value.candidates[0].dependencies[0].policies.len(), 1, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policies.count");
+        assert_eq!(value.candidates[0].dependencies[0].policies[0].id, "policy-a", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policies.0.id");
+        assert_eq!(value.candidates[0].dependencies[0].policies[0].digest, "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policies.0.digest");
+        assert_eq!(value.candidates[0].dependencies[0].policies[0].revision, 0_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.policies.0.revision");
+        assert_eq!(value.candidates[0].dependencies[0].provider_profile, "host-runtime-v1", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.provider_profile");
+        assert_eq!(value.candidates[0].dependencies[0].configuration_digest, "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.dependencies.0.configuration_digest");
+        assert!(value.candidates[0].preparation.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().state.0, 1, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.state");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.is_none(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.diagnostic.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().profile.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.profile.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().profile.unwrap().0, 2, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.profile");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().engine_version.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.engine_version.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().engine_version.as_deref().unwrap(), "wasmtime-42", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.engine_version");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().engine_configuration_digest.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.engine_configuration_digest.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().engine_configuration_digest.as_deref().unwrap(), "blake3:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.engine_configuration_digest");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().target_triple.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.target_triple.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().target_triple.as_deref().unwrap(), "x86_64-unknown-linux-gnu", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.target_triple");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().cpu_feature_set.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.cpu_feature_set.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().cpu_feature_set.as_deref().unwrap(), "baseline", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.cpu_feature_set");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().sealed_metadata_fingerprint.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.sealed_metadata_fingerprint.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().sealed_metadata_fingerprint.as_deref().unwrap(), "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.sealed_metadata_fingerprint");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().import_count.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.import_count.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().import_count.unwrap(), 2_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.import_count");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().function_count.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.function_count.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().function_count.unwrap(), 1_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.function_count");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().hostcall_fuel.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.hostcall_fuel.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().hostcall_fuel.unwrap(), 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.hostcall_fuel");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().maximum_lifted_bytes.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.maximum_lifted_bytes.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().maximum_lifted_bytes.unwrap(), 67_108_864_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.maximum_lifted_bytes");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().maximum_type_nodes.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.maximum_type_nodes.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().maximum_type_nodes.unwrap(), 65_536_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.maximum_type_nodes");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().cpu_fuel, 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.cpu_fuel");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().memory_bytes, 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.memory_bytes");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().child_calls, 4_294_967_295_u32, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.child_calls");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().outbound_requests, 0_u32, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.outbound_requests");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().state_read_bytes, 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.state_read_bytes");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().state_write_bytes, 0_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.state_write_bytes");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().blob_read_bytes, 0_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.blob_read_bytes");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().blob_write_bytes, 0_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.blob_write_bytes");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().log_bytes, 0_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.log_bytes");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().effect_count, 0_u32, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.effect_count");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().wall_time_limit_millis.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.wall_time_limit_millis.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.as_ref().unwrap().wall_time_limit_millis.unwrap(), 0_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.declared_budget.wall_time_limit_millis");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().imports.len(), 1, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.imports.count");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().imports[0], "latent:runtime/clocks@0.1.0", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.imports.0");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().exports.len(), 1, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.exports.count");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().exports[0].contract, "latent:web/application@0.1.0", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.exports.0.contract");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().exports[0].function, "handle", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.exports.0.function");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().type_imports.len(), 1, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.type_imports.count");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().type_imports[0], "examples:java-http-domain/types@1.0.0", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.preparation.type_imports.0");
+        assert!(value.candidates[0].publication_kind.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication_kind.presence");
+        assert_eq!(value.candidates[0].publication_kind.as_deref().unwrap(), "capsule", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.publication_kind");
+        assert_eq!(value.candidates[0].http_bindings.len(), 1, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.count");
+        assert_eq!(value.candidates[0].http_bindings[0].id, "trigger-a", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.0.id");
+        assert_eq!(value.candidates[0].http_bindings[0].generation, 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.0.generation");
+        assert_eq!(value.candidates[0].http_bindings[0].selected_deployment_generation, 18_446_744_073_709_551_615_u64, "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.0.selected_deployment_generation");
+        assert_eq!(value.candidates[0].http_bindings[0].state, "configured-current", "target-inspection-ready-keeps-full-width-owner-identities.candidates.0.http_bindings.0.state");
+        assert!(value.selected_revision_id.is_some(), "target-inspection-ready-keeps-full-width-owner-identities.selected_revision_id.presence");
+        assert_eq!(
+            value.selected_revision_id.as_deref().unwrap(),
+            "revision-a",
+            "target-inspection-ready-keeps-full-width-owner-identities.selected_revision_id"
+        );
+        assert!(
+            !value.live_grants_checked,
+            "target-inspection-ready-keeps-full-width-owner-identities.live_grants_checked"
+        );
+    }
+    {
+        let value = InspectHttpTargetResponse {
+            schema_version: 1_u32,
+            tenant: "tenant-a".into(),
+            service: "service-a".into(),
+            contract: "domain:application/api@1.0.0".into(),
+            function: "get".into(),
+            route: "domain".into(),
+            state: TargetObservationState(777),
+            catalog_transaction: 0_u64,
+            route_generation: 0_u64,
+            binding_generation: 0_u64,
+            candidates: vec![TargetCandidate {
+                deployment_id: "deployment-a".into(),
+                deployment_generation: 0_u64,
+                revision_id: "revision-a".into(),
+                component_digest:
+                    "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+                routing_weight: 0_u32,
+                export_compatible: false,
+                http_compatible: false,
+                eligible: false,
+                reasons: vec![TargetReason(-2_147_483_648), TargetReason(778)],
+                dependencies: vec![],
+                preparation: Some(TargetPreparation {
+                    state: TargetPreparationState(779),
+                    diagnostic: Some(ActivationDiagnostic {
+                        schema_version: 1_u32,
+                        stage: DiagnosticStage(780),
+                        reason: DiagnosticReason(781),
+                        configured_bound: Some(0_u64),
+                        calculated_requirement: Some(18_446_744_073_709_551_615_u64),
+                        ..Default::default()
+                    }),
+                    imports: vec![],
+                    exports: vec![],
+                    type_imports: vec![],
+                    ..Default::default()
+                }),
+                http_bindings: vec![],
+                ..Default::default()
+            }],
+            live_grants_checked: false,
+            ..Default::default()
+        };
+        assert_eq!(
+            value.schema_version, 1_u32,
+            "target-inspection-future-states-remain-descriptive.schema_version"
+        );
+        assert_eq!(
+            value.tenant, "tenant-a",
+            "target-inspection-future-states-remain-descriptive.tenant"
+        );
+        assert_eq!(
+            value.service, "service-a",
+            "target-inspection-future-states-remain-descriptive.service"
+        );
+        assert_eq!(
+            value.contract, "domain:application/api@1.0.0",
+            "target-inspection-future-states-remain-descriptive.contract"
+        );
+        assert_eq!(
+            value.function, "get",
+            "target-inspection-future-states-remain-descriptive.function"
+        );
+        assert_eq!(
+            value.route, "domain",
+            "target-inspection-future-states-remain-descriptive.route"
+        );
+        assert_eq!(
+            value.state.0, 777,
+            "target-inspection-future-states-remain-descriptive.state"
+        );
+        assert_eq!(
+            value.catalog_transaction, 0_u64,
+            "target-inspection-future-states-remain-descriptive.catalog_transaction"
+        );
+        assert_eq!(
+            value.route_generation, 0_u64,
+            "target-inspection-future-states-remain-descriptive.route_generation"
+        );
+        assert_eq!(
+            value.binding_generation, 0_u64,
+            "target-inspection-future-states-remain-descriptive.binding_generation"
+        );
+        assert!(
+            value.policy_store_generation.is_none(),
+            "target-inspection-future-states-remain-descriptive.policy_store_generation.presence"
+        );
+        assert_eq!(
+            value.candidates.len(),
+            1,
+            "target-inspection-future-states-remain-descriptive.candidates.count"
+        );
+        assert_eq!(
+            value.candidates[0].deployment_id, "deployment-a",
+            "target-inspection-future-states-remain-descriptive.candidates.0.deployment_id"
+        );
+        assert_eq!(
+            value.candidates[0].deployment_generation, 0_u64,
+            "target-inspection-future-states-remain-descriptive.candidates.0.deployment_generation"
+        );
+        assert_eq!(
+            value.candidates[0].revision_id, "revision-a",
+            "target-inspection-future-states-remain-descriptive.candidates.0.revision_id"
+        );
+        assert_eq!(
+            value.candidates[0].component_digest,
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "target-inspection-future-states-remain-descriptive.candidates.0.component_digest"
+        );
+        assert!(
+            value.candidates[0].publication.is_none(),
+            "target-inspection-future-states-remain-descriptive.candidates.0.publication.presence"
+        );
+        assert!(value.candidates[0].requested_publication.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.requested_publication.presence");
+        assert!(value.candidates[0].package_digest.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.package_digest.presence");
+        assert!(value.candidates[0].publication_generation.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.publication_generation.presence");
+        assert_eq!(
+            value.candidates[0].routing_weight, 0_u32,
+            "target-inspection-future-states-remain-descriptive.candidates.0.routing_weight"
+        );
+        assert!(
+            !value.candidates[0].export_compatible,
+            "target-inspection-future-states-remain-descriptive.candidates.0.export_compatible"
+        );
+        assert!(
+            !value.candidates[0].http_compatible,
+            "target-inspection-future-states-remain-descriptive.candidates.0.http_compatible"
+        );
+        assert!(
+            !value.candidates[0].eligible,
+            "target-inspection-future-states-remain-descriptive.candidates.0.eligible"
+        );
+        assert_eq!(
+            value.candidates[0].reasons.len(),
+            2,
+            "target-inspection-future-states-remain-descriptive.candidates.0.reasons.count"
+        );
+        assert_eq!(
+            value.candidates[0].reasons[0].0, -2_147_483_648,
+            "target-inspection-future-states-remain-descriptive.candidates.0.reasons.0"
+        );
+        assert_eq!(
+            value.candidates[0].reasons[1].0, 778,
+            "target-inspection-future-states-remain-descriptive.candidates.0.reasons.1"
+        );
+        assert_eq!(
+            value.candidates[0].dependencies.len(),
+            0,
+            "target-inspection-future-states-remain-descriptive.candidates.0.dependencies.count"
+        );
+        assert!(
+            value.candidates[0].preparation.is_some(),
+            "target-inspection-future-states-remain-descriptive.candidates.0.preparation.presence"
+        );
+        assert_eq!(
+            value.candidates[0].preparation.as_ref().unwrap().state.0,
+            779,
+            "target-inspection-future-states-remain-descriptive.candidates.0.preparation.state"
+        );
+        assert!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.is_some(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().schema_version, 1_u32, "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.schema_version");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().stage.0, 780, "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.stage");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().reason.0, 781, "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.reason");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().profile.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.profile.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().profile_digest.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.profile_digest.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().configured_bound.is_some(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.configured_bound.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().configured_bound.unwrap(), 0_u64, "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.configured_bound");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().calculated_requirement.is_some(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.calculated_requirement.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().calculated_requirement.unwrap(), 18_446_744_073_709_551_615_u64, "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.calculated_requirement");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().fixed_bytes.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.fixed_bytes.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().lifting_fuel.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.lifting_fuel.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().diagnostic.as_ref().unwrap().lift_multiplier.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.diagnostic.lift_multiplier.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().profile.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.profile.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().engine_version.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.engine_version.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().engine_configuration_digest.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.engine_configuration_digest.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().target_triple.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.target_triple.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().cpu_feature_set.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.cpu_feature_set.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().sealed_metadata_fingerprint.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.sealed_metadata_fingerprint.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().import_count.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.import_count.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().function_count.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.function_count.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().hostcall_fuel.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.hostcall_fuel.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().maximum_lifted_bytes.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.maximum_lifted_bytes.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().maximum_type_nodes.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.maximum_type_nodes.presence");
+        assert!(value.candidates[0].preparation.as_ref().unwrap().declared_budget.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.preparation.declared_budget.presence");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().imports.len(), 0, "target-inspection-future-states-remain-descriptive.candidates.0.preparation.imports.count");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().exports.len(), 0, "target-inspection-future-states-remain-descriptive.candidates.0.preparation.exports.count");
+        assert_eq!(value.candidates[0].preparation.as_ref().unwrap().type_imports.len(), 0, "target-inspection-future-states-remain-descriptive.candidates.0.preparation.type_imports.count");
+        assert!(value.candidates[0].publication_kind.is_none(), "target-inspection-future-states-remain-descriptive.candidates.0.publication_kind.presence");
+        assert_eq!(
+            value.candidates[0].http_bindings.len(),
+            0,
+            "target-inspection-future-states-remain-descriptive.candidates.0.http_bindings.count"
+        );
+        assert!(
+            value.selected_revision_id.is_none(),
+            "target-inspection-future-states-remain-descriptive.selected_revision_id.presence"
+        );
+        assert!(
+            !value.live_grants_checked,
+            "target-inspection-future-states-remain-descriptive.live_grants_checked"
         );
     }
     assert!(parse_u64_decimal("0").is_some(), "uint64 decimal");

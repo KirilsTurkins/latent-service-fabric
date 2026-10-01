@@ -30,6 +30,67 @@ typedef int32_t latent_profile_capability_policy_record_kind;
 #define LATENT_PROFILE_CAPABILITY_POLICY_RECORD_KIND_POLICY ((latent_profile_capability_policy_record_kind)1)
 #define LATENT_PROFILE_CAPABILITY_POLICY_RECORD_KIND_PROVIDER_BINDING ((latent_profile_capability_policy_record_kind)2)
 
+typedef int32_t latent_profile_diagnostic_stage;
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_UNSPECIFIED ((latent_profile_diagnostic_stage)0)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_ADMISSION ((latent_profile_diagnostic_stage)1)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_QUEUE ((latent_profile_diagnostic_stage)2)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_PREPARATION ((latent_profile_diagnostic_stage)3)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_BINDING ((latent_profile_diagnostic_stage)4)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_EXECUTION ((latent_profile_diagnostic_stage)5)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_PROVIDER ((latent_profile_diagnostic_stage)6)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_CLEANUP ((latent_profile_diagnostic_stage)7)
+#define LATENT_PROFILE_DIAGNOSTIC_STAGE_OUTPUT_VALIDATION ((latent_profile_diagnostic_stage)8)
+
+typedef int32_t latent_profile_diagnostic_reason;
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_UNSPECIFIED ((latent_profile_diagnostic_reason)0)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_SIGNATURE_ALLOCATION_LIMIT ((latent_profile_diagnostic_reason)1)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_VALUE_ALLOCATION_LIMIT ((latent_profile_diagnostic_reason)2)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_UNSUPPORTED_COMPONENT_SURFACE ((latent_profile_diagnostic_reason)3)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_UNSUPPORTED_ENGINE_PROFILE ((latent_profile_diagnostic_reason)4)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_PROVIDER_ABSENT ((latent_profile_diagnostic_reason)5)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_BINDING_ABSENT ((latent_profile_diagnostic_reason)6)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_ADMISSION_DENIED ((latent_profile_diagnostic_reason)7)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_GRANT_DENIED ((latent_profile_diagnostic_reason)8)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_QUEUE_PRESSURE ((latent_profile_diagnostic_reason)9)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_GUEST_MEMORY_EXHAUSTED ((latent_profile_diagnostic_reason)10)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_GUEST_FUEL_EXHAUSTED ((latent_profile_diagnostic_reason)11)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_GUEST_RESOURCE_EXHAUSTED ((latent_profile_diagnostic_reason)12)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_PROVIDER_TIMEOUT ((latent_profile_diagnostic_reason)13)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_DEADLINE_EXCEEDED ((latent_profile_diagnostic_reason)14)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_CANCELLED ((latent_profile_diagnostic_reason)15)
+#define LATENT_PROFILE_DIAGNOSTIC_REASON_HTTP_RESPONSE_REJECTED ((latent_profile_diagnostic_reason)16)
+
+typedef int32_t latent_profile_diagnostic_profile;
+#define LATENT_PROFILE_DIAGNOSTIC_PROFILE_UNSPECIFIED ((latent_profile_diagnostic_profile)0)
+#define LATENT_PROFILE_DIAGNOSTIC_PROFILE_WASMTIME_SERVICE_VALUES_V1 ((latent_profile_diagnostic_profile)1)
+#define LATENT_PROFILE_DIAGNOSTIC_PROFILE_WASMTIME_BUFFERED_WEB_VALUES_V1 ((latent_profile_diagnostic_profile)2)
+
+typedef int32_t latent_profile_target_observation_state;
+#define LATENT_PROFILE_TARGET_OBSERVATION_STATE_UNSPECIFIED ((latent_profile_target_observation_state)0)
+#define LATENT_PROFILE_TARGET_OBSERVATION_STATE_COHERENT ((latent_profile_target_observation_state)1)
+#define LATENT_PROFILE_TARGET_OBSERVATION_STATE_STALE ((latent_profile_target_observation_state)2)
+#define LATENT_PROFILE_TARGET_OBSERVATION_STATE_UNAVAILABLE ((latent_profile_target_observation_state)3)
+
+typedef int32_t latent_profile_target_reason;
+#define LATENT_PROFILE_TARGET_REASON_UNSPECIFIED ((latent_profile_target_reason)0)
+#define LATENT_PROFILE_TARGET_REASON_CURRENT ((latent_profile_target_reason)1)
+#define LATENT_PROFILE_TARGET_REASON_EXPORT_ABSENT ((latent_profile_target_reason)2)
+#define LATENT_PROFILE_TARGET_REASON_ZERO_ROUTING_WEIGHT ((latent_profile_target_reason)3)
+#define LATENT_PROFILE_TARGET_REASON_PUBLICATION_UNAVAILABLE ((latent_profile_target_reason)4)
+#define LATENT_PROFILE_TARGET_REASON_BINDING_PLAN_UNAVAILABLE ((latent_profile_target_reason)5)
+#define LATENT_PROFILE_TARGET_REASON_POLICY_CHANGED ((latent_profile_target_reason)6)
+#define LATENT_PROFILE_TARGET_REASON_PROVIDER_UNAVAILABLE ((latent_profile_target_reason)7)
+#define LATENT_PROFILE_TARGET_REASON_INSPECTION_UNAVAILABLE ((latent_profile_target_reason)8)
+#define LATENT_PROFILE_TARGET_REASON_UNMANAGED_PUBLICATION ((latent_profile_target_reason)9)
+#define LATENT_PROFILE_TARGET_REASON_HTTP_INCOMPATIBLE ((latent_profile_target_reason)10)
+
+typedef int32_t latent_profile_target_preparation_state;
+#define LATENT_PROFILE_TARGET_PREPARATION_STATE_UNSPECIFIED ((latent_profile_target_preparation_state)0)
+#define LATENT_PROFILE_TARGET_PREPARATION_STATE_READY ((latent_profile_target_preparation_state)1)
+#define LATENT_PROFILE_TARGET_PREPARATION_STATE_REJECTED ((latent_profile_target_preparation_state)2)
+#define LATENT_PROFILE_TARGET_PREPARATION_STATE_UNAVAILABLE ((latent_profile_target_preparation_state)3)
+#define LATENT_PROFILE_TARGET_PREPARATION_STATE_NOT_REQUESTED ((latent_profile_target_preparation_state)4)
+
 typedef int32_t latent_profile_failure_category;
 #define LATENT_PROFILE_FAILURE_CATEGORY_UNSPECIFIED ((latent_profile_failure_category)0)
 #define LATENT_PROFILE_FAILURE_CATEGORY_LOCAL_CANCELLED ((latent_profile_failure_category)1)
@@ -386,6 +447,202 @@ typedef struct latent_profile_publication_ref {
     latent_string tenant;
 } latent_profile_publication_ref;
 
+typedef struct latent_profile_activation_diagnostic {
+    uint32_t schema_version;
+    latent_profile_diagnostic_stage stage;
+    latent_profile_diagnostic_reason reason;
+    bool has_profile;
+    latent_profile_diagnostic_profile profile;
+    bool has_profile_digest;
+    latent_string profile_digest;
+    bool has_configured_bound;
+    uint64_t configured_bound;
+    bool has_calculated_requirement;
+    uint64_t calculated_requirement;
+    bool has_fixed_bytes;
+    uint64_t fixed_bytes;
+    bool has_lifting_fuel;
+    uint64_t lifting_fuel;
+    bool has_lift_multiplier;
+    uint64_t lift_multiplier;
+} latent_profile_activation_diagnostic;
+
+typedef struct latent_profile_activation_tree_node {
+    latent_string activation_id;
+    bool has_parent_activation_id;
+    latent_string parent_activation_id;
+    latent_string root_activation_id;
+    latent_string phase;
+    bool has_terminal_state;
+    latent_string terminal_state;
+    uint64_t last_updated_unix_millis;
+    bool has_diagnostic;
+    latent_profile_activation_diagnostic diagnostic;
+    latent_string principal_kind;
+    bool has_caller_service;
+    latent_string caller_service;
+    bool has_granted_budget;
+    latent_profile_resource_budget granted_budget;
+    bool has_effective_deadline_unix_millis;
+    uint64_t effective_deadline_unix_millis;
+    bool diagnostic_is_terminal;
+    latent_string target_service;
+    uint64_t received_at_unix_millis;
+} latent_profile_activation_tree_node;
+
+typedef struct latent_profile_inspect_activation_tree_request {
+    latent_string activation_id;
+    bool has_page;
+    latent_profile_page_request page;
+    bool has_service;
+    latent_string service;
+    bool has_from_unix_millis;
+    uint64_t from_unix_millis;
+} latent_profile_inspect_activation_tree_request;
+
+typedef struct latent_profile_inspect_activation_tree_response {
+    uint32_t schema_version;
+    const latent_profile_activation_tree_node * nodes;
+    size_t nodes_count;
+    bool has_page;
+    latent_profile_page_response page;
+    bool history_available;
+    bool cursor_expired;
+    bool retained_history_only;
+} latent_profile_inspect_activation_tree_response;
+
+typedef struct latent_profile_inspect_http_target_request {
+    latent_string service;
+    latent_string contract;
+    latent_string function;
+    bool has_route;
+    latent_string route;
+    bool has_revision_id;
+    latent_string revision_id;
+    bool has_publication;
+    latent_profile_publication_ref publication;
+    bool has_routing_key;
+    latent_string routing_key;
+    bool include_preparation;
+    uint64_t maximum_wait_millis;
+} latent_profile_inspect_http_target_request;
+
+typedef struct latent_profile_target_dependency_revision {
+    latent_string id;
+    latent_string digest;
+    uint64_t revision;
+} latent_profile_target_dependency_revision;
+
+typedef struct latent_profile_target_dependency {
+    latent_string capability;
+    latent_string state;
+    latent_string policy_identity_digest;
+    uint64_t provider_configuration_epoch;
+    bool has_binding;
+    latent_profile_target_dependency_revision binding;
+    const latent_profile_target_dependency_revision * policies;
+    size_t policies_count;
+    latent_string provider_profile;
+    latent_string configuration_digest;
+} latent_profile_target_dependency;
+
+typedef struct latent_profile_prepared_target_export {
+    latent_string contract;
+    latent_string function;
+} latent_profile_prepared_target_export;
+
+typedef struct latent_profile_target_preparation {
+    latent_profile_target_preparation_state state;
+    bool has_diagnostic;
+    latent_profile_activation_diagnostic diagnostic;
+    bool has_profile;
+    latent_profile_diagnostic_profile profile;
+    bool has_engine_version;
+    latent_string engine_version;
+    bool has_engine_configuration_digest;
+    latent_string engine_configuration_digest;
+    bool has_target_triple;
+    latent_string target_triple;
+    bool has_cpu_feature_set;
+    latent_string cpu_feature_set;
+    bool has_sealed_metadata_fingerprint;
+    latent_string sealed_metadata_fingerprint;
+    bool has_import_count;
+    uint64_t import_count;
+    bool has_function_count;
+    uint64_t function_count;
+    bool has_hostcall_fuel;
+    uint64_t hostcall_fuel;
+    bool has_maximum_lifted_bytes;
+    uint64_t maximum_lifted_bytes;
+    bool has_maximum_type_nodes;
+    uint64_t maximum_type_nodes;
+    bool has_declared_budget;
+    latent_profile_resource_budget declared_budget;
+    const latent_string * imports;
+    size_t imports_count;
+    const latent_profile_prepared_target_export * exports;
+    size_t exports_count;
+    const latent_string * type_imports;
+    size_t type_imports_count;
+} latent_profile_target_preparation;
+
+typedef struct latent_profile_inspected_http_binding {
+    latent_string id;
+    uint64_t generation;
+    uint64_t selected_deployment_generation;
+    latent_string state;
+} latent_profile_inspected_http_binding;
+
+typedef struct latent_profile_target_candidate {
+    latent_string deployment_id;
+    uint64_t deployment_generation;
+    latent_string revision_id;
+    latent_string component_digest;
+    bool has_publication;
+    latent_profile_publication_ref publication;
+    bool has_requested_publication;
+    latent_profile_publication_ref requested_publication;
+    bool has_package_digest;
+    latent_string package_digest;
+    bool has_publication_generation;
+    uint64_t publication_generation;
+    uint32_t routing_weight;
+    bool export_compatible;
+    bool http_compatible;
+    bool eligible;
+    const latent_profile_target_reason * reasons;
+    size_t reasons_count;
+    const latent_profile_target_dependency * dependencies;
+    size_t dependencies_count;
+    bool has_preparation;
+    latent_profile_target_preparation preparation;
+    bool has_publication_kind;
+    latent_string publication_kind;
+    const latent_profile_inspected_http_binding * http_bindings;
+    size_t http_bindings_count;
+} latent_profile_target_candidate;
+
+typedef struct latent_profile_inspect_http_target_response {
+    uint32_t schema_version;
+    latent_string tenant;
+    latent_string service;
+    latent_string contract;
+    latent_string function;
+    latent_string route;
+    latent_profile_target_observation_state state;
+    uint64_t catalog_transaction;
+    uint64_t route_generation;
+    uint64_t binding_generation;
+    bool has_policy_store_generation;
+    uint64_t policy_store_generation;
+    const latent_profile_target_candidate * candidates;
+    size_t candidates_count;
+    bool has_selected_revision_id;
+    latent_string selected_revision_id;
+    bool live_grants_checked;
+} latent_profile_inspect_http_target_response;
+
 typedef struct latent_profile_publication_identity {
     latent_profile_publication_ref publication;
     latent_string component_digest;
@@ -473,6 +730,16 @@ typedef void (*latent_profile_get_activation_callback)(
     const latent_profile_client_failure *failure,
     void *user_data);
 
+typedef struct latent_profile_inspect_activation_tree_result {
+    latent_profile_inspect_activation_tree_response value;
+    latent_profile_response_metadata metadata;
+} latent_profile_inspect_activation_tree_result;
+
+typedef void (*latent_profile_inspect_activation_tree_callback)(
+    const latent_profile_inspect_activation_tree_result *response,
+    const latent_profile_client_failure *failure,
+    void *user_data);
+
 typedef struct latent_profile_get_policy_result {
     latent_profile_get_policy_response value;
     latent_profile_response_metadata metadata;
@@ -523,6 +790,16 @@ typedef void (*latent_profile_get_policy_operation_callback)(
     const latent_profile_client_failure *failure,
     void *user_data);
 
+typedef struct latent_profile_inspect_http_target_result {
+    latent_profile_inspect_http_target_response value;
+    latent_profile_response_metadata metadata;
+} latent_profile_inspect_http_target_result;
+
+typedef void (*latent_profile_inspect_http_target_callback)(
+    const latent_profile_inspect_http_target_result *response,
+    const latent_profile_client_failure *failure,
+    void *user_data);
+
 typedef struct latent_profile_client_vtable {
     latent_profile_call *(*invoke)(
         latent_profile_client *client,
@@ -543,6 +820,13 @@ typedef struct latent_profile_client_vtable {
         const latent_profile_get_activation_request *request,
         const latent_profile_call_options *options,
         latent_profile_get_activation_callback callback,
+        void *user_data);
+
+    latent_profile_call *(*inspect_activation_tree)(
+        latent_profile_client *client,
+        const latent_profile_inspect_activation_tree_request *request,
+        const latent_profile_call_options *options,
+        latent_profile_inspect_activation_tree_callback callback,
         void *user_data);
 
     latent_profile_call *(*get_policy)(
@@ -578,6 +862,13 @@ typedef struct latent_profile_client_vtable {
         const latent_profile_get_policy_operation_request *request,
         const latent_profile_call_options *options,
         latent_profile_get_policy_operation_callback callback,
+        void *user_data);
+
+    latent_profile_call *(*inspect_http_target)(
+        latent_profile_client *client,
+        const latent_profile_inspect_http_target_request *request,
+        const latent_profile_call_options *options,
+        latent_profile_inspect_http_target_callback callback,
         void *user_data);
 
     void (*cancel_local)(latent_profile_call *call);

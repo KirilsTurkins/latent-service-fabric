@@ -1,0 +1,46 @@
+{
+  "formatVersion": 1,
+  "kind": "capsule",
+  "name": "java-http-domain",
+  "version": "1.0.0",
+  "entrypoint": "component.wasm",
+  "annotations": {},
+  "layers": [
+    {
+      "path": "component.wasm",
+      "source": "component.wasm",
+      "role": "component",
+      "mediaType": "application/wasm"
+    },
+    {
+      "path": "capsule.json",
+      "source": "capsule.json",
+      "role": "capsule-manifest",
+      "mediaType": "application/vnd.latent.capsule.manifest.v1+json"
+    },
+    {
+      "path": "contracts.json",
+      "source": "contracts.json",
+      "role": "contracts",
+      "mediaType": "application/vnd.latent.contracts.v1+json"
+    },
+    {
+      "path": "wit-lock.json",
+      "source": "wit-lock.json",
+      "role": "wit-lock",
+      "mediaType": "application/vnd.latent.wit-lock.v1+json"
+    },
+    {
+      "path": "wit/world.wit",
+      "source": "wit/world.wit",
+      "role": "asset",
+      "mediaType": "text/plain"
+    },
+    {
+      "path": "wit/deps/clock/package.wit",
+      "source": "wit/deps/clock/package.wit",
+      "role": "asset",
+      "mediaType": "text/plain"
+    }
+  ]
+}

@@ -51,7 +51,23 @@ pub(crate) fn validate_host_signature(
         .and_then(|dynamic| fixed.checked_add(dynamic))
         .ok_or_else(limit)?;
     if maximum > limits.max_lifted_bytes {
-        return Err(limit());
+        use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
+        let mut observation = ActivationDiagnostic::new(
+            DiagnosticStage::Preparation,
+            DiagnosticReason::SignatureAllocationLimit,
+        );
+        observation.configured_bound = u64::try_from(limits.max_lifted_bytes).ok();
+        observation.calculated_requirement = u64::try_from(maximum).ok();
+        observation.fixed_bytes = u64::try_from(fixed).ok();
+        observation.lifting_fuel = u64::try_from(hostcall_fuel).ok();
+        observation.lift_multiplier = u64::try_from(multiplier).ok();
+        // This producer owns preparation's exact allocation proof. The
+        // execution codec's generic limit already carries a diagnosis, which
+        // must not mask this more specific observation via attach().
+        return Err(observation.attach(super::failure(
+            latent_core::PlatformErrorCode::ResourceExhausted,
+            "invocation-value-limit",
+        )));
     }
     Ok(SignaturePlan {
         examined_type_nodes: limits.max_type_nodes - state.remaining,

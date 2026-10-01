@@ -22,7 +22,9 @@ pub(super) fn present<'de, D: Deserializer<'de>>(
     object(input).map(Some)
 }
 
-fn object<'de, T: Deserialize<'de>, D: Deserializer<'de>>(input: D) -> Result<T, D::Error> {
+pub(super) fn object<'de, T: Deserialize<'de>, D: Deserializer<'de>>(
+    input: D,
+) -> Result<T, D::Error> {
     struct Object<T>(std::marker::PhantomData<T>);
     impl<'de, T: Deserialize<'de>> de::Visitor<'de> for Object<T> {
         type Value = T;

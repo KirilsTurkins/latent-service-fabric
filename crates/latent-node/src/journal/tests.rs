@@ -6,6 +6,8 @@ use latent_core::{ActivationPhase, ActivationTerminalState, BudgetConsumption, M
 use super::*;
 
 mod support;
+#[path = "tests/tree.rs"]
+mod tree;
 use support::{envelope, journal, outcome, Clock};
 
 #[test]

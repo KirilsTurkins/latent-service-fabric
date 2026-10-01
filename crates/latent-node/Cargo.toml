@@ -27,6 +27,7 @@ latent-scheduler = { path = "../latent-scheduler" }
 latent-state = { path = "../latent-state" }
 latent-telemetry = { path = "../latent-telemetry" }
 tokio.workspace = true
+sha2.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

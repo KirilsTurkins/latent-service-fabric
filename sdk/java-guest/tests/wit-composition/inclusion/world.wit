@@ -1,0 +1,4 @@
+package examples:inclusion@1.0.0;
+interface api { echo: func(value: string) -> string; }
+world base { export api; }
+world service { include base; }

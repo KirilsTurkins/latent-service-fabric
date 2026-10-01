@@ -112,6 +112,76 @@ class CompatibilityReport(unittest.TestCase):
 
 
 class FinalComponentInspection(unittest.TestCase):
+    def test_actual_java_type_interface_is_structural_without_installing_or_granting_a_provider(self):
+        raw = (Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes()
+        self.assertEqual(digest(raw), "sha256:fa52df37a921a12fcfed9fc1fb499ee9848291daa01de04bdce572e0f7a0cf4d")
+        original = json.loads(raw)
+        host = json.loads((build.ROOT / "wit/host-abi-phase3-v4.json").read_bytes())
+        known = {row["interface"] for row in host["interfaces"]}
+        names = build.interface_names(original, host_interfaces=known)
+        clocks = ["latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0"]
+        self.assertEqual(names, {"imports": clocks, "typeImports": ["examples:java-http-domain/types@1.0.0"],
+                                "exports": ["examples:java-http-domain/api@1.0.0"]})
+        findings = c.import_findings(names["imports"], clocks, host)
+        self.assertEqual([item["classification"] for item in findings], ["unresolved-behavior"])
+        self.assertEqual(sample(findings)["authority"], "none")
+        self.assertEqual([item["classification"] for item in c.import_findings(names["imports"], clocks, host,
+                         installed=set(), granted=set())], ["missing-provider", "missing-provider"])
+        reexport = copy.deepcopy(original)
+        reexport["worlds"][0]["exports"]["types"] = {"interface": {"id": 2}}
+        self.assertIn("examples:java-http-domain/types@1.0.0", build.interface_names(reexport)["exports"])
+
+    def test_type_named_callable_and_recognized_host_interfaces_do_not_bypass_host_checks(self):
+        original = json.loads((Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes())
+        changed = copy.deepcopy(original)
+        changed["interfaces"][2]["functions"] = {"send": {"kind": "freestanding", "params": [], "result": None}}
+        self.assertEqual(build.interface_names(changed)["typeImports"], [])
+        changed = copy.deepcopy(original)
+        known = {"examples:java-http-domain/types@1.0.0"}
+        self.assertEqual(build.interface_names(changed, host_interfaces=known)["typeImports"], [])
+
+    def test_resource_handle_and_async_aliases_cannot_be_classified_as_structural(self):
+        original = json.loads((Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes())
+        for kind in ("resource", {"handle": {"own": 1}}, {"handle": {"borrow": 1}},
+                     {"future": "u64"}, {"stream": "u64"}, {"unknown": "u64"}):
+            changed = copy.deepcopy(original)
+            changed["types"][0]["kind"] = kind
+            names = build.interface_names(changed)
+            self.assertEqual(names["typeImports"], [])
+            self.assertIn("examples:java-http-domain/types@1.0.0", names["imports"])
+
+    def test_structural_alias_indices_cycles_and_deep_memoized_paths_fail_closed(self):
+        original = json.loads((Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes())
+        for index in (-1, True, 99999, 0):
+            changed = copy.deepcopy(original)
+            changed["types"][0]["kind"] = {"type": index}
+            with self.assertRaises(DevError):
+                build.interface_names(changed)
+        changed = copy.deepcopy(original)
+        changed["interfaces"][2]["types"] = {"shallow": 0, "deep": len(changed["types"]) + 32}
+        for index in range(33):
+            child = 0 if index == 0 else len(changed["types"]) - 1
+            changed["types"].append({"kind": {"option": child}})
+        with self.assertRaises(DevError):
+            build.interface_names(changed)
+
+    def test_structural_value_forms_and_shared_work_bound_remain_finite(self):
+        original = json.loads((Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes())
+        for kind in ({"tuple": {"types": ["u64", "string"]}}, {"result": {"ok": "u64", "err": None}},
+                     {"variant": {"cases": [{"name": "empty", "type": None}, {"name": "full", "type": "u64"}]}},
+                     {"enum": {"cases": [{"name": "on"}, {"name": "off"}]}},
+                     {"flags": {"flags": [{"name": "read"}, {"name": "write"}]}}):
+            changed = copy.deepcopy(original)
+            changed["types"][0]["kind"] = kind
+            self.assertEqual(build.interface_names(changed)["typeImports"], ["examples:java-http-domain/types@1.0.0"])
+        changed = copy.deepcopy(original)
+        base = len(changed["types"])
+        for index in range(9):
+            changed["types"].append({"kind": {"tuple": {"types": ["u64"] * 4096}}})
+        changed["interfaces"][2]["types"] = {"bounded-" + str(index): base + index for index in range(9)}
+        with self.assertRaises(DevError):
+            build.interface_names(changed)
+
     def test_reporting_stale_input_preserves_original_build_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)

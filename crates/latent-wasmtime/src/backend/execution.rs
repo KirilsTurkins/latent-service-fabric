@@ -58,7 +58,7 @@ impl WasmtimeBackend {
             &function.params,
             raw_input.bytes(),
             &request.activation.input_media_type,
-            self.config.value_codec_limits,
+            runtime.surface.value_codec_limits,
         )?;
 
         let capabilities =
@@ -83,6 +83,7 @@ impl WasmtimeBackend {
             accounting,
             capabilities,
             transaction,
+            runtime.surface.hostcall_fuel,
         )?);
         // Decoding and every borrowed validation have completed. The Store now
         // owns only the moved context; destroy the actual raw input before call.
@@ -117,7 +118,7 @@ impl WasmtimeBackend {
         timing.component_post_return_micros = elapsed_micros(component_post_return_started);
 
         let encoded = call_result.as_ref().ok().map(|()| {
-            values::encode_result(&function.results, &output, self.config.value_codec_limits)
+            values::encode_result(&function.results, &output, runtime.surface.value_codec_limits)
         });
         // Cleanup order is intentional: after the guest call and its
         // component-model post-return complete, the actual component instance,

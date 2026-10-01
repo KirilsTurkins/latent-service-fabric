@@ -563,6 +563,7 @@ impl WasmtimeBackend {
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
         transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
+        hostcall_fuel: usize,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -609,7 +610,7 @@ impl WasmtimeBackend {
             host_state.limiter.reserve_exception_heap()?;
         }
         let mut store = Store::new(&self.engine, host_state);
-        store.set_hostcall_fuel(self.config.hostcall_fuel);
+        store.set_hostcall_fuel(hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
         store.set_fuel(initial_fuel).map_err(|error| {
             platform_error(
@@ -780,6 +781,13 @@ impl ExecutionBackend for WasmtimeBackend {
     }
     fn backend_id(&self) -> &str {
         &self.profile.id
+    }
+
+    fn inspect_ready(
+        &self,
+        ready: latent_executor::PreparedReadiness,
+    ) -> Result<latent_executor::PreparationInspection, PlatformError> {
+        self.inspect_readiness(ready)
     }
 
     fn preparation_key(

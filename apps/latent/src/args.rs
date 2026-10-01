@@ -22,7 +22,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 pub use invoke::{InvokeArgs, InvokeBudgetProfile};
 pub use management::{
     ActivationCommand, ApplyArgs, DeploymentCommand, NodeCommand, PublicationArgs, PublishArgs,
-    ReleaseCommand, RouteCommand, ServicePageArgs, ValidateCommand,
+    ReleaseCommand, RouteCommand, ServicePageArgs, TargetInspectionArgs, ValidateCommand,
 };
 #[cfg(test)]
 pub use management::{CancelArgs, DeleteArgs, DeploymentOperationArgs, FileArgs, IdArgs};

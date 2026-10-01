@@ -1831,6 +1831,7 @@ dependencies = [
  "latent-state",
  "latent-telemetry",
  "tempfile",
+ "sha2 0.11.0",
  "tokio",
 ]
 

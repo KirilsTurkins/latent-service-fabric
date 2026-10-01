@@ -139,6 +139,14 @@ pub struct ArtifactCatalogEntry {
     pub world: ContractId,
 }
 
+/// Fixed-size publication identity facts. No raw metadata or mutable authority.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PublicationInspectionIdentity {
+    pub component: ReleaseDigest,
+    pub package: Option<latent_core::PackageDigest>,
+    pub kind: Option<package::PackageKind>,
+}
+
 /// The tenant comes from the authenticated adapter, independently of the opaque cursor.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArtifactCatalogPageRequest {

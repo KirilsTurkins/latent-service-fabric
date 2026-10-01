@@ -14,6 +14,7 @@
         "paths": [
           "sdk/java-guest/**",
           "sdk/transaction-contract/**",
+          "examples/java-http-composition/**",
           "tools/**",
           "apps/**",
           "crates/**",
@@ -33,7 +34,7 @@
   "requiredJobs": [
     "compiler-component"
   ],
-  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution",
+  "reviewReason": "Preserve all workflow controls and add both Java HTTP composition and transaction-contract change paths",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

@@ -548,6 +548,11 @@ impl StandaloneNode {
     ) -> Result<(), PlatformError> {
         self.start_state(settings, &catalogs, &control_runtime)
             .await?;
+        if let Some(capabilities) = &catalogs.capabilities {
+            capabilities
+                .broker()
+                .install_diagnostic_sink(Arc::new(self.manager.journal()))?;
+        }
         let cleanup = self
             .cleanup
             .as_ref()
@@ -582,7 +587,9 @@ impl StandaloneNode {
             },
             settings.management.clone(),
         )?;
-        let management = self.policy_management(management, &catalogs)?;
+        let management = self
+            .policy_management(management, &catalogs)?
+            .with_activation_journal(self.manager.journal());
         if self.sampler.is_none() {
             self.sampler = Some(load::LoadSampler::start(
                 Arc::clone(&self.load),

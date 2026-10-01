@@ -511,3 +511,36 @@ mutation preconditions, tenant isolation and current authority checks remain
 explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
+
+## Additive privileged activation-tree inspection
+
+Issue #709 adds `NodeService.InspectActivationTree` and its four messages and
+three closed diagnostic enums. Every earlier declaration, field number and RPC
+is preserved. Producer details use `activation.diagnostic.v1` internally;
+public invocation and browser errors continue to discard that detail.
+Unknown enum numbers and optional zero values survive all six common models
+and native transports. See [activation inspection](../reference/activation-inspection.md).
+
+Caller-supplied root/parent IDs now reject before an external activation is
+accepted. These IDs cannot authorize a tree edge. Trusted local service brokers
+derive lineage from the actual parent owner and authenticated tenant.
+
+## Additive immutable target inspection
+
+Issue #716 adds the unary `NodeService.InspectHttpTarget` method, eight bounded
+inspection messages and three observation enums. The descriptor contract
+preserves every existing file, message, field number, enum value and RPC. The
+node descriptor additionally imports the existing release descriptor for exact
+publication identities.
+
+The authenticated tenant administrator receives coherent, stale or unavailable
+observations of the selected catalog and policy owners. Optional preparation
+inspects the same admitted readiness owner without materialization or guest and
+provider execution. The reply reports actual provider imports and validated
+structural type imports separately, and preserves numeric option presence and
+future enum values. See [target inspection](../reference/target-inspection.md).
+
+Engine configuration digests and internal sealed metadata fingerprints retain
+their separate meanings. Live grant checks are explicitly absent; an inspection
+does not grant execution or mutation authority. Public invocation and browser
+error projections retain their existing disclosure rules.
