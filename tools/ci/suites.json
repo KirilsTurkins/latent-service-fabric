@@ -3976,7 +3976,10 @@
         "supply_chain::tests::web_catalog::web_catalog_current_grants_do_not_hide_missing_or_changed_original_content_on_restart",
         "supply_chain::tests::web_catalog::web_catalog_preflight_rejection_and_bad_evidence_leave_no_publication_or_mode_upgrade",
         "supply_chain::tests::web_catalog::web_catalog_reclaims_only_unselected_evidence_and_keeps_the_current_revision_after_restart",
-        "supply_chain::tests::web_catalog::web_catalog_renewal_replaces_only_evidence_and_invalidates_old_use_tokens_after_restart"
+        "supply_chain::tests::web_catalog::web_catalog_renewal_replaces_only_evidence_and_invalidates_old_use_tokens_after_restart",
+        "capability::tests::state::native_recovery_purposes_require_explicit_caller_scope_and_never_inherit_quiesce_grants",
+        "capability::tests::state::native_recovery_policy_vocabulary_refuses_unknown_approval_redrive_and_guest_labels",
+        "capability::store::tests::authority::publication::recovery::inherited_state_binding_keeps_caller_purposes_and_final_publication_fences"
       ],
       "expectedIgnored": [
         "supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture",
@@ -3999,7 +4002,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 106,
+      "minimumCases": 109,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -5086,14 +5089,16 @@
         "tenant::tests::missing_changed_or_malformed_tenant_record_refuses_instead_of_auto_upgrading_legacy",
         "tenant::tests::noisy_tenant_saturation_and_stale_counter_fence_do_not_consume_another_tenant_or_partial_business_commit",
         "tenant::tests::same_atomic_envelope_merges_state_and_command_counter_once_and_rejects_overflow_without_partial_rows",
-        "tenant::tests::typed_accounting_reads_and_setup_existence_checks_refuse_oversized_bytes_before_copying_values"
+        "tenant::tests::typed_accounting_reads_and_setup_existence_checks_refuse_oversized_bytes_before_copying_values",
+        "session::tests::inspection::native_cell_observation_preserves_real_scope_value_and_tombstone_without_session_access",
+        "session::tests::inspection::native_cell_observation_refuses_foreign_incarnations_future_versions_and_malformed_owned_rows"
       ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 188,
+      "minimumCases": 190,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

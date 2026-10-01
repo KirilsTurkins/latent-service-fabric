@@ -27,7 +27,7 @@ use std::{
     time::{Duration, Instant},
 };
 pub use validation::validate_row;
-pub use validation::{inspect_usage, StateUsage};
+pub use validation::{inspect_cell, inspect_usage, ObservedCell, StateUsage};
 static NEXT_SESSION: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
