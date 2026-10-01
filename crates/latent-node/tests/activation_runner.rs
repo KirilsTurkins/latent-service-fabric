@@ -63,6 +63,7 @@ impl ScriptedBackend {
                 metadata.insert("guest-value".to_owned(), "sensitive".repeat(128));
                 ExecutionReport::reusable(Ok(GuestOutcome::Trapped {
                     trap: GuestTrap {
+                        diagnostic: None,
                         code: "controlled-trap".to_owned(),
                         message: "guest trap detail ".repeat(128),
                         guest_backtrace: vec!["guest-frame".repeat(128)],

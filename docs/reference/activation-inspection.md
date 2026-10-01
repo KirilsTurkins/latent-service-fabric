@@ -33,6 +33,13 @@ different reasons. Unknown client enum numbers are preserved as numbers.
 `diagnosticIsTerminal` distinguishes the actual terminal failure cause from a
 caught broker observation; a successful guest may have caught a provider error.
 
+A result-codec limit after the guest returns retains the codec producer's
+`Execution` / `ValueAllocationLimit` observation through `GuestTrap` and the
+terminal journal record. The trap state and measured consumption stay intact;
+HTTP output validation is a later stage. Arbitrary trap metadata cannot supply
+this observation, and a generic untyped codec failure keeps it absent. Neither
+case certifies external effect completion or proves no mutation occurred.
+
 One request returns at most 128 nodes and 64 KiB. Zero/absent size selects 32;
 clients never drain pages automatically. Cursors are opaque and tied to tenant,
 anchor, retained anchor identity and this journal lifetime. Their membership

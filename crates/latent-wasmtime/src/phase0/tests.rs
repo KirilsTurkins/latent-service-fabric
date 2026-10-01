@@ -216,6 +216,7 @@ fn traps_interruptions_and_platform_failures_preserve_shared_backend_reports() {
     let limits = ValueCodecLimits::default();
     let trap = GuestOutcome::Trapped {
         trap: GuestTrap {
+            diagnostic: None,
             code: "wasm-trap".to_owned(),
             message: "unreachable".to_owned(),
             guest_backtrace: Vec::new(),

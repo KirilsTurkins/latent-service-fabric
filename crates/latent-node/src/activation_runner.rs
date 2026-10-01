@@ -647,6 +647,11 @@ pub(crate) fn map_execution_outcome(
                 fields,
             }];
             details.extend(diagnostics::currentness_detail(&trap));
+            details.extend(
+                trap.diagnostic
+                    .as_ref()
+                    .map(latent_core::diagnostic::ActivationDiagnostic::detail),
+            );
             failure(
                 PlatformError {
                     code: PlatformErrorCode::GuestTrap,
