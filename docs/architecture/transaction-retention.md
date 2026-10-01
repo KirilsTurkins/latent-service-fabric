@@ -64,13 +64,33 @@ leaves the prepared plan unchanged. Legacy catalog compositions canonicalize onl
 identical read-only installation-absence expectations; ordinary duplicate keys
 still reject and installation still conflicts with an earlier legacy plan.
 
-Portable engine fixtures cover real catalog/state writes across two namespaces,
-another tenant's independent capacity, live-to-tombstone changes, atomic command
-and effect refusal, actual response expiry, reopened totals and a bounded whole
-floor/management append. These hooks do not establish the startup total census,
-all schema/restore writers, an installed protected-worker profile or operator
-endpoint qualification. Those consuming checks remain required before enabling
-the mandatory installed runtime profile.
+`TenantCensus` accumulates the original producer-validated startup scan, with at
+most 32 tenant totals, 65,536 rows, 128 MiB of charged bytes and the original
+deadline capped at one minute. It requires exact installation and counter
+originals and strict family/key order. Missing, duplicate, unconfigured or
+inconsistent ownership refuses; it never repairs counters. Upper owners supply
+their original reserved ownership and covered linked rows. Only the installation,
+recovery, retention and two dispatcher singleton controls can use a separately
+reviewed global allowance of at most five rows and 256 KiB. Unknown metadata
+cannot become an exclusion. The accumulator retains no business bytes or native
+view and creates no second store, worker or scan.
+
+The fixed migration and explicit resume compose actual state, usage, history and
+progress/receipt changes with that same tenant CAS. Migration checks transformed
+state capacity before pausing. Its existing checkpoint remembers original tenant
+counter bytes to distinguish the known staging change from unrelated writes;
+historical progress bytes retain their legacy encoding. Replays preserve quota
+generations. Restore imports original counters while Staging, then charges each
+new paused history against the exact restored origin before completing. Original
+business identities and immutable quota limits remain unchanged.
+
+Portable engine fixtures cover real catalog/state writes, independent tenants,
+live-to-tombstone changes, command/effect refusal, response expiry and bounded
+floor/management append. Census cases reject validly encoded drift and orphaned
+state after reopen. Migration/resume and restore cases verify actual changed
+bytes, capacity refusal, replay and paused history. Complete upper startup
+observation, the installed protected-worker profile and operator endpoint
+qualification remain consuming requirements before enabling mandatory startup.
 
 ## Linked response expiry
 

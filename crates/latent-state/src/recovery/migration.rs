@@ -241,14 +241,25 @@ impl AggregateMigrationPlan {
                 original_progress: prior.as_ref(),
             },
         )?;
-        match prior {
+        let mut plan = match prior {
             Some(progress) if progress.completed() || phase == MigrationAction::Stage => {
                 Self::replay(view, &current, key, bytes, progress)
             }
             Some(progress) => Self::complete(view, &current, key, bytes, progress),
             None if phase == MigrationAction::Stage => Self::stage(view, &current, request, schema),
             None => Err(StoreError::Unavailable),
+        }?;
+        let accounting = crate::tenant::prepare_update(
+            view,
+            &request.scope.tenant,
+            crate::tenant::TenantDelta::default(),
+        )?;
+        if plan.action == MigrationAction::Replay {
+            accounting.append_read_expectations(&mut plan.batch)?;
+        } else {
+            accounting.rebuild_batch(&mut plan.batch)?;
         }
+        Ok(plan)
     }
 
     fn stage(
@@ -260,7 +271,14 @@ impl AggregateMigrationPlan {
         // Refuse unsupported values and insufficient namespace quota BEFORE
         // publishing even the paused progress marker. No transformed bytes are
         // published by this stage.
-        crate::session::offline::aggregate_v1_to_v2(view, &current.namespace)?;
+        let mut transformed =
+            crate::session::offline::aggregate_v1_to_v2(view, &current.namespace)?;
+        crate::tenant::prepare_update(
+            view,
+            &current.namespace.tenant,
+            crate::tenant::TenantDelta::default(),
+        )?
+        .rebuild_batch(&mut transformed)?;
         let progress = AggregateMigrationProgress::new(view, current, request, schema)?;
         let key = request.progress_key()?;
         let history_key = progress.history_key()?;

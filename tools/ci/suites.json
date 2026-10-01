@@ -5081,14 +5081,20 @@
         "tenant::tests::missing_changed_or_malformed_tenant_record_refuses_instead_of_auto_upgrading_legacy",
         "tenant::tests::noisy_tenant_saturation_and_stale_counter_fence_do_not_consume_another_tenant_or_partial_business_commit",
         "tenant::tests::same_atomic_envelope_merges_state_and_command_counter_once_and_rejects_overflow_without_partial_rows",
-        "tenant::tests::typed_accounting_reads_and_setup_existence_checks_refuse_oversized_bytes_before_copying_values"
+        "tenant::tests::typed_accounting_reads_and_setup_existence_checks_refuse_oversized_bytes_before_copying_values",
+        "recovery::migration::tests::tenant::installed_tenant_capacity_refuses_migration_before_paused_history_or_progress_publication",
+        "recovery::migration::tests::tenant::installed_tenant_migration_and_resume_charge_actual_changed_rows_with_restart_and_read_only_replay",
+        "recovery::restore::tests::tenant::restored_tenant_accounting_uses_original_quota_and_charges_new_paused_history_with_reopen",
+        "tenant::tests::census::actual_startup_census_reconstructs_state_tombstones_and_metadata_across_tenants_and_reopen",
+        "tenant::tests::census::actual_startup_census_refuses_valid_encoded_drift_and_orphaned_state_instead_of_repairing_counters",
+        "tenant::tests::census::census_refuses_unconfigured_ownership_duplicate_rows_and_unbounded_global_exclusions"
       ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 183,
+      "minimumCases": 189,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

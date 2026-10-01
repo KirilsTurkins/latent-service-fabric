@@ -31,6 +31,10 @@ pub struct AggregateMigrationProgress {
     history_row: Option<Vec<u8>>,
     guard_row: Option<Vec<u8>>,
     result_namespace_row: Option<Vec<u8>>,
+    /// Original installed accounting bytes belong to the same checkpoint.
+    /// Absence preserves the exact historical lower-store legacy encoding.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tenant_quota_row: Option<Vec<u8>>,
 }
 impl AggregateMigrationProgress {
     pub(super) fn new(
@@ -60,6 +64,10 @@ impl AggregateMigrationProgress {
             history_row,
             guard_row: view.get(&guard_key())?,
             result_namespace_row: None,
+            tenant_quota_row: view.get_bounded(
+                &crate::tenant::quota_key(&current.namespace.tenant)?,
+                crate::tenant::RECORD_BYTES,
+            )?,
         })
     }
     #[must_use]
@@ -68,6 +76,22 @@ impl AggregateMigrationProgress {
     }
     pub fn source_namespace(&self) -> Result<NamespaceRecord, StoreError> {
         NamespaceRecord::decode(&self.namespace_row).map_err(|_| StoreError::Corrupt)
+    }
+    pub(super) fn source_quota_expectation(&self) -> Result<Option<ExpectedRow>, StoreError> {
+        self.tenant_quota_row
+            .as_ref()
+            .map(|bytes| {
+                let namespace = self.source_namespace()?;
+                let record = crate::tenant::TenantRecord::decode(bytes)?;
+                if record.quota.tenant != namespace.tenant {
+                    return Err(StoreError::Corrupt);
+                }
+                Ok(ExpectedRow {
+                    key: crate::tenant::quota_key(&namespace.tenant)?,
+                    value: Some(bytes.clone()),
+                })
+            })
+            .transpose()
     }
     pub(super) fn source_history(&self) -> Result<NamespaceHistory, StoreError> {
         let namespace = self.source_namespace()?;
@@ -187,6 +211,7 @@ impl AggregateMigrationProgress {
     }
     pub(super) fn history_key(&self) -> Result<RowKey, StoreError> {
         let n = self.source_namespace()?;
+        self.source_quota_expectation()?;
         history_key(&n.tenant, &n.id, n.version.incarnation).map_err(|_| StoreError::Corrupt)
     }
     pub(super) fn namespace_expectation(&self) -> Result<ExpectedRow, StoreError> {

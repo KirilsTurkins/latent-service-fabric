@@ -127,6 +127,35 @@ fn metadata_delta(batch: &AtomicBatch) -> Result<TenantDelta, StoreError> {
 }
 
 impl PreparedTenantUpdate {
+    /// A replay/read plan keeps the exact configuration and original counter
+    /// expectations without advancing a quota generation or reserving space.
+    pub fn append_read_expectations(&self, batch: &mut AtomicBatch) -> Result<(), StoreError> {
+        let guard = ExpectedRow {
+            key: guard_key(),
+            value: self.captured.as_ref().map(|old| old.guard.clone()),
+        };
+        check_expectation(batch, &guard)?;
+        if batch.mutations.iter().any(|row| row.key == guard.key) {
+            return Err(StoreError::Corrupt);
+        }
+        if let Some(captured) = &self.captured {
+            let expected = ExpectedRow {
+                key: quota_key(&self.tenant)?,
+                value: Some(captured.bytes.clone()),
+            };
+            check_expectation(batch, &expected)?;
+            if batch.mutations.iter().any(|row| row.key == expected.key) {
+                return Err(StoreError::Corrupt);
+            }
+            check_size(batch, &[&guard, &expected], None)?;
+            add_expectation(batch, guard);
+            add_expectation(batch, expected);
+        } else {
+            check_size(batch, &[&guard], None)?;
+            add_expectation(batch, guard);
+        }
+        Ok(())
+    }
     /// Complete-envelope owner only: rebuild this contribution plus the exact
     /// lower state/namespace/metadata row changes from the original counter.
     /// This avoids charging a namespace row twice when a later management
