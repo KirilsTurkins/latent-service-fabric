@@ -8,6 +8,7 @@ use latent_state::namespace::catalog::{
 };
 use latent_state::namespace::NamespaceTransition;
 mod fixture;
+mod retained;
 use fixture::*;
 
 fn batch(read: &NamespaceRead, name: &str) -> AtomicBatch {
