@@ -15,6 +15,7 @@ import re
 import time
 
 from tools.java_http_composition.context import hops, roots, tree
+from tools.dev_workflow.node_output import PROVIDER_COUNTERS
 from tools.java_http_composition.node import ADAPTER, CHILD_SUBJECT, DOMAIN, MEDIA, TENANT, idle
 from tools.phase2_operator_process import read_json, require, write_json
 from tools.phase3_management_scenario import http_provider
@@ -237,8 +238,9 @@ def verify_managed_shutdown(shutdown: dict) -> dict:
 
 
 def _pool_shutdown(report: dict) -> dict:
-    counters = ("controlOwners", "connections", "pendingRequests", "runningRequests", "workers", "cleanupJobs",
-        "failedCleanup", "sessions", "handles", "calls", "results", "ioCalls", "ioRetainedBytes")
+    extra = ("secretGenerations", "secretReferences") if any(
+        name in report for name in ("secretGenerations", "secretReferences")) else ()
+    counters = (*PROVIDER_COUNTERS, *extra)
     require(report.get("clean") is True and all(type(report.get(name)) is int and report[name] == 0 for name in counters),
             "java-provider-physical-pool-not-retired")
     return {"reaped": True, "clean": True, "counters": {name: report[name] for name in counters}}

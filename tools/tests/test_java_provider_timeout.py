@@ -140,7 +140,8 @@ class JavaProviderTimeoutTests(unittest.TestCase):
 
     def test_shutdown_requires_original_reaped_report_and_every_known_pool_counter(self):
         counters = ("controlOwners", "connections", "pendingRequests", "runningRequests", "workers", "cleanupJobs",
-            "failedCleanup", "sessions", "handles", "calls", "results", "ioCalls", "ioRetainedBytes")
+            "failedCleanup", "sessions", "handles", "calls", "results", "ioCalls", "ioRetainedBytes",
+            "blobStages", "blobHandles", "blobWork")
         report = {"clean": True, **dict.fromkeys(counters, 0)}
         shutdown = {"reaped": True, "record": {"clean": True, "report": {"providers": report}}}
         self.assertTrue(campaign.verify_shutdown(shutdown)["clean"])
