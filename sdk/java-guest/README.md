@@ -116,6 +116,13 @@ providers and explicit publication/service/caller-scoped grants are required,
 even for a greeting. No entropy is implicitly granted. Async host waits,
 resource retention, cancellation and fuel remain controlled by LSF.
 
+The SDK records the exact original and adapted generated C files containing
+TeaVM 0.15 exception spill pointers. It qualifies each saved pointer itself as
+volatile so optimized setjmp/longjmp exception handling preserves Java
+references through catch and finally blocks. Scalar spills, application Java
+bytes, compiler JARs and the maintained `-O2` optimization level are unchanged.
+Unexpected spill declarations fail before generated files are changed.
+
 ## Reproduce and inspect
 
 With the exact pinned tools on PATH and `WASI_SDK_PATH` set, run from the checkout:
