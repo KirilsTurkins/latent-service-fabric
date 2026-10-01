@@ -1,4 +1,5 @@
 //! Local bounded package operations. Registry transfer uses its separate owner.
+mod canonical_policy;
 mod registry;
 
 use crate::args::{Cli, PackageCommand};
@@ -18,6 +19,13 @@ pub fn execute(cli: &Cli, command: &PackageCommand) -> Outcome {
 
 fn execute_inner(cli: &Cli, command: &PackageCommand) -> Result<Outcome, Failure> {
     match command {
+        PackageCommand::CanonicalPolicy(args) => {
+            let publisher = input::read(&args.publisher_policy, 65_536, "publisher-policy")?;
+            let builder = input::read(&args.builder_policy, 65_536, "builder-policy")?;
+            Ok(Outcome::success(canonical_policy::canonicalize(
+                &publisher, &builder,
+            )?))
+        }
         PackageCommand::RendererProfile => Ok(Outcome::success(json!({
             "profile": "angular-ssr-component-v1",
             "profileDigest": latent_artifacts::web::renderer_profile_digest(

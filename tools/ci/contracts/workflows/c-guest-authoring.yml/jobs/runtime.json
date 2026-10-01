@@ -62,13 +62,17 @@
         "run": "python3 -m unittest tools.tests.test_c_capsule_authoring\npython3 tools/qualify_c_capsules.py --output \"$RUNNER_TEMP/c-capsule-authoring\"\n"
       },
       {
+        "name": "Qualify captured C libraries with enforced compiler isolation",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\nLSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_captured_compiler_isolation\npython3 tools/qualify_c_capsules.py --application-dependencies --output \"$RUNNER_TEMP/c-application-library\"\n"
+      },
+      {
         "if": "always()",
         "name": "Retain compiler and ownership results including failures",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "c-guest-ownership-${{ github.run_id }}",
-          "path": "${{ runner.temp }}/transaction-contract-c/report.json\n${{ runner.temp }}/transaction-contract-c/source.tar.gz\n${{ runner.temp }}/transaction-contract-c/component.wit\n${{ runner.temp }}/transaction-contract-c/preparation.json\n${{ runner.temp }}/transaction-contract-c/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-c/logs/**\n${{ runner.temp }}/transaction-contract-c/compiler/*.log\n${{ runner.temp }}/transaction-contract-c/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-c/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-c/compiled/component.wit\n${{ runner.temp }}/transaction-contract-c/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-c/compiled/generated/**\n${{ runner.temp }}/transaction-contract-c/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-c/bindings/**\n${{ runner.temp }}/transaction-contract-c/component.wasm\n${{ runner.temp }}/c-guest-*.log\n${{ runner.temp }}/c-guest-capsules/BUILD-COMPLETE.json\n${{ runner.temp }}/c-guest-capsules/c-*/*.json\n${{ runner.temp }}/c-capsule-authoring/*.json\n${{ runner.temp }}/c-capsule-authoring/logs/**\n${{ runner.temp }}/c-capsule-authoring/builds/**\n${{ runner.temp }}/c-capsule-authoring/node/**\n${{ runner.temp }}/c-capsule-authoring/releases/**\n${{ runner.temp }}/c-capsule-authoring/guide/guide.json\n${{ runner.temp }}/c-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/c-capsule-authoring/guide/logs/**\n${{ runner.temp }}/c-capsule-authoring/guide/projects/results/**\n",
+          "path": "${{ runner.temp }}/transaction-contract-c/report.json\n${{ runner.temp }}/transaction-contract-c/source.tar.gz\n${{ runner.temp }}/transaction-contract-c/component.wit\n${{ runner.temp }}/transaction-contract-c/preparation.json\n${{ runner.temp }}/transaction-contract-c/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-c/logs/**\n${{ runner.temp }}/transaction-contract-c/compiler/*.log\n${{ runner.temp }}/transaction-contract-c/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-c/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-c/compiled/component.wit\n${{ runner.temp }}/transaction-contract-c/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-c/compiled/generated/**\n${{ runner.temp }}/transaction-contract-c/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-c/bindings/**\n${{ runner.temp }}/transaction-contract-c/component.wasm\n${{ runner.temp }}/c-guest-*.log\n${{ runner.temp }}/c-guest-capsules/BUILD-COMPLETE.json\n${{ runner.temp }}/c-guest-capsules/c-*/*.json\n${{ runner.temp }}/c-capsule-authoring/*.json\n${{ runner.temp }}/c-capsule-authoring/logs/**\n${{ runner.temp }}/c-capsule-authoring/builds/**\n${{ runner.temp }}/c-capsule-authoring/node/**\n${{ runner.temp }}/c-capsule-authoring/releases/**\n${{ runner.temp }}/c-capsule-authoring/guide/guide.json\n${{ runner.temp }}/c-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/c-capsule-authoring/guide/logs/**\n${{ runner.temp }}/c-capsule-authoring/guide/projects/results/**\n${{ runner.temp }}/c-application-library/**\n",
           "retention-days": 7
         }
       }
@@ -77,7 +81,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
+  "reviewReason": "Preserve existing standalone and captured SDK library C checks plus additive six-profile Phase4 ABI definition qualification and both retained artifact closures",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }
