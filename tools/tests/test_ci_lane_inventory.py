@@ -22,8 +22,9 @@ def synthetic_workflow():
     jobs["rust"] = {
         "needs": spec["rust"]["needs"],
         "if": spec["rust"]["if"],
+        "strategy": {"fail-fast": False, "matrix": {"lane": spec["rust"]["matrix_lanes"]}},
         "steps": [
-            {"name": "Check selected renderer prerequisites before building",
+            {"name": "Check selected renderer prerequisites before building", "id": "renderer_preflight",
              "if": spec["rust"]["renderer_condition"], "run": "preflight"},
             {"name": "Set up the qualified Angular build runtime",
              "if": spec["rust"]["renderer_condition"], "uses": "node"},
@@ -37,6 +38,24 @@ def synthetic_workflow():
             *({"name": name, "run": "physical"} for name in spec["rust"]["physical_after"]),
         ],
     }
+    steps = jobs["rust"]["steps"]
+    for step in steps:
+        key = step.get("id", step.get("name"))
+        step["if"] = spec["rust"]["step_conditions"][key]
+    identifiers = {step.get("id", step.get("name")) for step in steps}
+    for name, condition in spec["rust"]["step_conditions"].items():
+        if name not in identifiers:
+            steps.append({"name": name, "if": condition, "run": "fixture"})
+    jobs["contracts"] = {
+        "needs": spec["contracts"]["needs"],
+        "if": spec["contracts"]["if"],
+        "strategy": {"fail-fast": False, "matrix": {"lane": spec["contracts"]["matrix_lanes"]}},
+        "steps": [{"name": name, "if": condition, "run": "fixture"}
+                  for name, condition in spec["contracts"]["step_conditions"].items()],
+    }
+    dispatcher = next(step for step in jobs["contracts"]["steps"]
+                      if step["name"] == spec["contracts"]["lane_step"])
+    dispatcher.update(run=spec["contracts"]["lane_command"], env={"CI_CONTRACT_LANE": "${{ matrix.lane }}"})
     jobs["catalog"] = {"steps": [{
         "name": spec["catalog"]["manual_step"],
         "if": spec["catalog"]["manual_if"],
@@ -55,6 +74,36 @@ def synthetic_workflow():
 
 
 class InventoryTests(unittest.TestCase):
+    def test_required_matrix_rejects_omitted_lanes_exclusions_and_failure_masking(self):
+        for job_id in ("rust", "contracts"):
+            for edit in ("missing", "exclude", "fail-fast", "ignored"):
+                model = synthetic_workflow()
+                job = model["jobs"][job_id]
+                if edit == "missing":
+                    job["strategy"]["matrix"]["lane"] = job["strategy"]["matrix"]["lane"][:-1]
+                elif edit == "exclude":
+                    job["strategy"]["matrix"]["exclude"] = [{"lane": "tests"}]
+                elif edit == "fail-fast":
+                    job["strategy"]["fail-fast"] = True
+                else:
+                    job["continue-on-error"] = True
+                with self.subTest(job=job_id, edit=edit):
+                    self.assertTrue(workflow_errors(model, baseline()))
+
+    def test_contract_dispatcher_cannot_drop_or_replace_the_owned_lane(self):
+        for edit in ("missing", "selection", "environment"):
+            model = synthetic_workflow()
+            steps = model["jobs"]["contracts"]["steps"]
+            dispatcher = next(step for step in steps if step["name"] == baseline()["contracts"]["lane_step"])
+            if edit == "missing":
+                steps.remove(dispatcher)
+            elif edit == "selection":
+                dispatcher["run"] = "tools/validate_contracts.sh bindings"
+            else:
+                dispatcher["env"] = {"CI_CONTRACT_LANE": "bindings"}
+            with self.subTest(edit=edit):
+                self.assertTrue(workflow_errors(model, baseline()))
+
     def test_complete_model_matches(self):
         self.assertEqual(workflow_errors(synthetic_workflow(), baseline()), ())
 
