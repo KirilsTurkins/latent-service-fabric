@@ -68,7 +68,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         let bytes = retained_bytes
             .checked_add(metadata)
             .ok_or(StoreIoError::Exhausted)?;
-        state.admit(bytes)?;
+        state.admit(false, bytes)?;
         state.accepted += 1;
         state.physical_owners += 1;
         state.retained_bytes += bytes;
@@ -77,6 +77,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             reservation: PhysicalReservation(Reservation {
                 control: Arc::clone(control),
                 bytes,
+                recovery: false,
             }),
             retired: Arc::new(RetirementSignal::default()),
             witness_issued: false,
