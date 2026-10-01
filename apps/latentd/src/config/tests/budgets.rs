@@ -97,7 +97,31 @@ fn explicit_phase4_profile_keeps_immediate_providers_denied_and_bounds_state() {
     assert_eq!(zero.admission.budget_ceiling.state_read_bytes, 0);
     assert_eq!(zero.admission.budget_ceiling.state_write_bytes, 0);
     assert_eq!(zero.admission.budget_ceiling.effect_count, 0);
-    assert_ne!(zero.runtime_profile, ordinary.runtime_profile);
+    // Detected host facts remain stable. Transaction installation belongs to
+    // the preparation policy and capability identity, not the native CPU facts.
+    assert_eq!(zero.runtime_profile, ordinary.runtime_profile);
+    let ordinary_preparation = latent_wasmtime::aot::ValidatedAotProfile::from_config(
+        &ordinary.wasmtime,
+        latent_wasmtime::aot::AotCompilerLimits::default(),
+    )
+    .unwrap();
+    let transaction_preparation = latent_wasmtime::aot::ValidatedAotProfile::from_config(
+        &zero.wasmtime,
+        latent_wasmtime::aot::AotCompilerLimits::default(),
+    )
+    .unwrap();
+    assert_ne!(
+        transaction_preparation.security_policy_digest(),
+        ordinary_preparation.security_policy_digest()
+    );
+    assert_ne!(
+        transaction_preparation.capability_contract_digest(),
+        ordinary_preparation.capability_contract_digest()
+    );
+    assert_ne!(
+        transaction_preparation.digest(),
+        ordinary_preparation.digest()
+    );
     config.budget_profile = serde_json::from_str(
         r#"{
         "mode":"phase4","maximumStateReadBytes":4194304,
