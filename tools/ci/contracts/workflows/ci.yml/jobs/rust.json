@@ -256,132 +256,132 @@
     ".github/workflows/ci.yml:rust:Build the public Angular renderer fixture": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Build workspace binaries and test harnesses": {
       "after": ".github/workflows/ci.yml:rust:Build workspace binaries and test harnesses",
       "disposition": "extended",
-      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Check formatting": {
       "after": ".github/workflows/ci.yml:rust:Check formatting",
       "disposition": "extended",
-      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Check generated RPC and Component Model bindings": {
       "after": ".github/workflows/ci.yml:rust:Check generated RPC and Component Model bindings",
       "disposition": "extended",
-      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Check independently selected production packages": {
       "after": ".github/workflows/ci.yml:rust:Check independently selected production packages",
       "disposition": "extended",
-      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Check observed Angular build and source separation boundaries": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Check workspace": {
       "after": ".github/workflows/ci.yml:rust:Check workspace",
       "disposition": "extended",
-      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}": {
       "after": ".github/workflows/ci.yml:rust:Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "The exact command and its triggering conditions are retained. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned NATS conformance server": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned S3 conformance server": {
       "after": ".github/workflows/ci.yml:rust:s3_fixture",
       "disposition": "extended",
-      "reason": "Maintainer-approved pinned source build replaces the inaccessible image acquisition; immutable receipt and owned compiler cleanup preserve fixture preparation, with unchanged real S3 tests and negative control in the provider lane."
+      "reason": "Maintainer-approved pinned source build replaces the inaccessible image acquisition; immutable receipt and owned compiler cleanup preserve fixture preparation, with unchanged real S3 tests and negative control in the provider lane. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned Vault conformance server": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry": {
       "after": ".github/workflows/ci.yml:rust:Fetch the pinned operator workflow registry",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "The exact command and its triggering conditions are retained. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Produce the observed Angular application package": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Qualify bounded Angular SSR and browser hydration": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Run tests": {
       "after": ".github/workflows/ci.yml:rust:Run tests",
       "disposition": "extended",
-      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Validate Angular in generic cells and the shared HTTP node": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Validate NATS events with the existing test harness": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Validate NATS triggers with the existing test harness": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Validate S3 blobs with the existing test harness": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Validate Vault secrets with the existing test harness": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Validate bounded Phase 2 delivery and resource workflows": {
       "after": ".github/workflows/ci.yml:rust:Validate bounded Phase 2 delivery and resource workflows",
-      "disposition": "unchanged",
-      "reason": "The exact command and its triggering conditions are retained."
+      "disposition": "extended",
+      "reason": "The exact command and its triggering conditions are retained. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Validate browser boundary with live ingress": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Validate capability policy CLI lifecycle": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:Verify actual Angular package admission, fresh rendering and browser hydration": {
       "after": ".github/workflows/ci.yml:rust:integration_lanes",
       "disposition": "extended",
-      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage."
+      "reason": "Integrated into the bounded same-runner provider/renderer lane; #427 exact inventory and owned cleanup preserve the required coverage. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     },
     ".github/workflows/ci.yml:rust:clippy": {
       "after": ".github/workflows/ci.yml:rust:clippy",
       "disposition": "extended",
-      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory."
+      "reason": "Reviewed Cargo recipe preserves exact package, feature, target and lock arguments; current discovery, execution-log validation, AOT preparation and independent coverage remain mandatory. The fixed required matrix allocates this obligation to its owned lane and propagates every failure."
     }
   },
   "definition": {
     "if": "needs.profile.outputs.profile == 'full'",
-    "name": "Rust 1.97.1",
+    "name": "Rust 1.97.1 (${{ matrix.lane }})",
     "needs": "profile",
     "runs-on": "ubuntu-24.04",
     "steps": [
@@ -418,7 +418,7 @@
           "cache-workspace-crates": false,
           "key": "ubuntu-24.04",
           "prefix-key": "${{ inputs.cargo_dependency_cache == 'recipe' && steps.cargo-cache-identity.outputs.prefix || 'lsf-ci-dependencies-v2' }}",
-          "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}",
+          "save-if": "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'tests' }}",
           "shared-key": "host-correctness"
         }
       },
@@ -435,33 +435,39 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock"
       },
       {
+        "if": "matrix.lane == 'tests'",
         "name": "Install the real Fish completion test shell",
         "run": "sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish"
       },
       {
         "id": "renderer_preflight",
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "(matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
         "name": "Check selected renderer prerequisites before building",
         "run": "python3 tools/run_angular_renderer_tests.py --preflight --diagnostic-root \"$RUNNER_TEMP/owned-renderer\""
       },
       {
+        "if": "matrix.lane == 'checks'",
         "name": "Check formatting",
         "run": "python3 tools/ci_cargo.py run format"
       },
       {
+        "if": "matrix.lane == 'checks'",
         "name": "Check deterministic helper dependency boundaries",
         "run": "python3 tools/check_testkit_dependencies.py\npython3 tools/ci_cargo.py run deterministic\n",
         "timeout-minutes": 5
       },
       {
+        "if": "matrix.lane == 'checks'",
         "name": "Check workspace",
         "run": "python3 tools/ci_cargo.py run workspace-check"
       },
       {
+        "if": "matrix.lane == 'checks'",
         "name": "Check generated RPC and Component Model bindings",
         "run": "python3 tools/ci_cargo.py run bindings"
       },
       {
+        "if": "matrix.lane == 'checks'",
         "name": "Check independently selected production packages",
         "run": "python3 tools/ci_cargo.py run production"
       },
@@ -470,73 +476,82 @@
           "CARGO_TERM_COLOR": "never"
         },
         "id": "clippy",
+        "if": "matrix.lane == 'checks'",
         "name": "Run Clippy",
         "run": "status=0\npython3 tools/ci_cargo.py run clippy > \"$RUNNER_TEMP/lsf-clippy.log\" 2>&1 || status=$?\ntail -n 120 \"$RUNNER_TEMP/lsf-clippy.log\"\npython3 - <<'PY'\nimport os\nimport pathlib\nimport re\nlines = (pathlib.Path(os.environ[\"RUNNER_TEMP\"]) / \"lsf-clippy.log\").read_text().splitlines()\nerrors = [\" \".join(lines[i:i + 4]) for i, line in enumerate(lines) if re.match(r\"^error(?:\\[.*?\\])?:\", line)]\ndiagnostic = \" | \".join(errors)[:1000] or \"no compiler errors\"\nwith open(os.environ[\"GITHUB_OUTPUT\"], \"a\", encoding=\"utf-8\") as output:\n    output.write(f\"diagnostic={diagnostic}\\n\")\nPY\nexit \"$status\"\n"
       },
       {
-        "if": "failure() && steps.clippy.outcome == 'failure'",
+        "if": "failure() && matrix.lane == 'checks' && steps.clippy.outcome == 'failure'",
         "name": "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}",
         "run": "tail -n 120 \"$RUNNER_TEMP/lsf-clippy.log\""
       },
       {
+        "if": "matrix.lane != 'checks'",
         "name": "Build workspace binaries and test harnesses",
         "run": "python3 tools/ci_cargo.py run prepare --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\""
       },
       {
+        "if": "matrix.lane == 'tests'",
         "name": "Verify complete registered workspace test discovery",
         "run": "python3 tools/ci_suite_discovery.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --receipt \"$RUNNER_TEMP/ci-discovery.json\""
       },
       {
+        "if": "matrix.lane == 'tests'",
         "name": "Exercise the local exact-case entry point with prepared workspace inputs",
         "run": "python3 tools/test.py prepare --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py check --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py run --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\n"
       },
       {
+        "if": "matrix.lane == 'tests'",
         "name": "Prepare authenticated AOT test inputs",
         "run": "python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests\npython3 tools/aot_test_inputs.py prepare --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --output \"$RUNNER_TEMP/lsf-aot-test-inputs\"\n# Cargo supplies each harness's runtime environment itself. Export only\n# this recipe's input selectors, not CARGO_MANIFEST_DIR/library paths.\npython3 tools/aot_test_inputs.py environment --manifest \"$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json\" | grep '^LSF_AOT_' >> \"$GITHUB_ENV\"\n"
       },
       {
+        "if": "matrix.lane == 'tests'",
         "name": "Run tests",
         "run": "set -o pipefail\npython3 tools/ci_cargo.py run workspace-tests 2>&1 | tee \"$RUNNER_TEMP/ci-workspace-tests.log\"\npython3 tools/ci_suite_discovery.py --execution-log \"$RUNNER_TEMP/ci-workspace-tests.log\"\npython3 tools/ci_cargo.py run doctests 2>&1 | tee \"$RUNNER_TEMP/ci-doctests.log\"\npython3 tools/ci_suite_discovery.py --recipe explicit-doctests --execution-log \"$RUNNER_TEMP/ci-doctests.log\"\npython3 tools/ci_cargo.py run signing-compatibility 2>&1 | tee \"$RUNNER_TEMP/ci-signing-compatibility.log\"\npython3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log \"$RUNNER_TEMP/ci-signing-compatibility.log\"\n"
       },
       {
+        "if": "matrix.lane == 'tests'",
         "name": "Check metadata working-set suite selection and observation validation",
         "run": "python3 -m unittest tools.tests.test_metadata_working_set"
       },
       {
         "id": "metadata-working-set",
+        "if": "matrix.lane == 'tests'",
         "name": "Qualify catalog metadata compilation working set",
         "run": "set -o pipefail\npython3 tools/test.py check --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py prepare --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci\npython3 tools/test.py run --suite selection.metadata-working-set --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --context ci 2>&1 | tee \"$RUNNER_TEMP/metadata-working-set.log\"\n",
         "shell": "bash",
         "timeout-minutes": 16
       },
       {
-        "if": "always() && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'",
+        "if": "always() && matrix.lane == 'tests' && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'",
         "name": "Retain metadata working-set inputs and publication/apply/reopen costs",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
-          "name": "metadata-working-set-observations",
+          "name": "metadata-working-set-observations-${{ matrix.lane }}",
           "path": "${{ runner.temp }}/metadata-working-set.log"
         }
       },
       {
+        "if": "matrix.lane == 'tests'",
         "name": "Qualify the deterministic Phase 3 security matrix",
         "run": "python3 -m unittest tools.tests.test_phase3_security\nmkdir -p target/phase3-security\npython3 tools/phase3_security.py --profile pr --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --source-commit \"$GITHUB_SHA\" --output target/phase3-security/pr-receipt.json\n",
         "timeout-minutes": 12
       },
       {
-        "if": "always()",
+        "if": "always() && matrix.lane == 'tests'",
         "name": "Retain the bounded Phase 3 security receipt",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "phase3-security-pr-${{ github.sha }}",
+          "name": "phase3-security-pr-${{ github.sha }}-${{ matrix.lane }}",
           "path": "target/phase3-security/pr-receipt.json",
           "retention-days": 14
         }
       },
       {
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "(matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
         "name": "Set up the qualified Angular build runtime",
         "uses": "actions/setup-node",
         "with": {
@@ -546,12 +561,13 @@
         }
       },
       {
+        "if": "matrix.lane == 'tests'",
         "name": "Validate small Phase 3 resource regressions",
         "run": "python3 -m unittest tools.tests.test_phase3_resource tools.tests.test_phase3_resource_web",
         "timeout-minutes": 2
       },
       {
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "(matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
         "name": "Set up the pinned component composer",
         "uses": "bytecodealliance/actions/wasm-tools/setup",
         "with": {
@@ -559,13 +575,14 @@
         }
       },
       {
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "(matrix.lane == 'renderer-public') && needs.profile.outputs.renderer == 'true'",
         "name": "Prepare immutable browser lane component",
         "run": "mkdir -p \"$RUNNER_TEMP/browser-component\"\ncargo build --locked -p latent-toolchain-smoke --example web-contract --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o \"$RUNNER_TEMP/browser-component/application.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/browser-component/application.wasm\"\n",
         "timeout-minutes": 5
       },
       {
         "id": "s3_fixture",
+        "if": "matrix.lane == 'provider'",
         "name": "Build pinned source-only S3 test fixture",
         "run": "python3 -m unittest tools.tests.test_s3_fixture_builder tools.tests.test_s3_blob_runner\npython3 tools/build_s3_fixture.py --output \"$RUNNER_TEMP/s3-fixture\"\n",
         "timeout-minutes": 26
@@ -576,7 +593,7 @@
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
-          "name": "source-built-s3-fixture-${{ github.sha }}",
+          "name": "source-built-s3-fixture-${{ github.sha }}-${{ matrix.lane }}",
           "path": "${{ runner.temp }}/s3-fixture/\n${{ runner.temp }}/s3-fixture-diagnostics/\n",
           "retention-days": 14
         }
@@ -585,60 +602,74 @@
         "env": {
           "CI_LANE_RENDERER": "${{ needs.profile.outputs.renderer }}",
           "CI_LANE_WORKERS": "${{ github.event_name == 'workflow_dispatch' && inputs.ci_lane_workers || '2' }}",
+          "CI_NATIVE_LANE": "${{ matrix.lane }}",
           "LSF_S3_FIXTURE_RECEIPT": "${{ runner.temp }}/s3-fixture/fixture.json"
         },
         "id": "integration_lanes",
+        "if": "matrix.lane == 'provider' || ((matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular') && needs.profile.outputs.renderer == 'true')",
         "name": "Run bounded renderer and provider integration lanes",
-        "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py tools/build_s3_fixture.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --output \"$RUNNER_TEMP/ci-lanes\"\n",
+        "run": "# Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py\n# tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py\n# tools/build_angular_package.py tools/run_angular_build_tests.py tools/build_s3_fixture.py\npython3 tools/run_ci_lanes.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --renderer \"$CI_LANE_RENDERER\" --workers \"$CI_LANE_WORKERS\" --lane \"$CI_NATIVE_LANE\" --output \"$RUNNER_TEMP/ci-lanes\"\n",
         "timeout-minutes": 70
       },
       {
-        "if": "always() && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'",
+        "if": "always() && (matrix.lane == 'provider' || ((matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular') && needs.profile.outputs.renderer == 'true')) && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'",
         "name": "Retain bounded CI lane timing and completion receipts",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
-          "name": "ci-integration-lanes-${{ github.sha }}",
+          "name": "ci-integration-lanes-${{ github.sha }}-${{ matrix.lane }}",
           "path": "${{ runner.temp }}/ci-lanes/",
           "retention-days": 14
         }
       },
       {
-        "if": "always() && needs.profile.outputs.renderer == 'true' && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'",
+        "if": "always() && (matrix.lane == 'renderer-public') && needs.profile.outputs.renderer == 'true' && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'",
         "name": "Retain bounded browser boundary observations",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
-          "name": "browser-boundary-observations",
+          "name": "browser-boundary-observations-${{ matrix.lane }}",
           "path": "${{ runner.temp }}/browser-boundary/build-receipt.json\n${{ runner.temp }}/browser-boundary/browser-receipt.json\n${{ runner.temp }}/browser-boundary/browser-application-receipt.json\n"
         }
       },
       {
+        "if": "matrix.lane == 'publications' && needs.profile.outputs.renderer == 'true'",
+        "name": "Prepare publication toolchain and package assembler",
+        "run": "npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund\nobjcopy --strip-debug \"$PWD/target/debug/latent\" \"$RUNNER_TEMP/lsf-angular-package-assembler\"\n"
+      },
+      {
+        "if": "matrix.lane == 'publications'",
         "name": "Fetch the pinned operator workflow registry",
         "run": "docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395"
       },
       {
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "matrix.lane == 'publications' && needs.profile.outputs.renderer == 'true'",
         "name": "Qualify signed static sites through OCI and actual browsers",
         "run": "# Reviewed capture owner: tools/static_site.py\nnode --test tools/static-release/route-set.test.mjs tools/static-release/io.test.mjs\nnode --test tools/catalog-capacity.test.mjs\nstatic_root=\"${RUNNER_TEMP}/static-site\"\nmkdir -p \"$static_root\" \"${RUNNER_TEMP}/phase2-gate\"\nobjcopy --strip-debug \"${PWD}/target/debug/latentd\" \"${static_root}/latentd\"\npython3 tools/build_static_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --toolchain examples/renderer-profile --output \"${static_root}/builds\"\nLSF_STATIC_BUILDS=\"${static_root}/builds\" LSF_STATIC_FIXTURE_ROOT=\"${static_root}/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_static_site_workflow.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${static_root}/latentd\" --fixture \"${static_root}/fixture\" --toolchain examples/renderer-profile --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/static-site-receipt.json\"\nnode --test tools/cross-origin/contract.test.mjs\nmkdir -m 0700 \"$static_root/cors-tls\"\nopenssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -sha256 -days 1 -subj '/CN=localhost' -keyout \"$static_root/cors-tls/key.pem\" -out \"$static_root/cors-tls/server.pem\"\nnode tools/cross-origin/browser.mjs examples/renderer-profile \"$(command -v google-chrome)\" \"$static_root/cors-tls\" examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 \"${RUNNER_TEMP}/phase2-gate/cross-origin-feasibility.json\"\n",
         "shell": "bash",
         "timeout-minutes": 12
       },
       {
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "matrix.lane == 'publications' && needs.profile.outputs.renderer == 'true'",
         "name": "Qualify actual Angular PrimeNG and bilingual Docusaurus publications",
         "run": "npm ci --prefix examples/framework-compatibility --ignore-scripts\nframework_root=\"${RUNNER_TEMP}/framework-sites\"\nmkdir -p \"$framework_root\" \"${RUNNER_TEMP}/phase2-gate\"\npython3 tools/build_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --chrome \"$(command -v google-chrome)\" --output \"$framework_root/builds\"\nLSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS=\"$framework_root/builds\" LSF_STATIC_FIXTURE_ROOT=\"$framework_root/fixture\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite static-site-fixture\npython3 tools/run_framework_sites.py --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --node \"${RUNNER_TEMP}/static-site/latentd\" --fixture \"$framework_root/fixture\" --chrome \"$(command -v google-chrome)\" > \"${RUNNER_TEMP}/phase2-gate/framework-sites.json\"\n",
         "shell": "bash",
         "timeout-minutes": 15
       },
       {
+        "if": "matrix.lane == 'publications'",
         "name": "Validate bounded Phase 2 delivery and resource workflows",
         "run": "python3 -m unittest tools.tests.test_ci_rust_artifacts tools.tests.test_phase2_resource_binaries\nfixture_root=\"$(mktemp -d \"${RUNNER_TEMP}/lsf-operator-fixture.XXXXXXXX\")\"\nmkdir -p \"${RUNNER_TEMP}/phase2-gate\"\ntrap 'rm -rf -- \"$fixture_root\"' EXIT\nLSF_OPERATOR_FIXTURE_ROOT=\"${fixture_root}/inputs\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite operator-fixture\npython3 -m unittest tools.tests.test_phase2_operator_workflow tools.tests.test_phase2_operator_canary tools.tests.test_phase2_offline_workflow\npython3 tools/run_phase2_operator_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --fixture-root \"${fixture_root}/inputs\" --source-commit \"${GITHUB_SHA}\" > \"${RUNNER_TEMP}/phase2-gate/operator-receipt.json\"\n# The executable is authenticated and hashed again in the child. Keep\n# debug sections out of this bounded runtime fixture without rebuilding\n# the workspace or modifying Cargo's cached executable.\nobjcopy --strip-debug \"${PWD}/target/debug/latent-aot-compiler\" \"${fixture_root}/latent-aot-compiler\"\nstat --format='AOT compiler fixture: %s bytes' \"${fixture_root}/latent-aot-compiler\"\nLSF_OPERATOR_FIXTURE_ROOT=\"${fixture_root}/inputs\" LSF_AOT_COMPILER=\"${fixture_root}/latent-aot-compiler\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite trust-currentness\npython3 tools/run_security_profile_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --compiler \"${fixture_root}/latent-aot-compiler\" --fixture-root \"${fixture_root}/inputs\" > \"${RUNNER_TEMP}/phase2-gate/security-profile-receipt.json\"\npython3 tools/run_phase2_offline_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --fixture-root \"${fixture_root}/inputs\" --source-commit \"${GITHUB_SHA}\" > \"${RUNNER_TEMP}/phase2-gate/offline-receipt.json\"\nLSF_OPERATOR_FIXTURE_ROOT=\"${fixture_root}/publication-inputs\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite publication-fixture\npython3 tools/run_publication_workflow.py --cli \"${PWD}/target/debug/latent\" --node \"${PWD}/target/debug/latentd\" --fixture-root \"${fixture_root}/publication-inputs\" --source-commit \"${GITHUB_SHA}\" > \"${RUNNER_TEMP}/phase2-gate/publication-receipt.json\"\n# Keep the frozen 512 MiB executable-hash limit without modifying\n# Cargo's debug artifacts or their hard-linked copies. Hash and run\n# these same runtime-only copies, never the unstripped originals.\nresource_bin=\"${fixture_root}/resource-bin\"\nmkdir \"${resource_bin}\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"${PWD}/target/debug/${binary}\" \"${resource_bin}/${binary}\"\n  stat --format=\"Resource ${binary} fixture: %s bytes\" \"${resource_bin}/${binary}\"\ndone\nLSF_PHASE2_RESOURCE_FIXTURE_ROOT=\"${fixture_root}/resource-inputs\" python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite resource-fixture\npython3 -m unittest tools.tests.test_phase2_gate_resource tools.tests.test_phase2_resource_clock\nLSF_GATE_FIXTURE_ROOT=\"${fixture_root}\" python3 - <<'PY'\nimport hashlib, json, os, pathlib, subprocess\nroot = pathlib.Path.cwd()\nbinaries = pathlib.Path(os.environ[\"LSF_GATE_FIXTURE_ROOT\"]) / \"resource-bin\"\ndef digest(path):\n    with path.open(\"rb\") as source:\n        return \"sha256:\" + hashlib.file_digest(source, \"sha256\").hexdigest()\nidentity = {\n    \"schemaVersion\": \"latent.phase2.resource-build.v1\",\n    \"sourceRevision\": os.environ[\"GITHUB_SHA\"],\n    \"cargoLockSha256\": digest(root / \"Cargo.lock\"),\n    \"cliSha256\": digest(binaries / \"latent\"),\n    \"nodeSha256\": digest(binaries / \"latentd\"),\n    \"rustcVersion\": subprocess.check_output([\"rustc\", \"--version\"], text=True).strip(),\n    \"buildProfile\": \"debug\",\n}\n(pathlib.Path(os.environ[\"LSF_GATE_FIXTURE_ROOT\"]) / \"build.json\").write_text(json.dumps(identity))\nPY\npython3 tools/phase2_gate_resource.py --cli \"${resource_bin}/latent\" --node \"${resource_bin}/latentd\" --fixture-root \"${fixture_root}/resource-inputs\" --build-identity \"${fixture_root}/build.json\" --output \"${RUNNER_TEMP}/phase2-gate/resource-receipt.json\"\npython3 tools/phase2_gate_resource.py --validate \"${RUNNER_TEMP}/phase2-gate/resource-receipt.json\"\n",
         "shell": "bash",
         "timeout-minutes": 10
       },
       {
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "matrix.lane == 'angular-t1' && needs.profile.outputs.renderer == 'true'",
+        "name": "Prepare fresh actual Angular package for T1",
+        "run": "npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund\nmkdir -p \"$RUNNER_TEMP/phase2-gate\"\nobjcopy --strip-debug \"$PWD/target/debug/latent\" \"$RUNNER_TEMP/lsf-angular-package-assembler\"\npython3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli \"$RUNNER_TEMP/lsf-angular-package-assembler\" --target-root \"$RUNNER_TEMP/angular-build\" --output \"$RUNNER_TEMP/angular-build/actual\" --cargo-target-dir \"$PWD/target\" --repository https://example.com/source\n"
+      },
+      {
+        "if": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
         "name": "Restore isolated Angular compiler dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
@@ -657,7 +688,7 @@
           "CARGO_BUILD_JOBS": 2,
           "CARGO_TARGET_DIR": "${{ runner.temp }}/angular-t1-compiler"
         },
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
         "name": "Build the optimized isolated Angular compiler",
         "run": "cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked",
         "timeout-minutes": 25
@@ -667,30 +698,30 @@
           "LSF_ANGULAR_BUILD_DIR": "${{ runner.temp }}/angular-build/actual",
           "LSF_ANGULAR_T1_FIXTURE_ROOT": "${{ runner.temp }}/angular-t1-fixture"
         },
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
         "name": "Export actual signed Angular T1 fixtures",
         "run": "python3 tools/ci_rust_artifacts.py --inventory \"$RUNNER_TEMP/lsf-workspace-tests.jsonl\" --suite angular-t1-fixture",
         "timeout-minutes": 5
       },
       {
-        "if": "needs.profile.outputs.renderer == 'true'",
+        "if": "(matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'",
         "name": "Qualify actual Angular on the protected T1 node",
         "run": "python3 -m unittest tools.tests.test_angular_t1_workflow\nmkdir \"$RUNNER_TEMP/angular-t1-bin\"\nfor binary in latent latentd; do\n  objcopy --strip-debug \"$PWD/target/debug/$binary\" \"$RUNNER_TEMP/angular-t1-bin/$binary\"\ndone\nobjcopy --strip-debug \"$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler\" \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\"\npython3 tools/run_angular_t1_workflow.py --cli \"$RUNNER_TEMP/angular-t1-bin/latent\" --node \"$RUNNER_TEMP/angular-t1-bin/latentd\" --compiler \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\" --fixture-root \"$RUNNER_TEMP/angular-t1-fixture\" > \"$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json\"\n",
         "timeout-minutes": 22
       },
       {
-        "if": "always()",
+        "if": "always() && (matrix.lane == 'publications' || matrix.lane == 'angular-t1')",
         "name": "Retain compact Phase 2 gate receipts",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "phase-2-gate-${{ github.sha }}",
+          "name": "phase-2-gate-${{ github.sha }}-${{ matrix.lane }}",
           "path": "${{ runner.temp }}/phase2-gate/*.json",
           "retention-days": 7
         }
       },
       {
-        "if": "github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+        "if": "matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
         "name": "Set up the bounded resource guest compiler",
         "uses": "mlugg/setup-zig",
         "with": {
@@ -702,7 +733,7 @@
           "CARGO_BUILD_JOBS": 3,
           "CARGO_TARGET_DIR": "${{ github.workspace }}/target/phase3-resource"
         },
-        "if": "github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+        "if": "matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
         "name": "Build fresh resource guest inputs",
         "run": "python3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/resource-guest-tools\"\nPATH=\"$RUNNER_TEMP/resource-guest-tools:$PATH\" python3 tools/build_guest_capsules.py --output \"$PWD/target/phase3-resource-guests\"\n",
         "timeout-minutes": 20
@@ -714,18 +745,18 @@
           "CARGO_PROFILE_TEST_DEBUG": 0,
           "CARGO_TARGET_DIR": "${{ github.workspace }}/target/phase3-resource"
         },
-        "if": "github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+        "if": "matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
         "name": "Execute the bounded Phase 3 resource matrix",
         "run": "python3 tools/phase3_resource_campaign.py --matrix\npython3 tools/run_phase3_resource_acceptance.py --revision \"$GITHUB_SHA\" --output \"$RUNNER_TEMP/phase3-resource-matrix\" --guest-capsules \"$PWD/target/phase3-resource-guests\" --angular-build \"$RUNNER_TEMP/angular-build/actual\" --compiler \"$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler\" --host-condition shared-github-runner\n",
         "timeout-minutes": 70
       },
       {
-        "if": "always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
+        "if": "matrix.lane == 'angular-t1' && always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources",
         "name": "Retain immutable Phase 3 resource attempts",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "phase3-resource-${{ github.sha }}",
+          "name": "phase3-resource-${{ github.sha }}-${{ matrix.lane }}",
           "path": "${{ runner.temp }}/phase3-resource-matrix/*.json\n${{ runner.temp }}/phase3-resource-matrix/*.sha256\n",
           "retention-days": 14
         }
@@ -736,38 +767,52 @@
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
-          "name": "cargo-dependency-cache-identity-${{ github.sha }}",
+          "name": "cargo-dependency-cache-identity-${{ github.sha }}-${{ matrix.lane }}",
           "path": "${{ runner.temp }}/lsf-cargo-cache-identity.json",
           "retention-days": 7
         }
       },
       {
-        "if": "always()",
+        "if": "always() && matrix.lane == 'tests'",
         "name": "Retain exact workspace test discovery and custom-harness execution",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "ci-runtime-discovery-${{ github.sha }}",
+          "name": "ci-runtime-discovery-${{ github.sha }}-${{ matrix.lane }}",
           "path": "${{ runner.temp }}/ci-discovery.json\n${{ runner.temp }}/ci-workspace-tests.log\n${{ runner.temp }}/ci-doctests.log\n${{ runner.temp }}/ci-signing-compatibility.log\n",
           "retention-days": 7
         }
       },
       {
-        "if": "always() && steps.renderer_preflight.outcome != '' && steps.renderer_preflight.outcome != 'skipped'",
+        "if": "always() && (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && steps.renderer_preflight.outcome != '' && steps.renderer_preflight.outcome != 'skipped'",
         "name": "Retain attempted renderer ownership diagnostics",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
-          "name": "owned-renderer-${{ github.sha }}",
+          "name": "owned-renderer-${{ github.sha }}-${{ matrix.lane }}",
           "path": "${{ runner.temp }}/owned-renderer/*.json\n${{ runner.temp }}/owned-renderer-fault/*.json\n",
           "retention-days": 7
         }
       }
-    ]
+    ],
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "lane": [
+          "checks",
+          "tests",
+          "provider",
+          "renderer-public",
+          "renderer-angular",
+          "publications",
+          "angular-t1"
+        ]
+      }
+    }
   },
   "jobId": "rust",
   "kind": "job",
-  "reviewReason": "CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks.",
+  "reviewReason": "Require every fixed Rust matrix lane, with fresh current-job Cargo inventories, complete case parity and isolated physical probes. Preserve all commands and the protected result.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

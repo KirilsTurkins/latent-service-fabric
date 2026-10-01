@@ -18,7 +18,9 @@ The ordinary CI workflow invokes reviewed recipes instead of duplicating Cargo
 argument lists in shell blocks. Existing job selection, required checks,
 renderer conditionals, qualification steps, artifact consumers, release builds,
 and the unconditional `CI result` remain in place. The opt-in cache changes only
-the Rust correctness job; it does not shard compilation into additional jobs.
+the Rust correctness matrix's cache identity. The required execution lanes are
+described in [CI lanes](ci-lanes.md); each runtime variant retains its own complete
+fresh Cargo producer without transferring native inventories between jobs.
 Integration with the current shared suite inventory retains exact workspace
 discovery, separate execution logs for ordinary tests, doctests and signing
 compatibility, and authenticated AOT preparation before execution. All recipe

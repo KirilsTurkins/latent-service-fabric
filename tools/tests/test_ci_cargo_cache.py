@@ -134,10 +134,20 @@ class CacheIdentityTests(unittest.TestCase):
         self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/development'", rust)
         self.assertNotIn("pull_request_target", rust)
         jobs = workflow_model(workflow)["jobs"]
-        for name in ("oci-registry", "catalog", "contracts"):
+        primary = next(s for s in jobs["rust"]["steps"] if s.get("name") == "Restore compiled Rust dependencies")
+        self.assertEqual(primary["with"]["save-if"],
+            "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'tests' }}")
+        for name in ("oci-registry", "catalog"):
             step = next(s for s in jobs[name]["steps"] if s.get("name") == "Restore compiled Rust dependencies")
             self.assertIs(step["with"]["save-if"], False)
             self.assertEqual(step["with"]["shared-key"], "host-correctness")
+        native = next(s for s in jobs["contracts"]["steps"] if s.get("name") == "Restore compiled Rust dependencies")
+        self.assertEqual(native["with"]["save-if"],
+            "${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements' || matrix.lane == 'optimization') }}")
+        self.assertEqual(native["with"]["shared-key"],
+            "${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}")
+        for option in ("cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
+            self.assertIs(native["with"][option], False)
 
     def test_ci_symbols_are_removed_without_disabling_correctness_guards(self):
         from tools.ci_lane_inventory import workflow_model

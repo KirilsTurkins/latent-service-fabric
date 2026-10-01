@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/validate_contracts.sh",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Restore foreground SIGINT semantics for the complete background Python suite; join every case and preserve the frozen collector build environment.",
+  "reviewReason": "Preserve the full default validation and every command while dispatching all required contract lanes with foreground Python isolation, job-local fresh fixtures and unchanged frozen build-policy rejection.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "39ea3b171b9faed4e3bb2dea020ba1110b9e54e4af3e82cd37aaaa3c0096ca30"
+  "sha256": "0b7fbed5d1cf034b6d2c121569a71e106c2e03a509418d48e7273a831f821666"
 }

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_lane_inventory.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Issue #732: enforce fingerprint review for the newly explicit structural/storage/parser owner.",
+  "reviewReason": "Preserve every renderer/provider case and process owner while running fixed mandatory shards from current-job Cargo inputs.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "bd9c6bb5fdc6bfba02c4e3bc5dff586127b0541f891ced33bf4009d30926a54b"
+  "sha256": "7efea3aa3013d6f5a1684ffa14fe641600f659db28423f4482739e46696362d8"
 }

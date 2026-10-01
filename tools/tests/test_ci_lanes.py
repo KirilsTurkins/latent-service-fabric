@@ -311,6 +311,44 @@ class ExecutionPolicyTests(unittest.TestCase):
 
 
 class IntegrationContractTests(unittest.TestCase):
+    def test_split_renderer_keeps_every_case_and_step_exactly_once(self):
+        from tools.ci_lane_worker import _renderer_cases
+        data = ci_suite_inventory.load()
+        public = _expected_cases(data, "renderer-public")
+        angular = _expected_cases(data, "renderer-angular")
+        self.assertTrue(public and angular)
+        self.assertFalse(set(public) & set(angular))
+        self.assertEqual(public + angular, _expected_cases(data, "renderer"))
+        self.assertEqual(list(public), _renderer_cases(data, "public"))
+        self.assertEqual(list(angular), _renderer_cases(data, "angular"))
+        left, = stages(True, "renderer-public")
+        right, = stages(True, "renderer-angular")
+        whole = stages(True, "renderer")[0]
+        self.assertEqual(left.cases + right.cases, whole.cases)
+
+    def test_explicit_lanes_cannot_silently_drop_renderer_selection(self):
+        for lane in ("renderer", "renderer-public", "renderer-angular", "unknown"):
+            with self.subTest(lane=lane), self.assertRaises(LaneError):
+                stages(False, lane)
+        self.assertEqual([s.name for s in stages(True, "provider")], ["provider-integrations"])
+
+    def test_each_renderer_receipt_still_rejects_an_omitted_case(self):
+        data = ci_suite_inventory.load()
+        for lane in ("renderer-public", "renderer-angular"):
+            sched = Scheduler(stages(True, lane), workers=1, capacities={"provider": 1, "renderer": 1})
+            lease, = sched.claim_ready()
+            value = {"schemaVersion": CHILD_SCHEMA, "lane": lane, "outcome": "passed",
+                     "steps": list(lease.stage.cases), "selectedCases": list(_expected_cases(data, lane)),
+                     "timings": [{"stage": "execution", "elapsedMs": 1}]}
+            with self.subTest(lane=lane), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "receipt.json"
+                path.write_text(json.dumps(value), encoding="utf-8")
+                _read_receipt(path, lease, data)
+                value["selectedCases"].pop()
+                path.write_text(json.dumps(value), encoding="utf-8")
+                with self.assertRaisesRegex(LaneError, "lane-selected-case-parity"):
+                    _read_receipt(path, lease, data)
+
     def test_current_inventory_supplies_nonempty_exact_lane_cases(self):
         data = ci_suite_inventory.load()
         provider = _expected_cases(data, "provider")

@@ -8,17 +8,19 @@ steps: the same checks and tests run after a hit or a miss. A cold or
 evicted cache remains a supported build path. Caching does not establish a
 measured speedup or change the retained benchmark results.
 
-## Reusing builds within the Rust job
+## Reusing builds within required Rust lanes
 
-The Rust job builds workspace binaries and test harnesses with one package,
+Each required Rust runtime lane builds workspace binaries and test harnesses with one package,
 target and feature selection: `--workspace --all-targets --all-features`.
-Its ordinary workspace test suite runs once. A fresh Cargo JSON inventory from
+The ordinary workspace test suite runs once, in the tests variant. A fresh Cargo JSON inventory from
 the same selection identifies the exact library test executables used for the
 two fixture exporters and three native currentness tests. Those later steps
 execute the already-built harnesses through
 [the artifact runner](../../tools/ci_rust_artifacts.py), which checks source and
 package ownership and verifies the expected ignored test names before execution.
-Fixtures and receipts are still generated during the current run.
+Fixtures and receipts are still generated during the current run. Runtime
+variants each own their producer and consumers on the same checkout; no native
+target tree or completed test receipt is transferred between matrix jobs.
 
 This avoids switching back to narrower linked build graphs after workspace
 testing. Independently selected CLI/node and compiler packages still receive
@@ -81,11 +83,15 @@ This includes the virtual workspace's inherited dependency/profile settings.
 MSRV artifacts therefore cannot substitute for the primary toolchain's cache.
 Compatible jobs share the `host-correctness` key. MSRV uses
 `msrv-correctness`, and the isolated release compiler uses
-`angular-release-compiler`. No commit SHA or PR number is added. A version-only root
+`angular-release-compiler`. Default-feature native contracts use `host-contracts`;
+frozen measurement and optimization smoke use `frozen-collector` and
+`optimization-smoke` respectively, keeping their complete dependency producers
+separate from workspace feature unification. No commit SHA or PR number is added. A version-only root
 manifest change can cause a cold cache; that is an accepted initial tradeoff.
 See the pinned [key construction](https://github.com/Swatinem/rust-cache/blob/6323deb102c322ba6fcbdcafc7e3dddab59af2b6/src/config.ts).
 
-The complete Rust producer, MSRV and isolated compiler save their respective
+The Rust tests variant, standalone contracts variant, both collector variants,
+MSRV and isolated compiler save their respective
 caches only after successful pushes to `development`. Smaller consumers and
 guest qualification jobs only restore, so an incomplete dependency graph cannot
 win an immutable shared cache key. PR runs only restore, reducing per-PR storage
@@ -117,7 +123,7 @@ list; the initial configuration adds no per-PR Rust cache writes.
 Change `prefix-key` to retire this cache family after a layout or pruning
 change. Keep the action pinned to a reviewed full commit. Do not use a cache
 hit as evidence that a test passed or a current fixture was regenerated.
-Developer-tool compiler archives are also written only by development pushes;
+Developer-tool compiler archives are written only by the trusted manual development run;
 restored archives still pass their existing checksum and installation checks.
 The TypeScript workflow installs the same pinned wasm-tools binary through the
 reviewed setup action instead of recompiling the tool from source on every PR.

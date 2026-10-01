@@ -668,6 +668,10 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
         performance_extensions = {
+            ".github/workflows/ci.yml:rust:integration_lanes": [
+                "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
+                '--renderer "$CI_LANE_RENDERER"', '--workers "$CI_LANE_WORKERS"', '--lane "$CI_NATIVE_LANE"',
+                '--output "$RUNNER_TEMP/ci-lanes"'],
             ".github/workflows/ci.yml:contracts:Validate contracts, echo component, and generated bindings": ["tools/validate_contracts.sh"],
             ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": ["python3 tools/run_optimization_benchmarks.py --profile smoke"],
             ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": [
@@ -681,7 +685,13 @@ class RepositoryMigrationTests(unittest.TestCase):
                 'cp "$HOME/.cargo/bin/componentize-go" "$(command -v wasm-tools)" "$out/"',
                 'sha256sum "$out/componentize-go" "$out/wasm-tools"'],
         }
-        for key, value in legacy["after"].items():
+        lane_baseline = contracts.read_json(ROOT / "tools/tests/fixtures/ci_lane_baseline.json")
+        for key, original in legacy["after"].items():
+            value = dict(original)
+            if value["workflow"] == ".github/workflows/ci.yml" and value["job"] in {"rust", "contracts"}:
+                # Exact commands survive; the reviewed fixed matrix allocates
+                # every obligation to its required, failure-propagating lane.
+                value["stepIf"] = lane_baseline[value["job"]]["step_conditions"].get(value["name"], value["stepIf"])
             self.assertIn(key, data["after"])
             if key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)

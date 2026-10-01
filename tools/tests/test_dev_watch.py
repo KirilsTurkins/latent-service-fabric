@@ -185,7 +185,16 @@ except common.DevError as error:
                         owner.spawn([str(python), "-c", script, str(root)], Path.cwd(), process.environment(), time.monotonic() + 15)
                         deadline = time.monotonic() + 8
                         while time.monotonic() < deadline:
-                            active = build_control.status(root)
+                            try:
+                                active = build_control.status(root)
+                            except common.DevError as error:
+                                # The helper atomically publishes its live state.
+                                # A guarded read may overlap that replacement;
+                                # keep polling within the original finite bound.
+                                if error.code != "source-changed-during-read":
+                                    raise
+                                time.sleep(0.02)
+                                continue
                             live = root / "builds" / (active.get("attempt") or "absent") / "source/live"
                             if live.is_file():
                                 break

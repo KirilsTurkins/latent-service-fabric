@@ -169,10 +169,14 @@ jobs:
 
 
   rust:
-    name: Rust 1.97.1
+    name: Rust 1.97.1 (${{ matrix.lane }})
     needs: profile
     if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [checks, tests, provider, renderer-public, renderer-angular, publications, angular-t1]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -199,7 +203,7 @@ jobs:
           cache-workspace-crates: false
           cache-all-crates: false
           cache-on-failure: false
-          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && matrix.lane == 'tests' }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
@@ -208,25 +212,32 @@ jobs:
       - name: Install pinned validation dependencies
         run: python3 -m pip install --requirement tools/requirements.lock
       - name: Install the real Fish completion test shell
+        if: matrix.lane == 'tests'
         run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes fish
       - name: Check selected renderer prerequisites before building
         id: renderer_preflight
-        if: needs.profile.outputs.renderer == 'true'
+        if: (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
         run: python3 tools/run_angular_renderer_tests.py --preflight --diagnostic-root "$RUNNER_TEMP/owned-renderer"
       - name: Check formatting
+        if: matrix.lane == 'checks'
         run: python3 tools/ci_cargo.py run format
       - name: Check deterministic helper dependency boundaries
+        if: matrix.lane == 'checks'
         timeout-minutes: 5
         run: |
           python3 tools/check_testkit_dependencies.py
           python3 tools/ci_cargo.py run deterministic
       - name: Check workspace
+        if: matrix.lane == 'checks'
         run: python3 tools/ci_cargo.py run workspace-check
       - name: Check generated RPC and Component Model bindings
+        if: matrix.lane == 'checks'
         run: python3 tools/ci_cargo.py run bindings
       - name: Check independently selected production packages
+        if: matrix.lane == 'checks'
         run: python3 tools/ci_cargo.py run production
       - name: Run Clippy
+        if: matrix.lane == 'checks'
         id: clippy
         env:
           CARGO_TERM_COLOR: never
@@ -246,18 +257,22 @@ jobs:
           PY
           exit "$status"
       - name: "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}"
-        if: failure() && steps.clippy.outcome == 'failure'
+        if: failure() && matrix.lane == 'checks' && steps.clippy.outcome == 'failure'
         run: tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
       - name: Build workspace binaries and test harnesses
+        if: matrix.lane != 'checks'
         run: python3 tools/ci_cargo.py run prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
       - name: Verify complete registered workspace test discovery
+        if: matrix.lane == 'tests'
         run: python3 tools/ci_suite_discovery.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --receipt "$RUNNER_TEMP/ci-discovery.json"
       - name: Exercise the local exact-case entry point with prepared workspace inputs
+        if: matrix.lane == 'tests'
         run: |
           python3 tools/test.py prepare --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
           python3 tools/test.py check --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
           python3 tools/test.py run --suite latent-core.lib.latent-core --case digest::tests::canonical_sha256_text_round_trips_in_each_identity_domain --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
       - name: Prepare authenticated AOT test inputs
+        if: matrix.lane == 'tests'
         run: |
           python3 -m unittest tools.tests.test_aot_test_inputs tools.tests.test_run_aot_tests
           python3 tools/aot_test_inputs.py prepare --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --output "$RUNNER_TEMP/lsf-aot-test-inputs"
@@ -266,6 +281,7 @@ jobs:
           python3 tools/aot_test_inputs.py environment --manifest "$RUNNER_TEMP/lsf-aot-test-inputs/manifest.json" | grep '^LSF_AOT_' >> "$GITHUB_ENV"
 
       - name: Run tests
+        if: matrix.lane == 'tests'
         run: |
           set -o pipefail
           python3 tools/ci_cargo.py run workspace-tests 2>&1 | tee "$RUNNER_TEMP/ci-workspace-tests.log"
@@ -276,8 +292,10 @@ jobs:
           python3 tools/ci_suite_discovery.py --recipe signing-compatibility --execution-log "$RUNNER_TEMP/ci-signing-compatibility.log"
 
       - name: Check metadata working-set suite selection and observation validation
+        if: matrix.lane == 'tests'
         run: python3 -m unittest tools.tests.test_metadata_working_set
       - name: Qualify catalog metadata compilation working set
+        if: matrix.lane == 'tests'
         id: metadata-working-set
         timeout-minutes: 16
         # Required on every full profile. The exact inventory-owned selection is
@@ -289,44 +307,46 @@ jobs:
           python3 tools/test.py prepare --suite selection.metadata-working-set --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci
           python3 tools/test.py run --suite selection.metadata-working-set --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --context ci 2>&1 | tee "$RUNNER_TEMP/metadata-working-set.log"
       - name: Retain metadata working-set inputs and publication/apply/reopen costs
-        if: always() && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'
+        if: always() && matrix.lane == 'tests' && steps.metadata-working-set.outcome != '' && steps.metadata-working-set.outcome != 'skipped'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: metadata-working-set-observations
+          name: metadata-working-set-observations-${{ matrix.lane }}
           path: ${{ runner.temp }}/metadata-working-set.log
           if-no-files-found: error
 
       - name: Qualify the deterministic Phase 3 security matrix
+        if: matrix.lane == 'tests'
         timeout-minutes: 12
         run: |
           python3 -m unittest tools.tests.test_phase3_security
           mkdir -p target/phase3-security
           python3 tools/phase3_security.py --profile pr --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --source-commit "$GITHUB_SHA" --output target/phase3-security/pr-receipt.json
       - name: Retain the bounded Phase 3 security receipt
-        if: always()
+        if: always() && matrix.lane == 'tests'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: phase3-security-pr-${{ github.sha }}
+          name: phase3-security-pr-${{ github.sha }}-${{ matrix.lane }}
           path: target/phase3-security/pr-receipt.json
           if-no-files-found: warn
           retention-days: 14
       - name: Set up the qualified Angular build runtime
-        if: needs.profile.outputs.renderer == 'true'
+        if: (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
           cache: npm
           cache-dependency-path: examples/renderer-profile/package-lock.json
       - name: Validate small Phase 3 resource regressions
+        if: matrix.lane == 'tests'
         timeout-minutes: 2
         run: python3 -m unittest tools.tests.test_phase3_resource tools.tests.test_phase3_resource_web
       - name: Set up the pinned component composer
-        if: needs.profile.outputs.renderer == 'true'
+        if: (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
         uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
       - name: Prepare immutable browser lane component
-        if: needs.profile.outputs.renderer == 'true'
+        if: (matrix.lane == 'renderer-public') && needs.profile.outputs.renderer == 'true'
         timeout-minutes: 5
         run: |
           mkdir -p "$RUNNER_TEMP/browser-component"
@@ -334,6 +354,7 @@ jobs:
           wasm-tools component new target/wasm32-unknown-unknown/release/examples/web_contract.wasm -o "$RUNNER_TEMP/browser-component/application.wasm"
           wasm-tools validate "$RUNNER_TEMP/browser-component/application.wasm"
       - name: Build pinned source-only S3 test fixture
+        if: matrix.lane == 'provider'
         id: s3_fixture
         timeout-minutes: 26
         run: |
@@ -343,16 +364,18 @@ jobs:
         if: always() && steps.s3_fixture.outcome != '' && steps.s3_fixture.outcome != 'skipped'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: source-built-s3-fixture-${{ github.sha }}
+          name: source-built-s3-fixture-${{ github.sha }}-${{ matrix.lane }}
           path: |
             ${{ runner.temp }}/s3-fixture/
             ${{ runner.temp }}/s3-fixture-diagnostics/
           if-no-files-found: error
           retention-days: 14
       - name: Run bounded renderer and provider integration lanes
+        if: matrix.lane == 'provider' || ((matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular') && needs.profile.outputs.renderer == 'true')
         id: integration_lanes
         timeout-minutes: 70
         env:
+          CI_NATIVE_LANE: ${{ matrix.lane }}
           CI_LANE_WORKERS: ${{ github.event_name == 'workflow_dispatch' && inputs.ci_lane_workers || '2' }}
           CI_LANE_RENDERER: ${{ needs.profile.outputs.renderer }}
           LSF_S3_FIXTURE_RECEIPT: ${{ runner.temp }}/s3-fixture/fixture.json
@@ -360,32 +383,36 @@ jobs:
           # Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py
           # tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py
           # tools/build_angular_package.py tools/run_angular_build_tests.py tools/build_s3_fixture.py
-          python3 tools/run_ci_lanes.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --renderer "$CI_LANE_RENDERER" --workers "$CI_LANE_WORKERS" --output "$RUNNER_TEMP/ci-lanes"
+          python3 tools/run_ci_lanes.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --renderer "$CI_LANE_RENDERER" --workers "$CI_LANE_WORKERS" --lane "$CI_NATIVE_LANE" --output "$RUNNER_TEMP/ci-lanes"
       - name: Retain bounded CI lane timing and completion receipts
-        if: always() && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
+        if: always() && (matrix.lane == 'provider' || ((matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular') && needs.profile.outputs.renderer == 'true')) && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ci-integration-lanes-${{ github.sha }}
+          name: ci-integration-lanes-${{ github.sha }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/ci-lanes/
           if-no-files-found: error
           retention-days: 14
       - name: Retain bounded browser boundary observations
-        if: >-
-          always() && needs.profile.outputs.renderer == 'true' &&
-          steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
+        if: always() && (matrix.lane == 'renderer-public') && needs.profile.outputs.renderer == 'true' && steps.integration_lanes.outcome != '' && steps.integration_lanes.outcome != 'skipped'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: browser-boundary-observations
+          name: browser-boundary-observations-${{ matrix.lane }}
           path: |
             ${{ runner.temp }}/browser-boundary/build-receipt.json
             ${{ runner.temp }}/browser-boundary/browser-receipt.json
             ${{ runner.temp }}/browser-boundary/browser-application-receipt.json
           if-no-files-found: error
 
+      - name: Prepare publication toolchain and package assembler
+        if: matrix.lane == 'publications' && needs.profile.outputs.renderer == 'true'
+        run: |
+          npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund
+          objcopy --strip-debug "$PWD/target/debug/latent" "$RUNNER_TEMP/lsf-angular-package-assembler"
       - name: Fetch the pinned operator workflow registry
+        if: matrix.lane == 'publications'
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
       - name: Qualify signed static sites through OCI and actual browsers
-        if: needs.profile.outputs.renderer == 'true'
+        if: matrix.lane == 'publications' && needs.profile.outputs.renderer == 'true'
         timeout-minutes: 12
         shell: bash
         run: |
@@ -403,7 +430,7 @@ jobs:
           openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -sha256 -days 1 -subj '/CN=localhost' -keyout "$static_root/cors-tls/key.pem" -out "$static_root/cors-tls/server.pem"
           node tools/cross-origin/browser.mjs examples/renderer-profile "$(command -v google-chrome)" "$static_root/cors-tls" examples/renderer-profile/node_modules/primeicons/fonts/primeicons.woff2 "${RUNNER_TEMP}/phase2-gate/cross-origin-feasibility.json"
       - name: Qualify actual Angular PrimeNG and bilingual Docusaurus publications
-        if: needs.profile.outputs.renderer == 'true'
+        if: matrix.lane == 'publications' && needs.profile.outputs.renderer == 'true'
         timeout-minutes: 15
         shell: bash
         run: |
@@ -414,6 +441,7 @@ jobs:
           LSF_STATIC_REFERENCE_PROFILE=frameworks-v1 LSF_STATIC_BUILDS="$framework_root/builds" LSF_STATIC_FIXTURE_ROOT="$framework_root/fixture" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite static-site-fixture
           python3 tools/run_framework_sites.py --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --node "${RUNNER_TEMP}/static-site/latentd" --fixture "$framework_root/fixture" --chrome "$(command -v google-chrome)" > "${RUNNER_TEMP}/phase2-gate/framework-sites.json"
       - name: Validate bounded Phase 2 delivery and resource workflows
+        if: matrix.lane == 'publications'
         timeout-minutes: 10
         shell: bash
         run: |
@@ -465,8 +493,15 @@ jobs:
           PY
           python3 tools/phase2_gate_resource.py --cli "${resource_bin}/latent" --node "${resource_bin}/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
           python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+      - name: Prepare fresh actual Angular package for T1
+        if: matrix.lane == 'angular-t1' && needs.profile.outputs.renderer == 'true'
+        run: |
+          npm ci --prefix examples/renderer-profile --ignore-scripts --no-audit --no-fund
+          mkdir -p "$RUNNER_TEMP/phase2-gate"
+          objcopy --strip-debug "$PWD/target/debug/latent" "$RUNNER_TEMP/lsf-angular-package-assembler"
+          python3 tools/build_angular_package.py --input-root examples/angular-application --toolchain-root examples/renderer-profile --cli "$RUNNER_TEMP/lsf-angular-package-assembler" --target-root "$RUNNER_TEMP/angular-build" --output "$RUNNER_TEMP/angular-build/actual" --cargo-target-dir "$PWD/target" --repository https://example.com/source
       - name: Restore isolated Angular compiler dependencies
-        if: needs.profile.outputs.renderer == 'true'
+        if: (matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           prefix-key: lsf-ci-dependencies-v2
@@ -478,21 +513,21 @@ jobs:
           cache-on-failure: false
           save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' }}
       - name: Build the optimized isolated Angular compiler
-        if: needs.profile.outputs.renderer == 'true'
+        if: (matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
         timeout-minutes: 25
         env:
           CARGO_BUILD_JOBS: 2
           CARGO_TARGET_DIR: ${{ runner.temp }}/angular-t1-compiler
         run: cargo build -p latent-wasmtime --bin latent-aot-compiler --release --locked
       - name: Export actual signed Angular T1 fixtures
-        if: needs.profile.outputs.renderer == 'true'
+        if: (matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
         timeout-minutes: 5
         env:
           LSF_ANGULAR_BUILD_DIR: ${{ runner.temp }}/angular-build/actual
           LSF_ANGULAR_T1_FIXTURE_ROOT: ${{ runner.temp }}/angular-t1-fixture
         run: python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite angular-t1-fixture
       - name: Qualify actual Angular on the protected T1 node
-        if: needs.profile.outputs.renderer == 'true'
+        if: (matrix.lane == 'angular-t1') && needs.profile.outputs.renderer == 'true'
         timeout-minutes: 22
         run: |
           python3 -m unittest tools.tests.test_angular_t1_workflow
@@ -503,20 +538,20 @@ jobs:
           objcopy --strip-debug "$RUNNER_TEMP/angular-t1-compiler/release/latent-aot-compiler" "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler"
           python3 tools/run_angular_t1_workflow.py --cli "$RUNNER_TEMP/angular-t1-bin/latent" --node "$RUNNER_TEMP/angular-t1-bin/latentd" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --fixture-root "$RUNNER_TEMP/angular-t1-fixture" > "$RUNNER_TEMP/phase2-gate/angular-t1-receipt.json"
       - name: Retain compact Phase 2 gate receipts
-        if: always()
+        if: always() && (matrix.lane == 'publications' || matrix.lane == 'angular-t1')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: phase-2-gate-${{ github.sha }}
+          name: phase-2-gate-${{ github.sha }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/phase2-gate/*.json
           if-no-files-found: warn
           retention-days: 7
       - name: Set up the bounded resource guest compiler
-        if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        if: matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
         uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: "0.16.0"
       - name: Build fresh resource guest inputs
-        if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        if: matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
         timeout-minutes: 20
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target/phase3-resource
@@ -525,7 +560,7 @@ jobs:
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/resource-guest-tools"
           PATH="$RUNNER_TEMP/resource-guest-tools:$PATH" python3 tools/build_guest_capsules.py --output "$PWD/target/phase3-resource-guests"
       - name: Execute the bounded Phase 3 resource matrix
-        if: github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        if: matrix.lane == 'angular-t1' && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
         timeout-minutes: 70
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target/phase3-resource
@@ -536,10 +571,10 @@ jobs:
           python3 tools/phase3_resource_campaign.py --matrix
           python3 tools/run_phase3_resource_acceptance.py --revision "$GITHUB_SHA" --output "$RUNNER_TEMP/phase3-resource-matrix" --guest-capsules "$PWD/target/phase3-resource-guests" --angular-build "$RUNNER_TEMP/angular-build/actual" --compiler "$RUNNER_TEMP/angular-t1-bin/latent-aot-compiler" --host-condition shared-github-runner
       - name: Retain immutable Phase 3 resource attempts
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
+        if: matrix.lane == 'angular-t1' && always() && github.event_name == 'workflow_dispatch' && inputs.run_phase3_resources
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: phase3-resource-${{ github.sha }}
+          name: phase3-resource-${{ github.sha }}-${{ matrix.lane }}
           path: |
             ${{ runner.temp }}/phase3-resource-matrix/*.json
             ${{ runner.temp }}/phase3-resource-matrix/*.sha256
@@ -550,15 +585,15 @@ jobs:
         if: always() && steps.cargo-cache-identity.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: cargo-dependency-cache-identity-${{ github.sha }}
+          name: cargo-dependency-cache-identity-${{ github.sha }}-${{ matrix.lane }}
           path: ${{ runner.temp }}/lsf-cargo-cache-identity.json
           if-no-files-found: error
           retention-days: 7
       - name: Retain exact workspace test discovery and custom-harness execution
-        if: always()
+        if: always() && matrix.lane == 'tests'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ci-runtime-discovery-${{ github.sha }}
+          name: ci-runtime-discovery-${{ github.sha }}-${{ matrix.lane }}
           path: |
             ${{ runner.temp }}/ci-discovery.json
             ${{ runner.temp }}/ci-workspace-tests.log
@@ -568,10 +603,10 @@ jobs:
           retention-days: 7
 
       - name: Retain attempted renderer ownership diagnostics
-        if: always() && steps.renderer_preflight.outcome != '' && steps.renderer_preflight.outcome != 'skipped'
+        if: always() && (matrix.lane == 'renderer-public' || matrix.lane == 'renderer-angular' || matrix.lane == 'publications' || matrix.lane == 'angular-t1') && steps.renderer_preflight.outcome != '' && steps.renderer_preflight.outcome != 'skipped'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: owned-renderer-${{ github.sha }}
+          name: owned-renderer-${{ github.sha }}-${{ matrix.lane }}
           path: |
             ${{ runner.temp }}/owned-renderer/*.json
             ${{ runner.temp }}/owned-renderer-fault/*.json
@@ -741,10 +776,14 @@ jobs:
           retention-days: 7
 
   contracts:
-    name: Repository contracts
+    name: Repository contracts (${{ matrix.lane }})
     needs: profile
     if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [python, bindings, runtime, standalone, sdk-provider, measurements, optimization]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -763,14 +802,14 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           prefix-key: lsf-ci-dependencies-v2
-          shared-key: host-correctness
+          shared-key: ${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}
           key: ubuntu-24.04
           cache-targets: true
           cache-bin: false
           cache-workspace-crates: false
           cache-all-crates: false
           cache-on-failure: false
-          save-if: false
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements' || matrix.lane == 'optimization') }}
       - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
         with:
           version: 1.254.0
@@ -805,8 +844,12 @@ jobs:
         with:
           dotnet-version: 8.0.425
       - name: Validate contracts, echo component, and generated bindings
-        run: tools/validate_contracts.sh
+        if: matrix.lane != 'optimization'
+        env:
+          CI_CONTRACT_LANE: ${{ matrix.lane }}
+        run: tools/validate_contracts.sh "$CI_CONTRACT_LANE"
       - name: Pass bounded observed build inputs to registry verification
+        if: matrix.lane == 'runtime'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-2-observed-echo-${{ github.sha }}
@@ -814,6 +857,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
       - name: Pass the bounded public web component to registry verification
+        if: matrix.lane == 'runtime'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-3-web-contract-${{ github.sha }}
@@ -821,10 +865,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
       - name: Retain bounded conformance and provider diagnostics
-        if: always()
+        if: always() && (matrix.lane == 'standalone' || matrix.lane == 'sdk-provider')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: phase-1-bounded-conformance-${{ github.sha }}
+          name: phase-1-bounded-conformance-${{ github.sha }}-${{ matrix.lane }}
           path: |
             target/phase1-conformance/
             target/phase3-management/provider-receipt.json
@@ -832,7 +876,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Retain Phase 1 measurement collector smoke diagnostics
-        if: always()
+        if: always() && matrix.lane == 'measurements'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-1-measurement-smoke-${{ github.sha }}
@@ -840,13 +884,14 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Validate standalone optimization benchmark smoke
+        if: matrix.lane == 'optimization'
         run: |
           unset CARGO_INCREMENTAL CARGO_BUILD_JOBS CARGO_PROFILE_DEV_DEBUG CARGO_PROFILE_TEST_DEBUG
           unset CARGO_PROFILE_DEV_DEBUG_ASSERTIONS CARGO_PROFILE_TEST_DEBUG_ASSERTIONS
           unset CARGO_PROFILE_DEV_OVERFLOW_CHECKS CARGO_PROFILE_TEST_OVERFLOW_CHECKS
           python3 tools/run_optimization_benchmarks.py --profile smoke
       - name: Retain optimization benchmark smoke evidence
-        if: always()
+        if: always() && matrix.lane == 'optimization'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-1-optimization-smoke-${{ github.sha }}
@@ -854,10 +899,12 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Record echo capsule build evidence
+        if: matrix.lane == 'runtime'
         run: |
           cat target/capsules/echo/build.json
           cat target/capsules/echo/sha256.txt
       - name: Upload echo capsule build evidence
+        if: matrix.lane == 'runtime'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: phase-0-echo-capsule-${{ github.sha }}
