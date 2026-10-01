@@ -49,7 +49,7 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                     self.assertEqual(companion["profile"], "lsf-transaction-v1")
                     self.assertEqual([item["operation"] for item in companion["operations"]], ["update", "query", "scan"])
                     self.assertEqual(companion["capsule"], project["service"])
-                    self.assertEqual(files["wit/deps/forbidden-http/package.wit"],
+                    self.assertEqual(files["wit/deps/http-v2/package.wit"],
                                      files["vendor/lsf/wit/platform/http-v2/package.wit"])
                     self.assertEqual(files["wit/world.wit"].decode().count("import " + HTTP + ";"), 1)
                     code = files[SOURCES[language]].decode()
