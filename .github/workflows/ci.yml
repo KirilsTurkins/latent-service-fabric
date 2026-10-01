@@ -63,6 +63,17 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+          # Complete ancestry and trees keep offline diff selection authoritative.
+          # Only its current catalogue, manifests and Rust sources need blobs.
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tools/ci_profile.py
+            /tools/ci_suite_inventory.py
+            /tools/ci/suites.json
+            /tools/ci/suites.d/
+            Cargo.toml
+            *.rs
       - name: Classify the complete change
         id: select
         run: python3 tools/ci_profile.py
@@ -954,6 +965,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tools/ci_result.py
+            /tools/ci_suite_inventory.py
+            /tools/ci/suites.json
+            /tools/ci/suites.d/
       - name: Require every selected validation job
         env:
           CI_JOB_RESULTS: ${{ toJSON(needs) }}

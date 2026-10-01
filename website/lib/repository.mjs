@@ -17,6 +17,11 @@ export const websiteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.u
 export const repositoryRoot = path.dirname(websiteRoot);
 export const repositoryUrl = 'https://github.com/KirilsTurkins/latent-service-fabric';
 export const maxSourceBytes = 2 * 1024 * 1024;
+const markdownParser = unified().use(remarkParse).use(remarkGfm);
+const mdxParser = unified().use(remarkParse).use(remarkGfm).use(remarkMdx);
+const parsedBodies = new Map();
+const maxParsedBytes = 16 * 1024 * 1024;
+let parsedBytes = 0;
 
 export function requireValue(condition, message) {
   if (!condition) throw new Error(message);
@@ -75,14 +80,31 @@ export function readSource(root, relative, limit = maxSourceBytes) {
 }
 
 export function parseDocument(text, source) {
-  const processor = unified().use(remarkParse).use(remarkGfm);
-  if (source.endsWith('.mdx')) processor.use(remarkMdx);
   const header = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
   const frontMatter = header ? parseYaml(header[1], {uniqueKeys: true, maxAliasCount: 20}) : {};
   requireValue(frontMatter && typeof frontMatter === 'object' && !Array.isArray(frontMatter), `Invalid front matter: ${source}`);
   requireValue(frontMatter.format === undefined || frontMatter.format === 'detect' || frontMatter.format === (source.endsWith('.mdx') ? 'mdx' : 'md'), `Front matter cannot change the file execution mode: ${source}`);
   requireValue(!frontMatter.draft && !frontMatter.unlisted && frontMatter.custom_edit_url === undefined, `Draft/hidden/custom-edit overrides require a publication-contract review: ${source}`);
-  const tree = processor.parse(header ? text.slice(header[0].length) : text);
+  const body = header ? text.slice(header[0].length) : text;
+  const mode = source.endsWith('.mdx') ? 'mdx' : 'md';
+  const key = `${mode}:${body}`;
+  let parsed = parsedBodies.get(key);
+  if (!parsed) {
+    parsed = (mode === 'mdx' ? mdxParser : markdownParser).parse(body);
+    const bytes = Buffer.byteLength(key);
+    if (bytes <= maxParsedBytes) {
+      while (parsedBodies.size >= 2000 || parsedBytes + bytes > maxParsedBytes) {
+        const oldest = parsedBodies.keys().next().value;
+        parsedBytes -= Buffer.byteLength(oldest);
+        parsedBodies.delete(oldest);
+      }
+      parsedBodies.set(key, parsed);
+      parsedBytes += bytes;
+    }
+  }
+  // Only exact syntax bytes are memoized. Every caller gets an independent AST,
+  // and source, front matter, link and publication validation still runs fresh.
+  const tree = structuredClone(parsed);
   tree.frontMatter = frontMatter;
   return tree;
 }

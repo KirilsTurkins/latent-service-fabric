@@ -35,13 +35,23 @@ browser suites remain required. All five suites run concurrently with separate
 servers, browser processes and evidence directories. Source-path validation still checks
 every component for symlinks, final containment, size and case; Linux's exact-case
 lookup avoids repeatedly enumerating entire directories for each document/link.
-Windows retains explicit casing checks. No validation result is cached.
+Windows retains explicit casing checks. Plugin factories share the current
+configuration's prepared corpus instead of independently rebuilding it. Markdown
+syntax parsing uses a bounded process-local cache keyed by exact body bytes and
+format; each caller receives a separate mutable tree. File reads, path checks,
+front matter, link checks and changed-example checks still run on current inputs.
+Neither preparation nor parsed syntax is persisted across website commands.
 The site does not display last-update metadata, so eager Git history scans stay
 disabled. Windows retains the existing HTML minifier because its native SWC
 cache can reject host ACLs; Linux CI uses the accelerated native HTML minifier.
 
 The complete Python contract suite overlaps the independent native contract
 build, and its failure propagates through the final join even if a build fails.
+The profile selector fetches complete Git ancestry and trees with only its
+catalogue, Cargo manifests and Rust source blobs. Offline change classification,
+mode checks and reverse-dependent selection keep their existing behavior. The
+result aggregator checks the same complete job contract from a catalogue-only
+checkout, avoiding a second download of irrelevant frozen binary fixtures.
 Rust workspace checks, independent production features, Clippy, doctests,
 compatibility negatives, provider integrations and physical resource probes
 retain their commands and conditions. The two protected result aggregators and
