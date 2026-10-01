@@ -45,7 +45,9 @@ Root completion closes independent admission, while accepted application threads
 and running callbacks may still submit necessary continuations. Idle pool workers
 remain available during that drain. Once no accepted application work remains,
 the pump retires idle workers, executes their ordinary finally blocks, and settles
-the executor owners. Explicit `shutdown`/`shutdownNow` and `close` keep their
+the executor owners. Starting retirement invalidates the queue delay calculated
+before interruption, so the pump processes the newly offered worker callbacks
+before parking. Explicit `shutdown`/`shutdownNow` and `close` keep their
 standard rejection, queue-return, interruption and await-termination behavior.
 
 Compiler checkpoints are selected from actual application class files and the
@@ -91,6 +93,20 @@ root-return modes remain unqualified. Reference-JDK success and successful
 component generation do not establish their guest behavior. Complete failed
 attempts are retained separately.
 
+The retained expanded component `b15ce736` was replayed without changing its
+bytes or its original 10 billion fuel, 64 MiB and 120-second limits. A bounded
+diagnostic observed the actual TeaVM event queue empty at root completion, then
+containing two worker interrupt continuations when the pump parked indefinitely
+using its earlier delay. The original deadline and pending physical owners are
+retained in the failed receipt. The narrow delay repair passes controls that
+execute the SDK pump body and unchanged, digest-verified TeaVM 0.15 EventQueue:
+the prior source exposes the queued-work park, while 96 completed model
+activations settle their 256 original model owners once, and a busy pool still
+parks with its pending owners retained. These controls use synthetic host and
+continuation entry seams on JDK 25.0.3; they establish the pump ordering, not
+full guest thread or runtime qualification. Recompiling the pinned component and
+executing all original signed numeric modes after this repair remain pending.
+
 The original thread-only pinned Linux debug experiment measured 9241560 bytes of activation peak
 memory in each run under the unchanged 67108864-byte ceiling. The first run
 included cold preparation at 14.73 seconds; subsequent runs took 112.9 and 118.4
@@ -106,5 +122,5 @@ cross-tenant reuse, late wakes and node stop remain open. General generated host
 I/O still uses the existing synchronous lowering and does not establish sibling
 progress while an accepted socket operation waits. Published library/default
 factory qualification, dependency safe-point coverage and measured active/parked
-owner plateaus are also required for #741. This first thread slice does not close
-#741, #736, #695 or the SDK Library milestone.
+owner plateaus are also required for #741. Issues #741, #736, #695 and the SDK
+Library milestone remain open.

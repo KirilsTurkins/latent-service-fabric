@@ -164,17 +164,18 @@ public final class Activation {
         }
     }
 
-    private static void retireIdlePools() {
-        if (!closing || retiringPools) return;
+    private static boolean retireIdlePools() {
+        if (!closing || retiringPools) return false;
         // Idle pool workers cannot keep an activation alive. Keep their executor
         // available while accepted application threads/callbacks can still submit
         // necessary continuations, then drain the actual worker finally blocks.
         for (Work work : threads.values()) {
-            if (work != root && !work.managed && !work.complete) return;
+            if (work != root && !work.managed && !work.complete) return false;
         }
-        for (ManagedPool pool : pools) if (pool.hasPendingWork()) return;
+        for (ManagedPool pool : pools) if (pool.hasPendingWork()) return false;
         retiringPools = true;
         for (int index = 0, count = pools.size(); index < count; index++) pools.get(index).closeAtRoot();
+        return true;
     }
 
     @Export(name = "lsf_java_runtime_wait")
@@ -217,7 +218,10 @@ public final class Activation {
                 // The queue may become empty because that event completed the
                 // last accepted task. Establish quiescence before parking.
                 closeCompletedRoot();
-                retireIdlePools();
+                // Interrupting idle workers can enqueue their ordinary finally
+                // continuations after processSingle calculated its delay. Run
+                // the guest queue again before using that now-stale delay.
+                if (retireIdlePools()) continue;
                 if (delay != 0 && pending()) waitFor(delay < 0 ? -1 : delay);
             }
             if (failure != null) throw new IllegalStateException("activation-runtime-root-failure", failure);
