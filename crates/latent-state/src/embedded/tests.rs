@@ -2,6 +2,7 @@ use super::*;
 use std::fs::OpenOptions;
 
 mod measurement;
+mod reclamation;
 mod writers;
 
 #[test]

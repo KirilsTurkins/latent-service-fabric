@@ -4811,6 +4811,8 @@
         "embedded::tests::owned_process_termination_before_and_after_commit_recovers_all_or_none",
         "embedded::tests::promised_disposition_capacity_cannot_be_consumed_by_unrelated_writers",
         "embedded::tests::read_views_duplicates_and_prefix_scan_are_bounded",
+        "embedded::tests::reclamation::failed_reclamation_fence_keeps_rows_and_reopens_original_snapshot_admission",
+        "embedded::tests::reclamation::reclamation_waits_for_actual_native_view_drop_even_after_snapshot_expiry",
         "embedded::tests::reservation_generations_fence_stale_release_and_capacity_survives_reopen",
         "embedded::tests::state_command_and_outbox_have_one_atomic_snapshot_and_reopen_identity",
         "embedded::tests::writers::bounded_concurrent_writers_serialize_conflicts_and_preserve_independent_rows",
@@ -4965,7 +4967,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 160,
+      "minimumCases": 162,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
