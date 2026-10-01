@@ -36,12 +36,18 @@
     {
       "target": "latent_protected_files",
       "sha256": "d03701ebe6ba0f46c7010b71738632d4e1d22dc75347d49285db04dba1215755",
-      "bytes": 1794240
+      "bytes": 1794240,
+      "observedTestExecutable": "/target/debug/deps/latent_protected_files-4305848268c8e578",
+      "evidenceKind": "source-matched multi-package build artifact",
+      "executedBinaryDigestCaptured": false
     },
     {
       "target": "latent_state",
       "sha256": "2e72c9c92cffbf718370a83f61b981ad9ba0802b2aca58a132e8aa28e1fcf693",
-      "bytes": 18510232
+      "bytes": 18510232,
+      "observedTestExecutable": "/target/debug/deps/latent_state-1d1882b485da920f",
+      "evidenceKind": "executed test binary",
+      "executedBinaryDigestCaptured": true
     }
   ],
   "preservedEarlierFailure": {
@@ -50,5 +56,6 @@
     "sha256": "156a99abdc9748da5c6110e9b5d59ab4782ad3ceac1d7e9a89a9d28d6e066040"
   },
   "qualificationScope": "Selected engine, physical ext4 snapshot/fresh restore, paused recovery and exact finite source inventory; no packaged node, Java two-version or real external-effect/inbox workload claim",
-  "sensitiveSnapshotArtifactsPublished": false
+  "sensitiveSnapshotArtifactsPublished": false,
+  "artifactClarification": "Original protected-file artifact hash is from the source-matched multi-package build; its individual test command used the separately named observed executable. Original source, test results and log hashes are preserved; no historical executed-binary digest is inferred."
 }
