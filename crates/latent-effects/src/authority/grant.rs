@@ -15,6 +15,8 @@ pub struct DispatchGrant {
     credential_epoch: u64,
     reference: String,
     deadline: Instant,
+    committed_at_millis: u64,
+    expires_at_millis: u64,
 }
 
 impl DispatchGrant {
@@ -56,6 +58,19 @@ impl DispatchGrant {
     #[must_use]
     pub const fn deadline(&self) -> Instant {
         self.deadline
+    }
+
+    /// Original immutable commitment time, never a refreshed attempt time.
+    #[must_use]
+    pub const fn committed_at_millis(&self) -> u64 {
+        self.committed_at_millis
+    }
+
+    /// Original immutable expiry. Current ceiling and deadline may only narrow
+    /// usable dispatch time; this value supplies no authority to extend them.
+    #[must_use]
+    pub const fn expires_at_millis(&self) -> u64 {
+        self.expires_at_millis
     }
 }
 
@@ -123,6 +138,8 @@ impl DispatchContext {
             credential_epoch: self.credential_epoch,
             reference: self.reference.clone(),
             deadline,
+            committed_at_millis: authority.committed_at_millis,
+            expires_at_millis: authority.expires_at_millis,
         });
         drop(state);
         Ok(result)
