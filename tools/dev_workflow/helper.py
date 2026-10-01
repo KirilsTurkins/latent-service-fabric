@@ -14,11 +14,11 @@ from .common import DevError, MAX_DEPLOY_SECONDS, MAX_SNAPSHOT, decode, digest, 
 from .journal import Journal
 
 
-def root_directory() -> Path:
+def root_directory(*, create: bool = True) -> Path:
     require(sys.platform == "linux" and os.geteuid() != 0, "unprivileged-linux-helper-required")
     home = Path(pwd.getpwuid(os.geteuid()).pw_dir)
     root = home / ".lsf-dev"
-    if not root.exists():
+    if create and not root.exists():
         paths.new_directory(root)
     paths.private_root(root)
     return root
@@ -181,7 +181,12 @@ def dispatch(request: dict) -> dict:
     if operation == "hello":
         members(arguments, set())
         return protocol.hello()
-    root = state.workspace(root_directory(), request["workspace"], create=operation in {"install", "asset-begin", "purge"})
+    root = state.workspace(root_directory(create=False) if operation == "preflight" else root_directory(),
+                           request["workspace"], create=operation in {"install", "asset-begin", "purge"})
+    if operation == "preflight":
+        from .preflight_operation import packaged
+        members(arguments, {"composition"})
+        return packaged(root, arguments["composition"])
     from . import build_control
     if operation == "build-status":
         members(arguments, set())

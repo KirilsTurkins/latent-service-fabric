@@ -1,0 +1,469 @@
+{
+  "schemaVersion": "latent.composition.support.v1",
+  "inputVersion": "latent.composition.v1",
+  "sourceRevision": "36a10fc7cee5318d8ceb18efd31864c028c4452f",
+  "selectionRule": "first-matching-row-after-closed-input-and-Java-interface-ambiguity-checks",
+  "unlistedCombination": "selected-combination-needs-source-matched-owner-evidence",
+  "unlistedState": "untested",
+  "evidenceBoundary": "source-backed-definitions-and-maintained-owners; actual-selected-preparation-live-state-and-execution-are-separate",
+  "cartesianSupportPromised": false,
+  "executionAuthorized": false,
+  "sources": {
+    "java-authoring": {
+      "path": "tools/java_guest/model.py",
+      "digest": "sha256:e5d4ce26796df454b5971c89c96a1560aa95eebe7e4415efa424d186c53ad740",
+      "commit": "36a10fc7cee5318d8ceb18efd31864c028c4452f"
+    },
+    "host-recognition": {
+      "path": "crates/latent-core/src/host_profile.rs",
+      "digest": "sha256:a542f6c954c828d38cad2dbb2b6b3141c50225e88b8f199c9e73aaecdfea280b",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "native-surface": {
+      "path": "crates/latent-wasmtime/src/surface.rs",
+      "digest": "sha256:d410f13dab4605e832d6b8ba73ec5dcf1845435244d69e44bb39b6ba8eb5c909",
+      "commit": "1c30a98d70b7dbb89bed52414f75571f7b7b407f"
+    },
+    "provider-configuration": {
+      "path": "apps/latentd/src/config/providers.rs",
+      "digest": "sha256:efa50c5b60dfbabf367a6d9e5bf7ca09f9be0d5f3a64dc6ec55a90ccda343c25",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "node-composition": {
+      "path": "apps/latentd/src/config/runtime.rs",
+      "digest": "sha256:3e2ff204afdc39ab0ef45ac02177cee31bfc297a9cc63800be36b9c2738770bf",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "sealed-web-projection": {
+      "path": "crates/latent-artifacts/src/local_repository/web/projection/metadata.rs",
+      "digest": "sha256:76220f5640ecda4dd864f7d67e74e0909aa5b57846ed2d31c06ddd2370923835",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "sealed-web-validation": {
+      "path": "crates/latent-manifest/src/validation.rs",
+      "digest": "sha256:edb83d9bb3b0eb18bcb121f9dadce6d7cbaff30307a473f16a6e8a4361470918",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "former-reproduction": {
+      "path": "apps/latentd/src/config/development_preparation.rs",
+      "digest": "sha256:51c95b686a6db9927dc31a59f1543c3463274795b3c2527a089ed7b55ad47d37",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "java-qualification-owner": {
+      "path": "tools/qualify_java_http_composition.py",
+      "digest": "sha256:469c15cbe28b226b61a3a3af2602095cc4333941c4e7d5e129d18ae6f3f79b0b",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "static-capture-owner": {
+      "path": "tools/static_site.py",
+      "digest": "sha256:bf037162dcb6b332b50f4dd88175425b87bd2b209645e754ad6bddf74daedbd3",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "capture-budget-schema": {
+      "path": "schemas/static-site-budget.schema.json",
+      "digest": "sha256:64f43e465f875650958c2f563427b5c3f024f487f808eaa90742ec23f2e9eaa8",
+      "commit": "7ceedfaa906428fadc3dea11567e256771172cdd"
+    },
+    "resource-budget": {
+      "path": "crates/latent-core/src/budget.rs",
+      "digest": "sha256:01ad4bd3adfffec585d15d36f40052f9c17265f9507fe8bc706cbeaf202719e5",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "publication-identity": {
+      "path": "crates/latent-core/src/publication.rs",
+      "digest": "sha256:7ff30d73bd2359e08b8216bf92ef3efbb487d3f8db74a3ad7bdfd41524feb0dd",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "revision-identity": {
+      "path": "crates/latent-manifest/src/schema.rs",
+      "digest": "sha256:4872d23d309989eb60dcb4fc1edc9ca7f94a492753d3f29d6aec8209d1795a4e",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "static-trigger-owner": {
+      "path": "apps/latent/src/management/phase2/projection/trigger.rs",
+      "digest": "sha256:cc75273e869950f5c690d08fd3c9b0c3429c4808eb0cf913f5849a68143404d2",
+      "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
+    },
+    "structural-packaging": {
+      "path": "crates/latent-packaging/src/semantics/host.rs",
+      "digest": "sha256:da68c0c7186ec6eb2b64587d519870a2e82c2ed22692adf986ff217c8f9313bb",
+      "commit": "1c30a98d70b7dbb89bed52414f75571f7b7b407f"
+    },
+    "structural-engine-profile": {
+      "path": "crates/latent-wasmtime/src/config/profile.rs",
+      "digest": "sha256:001ae8c2b9c374a420b238d6e807c904dd7fefdd1ae3fee8ea11af482881dcc9",
+      "commit": "1c30a98d70b7dbb89bed52414f75571f7b7b407f"
+    },
+    "ready-inspection": {
+      "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",
+      "digest": "sha256:2f062d6af24f7dd09d94060c766705d8398cab549c71885db5e51269e7a6094e",
+      "commit": "9c8d836c6ac950c27b2d8add4fbd7e150fd55c7d"
+    },
+    "browser-response-ownership": {
+      "path": "contracts/http/browser-response-ownership-v1.json",
+      "digest": "sha256:b00795bf709c37d153af0bd6d445415ba6bd2fb47310b4c47ee1c3d2d951e2a3",
+      "commit": "241c3bb61c42e37cb70f878edc74bbe1009e94df"
+    }
+  },
+  "axes": {
+    "language": [
+      "rust",
+      "c",
+      "java",
+      "dotnet",
+      "go",
+      "typescript",
+      "static"
+    ],
+    "witShape": [
+      "nested-values-v1",
+      "static-assets-v1",
+      "resources",
+      "futures",
+      "streams",
+      "unknown"
+    ],
+    "publicationKind": [
+      "capsule",
+      "static-site"
+    ],
+    "provider": [
+      "none",
+      "declared-providers",
+      "ordinary-context-unavailable"
+    ],
+    "nodeProfile": [
+      "standalone-java-v1",
+      "http-java-v1",
+      "former-http-global-values-v1",
+      "static-site-v1"
+    ]
+  },
+  "recognizedImports": {
+    "profile": "lsf-host-abi-phase3-v4",
+    "recognitionGrantsPermission": false,
+    "configuredBindingContracts": [
+      "latent:http/client@0.2.0",
+      "latent:blob/blob@0.2.0",
+      "latent:secrets/reader@0.1.0",
+      "latent:telemetry/custom@0.1.0",
+      "latent:service/invoke@0.1.0",
+      "latent:events/publisher@0.2.0",
+      "latent:clock/monotonic@0.1.0",
+      "latent:clock/wall@0.1.0",
+      "latent:random/random@0.1.0"
+    ],
+    "pinnedImportedResourceInterfaces": [
+      "latent:http/streaming@0.3.0",
+      "latent:blob/blob@0.2.0"
+    ],
+    "context": {
+      "contract": "latent:context/context@0.1.0",
+      "ordinaryConfiguredProvider": false,
+      "sealedWebProjection": "implicit-only-after-native-checked-layout-and-projection-validation"
+    },
+    "streaming": "ABI recognition and SDK ownership do not install a configured standalone provider binding",
+    "structuralInterfaces": {
+      "profile": "structural-type-imports=resource-free-values-v1",
+      "classification": "actual-checked-component-instance",
+      "callableAuthority": false,
+      "resourceHandles": false,
+      "futuresAndStreams": false,
+      "nestedInstances": false,
+      "inspectionMaximumTotalInterfaces": 64,
+      "sources": [
+        "native-surface",
+        "structural-packaging",
+        "structural-engine-profile",
+        "ready-inspection"
+      ]
+    }
+  },
+  "resourceBudgetTypes": {
+    "u32DecimalStrings": [
+      "childCalls",
+      "outboundRequests",
+      "effectCount"
+    ],
+    "u64DecimalStrings": [
+      "cpuFuel",
+      "memoryBytes",
+      "stateReadBytes",
+      "stateWriteBytes",
+      "blobReadBytes",
+      "blobWriteBytes",
+      "logBytes"
+    ],
+    "wallTimeLimitMillis": "nullable-u64-decimal-string; null remains invocation-dependent",
+    "sources": [
+      "resource-budget"
+    ]
+  },
+  "immutableTargetTypes": {
+    "capsule": {
+      "publicationId": "publication:sha256:64-lowercase-hex",
+      "revision": "revision-v1:sha256:64-lowercase-hex",
+      "deploymentGeneration": "positive-u64-decimal-string"
+    },
+    "static": {
+      "publicationId": "publication:sha256:64-lowercase-hex",
+      "webGeneration": "positive-u64-decimal-string",
+      "byteIdentities": [
+        "packageDigest",
+        "assetsDigest",
+        "webManifestDigest"
+      ]
+    },
+    "sources": [
+      "publication-identity",
+      "revision-identity",
+      "static-trigger-owner"
+    ]
+  },
+  "sealedWebProjection": {
+    "publicationKind": "capsule",
+    "publicExport": "latent:web/application@0.1.0",
+    "state": "source-supported-native-execution-projection",
+    "sources": [
+      "sealed-web-projection",
+      "sealed-web-validation"
+    ],
+    "requiredObservation": "actual-checked-package-manifest-assets-renderer-world-and-immutable-tenant-publication-association",
+    "declaredExportOrHttpTriggerProvesProjection": false,
+    "executionQualified": false
+  },
+  "diagnostics": {
+    "captureBudget": {
+      "profile": "latent.static-site.budget.v1",
+      "schema": "https://latent.dev/schemas/static-site-budget.schema.json",
+      "scope": "capture-inputs-before-assembly",
+      "originalCaptureAndCurrentAdmission": "not-checked"
+    },
+    "responseHeaders": {
+      "profile": "latent.browser.response-ownership.v1",
+      "api": "tools.browser_response_ownership.inspect_declared_header_names",
+      "maximumNames": 64,
+      "maximumNameBytes": 64,
+      "dynamicOutputRequiresExecution": true,
+      "sourceCommit": "241c3bb61c42e37cb70f878edc74bbe1009e94df",
+      "tableDigest": "sha256:b00795bf709c37d153af0bd6d445415ba6bd2fb47310b4c47ee1c3d2d951e2a3",
+      "sources": [
+        "browser-response-ownership"
+      ]
+    }
+  },
+  "rows": [
+    {
+      "id": "ordinary-context",
+      "select": {
+        "publicationKind": [
+          "capsule"
+        ],
+        "provider": [
+          "ordinary-context-unavailable"
+        ]
+      },
+      "state": "unsupported",
+      "code": "ordinary-context-provider-not-installed",
+      "sources": [
+        "provider-configuration",
+        "sealed-web-projection",
+        "sealed-web-validation"
+      ],
+      "requires": [
+        "Native sealed web projection is a distinct execution owner; a declared WEB export or trigger cannot prove that projection."
+      ],
+      "evidenceLevel": "structural",
+      "executionQualified": false
+    },
+    {
+      "id": "java-disabled",
+      "select": {
+        "language": [
+          "java"
+        ],
+        "javaGuest": [
+          false
+        ]
+      },
+      "state": "unsupported",
+      "code": "java-engine-profile-not-selected",
+      "sources": [
+        "node-composition"
+      ],
+      "requires": [
+        "Select the actual Java-enabled node engine profile and observe its immutable identity."
+      ],
+      "evidenceLevel": "structural",
+      "executionQualified": false
+    },
+    {
+      "id": "java-public-resources",
+      "select": {
+        "language": [
+          "java"
+        ],
+        "witShape": [
+          "resources"
+        ]
+      },
+      "state": "unsupported",
+      "code": "selected-java-wit-shape-unsupported",
+      "sources": [
+        "java-authoring",
+        "native-surface"
+      ],
+      "requires": [
+        "This shape denotes resource-valued public signatures. Pinned imported own/borrow resources use freestanding operations and are a separate case."
+      ],
+      "evidenceLevel": "structural",
+      "executionQualified": false
+    },
+    {
+      "id": "java-future-stream-values",
+      "select": {
+        "language": [
+          "java"
+        ],
+        "witShape": [
+          "futures",
+          "streams"
+        ]
+      },
+      "state": "unsupported",
+      "code": "selected-java-wit-shape-unsupported",
+      "sources": [
+        "java-authoring",
+        "host-recognition"
+      ],
+      "requires": [
+        "Async freestanding host suspension does not add WIT future/stream values."
+      ],
+      "evidenceLevel": "structural",
+      "executionQualified": false
+    },
+    {
+      "id": "former-http-profile",
+      "select": {
+        "language": [
+          "java"
+        ],
+        "nodeProfile": [
+          "former-http-global-values-v1"
+        ]
+      },
+      "state": "unsupported",
+      "code": "former-profile-is-disposable-reproduction-only",
+      "sources": [
+        "former-reproduction",
+        "node-composition"
+      ],
+      "requires": [
+        "The feature-gated loopback fixture reproduces former global lifting policy; it is not a product support profile or qualification receipt."
+      ],
+      "evidenceLevel": "structural",
+      "executionQualified": false
+    },
+    {
+      "id": "java-typed-capsule",
+      "select": {
+        "language": [
+          "java"
+        ],
+        "witShape": [
+          "nested-values-v1"
+        ],
+        "publicationKind": [
+          "capsule"
+        ],
+        "nodeProfile": [
+          "standalone-java-v1",
+          "http-java-v1"
+        ],
+        "javaGuest": [
+          true
+        ],
+        "provider": [
+          "none",
+          "declared-providers"
+        ]
+      },
+      "state": "supported",
+      "code": "declared-profile-has-maintained-qualification-owner",
+      "sources": [
+        "java-authoring",
+        "node-composition",
+        "native-surface",
+        "java-qualification-owner"
+      ],
+      "requires": [
+        "One named nonempty exported interface; no inline interfaces, empty records, ambiguous versions, resource methods/constructors or public handles.",
+        "Actual signature allocation plan, source/component surface and engine preparation must pass under the selected profile.",
+        "Runtime clocks and any declared service/effect providers need their actual configured bindings and current grants.",
+        "An HTTP adapter remains an ordinary capsule exporting latent:web/application@0.1.0; its separately built domain capsule retains its own typed transfer profile."
+      ],
+      "evidenceLevel": "structural",
+      "executionQualified": false
+    },
+    {
+      "id": "static-assets",
+      "select": {
+        "language": [
+          "static"
+        ],
+        "witShape": [
+          "static-assets-v1"
+        ],
+        "publicationKind": [
+          "static-site"
+        ],
+        "nodeProfile": [
+          "static-site-v1",
+          "http-java-v1"
+        ],
+        "provider": [
+          "none"
+        ]
+      },
+      "state": "supported",
+      "code": "declared-profile-has-maintained-qualification-owner",
+      "sources": [
+        "static-capture-owner",
+        "capture-budget-schema",
+        "static-trigger-owner"
+      ],
+      "requires": [
+        "Publication ID and positive web generation select static delivery; package, assets and web manifest identify bytes. No fake service/revision/deployment, component/release digest, guest budget or service edge. Current native publication, asset and lifecycle owners remain authoritative.",
+        "Capture diagnostics neither prove signed bytes nor final package/node capacity or browser behavior."
+      ],
+      "evidenceLevel": "structural",
+      "executionQualified": false
+    },
+    {
+      "id": "other-language-owner",
+      "select": {
+        "language": [
+          "rust",
+          "c",
+          "dotnet",
+          "go",
+          "typescript"
+        ],
+        "publicationKind": [
+          "capsule"
+        ]
+      },
+      "state": "untested",
+      "code": "selected-combination-needs-source-matched-owner-evidence",
+      "sources": [
+        "native-surface",
+        "host-recognition"
+      ],
+      "requires": [
+        "Retain each maintained language owner. Java composition evidence does not qualify another language, shape, provider or profile."
+      ],
+      "evidenceLevel": "structural",
+      "executionQualified": false
+    }
+  ]
+}

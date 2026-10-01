@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Retain all build obligations and three real native structural preflight smokes; the context capsule smoke now includes its original positive deployment generation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b86e895abc7baf6f191c6ce2cf059f14d754c933c5d2f59bb6a75693a9ebf0b8"
+  "sha256": "591b59f4235b885584f677504d743eac2acf56ec6c616e906bcb2d5e394faed0"
 }

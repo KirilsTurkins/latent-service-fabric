@@ -20,6 +20,105 @@ from tools.dev_workflow.common import HOST_ABI, PROTOCOL, digest, encode, requir
 from tools.dev_distribution import frontend_files
 
 ROOT = Path(__file__).resolve().parents[1]
+PREFLIGHT_RESOURCES = (
+    "schemas/dev-composition-input.schema.json",
+    "schemas/static-site-budget.schema.json",
+    "contracts/dev/composition-support-v1.json",
+    "contracts/http/browser-response-ownership-v1.json",
+)
+
+
+def preflight_resources() -> tuple[tuple[str, bytes], ...]:
+    """Snapshot the four canonical contracts verbatim; no computed schema copy."""
+    result = []
+    for name in PREFLIGHT_RESOURCES:
+        try:
+            with (ROOT / name).open("rb") as source:
+                raw = source.read(65537)
+        except OSError as error:
+            raise ValueError("frontend-preflight-contract-required") from error
+        require(0 < len(raw) <= 65536, "frontend-preflight-contract-bound")
+        result.append((name, raw))
+    return tuple(result)
+
+
+def preflight_input() -> dict:
+    """Synthetic structural selection; contains no real publication or authority."""
+    identity = "sha256:" + "1" * 64
+    return {"schemaVersion": "latent.composition.v1", "tenant": "packaging-test",
+        "nodeProfile": {"id": "static-site-v1", "javaGuest": False,
+            "maximumWirePayloadBytes": "2097152", "maximumRequestBodyBytes": "65536",
+            "maximumResponseBodyBytes": "65536"},
+        "components": [{"id": "site", "packageDigest": identity, "assetsDigest": identity,
+            "webManifestDigest": identity, "language": "static", "witShape": "static-assets-v1",
+            "publicationKind": "static-site", "target": {"publicationId": "publication:" + identity,
+                "webGeneration": "1"}, "imports": [], "exports": []}],
+        "triggers": [{"kind": "static", "component": "site"}], "serviceEdges": [], "providers": [], "policies": []}
+
+
+def preflight_smoke_cases() -> tuple:
+    """Finite positive/context/header declarations used by the native smoke."""
+    import copy
+    selected = preflight_input()
+    context = copy.deepcopy(selected)
+    capsule = context["components"][0]
+    identity = capsule["packageDigest"]
+    capsule.pop("assetsDigest")
+    capsule.pop("webManifestDigest")
+    capsule.update(language="java", witShape="nested-values-v1", publicationKind="capsule",
+        componentDigest=identity, releaseDigest=identity, contractMetadataDigest=identity,
+        imports=["latent:context/context@0.1.0"],
+        exports=[{"contract": "example:packaging/app@1.0.0", "functions": ["run"]}],
+        target={"service": "packaging-test", "route": "packaging-test", "revision": "revision-v1:" + identity,
+            "publicationId": "publication:" + identity, "deploymentId": "packaging-test", "deploymentGeneration": "1",
+            "contract": "example:packaging/app@1.0.0", "function": "run"},
+        budget={name: None if name == "wallTimeLimitMillis" else "1" for name in (
+            "cpuFuel", "memoryBytes", "wallTimeLimitMillis", "childCalls", "outboundRequests",
+            "stateReadBytes", "stateWriteBytes", "blobReadBytes", "blobWriteBytes", "logBytes", "effectCount")})
+    context["nodeProfile"].update(id="standalone-java-v1", javaGuest=True)
+    context["triggers"] = [{"kind": "typed", "component": "site", "contract": "example:packaging/app@1.0.0", "function": "run"}]
+    header = copy.deepcopy(selected)
+    header["components"][0].update(headerNames=["referrer-policy"], dynamicHeaders=True)
+    return (("closed-static", selected, 0, None),
+        ("ordinary-context-unavailable", context, 3, "ordinary-context-provider-not-installed"),
+        ("reserved-header", header, 3, "declared-response-header-ownership"))
+
+
+def preflight_smoke(command: list[str]) -> dict:
+    """Run real packaged command paths outside the checkout with no Python PATH."""
+    import os
+    import tempfile
+    cases = preflight_smoke_cases()
+    with tempfile.TemporaryDirectory(prefix="lsf-native-preflight-smoke-") as temporary:
+        directory = Path(temporary)
+        state_root = directory / "uncreated-controller"
+        source = directory / "composition.json"
+        environment = {"TEMP": temporary, "TMP": temporary, "TMPDIR": temporary, "HOME": temporary,
+            "LOCALAPPDATA": str(directory / "uncreated-local-appdata"), "PATH": temporary, "LANG": "C.UTF-8"}
+        if sys.platform == "win32":
+            environment.update(SystemRoot=os.environ["SystemRoot"], WINDIR=os.environ["WINDIR"],
+                               PATH=str(Path(os.environ["SystemRoot"]) / "System32"))
+        for _name, value, expected, reason in cases:
+            source.write_bytes(encode(value))
+            completed = subprocess.run([*command, "--state-root", str(state_root), "dev", "preflight", "--input", str(source)],
+                cwd=directory, env=environment, capture_output=True, timeout=30)
+            require(completed.returncode == expected and len(completed.stdout) <= 262144
+                and not completed.stderr, "packaged-frontend-preflight-command-failed")
+            result = json.loads(completed.stdout)
+            require(result.get("schemaVersion") == "latent.dev.result.v1"
+                and result.get("code") == ("success" if expected == 0 else "composition-checks-failed"),
+                "packaged-frontend-preflight-result-failed")
+            result = result["result"]
+            require(result.get("schemaVersion") == "latent.composition.preflight.v1"
+                and result.get("passed") is (expected == 0) and all(result.get(name) is False for name in (
+                    "fullyChecked", "executionAuthorized", "grantCreated", "reservationCreated", "trafficEnabled")),
+                "packaged-frontend-preflight-authority-failed")
+            if reason:
+                require(any(row["code"] == reason and row["state"] in {"failed", "unsupported"}
+                    for row in result["checks"]), "packaged-frontend-preflight-rejection-missing")
+            require(set(directory.iterdir()) == {source}, "packaged-frontend-preflight-created-state")
+    return {"passed": True, "cases": [name for name, *_ in cases], "outsideCheckout": True,
+        "controllerStateCreated": False, "qualification": "packaged-structural-preflight-only"}
 
 
 def python_inventory(output: Path, lock: Path) -> None:
@@ -59,7 +158,7 @@ def python_inventory(output: Path, lock: Path) -> None:
         "pythonLicense": "licenses/CPython-3.13.5.txt", "scope": "CPython distribution and exact bootloader build inputs"}))
 
 
-def helper(output: Path) -> str:
+def helper(output: Path, resource_snapshot=None) -> str:
     entries = {"__main__.py": b"from tools.dev_workflow.helper import main\nraise SystemExit(main())\n",
                "tools/__init__.py": b""}
     for directory in ("tools/dev_workflow", "tools/native_runtime"):
@@ -68,8 +167,10 @@ def helper(output: Path) -> str:
             if path.name == "windows.py":
                 continue
             entries[path.relative_to(ROOT).as_posix()] = path.read_bytes()
-    for name in ("build_process", "build_process_linux", "build_process_signals", "guest_runtime_profiles"):
+    for name in ("build_process", "build_process_linux", "build_process_signals", "guest_runtime_profiles", "browser_response_ownership"):
         entries[f"tools/{name}.py"] = (ROOT / f"tools/{name}.py").read_bytes()
+    for name, raw in resource_snapshot if resource_snapshot is not None else preflight_resources():
+        entries["tools/dev_workflow/data/" + name] = raw
     with zipfile.ZipFile(output, "x", compression=zipfile.ZIP_DEFLATED) as archive:
         for name, raw in sorted(entries.items()):
             entry = zipfile.ZipInfo(name, (2026, 9, 23, 0, 0, 0))
@@ -88,7 +189,8 @@ def main() -> int:
     output = arguments.output.absolute()
     require(output.is_relative_to(ROOT / "target") and not output.exists(), "new-owned-build-directory-required")
     output.mkdir(parents=True)
-    helper_digest = helper(output / "helper.pyz")
+    resource_snapshot = preflight_resources()
+    helper_digest = helper(output / "helper.pyz", resource_snapshot)
     if arguments.helper_only:
         print(encode({"helperSha256": helper_digest}).decode(), end="")
         return 0
@@ -98,12 +200,25 @@ def main() -> int:
     lock = ROOT / ("tools/dev-frontend-windows.lock" if sys.platform == "win32" else "tools/dev-frontend-linux.lock")
     require(importlib.metadata.version("pyinstaller") == "6.22.3", "pinned-pyinstaller-required")
     python_inventory(output, lock)
+    data_arguments = []
+    import os
+    for name, raw in resource_snapshot:
+        source = output / "preflight-data" / name
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_bytes(raw)
+        destination = "tools/dev_workflow/data/" + Path(name).parent.as_posix()
+        data_arguments.extend(["--add-data", str(source) + os.pathsep + destination])
     subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir",
         "--noupx", "--name", "latent-dev", "--distpath", str(output / "dist"),
-        "--workpath", str(output / "work"), "--specpath", str(output), str(ROOT / "tools/latent_dev.py")],
+        "--workpath", str(output / "work"), "--specpath", str(output), *data_arguments, str(ROOT / "tools/latent_dev.py")],
         cwd=ROOT, check=True, timeout=300)
     executable = output / "dist/latent-dev" / ("latent-dev.exe" if sys.platform == "win32" else "latent-dev")
     require(executable.is_file(), "native-frontend-output-missing")
+    for name, raw in resource_snapshot:
+        installed = executable.parent / "_internal/tools/dev_workflow/data" / name
+        require(installed.read_bytes() == raw, "packaged-frontend-preflight-contract-changed")
+    require(preflight_resources() == resource_snapshot, "frontend-preflight-contract-changed-during-build")
+    preflight = preflight_smoke([str(executable)])
     native = None
     if sys.platform == "linux":
         from tools.dev_frontend_linux import collect
@@ -132,6 +247,8 @@ def main() -> int:
               "python": platform.python_version(), "packager": "pyinstaller-6.22.3",
               "lockSha256": digest(lock.read_bytes()),
               "doctor": json.loads(smoke.stdout), "publisherAuthenticated": False,
+              "preflight": preflight,
+              "preflightResources": [{"path": name, "sha256": digest(raw), "size": len(raw)} for name, raw in resource_snapshot],
               "qualification": "native-frontend-smoke-only"}
     if native is not None:
         record["hostRequirements"] = native["hostRequirements"]
