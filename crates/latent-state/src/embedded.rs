@@ -16,6 +16,10 @@ use std::{
 const FORMAT: &[u8] = b"latent.transaction-store.v1";
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
+static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
+
+mod bounded_file;
+pub use bounded_file::StoreFileStatus;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StoreError {
@@ -27,6 +31,20 @@ pub enum StoreError {
     Unavailable,
     CommitUncertain,
     SnapshotExpired,
+}
+
+/// A final host acceptance failure is a proven pre-commit failure, separate
+/// from an engine failure or an uncertain durable completion.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FencedStoreError<E> {
+    Store(StoreError),
+    Fence(E),
+}
+
+impl<E> From<StoreError> for FencedStoreError<E> {
+    fn from(error: StoreError) -> Self {
+        Self::Store(error)
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -55,7 +73,7 @@ impl Default for StoreLimits {
     }
 }
 impl StoreLimits {
-    fn validate(self) -> Result<Self, StoreError> {
+    pub(crate) fn validate(self) -> Result<Self, StoreError> {
         if self.cache_bytes < 1024 * 1024
             || self.cache_bytes > 64 * 1024 * 1024
             || self.maximum_rows == 0
@@ -143,6 +161,32 @@ impl EmbeddedStore {
         let mut builder = Database::builder();
         builder.set_cache_size(limits.cache_bytes);
         let db = builder.create_file(file).map_err(|_| StoreError::Corrupt)?;
+        Self::open_database(db, limits, was_empty)
+    }
+
+    /// The production owner additionally caps every physical growth/write.
+    /// Upstream `FileBackend` still owns descriptor locking and native I/O.
+    pub fn open_bounded_file(
+        file: File,
+        limits: StoreLimits,
+        maximum_file_bytes: u64,
+    ) -> Result<(Self, StoreFileStatus), StoreError> {
+        let limits = limits.validate()?;
+        let was_empty = file.metadata().map_err(|_| StoreError::Unavailable)?.len() == 0;
+        let (backend, status) = bounded_file::BoundedFile::new(file, maximum_file_bytes)?;
+        let mut builder = Database::builder();
+        builder.set_cache_size(limits.cache_bytes);
+        let db = builder
+            .create_with_backend(backend)
+            .map_err(|_| StoreError::Corrupt)?;
+        Ok((Self::open_database(db, limits, was_empty)?, status))
+    }
+
+    fn open_database(
+        db: Database,
+        limits: StoreLimits,
+        was_empty: bool,
+    ) -> Result<Self, StoreError> {
         if was_empty {
             let mut tx = db.begin_write().map_err(|_| StoreError::Unavailable)?;
             tx.set_durability(Durability::Immediate)
@@ -215,6 +259,11 @@ impl EmbeddedStore {
         if self.quarantined.load(Ordering::Acquire) {
             return Err(StoreError::Unavailable);
         }
+        let identity = NEXT_VIEW_ID
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+                value.checked_add(1)
+            })
+            .map_err(|_| StoreError::Capacity)?;
         self.views
             .fetch_update(Ordering::AcqRel, Ordering::Acquire, |v| {
                 (v < self.limits.maximum_read_views).then_some(v + 1)
@@ -226,6 +275,7 @@ impl EmbeddedStore {
                 limits: self.limits,
                 views: Arc::clone(&self.views),
                 opened: Instant::now(),
+                identity,
             })
         } else {
             self.views.fetch_sub(1, Ordering::AcqRel);
@@ -237,17 +287,44 @@ impl EmbeddedStore {
     pub fn apply(&self, batch: AtomicBatch) -> Result<(), StoreError> {
         self.apply_with_checkpoint(batch, |_| {})
     }
+
+    /// Recheck short host policy/publication/lifecycle/cancellation fences at
+    /// the actual writer boundary, after all OCC, row and quota checks and
+    /// staging, immediately before irreversible commit I/O. The callback must
+    /// perform no I/O, guest work or waiting; it consumes the host's once-only
+    /// commit acceptance. No policy lock is held over the engine flush.
+    pub fn apply_fenced<E>(
+        &self,
+        batch: AtomicBatch,
+        accept: impl FnOnce() -> Result<(), E>,
+    ) -> Result<(), FencedStoreError<E>> {
+        self.apply_inner(batch, accept, |_| {})
+    }
+
     fn apply_with_checkpoint(
         &self,
         batch: AtomicBatch,
-        mut checkpoint: impl FnMut(bool),
+        checkpoint: impl FnMut(bool),
     ) -> Result<(), StoreError> {
+        match self.apply_inner(batch, || Ok::<(), std::convert::Infallible>(()), checkpoint) {
+            Ok(()) => Ok(()),
+            Err(FencedStoreError::Store(error)) => Err(error),
+            Err(FencedStoreError::Fence(never)) => match never {},
+        }
+    }
+
+    fn apply_inner<E>(
+        &self,
+        batch: AtomicBatch,
+        accept: impl FnOnce() -> Result<(), E>,
+        mut checkpoint: impl FnMut(bool),
+    ) -> Result<(), FencedStoreError<E>> {
         if self.quarantined.load(Ordering::Acquire) {
-            return Err(StoreError::Unavailable);
+            return Err(FencedStoreError::Store(StoreError::Unavailable));
         }
         let maximum = self.limits.maximum_batch_rows;
         if batch.expectations.len() > maximum || batch.mutations.len() > maximum {
-            return Err(StoreError::Capacity);
+            return Err(FencedStoreError::Store(StoreError::Capacity));
         }
         let mut checks = BTreeSet::new();
         let mut mutations = BTreeSet::new();
@@ -275,7 +352,7 @@ impl EmbeddedStore {
                     .map_err(|_| StoreError::Corrupt)?
                     .map(|v| v.value().to_vec());
                 if actual != check.value {
-                    return Err(StoreError::Conflict);
+                    return Err(FencedStoreError::Store(StoreError::Conflict));
                 }
             }
             for mutation in batch.mutations {
@@ -292,10 +369,11 @@ impl EmbeddedStore {
             }
             self.charge_table(&table)?;
         }
+        accept().map_err(FencedStoreError::Fence)?;
         checkpoint(false);
         if tx.commit().is_err() {
             self.quarantined.store(true, Ordering::Release);
-            return Err(StoreError::CommitUncertain);
+            return Err(FencedStoreError::Store(StoreError::CommitUncertain));
         }
         checkpoint(true);
         Ok(())
@@ -339,8 +417,27 @@ pub struct ReadView {
     limits: StoreLimits,
     views: Arc<AtomicUsize>,
     opened: Instant,
+    identity: usize,
 }
+
+/// Continuation is descriptive engine position. Higher layers bind it to an
+/// authenticated query, tenant, incarnation, view and resource generation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReadPage {
+    pub rows: Vec<(RowKey, Vec<u8>)>,
+    /// Last emitted key, used as the next exclusive start. Present only when
+    /// another matching physical row remains; not an unbounded snapshot token.
+    pub resume: Option<Vec<u8>>,
+}
+
 impl ReadView {
+    /// Process-local descriptive identity, never caller or namespace authority.
+    /// Allocation does not wrap; external cursors also need activation/boot scope.
+    #[must_use]
+    pub fn identity(&self) -> usize {
+        self.identity
+    }
+
     pub fn get(&self, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
         if self.opened.elapsed() > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);
@@ -368,6 +465,19 @@ impl ReadView {
         maximum_rows: usize,
         maximum_bytes: usize,
     ) -> Result<Vec<(RowKey, Vec<u8>)>, StoreError> {
+        Ok(self
+            .scan_after(family, prefix, None, maximum_rows, maximum_bytes)?
+            .rows)
+    }
+
+    pub fn scan_after(
+        &self,
+        family: Family,
+        prefix: &[u8],
+        exclusive_after: Option<&[u8]>,
+        maximum_rows: usize,
+        maximum_bytes: usize,
+    ) -> Result<ReadPage, StoreError> {
         if self.opened.elapsed() > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);
         }
@@ -376,11 +486,23 @@ impl ReadView {
             || maximum_rows > 256
             || maximum_bytes == 0
             || maximum_bytes > 4 * 1024 * 1024
+            || exclusive_after.is_some_and(|key| {
+                !key.starts_with(prefix) || key.len() > self.limits.maximum_key_bytes
+            })
         {
             return Err(StoreError::Invalid);
         }
         let mut start = vec![family as u8];
         start.extend_from_slice(prefix);
+        let mut after = vec![family as u8];
+        if let Some(key) = exclusive_after {
+            after.extend_from_slice(key);
+        }
+        let lower = if exclusive_after.is_some() {
+            std::ops::Bound::Excluded(after.as_slice())
+        } else {
+            std::ops::Bound::Included(start.as_slice())
+        };
         let table = self
             .tx
             .as_ref()
@@ -389,16 +511,31 @@ impl ReadView {
             .map_err(|_| StoreError::Corrupt)?;
         let mut out = Vec::new();
         let mut bytes = 0usize;
+        let mut more = false;
         for row in table
-            .range(start.as_slice()..)
+            .range::<&[u8]>((lower, std::ops::Bound::Unbounded))
             .map_err(|_| StoreError::Corrupt)?
         {
             let (key, value) = row.map_err(|_| StoreError::Corrupt)?;
             if !key.value().starts_with(&start) {
                 break;
             }
-            let amount = key.value().len() + value.value().len();
+            if key.value().len() < 2
+                || key.value().len() > self.limits.maximum_key_bytes + 1
+                || value.value().len() > self.limits.maximum_value_bytes
+            {
+                return Err(StoreError::Corrupt);
+            }
+            let amount = key
+                .value()
+                .len()
+                .checked_add(value.value().len())
+                .ok_or(StoreError::Capacity)?;
             if out.len() == maximum_rows || amount > maximum_bytes.saturating_sub(bytes) {
+                if out.is_empty() {
+                    return Err(StoreError::Capacity);
+                }
+                more = true;
                 break;
             }
             bytes += amount;
@@ -410,7 +547,12 @@ impl ReadView {
                 value.value().to_vec(),
             ));
         }
-        Ok(out)
+        let resume = if more {
+            out.last().map(|(key, _)| key.key.clone())
+        } else {
+            None
+        };
+        Ok(ReadPage { rows: out, resume })
     }
 }
 impl Drop for ReadView {

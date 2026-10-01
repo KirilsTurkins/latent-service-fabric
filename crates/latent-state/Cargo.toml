@@ -12,9 +12,11 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-protected-files = { path = "../latent-protected-files" }
 redb.workspace = true
 
 [dev-dependencies]
+latent-core = { path = "../latent-core", features = ["test-support"] }
 tempfile.workspace = true
 latent-testkit = { path = "../latent-testkit", default-features = false }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
