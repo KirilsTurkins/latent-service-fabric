@@ -292,7 +292,7 @@ jobs:
           PY
       - name: Check original package rejection and bounded process contracts
         id: conductor-contracts
-        run: python3 -B -m unittest tools.tests.test_dev_packaged_probe
+        run: python3 -B -m unittest tools.tests.test_dev_packaged_probe tools.tests.test_java_provider_timeout tools.tests.test_java_resource_diagnostics
       - name: Exercise authenticated frontend workspaces and explicit standalone operator
         id: live-java-composition
         env:

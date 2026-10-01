@@ -22,7 +22,7 @@ from tools.dev_packaged_process import write_json as replace_public
 from tools.dev_packaged_windows import Frontend, acquire, inputs
 from tools.dev_workflow import build, project, state, tool_inventory
 from tools.dev_workflow.common import digest, encode, require
-from tools.java_http_composition import context, inspection, provider_timeout
+from tools.java_http_composition import context, inspection, provider_timeout, resource_diagnostics
 from tools.java_http_composition.build import projects
 from tools.java_http_composition.node import (
     SERVICE_CAPABILITY, TENANT, configure, grant, idle, invoke, rebind, route, service_grant,
@@ -182,6 +182,11 @@ def _configure(root, releases, output, *, former, provider_port=None):
         # Protected credential paths resolve relative to the real installed
         # config directory, not the conductor's observation directory.
         selected = provider_timeout.configure(config.parent, selected, provider_port)
+        require(len(selected["cells"]) == 1 and selected["cells"][0]["queueCapacity"] == 4,
+                "packaged-java-original-fixture-queue-bound")
+        # Narrow only this disposable diagnostic fixture. One waiting root plus
+        # the real parent and child exhausts admission without a larger load.
+        selected["cells"][0]["queueCapacity"] = resource_diagnostics.QUEUE_SIZE
     replace_config(config, selected)
     return config, host, {"originalConfigurationDigest": digest(encode(original)),
         "selectedConfigurationDigest": digest(encode(selected)), "nodeId": original["nodeId"],
@@ -280,6 +285,8 @@ def _current(frontend, api, workspace, root, output, releases, cancellation, *, 
         "freshComposedExecution": fresh_status(client, targets, host, "java-packaged-fresh-success"),
         "ordinaryContext": context.ordinary_import(client, context_targets, releases, publications, host)}
     if provider_port is not None:
+        result["childFuel"] = resource_diagnostics.fuel(client, targets, host)
+        result["queuePressure"] = resource_diagnostics.queue(client, targets, host)
         result["providerTimeout"] = provider_timeout.qualify(client, host, provider_control, provider_port)
     # A reviewed policy revision invalidates the original binding plan even
     # after restoration. Retain that intent, then explicitly redeploy/rebind.
@@ -350,7 +357,8 @@ def qualify(configuration, output, *, diagnostics=False):
             if peer is not None:
                 report["providerPeer"]["shutdown"] = provider_timeout.stop_peer(peer)
                 peer = None
-                report["diagnosticCampaignPassed"] = report["currentProfile"]["providerTimeout"]["status"] == "passed"
+                report["diagnosticCampaignPassed"] = all(report["currentProfile"][name]["status"] == "passed"
+                    for name in ("childFuel", "queuePressure", "providerTimeout"))
         frontend.unchanged()
         require(report["conductorSource"] == _sources(output), "packaged-java-conductor-source-changed")
         report["passed"] = True

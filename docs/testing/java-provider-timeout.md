@@ -25,6 +25,19 @@ retain their own compiler and signing receipts. `diagnosticCampaignPassed` is
 separate from the ordinary composition and preflight result: an unavailable
 typed runtime observation leaves that field false.
 
+The optional campaign also invokes the maintained `/api/spin` adapter with a
+one-billion CPU request, below its original ten-billion declaration, and requires
+the actual service child's authorized terminal observation to identify stage 5,
+reason 11. Its last consumption comes from the supported activation status.
+A separate held spin keeps both execution cells occupied. This disposable
+configuration narrows its original four-slot queue to one slot; one accepted
+waiting root then fills the remaining admission reservation. A third root must
+be refused with terminal stage 1 or 2, reason 9. Stage 2, reason 14 remains a
+queue deadline and cannot qualify as pressure. The waiting root and held tree
+are cancelled once each, their CLI owners are reaped, and the waiting root must
+show zero CPU and memory consumption. Both cases check idle resource counters
+and a distinct fresh successful invocation. Missing typed data stays unavailable.
+
 Start the existing `sdk_provider_scenario.start_provider` peer under the
 conductor's original deadline. Pass its actual loopback port to `configure`
 before node startup. That function adds the original bounded HTTP provider
