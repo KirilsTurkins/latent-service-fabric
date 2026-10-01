@@ -6,6 +6,7 @@ does not qualify the complete Java standard concurrency profile.
 """
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -35,7 +36,7 @@ def throwable_model_control(compiler: Compiler, output: Path) -> dict:
         candidates = list((cache / ".".join(parts[:-3]) / parts[-3] / parts[-2]).glob("*/" + parts[-1]))
         if len(candidates) != 1: raise ValueError("Java Throwable model tooling jar is missing or ambiguous")
         raw = read_file(candidates[0], 25 * 1024 * 1024)
-        if len(raw) != item["size"] or digest(raw) != item["sha256"]:
+        if len(raw) != item["size"] or hashlib.sha256(raw).hexdigest() != item["sha256"]:
             raise ValueError("Java Throwable model tooling jar integrity mismatch")
         jars.append(candidates[0])
         identities[item["path"]] = item["sha256"]

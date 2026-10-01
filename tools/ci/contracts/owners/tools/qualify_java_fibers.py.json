@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Four unchanged reference-JDK modes and exact locked Throwable constructor controls preserve original application identities; expanded signed guest execution remains unqualified",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1507ebe15be9eb75a0570770c19a9be9a8c355df948bf2eb87346623c1551c87"
+  "sha256": "ee8ca2d9796295e3196929890f1d3d281cf10120ccc7a885357776294e280ee5"
 }
