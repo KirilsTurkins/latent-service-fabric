@@ -7579,6 +7579,8 @@
         "phase4::state_management::recovery::tests::recovery_original_deadline_and_closed_owner_deny_without_refunding_retained_capacity",
         "phase4::state_management::recovery::tests::shared_recovery_admission_keeps_exact_capacities_and_does_not_borrow_ordinary_slots",
         "phase4::state_management::tests::actual_authenticated_namespace_create_inspect_and_original_receipt",
+        "phase4::state_management::tests::dispatcher::actual_authenticated_dispatcher_receipt_is_historical_and_audit_failure_cannot_mutate",
+        "phase4::state_management::tests::dispatcher::dispatcher_original_policy_is_captured_before_poll_and_reallow_cannot_revive_it",
         "phase4::state_management::tests::durable_typed_audit_precedes_mutation_and_closed_audit_cannot_create",
         "phase4::state_management::tests::exact_selected_service_mismatch_denies_before_native_lookup_even_when_store_closed",
         "phase4::state_management::tests::lifecycle_transition_invalidates_old_metadata_and_tombstone_is_inspectable",
@@ -7602,7 +7604,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 144,
+      "minimumCases": 146,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

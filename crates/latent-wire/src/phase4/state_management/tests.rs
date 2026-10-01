@@ -1,4 +1,5 @@
 use super::*;
+mod dispatcher;
 mod fixture;
 mod physical;
 mod recovery;
