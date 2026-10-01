@@ -95,7 +95,7 @@ impl Proxy {
             loop {
                 tokio::select! {
                     _=&mut stopped=>break,
-                    result=children.join_next(),if !children.is_empty()=>{let _=result.unwrap().unwrap();},
+                    result=children.join_next(),if !children.is_empty()=>{result.unwrap().unwrap();},
                     result=listener.accept(),if accepted<16=>{
                         let (socket,_)=result.unwrap();accepted+=1;
                                                 let (acceptor,connector,fault,event,running,unpause)=(acceptor.clone(),connector.clone(),fault.clone(),event.clone(),running.clone(),unpause.clone());

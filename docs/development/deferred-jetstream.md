@@ -69,41 +69,65 @@ The transaction runtime supplies the same protected store and dispatcher.
 
 ## Measured implementation evidence
 
-Pinned Rust 1.97.1 Linux: capability library 126/126, effect library 52/52 and NATS
-library 8/8 passed, with no ignored cases. These include actual TCP retirement,
-wrong-provider denial, finite operation counts, tenant capacity, provider
-rotation and closed qualification decoding. Strict all-target NATS/effects
-Clippy passed. Existing capability Clippy diagnostics are recorded separately;
-they are not replaced by these test results.
+On 1 October 2026, pinned Rust 1.97.1 on Linux passed all 301 selected library
+cases: core 104, state 114, effects 75 and NATS 8. No cases were ignored or
+filtered. Strict all-target, all-feature core/state/effects/NATS Clippy passed;
+the focused capacity-source change also passed strict effects Clippy and six
+actual protected-role admission schedules. All 48 CI contract regression cases
+passed on Linux, including actual symlink rejection. UTF-8 CI coverage retained
+all 88 historical obligations and observed 221 current run blocks with 132
+reviewed delegated owners.
 
-The existing pinned broker image
-`nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc`
-was actually launched and reported NATS 2.14.6. This is a software identity check,
-not the completed real-broker campaign. State-to-broker commit, guest rejection,
-restart, lost acknowledgement, broker-message inspection and live shutdown
-qualification are still required before issue #392 can close. Protocol peers
-and these library cases do not substitute for that campaign.
+The maintained provider CI lane selects `deferred_events` through
+`tools/run_nats_deferred_tests.py`. Its seven registered native schedules all
+passed against the actual controlled broker in 5.33 seconds, with zero ignored
+or filtered cases. Each schedule uses the protected shared store, native
+captured-intent atomic writer, fixed dispatcher, protected credential references
+and the original installed provider pools. An acknowledgement fault proxy
+forwards to the real broker before dropping, holding or replacing replies;
+independent operator inspection checks actual stored bytes and effect-derived
+headers. Every owned broker, bounded storage directory and TLS file was removed.
 
-The maintained provider CI lane now selects a separate `deferred_events`
-harness through `tools/run_nats_deferred_tests.py`. Its seven registered
-schedules use the actual protected store, captured-intent atomic envelope,
-fixed dispatcher, protected credentials and installed provider pools. The
-owned file stream has 64 messages/1 MiB, a 30-second duplicate window and
-delete/purge denied. An acknowledgement fault proxy forwards to that real
-broker before dropping, holding or replacing its replies; operator inspection
-checks stored message bytes and effect-derived headers independently.
+The seven schedules cover committed state/result/payload/receipt agreement,
+declared rejection and positive technical abort without outgoing effects,
+presend restart with advanced physical epoch, lost acknowledgement followed by
+equal-ID recovery with one broker message, expiry/revocation/stream recreation,
+malformed and oversized replies, and live publication across the original
+shutdown cutoff. They preserve the existing immediate and trigger campaigns
+and their required CI owners. The earlier selected ownership, runner and
+inventory regressions passed all 58 Python cases.
 
-The fixture covers success, declared rejection/positive technical abort,
-presend restart, a lost acknowledgement with equal-ID duplicate recovery,
-revocation/recreation/horizon denial, malformed/oversized replies and a live
-publication across shutdown. It retains the historical immediate/trigger
-campaigns and their bounded CI owners. The new runner's negative ownership and
-harness selection cases, together with inventory/lane regressions, passed all
-58 selected Python cases; UTF-8 CI coverage passed 88 historical and 219
-current run blocks with 132 delegated owners.
+The measured identities are:
 
-Execution of these seven new native schedules is still pending. Compilation
-was interrupted when the shared host disk filled and Docker's build volume
-became read-only; those infrastructure failures are not passing broker
-evidence. Actual guest/standalone delivery qualification remains required
-alongside this native atomic-writer campaign before #392 can close.
+| Input | Exact identity |
+| --- | --- |
+| Rust qualification image | `sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97` |
+| Rust toolchain | `1.97.1-x86_64-unknown-linux-gnu` |
+| Broker image | `nats@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc` |
+| Observed broker software | NATS `2.14.6` |
+| Native source base | `863b3dfd8eee573aac7874ff40c1871f071cd050` |
+| `support.rs` fixture blob | `a4b73e7f80d264ef9e27c947a0a9a54fff9a7a8d` |
+| `campaign.rs` fixture blob | `38df1a6af23f56e0c5393c8b3a950cf91c071cd1` |
+| `proxy.rs` fixture blob | `b2baf2c21d156fadb2a11da35cd74e50e8eaec5a` |
+| Native harness SHA-256 | `4460495f3504db1cdc33f0c939e72e1e70b56ef2b3f4c27a2ec92fa876665298` |
+
+The fixture stream has file storage, one replica, 64 messages/1 MiB, discard-new,
+a 30-second duplicate window, and delete/purge denied. The runner owns one
+256 MiB, one-CPU broker with 64 process slots, bounded storage/logs, TLS and
+explicit credentials. Its immutable container identity and random ownership
+label gate cleanup. No external account or ambient credential is used.
+
+A first success fixture used its pre-Pending admission snapshot for completion;
+the real OCC engine correctly rejected the newly published command row. The
+fixture now opens its coherent completion view after Pending publication.
+Earlier host disk/Docker failures, that rejected fixture attempt, and one
+historical immediate-campaign build that exceeded its finite fixture lifetime
+remain unsuccessful evidence. They do not replace required immediate/trigger
+CI execution or establish a product regression.
+
+This native campaign executes trusted fixture source labels directly through
+the captured-intent writer. Actual verified guest component identities and
+ordinary standalone node delivery, rejection and recovery qualification remain
+required before issue #392 can close. The shared provider factory is implemented;
+the node composition and authenticated management/reconciliation paths must also
+be exercised through their actual owners.

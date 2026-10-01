@@ -87,86 +87,7 @@ async fn real_deferred_atomic_state_result_payload_and_broker_receipt_agree() {
 async fn real_deferred_declared_rejection_and_positive_technical_abort_publish_nothing() {
     let fixture = Fixture::new(config(), reset()).await;
     for technical in [false, true] {
-        let role = fixture.owner.as_ref().unwrap().command_admission().unwrap();
-        let effects = fixture.authority.clone();
-        call(&fixture.store, StoreIoKind::Write, move |db| {
-            let view = db.snapshot().unwrap();
-            let time = CommandTime {
-                unix_millis: 100,
-                continuity_proven: true,
-            };
-            let AdmissionDecision::New(prepared) = PreparedAdmission::prepare(
-                &view,
-                input(
-                    if technical { "abort" } else { "reject" },
-                    role.owner_epoch(),
-                ),
-                time,
-                permission,
-            )
-            .unwrap() else {
-                panic!("new claim")
-            };
-            let claim = prepared
-                .publish(db, || role.with_current(|_, _| Ok(())).unwrap())
-                .unwrap();
-            let work = claim.physical_work().unwrap();
-            let retirement = claim.retirement();
-            let captured = claim
-                .intent_capture_context()
-                .capture(
-                    0,
-                    StagedIntent {
-                        binding: "approved-event".into(),
-                        operation: "event".into(),
-                        payload: value(b"discarded"),
-                        expires_at_millis: None,
-                    },
-                    &effects,
-                    time,
-                )
-                .unwrap();
-            let mut session =
-                StateSession::open(&view, scope(), SessionLimits::default(), state_permission)
-                    .unwrap();
-            session
-                .put(
-                    &view,
-                    b"aggregate/count".to_vec(),
-                    value(b"discarded"),
-                    state_permission,
-                )
-                .unwrap();
-            drop(session);
-            drop(captured);
-            let envelope = if technical {
-                drop(claim);
-                work.retire();
-                CompleteEnvelope::technical_abort(
-                    &view,
-                    retirement.proven_noncommit().unwrap(),
-                    "guest-trap".into(),
-                    time,
-                )
-                .unwrap()
-            } else {
-                work.retire();
-                CompleteEnvelope::rejection(
-                    &view,
-                    claim,
-                    "declared-rejection".into(),
-                    value(b"rejected"),
-                    time,
-                )
-                .unwrap()
-            };
-            assert!(envelope.authorities().is_empty());
-            let disposition = envelope.publish(db, |_| role.with_current(|_, _| Ok(())).unwrap());
-            assert!(matches!(disposition, PreparedDisposition::Confirmed { .. }));
-            drop(view);
-            role.retire();
-        })
-        .await;
+        terminal_without_delivery(&fixture, technical).await;
     }
     fixture.owner.as_ref().unwrap().resume().unwrap();
     call(&fixture.store, StoreIoKind::Read, |db| {
@@ -392,7 +313,7 @@ async fn real_deferred_live_publication_keeps_actual_root_role_and_buffers_after
     assert!(!report.physically_retired);
     assert!(report.snapshot.physical_owners > 0);
     assert!(DispatcherOwner::start(
-        Default::default(),
+        latent_effects::runtime::DispatcherConfig::default(),
         fixture.store.clone(),
         fixture.authority.clone(),
         vec![fixture.adapter.clone()],
@@ -441,4 +362,88 @@ async fn real_deferred_live_publication_keeps_actual_root_role_and_buffers_after
         .unwrap()
         .is_clean());
     proxy.close().await;
+}
+
+async fn terminal_without_delivery(fixture: &Fixture, technical: bool) {
+    let role = fixture.owner.as_ref().unwrap().command_admission().unwrap();
+    let effects = fixture.authority.clone();
+    call(&fixture.store, StoreIoKind::Write, move |db| {
+        let view = db.snapshot().unwrap();
+        let time = CommandTime {
+            unix_millis: 100,
+            continuity_proven: true,
+        };
+        let AdmissionDecision::New(prepared) = PreparedAdmission::prepare(
+            &view,
+            input(
+                if technical { "abort" } else { "reject" },
+                role.owner_epoch(),
+            ),
+            time,
+            permission,
+        )
+        .unwrap() else {
+            panic!("new claim")
+        };
+        let claim = prepared
+            .publish(db, || role.with_current(|_, _| Ok(())).unwrap())
+            .unwrap();
+        drop(view);
+        let view = db.snapshot().unwrap();
+        let work = claim.physical_work().unwrap();
+        let retirement = claim.retirement();
+        let captured = claim
+            .intent_capture_context()
+            .capture(
+                0,
+                StagedIntent {
+                    binding: "approved-event".into(),
+                    operation: "event".into(),
+                    payload: value(b"discarded"),
+                    expires_at_millis: None,
+                },
+                &effects,
+                time,
+            )
+            .unwrap();
+        let mut session =
+            StateSession::open(&view, scope(), SessionLimits::default(), state_permission).unwrap();
+        session
+            .put(
+                &view,
+                b"aggregate/count".to_vec(),
+                value(b"discarded"),
+                state_permission,
+            )
+            .unwrap();
+        drop(session);
+        drop(captured);
+        let envelope = if technical {
+            drop(claim);
+            work.retire();
+            CompleteEnvelope::technical_abort(
+                &view,
+                retirement.proven_noncommit().unwrap(),
+                "guest-trap".into(),
+                time,
+            )
+            .unwrap()
+        } else {
+            work.retire();
+            CompleteEnvelope::rejection(
+                &view,
+                claim,
+                "declared-rejection".into(),
+                value(b"rejected"),
+                time,
+            )
+            .unwrap()
+        };
+        assert!(envelope.authorities().is_empty());
+        let disposition = envelope.publish(db, |_| role.with_current(|_, _| Ok(())).unwrap());
+        assert!(matches!(disposition, PreparedDisposition::Confirmed { .. }));
+        drop(view);
+        role.retire();
+    })
+    .await;
 }

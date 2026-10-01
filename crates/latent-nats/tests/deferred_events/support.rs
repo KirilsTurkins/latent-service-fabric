@@ -44,7 +44,7 @@ use latent_state::{
 use std::{
     fs,
     os::unix::fs::PermissionsExt,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicU64, Ordering},
         Arc,
@@ -166,10 +166,11 @@ pub fn state_permission(
     scope: &StateScope,
     _: StateAccess,
 ) -> Result<(), latent_state::session::StateError> {
-    assert_eq!(scope.tenant.0, "tests");
-    assert_eq!(scope.namespace.0, "aggregate");
-    assert_eq!(scope.incarnation, 1);
-    Ok(())
+    if scope.tenant.0 != "tests" || scope.namespace.0 != "aggregate" || scope.incarnation != 1 {
+        Err(latent_state::session::StateError::PermissionDenied)
+    } else {
+        Ok(())
+    }
 }
 pub fn input(key: &str, epoch: u64) -> AdmissionInput {
     AdmissionInput {
@@ -223,6 +224,139 @@ pub fn permission(
     }
 }
 
+fn install_shared_pools(
+    root: &Path,
+) -> (
+    Arc<DirectoryArtifactRepository>,
+    Arc<PolicyStore>,
+    Arc<ProviderPools>,
+) {
+    let catalog = Arc::new(
+        DirectoryArtifactRepository::open(
+            root.join("catalog"),
+            DirectoryArtifactRepositoryConfig::default(),
+        )
+        .unwrap(),
+    );
+    let policies = Arc::new(
+        PolicyStore::open(
+            &root.join("policies"),
+            PolicyStoreLimits::default(),
+            catalog.lifecycle_authority(),
+        )
+        .unwrap(),
+    );
+    let broker = Arc::new(
+        ActivationCapabilityBroker::new(
+            catalog.lifecycle_authority(),
+            policies.clone(),
+            Arc::new(SystemActivationClock),
+            CapabilityBrokerLimits::default(),
+        )
+        .unwrap(),
+    );
+    let io = Arc::new(IoRuntime::new(IoLimits::default()).unwrap());
+    let pools = Arc::new(
+        ProviderPools::new(
+            broker,
+            io,
+            tokio::runtime::Handle::current(),
+            ProviderPoolLimits::default(),
+        )
+        .unwrap(),
+    );
+    (catalog, policies, pools)
+}
+
+async fn install_protected_credentials(
+    root: &Path,
+    pools: Arc<ProviderPools>,
+    config: &NatsConfig,
+) -> LocalSecretStore {
+    let secret_root = root.join("secrets");
+    fs::create_dir(&secret_root).unwrap();
+    fs::set_permissions(&secret_root, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::write(secret_root.join("password"), b"lsf-public-nats-password").unwrap();
+    fs::set_permissions(
+        secret_root.join("password"),
+        fs::Permissions::from_mode(0o600),
+    )
+    .unwrap();
+    let secrets = LocalSecretStore::open(
+        pools,
+        secret_root,
+        SecretLimits::default(),
+        vec![],
+        Arc::new(SystemSecretClock),
+    )
+    .unwrap()
+    .await
+    .unwrap();
+    secrets
+        .reload(
+            0,
+            vec![SecretSpec {
+                tenant: TenantId("tests".into()),
+                reference: "nats-password".into(),
+                source: SecretSource::File {
+                    name: "password".into(),
+                },
+                purpose: SecretPurpose::TlsProviderCredential {
+                    provider_id: "events".into(),
+                    destination: config.endpoint.credential_destination(),
+                },
+                media_type: "application/octet-stream".into(),
+                version: "1".into(),
+                expires_at_unix_millis: None,
+            }],
+        )
+        .unwrap()
+        .await
+        .unwrap();
+    secrets
+}
+
+async fn initialized_store(root: &Path) -> (ProtectedStoreConfig, Arc<ProtectedStoreOwner>) {
+    let store_root = root.join("state");
+    fs::create_dir(&store_root).unwrap();
+    fs::set_permissions(&store_root, fs::Permissions::from_mode(0o700)).unwrap();
+    let mut store_config = ProtectedStoreConfig::bounded_linux(store_root);
+    store_config.create_if_missing = true;
+    let store = Arc::new(
+        ProtectedStoreOwner::start_validated_view(store_config.clone(), 0, validate)
+            .unwrap()
+            .await
+            .unwrap(),
+    );
+    call(&store, StoreIoKind::Write, |db| {
+        let namespace = NamespaceRecord {
+            tenant: TenantId("tests".into()),
+            id: StateNamespaceId("aggregate".into()),
+            version: NamespaceVersion {
+                incarnation: 1,
+                generation: 1,
+            },
+            state_schema: schema(),
+            status: NamespaceStatus::Active,
+            quota: NamespaceQuota::default(),
+            pins: NamespacePins::default(),
+        };
+        db.apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: RowKey {
+                    family: Family::Namespace,
+                    key: namespace_record_key(&namespace.tenant, &namespace.id).unwrap(),
+                },
+                value: Some(namespace.encode().unwrap()),
+            }],
+        })
+        .unwrap();
+    })
+    .await;
+    (store_config, store)
+}
+
 pub struct Fixture {
     pub _root: tempfile::TempDir,
     pub store: Arc<ProtectedStoreOwner>,
@@ -245,80 +379,8 @@ impl Fixture {
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
         fs::set_permissions(root.path(), fs::Permissions::from_mode(0o700)).unwrap();
-        let catalog = Arc::new(
-            DirectoryArtifactRepository::open(
-                root.path().join("catalog"),
-                DirectoryArtifactRepositoryConfig::default(),
-            )
-            .unwrap(),
-        );
-        let policies = Arc::new(
-            PolicyStore::open(
-                &root.path().join("policies"),
-                PolicyStoreLimits::default(),
-                catalog.lifecycle_authority(),
-            )
-            .unwrap(),
-        );
-        let broker = Arc::new(
-            ActivationCapabilityBroker::new(
-                catalog.lifecycle_authority(),
-                policies.clone(),
-                Arc::new(SystemActivationClock),
-                CapabilityBrokerLimits::default(),
-            )
-            .unwrap(),
-        );
-        let io = Arc::new(IoRuntime::new(IoLimits::default()).unwrap());
-        let pools = Arc::new(
-            ProviderPools::new(
-                broker,
-                io,
-                tokio::runtime::Handle::current(),
-                ProviderPoolLimits::default(),
-            )
-            .unwrap(),
-        );
-        let secret_root = root.path().join("secrets");
-        fs::create_dir(&secret_root).unwrap();
-        fs::set_permissions(&secret_root, fs::Permissions::from_mode(0o700)).unwrap();
-        fs::write(secret_root.join("password"), b"lsf-public-nats-password").unwrap();
-        fs::set_permissions(
-            secret_root.join("password"),
-            fs::Permissions::from_mode(0o600),
-        )
-        .unwrap();
-        let secrets = LocalSecretStore::open(
-            pools.clone(),
-            secret_root,
-            SecretLimits::default(),
-            vec![],
-            Arc::new(SystemSecretClock),
-        )
-        .unwrap()
-        .await
-        .unwrap();
-        secrets
-            .reload(
-                0,
-                vec![SecretSpec {
-                    tenant: TenantId("tests".into()),
-                    reference: "nats-password".into(),
-                    source: SecretSource::File {
-                        name: "password".into(),
-                    },
-                    purpose: SecretPurpose::TlsProviderCredential {
-                        provider_id: "events".into(),
-                        destination: config.endpoint.credential_destination(),
-                    },
-                    media_type: "application/octet-stream".into(),
-                    version: "1".into(),
-                    expires_at_unix_millis: None,
-                }],
-            )
-            .unwrap()
-            .await
-            .unwrap();
+        let (catalog, policies, pools) = install_shared_pools(root.path());
+        let secrets = install_protected_credentials(root.path(), pools.clone(), &config).await;
         let credential = secrets
             .bind_tls_credential(
                 TlsCredentialScope {
@@ -370,43 +432,7 @@ impl Fixture {
             )
             .unwrap();
         authority.publish(rule.clone()).unwrap();
-        let store_root = root.path().join("state");
-        fs::create_dir(&store_root).unwrap();
-        fs::set_permissions(&store_root, fs::Permissions::from_mode(0o700)).unwrap();
-        let mut store_config = ProtectedStoreConfig::bounded_linux(store_root);
-        store_config.create_if_missing = true;
-        let store = Arc::new(
-            ProtectedStoreOwner::start_validated_view(store_config.clone(), 0, validate)
-                .unwrap()
-                .await
-                .unwrap(),
-        );
-        call(&store, StoreIoKind::Write, |db| {
-            let namespace = NamespaceRecord {
-                tenant: TenantId("tests".into()),
-                id: StateNamespaceId("aggregate".into()),
-                version: NamespaceVersion {
-                    incarnation: 1,
-                    generation: 1,
-                },
-                state_schema: schema(),
-                status: NamespaceStatus::Active,
-                quota: NamespaceQuota::default(),
-                pins: NamespacePins::default(),
-            };
-            db.apply(AtomicBatch {
-                expectations: vec![],
-                mutations: vec![RowMutation {
-                    key: RowKey {
-                        family: Family::Namespace,
-                        key: namespace_record_key(&namespace.tenant, &namespace.id).unwrap(),
-                    },
-                    value: Some(namespace.encode().unwrap()),
-                }],
-            })
-            .unwrap();
-        })
-        .await;
+        let (store_config, store) = initialized_store(root.path()).await;
         let mut fixture = Self {
             _root: root,
             store,
@@ -454,6 +480,8 @@ impl Fixture {
             let view = db.snapshot().unwrap();
             let AdmissionDecision::New(prepared) = PreparedAdmission::prepare(&view, input(&key, epoch), time, permission).unwrap() else { panic!("new command") };
             let claim = prepared.publish(db, || role.with_current(|_, _| permission(CommandAccess::FinalClaim, None)).unwrap()).unwrap();
+            drop(view);
+            let view = db.snapshot().unwrap();
             let work = claim.physical_work().unwrap();
             let captured = claim.intent_capture_context().capture(0, StagedIntent { binding: "approved-event".into(), operation: "event".into(), payload: value(b"updated"), expires_at_millis: None }, &effects, time).unwrap();
             let mut session = StateSession::open(&view, scope(), SessionLimits::default(), state_permission).unwrap();
