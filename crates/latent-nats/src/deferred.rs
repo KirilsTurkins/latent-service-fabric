@@ -116,6 +116,7 @@ impl DeferredEffectAdapter for JetStreamEffectAdapter {
         payload: PayloadRecord,
         attempt: AttemptIdentity,
     ) -> Result<BoxFuture<'static, AdapterOutcome>, AuthorityError> {
+        grant.require_execution()?;
         let horizon = self.check_grant(&grant, &payload, &attempt)?;
         let inner = &self.publisher.inner;
         let event = event(payload, &grant, &inner.config.topics[self.row].topic)?;
