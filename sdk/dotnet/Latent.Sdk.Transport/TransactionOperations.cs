@@ -99,7 +99,7 @@ public sealed partial class BoundedClient : Tx.ITransactionClient
         catch (TransactionWireValueException failure)
         {
             throw state.Wrap(state.Failure(state.Dispatched ? Profile.FailureCategory.Decode : Profile.FailureCategory.InvalidRequest,
-                "unsupported transaction wire value") with { UnsupportedWireValue = failure.Value });
+                "unsupported transaction wire value") with { UnsupportedWireValue = failure.Value with { Value = Redact(failure.Value.Value) } });
         }
         catch (Exception failure) when (failure is IOException or HttpRequestException or ObjectDisposedException)
         {

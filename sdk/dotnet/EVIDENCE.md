@@ -3,7 +3,7 @@
 The Phase 4 source milestone on 2026-10-01 adds twelve core methods to the same
 bounded HTTP/2 owner. Local Windows checks used the pinned SDK 8.0.425 and
 runtime 8.0.31 with locked cached NuGet packages: compilation passed with zero
-warnings/errors, 49 shared protobuf cases and 561 native assertions passed.
+warnings/errors, 49 shared protobuf cases and 563 native assertions passed.
 Six new real HTTP/2 serialization scenarios cover all twelve methods, independent
 durable rejection through audit failure, transport ABORTED versus explicit
 proven-abort attempts, retained old result formats/payload expiry, full-width

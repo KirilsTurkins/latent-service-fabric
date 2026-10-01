@@ -184,6 +184,7 @@ internal static partial class Program
             command.Retention.RecordVersion = 7; command.Retention.RecordFormat = "retained-old-format";
             command.Retention.RequiredRecordIds.Clear(); command.Retention.RequiredRecordIds.Add(Enumerable.Range(0, 256).Select(index => "linked-" + index));
             if (request.HasAttemptId && request.AttemptId == "future") command.Outcome = (WireTx.CommandOutcome)91;
+            if (request.HasAttemptId && request.AttemptId == "credential") { command = TxWireCommand(4); command.TechnicalFailure.Code = Token; }
             byte[] bytes = new WireTx.LookupCommandResponse { Command = command }.ToByteArray();
             if (request.HasAttemptId && request.AttemptId == "duplicate") bytes = bytes.Concat(bytes).ToArray();
             if (request.HasAttemptId && request.AttemptId == "expansion")
@@ -199,6 +200,9 @@ internal static partial class Program
         Check(old.Value.Command!.Retention!.RequiredRecordIds.Count == 256 && old.Value.Command.Retention.RecordVersion == 7 && old.Value.Command.Success is null && old.Metadata.Observed!.Command!.Commit is not null, "payload expiry lost old-format identity/receipt");
         var unknown = await TxFailure(client.LookupCommandAsync(TxLookup("future"), Defaults).AsTask(), Profile.FailureCategory.Decode);
         Check(unknown.Transport.UnsupportedWireValue!.Value == "91" && unknown.Observed is null, "unknown enum was narrowed or treated as known receipt");
+        var credential = await TxFailure(client.LookupCommandAsync(TxLookup("credential"), Defaults).AsTask(), Profile.FailureCategory.Decode);
+        Check(credential.Transport.UnsupportedWireValue!.Value == "[redacted]" && credential.Observed is null,
+            "future wire diagnostic echoed the credential or supplied receipt knowledge");
         var duplicate = await TxFailure(client.LookupCommandAsync(TxLookup("duplicate"), Defaults).AsTask(), Profile.FailureCategory.Decode);
         Check(duplicate.Observed is null, "duplicate wire field produced receipt knowledge");
         var malformed = await TxFailure(client.LookupCommandAsync(TxLookup("expansion"), Defaults).AsTask(), Profile.FailureCategory.Decode);
