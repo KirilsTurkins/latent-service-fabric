@@ -202,7 +202,7 @@ fn read_digest(reader: impl Read, maximum: u64) -> (String, u64) {
     // Read at most one byte past the bound so growing inputs cannot extend work.
     let mut reader = reader.take(maximum.checked_add(1).unwrap());
     let mut hasher = Sha256::new();
-    let mut bytes = [0; 65536];
+    let mut bytes = vec![0; 65_536];
     let mut observed_bytes = 0_u64;
     loop {
         let length = reader.read(&mut bytes).unwrap();

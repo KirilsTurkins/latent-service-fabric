@@ -15,8 +15,13 @@ async fn generated_metric_kinds_and_typed_failure() {
     for language in super::languages() {
         let root = tempfile::tempdir().unwrap();
         let publication = package::publish(root.path(), &format!("{language}-metrics")).await;
-        let mut f =
-            Fixture::with_publication(Default::default(), config(), None, Some(publication)).await;
+        let mut f = Fixture::with_publication(
+            latent_capabilities::broker::metrics::MetricActivationLimits::default(),
+            config(),
+            None,
+            Some(publication),
+        )
+        .await;
         for (which, name, expected) in [
             (0, "requests", 1),
             (1, "inflight", 1),

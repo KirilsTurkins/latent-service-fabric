@@ -43,8 +43,7 @@ mod admission_fixture;
 mod authority;
 #[path = "diagnostics.rs"]
 mod diagnostics;
-#[path = "../guest_sdk/runtime.rs"]
-mod guest_runtime;
+use crate::support::guest_runtime;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
@@ -458,7 +457,7 @@ impl Fixture {
             _root: root,
         }
     }
-    pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
+    pub fn request(id: &str, which: u32) -> ActivationRequest {
         let mut request = admission_fixture::request(id);
         request.target.service = ServiceId("caller".into());
         request.target.contract = ContractId(component::CALLER.into());
