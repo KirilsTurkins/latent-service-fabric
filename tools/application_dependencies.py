@@ -435,12 +435,15 @@ def verify_inputs(project: Path, language: str, *, cache: Path | None = None,
 
 
 def prepare(project: Path, work: Path, output: Path, language: str, *, cache: Path | None = None,
-            profile_identity: dict | None = None) -> Closure | None:
+            profile_identity: dict | None = None, execution_approval=None) -> Closure | None:
     verified = verify_inputs(project, language, cache=cache, profile_identity=profile_identity)
     if verified is None:
         return None
     if verified.lock["executableInputs"]:
-        raise DependencyError("dependency-executable-tools-require-isolated-stage")
+        from tools.application_dependency_approval import Approval
+        if not isinstance(execution_approval, Approval):
+            raise DependencyError("dependency-executable-tools-require-isolated-stage")
+        execution_approval.validate(verified, work)
     store, lock = verified.store, verified.lock
     for item in lock["artifacts"]:
         destination = regular_path(work / item["mount"])
@@ -462,6 +465,9 @@ def prepare(project: Path, work: Path, output: Path, language: str, *, cache: Pa
                "selection": lock["selection"], "artifacts": lock["artifacts"], "transformations": lock["transformations"],
                "networkResolution": False, "hermetic": False, "completeness": lock["completeness"],
                "trust": "source-and-build-policy-required", "sbomBoundary": "selected-application-inputs-only"}
+    if execution_approval is not None:
+        receipt["executableApproval"] = {"identity": execution_approval.identity,
+                                        "specification": execution_approval.specification}
     with (output / "application-dependencies.json").open("xb") as stream:
         stream.write(canonical(receipt) + b"\n")
     return closure

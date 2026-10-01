@@ -12,6 +12,26 @@ is a verified transport cache. The application lock and compiler/runtime
 selection require source/build-policy review even when every object is cached.
 There is no invocation-time resolution.
 
+The developer workflow derives `dependencyInputs` when it loads
+`latent.project.json`. The approval identity includes the dependency manifest,
+reviewed lock, compiler/runtime/feature selection and executable-input identities.
+Source edits can retain approval; a changed reviewed dependency lock or selected
+profile requires a fresh `latent-dev dev trust`. An explicitly supplied stale
+`dependencyInputs` binding is rejected instead of silently replaced.
+
+The manifest, reviewed lock, native lockfiles and captured object directory are
+automatically included in source/watch snapshots. Required dependency inputs
+cannot be excluded. Snapshot acceptance and every build/cache-reuse check verify
+the closed graph, original object bytes, patch preimages and native locks offline
+before updating the accepted project or build. Capture metadata never authorizes
+execution of package hooks or generators.
+
+The developer controller retains its smaller transport bounds: 64 input roots,
+2,048 files, 16 MiB per file and 64 MiB in a source snapshot. Captures exceeding
+those bounds fail explicitly; use the standalone build workflow for a larger
+reviewed closure. The helper includes the same capture verifier and can inspect
+an offline snapshot from outside the repository without reaching private sources.
+
 The version 1 manifest has six required fields:
 
 ```json
