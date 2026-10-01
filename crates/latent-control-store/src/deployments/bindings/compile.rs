@@ -1,6 +1,6 @@
 use super::model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider};
 use super::{
-    capacity, denied, error, invalid, model::StoredBinding, BindingCatalog, CompilerOwner,
+    BindingCatalog, CompilerOwner, capacity, denied, error, invalid, model::StoredBinding,
 };
 use crate::deployments::compiler::{CompiledCatalog, RevisionRecord};
 use latent_artifacts::{AdmissionAuthority, ArtifactRepository, ReleaseUseEligibility};
@@ -301,7 +301,10 @@ async fn bundle(
             configuration,
             layers,
         },
-        latent_packaging::PackagingLimits::default(),
+        latent_packaging::PackagingLimits {
+            manifest_profile: owner.manifest_profile,
+            ..Default::default()
+        },
     )?;
     if bundle.layout().digest() != &package
         || bundle
@@ -431,6 +434,19 @@ async fn plan<'a>(
     let mut local_targets = Vec::new();
     let mut invocation_targets = Vec::new();
     for interface in surface.imports() {
+        // These exact interfaces belong to the admitted transaction host. A
+        // checked package or this configured profile grants no namespace or
+        // intent authority; TransactionInstallation seals it at invocation.
+        // Every ordinary import still requires its original signed source,
+        // provider selection, nominal proof, grants and currentness fences.
+        if owner.manifest_profile.transactional()
+            && matches!(
+                interface.as_ref(),
+                "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
+            )
+        {
+            continue;
+        }
         let d = definition(record, definitions, interface)?;
         let provider = selected(d, owner)?;
         let is_invocation = interface.as_ref() == SERVICE_INVOCATION_CAPABILITY

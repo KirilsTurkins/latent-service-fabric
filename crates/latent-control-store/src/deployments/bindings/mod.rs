@@ -9,7 +9,7 @@ mod update;
 pub use model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider};
 pub use update::PreparedBindingUpdate;
 
-use super::{compiler::CompiledCatalog, PublishedCatalog};
+use super::{PublishedCatalog, compiler::CompiledCatalog};
 use latent_capabilities::broker::{ActivationCapabilityBroker, CompiledCapabilityPlan};
 use latent_core::{PlatformError, PlatformErrorCode};
 use model::StoredBinding;
@@ -20,6 +20,7 @@ pub(super) struct CompilerOwner {
     providers: Box<[ConfiguredBindingProvider]>,
     current: Weak<RwLock<PublishedCatalog>>,
     limits: BindingLimits,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
 }
 impl CompilerOwner {
     fn retained_bytes(&self) -> usize {

@@ -9,6 +9,7 @@ mod publications;
 mod rejections;
 mod slow_preparation;
 mod startup;
+mod transaction_profile;
 use fixture::*;
 use latent_capabilities::broker::CapabilityPlanSource;
 use latent_routing::{RouteCompiler, RouteResolver, RouteSnapshotPublisher};

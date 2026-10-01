@@ -2,11 +2,11 @@
 pub mod component;
 
 use latent_artifacts::package::{
-    artifact_blob_digest, encode_wit_lock, LayerRole, PackageKind, PackageLimits, WitLock,
-    WitLockedPackage,
+    LayerRole, PackageKind, PackageLimits, WitLock, WitLockedPackage, artifact_blob_digest,
+    encode_wit_lock,
 };
 use latent_packaging::{BundleInput, LayerInput, PackageBundle, PackageInput};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 pub fn capsule(options: component::Options) -> PackageInput {
     let bytes = component::component(options);
@@ -76,6 +76,79 @@ pub fn capsule(options: component::Options) -> PackageInput {
             ),
         ],
     }
+}
+
+/// Real parsed/encoded transaction and ordinary imports, for selected-profile
+/// package/admission tests. It executes no guest and supplies no host grant.
+pub fn transactional_capsule() -> PackageInput {
+    let state = latent_core::PHASE4_HOST_ABI_V1
+        .interface("latent:state/key-value@0.2.0")
+        .unwrap();
+    let clock = component::host(component::Options::default());
+    // No state operation is called by this package-shape fixture, so its
+    // actual import is pruned. The source lock retains the complete pinned
+    // interface; full resource/async validation has independent ABI cases.
+    let state_host = wasm_encoder::InstanceType::new();
+    let bytes = component::with_hosts(
+        component::Options::default(),
+        &[(component::CLOCK, &clock), (state.interface, &state_host)],
+    );
+    let service = std::str::from_utf8(component::SERVICE_WIT)
+        .unwrap()
+        .replace(
+            "    export api;",
+            "    import latent:state/key-value@0.2.0;\n    export api;",
+        )
+        .into_bytes();
+    let mut input = capsule(component::Options::default());
+    for layer in &mut input.layers {
+        match layer.path.as_str() {
+            "component.wasm" => layer.bytes.clone_from(&bytes),
+            "wit/service.wit" => layer.bytes.clone_from(&service),
+            _ => (),
+        }
+    }
+    input.layers.push(layer(
+        "wit/state.wit",
+        LayerRole::Asset,
+        "text/plain",
+        state.wit.as_bytes().to_vec(),
+    ));
+    mutate_json(&mut input, "capsule.json", |manifest| {
+        manifest["component"]["digest"] = json!(artifact_blob_digest(&bytes).as_str());
+        manifest["imports"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"contract":state.interface,"optional":false}));
+        manifest["execution"]["threading"] = json!("single-threaded");
+        manifest["execution"]["snapshotEligible"] = json!(false);
+        manifest["execution"]["fusionEligible"] = json!(false);
+        manifest["execution"]["limits"]["stateReadBytes"] = json!(32);
+        manifest["execution"]["limits"]["stateWriteBytes"] = json!(32);
+        manifest["execution"]["limits"]["wallTimeLimitMillis"] = json!(1000);
+    });
+    mutate_json(&mut input, "wit-lock.json", |lock| {
+        lock["packages"][1]["digest"] = json!(artifact_blob_digest(&service).as_str());
+        lock["packages"][1]["dependencies"] = json!(["latent:clock@0.1.0", "latent:state@0.2.0"]);
+        lock["packages"].as_array_mut().unwrap().push(json!({
+            "id":"latent:state@0.2.0","sourcePath":"wit/state.wit",
+            "digest":artifact_blob_digest(state.wit.as_bytes()).as_str(),"dependencies":[]
+        }));
+        lock["packages"]
+            .as_array_mut()
+            .unwrap()
+            .sort_by(|left, right| left["id"].as_str().cmp(&right["id"].as_str()));
+    });
+    input
+}
+
+pub fn transaction_profile() -> latent_manifest::ManifestValidationProfile {
+    latent_manifest::ManifestValidationProfile::phase4(
+        latent_core::BudgetProfile::Phase4,
+        latent_core::PHASE4_HOST_ABI_V1,
+        &latent_manifest::phase4_host_abi_digest(),
+    )
+    .unwrap()
 }
 
 pub fn layer(path: &str, role: LayerRole, media_type: &str, bytes: Vec<u8>) -> LayerInput {

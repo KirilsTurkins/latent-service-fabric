@@ -10,16 +10,16 @@ mod web_fixture;
 pub use web_fixture::web_input;
 
 use super::super::{SupplyChainClock, SupplyChainPolicy};
-use base64::{engine::general_purpose::STANDARD, Engine};
-use latent_artifacts::package::{artifact_blob_digest, PackageLimits};
+use base64::{Engine, engine::general_purpose::STANDARD};
+use latent_artifacts::package::{PackageLimits, artifact_blob_digest};
 use latent_artifacts::{AdmissionEvidence, PackageAdmissionUpload};
 use latent_core::{PlatformError, PublisherId};
-use latent_packaging::{build_package_with_sbom, PackageBundle, PackagingLimits};
+use latent_packaging::{PackageBundle, PackagingLimits, build_package_with_sbom};
 use latent_signing::*;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::{
-    atomic::{AtomicU64, Ordering},
     Arc,
+    atomic::{AtomicU64, Ordering},
 };
 
 pub const NOW: u64 = 1100;
@@ -55,13 +55,29 @@ impl Fixture {
         Self::with_inventory("builder-a", false)
     }
     fn with_inventory(builder_id: &str, with_inventory: bool) -> Self {
-        Self::configured(builder_id, with_inventory, None)
+        Self::configured(builder_id, with_inventory, None, false)
     }
     pub fn with_runtime_requirements(requirements: Value) -> Self {
-        Self::configured("builder-a", true, Some(requirements))
+        Self::configured("builder-a", true, Some(requirements), false)
     }
-    fn configured(builder_id: &str, with_inventory: bool, requirements: Option<Value>) -> Self {
-        let mut input = packaging::capsule(packaging::component::Options::default());
+    pub fn transactional() -> Self {
+        Self::configured("builder-a", true, None, true)
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
+    )]
+    fn configured(
+        builder_id: &str,
+        with_inventory: bool,
+        requirements: Option<Value>,
+        transactional: bool,
+    ) -> Self {
+        let mut input = if transactional {
+            packaging::transactional_capsule()
+        } else {
+            packaging::capsule(packaging::component::Options::default())
+        };
         if let Some(requirements) = requirements {
             packaging::mutate_json(&mut input, "capsule.json", |manifest| {
                 for (key, value) in requirements.as_object().unwrap() {
@@ -73,10 +89,18 @@ impl Fixture {
             });
         }
         let inventory = sbom::inventory(&input);
+        let limits = PackagingLimits {
+            manifest_profile: if transactional {
+                packaging::transaction_profile()
+            } else {
+                latent_manifest::ManifestValidationProfile::default()
+            },
+            ..Default::default()
+        };
         let bundle = if with_inventory {
-            build_package_with_sbom(input, inventory, PackagingLimits::default()).unwrap()
+            build_package_with_sbom(input, inventory, limits).unwrap()
         } else {
-            latent_packaging::build_package(input, PackagingLimits::default()).unwrap()
+            latent_packaging::build_package(input, limits).unwrap()
         };
         let subject = PackageSigningSubject::from_package(
             bundle.manifest_bytes(),
