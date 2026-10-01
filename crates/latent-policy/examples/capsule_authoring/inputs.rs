@@ -96,7 +96,7 @@ pub(super) fn load(root: &Path) -> Result<Build> {
         BuildRecipe::JavaCapsule(recipe) if recipe.entry_point == "dev.latent.app.Capsule" => {}
         _ => return Err("standalone recipe and matching package identity required".into()),
     }
-    let inventory = sbom(&input, &observation)?;
+    let inventory = sbom(&input, &observation.source.snapshot_digest)?;
     let bundle =
         build_package_with_sbom(input, inventory, limits).map_err(|error| error.message)?;
     let deployment = read(root, "deployment.json", 65536)?;
@@ -121,7 +121,7 @@ fn identity(bytes: &[u8]) -> Value {
     json!({"digest":artifact_blob_digest(bytes).as_str(),"size":bytes.len()})
 }
 
-fn sbom(input: &PackageInput, observation: &BuildObservation) -> Result<SbomInventory> {
+fn sbom(input: &PackageInput, source_snapshot_digest: &str) -> Result<SbomInventory> {
     let layer = input
         .layers
         .iter()
@@ -149,7 +149,11 @@ fn sbom(input: &PackageInput, observation: &BuildObservation) -> Result<SbomInve
                 )
             }
             None => (
-                SbomEntryKind::Component,
+                if layer.role == LayerRole::Component {
+                    SbomEntryKind::Component
+                } else {
+                    SbomEntryKind::Asset
+                },
                 SbomDigestScope::OutputBytes,
                 layer.path.clone(),
                 None,
@@ -176,7 +180,55 @@ fn sbom(input: &PackageInput, observation: &BuildObservation) -> Result<SbomInve
         package_name: input.name.clone(),
         package_version: input.version.clone(),
         dependency_completeness: SbomDependencyCompleteness::DeclaredInputsIncomplete,
-        source_snapshot_digest: Some(observation.source.snapshot_digest.parse()?),
+        source_snapshot_digest: Some(source_snapshot_digest.parse()?),
         entries,
     })
+}
+
+#[cfg(test)]
+#[path = "../../../latent-packaging/tests/fixtures/mod.rs"]
+mod packaging_fixture;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use latent_packaging::LayerInput;
+
+    fn with_diagnostic_asset() -> PackageInput {
+        let mut input =
+            packaging_fixture::capsule(packaging_fixture::component::Options::default());
+        input.layers.push(LayerInput {
+            path: "compatibility-report.json".into(),
+            role: LayerRole::Asset,
+            media_type: "application/vnd.latent.guest.compatibility.v1+json".into(),
+            bytes: br#"{"authority":"none","status":"incomplete"}"#.to_vec(),
+        });
+        input
+    }
+
+    #[test]
+    fn diagnostic_assets_preserve_checked_component_and_wit_inventory() {
+        let input = with_diagnostic_asset();
+        let snapshot = artifact_blob_digest(b"captured source");
+        let inventory = sbom(&input, snapshot.as_str()).unwrap();
+        let bundle = build_package_with_sbom(input, inventory, PackagingLimits::default()).unwrap();
+        let checked = bundle.sbom().unwrap();
+        assert_eq!(checked.counts(SbomEntryKind::Component).entries(), 1);
+        assert_eq!(checked.counts(SbomEntryKind::Asset).entries(), 1);
+        assert_eq!(checked.counts(SbomEntryKind::WitPackage).entries(), 2);
+    }
+
+    #[test]
+    fn diagnostic_asset_inventory_cannot_cover_replaced_bytes() {
+        let mut input = with_diagnostic_asset();
+        let snapshot = artifact_blob_digest(b"captured source");
+        let inventory = sbom(&input, snapshot.as_str()).unwrap();
+        input.layers.last_mut().unwrap().bytes.push(b'!');
+        assert_eq!(
+            build_package_with_sbom(input, inventory, PackagingLimits::default())
+                .unwrap_err()
+                .message,
+            "sbom-output-identity-mismatch"
+        );
+    }
 }

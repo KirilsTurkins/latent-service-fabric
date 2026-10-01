@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod embedded;
+pub mod entity_lanes;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.
