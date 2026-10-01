@@ -4796,14 +4796,21 @@
         "store_io::tests::shutdown::deadline_quarantine_retains_live_io_and_late_retirement_is_distinct",
         "store_io::tests::shutdown::failed_finalization_is_quarantined_after_physical_engine_close",
         "store_io::tests::shutdown::finalizer_is_once_owned_and_engine_stays_open_while_it_is_paused",
-        "store_io::tests::shutdown::only_one_drain_waiter_and_dropped_registration_cannot_refund_work"
+        "store_io::tests::shutdown::only_one_drain_waiter_and_dropped_registration_cannot_refund_work",
+        "session::tests::history::changed_history_invalidates_old_record_preconditions_without_changing_business_cells",
+        "session::tests::history::history_decoder_refuses_corruption_unknown_fields_wrong_scope_and_zero_epochs",
+        "session::tests::history::live_command_plan_cannot_commit_when_an_absent_or_present_history_row_changes",
+        "session::tests::history::no_state_disposition_captures_the_same_exact_history_fence",
+        "session::tests::history::opaque_minimum_view_binds_scope_schema_recovery_and_exact_unsigned_versions",
+        "session::tests::history::ordinary_engine_restart_preserves_the_original_history_view_token",
+        "session::tests::history::restored_history_preserves_namespace_receipt_bytes_and_stays_paused"
       ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 113,
+      "minimumCases": 120,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
