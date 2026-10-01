@@ -5136,6 +5136,7 @@
         "store_io::tests::recovery::absent_or_invalid_recovery_configuration_cannot_synthesize_reserved_admission",
         "store_io::tests::recovery::blocked_ordinary_native_destructor_cannot_occupy_reserved_recovery_worker",
         "store_io::tests::recovery::detached_recovery_owner_keeps_its_partition_until_physical_buffer_retirement",
+        "store_io::tests::recovery::recovery_native_owner_retires_on_reserved_worker_when_ordinary_capacity_is_full",
         "store_io::tests::recovery::recovery_worker_and_admission_progress_with_all_ordinary_workers_and_quotas_full",
         "store_io::tests::recovery::recovery_write_never_steals_a_live_writer_and_read_can_pass_its_backlog",
         "store_io::tests::retirement::completed_response_memory_prevents_clean_drain_until_actual_waiter_drop",
@@ -5157,7 +5158,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 127,
+      "minimumCases": 128,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
