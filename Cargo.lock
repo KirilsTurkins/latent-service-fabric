@@ -1813,12 +1813,16 @@ dependencies = [
  "latent-admission",
  "latent-artifacts",
  "latent-capabilities",
+ "latent-commit",
  "latent-core",
+ "latent-effects",
  "latent-executor",
  "latent-manifest",
  "latent-routing",
  "latent-scheduler",
+ "latent-state",
  "latent-telemetry",
+ "tempfile",
  "tokio",
 ]
 
