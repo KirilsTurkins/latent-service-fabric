@@ -117,7 +117,8 @@ def requirements():
             ownedResources=re.findall(r"^    resource ([a-z-]+);", text, re.MULTILINE)))
     client = []
     for service, source in (("latent.transaction.v1.TransactionService", "api/proto/latent/transaction/v1/transaction.proto"),
-                            ("latent.control.v1.StateService", "api/proto/latent/control/v1/state.proto")):
+                            ("latent.control.v1.StateService", "api/proto/latent/control/v1/state.proto"),
+                            ("latent.control.v1.DispatcherService", "api/proto/latent/control/v1/dispatcher.proto")):
         text = (ROOT / source).read_text(encoding="utf-8")
         client.append(dict(service=service, source=source, sourceSha256=digest((ROOT / source).read_bytes()),
             operations=[dict(name=name, request=request, response=response)
@@ -131,6 +132,8 @@ def requirements():
             explicitResourceDrop=True, implicitReplay=False, executionQualified=False,
             executionOwnerIssues=[389, 718]),
         externalClient=dict(profile="latent.client.transaction.v1", requiredServices=client,
+            supportingSources=[dict(source=source, sourceSha256=digest((ROOT / source).read_bytes()))
+                for source in ("api/proto/latent/control/v1/common.proto", "api/proto/latent/control/v1/audit.proto")],
             requiredHttpEnvelopes=["command", "query", "recovery", "response"],
             applicationSchema="schemas/transaction-api.schema.json", managementAuthority="current-authenticated-host-policy",
             implicitReplay=False, transportExecutionQualified=False, executionOwnerIssues=[401]),

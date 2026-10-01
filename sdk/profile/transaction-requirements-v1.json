@@ -233,6 +233,54 @@
           "StateOperationDisposition",
           "StateMutationKind"
         ]
+      },
+      {
+        "service": "latent.control.v1.DispatcherService",
+        "source": "api/proto/latent/control/v1/dispatcher.proto",
+        "sourceSha256": "sha256:ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6",
+        "operations": [
+          {
+            "name": "InspectDispatcher",
+            "request": "InspectDispatcherRequest",
+            "response": "InspectDispatcherResponse"
+          },
+          {
+            "name": "ControlDispatcher",
+            "request": "ControlDispatcherRequest",
+            "response": "ControlDispatcherResponse"
+          },
+          {
+            "name": "GetDispatcherOperation",
+            "request": "GetDispatcherOperationRequest",
+            "response": "GetDispatcherOperationResponse"
+          }
+        ],
+        "messages": [
+          "DispatcherGeneration",
+          "InspectDispatcherRequest",
+          "DispatcherSnapshot",
+          "InspectDispatcherResponse",
+          "ControlDispatcherRequest",
+          "DispatcherOperationReceipt",
+          "ControlDispatcherResponse",
+          "GetDispatcherOperationRequest",
+          "GetDispatcherOperationResponse"
+        ],
+        "enums": [
+          "DispatcherScope",
+          "DispatcherAction",
+          "DispatcherFailure"
+        ]
+      }
+    ],
+    "supportingSources": [
+      {
+        "source": "api/proto/latent/control/v1/common.proto",
+        "sourceSha256": "sha256:9433f47d1ae62dd09bbfc55e8a43f411897a0ffc6dc51919adc0ff4df9564085"
+      },
+      {
+        "source": "api/proto/latent/control/v1/audit.proto",
+        "sourceSha256": "sha256:eb6088943b012ded2e90fe699019d208dbe29feb554d59b4db3281ac2dd0991f"
       }
     ],
     "requiredHttpEnvelopes": [

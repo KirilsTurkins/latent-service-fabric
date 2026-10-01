@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/generate_transaction_contracts.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Generate native Phase 4 negotiation constants from exact WIT and preparation profiles",
+  "reviewReason": "Freeze exact authenticated node dispatcher and typed audit definition sources alongside existing guest and external-client contract owners",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "10d9cfc46eaa56477d798d86f7a2a2253daf38a2a7294d81f868402f96494ba4"
+  "sha256": "41ac505a365b800ffc8cbbb9d05cd67242e3bc0097d7ed81dfe360d5e548f7c2"
 }

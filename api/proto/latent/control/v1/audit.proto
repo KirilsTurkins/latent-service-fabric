@@ -114,6 +114,7 @@ message AuditStaticWebTarget {
 }
 
 message AuditIdentities {
+  AuditDispatcherTarget dispatcher = 26;
   AuditStateTarget state = 25;
   AuditStaticWebTarget static_web = 24;
   optional string trigger = 22;
@@ -155,6 +156,13 @@ message AuditStateTarget {
   string state_schema = 3;
 }
 
+// Actual node owner and authenticated actor scope. This is descriptive history,
+// never a node-control or provider-dispatch grant.
+message AuditDispatcherTarget {
+  uint64 owner_epoch = 1;
+  string actor_tenant = 2;
+}
+
 enum AuditControlAction {
   AUDIT_CONTROL_ACTION_UNSPECIFIED = 0;
   AUDIT_CONTROL_ACTION_PUBLISH = 1;
@@ -175,6 +183,10 @@ enum AuditControlAction {
   AUDIT_CONTROL_ACTION_NAMESPACE_DESTROY = 16;
   AUDIT_CONTROL_ACTION_NAMESPACE_RECREATE = 17;
   AUDIT_CONTROL_ACTION_NAMESPACE_INSPECT = 18;
+  AUDIT_CONTROL_ACTION_DISPATCHER_INSPECT = 19;
+  AUDIT_CONTROL_ACTION_DISPATCHER_PAUSE = 20;
+  AUDIT_CONTROL_ACTION_DISPATCHER_RESUME = 21;
+  AUDIT_CONTROL_ACTION_DISPATCHER_OPERATION_READ = 22;
 }
 
 enum AuditCapabilityResourceClass {

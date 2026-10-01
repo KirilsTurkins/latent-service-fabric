@@ -29,6 +29,12 @@ fn scope_to_proto(value: domain::AuditScope) -> proto::AuditQueryScope {
 }
 pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentities {
     proto::AuditIdentities {
+        dispatcher: value
+            .dispatcher
+            .map(|dispatcher| proto::AuditDispatcherTarget {
+                owner_epoch: dispatcher.owner_epoch,
+                actor_tenant: dispatcher.actor_tenant,
+            }),
         state: value.state.map(|state| proto::AuditStateTarget {
             namespace: state.namespace,
             incarnation: state.incarnation,
