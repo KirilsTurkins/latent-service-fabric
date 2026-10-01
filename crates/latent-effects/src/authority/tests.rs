@@ -119,6 +119,170 @@ fn setup() -> (EffectAuthorityOwner, EffectRule, DurableEffectAuthority) {
 }
 
 #[test]
+fn commit_refresh_freezes_current_intersection_and_original_expiry_without_dispatch_work() {
+    let (owner, mut grant, staged) = setup();
+    grant.policy_revision = 2;
+    grant.credential_epoch = 2;
+    grant.protected_credential_reference = "rotated-secret".into();
+    grant.ceiling.maximum_response_bytes = 128;
+    grant.ceiling.maximum_attempts = 2;
+    grant.ceiling.maximum_age_millis = 600;
+    grant.ceiling.attempt_timeout_millis = 50;
+    owner.publish(grant.clone()).unwrap();
+    let committed = owner.refresh_for_commit(&staged, time(200)).unwrap();
+    assert_eq!(committed.scope(), staged.scope());
+    assert_eq!(committed.profile(), staged.profile());
+    assert_eq!(committed.link(), staged.link());
+    assert_eq!(committed.payload_digest(), staged.payload_digest());
+    assert_eq!(committed.payload_bytes(), staged.payload_bytes());
+    assert_eq!(committed.policy_revision, 2);
+    assert_eq!(committed.committed_at_millis(), 200);
+    assert_eq!(committed.expires_at_millis(), 800);
+    assert_eq!(committed.ceiling().maximum_response_bytes, 128);
+    assert_eq!(committed.ceiling().maximum_attempts, 2);
+    assert_eq!(committed.ceiling().maximum_age_millis, 600);
+    assert_eq!(committed.ceiling().attempt_timeout_millis, 50);
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+    assert_eq!(
+        DurableEffectAuthority::decode(&committed.encode().unwrap()),
+        Ok(committed.clone())
+    );
+
+    grant.policy_revision = 3;
+    grant.ceiling = rule().ceiling;
+    owner.publish(grant).unwrap();
+    let context = owner.accept(&committed, 1, time(201)).unwrap();
+    assert_eq!(context.ceiling(), committed.ceiling());
+    assert_eq!(context.credential_epoch(), 2);
+    context.retire().unwrap();
+    let late = owner.refresh_for_commit(&staged, time(1050)).unwrap();
+    assert_eq!(late.committed_at_millis(), 1050);
+    assert_eq!(late.expires_at_millis(), staged.expires_at_millis());
+    assert_eq!(late.ceiling().maximum_age_millis, 50);
+    assert_eq!(late.ceiling().attempt_timeout_millis, 50);
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
+#[test]
+fn commit_refresh_rejects_profile_changes_expiry_and_unproven_time() {
+    for profile in [
+        DispatchProfile {
+            provider: "other-provider".into(),
+            ..rule().profile
+        },
+        DispatchProfile {
+            destination: "other-subject".into(),
+            ..rule().profile
+        },
+        DispatchProfile {
+            adapter: "other-adapter".into(),
+            ..rule().profile
+        },
+        DispatchProfile {
+            intent_format: 2,
+            ..rule().profile
+        },
+        DispatchProfile {
+            payload_format: "bytes.v2".into(),
+            ..rule().profile
+        },
+        DispatchProfile {
+            idempotency_profile: "other-dedup".into(),
+            ..rule().profile
+        },
+    ] {
+        let (owner, mut grant, staged) = setup();
+        grant.policy_revision = 2;
+        grant.profile = profile;
+        owner.publish(grant).unwrap();
+        assert_eq!(
+            owner.refresh_for_commit(&staged, time(101)),
+            Err(AuthorityError::UnsupportedFormat)
+        );
+        assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+    }
+    let (owner, mut grant, staged) = setup();
+    assert_eq!(
+        owner.refresh_for_commit(
+            &staged,
+            EffectTime {
+                unix_millis: 101,
+                continuity_proven: false
+            }
+        ),
+        Err(AuthorityError::ClockDiscontinuity)
+    );
+    assert_eq!(
+        owner.refresh_for_commit(&staged, time(99)),
+        Err(AuthorityError::ClockDiscontinuity)
+    );
+    grant.policy_revision = 2;
+    grant.ceiling.maximum_payload_bytes = 99;
+    owner.publish(grant.clone()).unwrap();
+    assert_eq!(
+        owner.refresh_for_commit(&staged, time(101)),
+        Err(AuthorityError::Capacity)
+    );
+    grant.policy_revision = 3;
+    grant.ceiling.maximum_payload_bytes = 100;
+    owner.publish(grant.clone()).unwrap();
+    assert_eq!(
+        owner.refresh_for_commit(&staged, time(1100)),
+        Err(AuthorityError::Expired)
+    );
+    let (owner, mut grant, staged) = setup();
+    grant.policy_revision = 2;
+    grant.enabled = false;
+    owner.publish(grant).unwrap();
+    assert_eq!(
+        owner.refresh_for_commit(&staged, time(101)),
+        Err(AuthorityError::PolicyBlocked)
+    );
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
+#[test]
+fn commit_fence_rejects_narrowing_after_refresh_and_allows_compatible_rotation() {
+    let (owner, mut grant, staged) = setup();
+    grant.policy_revision = 2;
+    grant.ceiling.maximum_response_bytes = 512;
+    owner.publish(grant.clone()).unwrap();
+    let prepared = owner.refresh_for_commit(&staged, time(200)).unwrap();
+    grant.policy_revision = 3;
+    grant.ceiling.maximum_response_bytes = 256;
+    owner.publish(grant.clone()).unwrap();
+    assert!(matches!(
+        owner.commit_fence(std::slice::from_ref(&prepared), time(201)),
+        Err(AuthorityError::PolicyBlocked)
+    ));
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+    let prepared = owner.refresh_for_commit(&staged, time(202)).unwrap();
+    let fence = owner
+        .commit_fence(std::slice::from_ref(&prepared), time(203))
+        .unwrap();
+    assert!(matches!(
+        owner.0.state.try_lock(),
+        Err(std::sync::TryLockError::WouldBlock)
+    ));
+    drop(fence);
+    grant.policy_revision = 4;
+    grant.credential_epoch = 2;
+    grant.protected_credential_reference = "rotated-secret".into();
+    grant.ceiling = rule().ceiling;
+    owner.publish(grant).unwrap();
+    drop(
+        owner
+            .commit_fence(std::slice::from_ref(&prepared), time(204))
+            .unwrap(),
+    );
+    let context = owner.accept(&prepared, 1, time(205)).unwrap();
+    assert_eq!(context.ceiling().maximum_response_bytes, 256);
+    assert_eq!(context.credential_epoch(), 2);
+    context.retire().unwrap();
+    assert_eq!(owner.owners().unwrap(), DispatchOwners::default());
+}
+
+#[test]
 fn final_commit_fence_linearizes_revocation_without_allocating_dispatch_work() {
     use std::sync::mpsc;
     let (owner, mut grant, captured) = setup();

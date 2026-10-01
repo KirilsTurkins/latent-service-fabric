@@ -82,6 +82,15 @@ Generated build products belong in ignored locations such as Cargo `OUT_DIR`, `t
 
 `tools/validate_foundation.py` resolves all workspace path dependencies and performs cycle detection before contract compilation. A cycle is a validation error with the concrete dependency path. Missing path dependencies remain covered by the repository validator.
 
+Optional, test, build, and target-specific edges participate even when Cargo's
+selected feature graph does not activate them. Upstream storage tests use
+`latent-test-process` for child ownership and resource observations; that neutral
+crate has no workspace dependencies. `latent-testkit` re-exports its exact
+process/probe types for existing harness callers. Storage must not depend on
+testkit, whose optional node harness points back through capability authority to
+storage. The [helper graph check](../../tools/check_testkit_dependencies.py)
+enforces both unconditional topology and independently selected dependency graphs.
+
 ## Test foundation
 
 `latent-testkit` exposes reusable primitives whose resources are created only by explicit calls:
