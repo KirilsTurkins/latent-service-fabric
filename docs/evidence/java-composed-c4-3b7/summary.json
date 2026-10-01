@@ -87,7 +87,7 @@
     "permutations": 3,
     "verifierNegatives": 9,
     "admissionCases": 6,
-    "staleProofs": 7
+    "staleProofs": 2
   },
   "formerProfile": {
     "path": "former-profile.json",
