@@ -89,7 +89,14 @@ LSF_GUEST_SDK_LANGUAGE=java LSF_JAVA_FIBER_FIXTURE=/tmp/java-activation-fibers \
 
 Selecting the signed case without its prepared component fails. The Java CI lane
 prepares and executes it explicitly; normal runtime tests do not install a
-compiler or silently skip a missing fixture. Three fresh signed/admitted
+compiler or silently skip a missing fixture. The signed runtime case prepares
+the exact admitted publication before its first activation, with a separate
+600-second setup bound. It drops the preparation owner and checks idle ownership
+and zero created guest Stores before starting the unchanged guest cases. Setup
+time is recorded separately; every activation retains its original 120-second,
+fuel, memory and runtime-resource ceilings and normal authority checks. This
+isolates guest execution from cold native compilation and does not qualify cold
+startup latency. Three fresh signed/admitted
 activations verify ordinary thread start, a sleeping worker, ThreadLocal
 isolation, join, and a volatile flag loop without explicit yield. Prepared additional modes
 cover independent pools, future exceptions and interruption/cancellation,
