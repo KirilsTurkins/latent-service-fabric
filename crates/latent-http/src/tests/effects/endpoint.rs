@@ -138,16 +138,20 @@ impl Endpoint {
     }
 
     pub fn assert_applied(&self, effect: u64, body: &[u8], receipt: &str, until: u64) {
+        self.assert_applied_id(&format!("{effect:064x}"), body, receipt, until);
+    }
+
+    pub fn assert_applied_id(&self, effect: &str, body: &[u8], receipt: &str, until: u64) {
         let store = self.shared.store.lock().unwrap();
         let bytes = store
             .snapshot()
             .unwrap()
-            .get(&record_key(&format!("{effect:064x}")))
+            .get(&record_key(effect))
             .unwrap()
             .unwrap();
         let record: Record = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(record.contract, "latent.http-effect.put-once.v1");
-        assert_eq!(record.effect, format!("{effect:064x}"));
+        assert_eq!(record.effect, effect);
         assert_eq!(record.body_sha256, wire::sha256(body));
         assert_eq!(record.provider_incarnation, "a".repeat(64));
         assert_eq!(record.retain_until_unix_millis, until.to_string());

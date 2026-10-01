@@ -27,6 +27,7 @@ mod fixture;
 mod ownership;
 mod proxy;
 mod reconciliation;
+mod restore;
 
 use endpoint::{Endpoint, Fault};
 use fixture::Fixture;

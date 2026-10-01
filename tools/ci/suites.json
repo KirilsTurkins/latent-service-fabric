@@ -1994,14 +1994,15 @@
         "tests::effects::reconciliation::malformed_oversized_redirect_and_unqualified_remote_replies_remain_bounded_and_private",
         "tests::effects::reconciliation::original_remote_horizon_and_expired_history_reject_late_equal_key_mutation",
         "tests::effects::reconciliation::qualified_tls_delivery_and_equal_key_replay_mutate_remote_durable_counter_once",
-        "tests::effects::reconciliation::reservation_retry_retains_original_identity_body_incarnation_and_horizon"
+        "tests::effects::reconciliation::reservation_retry_retains_original_identity_body_incarnation_and_horizon",
+        "tests::effects::restore::older_protected_backup_keeps_applied_http_effect_paused_until_explicit_review_and_resume"
       ],
       "expectedIgnored": [],
       "id": "latent-http.lib.latent-http",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-http/Cargo.toml",
-      "minimumCases": 54,
+      "minimumCases": 55,
       "mode": "libtest",
       "package": "latent-http",
       "platforms": [
