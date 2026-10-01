@@ -254,7 +254,7 @@ admission. Already accepted buffers and workers remain accounted until actual
 physical destruction, including after waiter cancellation.
 
 Recovery capacity is finite: one worker, four queued jobs, eight accepted owners,
-16 MiB retained bytes and 4 MiB per job in the protected profile. These bytes are
+16 MiB retained bytes and 8 MiB plus 8 KiB metadata per job in the protected profile. These bytes are
 a disjoint partition of the existing 128 MiB owner ceiling; engine cache/fixed
 metadata still remain resident until engine destruction. Snapshot fields report
 recovery queue, accepted owners, bytes, reads and writes separately. Queue and
