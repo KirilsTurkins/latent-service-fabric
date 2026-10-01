@@ -163,6 +163,22 @@ impl StateAuthorization {
         self.evaluate("query-info", 0, 0, true, |_| Ok(()))
     }
 
+    pub(super) fn with_response_current(
+        &self,
+        operation: &str,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        self.evaluate(operation, 0, 0, true, |decision| {
+            self.authority.with_retained_response(
+                &self.policy,
+                decision,
+                &self.namespace,
+                operation,
+                action,
+            )
+        })
+    }
+
     fn evaluate<T>(
         &self,
         operation: &str,

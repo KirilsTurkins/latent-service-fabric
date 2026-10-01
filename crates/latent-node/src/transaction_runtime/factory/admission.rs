@@ -81,6 +81,7 @@ impl NativeTransactionAdmission {
         )?;
         let before = self.seal(initial.before, namespace, envelope, budget, None)?;
         let mode = selection.mode == TransactionOperationMode::StrictCommand;
+        self.retain_response_authority(Arc::clone(&before), !mode)?;
         let scope = selected_scope(&selection, envelope, &source.state_schema);
         let authorization = if mode {
             let role = CommandRole::capture(&self.owners.command).map_err(atomic)?;
@@ -137,6 +138,7 @@ impl NativeTransactionAdmission {
             drop(initial.after);
             before
         };
+        self.retain_response_authority(Arc::clone(&authorization), !mode)?;
         self.open_host(envelope, selection, scope, authorization)
             .await
     }

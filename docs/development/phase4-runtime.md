@@ -78,6 +78,16 @@ Acceptance without a known physical result remains recovery-required. Large
 result bodies stay in a once-only native completion owner, rather than being
 duplicated into the bounded activation journal.
 
+`take_owned_completion` transfers those actual terminal buffers together with
+their original `TransactionResponseAuthority`. After guest accounting freezes
+and the commit gate accepts, this owner permits only current result-read or
+query-read delivery under Policy, Namespace and Native fences. A revoked policy
+or closed native owner denies delivery without refunding an extracted frame's
+original charge. It holds no guest Store, cell or native state view and renews
+no execution source or deadline. Admission prepays the frozen Wire response's
+four-copy/body/frame envelope on both the shared native owner and the original
+activation memory ledger before native lookup or guest work.
+
 `CommandCompletion` publishes a successful state/result/intent envelope under
 the original role, current policy, namespace lifecycle, effect authority and
 cancellation fences. Declared rejection first retires the discarded business
@@ -90,13 +100,16 @@ The integrated pinned Linux campaign passed 267 library cases: State126,
 Commit49 and Node92. The original activation, cancellation, namespace, atomic
 and cleanup schedules remain required. Three new node schedules cover actual
 future minimums, changed schema/recovery histories and paused restore admission.
-Node all-target/all-feature Clippy completed without transaction-runtime
-warnings. These native tests do not execute guest components.
+The retained-response campaign additionally passed all151 Capabilities and95
+Node cases, including actual committed delivery, read-only query delivery and
+fresh authorized replay followed by policy revocation. Node/Capabilities
+all-target/all-feature Clippy completed without owned warnings. These native
+tests do not execute guest components or claim ordinary Wire/Standalone delivery.
 
 The same protected store and dispatcher must bind the original global native
 capacity owner before the first command. Physical views, writer callbacks and
 actual response owners retain the finite prepaid reservation after a lost
-waiter and ledger finalization. Ordinary standalone/RPC composition, authorized
-response-frame release, technical-abort/replay composition, audit reservations,
+waiter and ledger finalization. Ordinary standalone/RPC composition, actual
+response-frame composition, technical-abort/replay composition, audit reservations,
 all six signed guest components and crash/restart qualification remain required
 for #388 and the wider gate.

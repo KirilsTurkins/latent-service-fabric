@@ -240,9 +240,58 @@ impl NamespaceAuthority {
         expected_operation: &str,
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.with_operation_fenced(
+            store,
+            operation,
+            namespace,
+            expected_operation,
+            false,
+            action,
+        )
+    }
+
+    /// Current data permission for the original retained command/query response.
+    /// An accepted commit closes execution, while these two read operations
+    /// remain fenced by the original publication, scope and deadline. This port
+    /// cannot stage work, accept another commit or renew execution authority.
+    pub fn with_retained_response(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        expected_operation: &str,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if !matches!(expected_operation, "read-result" | "query-info") {
+            return Err(denied());
+        }
+        self.with_operation_fenced(
+            store,
+            operation,
+            namespace,
+            expected_operation,
+            true,
+            action,
+        )
+    }
+
+    fn with_operation_fenced(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        expected_operation: &str,
+        retained_response: bool,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
         let mut action = Some(action);
         store.with_captured(&self.initial, operation, &mut |inputs| {
-            self.check_namespace(namespace, expected_operation)?;
+            if retained_response {
+                self.gate.check_retained_response()?;
+                self.check_namespace_scope(namespace, expected_operation)?;
+            } else {
+                self.check_namespace(namespace, expected_operation)?;
+            }
             let actual = inputs.get(1).ok_or_else(denied)?;
             self.check_target(actual, expected_operation)?;
             let mut action_error = None;
@@ -333,6 +382,14 @@ impl NamespaceAuthority {
         operation: &str,
     ) -> Result<(), PlatformError> {
         self.gate.check()?;
+        self.check_namespace_scope(namespace, operation)
+    }
+
+    fn check_namespace_scope(
+        &self,
+        namespace: &NamespaceRead,
+        operation: &str,
+    ) -> Result<(), PlatformError> {
         let current = namespace.record();
         if Instant::now() >= self.deadline
             || current.tenant != self.ownership.tenant

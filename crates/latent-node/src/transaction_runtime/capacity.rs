@@ -32,10 +32,10 @@ impl TransactionRetention {
         // copies and the bounded read/authority/codec working set. Engine
         // resident memory is separately bounded by the sole protected owner.
         let work_bytes = 4 * transaction_contract::STAGED_BYTES as u64 + 16 * 1024 * 1024;
-        // Canonical output plus encoded transport copy and bounded metadata.
-        let response_bytes = 2 * transaction_contract::VALUE_BYTES as u64
-            + 4 * transaction_contract::METADATA_BYTES as u64
-            + 64 * 1024;
+        // The frozen public response is bounded to two canonical value sizes.
+        // Prepay the same four-copy/body/frame envelope required by Wire before
+        // any native lookup or guest execution, including encoder metadata.
+        let response_bytes = 8 * transaction_contract::VALUE_BYTES as u64 + 16 * 1024;
         let native = owner
             .reserve(
                 NativeAdmissionClass::Ordinary,
@@ -47,8 +47,11 @@ impl TransactionRetention {
                 deadline,
             )
             .map_err(|_| unavailable())?;
+        let retained_bytes = request_bytes
+            .checked_add(response_bytes)
+            .ok_or_else(unavailable)?;
         let memory = budget
-            .reserve_host_memory(request_bytes)
+            .reserve_host_memory(retained_bytes)
             .map_err(|error| error.to_platform_error())?;
         Ok(Arc::new(Self {
             _memory: Arc::new(memory),
@@ -66,6 +69,10 @@ impl TransactionRetention {
 
     pub(super) fn request_bytes(&self) -> u64 {
         self.native.request_bytes()
+    }
+
+    pub(super) fn response_bytes(&self) -> u64 {
+        self.native.response_bytes()
     }
 }
 
