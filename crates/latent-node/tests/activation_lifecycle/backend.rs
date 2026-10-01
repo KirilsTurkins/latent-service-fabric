@@ -235,6 +235,7 @@ fn outcome(
         }),
         TRAP => Ok(GuestOutcome::Trapped {
             trap: GuestTrap {
+                diagnostic: None,
                 code: "fixture-trap".to_owned(),
                 message: "controlled trap".to_owned(),
                 guest_backtrace: Vec::new(),

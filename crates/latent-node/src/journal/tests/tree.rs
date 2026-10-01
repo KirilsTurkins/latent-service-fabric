@@ -172,6 +172,110 @@ fn failed_preparation_child_is_visible_before_any_guest_or_capability_event() {
 }
 
 #[test]
+fn mapped_codec_trap_retains_terminal_observation_and_consumption_in_the_tree() {
+    use latent_executor::{GuestOutcome, GuestTrap};
+
+    let (journal, _) = journal(3, 3);
+    let root = envelope("codec-parent");
+    let parent = journal.begin(&root).unwrap();
+    let observation = ActivationDiagnostic::new(
+        DiagnosticStage::Execution,
+        DiagnosticReason::ValueAllocationLimit,
+    );
+    let consumption = BudgetConsumption {
+        cpu_fuel: 17,
+        peak_memory_bytes: 23,
+        wall_time_micros: 29,
+        ..BudgetConsumption::default()
+    };
+    for (id, diagnostic) in [
+        ("typed-codec-child", Some(observation.clone())),
+        ("unknown-codec-child", None),
+    ] {
+        let actual = child(id, "codec-parent", "codec-parent");
+        let mut owner = journal.begin(&actual).unwrap();
+        for phase in [
+            ActivationPhase::Resolved,
+            ActivationPhase::Admitted,
+            ActivationPhase::Queued,
+            ActivationPhase::Materializing,
+            ActivationPhase::Running,
+        ] {
+            owner.advance(phase, Metadata::new()).unwrap();
+        }
+        let mapped = crate::activation_runner::map_execution_outcome(
+            Ok(GuestOutcome::Trapped {
+                trap: GuestTrap {
+                    code: "result-limit-exceeded".into(),
+                    message: "private-result-message".into(),
+                    guest_backtrace: vec!["private-backtrace".into()],
+                    metadata: Metadata::from([(
+                        "result-codec-error".into(),
+                        "ResourceExhausted".into(),
+                    )]),
+                    diagnostic,
+                },
+                consumption: consumption.clone(),
+            }),
+            "cell-test",
+            "released",
+        );
+        let ActivationOutcome::Failed {
+            terminal_state,
+            error,
+            consumption: recorded,
+        } = &mapped
+        else {
+            panic!("codec failures must remain guest traps");
+        };
+        assert_eq!(*terminal_state, ActivationTerminalState::GuestTrap);
+        assert_eq!(error.code, PlatformErrorCode::GuestTrap);
+        assert!(!error.retryable);
+        assert_eq!(recorded, &consumption);
+        owner.validate_terminal(&mapped).unwrap();
+        owner.finish(mapped);
+        let page = journal
+            .inspect_tree(&root.target.tenant, &actual.activation_id, 0, None)
+            .unwrap();
+        let node = page
+            .nodes
+            .iter()
+            .find(|node| node.activation_id == actual.activation_id)
+            .unwrap();
+        assert_eq!(
+            node.terminal_state,
+            Some(ActivationTerminalState::GuestTrap)
+        );
+        assert_eq!(node.phase, ActivationPhase::Running);
+        assert_eq!(
+            node.diagnostic,
+            if id == "typed-codec-child" {
+                Some(observation.clone())
+            } else {
+                None
+            }
+        );
+        assert_eq!(node.diagnostic_is_terminal, id == "typed-codec-child");
+        assert_eq!(
+            journal
+                .status(&root.target.tenant, &actual.activation_id)
+                .unwrap()
+                .unwrap()
+                .final_consumption,
+            Some(consumption.clone())
+        );
+        assert!(!format!("{page:?}").contains("private"));
+        assert!(
+            !journal
+                .inspect_tree(&TenantId("foreign".into()), &actual.activation_id, 0, None)
+                .unwrap()
+                .history_available
+        );
+    }
+    parent.finish(outcome());
+}
+
+#[test]
 fn caught_provider_observation_is_bounded_scoped_and_never_certifies_terminal_cause() {
     use latent_core::diagnostic::ActivationDiagnosticSink;
     let (journal, _) = journal(2, 2);

@@ -1056,6 +1056,7 @@ fn classify_call_result(
         drop(call_result);
         return Ok(GuestOutcome::Trapped {
             trap: latent_executor::GuestTrap {
+                diagnostic: latent_core::diagnostic::ActivationDiagnostic::from_error(&error),
                 code: "budget-accounting-failed".to_owned(),
                 message: bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
                 guest_backtrace: Vec::new(),
@@ -1076,6 +1077,7 @@ fn classify_call_result(
             }
             Err(error) => Ok(GuestOutcome::Trapped {
                 trap: latent_executor::GuestTrap {
+                    diagnostic: latent_core::diagnostic::ActivationDiagnostic::from_error(&error),
                     code: if error.code == PlatformErrorCode::ResourceExhausted {
                         "result-limit-exceeded"
                     } else {

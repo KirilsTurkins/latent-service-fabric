@@ -129,6 +129,7 @@ fn domain_error(
 fn adaptation_trap(error: PlatformError, consumption: BudgetConsumption) -> GuestOutcome {
     GuestOutcome::Trapped {
         trap: GuestTrap {
+            diagnostic: None,
             code: if error.code == PlatformErrorCode::ResourceExhausted {
                 "result-limit-exceeded"
             } else {
