@@ -187,6 +187,119 @@ async fn pending_timer(
 }
 
 #[tokio::test]
+async fn completed_fixed_results_release_original_calls_before_the_next_import() {
+    let root = tempfile::tempdir().unwrap();
+    let f = configured(root.path(), 1).await;
+    // The existing fixture installs the unchanged broker default. This ceiling
+    // limits simultaneous accepted calls, not completed lifetime operation count.
+    assert_eq!(
+        latent_capabilities::broker::CapabilityBrokerLimits::default().maximum_calls_per_session,
+        16
+    );
+    assert!(component::COMPLETED_CYCLES > 16);
+    for (mode, per_cycle) in [(26, 3_u64), (27, 5_u64), (32, 2_u64)] {
+        let id = format!("fixed-completion-{mode}");
+        let receipt = success(f.manager.start(f.request(&id, mode)).unwrap().await);
+        assert_eq!(
+            serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+            [42]
+        );
+        assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+        assert_eq!(
+            f.backend
+                .take_invocation_timing(&ActivationId(id))
+                .unwrap()
+                .host_call_count,
+            u64::from(component::COMPLETED_CYCLES) * per_cycle + 3,
+            "every original import executes exactly once, including root registration/settlement/close"
+        );
+        f.idle().await;
+        assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+    }
+}
+
+#[tokio::test]
+async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanly() {
+    let root = tempfile::tempdir().unwrap();
+    let f = configured(root.path(), 1).await;
+    assert_eq!(
+        value(f.manager.start(f.request("fixed-warm", 0)).unwrap().await),
+        42
+    );
+    f.idle().await;
+    for cancel in [true, false] {
+        let id = ActivationId(format!("fixed-pending-{cancel}"));
+        let mut invocation = Box::pin(f.manager.start(f.request(&id.0, 28)).unwrap());
+        pending_timer(invocation.as_mut(), &f).await;
+        let broker = f.broker.snapshot();
+        assert_eq!(
+            broker.calls, 1,
+            "only the actual pending wait remains charged"
+        );
+        assert_eq!(broker.results, 1);
+        assert_eq!(broker.buffer_bytes, 128);
+        assert_eq!(f.backend.resource_snapshot().live_stores, 1);
+        assert_eq!(f.quotas.usage().unwrap().active_activations, 1);
+        if cancel {
+            f.manager
+                .cancel_for(
+                    &TenantId("tenant-a".into()),
+                    &id,
+                    "fixed-result-owner-cancel",
+                )
+                .unwrap();
+            assert_eq!(failure(invocation.await).code, PlatformErrorCode::Cancelled);
+        } else {
+            drop(invocation);
+        }
+        f.idle().await;
+        assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        assert_eq!(
+            value(
+                f.manager
+                    .start(f.request(&format!("fixed-fresh-{cancel}"), 0))
+                    .unwrap()
+                    .await
+            ),
+            42
+        );
+        f.idle().await;
+    }
+}
+
+#[tokio::test]
+async fn malformed_fixed_result_destinations_reclaim_original_calls() {
+    let root = tempfile::tempdir().unwrap();
+    let f = configured(root.path(), 1).await;
+    for (mode, original_calls) in [(29, 1), (30, 0), (31, 2)] {
+        let id = format!("fixed-destination-{mode}");
+        assert_eq!(
+            failure(f.manager.start(f.request(&id, mode)).unwrap().await).code,
+            PlatformErrorCode::GuestTrap
+        );
+        assert_eq!(
+            f.backend
+                .take_invocation_timing(&ActivationId(id))
+                .unwrap()
+                .host_call_count,
+            original_calls
+        );
+        f.idle().await;
+        assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        assert_eq!(
+            value(
+                f.manager
+                    .start(f.request(&format!("fixed-after-bad-{mode}"), 0))
+                    .unwrap()
+                    .await
+            ),
+            42
+        );
+        f.idle().await;
+    }
+}
+
+#[tokio::test]
 async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_admission() {
     let root = tempfile::tempdir().unwrap();
     let f = configured(root.path(), 1).await;

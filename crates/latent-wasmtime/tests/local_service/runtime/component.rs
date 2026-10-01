@@ -28,6 +28,7 @@ const FOURTH: i32 = 160;
 const UNIT: i32 = 192;
 const ASYNC_RESULT: i32 = 224;
 const OBSERVATION: i32 = 256;
+pub const COMPLETED_CYCLES: u32 = 40;
 
 pub fn bytes() -> Vec<u8> {
     let spec = latent_core::PHASE3_HOST_ABI_CURRENT
@@ -330,6 +331,107 @@ fn finish_wait(body: &mut Function) {
     body.instruction(&Instruction::End);
 }
 
+fn begin_wait(body: &mut Function, delay: i64) {
+    emit(
+        body,
+        [
+            Instruction::I64Const(delay),
+            Instruction::I32Const(1),
+            Instruction::LocalGet(1),
+            Instruction::LocalGet(2),
+            Instruction::I32Const(ASYNC_RESULT),
+            Instruction::Call(WAIT_FOR),
+            Instruction::LocalSet(3),
+        ],
+    );
+}
+fn observe_root_only(body: &mut Function) {
+    emit(
+        body,
+        [
+            Instruction::I32Const(OBSERVATION),
+            Instruction::Call(OBSERVE),
+        ],
+    );
+    success(body, OBSERVATION);
+    load(body, OBSERVATION + 12, 4);
+    emit(body, [Instruction::I32Const(1), Instruction::I32Eq]);
+    require(body);
+    for offset in [20, 28] {
+        load(body, OBSERVATION + offset, 4);
+        body.instruction(&Instruction::I32Eqz);
+        require(body);
+    }
+}
+fn completed_cycles(body: &mut Function, asynchronous: bool) {
+    emit(
+        body,
+        [
+            Instruction::I32Const(COMPLETED_CYCLES.cast_signed()),
+            Instruction::LocalSet(6),
+            Instruction::Loop(BlockType::Empty),
+        ],
+    );
+    if asynchronous {
+        timer(body, 1_000_000, None, SECOND);
+        success(body, SECOND);
+        begin_next(body, SECOND);
+        finish_wait(body);
+        success(body, ASYNC_RESULT);
+        stop_timer(body, SECOND);
+        begin_wait(body, 1_000_000);
+        finish_wait(body);
+        success(body, ASYNC_RESULT);
+    } else {
+        register(body, 3, true, SECOND);
+        success(body, SECOND);
+        settled(body, Some(SECOND));
+    }
+    observe_root_only(body);
+    emit(
+        body,
+        [
+            Instruction::LocalGet(6),
+            Instruction::I32Const(1),
+            Instruction::I32Sub,
+            Instruction::LocalTee(6),
+            Instruction::BrIf(0),
+            Instruction::End,
+        ],
+    );
+}
+fn completed_failed_cycles(body: &mut Function) {
+    emit(
+        body,
+        [
+            Instruction::I32Const(COMPLETED_CYCLES.cast_signed()),
+            Instruction::LocalSet(6),
+            Instruction::Loop(BlockType::Empty),
+            Instruction::LocalGet(1),
+            Instruction::LocalGet(2),
+            Instruction::I32Const(ASYNC_RESULT),
+            Instruction::Call(TIMER_NEXT),
+            Instruction::LocalSet(3),
+        ],
+    );
+    // The accepted call has no timer producer: the original task token is
+    // deliberately the wrong owner kind. Its fixed error still lowers once.
+    finish_wait(body);
+    error(body, ASYNC_RESULT, 8, 6);
+    observe_root_only(body);
+    emit(
+        body,
+        [
+            Instruction::LocalGet(6),
+            Instruction::I32Const(1),
+            Instruction::I32Sub,
+            Instruction::LocalTee(6),
+            Instruction::BrIf(0),
+            Instruction::End,
+        ],
+    );
+}
+
 #[expect(
     clippy::too_many_lines,
     reason = "small explicit ABI cases share one checked binary component"
@@ -422,6 +524,28 @@ fn guest() -> Module {
         error(b, PRIMARY, 8, 2);
         emit(b, [Instruction::I32Const(42), Instruction::Return]);
     });
+    case(&mut body, 29, |b| {
+        // Sync destination validation occurs after the accepted host callback.
+        // The fixed token result must retain its original call until rejection.
+        register(b, 0, false, 262_136);
+        b.instruction(&Instruction::Unreachable);
+    });
+    case(&mut body, 30, |b| {
+        // Canonical async validates this pointer before admitting a producer.
+        emit(
+            b,
+            [
+                Instruction::I64Const(60_000_000_000),
+                Instruction::I32Const(0),
+                Instruction::I64Const(0),
+                Instruction::I64Const(0),
+                Instruction::I32Const(262_144),
+                Instruction::Call(WAIT_FOR),
+                Instruction::Drop,
+                Instruction::Unreachable,
+            ],
+        );
+    });
     // Managed idle status is descriptive only; it cannot settle accepted work.
     emit(
         &mut body,
@@ -449,6 +573,24 @@ fn guest() -> Module {
         });
     }
     case(&mut body, 3, |b| {
+        b.instruction(&Instruction::Unreachable);
+    });
+    case(&mut body, 31, |b| {
+        emit(
+            b,
+            [Instruction::I32Const(262_136), Instruction::Call(OBSERVE)],
+        );
+        b.instruction(&Instruction::Unreachable);
+    });
+    for mode in [26, 27, 28] {
+        case(&mut body, mode, |b| completed_cycles(b, mode == 27));
+    }
+    case(&mut body, 32, completed_failed_cycles);
+    case(&mut body, 28, |b| {
+        token(b, PARK, None);
+        success(b, UNIT);
+        begin_wait(b, 60_000_000_000);
+        finish_wait(b);
         b.instruction(&Instruction::Unreachable);
     });
     case(&mut body, 0, |b| {
