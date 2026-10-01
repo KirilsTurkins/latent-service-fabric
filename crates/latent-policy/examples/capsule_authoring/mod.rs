@@ -1,5 +1,8 @@
+mod freshness;
 mod inputs;
 mod policy;
+
+pub(super) use freshness::check_stale_proofs;
 
 use std::{
     collections::BTreeSet,

@@ -5,7 +5,6 @@ produce canonical bytes and digests; no application ordering rule is reproduced.
 """
 from __future__ import annotations
 
-import base64
 import copy
 import json
 from pathlib import Path
@@ -188,7 +187,7 @@ def qualify(binaries, releases, output):
         source = releases / pair[0]["name"]
         for name in ("altered-component", "altered-policy", "noncanonical-revocation-digest",
                      "wrong-builder-source", "wrong-builder-key", "missing-provenance",
-                     "revoked-builder-key", "stale-proof", "stale-trust"):
+                     "revoked-builder-key", "stale-trust"):
             directory = fresh(output / name)
             changed = copy.deepcopy(policy)
             artifact = source
@@ -229,25 +228,30 @@ def qualify(binaries, releases, output):
                 changed["builderRevocations"]["revokedKeys"].append(pair[0]["builderKeyFingerprint"])
             elif name == "stale-trust":
                 changed["builderRevocations"]["validUntil"] = int(time.time()) - 1
-            elif name == "stale-proof":
-                changed["builder"]["maxProofAgeSeconds"] = 1
-                index = read_json(source / "evidence/index.json")
-                envelope = read_json(source / "evidence" / index["provenance"][0]["payload"])
-                statement = json.loads(base64.b64decode(envelope["payload"], validate=True))
-                issued_at = statement["predicate"]["issuedAt"]
-                end = time.monotonic() + 3
-                while int(time.time()) <= issued_at + 1:
-                    require(time.monotonic() < end, "java-paired-stale-proof-clock-bound")
-                    time.sleep(.05)
-            if name in ("wrong-builder-source", "wrong-builder-key", "stale-proof"):
+            if name in ("wrong-builder-source", "wrong-builder-key"):
                 changed["builderRevocations"]["policyDigest"] = verifier.canonical(name + "-test-policy", changed)["builder"]["policyDigest"]
             path = directory / "policy.json"
             write_json(path, changed)
             result["negatives"][name] = verifier.verify(name, artifact, path, accepted=False)
-            # An altered policy with a mismatched revocation digest fails before
-            # startup; the other cases exercise the real admission boundary.
+            # Digest/expiry failures remain verifier rejections before startup.
+            # Valid policy negatives exercise the real node admission boundary.
             if name not in ("altered-policy", "noncanonical-revocation-digest", "stale-trust"):
                 negatives.append((name, artifact, path))
+        changed = copy.deepcopy(policy)
+        changed["builder"]["maxProofAgeSeconds"] = 2
+        changed["builderRevocations"]["policyDigest"] = verifier.canonical("stale-proof-policy", changed)["builder"]["policyDigest"]
+        stale_policy = output / "stale-proof-policy.json"
+        write_json(stale_policy, changed)
+        freshness = run_bounded_result([str(binaries["examples/capsule_authoring"]), "demo-check-stale-proofs",
+            str(output / "stale-proof"), str(stale_policy), *(str(releases / row["name"]) for row in pair)],
+            cwd=ROOT, env=build_environment(output), timeout_seconds=20, max_output_bytes=8192)
+        for stream in ("stdout", "stderr"):
+            with (output / ("stale-proof." + stream + ".log")).open("xb") as file:
+                file.write(getattr(freshness, stream))
+        require(freshness.returncode == 0, "java-paired-actual-stale-proof-checkpoint")
+        result["staleProofs"] = read_json(output / "stale-proof/stale-proofs.json")
+        require(result["staleProofs"]["status"] == "passed" and len(result["staleProofs"]["proofs"]) == 2,
+            "java-paired-both-original-grants-fenced")
         result["admission"] = admission(binaries, releases, fresh(output / "admission"), negatives)
         require(before == inventory(releases, maximum_bytes=128 * 1024 * 1024), "java-paired-approved-inputs-changed")
         result["status"] = "passed"
