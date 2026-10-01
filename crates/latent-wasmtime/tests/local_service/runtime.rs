@@ -254,6 +254,9 @@ async fn completed_fixed_results_release_original_calls_before_the_next_import()
         f.idle().await;
         assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
     }
+    let child_failures = f.observations.child_failures.snapshot();
+    assert!(child_failures.records.is_empty());
+    assert!(!child_failures.incomplete);
 }
 
 #[tokio::test]
@@ -292,15 +295,28 @@ async fn pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanl
         }
         f.idle().await;
         assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
-        assert_eq!(
-            value(
-                f.manager
-                    .start(f.request(&format!("fixed-fresh-{cancel}"), 0))
-                    .unwrap()
-                    .await
-            ),
-            42
-        );
+        let fresh = f
+            .manager
+            .start(f.request(&format!("fixed-fresh-{cancel}"), 0))
+            .unwrap()
+            .await;
+        if cancel {
+            assert_eq!(value(fresh), 42);
+        } else {
+            // Dropping the outer manager future never publishes the backend's
+            // reusable cleanup proof. Physical result/call/Store owners are
+            // reclaimed above, but the existing scheduler must quarantine the
+            // execution cell instead of inferring permission to reuse it.
+            let error = failure(fresh);
+            assert_eq!(error.code, PlatformErrorCode::Unavailable);
+            assert_eq!(error.details.len(), 1);
+            assert_eq!(error.details[0].kind, "scheduler.limit");
+            assert_eq!(error.details[0].fields.len(), 1);
+            assert_eq!(
+                error.details[0].fields.get("reason").map(String::as_str),
+                Some("all-cells-quarantined")
+            );
+        }
         f.idle().await;
     }
 }
