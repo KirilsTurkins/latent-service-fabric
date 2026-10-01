@@ -41,6 +41,11 @@ impl CommandAdmissionSource {
         self.services.authority.same_owner(authority)
     }
 
+    #[must_use]
+    pub fn uses_store(&self, store: &latent_state::protected_store::ProtectedStoreOwner) -> bool {
+        self.services.store.is_same_owner(store)
+    }
+
     fn current_source(&self) -> Result<(u64, EffectTime), DispatcherError> {
         let mut state = self
             .services
