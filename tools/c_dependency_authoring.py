@@ -22,6 +22,8 @@ RECEIPT_LIMIT = 1024 * 1024
 
 def layout(project: Path) -> tuple[Path, Path, bytes | None]:
     """Support both direct capsules and the maintained frontend's app subdirectory."""
+    from tools.guest_dependency_inputs import layout as checked_layout
+    checked_layout(project, 'c')
     root = regular_path(project)
     descriptor = root / 'latent.project.json'
     raw = read_bytes(descriptor, 256 * 1024) if os.path.lexists(descriptor) else None
@@ -59,6 +61,8 @@ def check_authority(root: Path, sdk: tuple[Path, bytes, bytes | None]) -> None:
 def build_inputs(app: Path) -> tuple[dict[str, bytes], Path]:
     """Bind the outer reviewed closure into the existing observed C source snapshot."""
     from tools.rust_capsule_project import MAX_FILE, MAX_FILES, MAX_SOURCE, snapshot
+    from tools.guest_dependency_inputs import layout as checked_layout
+    checked_layout(app, 'c')
     app = regular_path(app)
     files = snapshot(app)
     owner = app.parent
