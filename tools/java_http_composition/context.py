@@ -198,8 +198,8 @@ def qualify(client, targets, releases, publications, host, evidence: Path):
                 require(denied["category"] == "platform-failure" and denied["error"]["code"] == "permission-denied"
                     and denied["requestDispatched"] and denied["outcomeKnown"], "java-context-supplied-authority-accepted")
             else:
-                require(denied["category"] == "local-error" and denied["error"]["code"] == "invalid-invocation"
-                    and not denied["requestDispatched"] and denied["outcomeKnown"], "java-context-oversized-metadata-dispatched")
+                require(denied["category"] == "local-error" and denied["error"]["code"] == "invalid-arguments"
+                    and not denied["requestDispatched"] and denied["outcomeKnown"], "java-context-oversized-metadata-outcome")
                 result["oversizedMetadataBounds"] = {"requestedUtf8Bytes": oversized_bytes,
                     "maximumCliMetadataUtf8Bytes": 32 * 1024, "rejectedBeforeDispatch": True}
             result[name + "Denied"] = denied
