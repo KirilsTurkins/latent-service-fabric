@@ -27,15 +27,14 @@ pub(super) async fn drive(
                 pending_receipt = Some(pending);
             }
         }
-        let closed = services
-            .shared
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .closed;
+        let (closed, commands_retired) =
+            services.shared.state.lock().map_or((true, false), |state| {
+                (state.closed, state.command_owners == 0)
+            });
         match jobs.snapshot() {
             Ok(snapshot)
                 if closed
+                    && commands_retired
                     && snapshot.physically_retired()
                     && pending_receipt.is_none()
                     && receipts.is_empty() =>
