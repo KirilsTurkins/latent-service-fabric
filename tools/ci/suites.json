@@ -1661,9 +1661,7 @@
         "test_support::deterministic::tests::executor_handles_a_wake_before_parking",
         "test_support::deterministic::tests::identifiers_are_repeatable",
         "test_support::deterministic::tests::workspace_rejects_path_traversal",
-        "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up",
-        "diagnostic::tests::closed_projection_preserves_absence_and_maximum_unsigned_values",
-        "diagnostic::tests::hostile_atoms_unknown_enums_and_oversized_values_never_project"
+        "test_support::deterministic::tests::workspace_uses_requested_path_and_cleans_up"
       ],
       "expectedIgnored": [],
       "id": "latent-core.lib.latent-core",
@@ -7646,7 +7644,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "apps/latent/Cargo.toml",
-      "minimumCases": 131,
+      "minimumCases": 133,
       "mode": "libtest",
       "package": "latent",
       "platforms": [
