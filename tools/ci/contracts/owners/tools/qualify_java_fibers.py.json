@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Owned thread and executor controls preserve the original reference-JDK modes and run real locked Throwable constructor models with tooling integrity and unchanged application identities",
+  "reviewReason": "Owned thread and executor controls preserve the original reference-JDK modes and validate real locked Throwable and TimeUnit models, enum ownership, and reference conversion observables before qualification",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ecc79b5139fecc0e52889eebaadf740458b33af6b5b10e86b76ec3b08d48a09e"
+  "sha256": "1e603808a003aed9e64a1f4f2aa7593f14e722878a36b32da8db5aec6302e2bb"
 }

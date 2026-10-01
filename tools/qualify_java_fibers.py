@@ -19,8 +19,8 @@ from tools.java_guest.compiler import Compiler
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file, write_json
 
 
-def throwable_model_control(compiler: Compiler, output: Path) -> dict:
-    """Test the actual locked classlib IR, without loading application classes."""
+def locked_model_classpath(compiler: Compiler) -> tuple[str, dict[str, str]]:
+    """Verify the compiler's own locked model tooling before any host loading."""
     names = {"teavm-classlib", "teavm-core", "teavm-extension-spi", "teavm-interop",
              "teavm-relocated-libs-asm", "teavm-relocated-libs-asm-analysis",
              "teavm-relocated-libs-asm-commons", "teavm-relocated-libs-asm-tree", "teavm-relocated-libs-hppc"}
@@ -28,20 +28,25 @@ def throwable_model_control(compiler: Compiler, output: Path) -> dict:
     artifacts = [item for item in lock["artifacts"]
                  if Path(item["path"]).parts[-3] in names and item["path"].startswith("org/teavm/")]
     if (len(artifacts) != len(names) or {Path(item["path"]).parts[-3] for item in artifacts} != names):
-        raise ValueError("Java Throwable model requires the exact locked tooling closure")
+        raise ValueError("Java runtime model requires the exact locked tooling closure")
     cache = compiler.directory / "gradle-home/caches/modules-2/files-2.1"
     jars, identities = [], {}
     for item in sorted(artifacts, key=lambda row: row["path"]):
         parts = Path(item["path"]).parts
         candidates = list((cache / ".".join(parts[:-3]) / parts[-3] / parts[-2]).glob("*/" + parts[-1]))
-        if len(candidates) != 1: raise ValueError("Java Throwable model tooling jar is missing or ambiguous")
+        if len(candidates) != 1: raise ValueError("Java runtime model tooling jar is missing or ambiguous")
         raw = read_file(candidates[0], 25 * 1024 * 1024)
         if len(raw) != item["size"] or hashlib.sha256(raw).hexdigest() != item["sha256"]:
-            raise ValueError("Java Throwable model tooling jar integrity mismatch")
+            raise ValueError("Java runtime model tooling jar integrity mismatch")
         jars.append(candidates[0])
         identities[item["path"]] = item["sha256"]
+    return os.pathsep.join(map(str, jars)), identities
+
+
+def throwable_model_control(compiler: Compiler, output: Path) -> dict:
+    """Test the actual locked classlib IR, without loading application classes."""
+    classpath, identities = locked_model_classpath(compiler)
     output.mkdir()
-    classpath = os.pathsep.join(map(str, jars))
     compiler.run("throwable-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", output,
                  compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java",
@@ -53,6 +58,33 @@ def throwable_model_control(compiler: Compiler, output: Path) -> dict:
                 "method-owners;layout-and-repeated-port-negatives;application-identity")
     if result.strip() != expected: raise ValueError("Java Throwable model control did not complete")
     return {"status": "actual-locked-classlib-model-passed", "constructors": 5, "jarDigests": identities}
+
+
+def timeunit_model_control(compiler: Compiler, output: Path) -> dict:
+    """Prove the standard enum body port and conversion observables separately."""
+    classpath, identities = locked_model_classpath(compiler)
+    output.mkdir()
+    sources = ("fibers/dev/latent/guest/runtime/concurrent/TimeUnit.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java",
+               "fibers/conformance/compiler/TimeUnitModelControl.java",
+               "fibers/conformance/compiler/TimeUnitNativeControl.java")
+    compiler.run("timeunit-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
+                 "-d", output, *(compiler.sdk / source for source in sources))
+    result = compiler.run("timeunit-model-control", "java", "-Xmx256m", "-cp",
+                          str(output) + os.pathsep + classpath,
+                          "dev.latent.guest.runtime.compiler.TimeUnitModelControl").strip()
+    expected = ("TIMEUNIT_MODEL_CONTROL PASS missing-declarations-negative;standard-body-and-reference-closure;"
+                "enum-owners-preserved;layout-negative;application-identity-preserved bodies=")
+    bodies = result.removeprefix(expected)
+    if not result.startswith(expected) or not bodies.isdecimal() or not 16 <= int(bodies) <= 256:
+        raise ValueError("Java TimeUnit model control did not complete")
+    native = compiler.run("timeunit-native-control", "java", "-Xmx256m", "-cp", output,
+                          "TimeUnitNativeControl").strip()
+    if native != "TIMEUNIT_NATIVE_SOURCE_CONTROL PASS checks=1661":
+        raise ValueError("Java TimeUnit reference conversion control did not complete")
+    return {"status": "actual-locked-classlib-model-passed", "methodBodies": int(bodies),
+            "referenceConversionChecks": 1661, "jarDigests": identities}
 
 
 def recipe_inputs() -> dict[str, str]:
@@ -94,6 +126,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True)
         report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
+        report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
         compiler.check_unchanged()
         report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
         report["componentDigest"] = digest(read_file(component, 64 * 1024 * 1024))

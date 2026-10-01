@@ -88,6 +88,43 @@ class ThrowableModelIntegrity(unittest.TestCase):
             self.assertEqual(second.args[-1], "dev.latent.guest.runtime.compiler.ThrowableInitializationControl")
 
 
+class TimeUnitModelIntegrity(unittest.TestCase):
+    def test_changed_tooling_is_rejected_before_any_host_model_or_reference_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = ThrowableModelIntegrity.fixture(root)
+            jars[-1].write_bytes(b"modified compiler tooling")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.timeunit_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_incomplete_model_proof_cannot_proceed_to_reference_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root)
+            compiler.run.side_effect = ["", "TIMEUNIT_MODEL_CONTROL PASS bodies=0"]
+            with self.assertRaisesRegex(ValueError, "TimeUnit model control did not complete"):
+                fibers.timeunit_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+    def test_source_control_requires_both_model_and_real_reference_conversion_receipts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root)
+            compiler.run.side_effect = ["", ("TIMEUNIT_MODEL_CONTROL PASS missing-declarations-negative;"
+                "standard-body-and-reference-closure;enum-owners-preserved;layout-negative;"
+                "application-identity-preserved bodies=20"), "TIMEUNIT_NATIVE_SOURCE_CONTROL PASS checks=1661"]
+            report = fibers.timeunit_model_control(compiler, root / "model")
+            self.assertEqual(len(report["jarDigests"]), 9)
+            self.assertEqual(report["referenceConversionChecks"], 1661)
+            self.assertEqual(compiler.run.call_count, 3)
+            first, model, native = compiler.run.call_args_list
+            self.assertEqual(first.args[:3], ("timeunit-model-compile", "javac", "-proc:none"))
+            self.assertEqual(model.args[-1], "dev.latent.guest.runtime.compiler.TimeUnitModelControl")
+            self.assertEqual(native.args[-1], "TimeUnitNativeControl")
+
+
 class PackagingTools(unittest.TestCase):
     def test_prebuilt_tools_are_reused_without_a_narrower_cargo_rebuild(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -39,7 +39,11 @@ completed result while that callback blocks. `AbstractExecutorService` implement
 standard submit, ordered `invokeAll` and first-successful-completion `invokeAny`.
 Factories and class substitutions apply only to these exact standard classes;
 application and library API references remain unchanged. TimeUnit conversions
-saturate and finite waits preserve positive submillisecond timeouts.
+saturate and finite waits preserve positive submillisecond timeouts. The compiler
+installs the reviewed method bodies on the maintained standard TimeUnit enum;
+the classlib's substitution has precedence over the SDK substitution policy.
+Its original constants, constructor and values method retain their identities.
+The complete template is validated before the maintained model is changed.
 
 Root completion closes independent admission, while accepted application threads
 and running callbacks may still submit necessary continuations. Idle pool workers
@@ -117,9 +121,31 @@ initializes that exact maintained field in the real constructors, preserving the
 original class, methods and application symbols. Actual locked-model controls
 check the prior missing initialization, all five repaired constructor entries,
 unchanged method owners, layout drift and repeated-port rejection. These controls
-run on host JDK 25.0.3 and also belong to the maintained pinned fiber qualifier.
-The subsequent component rebuild and all original signed modes remain pending;
-the original exception masked by cleanup may still require a separate repair.
+run in the maintained qualifier against the exact verified compiler JAR closure.
+The pinned rebuild `9b153e9d` passes those controls but its normal mode 1 still
+traps; a private probe identifies a NullPointerException in ExecutorService.close
+while unwinding the original application's pool block.
+
+The generated C backend spills pointers across exception jumps as
+`volatile void*`, which qualifies the pointee rather than the saved pointer.
+The narrow SDK adaptation changes only those exact generated declarations to
+`void* volatile`. Actual pinned Clang controls show the 33 application pointer
+spills retain their volatile saves and loads, while the complete compiler output
+ports 151 spills across 14 classes. Original generated files remain unchanged in
+the separate negative control. The new component `a717782e` passes all nine
+reference-JDK results and the locked Throwable model. Its normal mode 1 still
+fails under the original limits, consuming 8,576,733 fuel and 9,373,512 peak bytes
+in 71,099 microseconds. A separate diagnosis-only probe identifies the original
+application's TimeUnit.DAYS.toNanos(Long.MAX_VALUE) saturation assertion; the
+earlier ExecutorService.close null dereference is absent in this trace.
+
+The standard-enum method port passes an actual byte-verified nine-JAR model
+control on pinned JDK 25.0.4.1, including original missing declarations, maintained
+and SDK model ownership, resolved standard references, and layout rejection.
+Its source conversion control matches the same pinned JDK in 1,661 cases.
+The Java SDK helper suite passes 61 tests on Linux. These are source and compiler
+model controls; a new component build and complete original signed-mode replay
+remain required before the executor profile is qualified.
 
 The original thread-only pinned Linux debug experiment measured 9241560 bytes of activation peak
 memory in each run under the unchanged 67108864-byte ceiling. The first run
@@ -131,7 +157,7 @@ latency, fairness or physical memory plateaus.
 
 CompletableFuture, cached/work-stealing/virtual-thread factories, scheduled
 executors, recurring callbacks, FutureTask.runAndReset, duration-based TimeUnit
-members, full interruption and wait/notify races, shared I/O readiness, sockets/DNS,
+guest qualification, full interruption and wait/notify races, shared I/O readiness, sockets/DNS,
 cross-tenant reuse, late wakes and node stop remain open. General generated host
 I/O still uses the existing synchronous lowering and does not establish sibling
 progress while an accepted socket operation waits. Published library/default
