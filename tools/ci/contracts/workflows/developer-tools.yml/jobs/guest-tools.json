@@ -4,7 +4,6 @@
   "coverage": {},
   "definition": {
     "env": {
-      "LSF_DEV_COMPILER_CACHE": "${{ runner.temp }}/compiler-archives",
       "LSF_DEV_LANGUAGE": "${{ matrix.language }}"
     },
     "if": "github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feat/559-') || github.event.pull_request.head.repo.full_name != github.repository",
@@ -46,7 +45,7 @@
         "uses": "actions/cache/restore",
         "with": {
           "key": "compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}",
-          "path": "${{ env.LSF_DEV_COMPILER_CACHE }}"
+          "path": "${{ runner.temp }}/compiler-archives"
         }
       },
       {
@@ -66,7 +65,7 @@
         "uses": "actions/cache/save",
         "with": {
           "key": "${{ steps.compiler-cache.outputs.cache-primary-key }}",
-          "path": "${{ env.LSF_DEV_COMPILER_CACHE }}"
+          "path": "${{ runner.temp }}/compiler-archives"
         }
       },
       {
@@ -292,7 +291,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain all six compiler, signed-node, application, native resource and cleanup checks; preserve the reviewed explicit compiler cache environment and step cache restore/save inputs from current development.",
+  "reviewReason": "Retain all compiler, signed-node, native resource and cleanup checks; scope runner.temp compiler cache to the build step and cache action inputs permitted by GitHub Actions",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
