@@ -1,7 +1,7 @@
 use super::super::snapshot::{RequiredArtifact, SnapshotClosure, SnapshotReceipt};
 use super::{
-    schema_ids, AggregateMigrationProgress, AggregateMigrationRequest, PROGRESS_BYTES, RECIPE, V1,
-    V2,
+    schema_ids, AggregateMigrationProgress, AggregateMigrationRecipe, AggregateMigrationRequest,
+    PROGRESS_BYTES, V1, V2,
 };
 use crate::embedded::RowKey;
 use crate::embedded::{ReadView, StoreError};
@@ -41,7 +41,11 @@ impl VerifiedMigrationCheckpoint {
     pub fn receipt(&self) -> &SnapshotReceipt {
         &self.receipt
     }
-    pub(super) fn require_request(&self, r: &AggregateMigrationRequest) -> Result<(), StoreError> {
+    pub(super) fn require_request(
+        &self,
+        r: &AggregateMigrationRequest,
+        selected: AggregateMigrationRecipe,
+    ) -> Result<(), StoreError> {
         let m = &self.receipt.manifest;
         if self.receipt.snapshot_digest != r.checkpoint_digest
             || self.receipt.manifest_digest != r.checkpoint_manifest_digest
@@ -51,8 +55,8 @@ impl VerifiedMigrationCheckpoint {
         }
         let (v1, v2) = schema_ids()?;
         let recipe = RequiredArtifact {
-            identity: "lsf.aggregate-migration.v1".into(),
-            digest: Sha256::digest(RECIPE).into(),
+            identity: selected.identity().into(),
+            digest: selected.digest(),
         };
         let package = RequiredArtifact {
             identity: package_identity(&r.package_digest),

@@ -5001,6 +5001,8 @@
         "recovery::migration::tests::fixed_migration_checkpoint_detects_changed_linked_rows_and_final_revocation_without_upgrading_data",
         "recovery::migration::tests::fixed_migration_refuses_oversized_cell_and_quota_before_durable_stage",
         "recovery::migration::tests::fixed_migration_rejects_corrupt_checkpoint_wrong_scope_package_and_changed_operation_inputs",
+        "recovery::migration::tests::java_fixed_recipe_preserves_actual_key_and_original_selection_after_engine_reopen",
+        "recovery::migration::tests::java_fixed_recipe_requires_exact_checkpoint_artifact_and_refuses_cell_or_quota_mismatch",
         "recovery::migration::tests::migration_row_dispatch_preserves_foreign_bytes_and_rejects_malformed_owned_progress",
         "recovery::migration::tests::tenant::installed_tenant_capacity_refuses_migration_before_paused_history_or_progress_publication",
         "recovery::migration::tests::tenant::installed_tenant_migration_and_resume_charge_actual_changed_rows_with_restart_and_read_only_replay",
@@ -5112,7 +5114,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 196,
+      "minimumCases": 198,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
