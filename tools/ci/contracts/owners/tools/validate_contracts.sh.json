@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/validate_contracts.sh",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Restore foreground SIGINT semantics for the complete background Python suite; join every case and preserve the frozen collector build environment.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "c56e1c7d874239e97a3f5e7d263e93d85d3bc6618634cf3bd297f5d1d5e674ef"
+  "sha256": "39ea3b171b9faed4e3bb2dea020ba1110b9e54e4af3e82cd37aaaa3c0096ca30"
 }

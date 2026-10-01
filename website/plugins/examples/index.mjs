@@ -3,8 +3,8 @@ import {createRepositoryIndex} from '../../lib/repository.mjs';
 import {prepareExamples} from './site.mjs';
 import {validateExampleBuild} from './built.mjs';
 
-export default function examplesPlugin(context) {
-  const {examples, snapshots} = prepare({baseUrl: context.siteConfig.baseUrl});
+export default function examplesPlugin(context, _options, prepared = prepare({baseUrl: context.siteConfig.baseUrl})) {
+  const {examples, snapshots} = prepared;
   function checkCurrentInputs() {
     const current = prepareExamples(createRepositoryIndex(), {persist: false});
     if (JSON.stringify(current.identity) !== JSON.stringify(examples.identity)) {
