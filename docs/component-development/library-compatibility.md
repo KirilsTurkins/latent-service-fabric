@@ -6,6 +6,16 @@ surface or an import outside the recognized host ABI stops packaging. The
 retained `compatibility-inspection.json` identifies the component and ABI inputs.
 The existing package validator additionally checks the complete WIT types.
 
+Recipes select the frozen V5 manifest only when the authoritative declared WIT
+surface explicitly imports `latent:runtime/activation@0.1.0` or
+`latent:network/streams@0.1.0`; other surfaces keep the frozen V4 manifest.
+The profile selector accepts only those two manifest identities. It neither
+falls back after a missing manifest nor derives authority from emitted imports.
+V5 inspections record the selected profile and its exact manifest digest;
+packaging and failure reporting recheck that digest. Existing V4 inspection
+records retain their original shape. Provider installation, exact grants,
+runtime support and normal node admission still require their own evidence.
+
 Each package contains `compatibility-report.json`, a source-bound observation
 using `lsf.guest.compatibility.v1`. Its identity binds the source inventory,
 component, selected host ABI and SDK lock. The report does not install providers,
