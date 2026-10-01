@@ -85,7 +85,7 @@ async fn assert_rejected_outputs(fixture: &Fixture) {
         let reply = call(fixture, path).await;
         assert_eq!(reply.0, 502, "{path}");
         assert_eq!(reply.2, b"Bad gateway\n", "{path}");
-        assert!(reply.1.contains("content-length: 12\r\n"));
+        assert!(reply.1.contains("Content-Length: 12\r\n"));
         assert_eq!(reply.1.matches("HTTP/1.1").count(), 1);
         assert!(reply
             .1
