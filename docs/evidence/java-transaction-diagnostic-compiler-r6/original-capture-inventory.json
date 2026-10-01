@@ -1,0 +1,3689 @@
+{
+  "excludedGeneratedCaches": [
+    "gradle-home",
+    ".gradle"
+  ],
+  "files": [
+    {
+      "path": "put-once-diagnostics/compiled/bindings/Bindings.java",
+      "bytes": 30996,
+      "sha256": "sha256:5e342db195cc44acc07c0d838a1e73c50693b998255d55ad3c466f06f97a41fc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/bindings/bridge.c",
+      "bytes": 50083,
+      "sha256": "sha256:d6986949af4638f99b889701aee668a000307bb488d4a9f9a4c593d7cbdef12d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/bindings/probe.c",
+      "bytes": 39578,
+      "sha256": "sha256:e46d3b5c06ab6a3281066b5a8b0579ec804d194e9a10cf83f8239297b831aafa"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/bindings/probe.h",
+      "bytes": 17932,
+      "sha256": "sha256:213668346711f03f96a15506d11ca08fdeb08c368d31458fb4458e06f3126106"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/bindings/probe_component_type.o",
+      "bytes": 2345,
+      "sha256": "sha256:6160456d5a5c69fdbf7af244deb40d6e0ca1b861c448f4b1d2e8cc1ea344a930"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/bindings-check/Bindings.java",
+      "bytes": 30996,
+      "sha256": "sha256:5e342db195cc44acc07c0d838a1e73c50693b998255d55ad3c466f06f97a41fc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/bindings-check/bridge.c",
+      "bytes": 50083,
+      "sha256": "sha256:d6986949af4638f99b889701aee668a000307bb488d4a9f9a4c593d7cbdef12d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/bindings-check/probe.c",
+      "bytes": 39578,
+      "sha256": "sha256:e46d3b5c06ab6a3281066b5a8b0579ec804d194e9a10cf83f8239297b831aafa"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/bindings-check/probe.h",
+      "bytes": 17932,
+      "sha256": "sha256:213668346711f03f96a15506d11ca08fdeb08c368d31458fb4458e06f3126106"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/bindings-check/probe_component_type.o",
+      "bytes": 2345,
+      "sha256": "sha256:6160456d5a5c69fdbf7af244deb40d6e0ca1b861c448f4b1d2e8cc1ea344a930"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/closed-runtime.wasm",
+      "bytes": 663,
+      "sha256": "sha256:b9346744fceace22204cd12e4b658801d89b39b77ee4e8bdc86eb55f5b87b5f0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/component.wasm",
+      "bytes": 1013874,
+      "sha256": "sha256:0640b1bb0a28a7cc80b785efd6c1a3c8d55612e0a70759be2f2a400268dec20f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/core.wasm",
+      "bytes": 1006749,
+      "sha256": "sha256:edfc9643ff906a41927993eb1d2e2fc6766e1fb2939ee0d296c66305408adb42"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/dependencies.observed.json",
+      "bytes": 6083,
+      "sha256": "sha256:d90caf27efa84ad00cfbe4403324bd88e0d0b55bb66d4b92f15bd8e23371a8c0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/app/Capsule.class",
+      "bytes": 8325,
+      "sha256": "sha256:cc383646ad6d9f6cc94d1f55bee251e8aeb2f9e65457da755f0c8d28d3cd963f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/app/TransactionDiagnostics.class",
+      "bytes": 981,
+      "sha256": "sha256:90a6e7e65ef81f306d40b4910ec31d1bf4914eac14a122f39d7752ee7a34a3d6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$Dispatch.class",
+      "bytes": 492,
+      "sha256": "sha256:30a70faa517a4e4a5a7682fde7853cedd9be1584b04c64398f42cfc82aeaacab"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$ExamplesTransactionalAggregateApiAggregate.class",
+      "bytes": 2460,
+      "sha256": "sha256:5905fc7561e1c363678791a544ece27b41549275e37d62f31cb4b879cc48f3cd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$ExamplesTransactionalAggregateApiBusinessError.class",
+      "bytes": 1565,
+      "sha256": "sha256:bfc2f5688ad567847baec0a71eb7276afe017978e97cd0701360e3821b239d2b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$ExamplesTransactionalAggregateApiScanResult.class",
+      "bytes": 2683,
+      "sha256": "sha256:2114deb469a83e830f0a59c4afa4e1ad1950941f2af2c2afcc55d8862176acfc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$ExamplesTransactionalAggregateApiUpdateRequest.class",
+      "bytes": 2045,
+      "sha256": "sha256:18bc68a82bccbd72f429c30b8343d0d5d72d13811b8b2457de2a2045d02760b1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$Exports.class",
+      "bytes": 1736,
+      "sha256": "sha256:f12f430d6ec3c3b950f05d796db39c29e4460999b37b793699b26fe92e2b3cf6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentClockMonotonic.class",
+      "bytes": 1365,
+      "sha256": "sha256:5082958d46962548b7f5d7c58b3572555f224723c5ce75df108e376666800a2a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentClockWall.class",
+      "bytes": 1355,
+      "sha256": "sha256:0c0fc159be390024b1be5030c887d1ca383812635d170fab28fdf34fcfcb5af5"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentIntentsStaging.class",
+      "bytes": 2845,
+      "sha256": "sha256:e4976ad68836629cc66953373c172b5ba19de5f3a0a148266c79aa4c97fb9cbe"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentIntentsStagingIntent.class",
+      "bytes": 2878,
+      "sha256": "sha256:228fae8c2a6a7bdb64702ace88969377de73f3826fb8b055742d3c050b5c10f7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentIntentsStagingIntentError.class",
+      "bytes": 2041,
+      "sha256": "sha256:00a97fc3659719d57ebc8f0891eb134e09201a76a610ad284461bde9480bf166"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentIntentsStagingStagedIntent.class",
+      "bytes": 1760,
+      "sha256": "sha256:c3e2eeaf839373a98f2c23fe7fe68622625c8ad2db1359768f2aee7d96720c22"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValue.class",
+      "bytes": 13236,
+      "sha256": "sha256:fe526767691d1914b7ed260cac0a77eceb6a6ae09ab5aa20caf821c4ff89ad69"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValueCommandInfo.class",
+      "bytes": 2883,
+      "sha256": "sha256:b189f5c3c0a2798c33428662f1a065c56a46021fb43f970e8e0dad51fdd79204"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValueEntry.class",
+      "bytes": 2116,
+      "sha256": "sha256:f05d0d19a5f951caf3fa72a62e216380dd563431325e680bff30e49693a498fc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValuePage.class",
+      "bytes": 494,
+      "sha256": "sha256:a468e2a900999cf1162e06190f0120a50f8991f638a8aa18e3f900c7acb0c0ed"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValuePageInfo.class",
+      "bytes": 3155,
+      "sha256": "sha256:6cb7907b7c0b878e152d02b84621468bca15a9d42af798d47b9b81f112d02872"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValueQueryView.class",
+      "bytes": 509,
+      "sha256": "sha256:813ac623df65dc0fc0ff259899e32265b39dd336ec40e84798f2bfacfbd9055d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValueStateError.class",
+      "bytes": 2145,
+      "sha256": "sha256:06b267ad0f53892256d07f3084049bae0bffe4193a4a647a82c053092c2a8d3e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValueTransaction.class",
+      "bytes": 514,
+      "sha256": "sha256:ac5d4db32dc4fb0eeb4c7d0aa9128373ab476668f1654640d031c6fdd06e7701"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValueValue.class",
+      "bytes": 2390,
+      "sha256": "sha256:d97458b93ca0b845baf80a937321b518ffac49eb21a888d5dc1dadfb4592e4b1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValueVersionedValue.class",
+      "bytes": 2133,
+      "sha256": "sha256:b1363fb980677417bf1eec8600d3211e57a0eb7292a43dd21c7fd0cb7e2a7e0d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$LatentStateKeyValueViewIdentity.class",
+      "bytes": 2217,
+      "sha256": "sha256:9aa4f45a954a69491a099289a177df4382269b21485679703535949e564e89d6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings$Value4.class",
+      "bytes": 1727,
+      "sha256": "sha256:796ff59ace177dcfd3858975506a7264088b06e782e33a8232d347325f5d2ff1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/generated/Bindings.class",
+      "bytes": 36962,
+      "sha256": "sha256:2a4194c650793a14a56ea0416ade0b4ca8a055d25a11291c18fad9fc27dd0a16"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/BufferedWebResponseValidator$Header.class",
+      "bytes": 1748,
+      "sha256": "sha256:3d6f9f83c25c9ec45d1563070d15a918791478a77bcdf57b209a3acefb11bd51"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/BufferedWebResponseValidator$Method.class",
+      "bytes": 1594,
+      "sha256": "sha256:e535b40af1ff9098fa071bdba26800b563747162f23a753028525cb28eee1a50"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/BufferedWebResponseValidator$Ownership.class",
+      "bytes": 1891,
+      "sha256": "sha256:5f90f332341fe625793dfd888fbc65bad834cb32e372d672cda84c5aaef56397"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/BufferedWebResponseValidator$Reason.class",
+      "bytes": 2125,
+      "sha256": "sha256:03ba8f6440b2e73e801669c48442bfe94561121bba07e88c1af8192c1132bc4c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/BufferedWebResponseValidator$Scheme.class",
+      "bytes": 1353,
+      "sha256": "sha256:e94e61639d5f20858c475f93e76e3b5f361ef661a22c7d7b47d390cfef3aaeb6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/BufferedWebResponseValidator.class",
+      "bytes": 13709,
+      "sha256": "sha256:3914fdc62895f0f5a58097d435c60a58fc5728384e84a8c21a39a04dac4c66dc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Handle$Releaser.class",
+      "bytes": 336,
+      "sha256": "sha256:1a9dd65943b5ddabbe5775b925772cf17585fe7080907b75620bb8d545bb33e1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Handle.class",
+      "bytes": 1339,
+      "sha256": "sha256:1ee2d01ddea4163bcd39aded9c400e201e21142bfbd504b0a8421fe1e55aaf1c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Intent.class",
+      "bytes": 2661,
+      "sha256": "sha256:fa1433fbc0ba12bb09965f05b00fc5d67b091c7f73ee2f744ccb130baf436d03"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Option.class",
+      "bytes": 1369,
+      "sha256": "sha256:8038556ea2a3c1a1821e8897892f445d44cf58f7317daa8b1c9a8dbc6aef4ed3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Resource.class",
+      "bytes": 1835,
+      "sha256": "sha256:0664378937f736d7cef07276bc67ab251ebe2098a3f1eacfb3badcc3f83cae60"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Result.class",
+      "bytes": 1758,
+      "sha256": "sha256:e25772e38825e111abc047441b6e5fe40744da1c1871ba92b0c32ddd8a49cb7b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/SensitiveBytes.class",
+      "bytes": 859,
+      "sha256": "sha256:fd018e2869155925d5900e415a09112836b52ee3ded298a399406bd8c5b646e5"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/State$Access.class",
+      "bytes": 1885,
+      "sha256": "sha256:17487576d3b6e38b2bab0d00c4de8265b4bba1fe1359faf0da0211cd69bb15ac"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/State$Command.class",
+      "bytes": 4557,
+      "sha256": "sha256:7e1130963c2026442076ce5c9ef00713d95f850e711e7e2b0ab39e5a5e36c42b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/State$Page.class",
+      "bytes": 2984,
+      "sha256": "sha256:21856c4652638625d7df786f31cb2f2be08cdf817f288696ba7cb62a96522bbe"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/State$Query.class",
+      "bytes": 3526,
+      "sha256": "sha256:c7dd02c1533de9150df2b5cbf8c2e000b2c05457b6751de5ac2fb724251398aa"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/State.class",
+      "bytes": 3145,
+      "sha256": "sha256:41bad85adb8715f4328aa7695493953050d5bda146e124778e6eb24523a8d238"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Text.class",
+      "bytes": 1195,
+      "sha256": "sha256:ad5b90771336f01817b34718cddabc99ef7d035ed2779126db69470e0140c537"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Unit.class",
+      "bytes": 986,
+      "sha256": "sha256:0b5cc1a60fe4c9e815b0d48c21d1a0dabc7f3c791d91a8ac601d7500804a9ec3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Unsigned64.class",
+      "bytes": 3009,
+      "sha256": "sha256:8d666043b9fe0da69432c262c1b973617e8016bf88c81022cf7336df75c766d4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Wire$Reader.class",
+      "bytes": 2261,
+      "sha256": "sha256:f302ba9db1a61109e2aafd261af1fc19a0eaec214f7b9d81560201be8b8614ba"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Wire$Writer.class",
+      "bytes": 4006,
+      "sha256": "sha256:fe904f0a37d660efb7de80b6704141a1cd4e53eb0bdb43f2d123a4e1765f425d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/classes/java/main/dev/latent/guest/Wire.class",
+      "bytes": 2132,
+      "sha256": "sha256:7e8f347b16c5f2cad03c7fa7916afd9094e42a121077b8d2a7a5ce2f7db917a8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/generated/sources/headers/java/main/dev_latent_guest_Wire.h",
+      "bytes": 1078,
+      "sha256": "sha256:5902289ea6d508ff99abc1b0c245a517f4d187552fda0b1156a377b3fb3bc649"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/byte.c",
+      "bytes": 741,
+      "sha256": "sha256:ea8f96a14cd97b03b79f1e241dbfa27f76a226532ea44f00bb1e22e947bd06ce"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/byte.h",
+      "bytes": 200,
+      "sha256": "sha256:3b87e493e79f8ba94322df0ffc739e17ea81f6528e13a19c81e0e6f17d542eb7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/char.c",
+      "bytes": 743,
+      "sha256": "sha256:7157c1287defc94e67d9a90807e37884d7008c1022c85112f0c40d31ab16ae4d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/char.h",
+      "bytes": 200,
+      "sha256": "sha256:40788af5051018ec0ceee0b45fb904d96e799c8f5b814b128ae2937bc4322a8e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/double.c",
+      "bytes": 745,
+      "sha256": "sha256:5b7bffc3df2b2fc7ae8d99a02b147715b1619c1f816216880298cd2e4c6f6054"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/double.h",
+      "bytes": 200,
+      "sha256": "sha256:7acfafa97337d2f19d46afd76d2d28ee21194f6db55c4c51f6502bae53cd4628"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/float.c",
+      "bytes": 742,
+      "sha256": "sha256:3affc410e941065f641cbfec795f1459c80c80f2ad3a1a9207cdbe13a6d55b6f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/float.h",
+      "bytes": 200,
+      "sha256": "sha256:bb31b8d9cf0279095c48fe64bf8d3837ecde1be275db3511180e04a401db0650"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/int.c",
+      "bytes": 740,
+      "sha256": "sha256:7aa0eb41cfeac58dc9d6d14ed18311f91756a64c38e2e4e356a52558b45040da"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/int.h",
+      "bytes": 200,
+      "sha256": "sha256:86e05cc5ffec40277502b32a1279ca972d2c526dc7888225e007b89deb5a2212"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/long.c",
+      "bytes": 742,
+      "sha256": "sha256:e041a9c01e4eb157b4725402b6754bc2fff333d447bd8e652f5e0d8af3ff475f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/long.h",
+      "bytes": 200,
+      "sha256": "sha256:a41374a242219c23253f6144ee8e44d1f2c2dcafbf27263e0bfdd937b154aa05"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/short.c",
+      "bytes": 744,
+      "sha256": "sha256:c9b390ab199feb178bc19bd77faf93829505633c8b66e4c056c4a6bff3273026"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/a/p/short.h",
+      "bytes": 200,
+      "sha256": "sha256:b466318b8fd07a56b7ab82c3f4d078cfc51206a9e89def024ba2dbbc5501e555"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/all.c",
+      "bytes": 8657,
+      "sha256": "sha256:af0b6f4db2f9f501740c0fd29b2650794eb5d5a124816a986d7366ef8b92d3c9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/all.txt",
+      "bytes": 5965,
+      "sha256": "sha256:e937a0051f72757100ee4f8bb763934366eb76394232d548c638b415b1213e7c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/arrayclass.c",
+      "bytes": 1947,
+      "sha256": "sha256:a09f225c1517579640a9d0ba9483368eb0ce4d284339755c5b820aa63c85ddc0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/arrayclass.h",
+      "bytes": 363,
+      "sha256": "sha256:c6695fb726f23825ac0253341e5bfb7e92124ad31aac43a62599b9f04e113e65"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/arrayclass_gen.h",
+      "bytes": 159,
+      "sha256": "sha256:7952153e6f88ecb64bf71adc21fe5ea18d5800871bc517d0d7a97fdb58269274"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/a/Capsule.c",
+      "bytes": 87557,
+      "sha256": "sha256:543430101d328873558cd7ff87f0f5743451f0924b24066e916d3c77ab48377f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/a/Capsule.h",
+      "bytes": 782,
+      "sha256": "sha256:ae7375d157c6648bbd5786a51a1199a203cea4efdb6413a37b437860f3bc92b2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/a/TransactionDiagnostics.c",
+      "bytes": 2877,
+      "sha256": "sha256:bc661bb79d62206f98ecf503969ab95e1981559cfd6a40fdb1fa54600da0c707"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/a/TransactionDiagnostics.h",
+      "bytes": 797,
+      "sha256": "sha256:515ee9649664854f35dc1b383fe93e9c4fdf25171957ee89b16c84854f8fb766"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings.c",
+      "bytes": 266665,
+      "sha256": "sha256:48d8b1ad4183091cf0c89a1af7fc8d934a0b63e96ff5f5b9c5a5d65cecc4aa5c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings.h",
+      "bytes": 1867,
+      "sha256": "sha256:e3fc02b6f447959bdc7d17884fba645e2885d7a027a36e757a83902b8bdd398a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dDispatch.c",
+      "bytes": 116,
+      "sha256": "sha256:ddbb430bdd829093cb924199b2caa99c72bf0fe3633d2a8d4c0e193820b3b3ca"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dDispatch.h",
+      "bytes": 242,
+      "sha256": "sha256:829a02e4bbed005d66e073554d0c62d375bd7f069c5a3d8abacc1033a7dcf52d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExamplesTransactionalAggregateApiAggregate.c",
+      "bytes": 5263,
+      "sha256": "sha256:1032b04625afe582e4e609178f1f61f06106de673d9880903b6f2b48f469e4b6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExamplesTransactionalAggregateApiAggregate.h",
+      "bytes": 1002,
+      "sha256": "sha256:888f8283f6ab8af2292ee3c0760ce37b152cec9c0cae6148594f20c5fead25eb"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExamplesTransactionalAggregateApiBusinessError.c",
+      "bytes": 5829,
+      "sha256": "sha256:baa2cc5966299eff138b5b5faf90e460b35d8f5462f100fc4e816f685680d355"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExamplesTransactionalAggregateApiBusinessError.h",
+      "bytes": 1373,
+      "sha256": "sha256:9f74e0bef12f78e527db851d02dcde2e2692e8758bdd99259cb0b1dfe8063d0c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExamplesTransactionalAggregateApiScanResult.c",
+      "bytes": 6405,
+      "sha256": "sha256:4d7431bad9086290eaeddb26726eee3623ef349c67abeaaacaca2b3f6a053363"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExamplesTransactionalAggregateApiScanResult.h",
+      "bytes": 1047,
+      "sha256": "sha256:6fb895f134fc2a25d59a2f395ac042832378a1b49f1a2b5d95f2346368d1482b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExamplesTransactionalAggregateApiUpdateRequest.c",
+      "bytes": 2225,
+      "sha256": "sha256:fe2a136af15a6a3477189d6c18c425a3c328da04b2cb9396db793dc36803e28c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExamplesTransactionalAggregateApiUpdateRequest.h",
+      "bytes": 1069,
+      "sha256": "sha256:4b36d7b5d21d96f141ca9baa27b974fb68658c68f0614c6fb86d14d170aa6672"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExports.c",
+      "bytes": 647,
+      "sha256": "sha256:fd6d0efc8f5962ea1b9bb57884dd474716786d0b672bb1c68eb71ca685039c1f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dExports.h",
+      "bytes": 378,
+      "sha256": "sha256:b3259f182ea212032b7f4a62fa3b3d0bec0ec2a44a161e23111385dc71d4406c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentIntentsStaging.c",
+      "bytes": 1008,
+      "sha256": "sha256:765d06e5266f07f50924b45d6748fcd6ebd6ac3464f450fadcdabc2bc9209410"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentIntentsStaging.h",
+      "bytes": 606,
+      "sha256": "sha256:bd672186f94603a1ec4ad081858c4ff1a29b6c14268151e0cb6e941de0c1bfa6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentIntentsStagingIntent.c",
+      "bytes": 1730,
+      "sha256": "sha256:3de570d7ec5812975751a8470679385068bf1a95ff21128ad1473038986b2350"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentIntentsStagingIntent.h",
+      "bytes": 767,
+      "sha256": "sha256:aaa1cec28ed0139aad088cc3af6833801a35ef5073bf3a796f4a608fa955ffb8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentIntentsStagingIntentError.c",
+      "bytes": 13407,
+      "sha256": "sha256:879bdf3291ca41acc4b0d012f1968f0774bcc1c3f96d851b281753a5e9cd0b34"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentIntentsStagingIntentError.h",
+      "bytes": 2015,
+      "sha256": "sha256:9d6c23a756b0af66164151d34276b79175cfb3fb22b415de3d17c5177d33a7b0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentIntentsStagingStagedIntent.c",
+      "bytes": 1549,
+      "sha256": "sha256:bb859c0d8d3241b22a76e9da8119e9d9fc17d5e852a2511b30408acca61dfccd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentIntentsStagingStagedIntent.h",
+      "bytes": 739,
+      "sha256": "sha256:61f9e60ebc098b9236b82f48b45b113843ce98cdbd3ef419d64bd419104094af"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValue.c",
+      "bytes": 13749,
+      "sha256": "sha256:407e50546a1a95f3b4343ea76c9698879cc5503f818cad471239eacc9c33a106"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValue.h",
+      "bytes": 778,
+      "sha256": "sha256:2ab81c3a625ece289ddadf8702a73defb7d2bca614a6647724cd9d6983ee1cff"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueCommandInfo.c",
+      "bytes": 1951,
+      "sha256": "sha256:a3467709323b8822ffeec470719bd2a4762a9f6bdf89dd16d425d40c3e8468e2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueCommandInfo.h",
+      "bytes": 864,
+      "sha256": "sha256:7720deaf3a8ebc7756e13fa39045ae605de728085f405868756afd87edba1209"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueEntry.c",
+      "bytes": 1530,
+      "sha256": "sha256:9e2eade76a63d5c827ba0f5b6b5858ae7d8c5aaf70a42a6b44950880f7d7ba6b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueEntry.h",
+      "bytes": 690,
+      "sha256": "sha256:02c2c0af71cd13c4c9fa58068dd69b3c282120b4fb874cab38c9d3e85bc9c599"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValuePage.c",
+      "bytes": 1054,
+      "sha256": "sha256:a00f3819e1d802048408064b7dede5bc387cd6c59999d71a30cd65bcef428062"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValuePage.h",
+      "bytes": 629,
+      "sha256": "sha256:9529f93249b8a5d16a9f253aa17572ff01684ef963a32e603c6023a1c7f28ec4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValuePageInfo.c",
+      "bytes": 2549,
+      "sha256": "sha256:de42507cab0ac0b5e2e1127734ae56e804411eadf5593cb8c6826f74902b9f91"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValuePageInfo.h",
+      "bytes": 1101,
+      "sha256": "sha256:54baf53a2c44d024ed124845253c246f7b413b8148c93412b0d97046e1aee9b7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueQueryView.c",
+      "bytes": 1089,
+      "sha256": "sha256:86b76e2d034a096610cc5a371598617fdaa051b4b95b3f591988e4e1227b8fa9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueQueryView.h",
+      "bytes": 674,
+      "sha256": "sha256:5488eb62d8c873bd8c1b77ec22830aaa58899049f2595b4369be1a47b0dafe5e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueStateError.c",
+      "bytes": 14699,
+      "sha256": "sha256:74798e87a59892bed3cee2dad662fb89e3ee05c0b5f100a8e368fe423a189101"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueStateError.h",
+      "bytes": 2117,
+      "sha256": "sha256:6fa8aa5a4a4c39597f821087f022ff9d86d10ae67e1ee5e7efc2b3180e2cb593"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueTransaction.c",
+      "bytes": 1103,
+      "sha256": "sha256:5e564c32742b31d45e3df22101bb72f634b50801da073701fc1e5371d2dcdc3b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueTransaction.h",
+      "bytes": 692,
+      "sha256": "sha256:69401382fdb8fe0fbfbd14b4a7fc6f3be488f0fee4c2463028de641ef51a9a19"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueValue.c",
+      "bytes": 4949,
+      "sha256": "sha256:76731dd0df6243e9d431392a0f9427536cf8e06ffa27924baaab43238f3d9ea9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueValue.h",
+      "bytes": 818,
+      "sha256": "sha256:54dd546200e858e29a03da3ed58fb994d7ca0a33e3397569a021142dc958d631"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueVersionedValue.c",
+      "bytes": 1840,
+      "sha256": "sha256:1aa05dc5ee79cddb2891ec20ec90f72fffcaf7e2b2f41b8bce11b6a8aafb2584"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueVersionedValue.h",
+      "bytes": 863,
+      "sha256": "sha256:de648459040bbb53cd314a14dc01de8dab66b33c7750b7df46561d0b5ba27978"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueViewIdentity.c",
+      "bytes": 1990,
+      "sha256": "sha256:8a05e5778e56df4b302d4ec6570a18f6289cac8a2d72da2a7eb906aca0777d19"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dLatentStateKeyValueViewIdentity.h",
+      "bytes": 901,
+      "sha256": "sha256:83f7f3a3f4b54b27f96e84e98ca1bb191951209266fcd9593811572ec9e64303"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dValue4.c",
+      "bytes": 1310,
+      "sha256": "sha256:e0d5e3debd06ee43ec6b52a785826c90dddf8f536a95bfe49a9aeba30ec107bc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Bindings@dValue4.h",
+      "bytes": 517,
+      "sha256": "sha256:a5447a211a3aa4a9cb4508a54194af4f955f1009696dcb44d5dabc96d396e54a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Intent.c",
+      "bytes": 11411,
+      "sha256": "sha256:e8c848d61c82285a2db5a3d94a2f37fa45b50909c554ac4421c6e86d347e5656"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Intent.h",
+      "bytes": 533,
+      "sha256": "sha256:d44a676f71eb0b5c374f080139c71e52ebcdb292691d16ae12bed22aab9a0e67"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Option.c",
+      "bytes": 4109,
+      "sha256": "sha256:6c93a3ee28edfe7b75955f1a898966a4495f3f7f336b3aa61e7d505e096b3506"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Option.h",
+      "bytes": 587,
+      "sha256": "sha256:94d6a38e5d9f4802f0a72b24ee790a69be5703ef8807a91303c4ab1eafa8a0dd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Resource.c",
+      "bytes": 8063,
+      "sha256": "sha256:3c602f0515556302781cc856da4ab03ae85f1b9cd3e44cb6c44cbc65c6356ad1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Resource.h",
+      "bytes": 797,
+      "sha256": "sha256:9bf2ef66b29804f7e3c20a807b46bc1383e3bbbd8e5bd5d1b4bbf4546930d3d1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Result.c",
+      "bytes": 5402,
+      "sha256": "sha256:adc7fcba81ec6f36b5d6d315c6d3a587bb56eaeedb3ee1a968ae493f037ea042"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Result.h",
+      "bytes": 588,
+      "sha256": "sha256:6549164cc77abf9cfb6185d2d44885005029258aec0ca34172b350ef3b9fd599"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State.c",
+      "bytes": 839,
+      "sha256": "sha256:5b06ab84de8fefaef9debe7c5229e664452a1efa978a5a0cdd4aa572b424d14a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State.h",
+      "bytes": 389,
+      "sha256": "sha256:a30eedb4293c3202ba2848d6a79d8e204c67b4ea210ab65faf972f83a158c75f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dAccess.c",
+      "bytes": 2583,
+      "sha256": "sha256:434caff1aab2dc12a53e1823c0c23e7a8fa85dc8a3af011064db8e210651be51"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dAccess.h",
+      "bytes": 750,
+      "sha256": "sha256:8440868080e3516b2238dcbbc28e8abcf442f69a0e2aa1285929be94c7d4abf3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dCommand.c",
+      "bytes": 13752,
+      "sha256": "sha256:4064c706a0c37c662a073239f7e56e2aa274bf52a74db2e532ba2111b57259ac"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dCommand.h",
+      "bytes": 670,
+      "sha256": "sha256:ed4618cc829385c69bf101592f8ca1462274d98c9b05e15bf33935c91d71144b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dPage.c",
+      "bytes": 14546,
+      "sha256": "sha256:d3d2e7ef5b2e308beadabcc9e11e572997bcce670c9ed9cc0c13a56e1df98292"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dPage.h",
+      "bytes": 635,
+      "sha256": "sha256:a5b138dc712e1ad1d5e62ddba076e4c30355212a1f0482972ff4d5f68e9271b9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dPage@dinfo@dlambda@d_1_0.c",
+      "bytes": 7683,
+      "sha256": "sha256:d20d54eb69aa258b818f20bf954ca72087e60844e6b432e17c618e8667243b9d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dPage@dinfo@dlambda@d_1_0.h",
+      "bytes": 819,
+      "sha256": "sha256:427218502c620855a9edb628134067d0bf5d1b3e0b902d7409d8c53d52ede563"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dPage@dnext@dlambda@d_2_0.c",
+      "bytes": 7683,
+      "sha256": "sha256:7feda7a21fad884013716bdb9a5524c2012ca0d2ceb7b8c4b791617b0d3e58a2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dPage@dnext@dlambda@d_2_0.h",
+      "bytes": 819,
+      "sha256": "sha256:9548abd1df1d6d5c8e65999f68d1261dbb3ee42821c5ffbca1dca7b5659d47d8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dQuery.c",
+      "bytes": 19460,
+      "sha256": "sha256:6ce5219a027b0b9c5ae8c9c1b08fbadc96719146e8180d9e76d3ffc0d075bda2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dQuery.h",
+      "bytes": 654,
+      "sha256": "sha256:d1ca6171276a37e52dd391d67b925ddab58ca1df442108c4bc9ddeb5f7271cf9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dQuery@dscan@dlambda@d_3_0.c",
+      "bytes": 2564,
+      "sha256": "sha256:d85974cfface1dfc59c028396ce466f446a6972b4333ed0beb6081e363f30cad"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dQuery@dscan@dlambda@d_3_0.h",
+      "bytes": 856,
+      "sha256": "sha256:4b2ce62ae540d9992e72f0b6ad60cc50517e1c568ffa28fa39c3d9da0103a3d2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dacquireCommand@dlambda@d_2_0.c",
+      "bytes": 1924,
+      "sha256": "sha256:0c999252863f1eb6e6698d40d2e0377e9a1fe089e6f0eebfafeb8ab6f9af0727"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dacquireCommand@dlambda@d_2_0.h",
+      "bytes": 877,
+      "sha256": "sha256:4ca168033af2a59a5bbf61b3b2211ddfe94e95b2a3861582830d7a5f9b5459b8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dacquireQuery@dlambda@d_3_0.c",
+      "bytes": 1894,
+      "sha256": "sha256:d5cbcd34bd41f9bb26fbcc4dd6bbcced4bd3f7d397f1045c7cbdf345171e1c25"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/State@dacquireQuery@dlambda@d_3_0.h",
+      "bytes": 857,
+      "sha256": "sha256:1d3ed551e84f2d38bbf531a95c79f430b9bc9aca677e676aba0c242cbdf248d5"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Unit.c",
+      "bytes": 2567,
+      "sha256": "sha256:839c9f7a7fbe349da91d1c686126b365c2cdeab2849c960e5fb1df7753c6a3ff"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Unit.h",
+      "bytes": 524,
+      "sha256": "sha256:3602c8aabf839e1216be02bf9b02b116d7468ee4b64a0389911c94c17ae7778f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Unsigned64.c",
+      "bytes": 2375,
+      "sha256": "sha256:d3ea26ae3c6ab7b94c3cb7c79862a7f6b80a093a2a506e630a79f1e3ebc44f90"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Unsigned64.h",
+      "bytes": 636,
+      "sha256": "sha256:878a8d3173fb98f627deae83177ed8ad8316b218f83ea0c8f473a66171bfc445"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Wire.c",
+      "bytes": 28092,
+      "sha256": "sha256:7d8a0da385d9c2bd4f3aa841988e44ea8bb878224644252a05e0ebccdf5f345e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Wire.h",
+      "bytes": 518,
+      "sha256": "sha256:83f823ca119992e0b6289374b23e2e114cc0b208644786d43f43b5bd33f5d6cd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Wire@dReader.c",
+      "bytes": 13680,
+      "sha256": "sha256:e34ace640880cf39d66bccd28ac89a318af54cafadb34114f4567a915525f302"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Wire@dReader.h",
+      "bytes": 785,
+      "sha256": "sha256:de43a6cc4d8010bad5b8114c66a239d551ca19567ade4134c9385254b0c4a7cc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Wire@dWriter.c",
+      "bytes": 22998,
+      "sha256": "sha256:d89a574c1f9ea705e23602ffa6e7d34a7f683dee6080fc60ff7f7681bcb1e53c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/d/l/g/Wire@dWriter.h",
+      "bytes": 933,
+      "sha256": "sha256:12925ff7275cf7fd929444b1d7e11bc89217b4e9f80405e1c19464a3a9470192"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/i/IOException.c",
+      "bytes": 974,
+      "sha256": "sha256:4783958970730443476a8098a068c9af9d68c22420e6219b6a938678ec73b836"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/i/IOException.h",
+      "bytes": 434,
+      "sha256": "sha256:dc7cff3ce0ebd14aeace0e6c26ec6c9c01794bc4d08805af5f0ca6250e1fdca9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/i/Serializable.c",
+      "bytes": 920,
+      "sha256": "sha256:adb4bfea0fb94719c64b44da87c325acf05eb078e60e0bed7f0dd4b616a5601b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/i/Serializable.h",
+      "bytes": 345,
+      "sha256": "sha256:4278d6f8bfc105ebd628cc182d348a84b193683311e2819255cbcdf5ee016af3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/AbstractStringBuilder.c",
+      "bytes": 32089,
+      "sha256": "sha256:451ad05abbccb06430708991dbe877360fa217f255b2dfaece44870031e77bc7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/AbstractStringBuilder.h",
+      "bytes": 1746,
+      "sha256": "sha256:d4fa9cadf6e83cc81e51f3980b8db717b73120c147cbde07a297e18eab241d00"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/AbstractStringBuilder@dConstants.c",
+      "bytes": 2961,
+      "sha256": "sha256:58e9530b1721c32da351577b1c7ddb4a7607a2eb13415aba033cb98ba695e00b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/AbstractStringBuilder@dConstants.h",
+      "bytes": 953,
+      "sha256": "sha256:ff88059442d5e94dc898291fbe57fbd803d132b6038815d30530943acff7aeb1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Appendable.c",
+      "bytes": 651,
+      "sha256": "sha256:806a9e620ab5219c57be6d0fc942ded61115dc215b52c95c2b0e3f2b4f69a340"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Appendable.h",
+      "bytes": 333,
+      "sha256": "sha256:065141ae3967d9f5598e5d32ccc20640ef24023f5acae78001bbe0f25a959623"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/ArrayIndexOutOfBoundsException.c",
+      "bytes": 1934,
+      "sha256": "sha256:52510b60138e5c83cd6cd2228bbbd979834061de34fac7d077bb9588ecbe45a0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/ArrayIndexOutOfBoundsException.h",
+      "bytes": 714,
+      "sha256": "sha256:87cb0c31ad687dbb0c1d09b5704b5fe7471d3898f67138e08fc14029b9111cc6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/ArrayStoreException.c",
+      "bytes": 1123,
+      "sha256": "sha256:b3fa570712c340cd2a81c1acd7f063291a12a5837d5320544e47a27e7c346e9a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/ArrayStoreException.h",
+      "bytes": 522,
+      "sha256": "sha256:bd157e025ce253127c30da175ca76f612ed3d88728b48cdb3ff663f9f39c2c78"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/AssertionError.c",
+      "bytes": 979,
+      "sha256": "sha256:2454d9cf2b171520150c39aa194a3115fd2a62b117572e6ef0d397ed32001fb3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/AssertionError.h",
+      "bytes": 444,
+      "sha256": "sha256:81c5a7c6c19a1f2b25f25042acfd39803d02ed44ac97209cc7683fefec7efdbe"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/AutoCloseable.c",
+      "bytes": 822,
+      "sha256": "sha256:0fc442e71824a971bdfbc04e1e7024725cd7cbd15dcdbf681cb661b2d89b5be1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/AutoCloseable.h",
+      "bytes": 351,
+      "sha256": "sha256:8141d43495a17d41ad3161be0362496b6f34aecfff2e777777d24229827edda2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Boolean.c",
+      "bytes": 2409,
+      "sha256": "sha256:0b6d6fee7cb509eafb4695c7513cfafd5c8845d8a376492c2ec3c7c4362555f7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Boolean.h",
+      "bytes": 786,
+      "sha256": "sha256:063cd34a27807ab45af203a71f0c3898f5ca759b8315c180d50e5531259e46fb"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/CharSequence.c",
+      "bytes": 707,
+      "sha256": "sha256:ddfa9ddbdfbf126adcdc4d33c21b9ed23aad54eff3df9b90212c7a93cc374803"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/CharSequence.h",
+      "bytes": 345,
+      "sha256": "sha256:e7a4c198f26df95a2c7fb5bbab8d14cbfcba312aa68ea543b60a03e10c1ca2cc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Character.c",
+      "bytes": 2468,
+      "sha256": "sha256:e19bd33fc006d687dfb5fb250c090fac0fd96b578436d53a48630198734658b5"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Character.h",
+      "bytes": 633,
+      "sha256": "sha256:137d0db917c9ec10514ad5e8e0306bbe9ea4e39f88008d0aecb498f03ac06592"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Class.c",
+      "bytes": 1624,
+      "sha256": "sha256:002d77c21d03b894ce5bf9e5620cc6d631d48012c665522d4cd3b95ee625a432"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Class.h",
+      "bytes": 489,
+      "sha256": "sha256:23d3e749f8aed6f8a189da610722de7f366ee0f663422cc71f8fa6c50bc8f0e0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/ClassCastException.c",
+      "bytes": 1722,
+      "sha256": "sha256:f80f8a2d6f3f5bfced4a0a99f5effd6d96d74581ee5c1f37cd4d592e7bfb6b1f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/ClassCastException.h",
+      "bytes": 567,
+      "sha256": "sha256:a965974da4d8d4d9f50754b23a044b685017d65f1e890ab942e3985379aac3fd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Cloneable.c",
+      "bytes": 594,
+      "sha256": "sha256:1425581552b2c6b57a6f2f69d03bd4df4c995c6b9c59068c5f4d0d04898d727a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Cloneable.h",
+      "bytes": 327,
+      "sha256": "sha256:dc3b28aa2d638c072d35fff622cd2d016939c4391538012d203a82aeb9917637"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Comparable.c",
+      "bytes": 1113,
+      "sha256": "sha256:3a5c2f3e2a243c51d0680578f25241ea5989de0848baabdf92ca1b28a0791d08"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Comparable.h",
+      "bytes": 333,
+      "sha256": "sha256:a50f925774fcf0f943a6b7537c5e1301c8cf84175922932780be30a007e65021"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/DefaultUncaughtExceptionHandler.c",
+      "bytes": 998,
+      "sha256": "sha256:a1d3131359b95868894b5990cd789159e81be8e83754e5595e4a1833f8547b62"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/DefaultUncaughtExceptionHandler.h",
+      "bytes": 599,
+      "sha256": "sha256:3340c1643053a4949f9bf83e6cbacf2d0f15270907bde0e1d0b860812fe5c197"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Enum.c",
+      "bytes": 924,
+      "sha256": "sha256:4ddb3b28f3dfd256db48359cbcacd582e1a3dfe5ce81335bb2d67eb4b398d641"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Enum.h",
+      "bytes": 543,
+      "sha256": "sha256:3f0a024c3e51252be65f5142b0c92798a6dfa2dbdad903ee61a58f78c96537f6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Error.c",
+      "bytes": 842,
+      "sha256": "sha256:61d44f4724995caa1a30322b8bcdb0b5f5fac02c99e82b09bc65a19dd0b1ae66"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Error.h",
+      "bytes": 375,
+      "sha256": "sha256:c7e6c4f60c277d1cf156d3471d8400619f536dd5c57727cabc73f854386fde68"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Exception.c",
+      "bytes": 2073,
+      "sha256": "sha256:518ab023f5f237f46b314fa0d332cfe1e397a67993b1174ba702616137a9bda3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Exception.h",
+      "bytes": 510,
+      "sha256": "sha256:5bd37bac67735ce0ef2c709fd1a884ae159ed397bd6a5f3edcaf2f480b0e4736"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Float.c",
+      "bytes": 1464,
+      "sha256": "sha256:7b61df54c90d618966d7599741d3def159462e86c2a86e2e8b6ac4ff0df0e537"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Float.h",
+      "bytes": 471,
+      "sha256": "sha256:9ddc4e71e11063a7dd7e2d5184385cbb643f87ec466f2571389a3f2834bb0bfd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/IllegalArgumentException.c",
+      "bytes": 2416,
+      "sha256": "sha256:7d4fa73a41a31bc8e5e38848fa1a502eb9582311c084166a19f397369a2b407e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/IllegalArgumentException.h",
+      "bytes": 696,
+      "sha256": "sha256:e4abe905c3e4bb4c4b9f566b6ab02ee1421cd0cd631a52e9c7aa952237622101"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/IllegalStateException.c",
+      "bytes": 1844,
+      "sha256": "sha256:662a2ab1e7a29db927ce5b3268e2a57bb28b8c5056595f919554bfc38f19b3d0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/IllegalStateException.h",
+      "bytes": 604,
+      "sha256": "sha256:6765602c90d0d04d684839c161b1f06802f110ac4319d45d366646532ba9a171"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/IndexOutOfBoundsException.c",
+      "bytes": 1165,
+      "sha256": "sha256:0d4ac34403de8fec9c5b031388fc59ba9c9cb2a05f6b7771e118051345cef33f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/IndexOutOfBoundsException.h",
+      "bytes": 576,
+      "sha256": "sha256:6224a9731c5cca40d9f084a29e24c0f0031d37d5de74b658ed8e5b2a8c97081a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Integer.c",
+      "bytes": 1496,
+      "sha256": "sha256:4e6f3083a1646a25bb72e90bbb5040c29949e2017ed6f2309a46404737edd969"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Integer.h",
+      "bytes": 495,
+      "sha256": "sha256:1f8e990b15d50a0cc67055325534ed2de3dc30bea1e32956c951ae42302de466"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Iterable.c",
+      "bytes": 589,
+      "sha256": "sha256:0546c5dc7f3539daa228e59cfdd49c440d03c54f856eb65bc3b8a52ef8c8c52e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Iterable.h",
+      "bytes": 321,
+      "sha256": "sha256:b52fb1688d84c6938c17a2617381083e437e0de9f49d3b326796901b7ba36ae9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Long.c",
+      "bytes": 1878,
+      "sha256": "sha256:9987959b07fef1864b53110fb483c5a91b5eb9e894b8eeee07c228904060f343"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Long.h",
+      "bytes": 716,
+      "sha256": "sha256:52d06364fefbba6357eb99f364d801f0558f1435dd6301f992b5e863a5e6847d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Math.c",
+      "bytes": 810,
+      "sha256": "sha256:c6b2b741a2f5f9a6c5ce17d892a1c7722d3ba8aa4915f6b00c21ad5d168bef82"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Math.h",
+      "bytes": 356,
+      "sha256": "sha256:60f0f6155ebd5f4d3cd93e7b407ddd1fb7566ec6de695944bd3a8057bf0ddcf6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/NegativeArraySizeException.c",
+      "bytes": 1172,
+      "sha256": "sha256:cc6302637169b03bf8ac2ecbe1ed2841d807bf03cc8058985069f22183a17219"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/NegativeArraySizeException.h",
+      "bytes": 585,
+      "sha256": "sha256:d7f061ab2ea73f657095e4826fd7f7970c561661c8a5b0d0514dd3f8a36e7f3b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/NullPointerException.c",
+      "bytes": 2380,
+      "sha256": "sha256:f02376fbfd095a4c02a37dcace170200c905dcab35fce3fa3adf825dcba6df15"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/NullPointerException.h",
+      "bytes": 652,
+      "sha256": "sha256:fbb62f846d03d48e1d0be90a01ba31fc6c0dd4b49bb812eb27c6ba771dcfd689"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Number.c",
+      "bytes": 826,
+      "sha256": "sha256:b1854d59e09846d391fe635337b3c54d87cf9c0dee52d7341ebcf060add577fb"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Number.h",
+      "bytes": 374,
+      "sha256": "sha256:622cbbee7f15799ecd3f2994a09dc46fdac9ff8760937c436c1840bc72e8b169"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Object.c",
+      "bytes": 2734,
+      "sha256": "sha256:a6762d8bb26ee1361c9f91820cbcc98af643c16700053ae82a1829b9f1f30834"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Object.h",
+      "bytes": 579,
+      "sha256": "sha256:349e6e306f43db80db9ae5afe5e3410482fab6aa4bf6bd1c0bdb19c5391779c1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Readable.c",
+      "bytes": 589,
+      "sha256": "sha256:d433869d2f8a4737ecac14268f2669906bbcb93b81055d115f2acfaf6a80eaa9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Readable.h",
+      "bytes": 321,
+      "sha256": "sha256:11b3c719fc87e4e42dccd2b006f36535f9af88c7ac5a1590668553b2a6af5d6e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Record.c",
+      "bytes": 826,
+      "sha256": "sha256:58f6a63ee96ba2b1c45eb15b6a761318948bf645908f74dcb53536dde56cfd1a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Record.h",
+      "bytes": 374,
+      "sha256": "sha256:fc64a10c0d6f6e6516dfd5496fbed795c369a496a6d729dacfce9bd1fab1c196"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Runnable.c",
+      "bytes": 589,
+      "sha256": "sha256:775f2c6c009763efa97517905e934f69b1ce6bf5308da5adfa987c79ef8eee55"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Runnable.h",
+      "bytes": 321,
+      "sha256": "sha256:cacdc22c31ccdf7b668be9d3fcd46e329df4f1782a4851f06a3ff05c9bb11bf3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/RuntimeException.c",
+      "bytes": 2240,
+      "sha256": "sha256:c4dd73fb66579e76bee1c2823c7bce5cc5df0d6364efaecae7591c9528af8b10"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/RuntimeException.h",
+      "bytes": 587,
+      "sha256": "sha256:952e1c50a0a6c1b1ac7d2457d6b42dae303fba881f25742e56604af103c70781"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/StackTraceElement.c",
+      "bytes": 2853,
+      "sha256": "sha256:aa7253e0165725d9761f6747b815b9507726f572ea61cb5bdda9c6841f14b8c0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/StackTraceElement.h",
+      "bytes": 664,
+      "sha256": "sha256:911f204f649e5f53c4ae7ed0b357e1fac7213528d3fa6ca9acfb8f0a776738ee"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/String.c",
+      "bytes": 8183,
+      "sha256": "sha256:d403030c5a3f7e263a1b238aeac872c5a4ba909e44db9c2cb17fc26bb3408c70"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/String.h",
+      "bytes": 611,
+      "sha256": "sha256:59f1d6b55b2c7015783f24c02a953a10b6012c4dacb354f6ce76fc5caeae433e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/String@d@lclinit@g@dlambda@d_118_0.c",
+      "bytes": 989,
+      "sha256": "sha256:84ca6be9acd6f4c1477e025a0ccee38c80decba9ba6e5039f4d028044578652d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/String@d@lclinit@g@dlambda@d_118_0.h",
+      "bytes": 586,
+      "sha256": "sha256:944d529ece58208f4e47803c4005201d2e8c5f92a211b87ce48075fd0b2c1a5b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/StringBuilder.c",
+      "bytes": 922,
+      "sha256": "sha256:574cf3458cd8a1c60e67ccec52ba51e8b4c9040aa0da21b67cdad7d17a59755b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/StringBuilder.h",
+      "bytes": 905,
+      "sha256": "sha256:fe2c93a07c3c598133f854b27756f20daad61256d5ea75f9ff2a7dc8a191914e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/StringIndexOutOfBoundsException.c",
+      "bytes": 1323,
+      "sha256": "sha256:46f34cbe4e490e60187d86e294bf46ac1a64dc85277cd1b1ad7e6af496a52bde"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/StringIndexOutOfBoundsException.h",
+      "bytes": 657,
+      "sha256": "sha256:5c02f239dac389d6bc36b38185919d1afd689faebb7c211c554e8aa80cac75b2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/System.c",
+      "bytes": 23124,
+      "sha256": "sha256:506a1cab3a4b0b9e3da8e05c6613f3b5f7812636c79855f040bfe0e1e3116b9b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/System.h",
+      "bytes": 816,
+      "sha256": "sha256:9bc7e21150b6fef03e5ccb9195014d0ddb4087bc3b807315f2c5d95036b69722"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Thread.c",
+      "bytes": 4330,
+      "sha256": "sha256:2cc60b3ac8413e8f79af3921e61c9a898832d36c9ee03ca07a3be78a7f027d01"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Thread.h",
+      "bytes": 869,
+      "sha256": "sha256:3923a28c842ec530bb0b27f9423d5d637ba91271f5f23f4add57d6eeb40eeef3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Thread@dUncaughtExceptionHandler.c",
+      "bytes": 705,
+      "sha256": "sha256:0b38b5b5fc2f96a6c43b247ea3e1ec98f13cf1b6346ad6855bff9b89046a7405"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Thread@dUncaughtExceptionHandler.h",
+      "bytes": 460,
+      "sha256": "sha256:de275a9911f5d81e41d49cf04dfad58f0624acc5b6c06afb0f4b225eedf81619"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Throwable.c",
+      "bytes": 9390,
+      "sha256": "sha256:ff88231a97a5dbd7eb039888148ee3c38bda4148bfe9ee2527e8f522ff18ede3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/Throwable.h",
+      "bytes": 1028,
+      "sha256": "sha256:0c99a98e0856fcfd064bab1e7737867dd112e9747b7af2db6be348f82fac38ae"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/UnsupportedOperationException.c",
+      "bytes": 1193,
+      "sha256": "sha256:c8f52ddd73d02026f0054332702243ccfd007911bc8fb1033eeb88dd5061cba7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/UnsupportedOperationException.h",
+      "bytes": 612,
+      "sha256": "sha256:3783073a777fff9ebc482f064abf5c725ee2e0865e0ce75724313634da72f00d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/r/AnnotatedElement.c",
+      "bytes": 633,
+      "sha256": "sha256:0b5edac5ac4d3a2b41d429947bdf6c1202df0319a5b66c36ffee8fa68f56493d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/r/AnnotatedElement.h",
+      "bytes": 377,
+      "sha256": "sha256:3f54918bae14b9e45a4640f79205f4fa91298227f1d07f505b577b5744edf9cd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/r/Array.c",
+      "bytes": 829,
+      "sha256": "sha256:e39fa6c02a8c59c072f8528d6d309eccba9c0685e49187af28deac1845ec84c8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/r/Array.h",
+      "bytes": 379,
+      "sha256": "sha256:d78a1f704a1702df04a22e3119ba44795b4562452b925b4ee452850f3db2edb9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/r/GenericDeclaration.c",
+      "bytes": 643,
+      "sha256": "sha256:7254a6781377fc862aed2944a85a0617b7ec1961ec73a13be52e7611f005f885"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/r/GenericDeclaration.h",
+      "bytes": 389,
+      "sha256": "sha256:53e76ef372a44d474cf538a50d8be8381d86187bf77216ae2b44dafb753a070d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/r/Type.c",
+      "bytes": 573,
+      "sha256": "sha256:289cc3e6ec23008dbd3c3957d54bd25e4a00f5013737a6524af1284336b9836c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/l/r/Type.h",
+      "bytes": 305,
+      "sha256": "sha256:f357f67bfdf315eef22cf0376938bc8815e782fef90b7712c44cd63b0960e9fd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ArrayBufferViewProvider.c",
+      "bytes": 721,
+      "sha256": "sha256:52b9bf837284c0c1a3a356bbe7b0c3cf75f8177b762fb21ec7346e86f0290375"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ArrayBufferViewProvider.h",
+      "bytes": 411,
+      "sha256": "sha256:d2317b055d73da82334627f344c668deae973ad9b2f289edb7872a0e9743e043"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/Buffer.c",
+      "bytes": 7400,
+      "sha256": "sha256:5f8f412bfab98882832cffdb9d445faefc931ce61777c00f860ad357d4641073"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/Buffer.h",
+      "bytes": 952,
+      "sha256": "sha256:7c5bdc33d0b59422277aa1dfbb97c5646117b219c17b4f49d5ae9b35062f1a20"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/BufferOverflowException.c",
+      "bytes": 1161,
+      "sha256": "sha256:6fdefc948bde80ea3f6a3b7a38131701916ffe6b981670cb9dfc50bdcf207b57"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/BufferOverflowException.h",
+      "bytes": 563,
+      "sha256": "sha256:9a17468983e18e6cd1810852b5092cbe0081f40138b1d7e00b4efd9ca4877c68"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/BufferUnderflowException.c",
+      "bytes": 1168,
+      "sha256": "sha256:06c7be9dc708a1cb6417a80df1cd4d3bd5111bd8438959251a7fe71d540516f6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/BufferUnderflowException.h",
+      "bytes": 572,
+      "sha256": "sha256:141ee6ccd2621c152a3f8c775cd07216461558dea9117b2c0e71b7776c6cec42"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ByteBuffer.c",
+      "bytes": 15339,
+      "sha256": "sha256:1885e8f2b72bcdb6c1c0556e2bced84539fc1671e905a3b60dcf75eeec2c609a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ByteBuffer.h",
+      "bytes": 1060,
+      "sha256": "sha256:26a104df719c840577e2c4a2e93f6ba1c72bb93b469bf56a700714e64c273370"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ByteBufferNative.c",
+      "bytes": 1619,
+      "sha256": "sha256:b0b5a23fdded36e1822056eeabc52edf77052b6689850548d201e9246fa97e40"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ByteBufferNative.h",
+      "bytes": 1190,
+      "sha256": "sha256:3c27de6ad83763c06a871b27f5749ffd83db5357921225a3c4871c7e37e0d780"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ByteOrder.c",
+      "bytes": 3422,
+      "sha256": "sha256:967934b254afe2f65d5b9f4b57266d302c76b9abb7ca2bfb4f876c4a6ca44eec"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ByteOrder.h",
+      "bytes": 685,
+      "sha256": "sha256:bbb46c2078ababc029fac83dc5dc0145443bdbe636658913946784863957400a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/CharBuffer.c",
+      "bytes": 21018,
+      "sha256": "sha256:42e47ce2f1d3ac6f37b0b9a2b8368788bc12e263082d4a974d7f685a6d16b188"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/CharBuffer.h",
+      "bytes": 1228,
+      "sha256": "sha256:7caa7bae50b45f355e5bbbbd90e8340f187d27960b02d3de1deac008dcef9731"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/CharBufferImpl.c",
+      "bytes": 997,
+      "sha256": "sha256:5234ca06c2ea43b8e72bd4ab18e4d2d6259067ec829b88fcd9f293e214dbd86a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/CharBufferImpl.h",
+      "bytes": 504,
+      "sha256": "sha256:3d0f5a37c9e6fe6e02afa5629d6ac1e3a0084e1f53d4296849050f8506df7539"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/CharBufferNative.c",
+      "bytes": 10105,
+      "sha256": "sha256:a107db62f99da9e31e80a7dec0a0ed0cf2f34b0ee44dfdcbabeeddeabd8dbbd4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/CharBufferNative.h",
+      "bytes": 1497,
+      "sha256": "sha256:c56701645f0b22e7fbc0188ad8b8c8af1351f4e9e920ac7dc63c75af9a8135c1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/NativeBuffer.c",
+      "bytes": 614,
+      "sha256": "sha256:8c806a7ab3dd6116f55d39d7aff4f297e6662168bf6dd865577b12398fa93c0e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/NativeBuffer.h",
+      "bytes": 345,
+      "sha256": "sha256:d57a7afa007410d8e235e354bea4491e2db0782bb21af18da26ea5edd0903ad1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ReadOnlyBufferException.c",
+      "bytes": 1285,
+      "sha256": "sha256:c56e390d401f2d36075099c8e129d5acc7866364441ddb09b8d8a18fc3d9669a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/ReadOnlyBufferException.h",
+      "bytes": 602,
+      "sha256": "sha256:135689adb39f34a55c343de7fe5de8e8504a8893c49197468a5253e42a35dcab"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/BufferOverflowException.c",
+      "bytes": 1176,
+      "sha256": "sha256:33b98096a0e06e4008510d843bb8132a14f3ad7b3d7b45fac337475278bcf48b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/BufferOverflowException.h",
+      "bytes": 577,
+      "sha256": "sha256:b15a4b90e1df8e2e6d871c5119e9e1dbc82bbe92caecfdef291111a937577597"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/BufferUnderflowException.c",
+      "bytes": 1183,
+      "sha256": "sha256:40a45bb46c9f1a59732b1206d19b0ab07bec2fff5d0472ee8d00dd6b54fb9a2a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/BufferUnderflowException.h",
+      "bytes": 586,
+      "sha256": "sha256:1d4d4da0650f8e20c6dc93f3b2f7170888a85c7f80e0d7931bf923800777ec84"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CharacterCodingException.c",
+      "bytes": 1174,
+      "sha256": "sha256:3b6bdd3a624fb496ef3187d78a78aeb0b84ea42eacc8204ee536a2e4964624e7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CharacterCodingException.h",
+      "bytes": 571,
+      "sha256": "sha256:aa0fc131dc56d2a9fee34ce7bdb126318b7cbb5797cd5093c0efe53bb42726a2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/Charset.c",
+      "bytes": 8638,
+      "sha256": "sha256:6a56f7cd2ee5e5f9138c51470289afb1ec73d761dd5112cf3c9cf51eb1e79196"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/Charset.h",
+      "bytes": 745,
+      "sha256": "sha256:f91710437db3398193471721acd16fa447db9186f58a2f6c47f4f7da9ebe394e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CharsetDecoder.c",
+      "bytes": 54199,
+      "sha256": "sha256:7a3d2cd3c1d2e144327f53e37282c41b89fe4b74b6f4f24c2a4a057ba878621e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CharsetDecoder.h",
+      "bytes": 1619,
+      "sha256": "sha256:4c8753e8d88a048b7ec4f7e4f1cff6883780b60cef0336fd721cd70e4e42ceda"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CharsetEncoder.c",
+      "bytes": 39839,
+      "sha256": "sha256:867354be50077c3d675e8def6bcb5384c7f66e61178fcdb7ca0498496e18dc83"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CharsetEncoder.h",
+      "bytes": 1545,
+      "sha256": "sha256:a13317cd572c5053b05947bb3aed38a0b73c4b54368fe17739a489e644db4c74"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CoderMalfunctionError.c",
+      "bytes": 1053,
+      "sha256": "sha256:15b692708c8211cc707cca8fe85386fd8b6bde1bd42d4fb66a4abe56bc7b5d0c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CoderMalfunctionError.h",
+      "bytes": 526,
+      "sha256": "sha256:6e8ad8b68f3b5389bf9d626e1fd4ca5d1719f3868db5cf7a504955e4e9195323"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CoderResult.c",
+      "bytes": 2426,
+      "sha256": "sha256:31ebe40e65b65b917614e6caf220a7033afaef58b829b0d5d0406e5819351c98"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CoderResult.h",
+      "bytes": 1040,
+      "sha256": "sha256:693f99b51d92d0c0a88a9d8b9af6c330a3ce6c99ad5dd919f8363953cffd5644"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CodingErrorAction.c",
+      "bytes": 3135,
+      "sha256": "sha256:ee16b4d6c40554c9511a02e36fb009cb16edefbfc385c834614852ef16881a23"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/CodingErrorAction.h",
+      "bytes": 755,
+      "sha256": "sha256:88dc7e49d5fed8a3aa858cf96aaecfeee33315383f61fa5ec810a4a8e052effb"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/IllegalCharsetNameException.c",
+      "bytes": 1607,
+      "sha256": "sha256:c834f1331d02e255836652a91a1730bc8645aeb2751b601360b51f506cad7d1c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/IllegalCharsetNameException.h",
+      "bytes": 664,
+      "sha256": "sha256:5d69903c0e0c0c86486ab6cfebbeb84dc1c799271ae94ae98933cd64f94a5880"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/MalformedInputException.c",
+      "bytes": 1283,
+      "sha256": "sha256:76a1bd89d93569c8257020afb45be4de16c0435c1f8062e3a85c0824de8cb799"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/MalformedInputException.h",
+      "bytes": 619,
+      "sha256": "sha256:fb10f23b31c705487ac55a5054a8ca151b959c41d87bdaac207effc73a138b38"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/StandardCharsets.c",
+      "bytes": 10763,
+      "sha256": "sha256:1aec9d8bb587135415ac9a3ec07a74589f5e64ef8ce4d0b848115aad2e500bdb"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/StandardCharsets.h",
+      "bytes": 870,
+      "sha256": "sha256:33611523efc69420cb764afa25b8543fb1c875ab2dcc63e4c842d902d4707164"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/UnmappableCharacterException.c",
+      "bytes": 1318,
+      "sha256": "sha256:259a60f401c1e875f8775fd3bf3e359a6e0f89a41d3e3f50c34fcc2546130424"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/UnmappableCharacterException.h",
+      "bytes": 664,
+      "sha256": "sha256:357cf39b6b5ba41c56b16488cdebde758bb084522cec2bc0b1a8f88d5fcecc4f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/AsciiCharset.c",
+      "bytes": 920,
+      "sha256": "sha256:87a89f2eab0570f7ee168d74bdec18a1b3449d724515131348667c3fbc0e7707"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/AsciiCharset.h",
+      "bytes": 459,
+      "sha256": "sha256:287bad02f609a0b2991b68488446bc42b648c4f561b569576776a2ab2c23bf40"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/BufferedDecoder.c",
+      "bytes": 8497,
+      "sha256": "sha256:1d2e6dce2e698ca2d2aab2a02ed13f71462c783bf39cefcc0919ab402d3f354f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/BufferedDecoder.h",
+      "bytes": 697,
+      "sha256": "sha256:705c1576a749c46c8144b43de7de709200008adc87887aff9e0ff39ff6a3977c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/BufferedDecoder@dController.c",
+      "bytes": 1265,
+      "sha256": "sha256:994cb12d4e625ff99a49f556fe59224d20ddd51cbd3c1c2ddec492f0afa42a24"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/BufferedDecoder@dController.h",
+      "bytes": 978,
+      "sha256": "sha256:83a322f191b41583c9be56bbc4120bf92f7d7a515aa1c27861d003272e4da861"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/BufferedEncoder.c",
+      "bytes": 9371,
+      "sha256": "sha256:b443948791129cdb4fb73ffbb64d790ed2712db830e9e365d4a0e6e9feca84a6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/BufferedEncoder.h",
+      "bytes": 697,
+      "sha256": "sha256:881450aebfef7e1305f41076882587d42ca8909f8513acb76f35bd9e10132cc8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/BufferedEncoder@dController.c",
+      "bytes": 1265,
+      "sha256": "sha256:159b3fa9f1388d5db41f7a6fde55b74170a4bd8fdde92cf375d873b2d1a102ad"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/BufferedEncoder@dController.h",
+      "bytes": 967,
+      "sha256": "sha256:383fc4bcf3163706d825398bce61b2310dccd8690e824bf7a2038982fd647cb3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/Iso8859Charset.c",
+      "bytes": 934,
+      "sha256": "sha256:dfc9db73f2c9e7fcb5125e1a790b3e2d0dd0154a8eb50ad952078b12196b0751"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/Iso8859Charset.h",
+      "bytes": 477,
+      "sha256": "sha256:a57216dadf91e5e8a15f7fed81778e5f159c9893f6734eef1be0cd244487359e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/UTF16Charset.c",
+      "bytes": 920,
+      "sha256": "sha256:d22d89bc93774fee2dd83278a6637231e0dbfb3056bb91f9944c134a19d14d3d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/UTF16Charset.h",
+      "bytes": 508,
+      "sha256": "sha256:7f1bdb5693c8255f4bd258fa078fd8ccb2991917cbc0e69f3960726c3fbb4b60"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/UTF8Charset.c",
+      "bytes": 7813,
+      "sha256": "sha256:0ce0271bc3e4ec9362f2f6bc3cbe0ead26ce5ca6c89bd49cd9e38396a414c2bb"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/UTF8Charset.h",
+      "bytes": 775,
+      "sha256": "sha256:ac5265125b2c25d5881e97b9a6961f6345394cc98a2b34d3f1cbce495e4ba026"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/UTF8Decoder.c",
+      "bytes": 16000,
+      "sha256": "sha256:06641dd60a184583fe9a6c3ea4823e24f93d9485dbb86b1a2df3d3bd781949e5"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/UTF8Decoder.h",
+      "bytes": 714,
+      "sha256": "sha256:d5cb724b493d3779d4d7ba0d70a7abc181bb4c0733cb97f6a12123f1a7939100"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/UTF8Encoder.c",
+      "bytes": 13682,
+      "sha256": "sha256:3265bba7b8252db341422a9e93d7b14c9a286d6e25d07f5932823e90f8f7b478"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/c/i/UTF8Encoder.h",
+      "bytes": 714,
+      "sha256": "sha256:a0f5a26a350ab0e34f842394034e56bba78828a717137fe1883efcb8e70c48ca"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/f/AddressBasedBuffer.c",
+      "bytes": 706,
+      "sha256": "sha256:e3f473d8f502e4ecf7135c105ef0e26cc09a85a7b59554260f5f5bb4536b8d34"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/n/f/AddressBasedBuffer.h",
+      "bytes": 389,
+      "sha256": "sha256:bb828230e96d840639bf43fe837f145b43433c4e0a3abccf8b64d3778a303fd9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractCollection.c",
+      "bytes": 1233,
+      "sha256": "sha256:fbc3950d4a41235a5b0261a6ef4d4c0a79ea42370ad4bdb563bcac59628c3861"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractCollection.h",
+      "bytes": 725,
+      "sha256": "sha256:a235afe2576d35f40a46dcd0bd29b64a6fc4aaac13d30a7e08bcfffbad1558d6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractList.c",
+      "bytes": 1842,
+      "sha256": "sha256:74739b5bf19bae18d92b674fe001aa54923ed3e2eadd286b93277bf313bcf501"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractList.h",
+      "bytes": 771,
+      "sha256": "sha256:fa45b02747f9ef16af239680c5d33ddd2de16202033b9d6d3f2a59fdb6a5d9d1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractList@d1.c",
+      "bytes": 3327,
+      "sha256": "sha256:4fad213123e2839db11865b64de7184983aa95b99d061f1bfb8011c37398ae74"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractList@d1.h",
+      "bytes": 830,
+      "sha256": "sha256:1e0b41d225da6217deb0748e4313d6618a29a250dccdd9f3189140f8019e4cfd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractMap.c",
+      "bytes": 866,
+      "sha256": "sha256:9247c4c6f186927b3bb851a215a6267d561654711a6ba18b8a3b955733be3dc7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractMap.h",
+      "bytes": 424,
+      "sha256": "sha256:0195b44f10bd2127205a9c986cebefac872d3be66262a495a620e5769efc1b3e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractSet.c",
+      "bytes": 971,
+      "sha256": "sha256:c9b7674cfe850b526bebb14936af3187789337e56618303fec57c48d7ed7ee33"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/AbstractSet.h",
+      "bytes": 456,
+      "sha256": "sha256:3e0782239761dd6687f8a7fa1dea216a02ea4a7465627978824971981b7139de"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/ArrayList.c",
+      "bytes": 10460,
+      "sha256": "sha256:20e9f1fbe299137682d2e4fbc4bcd146d1738df4a146a4ea3f394504385b990d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/ArrayList.h",
+      "bytes": 816,
+      "sha256": "sha256:4208724a2acf8c9306a921e691f6e7adca06c489940f1d847cc3973d1f6cea56"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Arrays.c",
+      "bytes": 18983,
+      "sha256": "sha256:548dabcc06e609b576f1224aa70ce000686603564b3cfc1719d1034ff94d754e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Arrays.h",
+      "bytes": 1000,
+      "sha256": "sha256:a2481517e7121bb779566ee739f325e85c707156fa3dcc7dd518be2f45b1b0ea"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collection.c",
+      "bytes": 604,
+      "sha256": "sha256:a548206ed643a10a7834e58d4903fcc20f57a81c9b08c29edb183c34a306a199"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collection.h",
+      "bytes": 333,
+      "sha256": "sha256:6c51aae03681e1f10e672b48b50bca8ee0c60552aae7bea6ef4f850ae994427f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections.c",
+      "bytes": 3056,
+      "sha256": "sha256:ef28477e4a0bd87c34040e192d69ec2f97ca9dedfe0555ff331d93a5a3164c19"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections.h",
+      "bytes": 791,
+      "sha256": "sha256:76a5916250f43854e0689dd113222b2121681c782ad642064c0bab0e2bdc0077"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d1.c",
+      "bytes": 1240,
+      "sha256": "sha256:856ef89d6937a58243fd176bcd236cfb464a404f69140df2df5a1e8cbe830309"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d1.h",
+      "bytes": 542,
+      "sha256": "sha256:c16c29c8215aecff32548a10b6d3fbdcd63d0c33d75d7afca5e92b60d8f7e915"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d2.c",
+      "bytes": 1139,
+      "sha256": "sha256:7dca681308121f30d53dfbdb4b24552649a3f0b5e6575485d905abb424a5cd25"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d2.h",
+      "bytes": 542,
+      "sha256": "sha256:6dd71ae73bdb57e2db2d2fb41f3578e301c20e272323a6f758e7f39b39fdfa1b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d3.c",
+      "bytes": 2848,
+      "sha256": "sha256:6ce83638c9bc8d1624f70a567c17cfdf3fc9b92cc6388aeb336a3faf0eb77aa1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d3.h",
+      "bytes": 756,
+      "sha256": "sha256:3068d648e00628a76c6ac60777e5ac257959f7b04c4af32d7fd104d65c80f7a3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d4.c",
+      "bytes": 1982,
+      "sha256": "sha256:10d0d1b15a898812e0255e4abf912685e0bb18ea54441b6eb832bf1cb8b00a77"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d4.h",
+      "bytes": 697,
+      "sha256": "sha256:1758d3fe2c414d6e0cd3f3c6e9aee9214194cdf8de281e370a6068dbed6c6d28"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d5.c",
+      "bytes": 804,
+      "sha256": "sha256:84781a12e8349deb770c153ec70a5743adde4462b724189f12ebbce6ac845885"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d5.h",
+      "bytes": 596,
+      "sha256": "sha256:99e5962d907b61ae0d46e8609aee75456686cab19733c84e42feadfe9f78ad18"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d@lclinit@g@dlambda@d_59_0.c",
+      "bytes": 1022,
+      "sha256": "sha256:ecd75328c5244e5cae24c4d6a0af05a64c8d61a78b29017b7ba48052f7b2ea94"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Collections@d@lclinit@g@dlambda@d_59_0.h",
+      "bytes": 627,
+      "sha256": "sha256:0c48f908c5efd1abac441b7e7bb8022a9b1f33205b5274eb0a8ebe1608c6f31f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Comparator.c",
+      "bytes": 656,
+      "sha256": "sha256:38e2dff3f083ccbaa476839d5d80721abfb367719eb59831e887749bd91cdad4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Comparator.h",
+      "bytes": 333,
+      "sha256": "sha256:5ff756095c165b382e1059b35e276542fd04df9b081535a31f15b1d0564ab0cd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/ConcurrentModificationException.c",
+      "bytes": 1217,
+      "sha256": "sha256:1150a3ae42a8cff30a3a8410ee38517924992e17262f7321634cd78cb0e50812"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/ConcurrentModificationException.h",
+      "bytes": 635,
+      "sha256": "sha256:2cc4d7e625d8a165739aef212d5cb59fb68001c27165667ec8461a3be0f16ebd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Iterator.c",
+      "bytes": 698,
+      "sha256": "sha256:60971da51bfb631a96cfb8c152b9539530670cbed7d0f1e698049536cc2bab7f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Iterator.h",
+      "bytes": 423,
+      "sha256": "sha256:e63032883a8c87f80a717cd17b257a4fd17818c553ca73f1587cc3e64c0173c0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/List.c",
+      "bytes": 911,
+      "sha256": "sha256:5a848897812d2b7682cf8fdfeed73429df6dcbf9f6c0341510725e5515c637c8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/List.h",
+      "bytes": 473,
+      "sha256": "sha256:93ef39c6d30f7c3d24bee073c3d62df24507f6d6ee9cb5ba33d2054fe27b656a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/ListIterator.c",
+      "bytes": 614,
+      "sha256": "sha256:1a2d25c8accdde0fa013667a174511aad1f8e9957c0e90b3bfbd9eed8e14c35d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/ListIterator.h",
+      "bytes": 345,
+      "sha256": "sha256:ebe3c294f13302394cef89ea8ccbc1a3dd828bc7f02a23f0c43c0c65dd74a064"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Map.c",
+      "bytes": 569,
+      "sha256": "sha256:699f645d7923003ca33641f977f54d4bbbf9efbb9d8b514f4db33998272bd3e8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Map.h",
+      "bytes": 291,
+      "sha256": "sha256:a344f23a0443963258ca600afe33543af73e192a817fed9849d0586570414b7f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/NoSuchElementException.c",
+      "bytes": 1154,
+      "sha256": "sha256:b19bb42b959374d51c540c93eced51ed12664e4b5fcf6ed55eb6a07ed93822e2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/NoSuchElementException.h",
+      "bytes": 554,
+      "sha256": "sha256:614e0c6d42819219ab6c5b17e531cfed3b1e9b355dd8a5c0700339a8fd20d1b9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Objects.c",
+      "bytes": 2014,
+      "sha256": "sha256:1f674d97a8f5d134dd34fd028349b2239338283bd4b09cf2145486f2b796739a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Objects.h",
+      "bytes": 447,
+      "sha256": "sha256:bea0b0c163c02d64d7f70bcb797e71819d236baa0c96db155fffe22c321c6c1c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/RandomAccess.c",
+      "bytes": 666,
+      "sha256": "sha256:989d4e8823bcd30fa8d7f3e7163350f22cd7af3f205583c912bfe5bfa98dcb95"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/RandomAccess.h",
+      "bytes": 345,
+      "sha256": "sha256:b6f784d4394b90e2a5b85de878a857663ddaf6c0f714d05af2d3a76ebdd8d892"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/SequencedCollection.c",
+      "bytes": 649,
+      "sha256": "sha256:cb07362a2275d14e29c76bbb0bcf04f2836f27df458317dcdf24da829ac9fe72"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/SequencedCollection.h",
+      "bytes": 387,
+      "sha256": "sha256:51856c12b52d6c3f21853db33535baf5030eea1c8aaf33ffd5b00ded3ef0bf25"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Set.c",
+      "bytes": 569,
+      "sha256": "sha256:74cb297d1cdf518c894ca99d2a238acb30057d6aaa60f5880b1675c42ef31730"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/Set.h",
+      "bytes": 291,
+      "sha256": "sha256:249b02cbb356a02b490f8018b1af8c13f0d7c7a468c77aae133ba7a3d74e7b52"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/TemplateCollections@dAbstractImmutableList.c",
+      "bytes": 1259,
+      "sha256": "sha256:dc22d1ee8fc0974e036e0bf07d399fe2d79e449bc9a1e9292019974e2faa3bd4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/TemplateCollections@dAbstractImmutableList.h",
+      "bytes": 709,
+      "sha256": "sha256:bc4369ade53d5550795d91d693420f7abe78acecb599c6174a02c1434244267f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/TemplateCollections@dAbstractImmutableMap.c",
+      "bytes": 1182,
+      "sha256": "sha256:379fd7e99e07534c4a6396c1f1616e9016f3840e8dbd2c6b217a46116eb3d0f2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/TemplateCollections@dAbstractImmutableMap.h",
+      "bytes": 697,
+      "sha256": "sha256:2378591590419912b12efaf55dd70bfac7e7500f3dedb2ebda054bc57a7b4a7b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/TemplateCollections@dAbstractImmutableSet.c",
+      "bytes": 1279,
+      "sha256": "sha256:5ca12cf6ff75615392c924adba5a136df4db758cd90e6fb3b08cbc5bf4b6a044"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/TemplateCollections@dAbstractImmutableSet.h",
+      "bytes": 697,
+      "sha256": "sha256:0870cff1ac7de5432e1fa182595daf7dc6546220998aebf1310828ba296fc22c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/f/Function.c",
+      "bytes": 708,
+      "sha256": "sha256:a09a081fd8fc7e04ccbf6dafaa74269bfe18f113a59a158978193a43d3965d9a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/f/Function.h",
+      "bytes": 398,
+      "sha256": "sha256:fdf22007f4ed44e327aef4ac2b87c464b727d6aeec4bc93f73ada02c8ac70093"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/f/Supplier.c",
+      "bytes": 656,
+      "sha256": "sha256:c800f0e68950e34e5162d3130d8bbb145cd02f782bdea2bf4b73a3f4ebdd2826"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/j/u/f/Supplier.h",
+      "bytes": 389,
+      "sha256": "sha256:927d89b374f068033d67038fd2a01f1b38c2382bb1e19942775217b842e97049"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/b/c/r/Memory.c",
+      "bytes": 870,
+      "sha256": "sha256:34bc7e3ab1a8b1dfaf4405ab078191dabe7a58eb5acf86e704807211d4df12df"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/b/c/r/Memory.h",
+      "bytes": 426,
+      "sha256": "sha256:3337a1fc2930807ed932d57b8526b3c5d075b786f98182936cedbc1ac1d67a72"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/c/i/t/DoubleAnalyzer@dResult.c",
+      "bytes": 975,
+      "sha256": "sha256:bf762581fdc612c8c737ec6e39eb37fcacd71f2569af81212672ddd360e4ed4e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/c/i/t/DoubleAnalyzer@dResult.h",
+      "bytes": 562,
+      "sha256": "sha256:af8cadea61fe7b2c487d562116db92851fe55b7bea18fb66bba4766f8c54dff1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/c/i/t/FloatAnalyzer.c",
+      "bytes": 15160,
+      "sha256": "sha256:3598de16f7925a324f603da32e10bfeb8ba55d0d73a5b857c89f7f942aa36824"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/c/i/t/FloatAnalyzer.h",
+      "bytes": 816,
+      "sha256": "sha256:264a9b7e8f9a74a136eaa1f4598cb24d1bea23272d81b93a7f4d54a8d12bb959"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/c/i/t/FloatAnalyzer@dResult.c",
+      "bytes": 968,
+      "sha256": "sha256:fedf83ec1c65ac7b689193ea3f15da240f13445f96bea1833d524d64e5df5d09"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/c/i/t/FloatAnalyzer@dResult.h",
+      "bytes": 626,
+      "sha256": "sha256:66c525b39b625ac0e75c5bcf380fd3adfd9d34e8deebc2338196d6c1d5acd719"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/i/Address.c",
+      "bytes": 220,
+      "sha256": "sha256:a04ff918035211f0b9bfff9ae77d30dec4c7fde099caddc7a202021fb79ac92d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/i/Address.h",
+      "bytes": 139,
+      "sha256": "sha256:1dbe841909558b7b46db58941d512aaa196501dfede20c09dd07e0f61fd2f820"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/i/Function.c",
+      "bytes": 93,
+      "sha256": "sha256:7649c628dc95184adafb482da6daa87ce1ec520ac42295581659afe6dd7c92a0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/i/Function.h",
+      "bytes": 207,
+      "sha256": "sha256:2e017cc4fe39a67aa4b018929bace77a5f59054cb35ee26e79c212698383375d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/i/Structure.c",
+      "bytes": 62,
+      "sha256": "sha256:2ec90f121d4b546db4be244550471cd28bd6319bcf0c27fd25340bdb3ceeae87"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/i/Structure.h",
+      "bytes": 89,
+      "sha256": "sha256:1f252c5410d4d9e7ef801c6505ec5df7e39b0b871ed54ce570ea02d25862d2fc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Allocator.c",
+      "bytes": 3391,
+      "sha256": "sha256:74ae109f4b13aec0a81b91d5a22880063f8c1ce2697567777fe95c6a3149a8d0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Allocator.h",
+      "bytes": 612,
+      "sha256": "sha256:b34652b1c5a5f96506761e71ad45af3f975847e924a1c0785402f1d7686db93f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/CallSite.c",
+      "bytes": 60,
+      "sha256": "sha256:d6ccaf16b615f61591599f545ec696fd0b5b41c0f7f48a9c40ebd9b818c96901"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/CallSite.h",
+      "bytes": 88,
+      "sha256": "sha256:81334d879310313354248ba848d066492f6e57858108177c95bcb8825825e6aa"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/CallSiteLocation.c",
+      "bytes": 76,
+      "sha256": "sha256:e22eef54bfe5139d47c03f0435ad57bcbdde1d81f07e505fd6dc5812325c4ef4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/CallSiteLocation.h",
+      "bytes": 96,
+      "sha256": "sha256:a457d51fad0acc620b16992d096ccbd2c4f6ec7b87aad82f8ccd8cee1ed2445e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Console.c",
+      "bytes": 853,
+      "sha256": "sha256:b70935d7842f62ae15024139bb1c0fb4772d438d20ec95a04d4ad39d7abb8496"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Console.h",
+      "bytes": 407,
+      "sha256": "sha256:1959794d3e8cee0b14cede124ad6f233e820c1c397fc520c90a3aa4f2bd13a47"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/EventQueue.c",
+      "bytes": 9039,
+      "sha256": "sha256:f2bcef8d4eaac73bab07edf3e4cc03bc3d57cc20ce3ddef46709ac831df80423"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/EventQueue.h",
+      "bytes": 830,
+      "sha256": "sha256:619da802523fb18d57d00b8698cd582ee739ee3698a2b17547cd819982a48106"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/EventQueue@dNode.c",
+      "bytes": 1144,
+      "sha256": "sha256:5f368e21ef9bea5f951cd062cab2cdb7c29cc47328931b3f2ef91e89dacb5b6e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/EventQueue@dNode.h",
+      "bytes": 523,
+      "sha256": "sha256:ddd13ab2b091d43bf227f189d3567644dd34c77f6fd6b5309c71559bb000febf"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/ExceptionHandler.c",
+      "bytes": 76,
+      "sha256": "sha256:01cbf120a4ac5219297fd5209be53ef3d20262069b201146659ae5a8aee3bc6c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/ExceptionHandler.h",
+      "bytes": 96,
+      "sha256": "sha256:f008c35d6f2c3185a5f5a6b8260e94a8fb3bdb10fb2e18f1152e1745fc1102a8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/ExceptionHandling.c",
+      "bytes": 13070,
+      "sha256": "sha256:6e4e40ee3f8fd0ff8078d38e154784dee25753d0694602eadec6b8524973efd6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/ExceptionHandling.h",
+      "bytes": 1000,
+      "sha256": "sha256:74c94239e4dceb76e7ce123fb8bded1aaa06a94b2669d80b5120bc0878360386"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber.c",
+      "bytes": 18107,
+      "sha256": "sha256:c63af3ed95ea5eec9942629ec9601bc1b24a4459d1524eb381ac138bed1e710e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber.h",
+      "bytes": 2599,
+      "sha256": "sha256:a4d7779d8f8beeb395e5e04b3cde2cb29c94ba2e0c495d00bf8739c9e0d8d4dc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dFiberRunner.c",
+      "bytes": 655,
+      "sha256": "sha256:165cd2b4e904f116460c8ea0af6756e33502121cc4f31d067aafa7d657730e43"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dFiberRunner.h",
+      "bytes": 384,
+      "sha256": "sha256:200105bcacc6dbafc64179e7822c8b7672c2410af667977af6af0799ae8b1617"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dPlatformExceptionWrapper.c",
+      "bytes": 1310,
+      "sha256": "sha256:afc3bc3c4673df430bc5735a553f1da81f9152efde98f973ae76bb8d201a669e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dPlatformExceptionWrapper.h",
+      "bytes": 637,
+      "sha256": "sha256:2e806881db97a6531eaee0764f403f9c304702f2b0cb50373b490533f31a26c9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dPlatformFunctionWrapper.c",
+      "bytes": 1299,
+      "sha256": "sha256:00cf57f8e0e98893ee217e74e12e4659927851277e3d095c97ce4460ce95ecd4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dPlatformFunctionWrapper.h",
+      "bytes": 628,
+      "sha256": "sha256:3b9d089d49e9a2d5658d28b8b0506dda1598d3d3f9a3577fa6ca8e6768cce5a1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dPlatformObjectWrapper.c",
+      "bytes": 1277,
+      "sha256": "sha256:88d1e8adcf59969cb2d9e0b3593c50d2952e766211b18eade0bf811dcaf4cd51"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dPlatformObjectWrapper.h",
+      "bytes": 610,
+      "sha256": "sha256:2baee383c2acc7829670bb94049cdd366f2238031b1c25970aa2e30e5bb60351"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dstartMain@dlambda@d_36_0.c",
+      "bytes": 1849,
+      "sha256": "sha256:2c5f9a8be06ec2639ec386f5f09956f17fab10ec8462e2b63cad357c1b28d33f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Fiber@dstartMain@dlambda@d_36_0.h",
+      "bytes": 900,
+      "sha256": "sha256:1bba727a151df64f93a3f868663cd762d6a6463a9001c0e847d4ea071b5efcc9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/FreeChunk.c",
+      "bytes": 62,
+      "sha256": "sha256:b1f6a4aaa7aab159efd1db35321ee62f31665ae7626c4d11e5804ffc86b6bc6c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/FreeChunk.h",
+      "bytes": 199,
+      "sha256": "sha256:bc541e001cd36b688c66842d595b079c893e4affbab1987c2cb079a23bad2274"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/FreeChunkHolder.c",
+      "bytes": 74,
+      "sha256": "sha256:8e40817de887af27f01f6b5452261855627ca666d92671627af15c1cd0959d49"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/FreeChunkHolder.h",
+      "bytes": 184,
+      "sha256": "sha256:872167a9ea2173ba04e6ecea4126f6c1b69078f7adfa3c275c48dab7678ac245"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/GC.c",
+      "bytes": 87554,
+      "sha256": "sha256:d5173f002bb45122ef2d4bfc85d1f8164ded3817a29af0b958cbacad729f7f2f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/GC.h",
+      "bytes": 4822,
+      "sha256": "sha256:058a680a7c20b4c2fff23e1893a4f6dc30d92ef75b84e4b8441e87078e3e04bc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/GC@dRegion.c",
+      "bytes": 63,
+      "sha256": "sha256:7e0261af5154787e98f215cb90dbe6ca9c3506cd1e5a37c54936017ff9f4e072"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/GC@dRegion.h",
+      "bytes": 168,
+      "sha256": "sha256:d5eb7d630c7b8f82fa1d1bc922fbce6fc890688e09ca74648ee20c4bdf0ffb3b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/MarkQueue.c",
+      "bytes": 2907,
+      "sha256": "sha256:3fe7c20a80a6d0e713f4adc0055790e491e77f4d616d2379795037311bbed731"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/MarkQueue.h",
+      "bytes": 816,
+      "sha256": "sha256:473a3c8d6468144c501153ad57479049c0a5acf9bc6b328c17a9438777e4906f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/MemoryTrace.c",
+      "bytes": 880,
+      "sha256": "sha256:562143c4bf84e4bf6392d8ec7206bb314224ae401098987ad386b4fe86e01721"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/MemoryTrace.h",
+      "bytes": 443,
+      "sha256": "sha256:46203bb4c80e8a5aae4cc1a0a319d2a8f60f00994ad7c0bbaadd58b9be6503cf"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/MethodLocation.c",
+      "bytes": 72,
+      "sha256": "sha256:4dc184fc94d475bbeb6d0bb3dfc216c33efd58dc893fcf90e3cd9d49a2bfb200"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/MethodLocation.h",
+      "bytes": 94,
+      "sha256": "sha256:278640a03a5769b15148f9f3faad081ef296fa53587837b5433dd68680dd75c1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Mutator.c",
+      "bytes": 853,
+      "sha256": "sha256:5f5290f583ba72eb89ce8a73cfac0ca6d10fe866e7e64f6c2c4cff53e8afbdbc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Mutator.h",
+      "bytes": 407,
+      "sha256": "sha256:6c2c9a98b307323daccff7d1dfea5395fa5990c2297268789adabd922c7626f8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Relocation.c",
+      "bytes": 64,
+      "sha256": "sha256:0280a35342f6a72b3a0c0f7ffec9b7f34b522a3051f6dcc78a1deaf25f84a29f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/Relocation.h",
+      "bytes": 231,
+      "sha256": "sha256:c983983660a7ed975aea27ce8d7bbeab7c8eb18e506a69214e36c2fb6b329bff"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RelocationBlock.c",
+      "bytes": 74,
+      "sha256": "sha256:e3f7bb5d40e8cee21eb03a8719c6a5ea98f37ba639fe6dbb501a1576e08a2d76"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RelocationBlock.h",
+      "bytes": 226,
+      "sha256": "sha256:645bd6e13ecd9efc79b6b5192fcf7a6d570a2bba4fe45d0c3dfa297e3a940412"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeArray.c",
+      "bytes": 95,
+      "sha256": "sha256:0a31a9bf28f7f5178341aba4b2d346aec7f14e6025b7948976a6652b37147161"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeArray.h",
+      "bytes": 92,
+      "sha256": "sha256:1ef87c1a934eab777f841bce6b321f45f0534306e0012315f6f9a46017b9d3f7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeBuffer.c",
+      "bytes": 97,
+      "sha256": "sha256:2febf13da6271b0fd4026620c8f5518a0c2da898fc52fb031697d838c3b89b26"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeBuffer.h",
+      "bytes": 239,
+      "sha256": "sha256:569b8945a07e264bade2b276deb80f0a10861702ae0693ea7aa2e70bc76a6d89"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeClass.c",
+      "bytes": 1379,
+      "sha256": "sha256:f8636d17a4cb28d7d3738babc56d1212dda7a074bb9541fb6d24075afcd22b04"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeClass.h",
+      "bytes": 699,
+      "sha256": "sha256:af9aaafa85e67705ab56f8250781cc140ef4ad1398f07404c2561ede273045be"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeClassPointer.c",
+      "bytes": 82,
+      "sha256": "sha256:798f33902b0712857be92e83cfa796b15193a445880b0f428300a56ca17387cc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeClassPointer.h",
+      "bytes": 196,
+      "sha256": "sha256:2b38c4210281cbd19dc3dbcc5242bb56b3f70aa50b83f232826ac6b364285c7e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeObject.c",
+      "bytes": 387,
+      "sha256": "sha256:98e5cb8f5db26fa01ea3c543a75f0a422a6bb7615087a7422cf058e3ea560f04"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeObject.h",
+      "bytes": 245,
+      "sha256": "sha256:7a895746809af30c7966a8f45ae54e5ded0a4e4909803534a6438917d365e843"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeObjectPtr.c",
+      "bytes": 76,
+      "sha256": "sha256:ccb0506833073f8a77daeec0f5bcd394e61e6147486582c4d80096531a36d5c1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeObjectPtr.h",
+      "bytes": 187,
+      "sha256": "sha256:8cb7441bc3477643318585daeac3bafe59edb0845dff2565f6f198f64e9c90ce"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeReference.c",
+      "bytes": 103,
+      "sha256": "sha256:3fe29f9e01ed0aab32cdafbe95d726d52a08256f787bce4f5057a804dacea76b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeReference.h",
+      "bytes": 96,
+      "sha256": "sha256:d64729f923c98d1cfb05efcb8cf980cdd0ceb2f381ee63d922de9bcc42a766ee"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeReferenceQueue.c",
+      "bytes": 113,
+      "sha256": "sha256:ed70608d0107bb4d6c9e4229c55ebc03891fd7b18b6f7fd8faf35aa0e0ba599b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/RuntimeReferenceQueue.h",
+      "bytes": 101,
+      "sha256": "sha256:658076105e54fa78bd394d4af065febfb4187e7fbcc442b2f280b5e279ec8286"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/ShadowStack.c",
+      "bytes": 881,
+      "sha256": "sha256:a6eb136618e00296662fdfb6d4f0cb42d9a35ab66969ff850ae8107d345bde26"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/ShadowStack.h",
+      "bytes": 443,
+      "sha256": "sha256:1ffc4f8116bef632692ca1744cc605fb3410c1f7ec3b1bebee85466c87d9f6f7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/StringPtr.c",
+      "bytes": 62,
+      "sha256": "sha256:9170819c3fbaba974a1b59bfe9f06d253788b02ef17db312e77ddf6b686bf58e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/c/o/t/r/StringPtr.h",
+      "bytes": 89,
+      "sha256": "sha256:5edee9b2809d66649ebae558216bc8a3489569c04e3c02b6b88841193b3847db"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/callsites.c",
+      "bytes": 701434,
+      "sha256": "sha256:17cc5e46b2f97d1cfa48f07e0fb82992a8f242836c64e2d2f230e55d1f831c0f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/config.h",
+      "bytes": 13,
+      "sha256": "sha256:b3adf106d95b8934f690943f2921308b90be5b766c4c8ba250c792de56400201"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/core.c",
+      "bytes": 2936,
+      "sha256": "sha256:fa2ea833c98716bc90a5b0afc09293de3443694e9881a150af1b40807be496d9"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/core.h",
+      "bytes": 9451,
+      "sha256": "sha256:d3adb0e1e9bcde3883d509ca8be0cd4dbd592b903845dfc606406a1d43604fb7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/core_defs.h",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/core_gen.h",
+      "bytes": 87,
+      "sha256": "sha256:36472b42a1d380b26de8c9eea63369afb88382387d612f82d37d0f2bad2de9ae"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/date.c",
+      "bytes": 5355,
+      "sha256": "sha256:55f2eab2339db3f22713dd6a9acbed9452d3c8aa27925e508635bb598c7a8d9a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/date.h",
+      "bytes": 1070,
+      "sha256": "sha256:554f332ac52d01430e42998745321604bd585a3549a092c8e6fab44b20741f82"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/definitions.h",
+      "bytes": 1494,
+      "sha256": "sha256:27ba4d5cb22a436ddff7d36971d1068e74794b3646f64853b0196e9867c8fc63"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/exceptions.h",
+      "bytes": 2693,
+      "sha256": "sha256:024e4fafa0a2cd330911b5d84d1b929f928a88d74730cc265d08cbbb940eb368"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/fiber.c",
+      "bytes": 172,
+      "sha256": "sha256:c8484f6e4a9801f33f03197756fd92062523f8344cd9ef139cacf9a35337213f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/fiber.h",
+      "bytes": 158,
+      "sha256": "sha256:241e07676278e513546d44cc45836488ee2b94706243d35a189b75215bc7351c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/file.c",
+      "bytes": 2209,
+      "sha256": "sha256:6cbcbadf02ff4db88c4a8a82cf14cdc4f2ee3ee79621ecfab297c45f631c81a6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/file.h",
+      "bytes": 1635,
+      "sha256": "sha256:82d2000654fdcf050c3c54906f3e8d5b3aff562f415f71c30b58906a383bde6d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/heapdump.c",
+      "bytes": 14658,
+      "sha256": "sha256:db1efd4671506fb05cc5caa18a0783a4cb4e9f8cd0c99f30e0d4cb2a3694f5c3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/heapdump.h",
+      "bytes": 856,
+      "sha256": "sha256:56811e3f9a9aa8b137c812f0e5b7edbe84aab40614d59a43e10692d4b1726654"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/heaptrace.c",
+      "bytes": 18143,
+      "sha256": "sha256:f1b85eaa6467461a4bce4cc73e3a671b5ca2dfda503e611d3a7f25b75c492617"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/heaptrace.h",
+      "bytes": 1136,
+      "sha256": "sha256:b1fca8c583db033fbe997a396bb2318f871f2722bf65c397f6bddb98e1582341"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/log.c",
+      "bytes": 3043,
+      "sha256": "sha256:83e02b6474d6fa6de2ae5b4b925488b9ad419f6b0b64e75cf5d78d030ef8d3ab"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/log.h",
+      "bytes": 270,
+      "sha256": "sha256:5a16494a47f5905dc7554fd2739fef7a894db786c7b57fc8a433740b200c84bd"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/main.c",
+      "bytes": 25536,
+      "sha256": "sha256:4fea25ff3759a79114bd43a608d83d2cef400584a16874c48ee64ebbbebfbca2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/memory.c",
+      "bytes": 9994,
+      "sha256": "sha256:54d8d661b7aef84a7abc04a33d6899b160aba730444eac2d33be04009c5e95f2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/memory.h",
+      "bytes": 672,
+      "sha256": "sha256:7d949afc785f5bab9fb8f38d4e7dc1051089ab648e8072d8f3105a3cf54bf084"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/boolean.c",
+      "bytes": 516,
+      "sha256": "sha256:6a7a15d86fb66afbd957c715246e973d221cf88fa106a3008060309d45fa766e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/boolean.h",
+      "bytes": 152,
+      "sha256": "sha256:c83523dac39a08f54e5e867232bf659d31acb4a4a3774bdf4e5eec8d75265fd1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/byte.c",
+      "bytes": 479,
+      "sha256": "sha256:6dc0238a999c67f5394580952d6b89e01374c4a47b1edd6947f3bdc840828af2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/byte.h",
+      "bytes": 152,
+      "sha256": "sha256:a96b9d2cbf7dc241ef1c4540421dada0d6fed682bc698e91802c4268f9cff6c2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/char.c",
+      "bytes": 561,
+      "sha256": "sha256:62dcb8d4768c33d80835fd05917b0a0d647ced289d7f7c10ba6a4c3d0f2bdc72"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/char.h",
+      "bytes": 152,
+      "sha256": "sha256:1c4f0aeb947d0a3895a95c2801c377aefff885331c2cd9c9d9523db55054dd86"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/double.c",
+      "bytes": 484,
+      "sha256": "sha256:78843e9a3bbaa7ed046e4b0e416affa97f775ebf187da355c7a9a1462bd136e6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/double.h",
+      "bytes": 152,
+      "sha256": "sha256:77265ccac585c0a7e5470e3f34a0c24b72d9a6705cb40b462ada0dc959743ec3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/float.c",
+      "bytes": 561,
+      "sha256": "sha256:c40c0de9d813904e6a46bd23f074d4b08485cf3d294188455ee6cd1f8418f641"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/float.h",
+      "bytes": 152,
+      "sha256": "sha256:439c0f7a5da4cdc10a675c3414b7998cb33b2f1d5a2ccfbe63e14dc0aeb399e7"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/int.c",
+      "bytes": 558,
+      "sha256": "sha256:f0f13e7038718878561c13b9efee8a7a97478d6429606f279b64ae3bfbb93c3e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/int.h",
+      "bytes": 152,
+      "sha256": "sha256:edb85c0bd7923e492a4966e841d441a6f2571195d96ec631fc7c8fc9bf49a42e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/long.c",
+      "bytes": 560,
+      "sha256": "sha256:4b55f63b7b748eb918c7b1d240a62cd6fbcaf5ea1092061dee28d34a5cd56f5d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/long.h",
+      "bytes": 152,
+      "sha256": "sha256:bcd1813b1654085e1f9a1012355f30f2aa8009f96727c1f45816dc3c929edca4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/short.c",
+      "bytes": 482,
+      "sha256": "sha256:94b04410a6c4901e1c1b056ae83f6f1835749bd40fa3339cbfec0b902f2b6fe5"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/short.h",
+      "bytes": 152,
+      "sha256": "sha256:6933efde47aaa0532240be323b0c1331e2a76539878eee22157fd12950a62d5e"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/void.c",
+      "bytes": 412,
+      "sha256": "sha256:91cf2c11c05a694dadbe90e326cf1bfdec60b680f4de231b2cf87a27bfc84555"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/p/void.h",
+      "bytes": 152,
+      "sha256": "sha256:558a97ec14d73cd91ba728f9e2929e887510ae3f73face4d63c54c7b9942d730"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/references.c",
+      "bytes": 1353,
+      "sha256": "sha256:a1aabed8dece135159d32d92d7b894de6f85f557d03bba2cede8c796674cc862"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/references.h",
+      "bytes": 799,
+      "sha256": "sha256:b3d71a77d6dc4f880b83fa1b4508ae33b7722231c8f68c712651df56dae92035"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/reflection.c",
+      "bytes": 5332,
+      "sha256": "sha256:67a27867a4c9eaaa9ca313ce7e8679d50417af8c2fc90b3d6dbe066a66016625"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/reflection.h",
+      "bytes": 2881,
+      "sha256": "sha256:8e2871126588e1fb520a69e68c334cd3968711857d446ffb59e60b50689584d0"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/reflection_gen.h",
+      "bytes": 234,
+      "sha256": "sha256:66992f0a4295bd39a47d6068eb684efafe1757203e108d22b26ac02f7a10b5d2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/resource.c",
+      "bytes": 1031,
+      "sha256": "sha256:7120a4f2ddbd6dc3b99dff615d5908fa093166f510c2851078f9163f08413461"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/resource.h",
+      "bytes": 712,
+      "sha256": "sha256:5c71bb9ac9c374d2a9aca6978b6e8b8b001091700680f0d655f8744a14ca2815"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/runtime.h",
+      "bytes": 218,
+      "sha256": "sha256:9ef3fbc7759ae57160dda271f6294bda38a026eea72b5d219ea4cabbc03e7f9c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/special.c",
+      "bytes": 788,
+      "sha256": "sha256:74c526a67cb7364d7b262d99fdcaa931f1ada385089e36b230b17be1616ddf5c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/stack.c",
+      "bytes": 61,
+      "sha256": "sha256:6e61a9aae3608ed1fab67e8d5406e90dc1f846e4fc3e30da2149d1333e69d23b"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/stack.h",
+      "bytes": 3331,
+      "sha256": "sha256:ffeb1af219f9bf64529d4cbd7cf572eb2af9e81af93c3dd33e09ec95476bdd37"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/string.c",
+      "bytes": 5991,
+      "sha256": "sha256:491df81071698ca9130975325b5af6253b355b57d0b3518d92759bde813570e4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/string.h",
+      "bytes": 1862,
+      "sha256": "sha256:ef6d0f47858e07d081a221f50e3756e68d59b71cc1f8242a6fee81183a2e1b83"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/stringhash.c",
+      "bytes": 3845,
+      "sha256": "sha256:d4127c164e2cfd3d581e6847c0d548571131b99cd09253ee584de45b9b4deeaf"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/stringhash.h",
+      "bytes": 538,
+      "sha256": "sha256:310c3d08ffec50d697a35a23d84b628cf502178b08ca8629655aa8963563de1c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/strings.c",
+      "bytes": 34530,
+      "sha256": "sha256:fefdb6eb8536eb24d30a3357fc4ae607602966dd17b2b8526450303f9b0d647c"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/strings.h",
+      "bytes": 218,
+      "sha256": "sha256:eb1d7dd61f22f50009fc03d1c305051c8a8d1a11fed75a9644aebcca80b8f755"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/time.c",
+      "bytes": 311,
+      "sha256": "sha256:685144b5e9ad8f907a455ecd546a620a1222f75179e9ecd36af12cc150809b45"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/time.h",
+      "bytes": 337,
+      "sha256": "sha256:b0edd22f4de329d15723a4c3190d23bbc6e80abb3a43d61a6c0db05217bdf736"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/uchar.h",
+      "bytes": 444,
+      "sha256": "sha256:61950d9311ab6eafbd3e129944c9c5c0b5ab9e105278c73aa77a385e4fced457"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/virtcall.c",
+      "bytes": 9303,
+      "sha256": "sha256:dc05eb1e63597341c5fef6c57cf522f307bbe42b3ec98ab4cd7ad3c35bb582ac"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/teavm-c/c/virtcall.h",
+      "bytes": 1123,
+      "sha256": "sha256:e03a78944a08e66d2909845584511316a2ee69dcf42deb1ae28485d83375a1ce"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build/tmp/compileJava/previous-compilation-data.bin",
+      "bytes": 3387,
+      "sha256": "sha256:bf0d1c7828def5ca4a25a78efe3709db3583feb36571977c0a30f396ba14577a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/build.gradle",
+      "bytes": 1514,
+      "sha256": "sha256:a088e5d7049510389915cef55dc7833f0415155a847373a67be8b4da651840ef"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/dependencies.lock.json",
+      "bytes": 16525,
+      "sha256": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/gradle/verification-metadata.xml",
+      "bytes": 46640,
+      "sha256": "sha256:2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/gradle.properties",
+      "bytes": 146,
+      "sha256": "sha256:84d55f32052c328f7e576df56c0c608d5d4e7f386f676ff0006f8cd777eaef19"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/settings.gradle",
+      "bytes": 127,
+      "sha256": "sha256:23755faa9365a644fa70a39f8a1ef83e99422914fc67b85d6df51e60984d7982"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/app/Capsule.java",
+      "bytes": 4151,
+      "sha256": "sha256:88eadc0b5aef84fb71c48f49770ab5bde499b0571a094a40a43c402731e8a92d"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/app/TransactionDiagnostics.java",
+      "bytes": 915,
+      "sha256": "sha256:0c6998436a4fc0e937ff54017a2ecfaa2d0471ab507965a04436b89619a785e1"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/generated/Bindings.java",
+      "bytes": 30996,
+      "sha256": "sha256:5e342db195cc44acc07c0d838a1e73c50693b998255d55ad3c466f06f97a41fc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/BufferedWebResponseValidator.java",
+      "bytes": 14455,
+      "sha256": "sha256:caf6a2bf912fbaadad9f673551a10d2fec20edb874216019845392e7d807323f"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Handle.java",
+      "bytes": 949,
+      "sha256": "sha256:5d00dda66f7c167bd8e7f3e98d8e5be5c69225b8cd4744426f2dcabc1d63a63a"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Intent.java",
+      "bytes": 857,
+      "sha256": "sha256:ba3876ddc0ca1b9b0bbf53cb73a9477529ee055b5984ae9be4edcb5966027168"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Intent.java.in",
+      "bytes": 857,
+      "sha256": "sha256:ba3876ddc0ca1b9b0bbf53cb73a9477529ee055b5984ae9be4edcb5966027168"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Option.java",
+      "bytes": 502,
+      "sha256": "sha256:aa45393e65f74c005bdb2e0b9ac32a5a4e8b717090bc4c1ff8b9ec7cda681468"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Resource.java",
+      "bytes": 1231,
+      "sha256": "sha256:5ec05ea064c1ff25a4af8c3ff2948beef46ba3e711a956016481fb2b65449da2"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Result.java",
+      "bytes": 981,
+      "sha256": "sha256:0a65cdf987fe048f3d467a090662b4ab4d340b74bdcb35598ca4f7e2c6142743"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/SensitiveBytes.java",
+      "bytes": 555,
+      "sha256": "sha256:27cf682fc87999875f81611c9575674e2e43bfee0e1fe55950e357ceec83f870"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/State.java",
+      "bytes": 4687,
+      "sha256": "sha256:f437a93ff5d9494c9184c8952cbc775823bb2b8006940d0826e94557e2d1d765"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/State.java.in",
+      "bytes": 4687,
+      "sha256": "sha256:f437a93ff5d9494c9184c8952cbc775823bb2b8006940d0826e94557e2d1d765"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Text.java",
+      "bytes": 992,
+      "sha256": "sha256:0d1909cfe30b5cf0fb0a312ac03fbced5171c4c5e971d43f6d736e46872920cc"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Unit.java",
+      "bytes": 53,
+      "sha256": "sha256:4fbf8085595c1c3f7c5494e3ce1efcb0a738161960863e85d24b0489a7500cf8"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Unsigned64.java",
+      "bytes": 2192,
+      "sha256": "sha256:63d81a6e1bf67638e718e2eaf00565fc71ebdd1153fff23b0fafd04949ef3da6"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/project/src/main/java/dev/latent/guest/Wire.java",
+      "bytes": 6322,
+      "sha256": "sha256:e172958b5869bbf93a8766e65f1c074cdaa9136df19b68a4d9ac5db9a64458e3"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/wit/deps/clock/package.wit",
+      "bytes": 139,
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/wit/deps/intents/package.wit",
+      "bytes": 1142,
+      "sha256": "sha256:182a2a982c470a4bd8603fba8d3e2e54e93a167dda2501de02c77b10066ea636"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/wit/deps/state/package.wit",
+      "bytes": 3134,
+      "sha256": "sha256:56b0a1304a9987395e0ea3f07e3dde4cbae5e70e5c9837ffcc6ae3b3cb9b7f25"
+    },
+    {
+      "path": "put-once-diagnostics/compiled/wit/world.wit",
+      "bytes": 1020,
+      "sha256": "sha256:6642bc853129a8d1c84322eb9af59964bc7cbb8641a95ff4feae8837c1c7f539"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/0-java-version.command.json",
+      "bytes": 160,
+      "sha256": "sha256:cae6b7423460e38cb8fb03857702c35353c7da5432a362ece7e8f1692c29ecf1"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/0-java-version.log",
+      "bytes": 201,
+      "sha256": "sha256:dc52985e291a871cd813e0ec48efca3a22da113e8faae9101f126c3d6b16ce36"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/1-gradle-version.command.json",
+      "bytes": 168,
+      "sha256": "sha256:e75f0e9ce3b72835283b1f6bfd6dd2156277d6424e49e18d8b0ac188c2543cdd"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/1-gradle-version.log",
+      "bytes": 794,
+      "sha256": "sha256:b5e508e408abc79b4da81eb0868d79b09bc42eeec37b38f9217fd77e66fa628f"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/10-bindings-metadata.command.json",
+      "bytes": 286,
+      "sha256": "sha256:25c282ec5e6da13b3a333699d067cfe9843d5701eb0387871b300856883af3f2"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/10-bindings-metadata.log",
+      "bytes": 4531,
+      "sha256": "sha256:6640b83f56668e24314f17dc1f7c822ac1df0626e31f613f80be2a7622f7845b"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/11-wit-graph.command.json",
+      "bytes": 263,
+      "sha256": "sha256:c38e2bfeb142734e6a5e321dc00011ae59c71292ba1887ec315597864a66496d"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/11-wit-graph.log",
+      "bytes": 21234,
+      "sha256": "sha256:b87772b7e9fec51c5fe75341d37b9fbe36a34828a0ffa84e2a1f3e6e8cc972ca"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/12-wit-bindings.command.json",
+      "bytes": 490,
+      "sha256": "sha256:815083aefc23021ce6df84cf03d4565b52c7390b5d17d3a3ffd54d1db25f32ab"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/12-wit-bindings.log",
+      "bytes": 319,
+      "sha256": "sha256:9bf0da36808c44f98880e02e0c26f1850e4a1278dbca1cd8ab903e09c5bded67"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/13-bindings-metadata.command.json",
+      "bytes": 292,
+      "sha256": "sha256:19b5e85d93c5e3a64e978c63bbf8533e2f50d9f65923c45836d3f340d93aba07"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/13-bindings-metadata.log",
+      "bytes": 4531,
+      "sha256": "sha256:6640b83f56668e24314f17dc1f7c822ac1df0626e31f613f80be2a7622f7845b"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/14-java-to-c.command.json",
+      "bytes": 183,
+      "sha256": "sha256:23cbccb5e569c8a1c589db5dbe2970a35df16d1858460c1ef99876e247156799"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/14-java-to-c.log",
+      "bytes": 672,
+      "sha256": "sha256:9eb83c340e18ee624dc4b41d78c0f1e6815d109074f612ef9eefe3787aae1f17"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/15-c-to-wasm.command.json",
+      "bytes": 1552,
+      "sha256": "sha256:602d2e628d98b52d54b339e22f8ec359c694b139d8e0c2d540401d0c4a2182f5"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/15-c-to-wasm.log",
+      "bytes": 168596,
+      "sha256": "sha256:3c17643b5c5121eaf83aa9e532bb4c1b7b75ebf53504ed22c7b2547df041512f"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/16-closed-runtime.command.json",
+      "bytes": 525,
+      "sha256": "sha256:fb73b2afbf6b41a3a30eb3df89f295280329214b3ed0471a3f4c0fe2a637b02c"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/16-closed-runtime.log",
+      "bytes": 1,
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/17-component-new.command.json",
+      "bytes": 487,
+      "sha256": "sha256:e48bfaa202c6ed2172c5736d459d68e7aae64222b0c797f624a7d526a9a53620"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/17-component-new.log",
+      "bytes": 1,
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/18-component-validate.command.json",
+      "bytes": 258,
+      "sha256": "sha256:de45d5cb038b802fe7764103d5e30bf6cb0ba1c969340686e3b9ba238f71fe78"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/18-component-validate.log",
+      "bytes": 1,
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/19-component-surface.command.json",
+      "bytes": 269,
+      "sha256": "sha256:34262f69134cafb97f059d188c3b3d52530fb84cc4a6776221a76a7f036fcab0"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/19-component-surface.log",
+      "bytes": 4338,
+      "sha256": "sha256:9b2467bfd5c168a59d3f4a5268dda7cf40fd616269129efba5a796730f90fd13"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/2-clang-version.command.json",
+      "bytes": 168,
+      "sha256": "sha256:46d648d8b1d7fef8c7d1f2a450f91626e38266a8ebcd58adf841a7928064ea66"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/2-clang-version.log",
+      "bytes": 299,
+      "sha256": "sha256:d198d3d02231f58999c5ece4fa55a30b048f830a05b624787520e3ae9c57d519"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/20-expected-wit.command.json",
+      "bytes": 267,
+      "sha256": "sha256:81085816d6454e445d1fe8c0b9e913cd959240e4cd6570d2f1200a7268020152"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/20-expected-wit.log",
+      "bytes": 21234,
+      "sha256": "sha256:b87772b7e9fec51c5fe75341d37b9fbe36a34828a0ffa84e2a1f3e6e8cc972ca"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/21-compiled-wit.command.json",
+      "bytes": 276,
+      "sha256": "sha256:ac0224a697cfa9a8a5906db9a3c592fb46f2ed0dadbed0b3229121cc2124cd86"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/21-compiled-wit.log",
+      "bytes": 19590,
+      "sha256": "sha256:33085c9143f73bca0ebae4bf40a1db4a8dd1aef248a9fd6b79d14d86588c1af1"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/3-wit-bindgen-version.command.json",
+      "bytes": 173,
+      "sha256": "sha256:d588324389a5455a158eb52f6ab9eb9a38195186b7bb494a7f114bf619a5ce52"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/3-wit-bindgen-version.log",
+      "bytes": 24,
+      "sha256": "sha256:54a3b7f07a7f22e6db46237d76553a5024aa175f6e8966d2db7111e653d9cf42"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/4-wasm-tools-version.command.json",
+      "bytes": 172,
+      "sha256": "sha256:53c16079c5b1a18739454abfd58266950afcab594f54c79effd502fbd0d7c32f"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/4-wasm-tools-version.log",
+      "bytes": 43,
+      "sha256": "sha256:a9d05a8e1e1fd8ceb59716d851f535e44be83f11d8a2d6ff21b95fb6aafa39df"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/5-wit-graph.command.json",
+      "bytes": 278,
+      "sha256": "sha256:a784e061571e2025b1181faf2e6362838a6c80dabae136ffd64bc60b04303c1a"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/5-wit-graph.log",
+      "bytes": 41883,
+      "sha256": "sha256:5d5d27b6acbdb5d606bd21ac1a48355b6b9bcfe3b675ec3217279615cdec895a"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/6-wit-bindings.command.json",
+      "bytes": 493,
+      "sha256": "sha256:d3a90d20c0ad878867113fbe894e11e51e2dc8e97ee669478c59817826aef3a1"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/6-wit-bindings.log",
+      "bytes": 343,
+      "sha256": "sha256:6beedb9cfa8eb9706012211e8ade2d34ed37ad9cb334086e036756b8b2e842d0"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/7-bindings-metadata.command.json",
+      "bytes": 300,
+      "sha256": "sha256:52b3b8af07a81307922217687579cf7fc2dd73c01fe8e6612902049ddfa756c0"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/7-bindings-metadata.log",
+      "bytes": 8431,
+      "sha256": "sha256:16ad67914b30acd8ddc8f7336d9e9e20d2be36f535756bb2dc329a2ab34b371b"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/8-wit-graph.command.json",
+      "bytes": 264,
+      "sha256": "sha256:b034d7d73cc2f87bdce859ec586108173463616bd4e7ab3f856866c5487a1f91"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/8-wit-graph.log",
+      "bytes": 21234,
+      "sha256": "sha256:b87772b7e9fec51c5fe75341d37b9fbe36a34828a0ffa84e2a1f3e6e8cc972ca"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/9-wit-bindings.command.json",
+      "bytes": 484,
+      "sha256": "sha256:abb9e35b8a4f91f978f75cc6730cff9851adb9484150c9d80ec0b95bfbb58996"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/9-wit-bindings.log",
+      "bytes": 301,
+      "sha256": "sha256:3d499d7807a8b411ef25159a8464a10f52bff252dd5e920170f1881ca2bd65fb"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/bindings/Bindings.java",
+      "bytes": 65356,
+      "sha256": "sha256:c27dfee6691115291d0b01e41e808a3c57240002d8adf5f06cdfbc23e74ca3c9"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/bindings/bridge.c",
+      "bytes": 75211,
+      "sha256": "sha256:10a709a2f675623867256932655c640ad4363b5cc65c999a0ea6025e1674aec6"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/bindings/probe.c",
+      "bytes": 62593,
+      "sha256": "sha256:f75bb13e075f0351f393e25e833f3938124df4344053d0580594125d51f4f26d"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/bindings/probe.h",
+      "bytes": 30066,
+      "sha256": "sha256:5d6dd2c7e26c86f0219558b8403d2a3372aa2622f24cad202a2c6a13cd687f40"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/bindings/probe_component_type.o",
+      "bytes": 4306,
+      "sha256": "sha256:f9c04bc1e432f6ec344a1e13fca9bafc7b39b34e042b3789f8d1a9a745d51e49"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/deps/blob-v2/package.wit",
+      "bytes": 1406,
+      "sha256": "sha256:d1744403a7882fbe8bf99808ac28c26d271eb1fb26fbac2519f1c7b2840d0dcb"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/deps/clock/package.wit",
+      "bytes": 139,
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/deps/events-v2/package.wit",
+      "bytes": 1299,
+      "sha256": "sha256:645d6373dd55afeaaa400bd27f35e55dbb9c99a9599013d8419e90b02fb911d3"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/deps/http-v2/package.wit",
+      "bytes": 1296,
+      "sha256": "sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/deps/http-v3/package.wit",
+      "bytes": 2915,
+      "sha256": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/deps/invocation/package.wit",
+      "bytes": 1914,
+      "sha256": "sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/deps/random/package.wit",
+      "bytes": 272,
+      "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/deps/secrets/package.wit",
+      "bytes": 407,
+      "sha256": "sha256:4e0593c21ac5e3051500717fcf347cf7e23821816a9fc15945c68e93cee4ee54"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/deps/telemetry/package.wit",
+      "bytes": 505,
+      "sha256": "sha256:c79721b703eca86c55ab04ddcb37cbc7965287db64880c0a0bb555b92baaadc6"
+    },
+    {
+      "path": "put-once-diagnostics/compiler/sdk-reference/wit/world.wit",
+      "bytes": 663,
+      "sha256": "sha256:806182a284782a4db4e5fc2e4f5f3bf47b78b04fa291d1eab8cef8f177f71882"
+    },
+    {
+      "path": "put-once-diagnostics/compiler-inputs.json",
+      "bytes": 2902802,
+      "sha256": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+    },
+    {
+      "path": "put-once-diagnostics/component.wit",
+      "bytes": 4337,
+      "sha256": "sha256:482f2a318fed0ecf76f667732b04f26904750346d754d048a519e15ac6f9c8b7"
+    },
+    {
+      "path": "put-once-diagnostics/logs/00-source-revision.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/logs/00-source-revision.stdout.txt",
+      "bytes": 41,
+      "sha256": "sha256:4a765f3b2a43a3d79d79404a0338ea423c1ccf91f9faf41fb4790f1e4611ee84"
+    },
+    {
+      "path": "put-once-diagnostics/logs/01-source-status.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/logs/01-source-status.stdout.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/logs/02-validator-version.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/logs/02-validator-version.stdout.txt",
+      "bytes": 42,
+      "sha256": "sha256:f85fc42a5a4fd6614999a2f41e14fd84eae869d81f0b344672b6d3874400375e"
+    },
+    {
+      "path": "put-once-diagnostics/logs/03-authored-wit.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/logs/03-authored-wit.stdout.txt",
+      "bytes": 21233,
+      "sha256": "sha256:fec6be740f604e77f1869f239a607fba0ec2d3f9c85c9f55c329a95e2f700725"
+    },
+    {
+      "path": "put-once-diagnostics/logs/04-validate-authored-component.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/logs/04-validate-authored-component.stdout.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/logs/05-actual-component-wit.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/logs/05-actual-component-wit.stdout.txt",
+      "bytes": 19589,
+      "sha256": "sha256:cec37b3c2c0c73f6541b76fb7bbf5b3a986b01a383fbb7fc72f49e87441805f6"
+    },
+    {
+      "path": "put-once-diagnostics/logs/06-retained-component-wit.stderr.txt",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "put-once-diagnostics/logs/06-retained-component-wit.stdout.txt",
+      "bytes": 4337,
+      "sha256": "sha256:482f2a318fed0ecf76f667732b04f26904750346d754d048a519e15ac6f9c8b7"
+    },
+    {
+      "path": "put-once-diagnostics/project/.gitignore",
+      "bytes": 9,
+      "sha256": "sha256:306fd52e74fca6746e12acc750f232de15e71da917756a1270d74c91f5eb7368"
+    },
+    {
+      "path": "put-once-diagnostics/project/README.md",
+      "bytes": 333,
+      "sha256": "sha256:c1cb9fd0099469c799c7e468626f019d958a98a847e5d8b297b6fe0406414422"
+    },
+    {
+      "path": "put-once-diagnostics/project/application-schema-inputs.json",
+      "bytes": 508,
+      "sha256": "sha256:99cf9b5a7a026bf6c2805d9b0ae66a6f4efe690d6eb00764c9e7862a6a378031"
+    },
+    {
+      "path": "put-once-diagnostics/project/capsule-project.json",
+      "bytes": 534,
+      "sha256": "sha256:b1262443292da9c93baf9541577753b52b00815122a55faa3d371ae18dd502b4"
+    },
+    {
+      "path": "put-once-diagnostics/project/deferred-http-requirements.json",
+      "bytes": 1254,
+      "sha256": "sha256:f9c50d3923dea8e7973946c87d0a9b08abe5a7b1af67acbbc3709d7e37cdc205"
+    },
+    {
+      "path": "put-once-diagnostics/project/schemas/application-aggregate-v1.schema.json",
+      "bytes": 278,
+      "sha256": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f"
+    },
+    {
+      "path": "put-once-diagnostics/project/schemas/application-aggregate-v2.schema.json",
+      "bytes": 318,
+      "sha256": "sha256:5465983620116dc20476955ea815d665e2868421f6bed705760f12225bada6eb"
+    },
+    {
+      "path": "put-once-diagnostics/project/sdk-lock.json",
+      "bytes": 10202,
+      "sha256": "sha256:b5a3ee641edcb98544a3694c7c6826c434e540e8e75d2cc09d3c9deafb09f591"
+    },
+    {
+      "path": "put-once-diagnostics/project/src/dev/latent/app/Capsule.java",
+      "bytes": 4151,
+      "sha256": "sha256:88eadc0b5aef84fb71c48f49770ab5bde499b0571a094a40a43c402731e8a92d"
+    },
+    {
+      "path": "put-once-diagnostics/project/src/dev/latent/app/TransactionDiagnostics.java",
+      "bytes": 915,
+      "sha256": "sha256:0c6998436a4fc0e937ff54017a2ecfaa2d0471ab507965a04436b89619a785e1"
+    },
+    {
+      "path": "put-once-diagnostics/project/state-schema.json",
+      "bytes": 278,
+      "sha256": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f"
+    },
+    {
+      "path": "put-once-diagnostics/project/transaction-binding.json",
+      "bytes": 959,
+      "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d"
+    },
+    {
+      "path": "put-once-diagnostics/project/transaction-diagnostic-inputs.json",
+      "bytes": 1044,
+      "sha256": "sha256:2c3bd02ebfca6354b07d11516fbfe0b53e0ecc647bdaa97ab79d81dfddaa2814"
+    },
+    {
+      "path": "put-once-diagnostics/project/transaction-profile.json",
+      "bytes": 7346,
+      "sha256": "sha256:b365a7fa2bb8dfec7beef95ad88af03ffdc41c8f8bf77afdb3768c674af5907c"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/Cargo.toml",
+      "bytes": 3245,
+      "sha256": "sha256:ccaf54848aa19df4d0e6eef0f358c1cc3a97bbd05b8be96b046cab9659dfa98e"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/LICENSE",
+      "bytes": 10173,
+      "sha256": "sha256:a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/NOTICE",
+      "bytes": 209,
+      "sha256": "sha256:f0ed785b696cfcbe9e1e32f747715d30c44234b6e5c683267412958fe5b2c2d4"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/bindings.lock.json",
+      "bytes": 973,
+      "sha256": "sha256:82250bf8bc0dfd03e836f03d25b6304e5cc4e52c4825ed8983ee80af70c82966"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/compiler.gradle",
+      "bytes": 1514,
+      "sha256": "sha256:a088e5d7049510389915cef55dc7833f0415155a847373a67be8b4da651840ef"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/feasibility/closed-runtime.wat",
+      "bytes": 1191,
+      "sha256": "sha256:5cc7f5b37abb698acc319a9ae1589fbbb54788abf46c0027fb0933bd2e6e0874"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/feasibility/dependencies.lock.json",
+      "bytes": 16525,
+      "sha256": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/feasibility/gradle/verification-metadata.xml",
+      "bytes": 46640,
+      "sha256": "sha256:2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/feasibility/platform.c",
+      "bytes": 480,
+      "sha256": "sha256:d5d3662aa5def128b7858e61c5746038a26d47a409c22bb731bc72fbed336aad"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/feasibility/settings.gradle",
+      "bytes": 127,
+      "sha256": "sha256:23755faa9365a644fa70a39f8a1ef83e99422914fc67b85d6df51e60984d7982"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/bridge.h",
+      "bytes": 3641,
+      "sha256": "sha256:66428dca085509e2aa2aa543af4927949f8f1176255351a6e24b73641b078ec3"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/BufferedWebResponseValidator.java",
+      "bytes": 14455,
+      "sha256": "sha256:caf6a2bf912fbaadad9f673551a10d2fec20edb874216019845392e7d807323f"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Handle.java",
+      "bytes": 949,
+      "sha256": "sha256:5d00dda66f7c167bd8e7f3e98d8e5be5c69225b8cd4744426f2dcabc1d63a63a"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Intent.java.in",
+      "bytes": 857,
+      "sha256": "sha256:ba3876ddc0ca1b9b0bbf53cb73a9477529ee055b5984ae9be4edcb5966027168"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Option.java",
+      "bytes": 502,
+      "sha256": "sha256:aa45393e65f74c005bdb2e0b9ac32a5a4e8b717090bc4c1ff8b9ec7cda681468"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Resource.java",
+      "bytes": 1231,
+      "sha256": "sha256:5ec05ea064c1ff25a4af8c3ff2948beef46ba3e711a956016481fb2b65449da2"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Result.java",
+      "bytes": 981,
+      "sha256": "sha256:0a65cdf987fe048f3d467a090662b4ab4d340b74bdcb35598ca4f7e2c6142743"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/SensitiveBytes.java",
+      "bytes": 555,
+      "sha256": "sha256:27cf682fc87999875f81611c9575674e2e43bfee0e1fe55950e357ceec83f870"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/State.java.in",
+      "bytes": 4687,
+      "sha256": "sha256:f437a93ff5d9494c9184c8952cbc775823bb2b8006940d0826e94557e2d1d765"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Text.java",
+      "bytes": 992,
+      "sha256": "sha256:0d1909cfe30b5cf0fb0a312ac03fbced5171c4c5e971d43f6d736e46872920cc"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Unit.java",
+      "bytes": 53,
+      "sha256": "sha256:4fbf8085595c1c3f7c5494e3ce1efcb0a738161960863e85d24b0489a7500cf8"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Unsigned64.java",
+      "bytes": 2192,
+      "sha256": "sha256:63d81a6e1bf67638e718e2eaf00565fc71ebdd1153fff23b0fafd04949ef3da6"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Wire.java",
+      "bytes": 6322,
+      "sha256": "sha256:e172958b5869bbf93a8766e65f1c074cdaa9136df19b68a4d9ac5db9a64458e3"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/native.h",
+      "bytes": 306,
+      "sha256": "sha256:cdbf1bdf723470622a1d27e8b9e6034a4781aa6787c0d80aa872f3680ceeb5a1"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/templates/greeting.java",
+      "bytes": 571,
+      "sha256": "sha256:b3ef5de6dd9c15fc8c292112b657375b55e07722296a387bf0fe776ccbd95b62"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/templates/http-status.java",
+      "bytes": 801,
+      "sha256": "sha256:d9fd6b5f0a8e1b2f138a1ace7bce59ef86757663184ee5b47bc5b77e98c1e9a6"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/templates/recovery.java",
+      "bytes": 735,
+      "sha256": "sha256:93fa2fe75d40c688ed730666a4d4d4551fd398356852daf7ee0f6dea3c045b95"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/templates/shipping.java",
+      "bytes": 445,
+      "sha256": "sha256:52c40e4a0af92515a923d0d53c2f2d5adfd712e82319206b2d4037370a5cd127"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/templates/transactional-aggregate.java",
+      "bytes": 3684,
+      "sha256": "sha256:28939cbc29ad95e2f963cc2e7e6b13fe126368427ee70b0206a3012ad5006039"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/templates/word-count.java",
+      "bytes": 785,
+      "sha256": "sha256:36924c01937175faa45beff0c09f716b40e85f4b3a988b207077eb434fd26334"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/tools/capture.py",
+      "bytes": 1246,
+      "sha256": "sha256:99283643627ff4905a51112888994a6ed599c894824b531967cfb7e248746939"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/tools/dependencies.py",
+      "bytes": 6562,
+      "sha256": "sha256:770a90fc706bdbe961fb25757784b8b6d0826f1a194cc95da91a6f06fd01a9b1"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/tools/feasibility.py",
+      "bytes": 12327,
+      "sha256": "sha256:429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/tools/teavm_platform.py",
+      "bytes": 6713,
+      "sha256": "sha256:8d244a3eadea498dec231c7fa85b1f11b49074d9e7a453f607800b5f3775797a"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/sdk/java-guest/wit/world.wit",
+      "bytes": 663,
+      "sha256": "sha256:806182a284782a4db4e5fc2e4f5f3bf47b78b04fa291d1eab8cef8f177f71882"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/tools/toolchain.toml",
+      "bytes": 1044,
+      "sha256": "sha256:3c86472b8c9f236b2ae01cb58b830eeea68cbcae4274f36020e45305bad05f65"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/blob/package.wit",
+      "bytes": 867,
+      "sha256": "sha256:e73a86a069223567fd782ef0e20d83a8f25a1353d39b6d2c174c31bbfb936210"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/blob-v2/package.wit",
+      "bytes": 1406,
+      "sha256": "sha256:d1744403a7882fbe8bf99808ac28c26d271eb1fb26fbac2519f1c7b2840d0dcb"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/clock/package.wit",
+      "bytes": 139,
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/context/package.wit",
+      "bytes": 1409,
+      "sha256": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/events/package.wit",
+      "bytes": 572,
+      "sha256": "sha256:b599d127622a47c4d763df29ca5d0907f083566645a5d882d593701f39db68c1"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/events-v2/package.wit",
+      "bytes": 1299,
+      "sha256": "sha256:645d6373dd55afeaaa400bd27f35e55dbb9c99a9599013d8419e90b02fb911d3"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/http/package.wit",
+      "bytes": 997,
+      "sha256": "sha256:6ae7533f6e81d6364601a12d5f533ee60342eb6ba2e897e545e10743b4e92945"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/http-v2/package.wit",
+      "bytes": 1296,
+      "sha256": "sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/http-v3/package.wit",
+      "bytes": 2915,
+      "sha256": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/intents/package.wit",
+      "bytes": 1142,
+      "sha256": "sha256:182a2a982c470a4bd8603fba8d3e2e54e93a167dda2501de02c77b10066ea636"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/invocation/package.wit",
+      "bytes": 1914,
+      "sha256": "sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/log/package.wit",
+      "bytes": 418,
+      "sha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/random/package.wit",
+      "bytes": 272,
+      "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/runtime/world.wit",
+      "bytes": 558,
+      "sha256": "sha256:2e4da1942366ab63344cc4b959b75acb0afe933ab67b1d4cc819a15982b3e048"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/runtime-phase3/world.wit",
+      "bytes": 704,
+      "sha256": "sha256:09dae5ca8c10761c4c8a32411942c00564884b146bebb4069fa125e8d02ec8e0"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/runtime-phase3-blobs/world.wit",
+      "bytes": 551,
+      "sha256": "sha256:5a509dd87892ee54828c17d0189c034bf892afa6e47701834bd42db095244cfc"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/runtime-phase3-streaming/world.wit",
+      "bytes": 516,
+      "sha256": "sha256:240f3e0864a5f683cacef9f70868e1d4450ab466bd7473b639e788cedbdfef7c"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/runtime-phase4/world.wit",
+      "bytes": 402,
+      "sha256": "sha256:7369b62d5beef0ea0ed999c06ca768b46dd23c1d9bce81718b4bddb02cd34fb3"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/secrets/package.wit",
+      "bytes": 407,
+      "sha256": "sha256:4e0593c21ac5e3051500717fcf347cf7e23821816a9fc15945c68e93cee4ee54"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/state/package.wit",
+      "bytes": 3134,
+      "sha256": "sha256:56b0a1304a9987395e0ea3f07e3dde4cbae5e70e5c9837ffcc6ae3b3cb9b7f25"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/telemetry/package.wit",
+      "bytes": 505,
+      "sha256": "sha256:c79721b703eca86c55ab04ddcb37cbc7965287db64880c0a0bb555b92baaadc6"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/timer/package.wit",
+      "bytes": 610,
+      "sha256": "sha256:3c35d5a9078315848f86144e0f8f65cb7a4f8da1a54905098d4ff9c6e227090e"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/web/package.wit",
+      "bytes": 1858,
+      "sha256": "sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450"
+    },
+    {
+      "path": "put-once-diagnostics/project/vendor/lsf/wit/platform/web-http/package.wit",
+      "bytes": 181,
+      "sha256": "sha256:92bc3b8ca3cb5c0ec76b012d695ea6ddf962a1534eeac297dfe7b27125dc5450"
+    },
+    {
+      "path": "put-once-diagnostics/project/wit/deps/clock/package.wit",
+      "bytes": 139,
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+    },
+    {
+      "path": "put-once-diagnostics/project/wit/deps/intents/package.wit",
+      "bytes": 1142,
+      "sha256": "sha256:182a2a982c470a4bd8603fba8d3e2e54e93a167dda2501de02c77b10066ea636"
+    },
+    {
+      "path": "put-once-diagnostics/project/wit/deps/state/package.wit",
+      "bytes": 3134,
+      "sha256": "sha256:56b0a1304a9987395e0ea3f07e3dde4cbae5e70e5c9837ffcc6ae3b3cb9b7f25"
+    },
+    {
+      "path": "put-once-diagnostics/project/wit/world.wit",
+      "bytes": 1020,
+      "sha256": "sha256:6642bc853129a8d1c84322eb9af59964bc7cbb8641a95ff4feae8837c1c7f539"
+    },
+    {
+      "path": "put-once-diagnostics/recipe-inputs.json",
+      "bytes": 5701,
+      "sha256": "sha256:547c354e6cf8ef2222e08c634b01ca4828bdf313acf2b17fa7a0fb22ea8ddb33"
+    },
+    {
+      "path": "put-once-diagnostics/report.json",
+      "bytes": 15641,
+      "sha256": "sha256:7dcffc97a9ecdb45e9b7d7696c012de0d472c73b0d608185a3df2b4544024c4f"
+    },
+    {
+      "path": "put-once-diagnostics/source-inputs.json",
+      "bytes": 11142,
+      "sha256": "sha256:e65c1f414b28bd6ffd2182beaa7522d20a4ed01743a7ed659c8360acfcc607d0"
+    },
+    {
+      "path": "put-once-diagnostics/source.tar.gz",
+      "bytes": 56442,
+      "sha256": "sha256:db825063cdbaba3d9c77697711c89369489920614b5bb4b2a3c9afa772d394e5"
+    }
+  ],
+  "totalBytes": 8729652
+}
