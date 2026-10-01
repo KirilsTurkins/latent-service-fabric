@@ -11,6 +11,71 @@ impl SupplyChainClock for SequenceClock {
 }
 
 #[test]
+fn covered_clock_projects_original_epoch_and_floor_without_renewal() {
+    let fixture = Fixture::new();
+    let root = tempfile::tempdir().unwrap();
+    let owner =
+        SupplyChainAuthority::open(root.path(), fixture.approved(), fixture.clock.clone(), 5)
+            .unwrap();
+    let floor = std::fs::read(root.path().join("floor.json")).unwrap();
+    let first = owner.covered_clock().unwrap();
+    assert_eq!(first.now_seconds, NOW);
+    assert_eq!(first.authority_epoch, 1);
+    assert_eq!(first.covered_until_seconds, NOW + 5);
+    fixture.clock.set(NOW + 2);
+    let later = owner.covered_clock().unwrap();
+    assert_eq!(later.now_seconds, NOW + 2);
+    assert_eq!(later.authority_epoch, first.authority_epoch);
+    assert_eq!(later.covered_until_seconds, first.covered_until_seconds);
+    assert_eq!(
+        std::fs::read(root.path().join("floor.json")).unwrap(),
+        floor
+    );
+    fixture.clock.set(NOW + 5);
+    assert_eq!(
+        owner.covered_clock().unwrap_err().message,
+        "admission-clock-lease-uncovered"
+    );
+    assert_eq!(
+        std::fs::read(root.path().join("floor.json")).unwrap(),
+        floor
+    );
+}
+
+#[test]
+fn covered_clock_denies_busy_regressed_uncertain_and_retired_authority() {
+    let fixture = Fixture::new();
+    let root = tempfile::tempdir().unwrap();
+    let owner =
+        SupplyChainAuthority::open(root.path(), fixture.approved(), fixture.clock.clone(), 5)
+            .unwrap();
+    let original = owner.inner.lock().unwrap();
+    assert_eq!(
+        owner.covered_clock().unwrap_err().message,
+        "admission-authority-busy"
+    );
+    drop(original);
+    fixture.clock.set(NOW + 1);
+    owner.covered_clock().unwrap();
+    fixture.clock.set(NOW);
+    assert_eq!(
+        owner.covered_clock().unwrap_err().message,
+        "admission-clock-regression"
+    );
+    fixture.clock.set(NOW + 1);
+    owner.inner.halted.store(true, Ordering::Release);
+    assert_eq!(
+        owner.covered_clock().unwrap_err().message,
+        "admission-durability-uncertain"
+    );
+    owner.retire();
+    assert_eq!(
+        owner.covered_clock().unwrap_err().message,
+        "admission-owner-retired"
+    );
+}
+
+#[test]
 fn renewal_without_persistence_retains_covered_clock_observation() {
     let fixture = Fixture::new();
     let directory = tempfile::tempdir().unwrap();

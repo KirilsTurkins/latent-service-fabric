@@ -1,13 +1,13 @@
-use std::sync::{atomic::Ordering, Arc};
+use std::sync::{Arc, atomic::Ordering};
 
 use latent_capabilities::broker::ActivationCapabilityBroker;
 use latent_core::{PlatformError, PlatformErrorCode};
 
 use super::{
-    capacity, compile, denied, model, BindingDefinition, BindingLimits, CompilerOwner,
-    ConfiguredBindingProvider,
+    BindingDefinition, BindingLimits, CompilerOwner, ConfiguredBindingProvider, capacity, compile,
+    denied, model,
 };
-use crate::deployments::{compiler, observation::Work, DirectoryDeploymentRepository};
+use crate::deployments::{DirectoryDeploymentRepository, compiler, observation::Work};
 
 impl DirectoryDeploymentRepository {
     pub async fn activate_configured_bindings(
@@ -78,6 +78,7 @@ impl DirectoryDeploymentRepository {
             providers: providers.into_boxed_slice(),
             current: Arc::downgrade(&self.current),
             limits,
+            manifest_profile: self.config.manifest_profile,
         });
         let mut next = compiler::compile_catalog_for_bindings(
             previous.routes.deployments.clone(),

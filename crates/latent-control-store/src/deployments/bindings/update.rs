@@ -1,14 +1,14 @@
 use super::model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider, StoredBinding};
-use super::{capacity, compile, denied, invalid, model, CompilerOwner};
+use super::{CompilerOwner, capacity, compile, denied, invalid, model};
 use crate::deployments::{
-    compiler, observation::Work, persistence, DirectoryDeploymentRepository, PublicationView,
-    PublishedCatalog,
+    DirectoryDeploymentRepository, PublicationView, PublishedCatalog, compiler, observation::Work,
+    persistence,
 };
 use latent_capabilities::broker::ActivationCapabilityBroker;
 use latent_core::{PlatformError, PlatformErrorCode, RouteGeneration};
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc, RwLock, Weak,
+    atomic::{AtomicBool, Ordering},
 };
 
 pub(super) struct WorkPermit(pub(super) Arc<AtomicBool>);
@@ -85,6 +85,7 @@ impl DirectoryDeploymentRepository {
             providers: providers.into_boxed_slice(),
             current: Arc::downgrade(&self.current),
             limits,
+            manifest_profile: self.config.manifest_profile,
         });
         let mut work = Work::default();
         if let Some(authority) = &self.admission {
