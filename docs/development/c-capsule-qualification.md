@@ -198,7 +198,30 @@ Stores and no activation observations. Preparation time is reported separately;
 all existing success, declared-error, permission-denial and reuse assertions
 retain their original guest ceilings and invocation checks. This qualifies
 prepared execution; cold compilation latency still requires separate evidence.
-The updated full replay remains pending.
+The updated full maintained replay at
+`088a555195e713eb2812b2dc282fc3fb32fc1f6c` passed in 699.352 seconds. The
+[retained observation](c-maintained-replay-2026-10-02.json) binds all seven
+maintained commands, ten original direct SDK cases with no ignored or filtered
+cases, both normal signed nodes with 27 invocations each, and all six printed
+guide steps. All 7,307 frozen tracked files were checked before and after the
+run. The owned native cache was explicitly rebuilt at that source, and every
+maintained command ran with the original 900-second overall and 600-second
+command limits.
+
+The same run subsequently passed all 21 actual compiler and generator controls.
+Their captured source root is now a strict child of the isolated compiler
+workspace; captured SDK inputs remain read-only, while outputs use the separate
+owned compiler directory. The observation retains successful and failed
+receipt identities, generator descendant reaping, and a fresh generator after
+the deadline case. An earlier attempt stopped before SDK tests because its
+qualification container incorrectly denied network access during explicit
+upstream HTTPS capture. Its raw failure remains separate; the fresh passing
+attempt retained the ordinary offline compiler and generator namespaces.
+
+The complete receipts and raw logs were copied outside Docker and source
+worktrees, with an exact archive digest and per-file inventory. These results
+apply to the recorded source. Installed frontend dependency build/test/watch,
+private capture, and later exact-source CI require their own observations.
 
 Current remote CI and complete #684 acceptance reconciliation remain required,
 including the full C dependency edit/test/watch and private capture workflows.
