@@ -41,9 +41,11 @@ class Controls:
         self.started, self.stage = time.monotonic(), "pinned-compiler"
         self.work = output / "compiler-work"
         self.work.mkdir(mode=0o700)
-        sdk = self.work / "sdk"
+        captured = self.work / "inputs"
+        captured.mkdir(mode=0o700)
+        sdk = captured / "sdk"
         shutil.copytree(ROOT / "sdk/c-guest", sdk)
-        self.commands = Commands(self.work, output, build_environment(self.work))
+        self.commands = Commands(captured, output, build_environment(self.work))
         self.compiler = Compiler(self.work / "compiler", 900, sdk=sdk, platform=None,
                                  commands=self.commands, installed=installed)
         self.result["compilerIsolation"] = self.compiler.enable_captured_isolation(self.work)
