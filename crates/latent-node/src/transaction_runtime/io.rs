@@ -62,7 +62,8 @@ impl StateTransactionHost {
         };
         // Native destruction can outlive a dropped opening or guest waiter.
         // Bind the original memory charge before accepting physical I/O.
-        let physical_memory: Arc<dyn std::any::Any + Send + Sync> = memory.clone();
+        let physical_memory: Arc<dyn std::any::Any + Send + Sync> =
+            Arc::new((memory.clone(), authorization.retention.clone()));
         let opening = match store.open_view_retaining(physical_memory) {
             Ok(opening) => opening,
             Err(error) => {

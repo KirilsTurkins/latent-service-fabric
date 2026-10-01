@@ -5,9 +5,12 @@ mod policy;
 mod selection;
 pub use selection::{TransactionInstallation, TransactionSelection};
 
-use super::{authorization, CommandTimeSource, PolicyCallBinding, StateTransactionHost};
+use super::{
+    authorization, CommandTimeSource, PolicyCallBinding, StateTransactionHost, TransactionRetention,
+};
 use latent_capabilities::namespace::RecoverySelection;
 use latent_commit::atomic::{AdmittedCommand, AtomicError, CommandRecord, ResultPolicy};
+use latent_core::native_capacity::NativeCapacityOwner;
 use latent_core::PlatformError;
 use latent_effects::authority::EffectAuthorityOwner;
 use latent_effects::runtime::CommandAdmissionSource;
@@ -22,6 +25,7 @@ pub struct TransactionAdmissionOwners {
     effects: EffectAuthorityOwner,
     time: Arc<dyn CommandTimeSource>,
     command: CommandAdmissionSource,
+    native: NativeCapacityOwner,
 }
 impl TransactionAdmissionOwners {
     pub fn new(
@@ -30,7 +34,10 @@ impl TransactionAdmissionOwners {
         policy: Arc<PolicyStore>,
         command: CommandAdmissionSource,
     ) -> Result<Self, PlatformError> {
-        if !command.uses_store(&store) {
+        let native = command
+            .native_capacity()
+            .map_err(|_| authorization::denied())?;
+        if !command.uses_store(&store) || !store.uses_native_capacity(&native) {
             return Err(authorization::denied());
         }
         Ok(Self {
@@ -40,6 +47,7 @@ impl TransactionAdmissionOwners {
             effects: command.effect_authority(),
             time: Arc::new(super::command_role::CommandClock(command.clone())),
             command,
+            native,
         })
     }
 }
@@ -53,7 +61,10 @@ pub enum TransactionAdmissionResult {
     Query {
         host: Arc<StateTransactionHost>,
     },
-    Existing(CommandRecord),
+    Existing {
+        command: CommandRecord,
+        retained: Arc<TransactionRetention>,
+    },
     /// Admission flushed Pending but no host was published. This original
     /// affine claim still owns cleanup/recovery; no second guest is admitted.
     Pending(super::PendingCommandAdmission),
@@ -67,11 +78,16 @@ pub enum TransactionCompletionResult {
         outcome: latent_activation::ActivationOutcome,
         view: latent_executor::transaction::ViewIdentity,
         retained: Arc<latent_core::HostMemoryReservation>,
+        native: Arc<TransactionRetention>,
     },
-    Existing(CommandRecord),
+    Existing {
+        command: CommandRecord,
+        retained: Arc<TransactionRetention>,
+    },
     PendingRetired {
         command: CommandRecord,
         proof: Result<Box<latent_commit::atomic::RetiredAttempt>, AtomicError>,
+        retained: Arc<TransactionRetention>,
     },
 }
 enum State {
@@ -88,6 +104,7 @@ pub struct NativeTransactionAdmission {
     installation: Arc<TransactionInstallation>,
     state: Mutex<State>,
     completion: Mutex<Option<TransactionCompletionResult>>,
+    retention: Mutex<Option<Arc<TransactionRetention>>>,
 }
 impl NativeTransactionAdmission {
     pub fn new(
@@ -101,6 +118,7 @@ impl NativeTransactionAdmission {
             installation,
             state: Mutex::new(State::Fresh(Some(selection))),
             completion: Mutex::new(None),
+            retention: Mutex::new(None),
         })
     }
 
@@ -129,6 +147,15 @@ impl NativeTransactionAdmission {
             .lock()
             .map_err(|_| authorization::denied())?
             .take())
+    }
+
+    fn retained_capacity(&self) -> Result<Arc<TransactionRetention>, PlatformError> {
+        self.retention
+            .lock()
+            .map_err(|_| authorization::denied())?
+            .as_ref()
+            .cloned()
+            .ok_or_else(authorization::denied)
     }
 }
 

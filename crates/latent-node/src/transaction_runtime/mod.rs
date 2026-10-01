@@ -1,5 +1,6 @@
 //! Activation-scoped native state sessions over the existing protected owner.
 mod authorization;
+mod capacity;
 mod command_role;
 mod completion;
 mod factory;
@@ -9,6 +10,7 @@ mod io;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
 pub use authorization::{PolicyCallBinding, StateAuthorization};
+pub use capacity::TransactionRetention;
 pub use command_role::PendingCommandAdmission;
 pub use completion::{CommandCompletion, CommandCompletionDisposition};
 pub use factory::{

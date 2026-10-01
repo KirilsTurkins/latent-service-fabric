@@ -67,14 +67,10 @@ impl NativeTransactionAdmission {
             envelope,
             budget,
         )?;
-        let bytes = u64::try_from(envelope.input.capacity())
-            .map_err(|_| authorization::denied())?
-            .checked_mul(2)
-            .and_then(|bytes| bytes.checked_add(2 * 1024 * 1024))
-            .ok_or_else(authorization::denied)?;
-        let _metadata = budget
-            .reserve_host_memory(bytes)
-            .map_err(|error| error.to_platform_error())?;
+        let retention =
+            super::TransactionRetention::reserve(&self.owners.native, envelope, budget)?;
+        let bytes = retention.request_bytes();
+        *self.retention.lock().map_err(|_| authorization::denied())? = Some(Arc::clone(&retention));
         let namespace = self
             .read_namespace(&selection, &envelope.target.tenant)
             .await?;
@@ -218,10 +214,12 @@ impl NativeTransactionAdmission {
     ) -> Result<NamespaceRead, PlatformError> {
         let tenant = tenant.clone();
         let namespace = StateNamespaceId(selection.namespace.clone());
+        let retention = self.retained_capacity()?;
         let result = self
             .owners
             .store
             .with_store(StoreIoKind::Read, 8192, move |store| {
+                let _retention = retention;
                 let view = store.snapshot()?;
                 Ok(NamespaceCatalog::read_in(&view, &tenant, &namespace))
             })
@@ -273,6 +271,7 @@ impl NativeTransactionAdmission {
             self.installation.intents.clone(),
             budget.clone(),
         )?;
+        let authorization = authorization.with_retention(self.retained_capacity()?);
         let authorization = match role {
             Some(role) => authorization.with_command_role(role),
             None => authorization,
@@ -364,7 +363,10 @@ impl NativeTransactionAdmission {
             }
             Ok(PendingPublication::Existing(record)) => {
                 role.retire().map_err(atomic)?;
-                *state = State::Ready(Some(TransactionAdmissionResult::Existing(record)));
+                *state = State::Ready(Some(TransactionAdmissionResult::Existing {
+                    command: record,
+                    retained: self.retained_capacity()?,
+                }));
                 Err(error(
                     latent_core::PlatformErrorCode::AlreadyExists,
                     "transaction-already-admitted",

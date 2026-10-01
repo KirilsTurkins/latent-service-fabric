@@ -20,6 +20,9 @@ impl NativeTransactionAdmission {
             Ok(None) => return outcome,
             Err(_) => return unavailable(consumption),
         };
+        let Ok(retained) = self.retained_capacity() else {
+            return unavailable(consumption);
+        };
         let (result, observation) = match admitted {
             TransactionAdmissionResult::Command { claim, host } => {
                 let identity = claim.record().clone();
@@ -34,6 +37,7 @@ impl NativeTransactionAdmission {
                     Ok(completion) => completion.finish(outcome).await,
                     Err(_) => CommandCompletionDisposition::RecoveryRequired {
                         command: identity,
+                        retained_native: Some(Arc::clone(&retained)),
                         cleanup_failure: host.retire().await.err(),
                     },
                 };
@@ -50,7 +54,8 @@ impl NativeTransactionAdmission {
                 // ledger spending stay closed throughout this completion.
                 let current = control.matches(host.activation_id(), host.budget())
                     && control.is_current()
-                    && host.authorization.authorize_query_completion().is_ok();
+                    && host.authorization.authorize_query_completion().is_ok()
+                    && retained.check_current().is_ok();
                 let outcome = if current && retired {
                     outcome
                 } else {
@@ -62,20 +67,26 @@ impl NativeTransactionAdmission {
                         outcome,
                         view,
                         retained: Arc::clone(&host.memory),
+                        native: Arc::clone(&retained),
                     },
                     observation,
                 )
             }
-            TransactionAdmissionResult::Existing(record) => {
-                (TransactionCompletionResult::Existing(record), outcome)
-            }
+            TransactionAdmissionResult::Existing { command, retained } => (
+                TransactionCompletionResult::Existing { command, retained },
+                outcome,
+            ),
             TransactionAdmissionResult::Pending(pending) => {
                 let command = pending.record().clone();
                 let proof = pending.retire_without_guest().map(Box::new);
                 // This proof still needs a fresh authorized recovery writer to
                 // persist Aborted. It is never exposed as a durable abort here.
                 (
-                    TransactionCompletionResult::PendingRetired { command, proof },
+                    TransactionCompletionResult::PendingRetired {
+                        command,
+                        proof,
+                        retained: Arc::clone(&retained),
+                    },
                     outcome,
                 )
             }
@@ -83,6 +94,11 @@ impl NativeTransactionAdmission {
         match self.completion.lock() {
             Ok(mut slot) if slot.is_none() => {
                 *slot = Some(result);
+                // The actual view/work and result now retain this same guard.
+                // The admission shell adds no lifetime after physical completion.
+                if let Ok(mut retention) = self.retention.lock() {
+                    retention.take();
+                }
                 observation
             }
             _ => unavailable(outcome_consumption(&observation)),

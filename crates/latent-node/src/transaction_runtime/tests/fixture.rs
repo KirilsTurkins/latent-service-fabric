@@ -59,9 +59,17 @@ pub(super) struct Fixture {
     namespaces: Arc<NamespaceCatalog>,
     cancellations: crate::ActivationCancellationRegistry,
     registrations: std::sync::Mutex<Vec<crate::CancellationRegistration>>,
+    pub native: latent_core::native_capacity::NativeCapacityOwner,
 }
 impl Fixture {
     pub async fn new() -> Self {
+        Self::with_native_limits(latent_core::native_capacity::NativeCapacityLimits::default())
+            .await
+    }
+
+    pub async fn with_native_limits(
+        limits: latent_core::native_capacity::NativeCapacityLimits,
+    ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
@@ -76,6 +84,8 @@ impl Fixture {
         let mut config = ProtectedStoreConfig::bounded_linux(state_root);
         config.create_if_missing = true;
         let store = Arc::new(ProtectedStoreOwner::start(config).unwrap().await.unwrap());
+        let native = latent_core::native_capacity::NativeCapacityOwner::new(limits).unwrap();
+        store.bind_native_capacity(&native).unwrap();
         let namespaces = Arc::new(NamespaceCatalog::new());
         Self::create_namespace(&store, &namespaces).await;
         let effects = EffectAuthorityOwner::new(128, 16, 100).unwrap();
@@ -89,6 +99,7 @@ impl Fixture {
         )
         .await
         .unwrap();
+        dispatcher.bind_native_capacity(&native).unwrap();
         let command = dispatcher.command_admission_source();
         let time: Arc<dyn CommandTimeSource> =
             Arc::new(command_role::CommandClock(command.clone()));
@@ -135,6 +146,7 @@ impl Fixture {
             namespaces,
             cancellations: crate::ActivationCancellationRegistry::default(),
             registrations: std::sync::Mutex::new(Vec::new()),
+            native,
         }
     }
     async fn create_namespace(store: &ProtectedStoreOwner, namespaces: &Arc<NamespaceCatalog>) {

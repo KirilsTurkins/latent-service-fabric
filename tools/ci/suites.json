@@ -2877,6 +2877,9 @@
         "journal::tests::tenant_queries_and_cancellation_never_expose_another_tenants_record",
         "journal::tests::terminal_eviction_and_monotonic_ttl_never_remove_active_records",
         "journal::tests::unowned_append_is_rejected_without_changing_a_live_history",
+        "transaction_runtime::tests::capacity::durable_response_owner_retains_global_slot_after_native_view_and_admission_retire",
+        "transaction_runtime::tests::capacity::frozen_query_and_lost_waiter_retain_original_global_slot_through_real_retirement",
+        "transaction_runtime::tests::capacity::global_close_before_original_commit_cas_discards_business_mutations",
         "transaction_runtime::tests::native_admission_persists_pending_before_host_and_success_commits_once",
         "transaction_runtime::tests::native_declared_rejection_discards_state_and_preserves_exact_result",
         "transaction_runtime::tests::native_fresh_query_is_read_only_and_creates_no_command_journal",
@@ -2890,7 +2893,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 86,
+      "minimumCases": 89,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [

@@ -24,6 +24,7 @@ pub enum CommandCompletionDisposition {
         command: CommandRecord,
         result: Box<DurableResult>,
         retained: Arc<HostMemoryReservation>,
+        retained_native: Option<Arc<super::TransactionRetention>>,
         cleanup_failure: Option<StateFailure>,
     },
     /// This affine proof is issued only after every actual guest/native owner
@@ -33,9 +34,11 @@ pub enum CommandCompletionDisposition {
         proof: Box<RetiredAttempt>,
         reason: AtomicError,
         retained: Arc<HostMemoryReservation>,
+        retained_native: Option<Arc<super::TransactionRetention>>,
     },
     RecoveryRequired {
         command: CommandRecord,
+        retained_native: Option<Arc<super::TransactionRetention>>,
         cleanup_failure: Option<StateFailure>,
     },
 }
@@ -236,6 +239,7 @@ async fn publish(
                 command,
                 result: Box::new(result),
                 retained: Arc::clone(&host.memory),
+                retained_native: host.authorization.retention.clone(),
                 cleanup_failure,
             }
         }
@@ -305,10 +309,23 @@ fn publish_fenced(
                                     .map_err(|_| NamespaceError::PermissionDenied)
                             },
                             || {
-                                control
-                                    .accept(proposed)
-                                    .then_some(())
-                                    .ok_or(NamespaceError::PermissionDenied)
+                                let accept = || {
+                                    control
+                                        .accept(proposed)
+                                        .then_some(())
+                                        .ok_or(NamespaceError::PermissionDenied)
+                                };
+                                // Same global owner and original deadline. Keep
+                                // the short Native fence after Policy/Namespace/
+                                // Effects and through the original cancellation
+                                // CAS; never hold it across physical publication.
+                                if let Some(retained) = &authorization.retention {
+                                    retained
+                                        .with_current(accept)
+                                        .map_err(|_| NamespaceError::PermissionDenied)?
+                                } else {
+                                    accept()
+                                }
                             },
                         )
                         .map_err(|_| super::authorization::denied())
@@ -330,6 +347,7 @@ async fn retired(
             if host.retire_command_role().is_err() {
                 return CommandCompletionDisposition::RecoveryRequired {
                     command,
+                    retained_native: host.authorization.retention.clone(),
                     cleanup_failure: Some(StateFailure::Unavailable),
                 };
             }
@@ -338,11 +356,13 @@ async fn retired(
                 proof: Box::new(proof),
                 reason,
                 retained: Arc::clone(&host.memory),
+                retained_native: host.authorization.retention.clone(),
             };
         }
     }
     CommandCompletionDisposition::RecoveryRequired {
         command,
+        retained_native: host.authorization.retention.clone(),
         cleanup_failure,
     }
 }
@@ -352,6 +372,7 @@ async fn recovery(
 ) -> CommandCompletionDisposition {
     CommandCompletionDisposition::RecoveryRequired {
         command,
+        retained_native: host.authorization.retention.clone(),
         cleanup_failure: host.retire().await.err(),
     }
 }

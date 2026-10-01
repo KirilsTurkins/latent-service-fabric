@@ -1,5 +1,6 @@
 //! Real protected-engine/policy tests. These are native host-owner tests;
 //! the six authored Wasmtime components have a separate execution campaign.
+mod capacity;
 mod fixture;
 
 use super::*;
@@ -35,7 +36,7 @@ async fn native_admission_persists_pending_before_host_and_success_commits_once(
         .is_err());
     assert!(matches!(
         duplicate.take_result().unwrap(),
-        Some(TransactionAdmissionResult::Existing(_))
+        Some(TransactionAdmissionResult::Existing { .. })
     ));
     assert_eq!(fixture.rows(Family::Command).await, 1);
     host.finish_guest_access(); // exact native test owns no guest references
@@ -55,6 +56,7 @@ async fn native_admission_persists_pending_before_host_and_success_commits_once(
         result,
         cleanup_failure,
         retained,
+        ..
     } = result
     else {
         panic!("native commit was not durable");
@@ -271,6 +273,7 @@ async fn native_manager_completion_hook_commits_once_and_retains_affine_result()
         result,
         retained,
         cleanup_failure,
+        ..
     })) = admission.take_completion().unwrap()
     else {
         panic!("durable result absent")

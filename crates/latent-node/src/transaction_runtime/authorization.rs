@@ -33,6 +33,7 @@ pub struct StateAuthorization {
     intents: Option<Arc<PolicyCallBinding>>,
     pub(super) budget: ActivationBudget,
     pub(super) role: Option<Arc<super::command_role::CommandRole>>,
+    pub(super) retention: Option<Arc<super::TransactionRetention>>,
 }
 impl StateAuthorization {
     pub(super) fn publication(&self) -> &str {
@@ -99,11 +100,17 @@ impl StateAuthorization {
             intents,
             budget,
             role: None,
+            retention: None,
         })
     }
 
     pub(super) fn with_command_role(mut self, role: Arc<super::command_role::CommandRole>) -> Self {
         self.role = Some(role);
+        self
+    }
+
+    pub(super) fn with_retention(mut self, retention: Arc<super::TransactionRetention>) -> Self {
+        self.retention = Some(retention);
         self
     }
 
@@ -171,6 +178,11 @@ impl StateAuthorization {
             &self.state
         };
         let now = Instant::now();
+        if !completion {
+            if let Some(retention) = &self.retention {
+                retention.check_current()?;
+            }
+        }
         let cancelled = if completion {
             self.budget.retained_authority_is_cancelled_at(now)
         } else {
