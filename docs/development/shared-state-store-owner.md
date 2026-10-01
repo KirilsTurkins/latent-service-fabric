@@ -331,3 +331,22 @@ after actual retirement.
 On the pinned Linux Rust 1.97.1 image, all 117 state library cases passed with
 zero ignored or filtered cases, including this schedule and the original native
 view keeper schedule. Strict all-target/all-feature state Clippy also passed.
+
+## Physical recovery operation retirement
+
+`reserve_recovery_operation_retaining` reserves an affine operation pin in the
+same protected engine's recovery partition and binds the original request
+keeper before provider work starts. Its destruction is queued to the existing
+reserved worker. Ordinary native destructors and accepted slots cannot occupy
+that worker or the recovery retirement slots. An unexpected operation drop still
+quarantines the protected root and retains the original owner; no timeout
+provides physical completion evidence.
+
+The underlying `reserve_recovery_retained` uses separate preallocated retirement
+slots within the existing recovery limits. The deterministic schedule
+`recovery_native_owner_retires_on_reserved_worker_when_ordinary_capacity_is_full`
+fills both ordinary workers and their accepted quota, then proves actual recovery
+native destruction and pin retirement on the reserved worker. All 118 state
+library cases and strict all-target/all-feature state Clippy passed on the pinned
+Linux Rust 1.97.1 image. This establishes finite native recovery ownership, not
+progress through a stalled device or proof for an unretired provider operation.

@@ -62,6 +62,24 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         &self,
         retained_bytes: u64,
     ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
+        self.reserve_in(false, retained_bytes)
+    }
+
+    /// The same affine physical owner, admitted and retired exclusively in the
+    /// existing recovery partition. Ordinary native cleanup cannot consume its
+    /// reserved fixed worker or preallocated retirement slots.
+    pub fn reserve_recovery_retained<T: Send + 'static>(
+        &self,
+        retained_bytes: u64,
+    ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
+        self.reserve_in(true, retained_bytes)
+    }
+
+    fn reserve_in<T: Send + 'static>(
+        &self,
+        recovery: bool,
+        retained_bytes: u64,
+    ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
         let control = &self.inner.control;
         let mut state = control.state.lock().map_err(|_| StoreIoError::Poisoned)?;
         let metadata = std::mem::size_of::<Retained<S, T>>()
@@ -72,17 +90,16 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         let bytes = retained_bytes
             .checked_add(metadata)
             .ok_or(StoreIoError::Exhausted)?;
-        state.admit(false, bytes)?;
-        state.accepted += 1;
+        state.admit(recovery, bytes)?;
+        state.reserve(recovery, bytes);
         state.physical_owners += 1;
-        state.retained_bytes += bytes;
         let retained = Box::new(Retained {
             value: None,
             owner: None,
             reservation: PhysicalReservation(Reservation {
                 control: Arc::clone(control),
                 bytes,
-                recovery: false,
+                recovery,
                 keeper: None,
             }),
             retired: Arc::new(RetirementSignal::default()),
@@ -146,7 +163,11 @@ impl<S: Send + 'static, T: Send + 'static> StoreIoRetained<S, T> {
                     .state
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner);
-                state.retirements.push_back(retained);
+                if retained.reservation.0.recovery {
+                    state.recovery_retirements.push_back(retained);
+                } else {
+                    state.retirements.push_back(retained);
+                }
             }
             self.control.notify();
         }

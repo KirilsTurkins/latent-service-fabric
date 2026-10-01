@@ -173,6 +173,13 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
         self.owner.reserve_retained(bytes)
     }
 
+    pub fn reserve_recovery_retained<T: Send + 'static>(
+        &self,
+        bytes: u64,
+    ) -> Result<super::StoreIoRetained<OnceLock<S>, T>, StoreIoError> {
+        self.owner.reserve_recovery_retained(bytes)
+    }
+
     pub(crate) fn owns_retained<T: Send + 'static>(
         &self,
         retained: &super::StoreIoRetained<OnceLock<S>, T>,
