@@ -12,6 +12,12 @@
           "sdk/typescript-guest/**",
           "sdk/transaction-contract/**",
           "tools/qualify_transaction_contracts.py",
+          "tools/compile_transaction_guests.py",
+          "tools/transaction_guest_project.py",
+          "tools/transaction_guest_variants.py",
+          "tools/tests/test_transaction_guest_authoring.py",
+          "tools/tests/test_transaction_guest_compilers.py",
+          "examples/rust-capsules/transactional-aggregate/**",
           "crates/latent-wasmtime/examples/typescript_runtime_probe.rs",
           "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
           "tools/typescript_guest/**",
@@ -40,6 +46,12 @@
           "sdk/typescript-guest/**",
           "sdk/transaction-contract/**",
           "tools/qualify_transaction_contracts.py",
+          "tools/compile_transaction_guests.py",
+          "tools/transaction_guest_project.py",
+          "tools/transaction_guest_variants.py",
+          "tools/tests/test_transaction_guest_authoring.py",
+          "tools/tests/test_transaction_guest_compilers.py",
+          "examples/rust-capsules/transactional-aggregate/**",
           "crates/latent-wasmtime/examples/typescript_runtime_probe.rs",
           "crates/latent-wasmtime/examples/typescript_runtime_probe/**",
           "tools/typescript_guest/**",
@@ -69,7 +81,7 @@
   "requiredJobs": [
     "boundary"
   ],
-  "reviewReason": "Add source-bound transaction shape compiler evidence while preserving every existing language execution gate",
+  "reviewReason": "Build both real authored transaction variants with existing exact compiler pins and retain bounded source, recipe, binding and failure artifacts without claiming node execution",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

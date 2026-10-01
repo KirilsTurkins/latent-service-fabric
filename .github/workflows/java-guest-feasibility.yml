@@ -84,6 +84,8 @@ jobs:
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
       - name: Qualify proposed transaction shapes and shared imported owners with the maintained Java compiler
         run: python3 tools/qualify_transaction_contracts.py --language java --output "$RUNNER_TEMP/transaction-contract-java" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
+        run: python3 tools/compile_transaction_guests.py --language java --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guests-java"
       - name: Compile real Java sources and retain the first incompatible stage
         run: python3 sdk/java-guest/tools/feasibility.py --output "$RUNNER_TEMP/java-guest-feasibility" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
       - name: Execute Java code, exceptions and GC without claiming node admission
@@ -106,6 +108,20 @@ jobs:
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/transaction-guests-java/**/report.json
+            ${{ runner.temp }}/transaction-guests-java/**/source-inputs.json
+            ${{ runner.temp }}/transaction-guests-java/**/recipe-inputs.json
+            ${{ runner.temp }}/transaction-guests-java/**/source.tar.gz
+            ${{ runner.temp }}/transaction-guests-java/**/component.wasm
+            ${{ runner.temp }}/transaction-guests-java/**/component.wit
+            ${{ runner.temp }}/transaction-guests-java/**/compiler-inputs.json
+            ${{ runner.temp }}/transaction-guests-java/**/logs/**
+            ${{ runner.temp }}/transaction-guests-java/**/compiler/*.log
+            ${{ runner.temp }}/transaction-guests-java/**/compiler/*.command.json
+            ${{ runner.temp }}/transaction-guests-java/**/compiled/generated/**
+            ${{ runner.temp }}/transaction-guests-java/**/compiled/bindings/**
+            ${{ runner.temp }}/transaction-guests-java/**/bindings/**
+            ${{ runner.temp }}/transaction-guests-java/**/compiled/raw-generated-bindings.json
             ${{ runner.temp }}/transaction-contract-java/report.json
             ${{ runner.temp }}/transaction-contract-java/source.tar.gz
             ${{ runner.temp }}/transaction-contract-java/component.wit
