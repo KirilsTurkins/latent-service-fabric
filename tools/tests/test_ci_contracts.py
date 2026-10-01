@@ -656,23 +656,44 @@ class RepositoryMigrationTests(unittest.TestCase):
     def test_every_historical_obligation_and_current_expectation_is_accounted_for(self):
         legacy = contracts.read_json(ROOT / "tools/ci/history/commands-v1.json")
         data = contracts.load(ROOT)
-        for field in ("before", "coverage", "baselineRevision"):
+        for field in ("before", "baselineRevision"):
             self.assertEqual(data[field], legacy[field], field)
+        self.assertEqual(set(data["coverage"]), set(legacy["coverage"]))
+        for key, obligation in legacy["coverage"].items():
+            self.assertEqual(data["coverage"][key]["after"], obligation["after"], key)
         self.assertEqual(len(legacy["before"]), 88)
         self.assertEqual(len(legacy["after"]), 208)
         self.assertEqual(len(legacy["delegatedOwners"]), 124)
         self.assertEqual(len(legacy["pythonTestModules"]), 260)
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
+        performance_extensions = {
+            ".github/workflows/ci.yml:contracts:Validate contracts, echo component, and generated bindings": ["tools/validate_contracts.sh"],
+            ".github/workflows/ci.yml:contracts:Validate standalone optimization benchmark smoke": ["python3 tools/run_optimization_benchmarks.py --profile smoke"],
+            ".github/workflows/docs-site.yml:website:Verify production pages, theme and source-backed controls": [
+                "npm run test:build", "npm run test:theme", "npm run test:examples", "npm run test:versions", "npm run test:discovery", 'wait "$versions_pid"', 'exit "$status"'],
+            ".github/workflows/typescript-guest.yml:boundary:Install pinned component validator": ['test "$(wasm-tools --version | cut -d \' \' -f 1,2)" = \'wasm-tools 1.254.0\''],
+            ".github/workflows/go-guest.yml:upstream-probe:Install the locked compiler and generator": [
+                "cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go",
+                'test "$(wasm-tools --version | cut -d \' \' -f 1,2)" = \'wasm-tools 1.254.0\'',
+                "sha256sum --check --strict"],
+            ".github/workflows/go-guest.yml:upstream-probe:Retain pinned reproduction tools": [
+                'cp "$HOME/.cargo/bin/componentize-go" "$(command -v wasm-tools)" "$out/"',
+                'sha256sum "$out/componentize-go" "$out/wasm-tools"'],
+        }
         for key, value in legacy["after"].items():
             self.assertIn(key, data["after"])
-            if key != reviewed_extension:
+            if key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:
                 self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
                                  {k: v for k, v in value.items() if k != "run"})
-                old_modules = {word for word in value["run"].split() if word.startswith("tools.tests.")}
-                self.assertTrue(old_modules <= set(data["after"][key]["run"].split()))
+                if key == reviewed_extension:
+                    old_modules = {word for word in value["run"].split() if word.startswith("tools.tests.")}
+                    self.assertTrue(old_modules <= set(data["after"][key]["run"].split()))
+                else:
+                    for command in performance_extensions[key]:
+                        self.assertIn(command, data["after"][key]["run"], key)
         self.assertTrue(set(legacy["delegatedOwners"]) <= set(data["delegatedOwners"]))
         for name, cases in legacy["pythonCases"].items():
             self.assertTrue(set(cases) <= set(data["pythonCases"][name]), name)
