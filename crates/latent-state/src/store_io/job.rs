@@ -11,10 +11,15 @@ pub(super) struct Reservation<S> {
     pub control: Arc<Control<S>>,
     pub bytes: u64,
     pub recovery: bool,
+    pub keeper: Option<Arc<dyn std::any::Any + Send + Sync>>,
 }
 
 impl<S> Drop for Reservation<S> {
     fn drop(&mut self) {
+        // Completion values/callback buffers are already destroyed. The same
+        // original global owner retires before native slot/byte refund, outside
+        // the storage bookkeeping lock.
+        drop(self.keeper.take());
         {
             let mut state = self
                 .control
