@@ -1,0 +1,250 @@
+    Checking latent-core v0.1.0-alpha.5 (/work/crates/latent-core)
+    Checking tokio v1.53.1
+    Checking wasmparser v0.259.0
+   Compiling cranelift-codegen v0.135.3
+   Compiling wasmparser v0.254.0
+    Checking regalloc2 v0.15.2
+   Compiling latent-component-bindings v0.1.0-alpha.5 (/work/crates/latent-component-bindings)
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/work/crates/latent-wasmtime)
+    Checking latent-manifest v0.1.0-alpha.5 (/work/crates/latent-manifest)
+    Checking latent-audit v0.1.0-alpha.5 (/work/crates/latent-audit)
+    Checking latent-contracts v0.1.0-alpha.5 (/work/crates/latent-contracts)
+    Checking latent-protected-files v0.1.0-alpha.5 (/work/crates/latent-protected-files)
+    Checking latent-identity v0.1.0-alpha.5 (/work/crates/latent-identity)
+error: the following explicit lifetimes could be elided: 'a
+  --> crates/latent-identity/src/lib.rs:66:18
+   |
+66 |     fn authorize<'a>(
+   |                  ^^
+67 |         &'a self,
+   |          ^^
+68 |         request: AuthorizationRequest,
+69 |     ) -> BoxFuture<'a, Result<AuthorizationDecision, PlatformError>>;
+   |                    ^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#elidable_lifetime_names
+   = note: `-D clippy::elidable-lifetime-names` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::elidable_lifetime_names)]`
+help: elide the lifetimes
+   |
+66 ~     fn authorize(
+67 ~         &self,
+68 |         request: AuthorizationRequest,
+69 ~     ) -> BoxFuture<'_, Result<AuthorizationDecision, PlatformError>>;
+   |
+
+error: the following explicit lifetimes could be elided: 'a
+  --> crates/latent-identity/src/lib.rs:89:16
+   |
+89 |     fn current<'a>(&'a self) -> BoxFuture<'a, Result<NodeIdentity, PlatformError>>;
+   |                ^^   ^^                    ^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#elidable_lifetime_names
+help: elide the lifetimes
+   |
+89 -     fn current<'a>(&'a self) -> BoxFuture<'a, Result<NodeIdentity, PlatformError>>;
+89 +     fn current(&self) -> BoxFuture<'_, Result<NodeIdentity, PlatformError>>;
+   |
+
+error: the following explicit lifetimes could be elided: 'a
+  --> crates/latent-identity/src/lib.rs:90:15
+   |
+90 |     fn rotate<'a>(&'a self) -> BoxFuture<'a, Result<NodeIdentity, PlatformError>>;
+   |               ^^   ^^                    ^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#elidable_lifetime_names
+help: elide the lifetimes
+   |
+90 -     fn rotate<'a>(&'a self) -> BoxFuture<'a, Result<NodeIdentity, PlatformError>>;
+90 +     fn rotate(&self) -> BoxFuture<'_, Result<NodeIdentity, PlatformError>>;
+   |
+
+error: could not compile `latent-identity` (lib) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: redundant closure
+  --> crates/latent-manifest/src/json_number.rs:68:49
+   |
+68 |                 if bytes.get(index).is_some_and(|byte| byte.is_ascii_digit()) {
+   |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the method itself: `u8::is_ascii_digit`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure_for_method_calls
+   = note: `-D clippy::redundant-closure-for-method-calls` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::redundant_closure_for_method_calls)]`
+
+error: redundant closure
+  --> crates/latent-manifest/src/json_number.rs:74:52
+   |
+74 |                 while bytes.get(index).is_some_and(|byte| byte.is_ascii_digit()) {
+   |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the method itself: `u8::is_ascii_digit`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure_for_method_calls
+
+error: redundant closure
+  --> crates/latent-manifest/src/json_number.rs:87:48
+   |
+87 |             while bytes.get(index).is_some_and(|byte| byte.is_ascii_digit()) {
+   |                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the method itself: `u8::is_ascii_digit`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure_for_method_calls
+
+error: redundant closure
+   --> crates/latent-manifest/src/json_number.rs:107:48
+    |
+107 |             while bytes.get(index).is_some_and(|byte| byte.is_ascii_digit()) {
+    |                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the method itself: `u8::is_ascii_digit`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure_for_method_calls
+
+error: boolean to int conversion using if
+   --> crates/latent-manifest/src/json_number.rs:273:26
+    |
+273 |         let sign_bytes = if self.negative { 1 } else { 0 };
+    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace with from: `usize::from(self.negative)`
+    |
+    = note: `self.negative as usize` or `self.negative.into()` can also be valid options
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#bool_to_int_with_if
+    = note: `-D clippy::bool-to-int-with-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::bool_to_int_with_if)]`
+
+error: redundant closure
+   --> crates/latent-manifest/src/json_number.rs:344:52
+    |
+344 |         if digits.is_empty() || !digits.iter().all(|digit| digit.is_ascii_digit()) {
+    |                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the method itself: `u8::is_ascii_digit`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure_for_method_calls
+
+error: this argument is passed by value, but not consumed in the function body
+   --> crates/latent-manifest/src/json_number.rs:402:43
+    |
+402 |     fn normalized(negative: bool, digits: Vec<u8>) -> Self {
+    |                                           ^^^^^^^ help: consider changing the type to: `&[u8]`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_pass_by_value
+    = note: `-D clippy::needless-pass-by-value` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::needless_pass_by_value)]`
+
+error: used `debug_assert!` with an equality comparison
+   --> crates/latent-manifest/src/json_number.rs:506:5
+    |
+506 |     debug_assert!(compare_magnitudes(left, right) != Ordering::Less);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#manual_assert_eq
+    = note: `-D clippy::manual-assert-eq` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_assert_eq)]`
+help: replace it with `debug_assert_ne!(..)`
+    |
+506 -     debug_assert!(compare_magnitudes(left, right) != Ordering::Less);
+506 +     debug_assert_ne!(compare_magnitudes(left, right), Ordering::Less);
+    |
+
+error: this function has too many lines (110/100)
+   --> crates/latent-manifest/src/schema.rs:110:1
+    |
+110 | / fn validate_node(
+111 | |     schema: &Value,
+112 | |     instance: &Value,
+113 | |     path: &str,
+...   |
+116 | |     max_violations: usize,
+117 | | ) {
+    | |_^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+    = note: `-D clippy::too-many-lines` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: this function has too many lines (117/100)
+   --> crates/latent-manifest/src/validation.rs:177:5
+    |
+177 |     fn validate_deployment(&self, manifest: &DeploymentManifest) -> ManifestResult<()> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+
+error: this argument (0 byte) is passed by reference, but would be more efficient if passed by value (limit: 8 byte)
+   --> crates/latent-manifest/src/validation.rs:467:9
+    |
+467 |         &self,
+    |         ^^^^^ help: consider passing by value instead: `self`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#trivially_copy_pass_by_ref
+    = note: `-D clippy::trivially-copy-pass-by-ref` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::trivially_copy_pass_by_ref)]`
+
+error: this function has too many lines (101/100)
+   --> crates/latent-audit/src/durable/codec.rs:145:1
+    |
+145 | pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+    = note: `-D clippy::too-many-lines` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: all fields have the same prefix: `max`
+  --> crates/latent-manifest/src/codec.rs:70:1
+   |
+70 | / pub struct ManifestLimits {
+71 | |     pub max_document_bytes: usize,
+72 | |     pub max_nesting_depth: usize,
+73 | |     pub max_string_bytes: usize,
+74 | |     pub max_violations: usize,
+75 | | }
+   | |_^
+   |
+   = help: remove the prefixes
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#struct_field_names
+   = note: `-D clippy::struct-field-names` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::struct_field_names)]`
+
+error: this function has too many lines (101/100)
+   --> crates/latent-audit/src/durable/codec.rs:248:1
+    |
+248 | pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+
+error: usage of wildcard import
+   --> crates/latent-manifest/src/codec.rs:946:9
+    |
+946 |     use super::*;
+    |         ^^^^^^^^ help: try: `super::{Serializer, Serialize, Deserializer, Deserialize, de}`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#wildcard_imports
+    = note: `-D clippy::wildcard-imports` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::wildcard_imports)]`
+
+error: usage of wildcard import
+   --> crates/latent-manifest/src/codec.rs:963:9
+    |
+963 |     use super::*;
+    |         ^^^^^^^^ help: try: `super::{Serializer, Serialize, Deserializer, Deserialize, de}`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#wildcard_imports
+
+error: it is more idiomatic to use `Option<&T>` instead of `&Option<T>`
+   --> crates/latent-manifest/src/codec.rs:964:5
+    |
+964 | /     pub fn serialize<S: Serializer>(
+965 | |         value: &Option<latent_core::PublicationId>,
+966 | |         serializer: S,
+967 | |     ) -> Result<S::Ok, S::Error> {
+...   |
+971 | |             .serialize(serializer)
+972 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#ref_option
+    = note: `-D clippy::ref-option` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::ref_option)]`
+help: change this to
+    |
+965 -         value: &Option<latent_core::PublicationId>,
+965 +         value: Option<&latent_core::PublicationId>,
+    |
+
+error: could not compile `latent-manifest` (lib) due to 15 previous errors
+error: could not compile `latent-audit` (lib) due to 2 previous errors

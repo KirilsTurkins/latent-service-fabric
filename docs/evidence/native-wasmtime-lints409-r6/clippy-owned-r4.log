@@ -1,0 +1,89 @@
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/work/crates/latent-wasmtime)
+error: this function has too many lines (102/100)
+  --> crates/latent-wasmtime/src/backend/execution.rs:33:5
+   |
+33 | /     pub(super) async fn invoke_contained(
+34 | |         &self,
+35 | |         invocation: ContainedInvocation<'_>,
+36 | |         cancellation: &dyn ExecutionCancellation,
+37 | |         timing: &mut Phase0InvocationTiming,
+38 | |         capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
+39 | |     ) -> Result<GuestOutcome, PlatformError> {
+   | |____________________________________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+   = note: `-D clippy::too-many-lines` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::too_many_lines)]`
+
+error: this expression creates a reference which is immediately dereferenced by the compiler
+  --> crates/latent-wasmtime/src/backend/execution.rs:82:13
+   |
+82 |             &stop,
+   |             ^^^^^ help: change this to: `stop`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_borrow
+   = note: `-D clippy::needless-borrow` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::needless_borrow)]`
+
+error: this expression creates a reference which is immediately dereferenced by the compiler
+   --> crates/latent-wasmtime/src/backend/execution.rs:147:17
+    |
+147 |                 &stop,
+    |                 ^^^^^ help: change this to: `stop`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_borrow
+
+error: this function has too many lines (104/100)
+  --> crates/latent-wasmtime/src/backend/preparation.rs:47:5
+   |
+47 | /     pub(super) async fn prepare_repository(
+48 | |         &self,
+49 | |         repository: &dyn ArtifactRepository,
+50 | |         key: &PreparationKey,
+51 | |     ) -> Result<PreparedActivation, PlatformError> {
+   | |__________________________________________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+
+error: this function has too many lines (103/100)
+  --> crates/latent-wasmtime/src/backend/readiness.rs:43:5
+   |
+43 | /     pub(super) async fn prepare_ready_repository(
+44 | |         &self,
+45 | |         repository: Arc<dyn ArtifactRepository>,
+46 | |         key: PreparationKey,
+47 | |         read_wait: Option<&dyn latent_executor::PreparationReadWait>,
+48 | |     ) -> Result<PreparedReadiness, PlatformError> {
+   | |_________________________________________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_lines
+
+error: consider adding a `;` to the last statement for consistent formatting
+  --> crates/latent-wasmtime/src/compiler/worker.rs:15:9
+   |
+15 |         run_loop(&exit.core, worker)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: add a `;` here: `run_loop(&exit.core, worker);`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#semicolon_if_nothing_returned
+   = note: `-D clippy::semicolon-if-nothing-returned` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::semicolon_if_nothing_returned)]`
+
+error: could not compile `latent-wasmtime` (lib) due to 6 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: this expression creates a reference which is immediately dereferenced by the compiler
+   --> crates/latent-wasmtime/src/preparation_observer/tests.rs:161:43
+    |
+161 |     let mut context = Context::from_waker(&waker);
+    |                                           ^^^^^^ help: change this to: `waker`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_borrow
+
+error: this expression creates a reference which is immediately dereferenced by the compiler
+   --> crates/latent-wasmtime/src/preparation_observer/tests.rs:192:43
+    |
+192 |     let mut context = Context::from_waker(&waker);
+    |                                           ^^^^^^ help: change this to: `waker`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_borrow
+
+error: could not compile `latent-wasmtime` (lib test) due to 8 previous errors
