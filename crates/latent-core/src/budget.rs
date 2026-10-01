@@ -768,6 +768,7 @@ struct AccountingState {
     outstanding_reservations: u64,
     own_memory_peak: u64,
     host_reserved_memory: u64,
+    host_observed_memory: u64,
     pending_runtime_memory: Option<u64>,
     child_reserved_memory: u64,
     child_observed_memory: u64,
@@ -933,8 +934,8 @@ impl ActivationBudget {
             snapshot.peak_memory_bytes = state
                 .own_memory_peak
                 .max(state.pending_runtime_memory.unwrap_or(0))
-                + state.child_reserved_memory
-                + state.host_reserved_memory;
+                + state.host_reserved_memory
+                + state.child_reserved_memory;
         }
         snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
             now.saturating_duration_since(self.inner.started_at),
@@ -1079,8 +1080,8 @@ impl ActivationBudget {
                 state
                     .own_memory_peak
                     .max(state.pending_runtime_memory.unwrap_or(0))
-                    + state.child_reserved_memory
-                    + state.host_reserved_memory,
+                    + state.host_reserved_memory
+                    + state.child_reserved_memory,
             );
         }
         consumption.wall_time_micros =

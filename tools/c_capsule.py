@@ -19,6 +19,10 @@ def main() -> int:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
+    resolve_ = commands.add_parser("resolve", help="Explicitly capture declared C source/static library closure")
+    resolve_.add_argument("project", type=Path)
+    resolve_.add_argument("--candidate", type=Path, required=True)
+    resolve_.add_argument("--repositories", type=Path)
     compile_ = commands.add_parser("build", help="Compile, validate and package captured C sources")
     compile_.add_argument("project", type=Path)
     compile_.add_argument("--output", type=Path, required=True)
@@ -29,8 +33,29 @@ def main() -> int:
     packaging.add_argument("--package-inputs-only", action="store_true", help="Leave package assembly to the calling controller")
     args = parser.parse_args()
     try:
-        result = (create(args.directory, args.template, args.name) if args.command == "new" else
-                  build(args.project, args.output, args.contracts_tool, None if args.package_inputs_only else args.packager, args.repository))
+        if args.command == "new":
+            result = create(args.directory, args.template, args.name)
+        elif args.command == "resolve":
+            from tools.application_dependencies import capture, document
+            from tools.build_snapshot import canonical
+            from tools.application_dependency_store import DependencyError
+            if args.candidate.exists():
+                raise DependencyError("dependency-candidate-exists")
+            repositories = document(args.repositories) if args.repositories else {}
+            try:
+                lock = capture(args.project, repositories=repositories)
+                with args.candidate.open("xb") as output:
+                    output.write(canonical(lock) + b"\n")
+            except (DependencyError, OSError) as error:
+                failed = args.candidate.with_name(args.candidate.name + ".failed.json")
+                reason = str(error) if isinstance(error, DependencyError) else "dependency-resolution-io-failed"
+                if not failed.exists():
+                    with failed.open("xb") as output:
+                        output.write(canonical({"formatVersion": 1, "stage": "c-resolution-capture", "status": "failed", "reason": reason}) + b"\n")
+                raise DependencyError(reason) from None
+            result = args.candidate
+        else:
+            result = build(args.project, args.output, args.contracts_tool, None if args.package_inputs_only else args.packager, args.repository)
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError) as error:

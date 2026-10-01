@@ -8,6 +8,9 @@ for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
 For your first application, follow [Creating a capsule](creating-a-capsule.md).
 It has one shared workflow and selectable examples for all six languages. This
 reference explains the SDKs' capability types, ownership and runtime limits.
+The [dependency compatibility report](library-compatibility.md) distinguishes
+final import checks, missing runtime support and observations that still need
+actual execution evidence.
 
 The explicit [transactional aggregate authoring path](transactional-authoring.md)
 adds scoped state/query and deferred intent facades for all six guest languages.
