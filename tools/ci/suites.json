@@ -2216,6 +2216,7 @@
         "deferred::tests::campaign::qualified_remote_rejection_is_known_failure_without_counter_mutation",
         "deferred::tests::campaign::unsafe_or_generic_endpoint_profiles_cannot_open_a_provider_connection",
         "deferred::tests::locks::synchronous_acceptance_does_not_reverse_actual_role_and_effect_lock_order",
+        "deferred::tests::namespace::namespace_close_acceptance_invalidates_held_tls_grant_without_refunding_physical_work",
         "dns::tests::aliases_are_finite_and_all_returned_addresses_are_checked",
         "dns::tests::transaction_question_lengths_and_compression_cycles_fail_closed",
         "tests::audit::required_audit_keeps_provider_receipts_and_redacts_secrets",
@@ -2262,7 +2263,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-http/Cargo.toml",
-      "minimumCases": 55,
+      "minimumCases": 56,
       "mode": "libtest",
       "package": "latent-http",
       "platforms": [

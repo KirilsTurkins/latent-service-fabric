@@ -4,6 +4,7 @@ mod campaign;
 mod endpoint;
 mod fixture;
 mod locks;
+mod namespace;
 mod proxy;
 
 use latent_effects::dispatch::Disposition;
