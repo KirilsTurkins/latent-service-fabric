@@ -1,18 +1,23 @@
 # Transaction clients
 
 The additive `latent.transaction-client.v1` models come from the exact required
-StateService and TransactionService descriptors. Their generated index retains
+StateService, TransactionService and DispatcherService descriptors. Their generated index retains
 fully qualified Protobuf owners: transaction cursor paging is distinct from the
 existing control-plane paging types. Existing stateless models and operations
 remain supported.
 
 Rust exposes `latent_sdk::transaction::TransactionClient` on the existing
-`network::RpcClient`. TypeScript exposes the same twelve core operations on
+`network::RpcClient`. TypeScript exposes the same fifteen current operations on
 `RpcClient` from `@latent/sdk/node`, with types under the pure `transaction` and
 `transactionClient` exports. .NET exposes `Latent.Sdk.Transactions.ITransactionClient`
 on the maintained `Latent.Sdk.Transport.BoundedClient`, returning owned
 `TransactionResponse<T>` values or native cancellation/exception types with
 independent `TransactionFailure` recovery metadata.
+Go exposes them through the existing `transport.Client`, with context-aware
+methods and independent `transaction.ClientFailure` recovery metadata. Java
+implements `dev.latent.sdk.TransactionClient` on the existing transport
+`RpcClient`, returning typed `CompletableFuture` responses or transaction
+exceptions that preserve the original identity and any validated observation.
 The profile helpers construct the exact wire, host ABI and
 preparation descriptor. These strings describe a request and confer no authority.
 Every namespace/recovery request still needs its explicit current publication
@@ -26,7 +31,7 @@ and cancellation never supply a durable abort fence. Callers retain the original
 application request; lookup/inspection and any explicit new attempt are separate
 calls. The SDK never resubmits a command or refreshes a generation/version.
 
-Rust, Node and .NET retain a validated durable observation through a later transport, audit or
+Rust, Node, Go, Java and .NET retain a validated durable observation through a later transport, audit or
 cleanup failure. Failure recovery metadata excludes the application payload;
 the caller can explicitly recover the original result using its preserved
 identity. Effects retain their separate dispatch disposition; a provider
@@ -61,6 +66,15 @@ audit failure retains validated bounded receipt data in `TransactionFailure`;
 live token and the original identity. C# `ulong` values and optional fields
 retain their full width and presence.
 
+Java preserves unsigned 64-bit values in `long` using unsigned comparisons and
+formatting. Its immutable Protobuf request captures input, metadata and stale-edit
+preconditions before dispatch; response buffers are read-only. The transaction
+marshaller checks the exact descriptor before native parsing, including a shared
+4096-node limit, 128-entry pages, 256 linked retention IDs, metadata limits,
+duplicate fields/maps and strict UTF-8. The call uses the existing physical
+owner, connection and finite executor/shutdown path. A cancelled future leaves
+durable recovery explicit and uses a new live call for lookup.
+
 The TypeScript package root exposes the pure `transaction` models, including
 `bigint` uint64 values. Privileged RPC transport remains under the Node export.
 Browser command/query/recovery execution must use the purpose-built authenticated
@@ -74,8 +88,8 @@ python3 tools/transaction_client_conversions.py --check
 python3 tools/transaction_client_rust_shapes.py --check
 ```
 
-This source milestone includes six model sets and the Rust, Node and .NET transport facades.
-The other three maintained transport facades, dispatcher/backup/migration full
+This source milestone includes six model sets and the Rust, Node, Go, Java and .NET transport facades.
+The C transport facade, backup/migration full
 profile operations, separate-node six-client scenario matrix and browser HTTP
 execution remain outstanding. Generated model checks, codec tests and compiler
 checks do not qualify signed guest execution or real external-client execution.

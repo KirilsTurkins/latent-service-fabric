@@ -1,6 +1,8 @@
 package dev.latent.sdk.transport;
 
 import dev.latent.sdk.Management;
+import dev.latent.sdk.TransactionClient;
+import dev.latent.sdk.Transactions;
 import com.google.protobuf.Message;
 import io.grpc.ClientCall;
 import io.grpc.ClientStreamTracer;
@@ -36,9 +38,15 @@ import latent.control.v1.PolicyOuterClass;
 import latent.control.v1.PolicyServiceGrpc;
 import latent.control.v1.Capability;
 import latent.control.v1.CapabilityServiceGrpc;
+import latent.control.v1.State;
+import latent.control.v1.StateServiceGrpc;
+import latent.control.v1.Dispatcher;
+import latent.control.v1.DispatcherServiceGrpc;
+import latent.transaction.v1.Transaction;
+import latent.transaction.v1.TransactionServiceGrpc;
 
 @SuppressWarnings("deprecation")
-public final class RpcClient implements Management.ClientProfile, AutoCloseable {
+public final class RpcClient implements Management.ClientProfile, TransactionClient, AutoCloseable {
     private static final AtomicInteger OWNERS = new AtomicInteger();
     private static final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
     private final ClientConfig config;
@@ -152,10 +160,31 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
             Request request, Management.CallOptions options, Function<Request, WireRequest> encode,
             Function<WireRequest, Request> snapshot, MethodDescriptor<WireRequest, WireResponse> method,
             WireResponse prototype, Function<WireResponse, Response> decode) {
+        return call(request, options, encode, snapshot, method, prototype, decode, null);
+    }
+
+    private <Request, WireRequest extends Message, WireResponse extends Message, Response> CompletableFuture<TransactionClient.ClientResponse<Response>> transactionCall(
+            Request request, Management.CallOptions options, Function<Request, WireRequest> encode,
+            Function<WireRequest, Request> snapshot, MethodDescriptor<WireRequest, WireResponse> method,
+            WireResponse prototype, Function<WireResponse, Response> decode) {
+        TransactionContext context = new TransactionContext();
+        return context.wrap(call(request, options, encode, snapshot, method, prototype, decode, context));
+    }
+
+    private <Request, WireRequest extends Message, WireResponse extends Message, Response> CompletableFuture<Management.ClientResponse<Response>> call(
+            Request request, Management.CallOptions options, Function<Request, WireRequest> encode,
+            Function<WireRequest, Request> snapshot, MethodDescriptor<WireRequest, WireResponse> method,
+            WireResponse prototype, Function<WireResponse, Response> decode, TransactionContext transaction) {
         long started = System.nanoTime();
         Management.RequestIdentity identity;
-        try { identity = recovery(request); }
-        catch (RuntimeException failure) { identity = new Management.RequestIdentity(Optional.empty(), Optional.empty()); }
+        try {
+            if (transaction != null) {
+                TransactionProtocol.graph(request); transaction.capture(request); identity = transaction.transportIdentity();
+            } else identity = recovery(request);
+        } catch (RuntimeException failure) {
+            identity = new Management.RequestIdentity(Optional.empty(), Optional.empty());
+            if (transaction != null) return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.INVALID_REQUEST, identity)));
+        }
         synchronized (this) {
             if (closing) return CompletableFuture.failedFuture(new Management.ClientCancellationException(local(Management.FailureCategory.LOCAL_CANCELLED, identity)));
             if (active.size() >= config.maximumCalls) return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.LIMIT, identity)));
@@ -164,7 +193,13 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
                 if (Long.compareUnsigned(millis, config.timeoutMillis) > 0) {
                     return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.LIMIT, identity)));
                 }
-                if (request instanceof Management.InvokeRequest invocation && invocation.deadlineUnixMillis().isPresent()) {
+                Management.InvokeRequest invocation = switch (request) {
+                    case Management.InvokeRequest value -> value;
+                    case Transactions.InvokeCommandRequest value -> value.invocation().orElse(null);
+                    case Transactions.QueryRequest value -> value.invocation().orElse(null);
+                    default -> null;
+                };
+                if (invocation != null && invocation.deadlineUnixMillis().isPresent()) {
                     long absolute = invocation.deadlineUnixMillis().get();
                     long current = System.currentTimeMillis();
                     Protocol.require(current >= 0);
@@ -177,17 +212,21 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
                 long remaining = TimeUnit.MILLISECONDS.toNanos(millis) - (System.nanoTime() - started);
                 if (remaining <= 0) return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.DEADLINE, identity)));
                 Deadline deadline = Deadline.after(remaining, TimeUnit.NANOSECONDS);
-                int requestLimit = request instanceof Management.ListCapabilitiesRequest ? Math.min(8192, config.requestBytes)
+                int requestLimit = transaction != null ? Math.min(TransactionProtocol.WIRE_BYTES, config.requestBytes)
+                        : request instanceof Management.ListCapabilitiesRequest ? Math.min(8192, config.requestBytes)
                         : method.getFullMethodName().contains("PolicyService/") ? Math.min(131072, config.requestBytes) : config.requestBytes;
-                Protocol.sourceSize(request, requestLimit + 4096L, 0);
-                Protocol.request(request, config.tenant);
+                if (transaction == null) { Protocol.sourceSize(request, requestLimit + 4096L, 0); Protocol.request(request, config.tenant); }
+                else TransactionProtocol.request(request, config.tenant);
                 WireRequest wire = encode.apply(request);
                 if (wire.getSerializedSize() > requestLimit) return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.LIMIT, identity)));
                 Request captured = snapshot.apply(wire);
-                int responseLimit = request instanceof Management.ListCapabilitiesRequest ? Math.min(131072, config.responseBytes)
+                if (transaction != null) transaction.capture(captured);
+                int responseLimit = transaction != null ? Math.min(TransactionProtocol.WIRE_BYTES, config.responseBytes)
+                        : request instanceof Management.ListCapabilitiesRequest ? Math.min(131072, config.responseBytes)
                         : method.getFullMethodName().contains("PolicyService/") ? Math.min(1048576, config.responseBytes) : config.responseBytes;
-                var checked = method.toBuilder().setResponseMarshaller(Protocol.marshaller(prototype, responseLimit)).build();
-                CallState<WireRequest, WireResponse, Response> state = new CallState<>(identity, captured, decode, deadline);
+                var checked = method.toBuilder().setResponseMarshaller(transaction == null ? Protocol.marshaller(prototype, responseLimit)
+                        : TransactionProtocol.marshaller(prototype, responseLimit)).build();
+                CallState<WireRequest, WireResponse, Response> state = new CallState<>(identity, captured, decode, deadline, transaction);
                 var settings = io.grpc.CallOptions.DEFAULT.withDeadline(deadline).withMaxInboundMessageSize(responseLimit)
                         .withMaxOutboundMessageSize(requestLimit).withStreamTracerFactory(new ClientStreamTracer.Factory() {
                             @Override public ClientStreamTracer newClientStreamTracer(ClientStreamTracer.StreamInfo info, Metadata headers) {
@@ -218,6 +257,7 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
         private final Object request;
         private final Function<WireResponse, Response> decode;
         private final Deadline deadline;
+        private final TransactionContext transaction;
         private final Metadata metadata = new Metadata();
         private final CompletableFuture<Management.ClientResponse<Response>> future;
         private ClientCall<Request, WireResponse> transport;
@@ -230,8 +270,8 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
         private volatile boolean dispatched;
         private volatile String cancellation;
 
-        CallState(Management.RequestIdentity identity, Object request, Function<WireResponse, Response> decode, Deadline deadline) {
-            this.identity = identity; this.request = request; this.decode = decode; this.deadline = deadline;
+        CallState(Management.RequestIdentity identity, Object request, Function<WireResponse, Response> decode, Deadline deadline, TransactionContext transaction) {
+            this.identity = identity; this.request = request; this.decode = decode; this.deadline = deadline; this.transaction = transaction;
             future = new CompletableFuture<>() {
                 @Override public boolean cancel(boolean mayInterruptIfRunning) {
                     if (isDone()) return false;
@@ -252,8 +292,14 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
             try {
                 Protocol.require(response == null);
                 response = decode.apply(value);
-                if (identity.activationId().isEmpty()) identity = new Management.RequestIdentity(Protocol.activation(response), identity.operationId());
-                observed = Protocol.response(response, request, config.tenant, identity);
+                if (transaction == null) {
+                    if (identity.activationId().isEmpty()) identity = new Management.RequestIdentity(Protocol.activation(response), identity.operationId());
+                    observed = Protocol.response(response, request, config.tenant, identity);
+                } else {
+                    TransactionProtocol.response(response, request, config.tenant);
+                    transaction.observe(response); observed = transaction.known(); identity = transaction.transportIdentity();
+                    TransactionProtocol.independentAudit(response);
+                }
             } catch (Protocol.Invalid failure) {
                 invalid = failure;
                 transport.cancel("invalid response", null);
@@ -298,7 +344,7 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
                     } else {
                         int code = status.getCode().value();
                         var platform = Protocol.details(metadata, code);
-                        if (response == null && invalid == null && Set.of(3, 5, 6, 7, 9, 10, 12, 16).contains(code)) observed = true;
+                        if (transaction == null && response == null && invalid == null && Set.of(3, 5, 6, 7, 9, 10, 12, 16).contains(code)) observed = true;
                         if (code == 5 && (request instanceof Management.GetActivationRequest
                                 || request instanceof Management.GetPolicyOperationRequest)) observed = false;
                         if (audit.status().filter(value -> value.equals("outcome-unknown") || value.equals("audit-unavailable")).isPresent() && response == null) observed = false;
@@ -354,5 +400,51 @@ public final class RpcClient implements Management.ClientProfile, AutoCloseable 
     }
     @Override public CompletableFuture<Management.ClientResponse<Management.GetPolicyOperationResponse>> getPolicyOperation(Management.GetPolicyOperationRequest request, Management.CallOptions options) {
         return call(request, options, Wire::toWire, Wire::fromWire, PolicyServiceGrpc.getGetPolicyOperationMethod(), PolicyOuterClass.GetPolicyOperationResponse.getDefaultInstance(), Wire::fromWire);
+    }
+
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.InvokeCommandResponse>> invokeCommand(Transactions.InvokeCommandRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, TransactionServiceGrpc.getInvokeCommandMethod(), Transaction.InvokeCommandResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.QueryResponse>> query(Transactions.QueryRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, TransactionServiceGrpc.getQueryMethod(), Transaction.QueryResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.LookupCommandResponse>> lookupCommand(Transactions.LookupCommandRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, TransactionServiceGrpc.getLookupCommandMethod(), Transaction.LookupCommandResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.LookupCommitResponse>> lookupCommit(Transactions.LookupCommitRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, TransactionServiceGrpc.getLookupCommitMethod(), Transaction.LookupCommitResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.GetEffectResponse>> getEffect(Transactions.GetEffectRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, TransactionServiceGrpc.getGetEffectMethod(), Transaction.GetEffectResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.ListEffectHistoryResponse>> listEffectHistory(Transactions.ListEffectHistoryRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, TransactionServiceGrpc.getListEffectHistoryMethod(), Transaction.ListEffectHistoryResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.CancelCommandResponse>> cancelCommand(Transactions.CancelCommandRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, TransactionServiceGrpc.getCancelCommandMethod(), Transaction.CancelCommandResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.InspectNamespaceResponse>> inspectNamespace(Transactions.InspectNamespaceRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, StateServiceGrpc.getInspectNamespaceMethod(), State.InspectNamespaceResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.SelectEntityResponse>> selectEntity(Transactions.SelectEntityRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, StateServiceGrpc.getSelectEntityMethod(), State.SelectEntityResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.MutateNamespaceResponse>> mutateNamespace(Transactions.MutateNamespaceRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, StateServiceGrpc.getMutateNamespaceMethod(), State.MutateNamespaceResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.MutateStateResponse>> mutateState(Transactions.MutateStateRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, StateServiceGrpc.getMutateStateMethod(), State.MutateStateResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.GetStateOperationReceiptResponse>> getStateOperationReceipt(Transactions.GetStateOperationReceiptRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, StateServiceGrpc.getGetStateOperationReceiptMethod(), State.GetStateOperationReceiptResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.InspectDispatcherResponse>> inspectDispatcher(Transactions.InspectDispatcherRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, DispatcherServiceGrpc.getInspectDispatcherMethod(), Dispatcher.InspectDispatcherResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.ControlDispatcherResponse>> controlDispatcher(Transactions.ControlDispatcherRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, DispatcherServiceGrpc.getControlDispatcherMethod(), Dispatcher.ControlDispatcherResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.GetDispatcherOperationResponse>> getDispatcherOperation(Transactions.GetDispatcherOperationRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, DispatcherServiceGrpc.getGetDispatcherOperationMethod(), Dispatcher.GetDispatcherOperationResponse.getDefaultInstance(), TransactionWire::fromWire);
     }
 }

@@ -1,5 +1,35 @@
 # Java transport validation evidence
 
+## Phase 4 source checks, 1 October 2026
+
+The additive `TransactionClient` implements fifteen current operations through
+the existing `RpcClient`, immutable Protobuf snapshots, bounded admission,
+physical channel and executor. Windows x86-64 Temurin 25.0.4.1+1 with non-preview
+Java 25 passes all 67 shared profile vectors, 50 existing Protobuf cases plus
+the contradictory-oneof rejection, and the eleven existing transport suites.
+Five new bounded transaction suites pass 101 checks, including actual HTTP/2
+serialization for all fifteen operations over one connection, a large paired
+result, original buffer/version snapshots, unsigned generations, explicit
+recovery, durable rejection and retained old payload formats, proven-abort
+fences, independent audit failures, local cancellation, malformed/oversized
+responses, activation substitution and pre-dispatch ABI/presence bounds.
+
+The production transport sources and new public transaction interface pass
+`javac --release 25 -Xlint:all -Werror` against the compiled maintained model and
+descriptor classes. Both Java bridges reproduce. The packaged SDK JAR contains
+1031 verified non-preview Java 25 classes. Seven Python generator/launcher
+contract cases pass in the pinned Linux source-check image; repository CI
+coverage passes. Existing JVM dependency warnings remain visible.
+
+The [compact source receipt](evidence/transaction-source401-2026-10-01.json)
+records exact source, descriptor, JDK archive and built JAR hashes. These are
+controlled transport and source checks. They do not qualify the independent
+signed-node Phase 4 matrix, authenticated client artifact installation, Gradle
+execution, or issue #401 closure. Historical real-node receipts below continue
+to identify only their original tested implementations.
+
+## Historical Java transport checks
+
 Validated implementation: `b7e270d3faaa08aef7837f83133be8d0b6b0426f`, following
 code milestones `a13b335d` and `29abda86`, PR #367, branch
 `feat/262-bounded-java-client`. Base: development `9c271713` plus the complete

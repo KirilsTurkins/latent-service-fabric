@@ -304,3 +304,27 @@ or provider grants.
 
 See [validation evidence](EVIDENCE.md). Controlled TCP tests are not real-node
 qualification; parent-owned exact-head CI and acceptance review remain required.
+
+## Phase 4 commands, queries and recovery
+
+`RpcClient` also implements `dev.latent.sdk.TransactionClient`. Its fifteen
+current StateService, TransactionService and DispatcherService methods return
+typed `CompletableFuture<TransactionClient.ClientResponse<T>>` values using the
+same channel, authentication configuration, admission and bounded executor.
+`TransactionClient.clientFailure(error)` recovers original command, activation,
+operation and caller preconditions independently from the transport failure.
+Only a validated durable record can supply a technical-abort fence. Cancellation
+and an unavailable or aborted transport never resubmit a mutation.
+
+Unsigned fields retain all 64 bits in `long`; use `Long.toUnsignedString` and
+`Long.compareUnsigned` when displaying or comparing them. Optional fields retain
+presence. Byte buffers, metadata and preconditions are snapshotted before the
+asynchronous call. Replies use read-only owned buffers. Configured request and
+response ceilings can be below the protocol's 2 MiB ceiling; the decoded graph
+has a separate 8 MiB, 4096-node bound. Page cursors remain significant when a
+byte-bounded page contains fewer entries than its requested limit.
+
+`TransactionTransportTest` runs five bounded suites, including four actual HTTP/2 suites, through the maintained
+standalone `build.py test` and Gradle test tasks. This establishes codec and
+transport behavior. The separate-node Phase 4 matrix and authenticated artifact
+workflow remain required for issue #401.
