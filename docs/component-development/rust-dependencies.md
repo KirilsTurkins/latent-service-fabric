@@ -32,3 +32,15 @@ The existing Wasm target and panic-abort profile remain authoritative. This inge
 The required Rust authoring CI now captures `unicode-normalization` with its native `tinyvec`/`tinyvec_macros` transitive graph through a developer-owned external crate, embeds immutable UTF-8 bytes, and exercises a root build script and external procedural macro. It retains the unapproved denial, then authorizes only that SDK-owned fixture's exact request, removes the original external sources, compiles offline, signs and admits the resulting component, and runs the normal node workflow. Both executable controls assert that ambient files, credentials and network access are unavailable. These are qualification fixtures and never select application behavior. A passing receipt for the exact commit is required before claiming that qualification; additional panic/unwind, async/thread/network profiles and the complete feature/denial matrix keep their separate evidence requirements.
 
 The dependency greeting fixture uses a five-second wall limit in both its signed capsule and deployment, matching the experiment node's existing maximum. Run `36786586820` exhausted the earlier one-second ceiling during cold preparation at 1,001,448 microseconds, with zero guest fuel and memory recorded; this establishes a lower bound, not a successful cold timing. Subsequent receipts retain cold and warm invocation times and the fixture's original and selected ceilings. Ordinary project defaults and the separate 100 ms deadline/cancellation controls retain their existing limits.
+
+When captured application build scripts or proc macros are present, the first
+build retains `executable-input-approval-request.json` and fails before executing
+them. Review its exact source, recipe, compiler distribution, executable graph and
+namespace specification, then pass its `identity` with `--executable-approval` on
+the standalone build. For the packaged frontend, add the same flag and identity
+to the maintained Rust adapter's `build.argv` in `latent.project.json`, then run
+the existing `dev trust` and `dev build` commands. The changed argv changes recipe
+trust and cache identity; the compiler independently recalculates the request and
+rejects a stale or mismatched identity. Approval is not inherited from capture,
+package names, a previous source snapshot or ordinary recipe trust. Unsupported
+frontend adapters reject this flag before any build execution.

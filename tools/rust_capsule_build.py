@@ -24,6 +24,8 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
+           "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 
 
 class Commands:
