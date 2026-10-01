@@ -15,6 +15,16 @@ pub struct EventInstallation {
     pub credential_directory: PathBuf,
     pub credential_reference: String,
     pub credential_file: String,
+    #[serde(default)]
+    pub deferred: Vec<DeferredEventInstallation>,
+}
+
+/// One operator-qualified unordered mapping retained for committed effects.
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DeferredEventInstallation {
+    pub topic: String,
+    pub qualification: latent_nats::deferred::JetStreamQualification,
 }
 
 impl EventInstallation {
@@ -43,6 +53,28 @@ impl EventInstallation {
                 .any(|row| row.tenant != self.identity.tenant)
         {
             return Err(invalid("providers.events.credentialsOrScope"));
+        }
+        if self.deferred.capacity() > 16 {
+            return Err(invalid("providers.events.deferred"));
+        }
+        for (index, deferred) in self.deferred.iter().enumerate() {
+            let mapping = self
+                .configuration
+                .topics
+                .iter()
+                .find(|mapping| mapping.topic == deferred.topic)
+                .ok_or_else(|| invalid("providers.events.deferred.topic"))?;
+            if deferred.topic.capacity() > 128
+                || self.deferred[..index]
+                    .iter()
+                    .any(|other| other.topic == deferred.topic)
+            {
+                return Err(invalid("providers.events.deferred.topic"));
+            }
+            deferred
+                .qualification
+                .validate(mapping, &self.configuration)
+                .map_err(|_| invalid("providers.events.deferred.qualification"))?;
         }
         for identity in [
             providers.http.as_ref().map(|v| &v.identity),

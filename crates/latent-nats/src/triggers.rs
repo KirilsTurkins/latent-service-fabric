@@ -7,7 +7,7 @@ mod driver;
 mod execution;
 mod monitor;
 mod owner;
-mod wire;
+pub(crate) mod wire;
 pub use config::{RootBudget, TriggerBinding, TriggerConfig};
 pub use monitor::{Acknowledgement, TriggerMonitor, TriggerSnapshot, TriggerStep, TriggerTerminal};
 pub use owner::{NatsTriggers, NATS_TRIGGER_PROFILE};

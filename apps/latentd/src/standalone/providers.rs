@@ -18,6 +18,50 @@ mod unsupported;
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 pub(super) use unsupported::ProviderRuntime;
 
+impl super::StandaloneNode {
+    /// Builds qualified deferred adapters from the installed provider owner.
+    /// Transaction startup supplies the same trusted clock and store runtime.
+    pub fn deferred_event_adapters(
+        &self,
+        settings: &crate::config::NodeSettings,
+        time: std::sync::Arc<dyn latent_effects::runtime::EffectTimeSource>,
+    ) -> Result<
+        Vec<std::sync::Arc<dyn latent_effects::runtime::DeferredEffectAdapter>>,
+        latent_core::PlatformError,
+    > {
+        let Some(events) = settings
+            .providers
+            .as_ref()
+            .and_then(|providers| providers.events.as_ref())
+        else {
+            return Ok(Vec::new());
+        };
+        if events.deferred.is_empty() {
+            return Ok(Vec::new());
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            self.providers
+                .as_ref()
+                .ok_or_else(|| {
+                    super::error(
+                        latent_core::PlatformErrorCode::Unavailable,
+                        "deferred event provider owner unavailable",
+                    )
+                })?
+                .deferred_event_adapters(events, time)
+        }
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _ = time;
+            Err(super::error(
+                latent_core::PlatformErrorCode::Unavailable,
+                "deferred event provider requires supported Linux host",
+            ))
+        }
+    }
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderDescriptor {

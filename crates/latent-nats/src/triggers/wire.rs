@@ -4,7 +4,7 @@ use crate::{
     protocol, EventError, Result,
 };
 
-pub(super) struct Frame {
+pub(crate) struct Frame {
     pub subject: String,
     pub reply: Option<String>,
     pub bytes: Vec<u8>,
@@ -45,7 +45,7 @@ impl Frame {
     }
 }
 
-pub(super) async fn receive(
+pub(crate) async fn receive(
     connection: &mut Connection,
     call: Scope<'_>,
     subjects: &[&str],
@@ -114,7 +114,7 @@ fn number(value: &str) -> Result<usize> {
     value.parse().map_err(|_| EventError::Unavailable)
 }
 
-pub(super) async fn send(
+pub(crate) async fn send(
     connection: &mut Connection,
     call: Scope<'_>,
     subject: &str,

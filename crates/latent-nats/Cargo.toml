@@ -12,6 +12,7 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-effects = { path = "../latent-effects" }
 latent-activation = { path = "../latent-activation" }
 latent-node = { path = "../latent-node" }
 latent-routing = { path = "../latent-routing" }

@@ -24,6 +24,7 @@ pub(crate) struct Connection {
     pub stream: BufReader<TlsStream<TcpStream>>,
     pub stamp: Zeroizing<[u8; 32]>,
     pub max_payload: usize,
+    pub server_version: Option<String>,
     pub _metadata: ProviderMetadata,
 }
 pub(crate) struct Auth {
@@ -205,11 +206,13 @@ pub(crate) async fn connect_to(
         stream: BufReader::with_capacity(8192, stream),
         stamp: auth.stamp.clone(),
         max_payload: 0,
+        server_version: None,
         _metadata: metadata,
     };
     // This profile requires server tls.handshake_first=true. INFO is inside TLS.
     let info = line(&mut connection, call).await?;
     connection.max_payload = protocol::info(&info)?;
+    connection.server_version = protocol::server_version(&info);
     write(&mut connection, call, &auth.encoded).await?;
     protocol::pong(&mut connection, call).await?;
     reservation.connected(connection).map_err(Into::into)
