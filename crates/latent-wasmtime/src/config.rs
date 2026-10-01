@@ -89,6 +89,17 @@ impl CompilerOptimization {
     }
 }
 
+/// Explicit guest language installations, separate from activation authority.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GuestLanguageProfiles {
+    /// Explicit installation of the closed Angular profile. Ordinary defaults
+    /// never imply support for a JavaScript runtime or an ambient host surface.
+    pub angular_renderer: bool,
+    /// Explicit `TeaVM` C profile: standard Wasm exceptions, no Wasm GC values.
+    /// Its fixed exception heap is charged before every activation Store.
+    pub java_guest: bool,
+}
+
 /// Hard node limits for compilation, retained preparation and fresh stores.
 ///
 /// Component Model async execution, fuel and epoch interruption are required;
@@ -101,12 +112,7 @@ pub struct WasmtimeConfig {
     pub execution_isolation_profile: ExecutionIsolationProfile,
     #[cfg(feature = "development-clock-fixture")]
     pub development_clock_readings: Option<DevelopmentClockReadings>,
-    /// Explicit installation of the closed Angular profile. Ordinary defaults
-    /// never imply support for a JavaScript runtime or an ambient host surface.
-    pub angular_renderer: bool,
-    /// Explicit TeaVM C profile: standard Wasm exceptions, no Wasm GC values.
-    /// Its fixed exception heap is charged before every activation Store.
-    pub java_guest: bool,
+    pub guest_languages: GuestLanguageProfiles,
     /// Installs the scoped Phase 4 linker. Actual access still requires an
     /// activation-owned transaction host with the same ledger and identity.
     pub transactional_state: bool,
@@ -167,14 +173,27 @@ pub struct WasmtimeConfig {
 /// Compatibility name retaining every old field and its default value.
 pub type Phase0WasmtimeConfig = WasmtimeConfig;
 
+impl std::ops::Deref for WasmtimeConfig {
+    type Target = GuestLanguageProfiles;
+
+    fn deref(&self) -> &Self::Target {
+        &self.guest_languages
+    }
+}
+
+impl std::ops::DerefMut for WasmtimeConfig {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.guest_languages
+    }
+}
+
 impl Default for WasmtimeConfig {
     fn default() -> Self {
         Self {
             execution_isolation_profile: ExecutionIsolationProfile::LocalExperimental,
             #[cfg(feature = "development-clock-fixture")]
             development_clock_readings: None,
-            angular_renderer: false,
-            java_guest: false,
+            guest_languages: GuestLanguageProfiles::default(),
             transactional_state: false,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),

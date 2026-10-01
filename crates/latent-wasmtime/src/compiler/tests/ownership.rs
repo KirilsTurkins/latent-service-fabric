@@ -18,7 +18,7 @@ fn cancelled_running_job_retains_source_lock_and_reservations_then_discards_late
     let bounds = source.read_bounds(&identity.key.release).unwrap();
     let pool = pool(&config());
     let mut admission = input("owned", Some(identity.clone()));
-    admission.source_bytes = bounds.component_bytes as usize;
+    admission.source_bytes = usize::try_from(bounds.component_bytes).unwrap();
     let Acquisition::Waiting {
         future,
         owner: true,
@@ -39,7 +39,8 @@ fn cancelled_running_job_retains_source_lock_and_reservations_then_discards_late
                     .fetch_blocking(
                         &digest,
                         ArtifactPreparationReadLimits {
-                            maximum_component_bytes: bounds.component_bytes as usize,
+                            maximum_component_bytes: usize::try_from(bounds.component_bytes)
+                                .unwrap(),
                             maximum_metadata_document_bytes: bounds.maximum_metadata_document_bytes,
                             maximum_manifest_document_bytes: bounds.maximum_manifest_document_bytes,
                         },
@@ -109,16 +110,13 @@ fn queued_last_waiter_drop_destroys_input_without_running_it() {
 
 #[test]
 fn unexpected_finish_panic_fails_waiters_closes_admission_and_releases_dead_worker() {
-    fn panic_cost(_: &u8) -> (usize, usize) {
-        panic!("test unexpected finishing panic")
-    }
     let configuration: WasmtimeConfig = config();
     let cache = Arc::new(crate::cache::PreparedCache::new(configuration.cache_limits()).unwrap());
     let mut pool = CompilerPool::new(
         &configuration,
         cache,
         PreparationObserver::new(4),
-        panic_cost,
+        |_: &u8| panic!("test unexpected finishing panic"),
     )
     .unwrap();
     let (future, _) = waiting(&pool, "panic", None);

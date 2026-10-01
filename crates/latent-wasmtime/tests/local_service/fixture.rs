@@ -203,7 +203,10 @@ impl Fixture {
             (catalog, caller, callee)
         };
         let config = WasmtimeConfig {
-            java_guest: guest_runtime::java(),
+            guest_languages: latent_wasmtime::GuestLanguageProfiles {
+                java_guest: guest_runtime::java(),
+                ..Default::default()
+            },
             fuel_async_yield_interval: guest_runtime::java().then_some(10_000),
             maximum_memory_bytes: packages::budget().memory_bytes,
             maximum_fuel: packages::budget().cpu_fuel,

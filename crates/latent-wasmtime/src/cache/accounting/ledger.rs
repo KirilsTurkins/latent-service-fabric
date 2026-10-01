@@ -12,20 +12,19 @@ pub(super) const DEAD: u8 = 3;
 
 #[derive(Clone, Copy)]
 pub(crate) struct PreparedRuntimeCost {
-    pub source_bytes: usize,
-    pub metadata_bytes: usize,
-    pub compiled_image_bytes: usize,
+    pub source: usize,
+    pub metadata: usize,
+    pub compiled_image: usize,
 }
 
 impl PreparedRuntimeCost {
     pub(super) fn population(self) -> Result<PreparedRuntimePopulation, PlatformError> {
         Ok(PreparedRuntimePopulation {
             runtimes: 1,
-            source_bytes: u64::try_from(self.source_bytes)
+            source_bytes: u64::try_from(self.source).map_err(|_| super::super::capacity_error())?,
+            metadata_bytes: u64::try_from(self.metadata)
                 .map_err(|_| super::super::capacity_error())?,
-            metadata_bytes: u64::try_from(self.metadata_bytes)
-                .map_err(|_| super::super::capacity_error())?,
-            compiled_image_bytes: u64::try_from(self.compiled_image_bytes)
+            compiled_image_bytes: u64::try_from(self.compiled_image)
                 .map_err(|_| super::super::capacity_error())?,
         })
     }

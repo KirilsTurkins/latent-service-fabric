@@ -6,7 +6,7 @@ use latent_core::{
 use latent_executor::{ExecutionCell, ExecutionRequest, PreparationKey, PreparedComponent};
 use latent_routing::InvocationTarget;
 
-pub(super) fn request() -> ExecutionRequest {
+pub(crate) fn request() -> ExecutionRequest {
     let budget = ResourceBudget {
         cpu_fuel: 100,
         memory_bytes: 1024,

@@ -18,8 +18,7 @@ use latent_executor::{
     GuestInterruptionKind, GuestOutcome, PreparedActivation,
 };
 
-#[path = "../../../host/accounting/tests/support.rs"]
-mod input;
+use crate::test_fixtures::accounting as input;
 
 struct Clock;
 impl ActivationClock for Clock {

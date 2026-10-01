@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "baseSourceCommit": "39e3facc297b8f58e4d8836df758d311a97da507",
+  "observedAtUtc": "2026-10-01T12:00:04.724010+00:00",
+  "toolchain": "1.97.1-x86_64-unknown-linux-gnu",
+  "toolsImageSha256": "sha256:808682d39104dc67ea35b407841aa8ecd4d5662bb8fa8df09e78cecdf4cacde7",
+  "strictLibraryClippy": {
+    "passed": true,
+    "command": "cargo clippy -p latent-wasmtime --lib --all-features --locked --offline --no-deps -- -D warnings"
+  },
+  "libraryTests": {
+    "passed": 340,
+    "failed": 0,
+    "ignored": 2,
+    "total": 342,
+    "command": "cargo test -p latent-wasmtime --lib --all-features --locked --offline -- --test-threads=1"
+  },
+  "compatibilityFieldExpressionsIdentical": true,
+  "compatibilityExpressionsSha256": "sha256:caa72cf2ea6d5c3b41b8c9b59a239f1fbf1938f16320d9c2256e7abaa49f07b6",
+  "existingTestFunctionNamesAndGuardsIdentical": true,
+  "sourceInputFiles": {
+    "crates/latent-packaging/tests/fixtures/host.rs": {
+      "sha256": "sha256:11c207e0e43319b33e27b9706a35c6a9319b9accba1a94de506c3c546e4ee441",
+      "size": 7860
+    },
+    "crates/latent-wasmtime/src/aot/measurement.rs": {
+      "sha256": "sha256:d860b4fc6aec201c7b1c805367f29f282e758e5688c35da7f2112586838fa0a1",
+      "size": 1277
+    },
+    "crates/latent-wasmtime/src/aot/profile/tests.rs": {
+      "sha256": "sha256:62b4067bfaab77baa90938a660373568402675a8f51b2beb7fdb6115da7dc92f",
+      "size": 4050
+    },
+    "crates/latent-wasmtime/src/backend.rs": {
+      "sha256": "sha256:8815a1410ce082a8867fd2d409e353debcdbf151fa37e3d0ab6d872384481f24",
+      "size": 39598
+    },
+    "crates/latent-wasmtime/src/backend/admission/tests.rs": {
+      "sha256": "sha256:42405de761c61c614f3a9d9d00bf907feb9cf1d84810501f08938b5e2a17c444",
+      "size": 12087
+    },
+    "crates/latent-wasmtime/src/backend/execution.rs": {
+      "sha256": "sha256:3213e7ea9e90cc7ca915802b0af12acb6ca399513ce9f5359cc170ad14e2996d",
+      "size": 8361
+    },
+    "crates/latent-wasmtime/src/backend/preparation.rs": {
+      "sha256": "sha256:c4215574ad86045bd50649b82ed83b8a6970c7ca43423a149375e5218f0835f6",
+      "size": 12140
+    },
+    "crates/latent-wasmtime/src/backend/preparation/compilation.rs": {
+      "sha256": "sha256:57696a0bf0cd1060a8b1db674899c4b27c6a977409ccc83980b8d1abed1873f2",
+      "size": 9297
+    },
+    "crates/latent-wasmtime/src/backend/preparation_context.rs": {
+      "sha256": "sha256:064f413f69d64e82d2aab9cf5d88f950b0408888c9986aabe4e8d46eea8672e8",
+      "size": 17990
+    },
+    "crates/latent-wasmtime/src/backend/readiness.rs": {
+      "sha256": "sha256:9c03b0aaea0c79632a0561caf8c80c337b653fb6324c01705fbab5afeb210966",
+      "size": 15334
+    },
+    "crates/latent-wasmtime/src/backend/readiness/input.rs": {
+      "sha256": "sha256:87ad10b1b956288a4dd76da490397b3fb8f0307935c46e02a8076337cc9783d1",
+      "size": 8974
+    },
+    "crates/latent-wasmtime/src/backend/readiness/tests.rs": {
+      "sha256": "sha256:4d75ca0e0a238deb4fb41dbd2088ad0ee7ed6cb322ca90ff1898daa2fbfeee9e",
+      "size": 5893
+    },
+    "crates/latent-wasmtime/src/backend/readiness/tests/fixture.rs": {
+      "sha256": "sha256:a84cc64b51fe81f68105ce7bb0d959417ceb3887266d25c52caf8ff8e02ffc3d",
+      "size": 7643
+    },
+    "crates/latent-wasmtime/src/backend/readiness/tests/invocation.rs": {
+      "sha256": "sha256:0ff8ab31ddd48893d1fc2ce5241a6b4cb3fb805e7c2f385ff0f6859462058685",
+      "size": 11490
+    },
+    "crates/latent-wasmtime/src/backend/readiness/tests/materialization.rs": {
+      "sha256": "sha256:d527fe9f782dd7e57363e32d9d91723a65db9a361c65c4aa1bd460f9873a4f7a",
+      "size": 6956
+    },
+    "crates/latent-wasmtime/src/backend/readiness/tests/owners.rs": {
+      "sha256": "sha256:de8aa77a686ab06096f55dba42fdf56d3fddaf2b88a845b0d9b48ace1835084e",
+      "size": 3614
+    },
+    "crates/latent-wasmtime/src/backend/readiness/wait/tests.rs": {
+      "sha256": "sha256:dc1751917a0f4cfe6554c01cd39518040cec57c0fdb57af26bac539a12d9c1b4",
+      "size": 6621
+    },
+    "crates/latent-wasmtime/src/backend/readiness/worker_wait/tests.rs": {
+      "sha256": "sha256:6b0b91ba281c5991be326109a494b8ab71557a3852c13d39baa47fa846612bce",
+      "size": 3555
+    },
+    "crates/latent-wasmtime/src/backend/result_lifetime_tests.rs": {
+      "sha256": "sha256:6e9b8e5cb2bc04256cb24145ed05767eecb00fc6a954b58792d69b0fc8386092",
+      "size": 5764
+    },
+    "crates/latent-wasmtime/src/backend/start.rs": {
+      "sha256": "sha256:ee9b244643c2d35994c293029515a72f61161283afc079aa515f55c837cd61ed",
+      "size": 2458
+    },
+    "crates/latent-wasmtime/src/bindings/tests.rs": {
+      "sha256": "sha256:f7c2c2f6b7b2b44221caec6ed353b93ff3c6c1157ea34f83221206bb92b05372",
+      "size": 17230
+    },
+    "crates/latent-wasmtime/src/cache/accounting/ledger.rs": {
+      "sha256": "sha256:069d10870fd384f677b4c351707daedc1b905caa9d704d07dbfcec207b6ab006",
+      "size": 4185
+    },
+    "crates/latent-wasmtime/src/cache/accounting/tests/failures.rs": {
+      "sha256": "sha256:eecc7e809bfc7e46b0e68648f421dc1c6fc7a7157568c7cc1074eb0bc6c0b05c",
+      "size": 4042
+    },
+    "crates/latent-wasmtime/src/cache/accounting/tests/lifetime.rs": {
+      "sha256": "sha256:d9c54b376cd55607db388cf53a096ede2b5ab2a8edcea841810c2f72ccfc4286",
+      "size": 3957
+    },
+    "crates/latent-wasmtime/src/cache/accounting/tests/support.rs": {
+      "sha256": "sha256:40d0f1a63dc8117fac42eda3eecfa75955604d7d11a8ed859bca3feb9aff355d",
+      "size": 3957
+    },
+    "crates/latent-wasmtime/src/cache/recency_tests.rs": {
+      "sha256": "sha256:51666f794db05dc01ca034c5bf8a2544def446582a5c89fe7f0b1debe63c94c4",
+      "size": 6825
+    },
+    "crates/latent-wasmtime/src/cache/reservation.rs": {
+      "sha256": "sha256:8537ff9238022e633a2aba2b547ff170e5d1115449474e84d92cbffb4ca9167b",
+      "size": 6882
+    },
+    "crates/latent-wasmtime/src/compiler.rs": {
+      "sha256": "sha256:e0d9af0f53716b490fa30cd0c89a12b6cc32a362d3486da30ef5dcbae5c91ac3",
+      "size": 4013
+    },
+    "crates/latent-wasmtime/src/compiler/acquire.rs": {
+      "sha256": "sha256:c8f8cd7b2440f943d722553605d8ef029a01fc7d9262736e52c47c9f98cf7e48",
+      "size": 5887
+    },
+    "crates/latent-wasmtime/src/compiler/tests/ownership.rs": {
+      "sha256": "sha256:09288c09ae8d03af50960d528f9cf5c059a5558c28a88b1937d8818b6f1f4acc",
+      "size": 5658
+    },
+    "crates/latent-wasmtime/src/compiler/tests/read_control.rs": {
+      "sha256": "sha256:6154fbd3e5ae1f10ee713a87919f9e2af1b066fe4ccf549f93568bc3b0bc42ae",
+      "size": 6295
+    },
+    "crates/latent-wasmtime/src/compiler/tests/support.rs": {
+      "sha256": "sha256:a05bfa8e036a3debf6c8135715d5cdad860f3f1f379a6a9107a17654190099f4",
+      "size": 9341
+    },
+    "crates/latent-wasmtime/src/compiler/worker.rs": {
+      "sha256": "sha256:17ef4abde2a9d7e7edf8e6e9b951d240386a9dba5aaea087e62e0774aa77283f",
+      "size": 8216
+    },
+    "crates/latent-wasmtime/src/config.rs": {
+      "sha256": "sha256:5babff9eedddfc451e88f39e97c407eefe6f6b278513f04b61eefbf085fbdcde",
+      "size": 13511
+    },
+    "crates/latent-wasmtime/src/config/java.rs": {
+      "sha256": "sha256:f89714094e321e4c09ab2e27ef7881fa919a2677c27c1e52daf792c70f8c3de9",
+      "size": 7325
+    },
+    "crates/latent-wasmtime/src/config/profile.rs": {
+      "sha256": "sha256:07cf50af6d6037550f8b7bd9659040261f3b5bc1f724dc630c17ac85e5b4fe87",
+      "size": 11014
+    },
+    "crates/latent-wasmtime/src/config/tests/security_advisories.rs": {
+      "sha256": "sha256:57c9afc480802c537ac6aea855cbd4d6c94a1a1baa80072d22c99babdb5c7c23",
+      "size": 8598
+    },
+    "crates/latent-wasmtime/src/containment.rs": {
+      "sha256": "sha256:bad0aba1390a09f005ec1d419298b4d8c585bd5392cb04db83cbb21b76ffc81f",
+      "size": 20385
+    },
+    "crates/latent-wasmtime/src/factory.rs": {
+      "sha256": "sha256:314fe8e984c646d7cfec69bd2d419aa11f4d8aa173af070ceb7914f84d87fe5a",
+      "size": 12502
+    },
+    "crates/latent-wasmtime/src/factory/tests.rs": {
+      "sha256": "sha256:c82cec70462009b3e4e40ecfde81cbf3ed4ca2b0d79ddbcd648102fd1f575c0d",
+      "size": 7664
+    },
+    "crates/latent-wasmtime/src/host/accounting/tests.rs": {
+      "sha256": "sha256:e4f0c65235bdef28a8d5a4b50073d29cc20a813c44e3387a62b8b0379e3c192b",
+      "size": 13179
+    },
+    "crates/latent-wasmtime/src/host/accounting/tests/support.rs": {
+      "sha256": "sha256:c4e0c28c01442bc9c8003d0dcd46ec411df03e659fe11c5fdc593d2c66baf92f",
+      "size": 3042
+    },
+    "crates/latent-wasmtime/src/host/owned_context/tests.rs": {
+      "sha256": "sha256:cac12e0e91c76db2c8a6076e113c9e654cf6ac47c26c9db274487338827c7d01",
+      "size": 10723
+    },
+    "crates/latent-wasmtime/src/host/transaction/table.rs": {
+      "sha256": "sha256:be5638f81c3ab6f161655de8a2780d9dae55de033d9c52d73c7aab7ba05402f2",
+      "size": 5074
+    },
+    "crates/latent-wasmtime/src/lib.rs": {
+      "sha256": "sha256:a2ee35ae31e2342a1ad189d85ccfc06773f8a2988f04586043a479a8aeaec6f0",
+      "size": 4945
+    },
+    "crates/latent-wasmtime/src/preparation_observer.rs": {
+      "sha256": "sha256:a3c6e51b64f9eb4065c71b1a2ec4512e76a696c792c33eb5fc92fd516f962458",
+      "size": 5214
+    },
+    "crates/latent-wasmtime/src/preparation_observer/guard.rs": {
+      "sha256": "sha256:4bb0b00c4f92aa77bd60863e258e6fe20c5acc6419c8b8edea9273460c1724ba",
+      "size": 8752
+    },
+    "crates/latent-wasmtime/src/preparation_observer/tests.rs": {
+      "sha256": "sha256:5bc89a33a37e8031bcb96ea73712a20ae059ad42e705d0d7d543305b68daea05",
+      "size": 17006
+    },
+    "crates/latent-wasmtime/src/surface.rs": {
+      "sha256": "sha256:600df48663e0bf45383ca1867c3649d6ef0399c624fdf5a12b856ecb2479427f",
+      "size": 20620
+    },
+    "crates/latent-wasmtime/src/test_fixtures.rs": {
+      "sha256": "sha256:1d119e9520f3532f2543cc39b15508592a63ba58658c4d492b513ab288f3a1c2",
+      "size": 312
+    },
+    "crates/latent-wasmtime/src/values/tests/transactions.rs": {
+      "sha256": "sha256:d45a632561c868a1328fb9c2f672a193b43b5424297a5236afbb67243860cb87",
+      "size": 6820
+    },
+    "crates/latent-wasmtime/src/values/tests/web.rs": {
+      "sha256": "sha256:f5d6821c6bdf87bec82af0c557df6180acb2e3dc4ce0cc62f594716fccfe2ed3",
+      "size": 4153
+    },
+    "crates/latent-wasmtime/tests/generic_backend/support.rs": {
+      "sha256": "sha256:ca90db39dab6c8ccfe5bb8022269386f77f8c64a6c903b46eefcd6e08315c132",
+      "size": 10801
+    },
+    "crates/latent-wasmtime/tests/guest_sdk/package.rs": {
+      "sha256": "sha256:2ddb837b76365d38d228a9135639cba2cec424e207cc458705b2fd14182a7d69",
+      "size": 12404
+    },
+    "crates/latent-wasmtime/tests/local_service/fixture.rs": {
+      "sha256": "sha256:2bbec83e6c9c4c2c03acfcda8e568af11c37b498364c6769f731b08b7897c7fe",
+      "size": 23802
+    },
+    "tools/ci/suites.json": {
+      "sha256": "sha256:4425db3a55fd753d652717ad52f035add233561143186f7e637b2567d5f48422",
+      "size": 551476
+    }
+  },
+  "fullTargetClippyQualified": false,
+  "remainingFailures": {
+    "integrationFixtureLocatedErrors": 69,
+    "inheritedManifestLibraryErrors": 15,
+    "inheritedAuditLibraryErrors": 2
+  },
+  "signedGuestExecutionQualified": false
+}

@@ -9,7 +9,7 @@ use super::*;
 mod deadlines;
 mod diagnostic;
 mod runtime_observation;
-mod support;
+use crate::test_fixtures::accounting as support;
 use support::request;
 
 struct Clock {

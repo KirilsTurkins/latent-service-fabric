@@ -10,13 +10,13 @@ use crate::PreparationStage;
 pub(super) fn run<T: Send + Sync + 'static>(core: Arc<Core<T>>, worker: usize) {
     core.metrics
         .update(|s| s.workers_live = s.workers_live.saturating_add(1));
-    let _exit = Exit {
-        core: Arc::clone(&core),
-    };
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run_loop(&core, worker)));
+    let exit = Exit { core };
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        run_loop(&exit.core, worker);
+    }));
     if let Err(payload) = result {
         dispose_panic_payload(payload);
-        core.fail_worker(worker);
+        exit.core.fail_worker(worker);
     }
 }
 
@@ -71,7 +71,7 @@ fn run_loop<T: Send + Sync + 'static>(core: &Arc<Core<T>>, worker: usize) {
                 dispose_panic_payload(payload);
                 Err(capacity_error("compiler-job-panicked"))
             });
-        finish(&core, worker, id, result);
+        finish(core, worker, id, result);
     }
 }
 
@@ -142,7 +142,7 @@ fn finish<T: Send + Sync + 'static>(
     drop(discarded);
     let mut wakers = Vec::new();
     for waiter in waiters {
-        deliver(core, waiter, &output, &mut wakers);
+        deliver(core, &waiter, &output, &mut wakers);
     }
     if let Some(observation) = observation {
         observation.complete();
@@ -181,7 +181,7 @@ fn finish<T: Send + Sync + 'static>(
 
 fn deliver<T>(
     core: &Core<T>,
-    waiter: Arc<Waiter<T>>,
+    waiter: &Waiter<T>,
     output: &Result<Arc<T>, PlatformError>,
     wakers: &mut Vec<std::task::Waker>,
 ) {
