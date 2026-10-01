@@ -664,9 +664,18 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(len(legacy["pythonTestModules"]), 260)
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
+        reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
         for key, value in legacy["after"].items():
             self.assertIn(key, data["after"])
-            if key != reviewed_extension:
+            if key == reviewed_narrow_fixture:
+                self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
+                                 {k: v for k, v in value.items() if k != "run"})
+                # Only the fixture path changes: real state dependencies now
+                # select the full profile. Keep every command and assertion.
+                self.assertEqual(data["after"][key]["run"].rstrip("\n"),
+                                 value["run"].replace("crates/latent-state/src/lib.rs",
+                                                      "crates/latent-workflows/src/lib.rs"))
+            elif key != reviewed_extension:
                 self.assertEqual(data["after"][key], value, key)
             else:
                 self.assertEqual({k: v for k, v in data["after"][key].items() if k != "run"},
