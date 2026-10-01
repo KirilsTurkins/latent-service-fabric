@@ -187,11 +187,20 @@ fn protected_activation_runtime_starts_without_work_and_reaps_thirty_two_times()
         let providers = stopped.providers.unwrap();
         assert!(providers.clean);
         assert_eq!(providers.secret_generations, 0);
-        assert_eq!(providers.secret_leases, 0);
-        assert_eq!(providers.io.queued_jobs, 0);
-        assert_eq!(providers.io.active_jobs, 0);
-        assert_eq!(providers.io.memory_used_bytes, 0);
-        assert!(providers.io.threads_joined);
+        assert_eq!(providers.secret_references, 0);
+        assert_eq!(providers.control_owners, 0);
+        assert_eq!(providers.connections, 0);
+        assert_eq!(providers.pending_requests, 0);
+        assert_eq!(providers.running_requests, 0);
+        assert_eq!(providers.workers, 0);
+        assert_eq!(providers.cleanup_jobs, 0);
+        assert_eq!(providers.failed_cleanup, 0);
+        assert_eq!(providers.sessions, 0);
+        assert_eq!(providers.handles, 0);
+        assert_eq!(providers.calls, 0);
+        assert_eq!(providers.results, 0);
+        assert_eq!(providers.io_calls, 0);
+        assert_eq!(providers.io_retained_bytes, 0);
     }
     control.shutdown_timeout(Duration::from_secs(5));
     invocation.shutdown_timeout(Duration::from_secs(5));
