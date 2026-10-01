@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "JavaDependencies.test_duplicate_class_and_duplicate_resource_are_rejected",
+    "JavaDependencies.test_local_unknown_transitive_jars_and_resource_bytes_preserved_offline",
+    "JavaDependencies.test_malformed_multirelease_and_new_bytecode_fail",
+    "JavaDependencies.test_multi_release_highest_qualified_release_with_original_identity",
+    "JavaDependencies.test_private_repository_credentials_cannot_enter_declarations",
+    "JavaDependencies.test_resolver_owns_script_and_retains_native_conditions",
+    "JavaDependencies.test_service_provider_metadata_preserved_and_duplicate_policy_explicit",
+    "JavaDependencies.test_shaded_names_preserved_and_platform_override_denied",
+    "JavaDependencies.test_teavm_host_extension_services_cannot_execute_as_guest_inputs"
+  ],
+  "guards": {
+    "JavaDependencies.test_duplicate_class_and_duplicate_resource_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencies.test_local_unknown_transitive_jars_and_resource_bytes_preserved_offline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencies.test_malformed_multirelease_and_new_bytecode_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencies.test_multi_release_highest_qualified_release_with_original_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencies.test_private_repository_credentials_cannot_enter_declarations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencies.test_resolver_owns_script_and_retains_native_conditions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencies.test_service_provider_metadata_preserved_and_duplicate_policy_explicit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencies.test_shaded_names_preserved_and_platform_override_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencies.test_teavm_host_extension_services_cannot_execute_as_guest_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5d2d8295139a06858952ce24b29d97a8c19ec4c04b637350bea54a9e89026cc9",
+        "class:setup-sha256:0213c60884355091e2206f2c2913440aa8ff6d3eb4981ebaeec978b36b0206f1"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_application_dependencies.py",
+  "reviewReason": "Review native JAR selection and executable TeaVM compiler service denial",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
