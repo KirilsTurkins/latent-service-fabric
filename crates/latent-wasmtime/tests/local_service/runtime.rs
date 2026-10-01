@@ -192,11 +192,8 @@ async fn completed_fixed_results_release_original_calls_before_the_next_import()
     let f = configured(root.path(), 1).await;
     // The existing fixture installs the unchanged broker default. This ceiling
     // limits simultaneous accepted calls, not completed lifetime operation count.
-    assert_eq!(
-        latent_capabilities::broker::CapabilityBrokerLimits::default().maximum_calls_per_session,
-        16
-    );
-    assert!(component::COMPLETED_CYCLES > 16);
+    assert_eq!(f.maximum_calls_per_session, 16);
+    assert!(usize::try_from(component::COMPLETED_CYCLES).unwrap() > f.maximum_calls_per_session);
     for (mode, per_cycle) in [(26, 3_u64), (27, 5_u64), (32, 2_u64)] {
         let id = format!("fixed-completion-{mode}");
         let receipt = success(f.manager.start(f.request(&id, mode)).unwrap().await);
