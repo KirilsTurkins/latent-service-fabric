@@ -391,9 +391,29 @@ class CompletionRegressionTests(unittest.TestCase):
             plan = local.plan_suite(ROOT, ECHO,
                 "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary")
             with patch.object(local.shutil, "which", side_effect=lambda tool: None if tool == "wasm-tools" else tool), \
+                    patch.object(local, "_fixture_presence", return_value=False), \
                     patch.object(local, "run_bounded", side_effect=AssertionError("partial preparation")):
                 with self.assertRaisesRegex(local.LocalTestError, "wasm-tools"):
                     local.prepare(ROOT, plan, Path(directory) / "test.jsonl")
+
+    def test_valid_reusable_fixture_does_not_require_its_build_tools(self):
+        with tempfile.TemporaryDirectory() as directory:
+            inventory = Path(directory) / "test.jsonl"
+            inventory.touch()
+            plan = local.plan_suite(ROOT, ECHO,
+                "invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary")
+            with patch.object(local.shutil, "which", side_effect=lambda tool: None if tool == "wasm-tools" else tool), \
+                    patch.object(local, "_fixture_presence", return_value=True), \
+                    patch.object(local, "_validate_fixture_recipe") as fixture_validation, \
+                    patch.object(local, "_prepare_inventory", return_value=True) as prepared_inventory, \
+                    patch.object(local, "validate_prepared") as prepared_validation, \
+                    patch.object(local, "run_bounded", side_effect=AssertionError("unexpected preparation")):
+                result = local.prepare(ROOT, plan, inventory)
+            self.assertTrue(result["reused"])
+            self.assertTrue(result["fixtureRecipes"])
+            self.assertEqual(fixture_validation.call_count, len(result["fixtureRecipes"]))
+            prepared_inventory.assert_called_once()
+            prepared_validation.assert_called_once_with(ROOT, plan, inventory)
 
     def test_large_case_intent_is_bounded_but_never_truncated(self):
         cases = ["case_" + str(i) for i in range(300)]
