@@ -343,6 +343,174 @@ impl TryFrom<model::CancelCommandResponse> for t::CancelCommandResponse {
     }
 }
 
+impl From<c::DispatcherGeneration> for model::DispatcherGeneration {
+    fn from(value: c::DispatcherGeneration) -> Self {
+        Self {
+            owner_epoch: value.owner_epoch,
+            revision: value.revision,
+        }
+    }
+}
+
+impl TryFrom<model::DispatcherGeneration> for c::DispatcherGeneration {
+    type Error = ValidationError;
+    fn try_from(value: model::DispatcherGeneration) -> Result<Self, Self::Error> {
+        Ok(Self {
+            owner_epoch: value.owner_epoch,
+            revision: value.revision,
+        })
+    }
+}
+
+impl From<c::ControlDispatcherRequest> for model::ControlDispatcherRequest {
+    fn from(value: c::ControlDispatcherRequest) -> Self {
+        Self {
+            profile: value.profile.map(Into::into),
+            scope: model::DispatcherScope(value.scope),
+            operation_id: value.operation_id,
+            action: model::DispatcherAction(value.action),
+            expected_generation: value.expected_generation.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<model::ControlDispatcherRequest> for c::ControlDispatcherRequest {
+    type Error = ValidationError;
+    fn try_from(value: model::ControlDispatcherRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            profile: value.profile.map(TryInto::try_into).transpose()?,
+            scope: value.scope.0,
+            operation_id: value.operation_id,
+            action: value.action.0,
+            expected_generation: value
+                .expected_generation
+                .map(TryInto::try_into)
+                .transpose()?,
+        })
+    }
+}
+
+impl From<c::DispatcherOperationReceipt> for model::DispatcherOperationReceipt {
+    fn from(value: c::DispatcherOperationReceipt) -> Self {
+        Self {
+            operation_id: value.operation_id,
+            receipt_id: value.receipt_id,
+            action: model::DispatcherAction(value.action),
+            authenticated_operator: value.authenticated_operator,
+            actor_tenant: value.actor_tenant,
+            before_generation: value.before_generation.map(Into::into),
+            after_generation: value.after_generation.map(Into::into),
+            observed_at_unix_millis: value.observed_at_unix_millis,
+            clock_continuity_proven: value.clock_continuity_proven,
+            restore_review_required: value.restore_review_required,
+            disposition: model::StateOperationDisposition(value.disposition),
+        }
+    }
+}
+
+impl TryFrom<model::DispatcherOperationReceipt> for c::DispatcherOperationReceipt {
+    type Error = ValidationError;
+    fn try_from(value: model::DispatcherOperationReceipt) -> Result<Self, Self::Error> {
+        Ok(Self {
+            operation_id: value.operation_id,
+            receipt_id: value.receipt_id,
+            action: value.action.0,
+            authenticated_operator: value.authenticated_operator,
+            actor_tenant: value.actor_tenant,
+            before_generation: value.before_generation.map(TryInto::try_into).transpose()?,
+            after_generation: value.after_generation.map(TryInto::try_into).transpose()?,
+            observed_at_unix_millis: value.observed_at_unix_millis,
+            clock_continuity_proven: value.clock_continuity_proven,
+            restore_review_required: value.restore_review_required,
+            disposition: value.disposition.0,
+        })
+    }
+}
+
+impl From<c::ControlDispatcherResponse> for model::ControlDispatcherResponse {
+    fn from(value: c::ControlDispatcherResponse) -> Self {
+        Self {
+            receipt: value.receipt.map(Into::into),
+            replayed: value.replayed,
+            published: value.published,
+            paused: value.paused,
+            audit_ack: value.audit_ack.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<model::ControlDispatcherResponse> for c::ControlDispatcherResponse {
+    type Error = ValidationError;
+    fn try_from(value: model::ControlDispatcherResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            receipt: value.receipt.map(TryInto::try_into).transpose()?,
+            replayed: value.replayed,
+            published: value.published,
+            paused: value.paused,
+            audit_ack: value.audit_ack.map(Into::into),
+        })
+    }
+}
+
+impl From<c::DispatcherSnapshot> for model::DispatcherSnapshot {
+    fn from(value: c::DispatcherSnapshot) -> Self {
+        Self {
+            generation: value.generation.map(Into::into),
+            paused: value.paused,
+            pending_control: value.pending_control,
+            restore_review_required: value.restore_review_required,
+            admission_closed: value.admission_closed,
+            quarantined: value.quarantined,
+            failure: model::DispatcherFailure(value.failure),
+            queued: value.queued,
+            active_jobs: value.active_jobs,
+            retained_attempt_bytes: value.retained_attempt_bytes,
+            live_workers: value.live_workers,
+            accepted_effects: value.accepted_effects,
+            physical_owners: value.physical_owners,
+            quarantined_physical_owners: value.quarantined_physical_owners,
+            command_owners: value.command_owners,
+            claims: value.claims,
+            pending_effects: value.pending_effects,
+            uncertain_effects: value.uncertain_effects,
+            blocked_effects: value.blocked_effects,
+            dead_letter_effects: value.dead_letter_effects,
+            counts_observed_at_unix_millis: value.counts_observed_at_unix_millis,
+            clock_continuity_proven: value.clock_continuity_proven,
+        }
+    }
+}
+
+impl TryFrom<model::DispatcherSnapshot> for c::DispatcherSnapshot {
+    type Error = ValidationError;
+    fn try_from(value: model::DispatcherSnapshot) -> Result<Self, Self::Error> {
+        Ok(Self {
+            generation: value.generation.map(TryInto::try_into).transpose()?,
+            paused: value.paused,
+            pending_control: value.pending_control,
+            restore_review_required: value.restore_review_required,
+            admission_closed: value.admission_closed,
+            quarantined: value.quarantined,
+            failure: value.failure.0,
+            queued: value.queued,
+            active_jobs: value.active_jobs,
+            retained_attempt_bytes: value.retained_attempt_bytes,
+            live_workers: value.live_workers,
+            accepted_effects: value.accepted_effects,
+            physical_owners: value.physical_owners,
+            quarantined_physical_owners: value.quarantined_physical_owners,
+            command_owners: value.command_owners,
+            claims: value.claims,
+            pending_effects: value.pending_effects,
+            uncertain_effects: value.uncertain_effects,
+            blocked_effects: value.blocked_effects,
+            dead_letter_effects: value.dead_letter_effects,
+            counts_observed_at_unix_millis: value.counts_observed_at_unix_millis,
+            clock_continuity_proven: value.clock_continuity_proven,
+        })
+    }
+}
+
 impl From<t::EffectReceipt> for model::EffectReceipt {
     fn from(value: t::EffectReceipt) -> Self {
         Self {
@@ -426,6 +594,42 @@ impl TryFrom<model::ExpectedVersion> for t::ExpectedVersion {
         Ok(Self {
             key: value.key,
             expectation,
+        })
+    }
+}
+
+impl From<c::GetDispatcherOperationRequest> for model::GetDispatcherOperationRequest {
+    fn from(value: c::GetDispatcherOperationRequest) -> Self {
+        Self {
+            original: value.original.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<model::GetDispatcherOperationRequest> for c::GetDispatcherOperationRequest {
+    type Error = ValidationError;
+    fn try_from(value: model::GetDispatcherOperationRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            original: value.original.map(TryInto::try_into).transpose()?,
+        })
+    }
+}
+
+impl From<c::GetDispatcherOperationResponse> for model::GetDispatcherOperationResponse {
+    fn from(value: c::GetDispatcherOperationResponse) -> Self {
+        Self {
+            receipt: value.receipt.map(Into::into),
+            audit_ack: value.audit_ack.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<model::GetDispatcherOperationResponse> for c::GetDispatcherOperationResponse {
+    type Error = ValidationError;
+    fn try_from(value: model::GetDispatcherOperationResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            receipt: value.receipt.map(TryInto::try_into).transpose()?,
+            audit_ack: value.audit_ack.map(Into::into),
         })
     }
 }
@@ -597,6 +801,44 @@ impl TryFrom<model::GetStateOperationReceiptResponse> for c::GetStateOperationRe
         Ok(Self {
             receipt: value.receipt.map(TryInto::try_into).transpose()?,
             namespace_receipt: value.namespace_receipt.map(TryInto::try_into).transpose()?,
+        })
+    }
+}
+
+impl From<c::InspectDispatcherRequest> for model::InspectDispatcherRequest {
+    fn from(value: c::InspectDispatcherRequest) -> Self {
+        Self {
+            profile: value.profile.map(Into::into),
+            scope: model::DispatcherScope(value.scope),
+        }
+    }
+}
+
+impl TryFrom<model::InspectDispatcherRequest> for c::InspectDispatcherRequest {
+    type Error = ValidationError;
+    fn try_from(value: model::InspectDispatcherRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            profile: value.profile.map(TryInto::try_into).transpose()?,
+            scope: value.scope.0,
+        })
+    }
+}
+
+impl From<c::InspectDispatcherResponse> for model::InspectDispatcherResponse {
+    fn from(value: c::InspectDispatcherResponse) -> Self {
+        Self {
+            dispatcher: value.dispatcher.map(Into::into),
+            audit_ack: value.audit_ack.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<model::InspectDispatcherResponse> for c::InspectDispatcherResponse {
+    type Error = ValidationError;
+    fn try_from(value: model::InspectDispatcherResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            dispatcher: value.dispatcher.map(TryInto::try_into).transpose()?,
+            audit_ack: value.audit_ack.map(Into::into),
         })
     }
 }

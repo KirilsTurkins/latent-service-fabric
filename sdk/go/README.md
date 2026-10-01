@@ -11,6 +11,7 @@ removed during alpha; there is no compatibility facade.
 | --- | --- |
 | `latent.dev/sdk/go/profile` | Shared, generated public DTOs and eight-operation interface; owned by #227 |
 | `latent.dev/sdk/go/transport` | Explicit connection ownership, admission, unary wire transport and conversions |
+| `latent.dev/sdk/go/transaction` | Additive owned StateService, TransactionService and DispatcherService DTOs, original recovery identity and fifteen-operation interface |
 | `internal/rpc` | Private generated Protobuf/gRPC bindings; reproducible, ignored build output |
 | `cmd/provider-workflow` | Executable native HTTP/blob guest example and separate-node qualification participant |
 
@@ -34,8 +35,11 @@ go vet ./...
 go build -trimpath -o target/provider-workflow ./cmd/provider-workflow
 ```
 
-Generation uses only the authoritative common, policy, capability and invocation
-Protobuf sources. It builds local `protoc-gen-go v1.36.12` and the maintained
+Generation uses eight authoritative common, policy, capability, invocation,
+release, state, transaction and dispatcher Protobuf sources. State and dispatcher
+bindings have a separate private Go package so they can reference transactions
+without introducing an import cycle with the stateless control types. Protobuf
+wire names are unchanged. Generation builds local `protoc-gen-go v1.36.12` and the maintained
 `internal/rpcgen` unary-interface generator under this SDK's ignored
 `target/tools`, verifies the upstream plugin version, and compares byte-for-byte
 with fresh staged generation in `--check` mode. The private generated interface

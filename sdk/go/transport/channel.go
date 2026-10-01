@@ -22,14 +22,14 @@ import (
 type callKey struct{}
 
 type callState struct {
-	identity      profile.RequestIdentity
-	metadata      profile.ResponseMetadata
-	dispatched    bool
-	requestLimit  int
-	responseLimit int
-	grpcStatus    *int32
-	attempted     atomic.Bool
-	transactional bool
+	identity            profile.RequestIdentity
+	metadata            profile.ResponseMetadata
+	dispatched          bool
+	requestLimit        int
+	responseLimit       int
+	grpcStatus          *int32
+	attempted           atomic.Bool
+	transactional       bool
 	transactionIdentity tx.RecoveryIdentity
 	transactionObserved *tx.ObservedOutcome
 	transactionResponse func(proto.Message) error
@@ -96,7 +96,9 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, input, out
 		}
 	}
 	if !state.transactional {
-		if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil { return failure }
+		if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil {
+			return failure
+		}
 	}
 	if bodyFailure != nil {
 		if errors.Is(bodyFailure, errBound) {
@@ -120,7 +122,9 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, input, out
 	}
 	if *state.grpcStatus != 0 {
 		if state.transactional {
-			if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil { return failure }
+			if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil {
+				return failure
+			}
 		}
 		category := profile.FailureCategoryRpc
 		if *state.grpcStatus == 4 {
@@ -137,9 +141,14 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, input, out
 	}
 	maximumNodes := channel.client.config.MaxGraphNodes
 	maximumBytes := channel.client.config.MaxGraphBytes
-	if state.transactional { maximumNodes = min(maximumNodes,4096); maximumBytes = min(maximumBytes,8*1024*1024) }
+	if state.transactional {
+		maximumNodes = min(maximumNodes, 4096)
+		maximumBytes = min(maximumBytes, 8*1024*1024)
+	}
 	nodes := maximumNodes
-	if state.transactional { failure = validateTransactionWire(ctx, data, output.ProtoReflect().Descriptor(), &nodes, 0) } else {
+	if state.transactional {
+		failure = validateTransactionWire(ctx, data, output.ProtoReflect().Descriptor(), &nodes, 0)
+	} else {
 		failure = validateWire(ctx, data, output.ProtoReflect().Descriptor(), &nodes, 0)
 	}
 	if failure != nil {
@@ -155,8 +164,12 @@ func (channel *rpcChannel) Invoke(ctx context.Context, method string, input, out
 		return state.fail(profile.FailureCategoryDecode, "invalid protobuf response")
 	}
 	if state.transactional {
-		if failure = state.transactionResponse(output); failure != nil { return failure }
-		if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil { return failure }
+		if failure = state.transactionResponse(output); failure != nil {
+			return failure
+		}
+		if failure = readAudit(reply.Header, reply.Trailer, state); failure != nil {
+			return failure
+		}
 	}
 	return nil
 }

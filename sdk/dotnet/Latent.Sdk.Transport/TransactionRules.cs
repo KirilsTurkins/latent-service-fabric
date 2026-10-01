@@ -166,8 +166,33 @@ internal static class TransactionRules
                 if (value.Mutation.Value is 1 or 5) { var config = Present(value.Configuration); Text(config.StateSchema); Quota(config.Quota); }
                 else Require(value.Configuration is null);
                 break;
+            case Tx.InspectDispatcherRequest value: Selected(value.Profile); Enum(value.Scope.Value, 1); break;
+            case Tx.ControlDispatcherRequest value: DispatcherControl(value); break;
+            case Tx.GetDispatcherOperationRequest value: DispatcherControl(Present(value.Original)); break;
             default: throw new FormatException("unsupported transaction operation");
         }
+    }
+
+    private static Tx.DispatcherGeneration DispatcherGeneration(Tx.DispatcherGeneration? raw)
+    {
+        var generation = Present(raw); Require(generation.OwnerEpoch != 0 && generation.Revision != 0); return generation;
+    }
+
+    private static void DispatcherControl(Tx.ControlDispatcherRequest value)
+    {
+        Selected(value.Profile); Enum(value.Scope.Value, 1); Text(value.OperationId); Enum(value.Action.Value, 2);
+        Require(DispatcherGeneration(value.ExpectedGeneration).Revision != ulong.MaxValue);
+    }
+
+    private static void DispatcherReceipt(Tx.DispatcherOperationReceipt? raw, Tx.ControlDispatcherRequest original)
+    {
+        var receipt = Present(raw); Text(receipt.OperationId); Text(receipt.ReceiptId); Text(receipt.AuthenticatedOperator); Text(receipt.ActorTenant);
+        Enum(receipt.Action.Value, 2); Enum(receipt.Disposition.Value, 5);
+        var before = DispatcherGeneration(receipt.BeforeGeneration); var after = DispatcherGeneration(receipt.AfterGeneration);
+        Require(receipt.OperationId == original.OperationId && receipt.Action == original.Action && before == original.ExpectedGeneration);
+        Require(receipt.Disposition == Tx.StateOperationDisposition.Committed);
+        Require(after.OwnerEpoch == before.OwnerEpoch && before.Revision != ulong.MaxValue && after.Revision == before.Revision + 1);
+        Require(receipt.Action != Tx.DispatcherAction.Resume || receipt.ClockContinuityProven && !receipt.RestoreReviewRequired);
     }
 
     private static void Source(Tx.SourceIdentity? raw)
@@ -301,7 +326,7 @@ internal static class TransactionRules
             case (Tx.MutateStateResponse value, Tx.MutateStateRequest requested):
                 Receipt(value.Receipt, requested.Namespace, requested.OperationId); var acceptedState = value.Receipt!;
                 Require(acceptedState.Mutation == requested.Mutation && acceptedState.RecordId == requested.RecordId && EqualBytes(acceptedState.BeforeVersion, requested.ExpectedVersion) && acceptedState.PolicyDigest == requested.ExpectedPolicyDigest);
-                if (value.AuditAck is { } ack) Enum(ack.Status.Value, 4); break;
+                break;
             case (Tx.MutateNamespaceResponse value, Tx.MutateNamespaceRequest requested):
                 Receipt(value.Receipt, requested.Namespace, requested.OperationId); var accepted = value.Receipt!;
                 Require(accepted.Mutation == requested.Mutation && accepted.BeforeGeneration == (requested.Mutation.Value == 1 ? null : requested.ExpectedGeneration));
@@ -313,17 +338,36 @@ internal static class TransactionRules
                     Require(accepted.Status.Value == (requested.Mutation.Value is 1 or 5 ? 1 : requested.Mutation.Value));
                     Require(requested.Configuration is null || requested.Configuration.StateSchema == accepted.StateSchema);
                 }
-                if (value.AuditAck is { } nsAck) Enum(nsAck.Status.Value, 4); break;
+                break;
             case (Tx.GetStateOperationReceiptResponse value, Tx.GetStateOperationReceiptRequest requested):
                 Require((value.Receipt is null) != (value.NamespaceReceipt is null));
                 if (value.Receipt is not null) Receipt(value.Receipt, requested.Namespace, requested.OperationId);
                 else Receipt(value.NamespaceReceipt, requested.Namespace, requested.OperationId);
                 break;
+            case (Tx.InspectDispatcherResponse value, Tx.InspectDispatcherRequest):
+                var snapshot = Present(value.Dispatcher); DispatcherGeneration(snapshot.Generation); Enum(snapshot.Failure.Value, 7);
+                Require(!(snapshot.PendingControl || snapshot.RestoreReviewRequired) || snapshot.Paused);
+                break;
+            case (Tx.ControlDispatcherResponse value, Tx.ControlDispatcherRequest requested):
+                DispatcherReceipt(value.Receipt, requested);
+                Require(!(value.Replayed && value.Published));
+                Require(requested.Action != Tx.DispatcherAction.Pause || !value.Published || value.Paused);
+                break;
+            case (Tx.GetDispatcherOperationResponse value, Tx.GetDispatcherOperationRequest requested):
+                DispatcherReceipt(value.Receipt, requested.Original!); break;
             default: throw new FormatException("response owner does not match the original operation");
         }
         state.ObservedTransaction = Observe(response);
         state.TransactionIdentity = Extend(state.TransactionIdentity, state.ObservedTransaction);
         state.Outcome = Known(state.ObservedTransaction) ? Profile.OutcomeKnowledge.Observed : Profile.OutcomeKnowledge.Unknown;
+        // A malformed independent audit value cannot erase an already validated durable receipt.
+        Profile.AuditAck? audit = response switch
+        {
+            Tx.MutateStateResponse value => value.AuditAck, Tx.MutateNamespaceResponse value => value.AuditAck,
+            Tx.InspectDispatcherResponse value => value.AuditAck, Tx.ControlDispatcherResponse value => value.AuditAck,
+            Tx.GetDispatcherOperationResponse value => value.AuditAck, _ => null
+        };
+        if (audit is not null) Enum(audit.Status.Value, 4);
     }
 
     private static Tx.ObservedOutcome? Observe(object response)
@@ -337,11 +381,12 @@ internal static class TransactionRules
         return response switch
         {
             Tx.GetEffectResponse value => new() { Effect = value.Effect }, Tx.MutateStateResponse value => new() { State = value.Receipt },
-            Tx.MutateNamespaceResponse value => new() { Namespace = value.Receipt }, Tx.GetStateOperationReceiptResponse value => new() { State = value.Receipt, Namespace = value.NamespaceReceipt }, _ => null
+            Tx.MutateNamespaceResponse value => new() { Namespace = value.Receipt }, Tx.GetStateOperationReceiptResponse value => new() { State = value.Receipt, Namespace = value.NamespaceReceipt },
+            Tx.ControlDispatcherResponse value => new() { Dispatcher = value.Receipt }, Tx.GetDispatcherOperationResponse value => new() { Dispatcher = value.Receipt }, _ => null
         };
     }
     private static bool Known(Tx.ObservedOutcome? value) => value?.Command is { MetadataDurable: true } command && command.Outcome.Value is 2 or 3 or 4 ||
-        value?.State?.Disposition.Value is 1 or 2 or 3 || value?.Namespace?.Disposition.Value is 1 or 2 or 3;
+        value?.State?.Disposition.Value is 1 or 2 or 3 || value?.Namespace?.Disposition.Value is 1 or 2 or 3 || value?.Dispatcher?.Disposition.Value is 1 or 2 or 3;
     private static Tx.RecoveryIdentity Extend(Tx.RecoveryIdentity original, Tx.ObservedOutcome? observed)
     {
         if (observed?.Command is { } command) return original with
@@ -351,7 +396,7 @@ internal static class TransactionRules
             ReceiptId = original.ReceiptId ?? command.Commit?.ReceiptId,
             FingerprintSha256 = command.FingerprintSha256.IsEmpty ? original.FingerprintSha256 : command.FingerprintSha256.ToArray()
         };
-        return original with { ReceiptId = observed?.State?.ReceiptId ?? observed?.Namespace?.ReceiptId ?? original.ReceiptId };
+        return original with { ReceiptId = observed?.State?.ReceiptId ?? observed?.Namespace?.ReceiptId ?? observed?.Dispatcher?.ReceiptId ?? original.ReceiptId };
     }
 
     internal static Tx.RecoveryIdentity IdentitySnapshot(object original)
@@ -372,6 +417,8 @@ internal static class TransactionRules
             Tx.NamespaceSelector? ns = command?.Namespace ?? inspect?.Namespace ?? (original as Tx.QueryRequest)?.Namespace;
             if (ns is not null) Namespace(ns); if (command is not null) Selector(command);
             var invoke = original as Tx.InvokeCommandRequest; var state = original as Tx.MutateStateRequest; var lifecycle = original as Tx.MutateNamespaceRequest;
+            var dispatcher = original as Tx.ControlDispatcherRequest ?? (original as Tx.GetDispatcherOperationRequest)?.Original;
+            if (dispatcher is not null) { Text(dispatcher.OperationId); Enum(dispatcher.Action.Value, 2); DispatcherGeneration(dispatcher.ExpectedGeneration); }
             if (state is not null) Bytes(state.ExpectedVersion);
             if (invoke is not null)
             {
@@ -389,11 +436,12 @@ internal static class TransactionRules
             {
                 Namespace = ns, Command = command,
                 ActivationId = invoke?.Invocation?.ActivationId ?? (original as Tx.QueryRequest)?.Invocation?.ActivationId,
-                OperationId = lifecycle?.OperationId ?? state?.OperationId ?? (original as Tx.GetStateOperationReceiptRequest)?.OperationId,
+                OperationId = lifecycle?.OperationId ?? state?.OperationId ?? (original as Tx.GetStateOperationReceiptRequest)?.OperationId ?? dispatcher?.OperationId,
                 AttemptId = (original as Tx.LookupCommandRequest)?.AttemptId ?? invoke?.RetryAttempt?.ExpectedAbort?.AttemptId ?? (original as Tx.CancelCommandRequest)?.Command?.AttemptId,
                 ReceiptId = (original as Tx.LookupCommitRequest)?.ReceiptId,
                 EffectId = (original as Tx.GetEffectRequest)?.EffectId ?? (original as Tx.ListEffectHistoryRequest)?.Effect?.EffectId,
                 ExpectedGeneration = lifecycle?.ExpectedGeneration,
+                DispatcherAction = dispatcher?.Action, DispatcherExpectedGeneration = dispatcher?.ExpectedGeneration,
                 ExpectedVersion = state is null ? (ReadOnlyMemory<byte>?)null : new ReadOnlyMemory<byte>(state.ExpectedVersion.ToArray()), ExpectedPolicyDigest = state?.ExpectedPolicyDigest,
                 AuthorizationPublication = publication, RetryRequestId = invoke?.RetryAttempt?.RequestId,
                 ExpectedAbort = invoke?.RetryAttempt?.ExpectedAbort is { } abort ? abort with { OwnerFence = abort.OwnerFence.ToArray() } : null,

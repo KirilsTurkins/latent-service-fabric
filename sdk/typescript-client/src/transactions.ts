@@ -23,6 +23,31 @@ export const CommandOutcome = {
   Expired: 7,
 } as const;
 
+export type DispatcherAction = number;
+export const DispatcherAction = {
+  Unspecified: 0,
+  Pause: 1,
+  Resume: 2,
+} as const;
+
+export type DispatcherFailure = number;
+export const DispatcherFailure = {
+  Unspecified: 0,
+  None: 1,
+  Authority: 2,
+  Store: 3,
+  Worker: 4,
+  RestoreCheckpoint: 5,
+  AdmissionClosed: 6,
+  Configuration: 7,
+} as const;
+
+export type DispatcherScope = number;
+export const DispatcherScope = {
+  Unspecified: 0,
+  Node: 1,
+} as const;
+
 export type EffectDisposition = number;
 export const EffectDisposition = {
   Unspecified: 0,
@@ -177,6 +202,66 @@ export interface CancelCommandResponse {
   readonly command?: CommandInspection;
 }
 
+export interface DispatcherGeneration {
+  readonly ownerEpoch: bigint;
+  readonly revision: bigint;
+}
+
+export interface ControlDispatcherRequest {
+  readonly profile?: TransactionProfile;
+  readonly scope: DispatcherScope;
+  readonly operationId: string;
+  readonly action: DispatcherAction;
+  readonly expectedGeneration?: DispatcherGeneration;
+}
+
+export interface DispatcherOperationReceipt {
+  readonly operationId: string;
+  readonly receiptId: string;
+  readonly action: DispatcherAction;
+  readonly authenticatedOperator: string;
+  readonly actorTenant: string;
+  readonly beforeGeneration?: DispatcherGeneration;
+  readonly afterGeneration?: DispatcherGeneration;
+  readonly observedAtUnixMillis: bigint;
+  readonly clockContinuityProven: boolean;
+  readonly restoreReviewRequired: boolean;
+  readonly disposition: StateOperationDisposition;
+}
+
+export interface ControlDispatcherResponse {
+  readonly receipt?: DispatcherOperationReceipt;
+  readonly replayed: boolean;
+  readonly published: boolean;
+  readonly paused: boolean;
+  readonly auditAck?: profile.AuditAck;
+}
+
+export interface DispatcherSnapshot {
+  readonly generation?: DispatcherGeneration;
+  readonly paused: boolean;
+  readonly pendingControl: boolean;
+  readonly restoreReviewRequired: boolean;
+  readonly admissionClosed: boolean;
+  readonly quarantined: boolean;
+  readonly failure: DispatcherFailure;
+  readonly queued: bigint;
+  readonly activeJobs: bigint;
+  readonly retainedAttemptBytes: bigint;
+  readonly liveWorkers: bigint;
+  readonly acceptedEffects: bigint;
+  readonly physicalOwners: bigint;
+  readonly quarantinedPhysicalOwners: bigint;
+  readonly commandOwners: bigint;
+  readonly claims: bigint;
+  readonly pendingEffects: bigint;
+  readonly uncertainEffects: bigint;
+  readonly blockedEffects: bigint;
+  readonly deadLetterEffects: bigint;
+  readonly countsObservedAtUnixMillis: bigint;
+  readonly clockContinuityProven: boolean;
+}
+
 export interface EffectReceipt {
   readonly effectId: string;
   readonly commandId: string;
@@ -200,6 +285,15 @@ export interface ExpectedVersion {
   readonly key: Uint8Array;
   readonly absent?: boolean;
   readonly version?: Uint8Array;
+}
+
+export interface GetDispatcherOperationRequest {
+  readonly original?: ControlDispatcherRequest;
+}
+
+export interface GetDispatcherOperationResponse {
+  readonly receipt?: DispatcherOperationReceipt;
+  readonly auditAck?: profile.AuditAck;
 }
 
 export interface GetEffectRequest {
@@ -254,6 +348,16 @@ export interface NamespaceOperationReceipt {
 export interface GetStateOperationReceiptResponse {
   readonly receipt?: StateOperationReceipt;
   readonly namespaceReceipt?: NamespaceOperationReceipt;
+}
+
+export interface InspectDispatcherRequest {
+  readonly profile?: TransactionProfile;
+  readonly scope: DispatcherScope;
+}
+
+export interface InspectDispatcherResponse {
+  readonly dispatcher?: DispatcherSnapshot;
+  readonly auditAck?: profile.AuditAck;
 }
 
 export interface ViewIdentity {

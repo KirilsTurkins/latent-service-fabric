@@ -557,6 +557,71 @@ fn get_state_operation_receipt_request(
     Ok(())
 }
 
+fn inspect_dispatcher_request(
+    value: &model::InspectDispatcherRequest,
+    depth: usize,
+    budget: &mut Budget,
+) -> Result<(), ValidationError> {
+    let _ = value;
+    budget.node(
+        std::mem::size_of::<model::InspectDispatcherRequest>(),
+        depth,
+    )?;
+    if let Some(member) = &value.profile {
+        transaction_profile(member, depth + 1, budget)?;
+    }
+    Ok(())
+}
+
+fn dispatcher_generation(
+    value: &model::DispatcherGeneration,
+    depth: usize,
+    budget: &mut Budget,
+) -> Result<(), ValidationError> {
+    let _ = value;
+    budget.node(std::mem::size_of::<model::DispatcherGeneration>(), depth)?;
+    Ok(())
+}
+
+fn control_dispatcher_request(
+    value: &model::ControlDispatcherRequest,
+    depth: usize,
+    budget: &mut Budget,
+) -> Result<(), ValidationError> {
+    let _ = value;
+    budget.node(
+        std::mem::size_of::<model::ControlDispatcherRequest>(),
+        depth,
+    )?;
+    if let Some(member) = &value.profile {
+        transaction_profile(member, depth + 1, budget)?;
+    }
+    {
+        let member = &value.operation_id;
+        budget.data(member.len())?;
+    }
+    if let Some(member) = &value.expected_generation {
+        dispatcher_generation(member, depth + 1, budget)?;
+    }
+    Ok(())
+}
+
+fn get_dispatcher_operation_request(
+    value: &model::GetDispatcherOperationRequest,
+    depth: usize,
+    budget: &mut Budget,
+) -> Result<(), ValidationError> {
+    let _ = value;
+    budget.node(
+        std::mem::size_of::<model::GetDispatcherOperationRequest>(),
+        depth,
+    )?;
+    if let Some(member) = &value.original {
+        control_dispatcher_request(member, depth + 1, budget)?;
+    }
+    Ok(())
+}
+
 pub(super) trait ModelShape {
     fn validate_shape(&self) -> Result<(), ValidationError>;
 }
@@ -619,5 +684,20 @@ impl ModelShape for model::MutateStateRequest {
 impl ModelShape for model::GetStateOperationReceiptRequest {
     fn validate_shape(&self) -> Result<(), ValidationError> {
         get_state_operation_receipt_request(self, 0, &mut Budget::new())
+    }
+}
+impl ModelShape for model::InspectDispatcherRequest {
+    fn validate_shape(&self) -> Result<(), ValidationError> {
+        inspect_dispatcher_request(self, 0, &mut Budget::new())
+    }
+}
+impl ModelShape for model::ControlDispatcherRequest {
+    fn validate_shape(&self) -> Result<(), ValidationError> {
+        control_dispatcher_request(self, 0, &mut Budget::new())
+    }
+}
+impl ModelShape for model::GetDispatcherOperationRequest {
+    fn validate_shape(&self) -> Result<(), ValidationError> {
+        get_dispatcher_operation_request(self, 0, &mut Budget::new())
     }
 }

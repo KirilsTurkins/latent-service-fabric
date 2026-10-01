@@ -57,6 +57,18 @@ public sealed partial class BoundedClient : Tx.ITransactionClient
         ExecuteTransactionAsync<Tx.GetStateOperationReceiptResponse, WireControl.GetStateOperationReceiptRequest, WireControl.GetStateOperationReceiptResponse>(request, options, cancellationToken,
             (invoker, wire) => new WireControl.StateService.StateServiceClient(invoker).GetStateOperationReceiptAsync(wire, cancellationToken: invoker.Token).ResponseAsync);
 
+    public ValueTask<Tx.TransactionResponse<Tx.InspectDispatcherResponse>> InspectDispatcherAsync(Tx.InspectDispatcherRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
+        ExecuteTransactionAsync<Tx.InspectDispatcherResponse, WireControl.InspectDispatcherRequest, WireControl.InspectDispatcherResponse>(request, options, cancellationToken,
+            (invoker, wire) => new WireControl.DispatcherService.DispatcherServiceClient(invoker).InspectDispatcherAsync(wire, cancellationToken: invoker.Token).ResponseAsync);
+
+    public ValueTask<Tx.TransactionResponse<Tx.ControlDispatcherResponse>> ControlDispatcherAsync(Tx.ControlDispatcherRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
+        ExecuteTransactionAsync<Tx.ControlDispatcherResponse, WireControl.ControlDispatcherRequest, WireControl.ControlDispatcherResponse>(request, options, cancellationToken,
+            (invoker, wire) => new WireControl.DispatcherService.DispatcherServiceClient(invoker).ControlDispatcherAsync(wire, cancellationToken: invoker.Token).ResponseAsync);
+
+    public ValueTask<Tx.TransactionResponse<Tx.GetDispatcherOperationResponse>> GetDispatcherOperationAsync(Tx.GetDispatcherOperationRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
+        ExecuteTransactionAsync<Tx.GetDispatcherOperationResponse, WireControl.GetDispatcherOperationRequest, WireControl.GetDispatcherOperationResponse>(request, options, cancellationToken,
+            (invoker, wire) => new WireControl.DispatcherService.DispatcherServiceClient(invoker).GetDispatcherOperationAsync(wire, cancellationToken: invoker.Token).ResponseAsync);
+
     private async ValueTask<Tx.TransactionResponse<Response>> ExecuteTransactionAsync<Response, WireRequest, WireResponse>(object request,
         Profile.CallOptions options, CancellationToken caller, Func<UnaryInvoker, WireRequest, Task<WireResponse>> dispatch)
         where Response : class where WireRequest : IMessage, new() where WireResponse : IMessage

@@ -21,6 +21,310 @@ pub(super) static LATENT_CONTROL_V1_AUDITACK: Schema = Schema {
     ],
 };
 
+pub(super) static LATENT_CONTROL_V1_CONTROLDISPATCHERRESPONSE: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::ControlDispatcherResponse>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_CONTROL_V1_DISPATCHEROPERATIONRECEIPT),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 4,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 5,
+            kind: Kind::Message(&LATENT_CONTROL_V1_AUDITACK),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
+pub(super) static LATENT_CONTROL_V1_DISPATCHERGENERATION: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::DispatcherGeneration>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
+pub(super) static LATENT_CONTROL_V1_DISPATCHEROPERATIONRECEIPT: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::DispatcherOperationReceipt>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
+            kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 4,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 5,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 6,
+            kind: Kind::Message(&LATENT_CONTROL_V1_DISPATCHERGENERATION),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 7,
+            kind: Kind::Message(&LATENT_CONTROL_V1_DISPATCHERGENERATION),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 8,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 9,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 10,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 11,
+            kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
+pub(super) static LATENT_CONTROL_V1_DISPATCHERSNAPSHOT: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::DispatcherSnapshot>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_CONTROL_V1_DISPATCHERGENERATION),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 4,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 5,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 6,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 7,
+            kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 8,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 9,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 10,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 11,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 12,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 13,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 14,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 15,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 16,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 17,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 18,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 19,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 20,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 21,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 22,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
 pub(super) static LATENT_CONTROL_V1_ENTITYINSPECTION: Schema = Schema {
     allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::EntityInspection>() + 64,
     fields: &[
@@ -81,6 +385,27 @@ pub(super) static LATENT_CONTROL_V1_ERRORDETAIL_FIELDSENTRY: Schema = Schema {
     ],
 };
 
+pub(super) static LATENT_CONTROL_V1_GETDISPATCHEROPERATIONRESPONSE: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::GetDispatcherOperationResponse>()
+        + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_CONTROL_V1_DISPATCHEROPERATIONRECEIPT),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::Message(&LATENT_CONTROL_V1_AUDITACK),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
 pub(super) static LATENT_CONTROL_V1_GETSTATEOPERATIONRECEIPTRESPONSE: Schema = Schema {
     allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::GetStateOperationReceiptResponse>(
     ) + 64,
@@ -95,6 +420,26 @@ pub(super) static LATENT_CONTROL_V1_GETSTATEOPERATIONRECEIPTRESPONSE: Schema = S
         Field {
             number: 2,
             kind: Kind::Message(&LATENT_CONTROL_V1_NAMESPACEOPERATIONRECEIPT),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
+pub(super) static LATENT_CONTROL_V1_INSPECTDISPATCHERRESPONSE: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::InspectDispatcherResponse>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_CONTROL_V1_DISPATCHERSNAPSHOT),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::Message(&LATENT_CONTROL_V1_AUDITACK),
             repeated: false,
             maximum: 128,
             oneof: 0,

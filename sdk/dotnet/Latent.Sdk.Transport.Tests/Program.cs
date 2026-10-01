@@ -18,8 +18,9 @@ internal static partial class Program
             {
                 EightOperations, CancellationAndQueue, DeadlinesAndShutdown, NoReplay, LostMutation,
                 MalformedAndBounds, AuditAndRawStatus, ConnectionOwnership, ZeroLengthReads, FrameFragments, StalledRawPeers,
-                TransactionTwelveOperations, TransactionDurableRejectionThroughAuditFailure, TransactionTransportAbortAndExplicitAttempt,
-                TransactionWireBoundsAndOldPayloads, TransactionOriginalInputsAndCancellation, TransactionProfileAndDeadlineFailBeforeDispatch
+                TransactionFifteenOperations, TransactionDurableRejectionThroughAuditFailure, TransactionTransportAbortAndExplicitAttempt,
+                TransactionWireBoundsAndOldPayloads, TransactionOriginalInputsAndCancellation, TransactionProfileAndDeadlineFailBeforeDispatch,
+                TransactionDispatcherReceiptAndAuditAreIndependent
             })
             {
                 await scenario().WaitAsync(TimeSpan.FromSeconds(30));

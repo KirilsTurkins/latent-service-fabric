@@ -69,8 +69,8 @@ internal sealed class CallState
             Identity = new(TransactionIdentity.ActivationId, TransactionIdentity.OperationId);
             RequestLimit = Math.Min(config.MaxRequestBytes, 2 * 1024 * 1024);
             ResponseLimit = Math.Min(config.MaxResponseBytes, 2 * 1024 * 1024);
-            Recovery = request is Tx.LookupCommandRequest or Tx.LookupCommitRequest or Tx.GetEffectRequest or Tx.ListEffectHistoryRequest or Tx.CancelCommandRequest or Tx.GetStateOperationReceiptRequest;
-            RecoveryRead = Recovery && request is not Tx.CancelCommandRequest;
+            Recovery = request is Tx.LookupCommandRequest or Tx.LookupCommitRequest or Tx.GetEffectRequest or Tx.ListEffectHistoryRequest or Tx.CancelCommandRequest or Tx.GetStateOperationReceiptRequest or Tx.InspectDispatcherRequest or Tx.ControlDispatcherRequest or Tx.GetDispatcherOperationRequest;
+            RecoveryRead = Recovery && request is not Tx.CancelCommandRequest and not Tx.ControlDispatcherRequest;
         }
         Timeout = config.DefaultTimeout;
         if (options is null) throw Error(Profile.FailureCategory.InvalidRequest, "call options are required");

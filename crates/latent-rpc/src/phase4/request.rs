@@ -9,6 +9,11 @@ pub(super) fn validate(request: &Request) -> Result<(), ValidationError> {
     let mut b = Budget::new::<Request>(MAX_REQUEST_BYTES)?;
     b.charge(request.native_message_bytes())?;
     match request {
+        Request::InspectDispatcher(value) => super::dispatcher::inspect(&mut b, value),
+        Request::ControlDispatcher(value) => super::dispatcher::control(&mut b, value),
+        Request::GetDispatcherOperation(value) => {
+            super::dispatcher::control(&mut b, required(value.original.as_ref())?)
+        }
         Request::InspectNamespace(value) => inspect(&mut b, value),
         Request::MutateNamespace(value) => validate_namespace_mutation(&mut b, value),
         Request::SelectEntity(value) => {
@@ -98,6 +103,9 @@ pub(super) fn tenant(request: &Request) -> Option<&str> {
         value.namespace.as_ref()
     }
     let namespace = match request {
+        Request::InspectDispatcher(_)
+        | Request::ControlDispatcher(_)
+        | Request::GetDispatcherOperation(_) => None,
         Request::InspectNamespace(v) => inspect(v),
         Request::MutateNamespace(v) => v.namespace.as_ref().and_then(inspect),
         Request::SelectEntity(v) => v.namespace.as_ref().and_then(inspect),

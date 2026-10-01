@@ -27,6 +27,25 @@ typedef int32_t latent_transaction_command_outcome;
 #define LATENT_TRANSACTION_COMMAND_OUTCOME_RECOVERY_REQUIRED ((latent_transaction_command_outcome)6)
 #define LATENT_TRANSACTION_COMMAND_OUTCOME_EXPIRED ((latent_transaction_command_outcome)7)
 
+typedef int32_t latent_transaction_dispatcher_action;
+#define LATENT_TRANSACTION_DISPATCHER_ACTION_UNSPECIFIED ((latent_transaction_dispatcher_action)0)
+#define LATENT_TRANSACTION_DISPATCHER_ACTION_PAUSE ((latent_transaction_dispatcher_action)1)
+#define LATENT_TRANSACTION_DISPATCHER_ACTION_RESUME ((latent_transaction_dispatcher_action)2)
+
+typedef int32_t latent_transaction_dispatcher_failure;
+#define LATENT_TRANSACTION_DISPATCHER_FAILURE_UNSPECIFIED ((latent_transaction_dispatcher_failure)0)
+#define LATENT_TRANSACTION_DISPATCHER_FAILURE_NONE ((latent_transaction_dispatcher_failure)1)
+#define LATENT_TRANSACTION_DISPATCHER_FAILURE_AUTHORITY ((latent_transaction_dispatcher_failure)2)
+#define LATENT_TRANSACTION_DISPATCHER_FAILURE_STORE ((latent_transaction_dispatcher_failure)3)
+#define LATENT_TRANSACTION_DISPATCHER_FAILURE_WORKER ((latent_transaction_dispatcher_failure)4)
+#define LATENT_TRANSACTION_DISPATCHER_FAILURE_RESTORE_CHECKPOINT ((latent_transaction_dispatcher_failure)5)
+#define LATENT_TRANSACTION_DISPATCHER_FAILURE_ADMISSION_CLOSED ((latent_transaction_dispatcher_failure)6)
+#define LATENT_TRANSACTION_DISPATCHER_FAILURE_CONFIGURATION ((latent_transaction_dispatcher_failure)7)
+
+typedef int32_t latent_transaction_dispatcher_scope;
+#define LATENT_TRANSACTION_DISPATCHER_SCOPE_UNSPECIFIED ((latent_transaction_dispatcher_scope)0)
+#define LATENT_TRANSACTION_DISPATCHER_SCOPE_NODE ((latent_transaction_dispatcher_scope)1)
+
 typedef int32_t latent_transaction_effect_disposition;
 #define LATENT_TRANSACTION_EFFECT_DISPOSITION_UNSPECIFIED ((latent_transaction_effect_disposition)0)
 #define LATENT_TRANSACTION_EFFECT_DISPOSITION_PENDING ((latent_transaction_effect_disposition)1)
@@ -197,6 +216,73 @@ typedef struct latent_transaction_cancel_command_response {
     latent_transaction_command_inspection command;
 } latent_transaction_cancel_command_response;
 
+typedef struct latent_transaction_dispatcher_generation {
+    uint64_t owner_epoch;
+    uint64_t revision;
+} latent_transaction_dispatcher_generation;
+
+typedef struct latent_transaction_control_dispatcher_request {
+    bool has_profile;
+    latent_transaction_transaction_profile profile;
+    latent_transaction_dispatcher_scope scope;
+    latent_string operation_id;
+    latent_transaction_dispatcher_action action;
+    bool has_expected_generation;
+    latent_transaction_dispatcher_generation expected_generation;
+} latent_transaction_control_dispatcher_request;
+
+typedef struct latent_transaction_dispatcher_operation_receipt {
+    latent_string operation_id;
+    latent_string receipt_id;
+    latent_transaction_dispatcher_action action;
+    latent_string authenticated_operator;
+    latent_string actor_tenant;
+    bool has_before_generation;
+    latent_transaction_dispatcher_generation before_generation;
+    bool has_after_generation;
+    latent_transaction_dispatcher_generation after_generation;
+    uint64_t observed_at_unix_millis;
+    bool clock_continuity_proven;
+    bool restore_review_required;
+    latent_transaction_state_operation_disposition disposition;
+} latent_transaction_dispatcher_operation_receipt;
+
+typedef struct latent_transaction_control_dispatcher_response {
+    bool has_receipt;
+    latent_transaction_dispatcher_operation_receipt receipt;
+    bool replayed;
+    bool published;
+    bool paused;
+    bool has_audit_ack;
+    latent_profile_audit_ack audit_ack;
+} latent_transaction_control_dispatcher_response;
+
+typedef struct latent_transaction_dispatcher_snapshot {
+    bool has_generation;
+    latent_transaction_dispatcher_generation generation;
+    bool paused;
+    bool pending_control;
+    bool restore_review_required;
+    bool admission_closed;
+    bool quarantined;
+    latent_transaction_dispatcher_failure failure;
+    uint64_t queued;
+    uint64_t active_jobs;
+    uint64_t retained_attempt_bytes;
+    uint64_t live_workers;
+    uint64_t accepted_effects;
+    uint64_t physical_owners;
+    uint64_t quarantined_physical_owners;
+    uint64_t command_owners;
+    uint64_t claims;
+    uint64_t pending_effects;
+    uint64_t uncertain_effects;
+    uint64_t blocked_effects;
+    uint64_t dead_letter_effects;
+    uint64_t counts_observed_at_unix_millis;
+    bool clock_continuity_proven;
+} latent_transaction_dispatcher_snapshot;
+
 typedef struct latent_transaction_effect_receipt {
     latent_string effect_id;
     latent_string command_id;
@@ -227,6 +313,18 @@ typedef struct latent_transaction_expected_version {
     bool has_version;
     latent_bytes version;
 } latent_transaction_expected_version;
+
+typedef struct latent_transaction_get_dispatcher_operation_request {
+    bool has_original;
+    latent_transaction_control_dispatcher_request original;
+} latent_transaction_get_dispatcher_operation_request;
+
+typedef struct latent_transaction_get_dispatcher_operation_response {
+    bool has_receipt;
+    latent_transaction_dispatcher_operation_receipt receipt;
+    bool has_audit_ack;
+    latent_profile_audit_ack audit_ack;
+} latent_transaction_get_dispatcher_operation_response;
 
 typedef struct latent_transaction_get_effect_request {
     bool has_profile;
@@ -295,6 +393,19 @@ typedef struct latent_transaction_get_state_operation_receipt_response {
     bool has_namespace_receipt;
     latent_transaction_namespace_operation_receipt namespace_receipt;
 } latent_transaction_get_state_operation_receipt_response;
+
+typedef struct latent_transaction_inspect_dispatcher_request {
+    bool has_profile;
+    latent_transaction_transaction_profile profile;
+    latent_transaction_dispatcher_scope scope;
+} latent_transaction_inspect_dispatcher_request;
+
+typedef struct latent_transaction_inspect_dispatcher_response {
+    bool has_dispatcher;
+    latent_transaction_dispatcher_snapshot dispatcher;
+    bool has_audit_ack;
+    latent_profile_audit_ack audit_ack;
+} latent_transaction_inspect_dispatcher_response;
 
 typedef struct latent_transaction_view_identity {
     bool has_namespace;

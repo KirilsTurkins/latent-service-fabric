@@ -41,6 +41,50 @@ public readonly record struct CommandOutcome(int Value)
     public static readonly CommandOutcome Expired = new(7);
 }
 
+/// <summary>Open numeric DispatcherAction value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct DispatcherAction(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly DispatcherAction Unspecified = new(0);
+    /// <summary>The pause value.</summary>
+    public static readonly DispatcherAction Pause = new(1);
+    /// <summary>The resume value.</summary>
+    public static readonly DispatcherAction Resume = new(2);
+}
+
+/// <summary>Open numeric DispatcherFailure value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct DispatcherFailure(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly DispatcherFailure Unspecified = new(0);
+    /// <summary>The none value.</summary>
+    public static readonly DispatcherFailure None = new(1);
+    /// <summary>The authority value.</summary>
+    public static readonly DispatcherFailure Authority = new(2);
+    /// <summary>The store value.</summary>
+    public static readonly DispatcherFailure Store = new(3);
+    /// <summary>The worker value.</summary>
+    public static readonly DispatcherFailure Worker = new(4);
+    /// <summary>The restore checkpoint value.</summary>
+    public static readonly DispatcherFailure RestoreCheckpoint = new(5);
+    /// <summary>The admission closed value.</summary>
+    public static readonly DispatcherFailure AdmissionClosed = new(6);
+    /// <summary>The configuration value.</summary>
+    public static readonly DispatcherFailure Configuration = new(7);
+}
+
+/// <summary>Open numeric DispatcherScope value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct DispatcherScope(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly DispatcherScope Unspecified = new(0);
+    /// <summary>The node value.</summary>
+    public static readonly DispatcherScope Node = new(1);
+}
+
 /// <summary>Open numeric EffectDisposition value; unknown integers are retained.</summary>
 /// <param name="Value">The exact signed protobuf enum value.</param>
 public readonly record struct EffectDisposition(int Value)
@@ -303,6 +347,111 @@ public sealed record CancelCommandResponse(
     CommandCancelDisposition Disposition,
     CommandInspection? Command);
 
+/// <summary>Transport-neutral DispatcherGeneration; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="OwnerEpoch">The exact owner_epoch value with preserved presence.</param>
+/// <param name="Revision">The exact revision value with preserved presence.</param>
+public sealed record DispatcherGeneration(
+    ulong OwnerEpoch,
+    ulong Revision);
+
+/// <summary>Transport-neutral ControlDispatcherRequest; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Profile">The exact profile value with preserved presence.</param>
+/// <param name="Scope">The exact scope value with preserved presence.</param>
+/// <param name="OperationId">The exact operation_id value with preserved presence.</param>
+/// <param name="Action">The exact action value with preserved presence.</param>
+/// <param name="ExpectedGeneration">The exact expected_generation value with preserved presence.</param>
+public sealed record ControlDispatcherRequest(
+    TransactionProfile? Profile,
+    DispatcherScope Scope,
+    string OperationId,
+    DispatcherAction Action,
+    DispatcherGeneration? ExpectedGeneration);
+
+/// <summary>Transport-neutral DispatcherOperationReceipt; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="OperationId">The exact operation_id value with preserved presence.</param>
+/// <param name="ReceiptId">The exact receipt_id value with preserved presence.</param>
+/// <param name="Action">The exact action value with preserved presence.</param>
+/// <param name="AuthenticatedOperator">The exact authenticated_operator value with preserved presence.</param>
+/// <param name="ActorTenant">The exact actor_tenant value with preserved presence.</param>
+/// <param name="BeforeGeneration">The exact before_generation value with preserved presence.</param>
+/// <param name="AfterGeneration">The exact after_generation value with preserved presence.</param>
+/// <param name="ObservedAtUnixMillis">The exact observed_at_unix_millis value with preserved presence.</param>
+/// <param name="ClockContinuityProven">The exact clock_continuity_proven value with preserved presence.</param>
+/// <param name="RestoreReviewRequired">The exact restore_review_required value with preserved presence.</param>
+/// <param name="Disposition">The exact disposition value with preserved presence.</param>
+public sealed record DispatcherOperationReceipt(
+    string OperationId,
+    string ReceiptId,
+    DispatcherAction Action,
+    string AuthenticatedOperator,
+    string ActorTenant,
+    DispatcherGeneration? BeforeGeneration,
+    DispatcherGeneration? AfterGeneration,
+    ulong ObservedAtUnixMillis,
+    bool ClockContinuityProven,
+    bool RestoreReviewRequired,
+    StateOperationDisposition Disposition);
+
+/// <summary>Transport-neutral ControlDispatcherResponse; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Receipt">The exact receipt value with preserved presence.</param>
+/// <param name="Replayed">The exact replayed value with preserved presence.</param>
+/// <param name="Published">The exact published value with preserved presence.</param>
+/// <param name="Paused">The exact paused value with preserved presence.</param>
+/// <param name="AuditAck">The exact audit_ack value with preserved presence.</param>
+public sealed record ControlDispatcherResponse(
+    DispatcherOperationReceipt? Receipt,
+    bool Replayed,
+    bool Published,
+    bool Paused,
+    global::Latent.Sdk.Profile.AuditAck? AuditAck);
+
+/// <summary>Transport-neutral DispatcherSnapshot; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Generation">The exact generation value with preserved presence.</param>
+/// <param name="Paused">The exact paused value with preserved presence.</param>
+/// <param name="PendingControl">The exact pending_control value with preserved presence.</param>
+/// <param name="RestoreReviewRequired">The exact restore_review_required value with preserved presence.</param>
+/// <param name="AdmissionClosed">The exact admission_closed value with preserved presence.</param>
+/// <param name="Quarantined">The exact quarantined value with preserved presence.</param>
+/// <param name="Failure">The exact failure value with preserved presence.</param>
+/// <param name="Queued">The exact queued value with preserved presence.</param>
+/// <param name="ActiveJobs">The exact active_jobs value with preserved presence.</param>
+/// <param name="RetainedAttemptBytes">The exact retained_attempt_bytes value with preserved presence.</param>
+/// <param name="LiveWorkers">The exact live_workers value with preserved presence.</param>
+/// <param name="AcceptedEffects">The exact accepted_effects value with preserved presence.</param>
+/// <param name="PhysicalOwners">The exact physical_owners value with preserved presence.</param>
+/// <param name="QuarantinedPhysicalOwners">The exact quarantined_physical_owners value with preserved presence.</param>
+/// <param name="CommandOwners">The exact command_owners value with preserved presence.</param>
+/// <param name="Claims">The exact claims value with preserved presence.</param>
+/// <param name="PendingEffects">The exact pending_effects value with preserved presence.</param>
+/// <param name="UncertainEffects">The exact uncertain_effects value with preserved presence.</param>
+/// <param name="BlockedEffects">The exact blocked_effects value with preserved presence.</param>
+/// <param name="DeadLetterEffects">The exact dead_letter_effects value with preserved presence.</param>
+/// <param name="CountsObservedAtUnixMillis">The exact counts_observed_at_unix_millis value with preserved presence.</param>
+/// <param name="ClockContinuityProven">The exact clock_continuity_proven value with preserved presence.</param>
+public sealed record DispatcherSnapshot(
+    DispatcherGeneration? Generation,
+    bool Paused,
+    bool PendingControl,
+    bool RestoreReviewRequired,
+    bool AdmissionClosed,
+    bool Quarantined,
+    DispatcherFailure Failure,
+    ulong Queued,
+    ulong ActiveJobs,
+    ulong RetainedAttemptBytes,
+    ulong LiveWorkers,
+    ulong AcceptedEffects,
+    ulong PhysicalOwners,
+    ulong QuarantinedPhysicalOwners,
+    ulong CommandOwners,
+    ulong Claims,
+    ulong PendingEffects,
+    ulong UncertainEffects,
+    ulong BlockedEffects,
+    ulong DeadLetterEffects,
+    ulong CountsObservedAtUnixMillis,
+    bool ClockContinuityProven);
+
 /// <summary>Transport-neutral EffectReceipt; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="EffectId">The exact effect_id value with preserved presence.</param>
 /// <param name="CommandId">The exact command_id value with preserved presence.</param>
@@ -343,6 +492,18 @@ public sealed record ExpectedVersion(
     ReadOnlyMemory<byte> Key,
     bool? Absent,
     ReadOnlyMemory<byte>? Version);
+
+/// <summary>Transport-neutral GetDispatcherOperationRequest; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Original">The exact original value with preserved presence.</param>
+public sealed record GetDispatcherOperationRequest(
+    ControlDispatcherRequest? Original);
+
+/// <summary>Transport-neutral GetDispatcherOperationResponse; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Receipt">The exact receipt value with preserved presence.</param>
+/// <param name="AuditAck">The exact audit_ack value with preserved presence.</param>
+public sealed record GetDispatcherOperationResponse(
+    DispatcherOperationReceipt? Receipt,
+    global::Latent.Sdk.Profile.AuditAck? AuditAck);
 
 /// <summary>Transport-neutral GetEffectRequest; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Profile">The exact profile value with preserved presence.</param>
@@ -430,6 +591,20 @@ public sealed record NamespaceOperationReceipt(
 public sealed record GetStateOperationReceiptResponse(
     StateOperationReceipt? Receipt,
     NamespaceOperationReceipt? NamespaceReceipt);
+
+/// <summary>Transport-neutral InspectDispatcherRequest; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Profile">The exact profile value with preserved presence.</param>
+/// <param name="Scope">The exact scope value with preserved presence.</param>
+public sealed record InspectDispatcherRequest(
+    TransactionProfile? Profile,
+    DispatcherScope Scope);
+
+/// <summary>Transport-neutral InspectDispatcherResponse; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Dispatcher">The exact dispatcher value with preserved presence.</param>
+/// <param name="AuditAck">The exact audit_ack value with preserved presence.</param>
+public sealed record InspectDispatcherResponse(
+    DispatcherSnapshot? Dispatcher,
+    global::Latent.Sdk.Profile.AuditAck? AuditAck);
 
 /// <summary>Transport-neutral ViewIdentity; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Namespace">The exact namespace value with preserved presence.</param>

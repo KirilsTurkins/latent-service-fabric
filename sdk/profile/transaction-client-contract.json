@@ -102,6 +102,30 @@
       "service": "latent.control.v1.StateService",
       "wireRequest": ".latent.control.v1.GetStateOperationReceiptRequest",
       "wireResponse": ".latent.control.v1.GetStateOperationReceiptResponse"
+    },
+    {
+      "name": "InspectDispatcher",
+      "request": "InspectDispatcherRequest",
+      "response": "InspectDispatcherResponse",
+      "service": "latent.control.v1.DispatcherService",
+      "wireRequest": ".latent.control.v1.InspectDispatcherRequest",
+      "wireResponse": ".latent.control.v1.InspectDispatcherResponse"
+    },
+    {
+      "name": "ControlDispatcher",
+      "request": "ControlDispatcherRequest",
+      "response": "ControlDispatcherResponse",
+      "service": "latent.control.v1.DispatcherService",
+      "wireRequest": ".latent.control.v1.ControlDispatcherRequest",
+      "wireResponse": ".latent.control.v1.ControlDispatcherResponse"
+    },
+    {
+      "name": "GetDispatcherOperation",
+      "request": "GetDispatcherOperationRequest",
+      "response": "GetDispatcherOperationResponse",
+      "service": "latent.control.v1.DispatcherService",
+      "wireRequest": ".latent.control.v1.GetDispatcherOperationRequest",
+      "wireResponse": ".latent.control.v1.GetDispatcherOperationResponse"
     }
   ],
   "sources": {
@@ -112,12 +136,28 @@
     "latent/control/v1/state.proto": {
       "sha256": "sha256:ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
       "service": "latent.control.v1.StateService"
+    },
+    "latent/control/v1/dispatcher.proto": {
+      "sha256": "sha256:ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6",
+      "service": "latent.control.v1.DispatcherService"
     }
   },
   "wireNames": {
+    "ControlDispatcherRequest": ".latent.control.v1.ControlDispatcherRequest",
+    "ControlDispatcherResponse": ".latent.control.v1.ControlDispatcherResponse",
+    "DispatcherAction": ".latent.control.v1.DispatcherAction",
+    "DispatcherFailure": ".latent.control.v1.DispatcherFailure",
+    "DispatcherGeneration": ".latent.control.v1.DispatcherGeneration",
+    "DispatcherOperationReceipt": ".latent.control.v1.DispatcherOperationReceipt",
+    "DispatcherScope": ".latent.control.v1.DispatcherScope",
+    "DispatcherSnapshot": ".latent.control.v1.DispatcherSnapshot",
     "EntityInspection": ".latent.control.v1.EntityInspection",
+    "GetDispatcherOperationRequest": ".latent.control.v1.GetDispatcherOperationRequest",
+    "GetDispatcherOperationResponse": ".latent.control.v1.GetDispatcherOperationResponse",
     "GetStateOperationReceiptRequest": ".latent.control.v1.GetStateOperationReceiptRequest",
     "GetStateOperationReceiptResponse": ".latent.control.v1.GetStateOperationReceiptResponse",
+    "InspectDispatcherRequest": ".latent.control.v1.InspectDispatcherRequest",
+    "InspectDispatcherResponse": ".latent.control.v1.InspectDispatcherResponse",
     "InspectNamespaceRequest": ".latent.control.v1.InspectNamespaceRequest",
     "InspectNamespaceResponse": ".latent.control.v1.InspectNamespaceResponse",
     "MutateNamespaceRequest": ".latent.control.v1.MutateNamespaceRequest",
@@ -657,6 +697,306 @@
         "optional": true
       }
     ],
+    "DispatcherGeneration": [
+      {
+        "name": "owner_epoch",
+        "number": 1,
+        "jsonName": "ownerEpoch",
+        "type": "uint64"
+      },
+      {
+        "name": "revision",
+        "number": 2,
+        "jsonName": "revision",
+        "type": "uint64"
+      }
+    ],
+    "ControlDispatcherRequest": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "TransactionProfile",
+        "wireType": ".latent.transaction.v1.TransactionProfile",
+        "optional": true
+      },
+      {
+        "name": "scope",
+        "number": 2,
+        "jsonName": "scope",
+        "type": "DispatcherScope",
+        "wireType": ".latent.control.v1.DispatcherScope"
+      },
+      {
+        "name": "operation_id",
+        "number": 3,
+        "jsonName": "operationId",
+        "type": "string"
+      },
+      {
+        "name": "action",
+        "number": 4,
+        "jsonName": "action",
+        "type": "DispatcherAction",
+        "wireType": ".latent.control.v1.DispatcherAction"
+      },
+      {
+        "name": "expected_generation",
+        "number": 5,
+        "jsonName": "expectedGeneration",
+        "type": "DispatcherGeneration",
+        "wireType": ".latent.control.v1.DispatcherGeneration",
+        "optional": true
+      }
+    ],
+    "DispatcherOperationReceipt": [
+      {
+        "name": "operation_id",
+        "number": 1,
+        "jsonName": "operationId",
+        "type": "string"
+      },
+      {
+        "name": "receipt_id",
+        "number": 2,
+        "jsonName": "receiptId",
+        "type": "string"
+      },
+      {
+        "name": "action",
+        "number": 3,
+        "jsonName": "action",
+        "type": "DispatcherAction",
+        "wireType": ".latent.control.v1.DispatcherAction"
+      },
+      {
+        "name": "authenticated_operator",
+        "number": 4,
+        "jsonName": "authenticatedOperator",
+        "type": "string"
+      },
+      {
+        "name": "actor_tenant",
+        "number": 5,
+        "jsonName": "actorTenant",
+        "type": "string"
+      },
+      {
+        "name": "before_generation",
+        "number": 6,
+        "jsonName": "beforeGeneration",
+        "type": "DispatcherGeneration",
+        "wireType": ".latent.control.v1.DispatcherGeneration",
+        "optional": true
+      },
+      {
+        "name": "after_generation",
+        "number": 7,
+        "jsonName": "afterGeneration",
+        "type": "DispatcherGeneration",
+        "wireType": ".latent.control.v1.DispatcherGeneration",
+        "optional": true
+      },
+      {
+        "name": "observed_at_unix_millis",
+        "number": 8,
+        "jsonName": "observedAtUnixMillis",
+        "type": "uint64"
+      },
+      {
+        "name": "clock_continuity_proven",
+        "number": 9,
+        "jsonName": "clockContinuityProven",
+        "type": "bool"
+      },
+      {
+        "name": "restore_review_required",
+        "number": 10,
+        "jsonName": "restoreReviewRequired",
+        "type": "bool"
+      },
+      {
+        "name": "disposition",
+        "number": 11,
+        "jsonName": "disposition",
+        "type": "StateOperationDisposition",
+        "wireType": ".latent.control.v1.StateOperationDisposition"
+      }
+    ],
+    "ControlDispatcherResponse": [
+      {
+        "name": "receipt",
+        "number": 1,
+        "jsonName": "receipt",
+        "type": "DispatcherOperationReceipt",
+        "wireType": ".latent.control.v1.DispatcherOperationReceipt",
+        "optional": true
+      },
+      {
+        "name": "replayed",
+        "number": 2,
+        "jsonName": "replayed",
+        "type": "bool"
+      },
+      {
+        "name": "published",
+        "number": 3,
+        "jsonName": "published",
+        "type": "bool"
+      },
+      {
+        "name": "paused",
+        "number": 4,
+        "jsonName": "paused",
+        "type": "bool"
+      },
+      {
+        "name": "audit_ack",
+        "number": 5,
+        "jsonName": "auditAck",
+        "type": "AuditAck",
+        "wireType": ".latent.control.v1.AuditAck",
+        "external": true,
+        "optional": true
+      }
+    ],
+    "DispatcherSnapshot": [
+      {
+        "name": "generation",
+        "number": 1,
+        "jsonName": "generation",
+        "type": "DispatcherGeneration",
+        "wireType": ".latent.control.v1.DispatcherGeneration",
+        "optional": true
+      },
+      {
+        "name": "paused",
+        "number": 2,
+        "jsonName": "paused",
+        "type": "bool"
+      },
+      {
+        "name": "pending_control",
+        "number": 3,
+        "jsonName": "pendingControl",
+        "type": "bool"
+      },
+      {
+        "name": "restore_review_required",
+        "number": 4,
+        "jsonName": "restoreReviewRequired",
+        "type": "bool"
+      },
+      {
+        "name": "admission_closed",
+        "number": 5,
+        "jsonName": "admissionClosed",
+        "type": "bool"
+      },
+      {
+        "name": "quarantined",
+        "number": 6,
+        "jsonName": "quarantined",
+        "type": "bool"
+      },
+      {
+        "name": "failure",
+        "number": 7,
+        "jsonName": "failure",
+        "type": "DispatcherFailure",
+        "wireType": ".latent.control.v1.DispatcherFailure"
+      },
+      {
+        "name": "queued",
+        "number": 8,
+        "jsonName": "queued",
+        "type": "uint64"
+      },
+      {
+        "name": "active_jobs",
+        "number": 9,
+        "jsonName": "activeJobs",
+        "type": "uint64"
+      },
+      {
+        "name": "retained_attempt_bytes",
+        "number": 10,
+        "jsonName": "retainedAttemptBytes",
+        "type": "uint64"
+      },
+      {
+        "name": "live_workers",
+        "number": 11,
+        "jsonName": "liveWorkers",
+        "type": "uint64"
+      },
+      {
+        "name": "accepted_effects",
+        "number": 12,
+        "jsonName": "acceptedEffects",
+        "type": "uint64"
+      },
+      {
+        "name": "physical_owners",
+        "number": 13,
+        "jsonName": "physicalOwners",
+        "type": "uint64"
+      },
+      {
+        "name": "quarantined_physical_owners",
+        "number": 14,
+        "jsonName": "quarantinedPhysicalOwners",
+        "type": "uint64"
+      },
+      {
+        "name": "command_owners",
+        "number": 15,
+        "jsonName": "commandOwners",
+        "type": "uint64"
+      },
+      {
+        "name": "claims",
+        "number": 16,
+        "jsonName": "claims",
+        "type": "uint64"
+      },
+      {
+        "name": "pending_effects",
+        "number": 17,
+        "jsonName": "pendingEffects",
+        "type": "uint64"
+      },
+      {
+        "name": "uncertain_effects",
+        "number": 18,
+        "jsonName": "uncertainEffects",
+        "type": "uint64"
+      },
+      {
+        "name": "blocked_effects",
+        "number": 19,
+        "jsonName": "blockedEffects",
+        "type": "uint64"
+      },
+      {
+        "name": "dead_letter_effects",
+        "number": 20,
+        "jsonName": "deadLetterEffects",
+        "type": "uint64"
+      },
+      {
+        "name": "counts_observed_at_unix_millis",
+        "number": 21,
+        "jsonName": "countsObservedAtUnixMillis",
+        "type": "uint64"
+      },
+      {
+        "name": "clock_continuity_proven",
+        "number": 22,
+        "jsonName": "clockContinuityProven",
+        "type": "bool"
+      }
+    ],
     "EffectReceipt": [
       {
         "name": "effect_id",
@@ -767,6 +1107,35 @@
         "type": "bytes",
         "optional": true,
         "oneof": "expectation"
+      }
+    ],
+    "GetDispatcherOperationRequest": [
+      {
+        "name": "original",
+        "number": 1,
+        "jsonName": "original",
+        "type": "ControlDispatcherRequest",
+        "wireType": ".latent.control.v1.ControlDispatcherRequest",
+        "optional": true
+      }
+    ],
+    "GetDispatcherOperationResponse": [
+      {
+        "name": "receipt",
+        "number": 1,
+        "jsonName": "receipt",
+        "type": "DispatcherOperationReceipt",
+        "wireType": ".latent.control.v1.DispatcherOperationReceipt",
+        "optional": true
+      },
+      {
+        "name": "audit_ack",
+        "number": 2,
+        "jsonName": "auditAck",
+        "type": "AuditAck",
+        "wireType": ".latent.control.v1.AuditAck",
+        "external": true,
+        "optional": true
       }
     ],
     "GetEffectRequest": [
@@ -1011,6 +1380,42 @@
         "jsonName": "namespaceReceipt",
         "type": "NamespaceOperationReceipt",
         "wireType": ".latent.control.v1.NamespaceOperationReceipt",
+        "optional": true
+      }
+    ],
+    "InspectDispatcherRequest": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "TransactionProfile",
+        "wireType": ".latent.transaction.v1.TransactionProfile",
+        "optional": true
+      },
+      {
+        "name": "scope",
+        "number": 2,
+        "jsonName": "scope",
+        "type": "DispatcherScope",
+        "wireType": ".latent.control.v1.DispatcherScope"
+      }
+    ],
+    "InspectDispatcherResponse": [
+      {
+        "name": "dispatcher",
+        "number": 1,
+        "jsonName": "dispatcher",
+        "type": "DispatcherSnapshot",
+        "wireType": ".latent.control.v1.DispatcherSnapshot",
+        "optional": true
+      },
+      {
+        "name": "audit_ack",
+        "number": 2,
+        "jsonName": "auditAck",
+        "type": "AuditAck",
+        "wireType": ".latent.control.v1.AuditAck",
+        "external": true,
         "optional": true
       }
     ],
@@ -1662,6 +2067,25 @@
       "UNKNOWN": 5,
       "RECOVERY_REQUIRED": 6,
       "EXPIRED": 7
+    },
+    "DispatcherAction": {
+      "UNSPECIFIED": 0,
+      "PAUSE": 1,
+      "RESUME": 2
+    },
+    "DispatcherFailure": {
+      "UNSPECIFIED": 0,
+      "NONE": 1,
+      "AUTHORITY": 2,
+      "STORE": 3,
+      "WORKER": 4,
+      "RESTORE_CHECKPOINT": 5,
+      "ADMISSION_CLOSED": 6,
+      "CONFIGURATION": 7
+    },
+    "DispatcherScope": {
+      "UNSPECIFIED": 0,
+      "NODE": 1
     },
     "EffectDisposition": {
       "UNSPECIFIED": 0,

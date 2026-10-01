@@ -27,6 +27,34 @@ const (
 	CommandOutcomeExpired          CommandOutcome = 7
 )
 
+type DispatcherAction int32
+
+const (
+	DispatcherActionUnspecified DispatcherAction = 0
+	DispatcherActionPause       DispatcherAction = 1
+	DispatcherActionResume      DispatcherAction = 2
+)
+
+type DispatcherFailure int32
+
+const (
+	DispatcherFailureUnspecified       DispatcherFailure = 0
+	DispatcherFailureNone              DispatcherFailure = 1
+	DispatcherFailureAuthority         DispatcherFailure = 2
+	DispatcherFailureStore             DispatcherFailure = 3
+	DispatcherFailureWorker            DispatcherFailure = 4
+	DispatcherFailureRestoreCheckpoint DispatcherFailure = 5
+	DispatcherFailureAdmissionClosed   DispatcherFailure = 6
+	DispatcherFailureConfiguration     DispatcherFailure = 7
+)
+
+type DispatcherScope int32
+
+const (
+	DispatcherScopeUnspecified DispatcherScope = 0
+	DispatcherScopeNode        DispatcherScope = 1
+)
+
 type EffectDisposition int32
 
 const (
@@ -186,6 +214,66 @@ type CancelCommandResponse struct {
 	Command     *CommandInspection
 }
 
+type DispatcherGeneration struct {
+	OwnerEpoch uint64
+	Revision   uint64
+}
+
+type ControlDispatcherRequest struct {
+	Profile            *TransactionProfile
+	Scope              DispatcherScope
+	OperationId        string
+	Action             DispatcherAction
+	ExpectedGeneration *DispatcherGeneration
+}
+
+type DispatcherOperationReceipt struct {
+	OperationId           string
+	ReceiptId             string
+	Action                DispatcherAction
+	AuthenticatedOperator string
+	ActorTenant           string
+	BeforeGeneration      *DispatcherGeneration
+	AfterGeneration       *DispatcherGeneration
+	ObservedAtUnixMillis  uint64
+	ClockContinuityProven bool
+	RestoreReviewRequired bool
+	Disposition           StateOperationDisposition
+}
+
+type ControlDispatcherResponse struct {
+	Receipt   *DispatcherOperationReceipt
+	Replayed  bool
+	Published bool
+	Paused    bool
+	AuditAck  *profile.AuditAck
+}
+
+type DispatcherSnapshot struct {
+	Generation                 *DispatcherGeneration
+	Paused                     bool
+	PendingControl             bool
+	RestoreReviewRequired      bool
+	AdmissionClosed            bool
+	Quarantined                bool
+	Failure                    DispatcherFailure
+	Queued                     uint64
+	ActiveJobs                 uint64
+	RetainedAttemptBytes       uint64
+	LiveWorkers                uint64
+	AcceptedEffects            uint64
+	PhysicalOwners             uint64
+	QuarantinedPhysicalOwners  uint64
+	CommandOwners              uint64
+	Claims                     uint64
+	PendingEffects             uint64
+	UncertainEffects           uint64
+	BlockedEffects             uint64
+	DeadLetterEffects          uint64
+	CountsObservedAtUnixMillis uint64
+	ClockContinuityProven      bool
+}
+
 type EffectReceipt struct {
 	EffectId                     string
 	CommandId                    string
@@ -209,6 +297,15 @@ type ExpectedVersion struct {
 	Key     []byte
 	Absent  *bool
 	Version *[]byte
+}
+
+type GetDispatcherOperationRequest struct {
+	Original *ControlDispatcherRequest
+}
+
+type GetDispatcherOperationResponse struct {
+	Receipt  *DispatcherOperationReceipt
+	AuditAck *profile.AuditAck
 }
 
 type GetEffectRequest struct {
@@ -263,6 +360,16 @@ type NamespaceOperationReceipt struct {
 type GetStateOperationReceiptResponse struct {
 	Receipt          *StateOperationReceipt
 	NamespaceReceipt *NamespaceOperationReceipt
+}
+
+type InspectDispatcherRequest struct {
+	Profile *TransactionProfile
+	Scope   DispatcherScope
+}
+
+type InspectDispatcherResponse struct {
+	Dispatcher *DispatcherSnapshot
+	AuditAck   *profile.AuditAck
 }
 
 type ViewIdentity struct {

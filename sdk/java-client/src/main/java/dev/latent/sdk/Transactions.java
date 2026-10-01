@@ -29,6 +29,28 @@ public final class Transactions {
         public static final CommandOutcome EXPIRED = new CommandOutcome(7);
     }
 
+    public record DispatcherAction(int value) {
+        public static final DispatcherAction UNSPECIFIED = new DispatcherAction(0);
+        public static final DispatcherAction PAUSE = new DispatcherAction(1);
+        public static final DispatcherAction RESUME = new DispatcherAction(2);
+    }
+
+    public record DispatcherFailure(int value) {
+        public static final DispatcherFailure UNSPECIFIED = new DispatcherFailure(0);
+        public static final DispatcherFailure NONE = new DispatcherFailure(1);
+        public static final DispatcherFailure AUTHORITY = new DispatcherFailure(2);
+        public static final DispatcherFailure STORE = new DispatcherFailure(3);
+        public static final DispatcherFailure WORKER = new DispatcherFailure(4);
+        public static final DispatcherFailure RESTORE_CHECKPOINT = new DispatcherFailure(5);
+        public static final DispatcherFailure ADMISSION_CLOSED = new DispatcherFailure(6);
+        public static final DispatcherFailure CONFIGURATION = new DispatcherFailure(7);
+    }
+
+    public record DispatcherScope(int value) {
+        public static final DispatcherScope UNSPECIFIED = new DispatcherScope(0);
+        public static final DispatcherScope NODE = new DispatcherScope(1);
+    }
+
     public record EffectDisposition(int value) {
         public static final EffectDisposition UNSPECIFIED = new EffectDisposition(0);
         public static final EffectDisposition PENDING = new EffectDisposition(1);
@@ -166,6 +188,61 @@ public final class Transactions {
             CommandCancelDisposition disposition,
             Optional<CommandInspection> command) { }
 
+    public record DispatcherGeneration(
+            long ownerEpoch,
+            long revision) { }
+
+    public record ControlDispatcherRequest(
+            Optional<TransactionProfile> profile,
+            DispatcherScope scope,
+            String operationId,
+            DispatcherAction action,
+            Optional<DispatcherGeneration> expectedGeneration) { }
+
+    public record DispatcherOperationReceipt(
+            String operationId,
+            String receiptId,
+            DispatcherAction action,
+            String authenticatedOperator,
+            String actorTenant,
+            Optional<DispatcherGeneration> beforeGeneration,
+            Optional<DispatcherGeneration> afterGeneration,
+            long observedAtUnixMillis,
+            boolean clockContinuityProven,
+            boolean restoreReviewRequired,
+            StateOperationDisposition disposition) { }
+
+    public record ControlDispatcherResponse(
+            Optional<DispatcherOperationReceipt> receipt,
+            boolean replayed,
+            boolean published,
+            boolean paused,
+            Optional<Management.AuditAck> auditAck) { }
+
+    public record DispatcherSnapshot(
+            Optional<DispatcherGeneration> generation,
+            boolean paused,
+            boolean pendingControl,
+            boolean restoreReviewRequired,
+            boolean admissionClosed,
+            boolean quarantined,
+            DispatcherFailure failure,
+            long queued,
+            long activeJobs,
+            long retainedAttemptBytes,
+            long liveWorkers,
+            long acceptedEffects,
+            long physicalOwners,
+            long quarantinedPhysicalOwners,
+            long commandOwners,
+            long claims,
+            long pendingEffects,
+            long uncertainEffects,
+            long blockedEffects,
+            long deadLetterEffects,
+            long countsObservedAtUnixMillis,
+            boolean clockContinuityProven) { }
+
     public record EffectReceipt(
             String effectId,
             String commandId,
@@ -187,6 +264,13 @@ public final class Transactions {
             ByteBuffer key,
             Optional<Boolean> absent,
             Optional<ByteBuffer> version) { }
+
+    public record GetDispatcherOperationRequest(
+            Optional<ControlDispatcherRequest> original) { }
+
+    public record GetDispatcherOperationResponse(
+            Optional<DispatcherOperationReceipt> receipt,
+            Optional<Management.AuditAck> auditAck) { }
 
     public record GetEffectRequest(
             Optional<TransactionProfile> profile,
@@ -234,6 +318,14 @@ public final class Transactions {
     public record GetStateOperationReceiptResponse(
             Optional<StateOperationReceipt> receipt,
             Optional<NamespaceOperationReceipt> namespaceReceipt) { }
+
+    public record InspectDispatcherRequest(
+            Optional<TransactionProfile> profile,
+            DispatcherScope scope) { }
+
+    public record InspectDispatcherResponse(
+            Optional<DispatcherSnapshot> dispatcher,
+            Optional<Management.AuditAck> auditAck) { }
 
     public record ViewIdentity(
             Optional<NamespaceSelector> namespace,

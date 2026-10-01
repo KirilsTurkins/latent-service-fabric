@@ -18,6 +18,15 @@ internal static partial class Program
     private static Tx.LookupCommandRequest TxLookup(string? attempt = null) => new(Tx.CurrentTransactionProfile.Create(), TxSelector, attempt, TxPublication);
     private static Tx.InvokeCommandRequest TxInvoke() => new(Tx.CurrentTransactionProfile.Create(), Invoke() with { DeadlineUnixMillis = null }, TxSelector, "aggregate-input-v1",
         new[] { new Tx.ExpectedVersion(new byte[] { 0, 255 }, null, new byte[] { 1 }) }, null);
+    private static Tx.ControlDispatcherRequest TxControl() => new(Tx.CurrentTransactionProfile.Create(), Tx.DispatcherScope.Node,
+        "dispatcher-operation-a", Tx.DispatcherAction.Pause, new(ulong.MaxValue, ulong.MaxValue - 1));
+    private static WireControl.DispatcherOperationReceipt TxDispatcherReceipt() => new()
+    {
+        OperationId = "dispatcher-operation-a", ReceiptId = "dispatcher-receipt-a", Action = WireControl.DispatcherAction.Pause,
+        AuthenticatedOperator = "operator-a", ActorTenant = "tenant-a", BeforeGeneration = new() { OwnerEpoch = ulong.MaxValue, Revision = ulong.MaxValue - 1 },
+        AfterGeneration = new() { OwnerEpoch = ulong.MaxValue, Revision = ulong.MaxValue }, ObservedAtUnixMillis = ulong.MaxValue,
+        ClockContinuityProven = true, Disposition = WireControl.StateOperationDisposition.Committed
+    };
     private static Tx.SourceIdentity TxSource() => new(TxPublication.Id, "revision-a", TxDigest, ulong.MaxValue, TxDigest, TxDigest, "aggregate-input-v1", "aggregate-result-v1", TxDigest);
     private static WireTx.CommandInspection TxWireCommand(int outcome = 2, bool payload = true)
     {
@@ -63,7 +72,7 @@ internal static partial class Program
     }
 
     // A real HTTP/2 serialization peer; this does not claim signed-node execution.
-    private static async Task TransactionTwelveOperations()
+    private static async Task TransactionFifteenOperations()
     {
         await using Peer peer = await Peer.Start(async context =>
         {
@@ -107,6 +116,22 @@ internal static partial class Program
                     await Peer.Read<WireControl.GetStateOperationReceiptRequest>(context);
                     await Peer.Reply(context, (WireControl.GetStateOperationReceiptResponse)ProfileCodec.ToWire(new Tx.GetStateOperationReceiptResponse(new("state-operation-a", "state-receipt-a", Tx.StateMutationKind.CheckpointNamespace,
                         TxNamespace, "operator-a", new byte[] { 1 }, new byte[] { 2 }, 0, null, TxDigest, Tx.StateOperationDisposition.Committed), null), new WireControl.GetStateOperationReceiptResponse())); break;
+                case "InspectDispatcher":
+                    var inspect = await Peer.Read<WireControl.InspectDispatcherRequest>(context);
+                    Check(inspect.Scope == WireControl.DispatcherScope.Node, "dispatcher scope became tenant or namespace scope");
+                    await Peer.Reply(context, new WireControl.InspectDispatcherResponse { Dispatcher = new() {
+                        Generation = new() { OwnerEpoch = ulong.MaxValue, Revision = ulong.MaxValue }, Failure = WireControl.DispatcherFailure.None,
+                        PhysicalOwners = ulong.MaxValue, RetainedAttemptBytes = ulong.MaxValue, CountsObservedAtUnixMillis = ulong.MaxValue, Paused = true } }); break;
+                case "ControlDispatcher":
+                    var control = await Peer.Read<WireControl.ControlDispatcherRequest>(context);
+                    Check(control.ExpectedGeneration.OwnerEpoch == ulong.MaxValue && control.ExpectedGeneration.Revision == ulong.MaxValue - 1 && control.Action == WireControl.DispatcherAction.Pause,
+                        "dispatcher original action or full-width generation changed");
+                    await Peer.Reply(context, new WireControl.ControlDispatcherResponse { Receipt = TxDispatcherReceipt(), Published = true, Paused = true }); break;
+                case "GetDispatcherOperation":
+                    var recovered = await Peer.Read<WireControl.GetDispatcherOperationRequest>(context);
+                    Check(recovered.Original.OperationId == "dispatcher-operation-a" && recovered.Original.ExpectedGeneration.Revision == ulong.MaxValue - 1,
+                        "dispatcher recovery refreshed the original operation or generation");
+                    await Peer.Reply(context, new WireControl.GetDispatcherOperationResponse { Receipt = TxDispatcherReceipt() }); break;
                 default: throw new InvalidOperationException("unexpected transaction RPC");
             }
         });
@@ -133,8 +158,65 @@ internal static partial class Program
         Check(lifecycle.Metadata.Identity.ExpectedGeneration == ulong.MaxValue - 1, "lifecycle precondition was refreshed: " + lifecycle.Metadata.Identity.ExpectedGeneration);
         Check(lifecycle.Value.Receipt!.AfterGeneration == ulong.MaxValue, "lifecycle receipt generation narrowed");
         Check((await client.GetStateOperationReceiptAsync(new(TxInspect, "state-operation-a"), Defaults)).Metadata.Observed!.State!.OperationId == "state-operation-a", "management recovery identity changed");
-        Check(peer.Requests.Count == 12 && peer.Requests.Values.All(count => count == 1) && peer.Connections.Count == 1, "transaction operations replayed or replaced the existing connection");
+        var dispatcher = await client.InspectDispatcherAsync(new(Tx.CurrentTransactionProfile.Create(), Tx.DispatcherScope.Node), Defaults);
+        Check(dispatcher.Value.Dispatcher!.Generation!.OwnerEpoch == ulong.MaxValue && dispatcher.Value.Dispatcher.PhysicalOwners == ulong.MaxValue,
+            "dispatcher full-width observations were narrowed or confused with retirement");
+        var paused = await client.ControlDispatcherAsync(TxControl(), Defaults);
+        Check(paused.Metadata.Observed!.Dispatcher!.ReceiptId == "dispatcher-receipt-a" && paused.Metadata.Identity.DispatcherExpectedGeneration!.Revision == ulong.MaxValue - 1,
+            "dispatcher receipt was lost or the original generation refreshed");
+        var recoveredDispatcher = await client.GetDispatcherOperationAsync(new(TxControl()), Defaults);
+        Check(recoveredDispatcher.Metadata.Identity.OperationId == "dispatcher-operation-a" && recoveredDispatcher.Metadata.Identity.DispatcherAction == Tx.DispatcherAction.Pause,
+            "dispatcher recovery changed logical identity");
+        Check(peer.Requests.Count == 15 && peer.Requests.Values.All(count => count == 1) && peer.Connections.Count == 1, "transaction operations replayed or replaced the existing connection");
         await client.DisposeAsync(); Check(client.Snapshot().Reaped, "transaction connection did not physically retire");
+    }
+
+    private static async Task TransactionDispatcherReceiptAndAuditAreIndependent()
+    {
+        await using Peer peer = await Peer.Start(async context =>
+        {
+            if (context.Request.Path.Value!.EndsWith("/ControlDispatcher", StringComparison.Ordinal))
+            {
+                var original = await Peer.Read<WireControl.ControlDispatcherRequest>(context);
+                var accepted = TxDispatcherReceipt(); accepted.OperationId = original.OperationId; accepted.Action = original.Action;
+                if (original.Action == WireControl.DispatcherAction.Resume) accepted.ClockContinuityProven = false;
+                if (original.OperationId == "not-committed") accepted.Disposition = WireControl.StateOperationDisposition.Conflict;
+                await Peer.Reply(context, new WireControl.ControlDispatcherResponse { Receipt = accepted, Published = true, Paused = true,
+                    Replayed = original.OperationId == "replayed",
+                    AuditAck = original.OperationId == "dispatcher-operation-a" && original.Action == WireControl.DispatcherAction.Pause ? new() { Status = (WireControl.AuditAckStatus)91 } : null }); return;
+            }
+            if (context.Request.Path.Value!.EndsWith("/InspectDispatcher", StringComparison.Ordinal))
+            {
+                await Peer.Read<WireControl.InspectDispatcherRequest>(context);
+                await Peer.Reply(context, new WireControl.InspectDispatcherResponse { Dispatcher = new() {
+                    Generation = new() { OwnerEpoch = 1, Revision = 1 }, Failure = WireControl.DispatcherFailure.None, PendingControl = true, Paused = false } }); return;
+            }
+            var lookup = await Peer.Read<WireControl.GetDispatcherOperationRequest>(context);
+            var receipt = TxDispatcherReceipt(); if (lookup.Original.OperationId == "mismatch") receipt.AfterGeneration.Revision = 7;
+            await Peer.Reply(context, new WireControl.GetDispatcherOperationResponse { Receipt = receipt });
+        });
+        await using BoundedClient client = await BoundedClient.ConnectAsync(Options(peer.Endpoint));
+        var failure = await TxFailure(client.ControlDispatcherAsync(TxControl(), Defaults).AsTask(), Profile.FailureCategory.Decode);
+        Check(failure.Observed!.Dispatcher!.Disposition == Tx.StateOperationDisposition.Committed && failure.Transport.Outcome == Profile.OutcomeKnowledge.Observed,
+            "unknown independent audit status erased the dispatcher receipt");
+        Check(failure.Transport.UnsupportedWireValue!.Value == "91" && failure.Identity.DispatcherExpectedGeneration!.Revision == ulong.MaxValue - 1 && failure.Observed.Command is null,
+            "dispatcher operation inferred a command abort or refreshed a precondition");
+        var recovered = await client.GetDispatcherOperationAsync(new(TxControl()), Defaults);
+        Check(recovered.Metadata.Observed!.Dispatcher!.ReceiptId == "dispatcher-receipt-a" && peer.Requests.Values.Sum() == 2,
+            "receipt recovery resubmitted a dispatcher control");
+        var bad = await TxFailure(client.GetDispatcherOperationAsync(new(TxControl() with { OperationId = "mismatch" }), Defaults).AsTask(), Profile.FailureCategory.Decode);
+        Check(bad.Observed is null && bad.Identity.OperationId == "mismatch", "mismatched dispatcher receipt supplied accepted disposition");
+        foreach (var invalid in new[] { TxControl() with { OperationId = "replayed" }, TxControl() with { OperationId = "not-committed" }, TxControl() with { Action = Tx.DispatcherAction.Resume } })
+        {
+            var unsafeReceipt = await TxFailure(client.ControlDispatcherAsync(invalid, Defaults).AsTask(), Profile.FailureCategory.Decode);
+            Check(unsafeReceipt.Observed is null, "replayed publication, noncommitted receipt or unproven resume supplied accepted disposition");
+        }
+        var snapshot = await TxFailure(client.InspectDispatcherAsync(new(Tx.CurrentTransactionProfile.Create(), Tx.DispatcherScope.Node), Defaults).AsTask(), Profile.FailureCategory.Decode);
+        Check(snapshot.Observed is null, "pending control claimed an unpaused dispatcher");
+        int sent = peer.Requests.Values.Sum();
+        var exhausted = await TxFailure(client.ControlDispatcherAsync(TxControl() with { ExpectedGeneration = new(ulong.MaxValue, ulong.MaxValue) }, Defaults).AsTask(), Profile.FailureCategory.InvalidRequest);
+        Check(!exhausted.Transport.Dispatched && exhausted.Identity.DispatcherExpectedGeneration!.Revision == ulong.MaxValue && peer.Requests.Values.Sum() == sent,
+            "unrepresentable dispatcher successor was submitted or its precondition replaced");
     }
 
     private static async Task TransactionDurableRejectionThroughAuditFailure()

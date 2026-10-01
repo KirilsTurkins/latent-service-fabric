@@ -29,6 +29,10 @@ public sealed record RecoveryIdentity
     public IReadOnlyList<ExpectedVersion>? ExpectedVersions { get; init; }
     /// <summary>The original namespace management precondition.</summary>
     public ulong? ExpectedGeneration { get; init; }
+    /// <summary>The original node dispatcher action.</summary>
+    public DispatcherAction? DispatcherAction { get; init; }
+    /// <summary>The original dispatcher owner epoch and revision.</summary>
+    public DispatcherGeneration? DispatcherExpectedGeneration { get; init; }
     /// <summary>The original record management precondition.</summary>
     public ReadOnlyMemory<byte>? ExpectedVersion { get; init; }
     /// <summary>The original policy precondition.</summary>
@@ -50,6 +54,8 @@ public sealed record ObservedOutcome
     public NamespaceOperationReceipt? Namespace { get; init; }
     /// <summary>The effect delivery observation; it does not prove a command abort.</summary>
     public EffectReceipt? Effect { get; init; }
+    /// <summary>The durable logical dispatcher operation; it does not prove physical retirement.</summary>
+    public DispatcherOperationReceipt? Dispatcher { get; init; }
 }
 
 /// <summary>Independent transport, audit, identity and durable outcome observations.</summary>
@@ -115,4 +121,10 @@ public interface ITransactionClient
     ValueTask<TransactionResponse<MutateStateResponse>> MutateStateAsync(MutateStateRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default);
     /// <summary>Recovers one state or namespace operation receipt.</summary>
     ValueTask<TransactionResponse<GetStateOperationReceiptResponse>> GetStateOperationReceiptAsync(GetStateOperationReceiptRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default);
+    /// <summary>Inspects the current node dispatcher using current operator authority.</summary>
+    ValueTask<TransactionResponse<InspectDispatcherResponse>> InspectDispatcherAsync(InspectDispatcherRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default);
+    /// <summary>Submits the original node dispatcher action once.</summary>
+    ValueTask<TransactionResponse<ControlDispatcherResponse>> ControlDispatcherAsync(ControlDispatcherRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default);
+    /// <summary>Recovers the exact original dispatcher action without republishing it.</summary>
+    ValueTask<TransactionResponse<GetDispatcherOperationResponse>> GetDispatcherOperationAsync(GetDispatcherOperationRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default);
 }

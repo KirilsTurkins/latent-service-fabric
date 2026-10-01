@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/go/generate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Generate additive StateService TransactionService and required publication descriptors with the existing exact pinned Go plugins and preserve all stateless owners",
+  "reviewReason": "Generate all eight authoritative services with private state owner to prevent control and transaction import cycles while retaining stateless owners",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "040746b6a920ebf110231fae3f98bba1cb33ff9e342d182d0315b7b85103c7c4"
+  "sha256": "9e0d792839cc21de656532e6f900fbf4e2a5bcca1cb57062dcbc91a33c4d0cc0"
 }

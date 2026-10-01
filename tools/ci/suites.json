@@ -3940,6 +3940,9 @@
         "phase4::tests::create_preserves_present_zero_and_requires_finite_configuration",
         "phase4::tests::cross_tenant_current_publication_fails_before_lookup",
         "phase4::tests::current_read_publication_is_required_without_changing_command_selector",
+        "phase4::tests::dispatcher::dispatcher_replay_cannot_publish_and_pending_control_cannot_claim_unpaused",
+        "phase4::tests::dispatcher::historical_dispatcher_receipt_requires_exact_action_epoch_revision_and_safe_resume_facts",
+        "phase4::tests::dispatcher::node_control_requires_explicit_scope_closed_action_original_generation_and_profile",
         "phase4::tests::exact_negotiated_profile_has_no_unknown_fallback",
         "phase4::tests::incarnation_is_positive_canonical_lossless_unsigned64",
         "phase4::tests::namespaces_reject_unknown_mutation_and_unbounded_page_requests",
@@ -3955,7 +3958,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-rpc/Cargo.toml",
-      "minimumCases": 14,
+      "minimumCases": 17,
       "mode": "libtest",
       "package": "latent-rpc",
       "platforms": [

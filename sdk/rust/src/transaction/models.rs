@@ -26,6 +26,37 @@ impl CommandOutcome {
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct DispatcherAction(pub i32);
+
+impl DispatcherAction {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const PAUSE: Self = Self(1);
+    pub const RESUME: Self = Self(2);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct DispatcherFailure(pub i32);
+
+impl DispatcherFailure {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const NONE: Self = Self(1);
+    pub const AUTHORITY: Self = Self(2);
+    pub const STORE: Self = Self(3);
+    pub const WORKER: Self = Self(4);
+    pub const RESTORE_CHECKPOINT: Self = Self(5);
+    pub const ADMISSION_CLOSED: Self = Self(6);
+    pub const CONFIGURATION: Self = Self(7);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct DispatcherScope(pub i32);
+
+impl DispatcherScope {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const NODE: Self = Self(1);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct EffectDisposition(pub i32);
 
 impl EffectDisposition {
@@ -202,6 +233,71 @@ pub struct CancelCommandResponse {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DispatcherGeneration {
+    pub owner_epoch: u64,
+    pub revision: u64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ControlDispatcherRequest {
+    pub profile: Option<TransactionProfile>,
+    pub scope: DispatcherScope,
+    pub operation_id: String,
+    pub action: DispatcherAction,
+    pub expected_generation: Option<DispatcherGeneration>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DispatcherOperationReceipt {
+    pub operation_id: String,
+    pub receipt_id: String,
+    pub action: DispatcherAction,
+    pub authenticated_operator: String,
+    pub actor_tenant: String,
+    pub before_generation: Option<DispatcherGeneration>,
+    pub after_generation: Option<DispatcherGeneration>,
+    pub observed_at_unix_millis: u64,
+    pub clock_continuity_proven: bool,
+    pub restore_review_required: bool,
+    pub disposition: StateOperationDisposition,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ControlDispatcherResponse {
+    pub receipt: Option<DispatcherOperationReceipt>,
+    pub replayed: bool,
+    pub published: bool,
+    pub paused: bool,
+    pub audit_ack: Option<crate::management::AuditAck>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DispatcherSnapshot {
+    pub generation: Option<DispatcherGeneration>,
+    pub paused: bool,
+    pub pending_control: bool,
+    pub restore_review_required: bool,
+    pub admission_closed: bool,
+    pub quarantined: bool,
+    pub failure: DispatcherFailure,
+    pub queued: u64,
+    pub active_jobs: u64,
+    pub retained_attempt_bytes: u64,
+    pub live_workers: u64,
+    pub accepted_effects: u64,
+    pub physical_owners: u64,
+    pub quarantined_physical_owners: u64,
+    pub command_owners: u64,
+    pub claims: u64,
+    pub pending_effects: u64,
+    pub uncertain_effects: u64,
+    pub blocked_effects: u64,
+    pub dead_letter_effects: u64,
+    pub counts_observed_at_unix_millis: u64,
+    pub clock_continuity_proven: bool,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct EffectReceipt {
     pub effect_id: String,
     pub command_id: String,
@@ -227,6 +323,17 @@ pub struct ExpectedVersion {
     pub key: Vec<u8>,
     pub absent: Option<bool>,
     pub version: Option<Vec<u8>>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GetDispatcherOperationRequest {
+    pub original: Option<ControlDispatcherRequest>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GetDispatcherOperationResponse {
+    pub receipt: Option<DispatcherOperationReceipt>,
+    pub audit_ack: Option<crate::management::AuditAck>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -288,6 +395,18 @@ pub struct NamespaceOperationReceipt {
 pub struct GetStateOperationReceiptResponse {
     pub receipt: Option<StateOperationReceipt>,
     pub namespace_receipt: Option<NamespaceOperationReceipt>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InspectDispatcherRequest {
+    pub profile: Option<TransactionProfile>,
+    pub scope: DispatcherScope,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InspectDispatcherResponse {
+    pub dispatcher: Option<DispatcherSnapshot>,
+    pub audit_ack: Option<crate::management::AuditAck>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
