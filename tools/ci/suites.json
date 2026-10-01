@@ -4755,6 +4755,7 @@
         "store_io::tests::ownership::response_buffer_destruction_precedes_detached_reservation_refund",
         "store_io::tests::ownership::worker_panic_is_recovery_required_and_gates_queued_writes",
         "store_io::tests::recovery::absent_or_invalid_recovery_configuration_cannot_synthesize_reserved_admission",
+        "store_io::tests::recovery::blocked_ordinary_native_destructor_cannot_occupy_reserved_recovery_worker",
         "store_io::tests::recovery::detached_recovery_owner_keeps_its_partition_until_physical_buffer_retirement",
         "store_io::tests::recovery::recovery_worker_and_admission_progress_with_all_ordinary_workers_and_quotas_full",
         "store_io::tests::recovery::recovery_write_never_steals_a_live_writer_and_read_can_pass_its_backlog",
@@ -4775,7 +4776,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 112,
+      "minimumCases": 113,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [
