@@ -37,7 +37,8 @@ LEGACY_CACHE_WIT = {
 
 
 def _inventory(directory: Path, required: frozenset[str], optional: frozenset[str],
-               allowed_directories: set[str], retained_profile: dict[str, str] | None = None) -> bool:
+               allowed_directories: set[str], retained_profile: dict[str, str] | None = None,
+               *, allow_empty: bool = False) -> bool:
     pending = [directory]
     files = set()
     entries = 0
@@ -64,12 +65,13 @@ def _inventory(directory: Path, required: frozenset[str], optional: frozenset[st
                     files.add(name)
                 else:
                     raise SnapshotError("validator fixture contains an unknown file or directory")
-    # The pinned dependency-cache cleaner removes regular files from non-Cargo
-    # directories while retaining the known directory skeleton. A tree with no
-    # files has no fixture metadata or payload to authenticate. Unknown paths,
-    # links, special files and entry limits were still checked above.
+    # An empty owner cannot authenticate itself. The pinned cleaner's empty
+    # package skeleton is accepted only with its exact retained legacy WIT
+    # sibling, after both owners' paths, links and entry bounds are checked.
     if not files:
-        return False
+        if allow_empty:
+            return False
+        raise SnapshotError("validator fixture is incomplete")
     if retained_profile is not None and files == set(retained_profile):
         for name, expected in retained_profile.items():
             actual = file_identity(directory / name, "cached-generated-wit", 256 * 1024)
@@ -101,10 +103,11 @@ def _metadata(directory: Path, name: str) -> dict:
     return result
 
 
-def _recognized(directory: Path, package: bool) -> None:
+def _recognized(directory: Path, package: bool, *, allow_empty: bool = False) -> bool:
     if package:
-        if not _inventory(directory, PACKAGE_REQUIRED, PACKAGE_OPTIONAL, {"wit"}):
-            return
+        if not _inventory(directory, PACKAGE_REQUIRED, PACKAGE_OPTIONAL, {"wit"},
+                          allow_empty=allow_empty):
+            return False
         marker = _metadata(directory, "observation.json")
         recipe = _metadata(directory, "package-source.json")
         if (type(marker.get("formatVersion")) is not int or marker["formatVersion"] != 1
@@ -128,7 +131,7 @@ def _recognized(directory: Path, package: bool) -> None:
     else:
         if not _inventory(directory, LEGACY_REQUIRED, LEGACY_OPTIONAL, {"interface", "interface/deps"},
                           LEGACY_CACHE_WIT):
-            return
+            return True
         marker = _metadata(directory, "build.json")
         if (type(marker.get("schemaVersion")) is not int or marker["schemaVersion"] != 1
                 or marker.get("artifact") != "echo-capsule.wasm"
@@ -142,6 +145,7 @@ def _recognized(directory: Path, package: bool) -> None:
             or expected_digest != actual["digest"] or not isinstance(capsule.get("component"), dict)
             or capsule["component"].get("digest") != actual["digest"]):
         raise SnapshotError("validator fixture component association has changed")
+    return False
 
 
 def reset_validation_echo(target_root: Path) -> int:
@@ -151,6 +155,7 @@ def reset_validation_echo(target_root: Path) -> int:
         return 0
     target_root = target_root.resolve(strict=True)
     retained = []
+    cached_legacy = False
     with owned_cancellation() as cancellation:
         for name, package in (("echo", False), ("echo-provenance", True)):
             directory = target_root / "capsules" / name
@@ -158,7 +163,9 @@ def reset_validation_echo(target_root: Path) -> int:
             if os.path.lexists(directory):
                 if not directory.is_dir():
                     raise SnapshotError("validator fixture path is not a directory")
-                _recognized(directory, package)
+                recognized_cache = _recognized(directory, package, allow_empty=package and cached_legacy)
+                if not package:
+                    cached_legacy = recognized_cache
                 retained.append(directory)
             cancellation.check()
         with cancellation.defer():
