@@ -967,7 +967,13 @@
                     "namespace-quiesce",
                     "namespace-retire",
                     "namespace-destroy",
-                    "namespace-recreate"
+                    "namespace-recreate",
+                    "effect-plan",
+                    "effect-reconcile",
+                    "effect-redrive",
+                    "effect-terminate",
+                    "state-checkpoint",
+                    "purge-expired-payload"
                   ]
                 }
               },
