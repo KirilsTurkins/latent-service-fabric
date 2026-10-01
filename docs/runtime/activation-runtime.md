@@ -26,6 +26,15 @@ memory and delegated children. Failed preparation rolls back. Completed work
 settles its owner once; an abandoned waiter cannot release a physical provider
 owner's reservation.
 
+The four closed, resource-free runtime result shapes retain the accepted broker
+call inside the actual Wasmtime return value until canonical lowering completes.
+Completed scalar, token and observation results then release their original call,
+result and output-window reservations before the next import. Callback return
+alone cannot release that owner. The private lowering wrapper delegates the exact
+pinned generated ABI, including both memory and flat lowering, and rejects an
+upstream binding that requires guest allocation. Pending host futures and owned
+stream/list/string resources retain their existing physical owners.
+
 Parking records readiness without running guest code. A wake is valid only for
 the original generation and a still-live owner. A weak wake does not keep the
 Store or budget alive. The maintained language scheduler must choose a runnable
@@ -100,6 +109,13 @@ byte difference is fixture evidence, not a language memory or latency claim.
 Growing linear memory to the entire original ceiling while native owners are
 live produces resource exhaustion; cleanup preserves the original trap or
 interruption instead of replacing it with cleanup cancellation.
+
+Three additional normal-suite regressions exercise 40 completed cycles under
+the original 16-call session ceiling, exact import counts, live pending-call
+reservations, cancellation/drop, and malformed sync/async result destinations.
+Their native execution on this repair remains pending. The prior signed Java
+executor failure and its closed `resource-exhausted` receipt are retained; a
+successful source repair alone does not qualify the expanded Java profile.
 
 These checks are implementation evidence for #736. Remaining requirements
 include the complete signed cross-tenant, late-wake and node-stop matrix,
