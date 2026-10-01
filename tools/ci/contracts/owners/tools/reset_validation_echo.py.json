@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/reset_validation_echo.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Recognize only file-free known echo cache skeletons after the pinned cache cleaner; preserve partial fixture and metadata identity rejection",
+  "reviewReason": "Authenticate the three exact generated WIT files retained by the pinned cache false-Cargo-profile cleanup; preserve unknown or altered partial owners and all previous bounds",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "85238d568dc56cfd9c82ff09ba74e421306225876f71070536502c361ad86077"
+  "sha256": "9b4c6fafdd4efb4c1843ade901ee169efec7b11225b97a33f5491b77aa763a96"
 }
