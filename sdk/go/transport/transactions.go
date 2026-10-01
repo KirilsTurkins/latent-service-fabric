@@ -81,6 +81,12 @@ func (client *Client) MutateState(ctx context.Context, request tx.MutateStateReq
 	})
 }
 
+func (client *Client) PlanEffectMutation(ctx context.Context, request tx.PlanEffectMutationRequest, options profile.CallOptions) (tx.ClientResponse[tx.PlanEffectMutationResponse], error) {
+	return executeTransaction[tx.PlanEffectMutationResponse](client, ctx, request, options, &statev1.PlanEffectMutationRequest{}, func(ctx context.Context, wire proto.Message) (proto.Message, error) {
+		return client.stateService.PlanEffectMutation(ctx, wire.(*statev1.PlanEffectMutationRequest))
+	})
+}
+
 func (client *Client) GetStateOperationReceipt(ctx context.Context, request tx.GetStateOperationReceiptRequest, options profile.CallOptions) (tx.ClientResponse[tx.GetStateOperationReceiptResponse], error) {
 	return executeTransaction[tx.GetStateOperationReceiptResponse](client, ctx, request, options, &statev1.GetStateOperationReceiptRequest{}, func(ctx context.Context, wire proto.Message) (proto.Message, error) {
 		return client.stateService.GetStateOperationReceipt(ctx, wire.(*statev1.GetStateOperationReceiptRequest))

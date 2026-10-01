@@ -58,3 +58,23 @@ cleanup, invented grant ceiling or client-side authorization is inferred from
 these tests. `ListCapabilities` has no authoritative effective-ceiling field;
 referenced policy/binding documents retain stored limits without turning them
 into execution authority.
+
+## Phase 4 client effect-plan source evidence
+
+The [six-client source receipt](../../docs/evidence/phase4-client-effect-plan-source-2026-10-01/receipt.json)
+records the sixteen concrete transaction, state and dispatcher operations,
+the exact original-plan recovery checks and normalized source fingerprints.
+Rust passes 23 RPC boundary tests, 16 SDK transport tests and strict linting;
+C passes the full ASan/UBSan transport owner with all 16 methods and all four
+transaction connections closed. Node passes 35 transport tests plus 67 shared
+semantic vectors; its Linux-only credential subprocess test is separately
+reported as skipped on Windows. Go passes pinned generation, race tests and
+vet. Java passes six transaction TCP suites with 120 checks and production
+linting; .NET passes 603 native transport checks. The receipt records the
+individual platform and toolchain for each result.
+
+These are controlled transport peers and source checks. The separate-process
+real-node matrix, browser HTTP execution, authenticated packaged qualification
+and complete management acceptance remain outstanding for #401. The earlier
+[C fifteen-method receipt](../../docs/evidence/phase4-client-c-source-2026-10-01/receipt.json)
+is preserved as historical evidence of its original bytes.

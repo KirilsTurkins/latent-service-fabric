@@ -69,6 +69,29 @@ impl EffectDisposition {
     pub const EXPIRED: Self = Self(6);
     pub const POLICY_BLOCKED: Self = Self(7);
     pub const ADMINISTRATIVELY_TERMINATED: Self = Self(8);
+    pub const RETRY_SCHEDULED: Self = Self(9);
+    pub const DEAD_LETTERED: Self = Self(10);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EffectManagementFact(pub i32);
+
+impl EffectManagementFact {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const REDRIVE_SCHEDULED: Self = Self(1);
+    pub const PROVIDER_CONFIRMED: Self = Self(2);
+    pub const ADMINISTRATOR_TERMINATED: Self = Self(3);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EffectPlanSafety(pub i32);
+
+impl EffectPlanSafety {
+    pub const UNSPECIFIED: Self = Self(0);
+    pub const KNOWN_NONEXECUTION: Self = Self(1);
+    pub const QUALIFIED_DEDUPLICATION: Self = Self(2);
+    pub const PROVIDER_RECEIPT_LOOKUP: Self = Self(3);
+    pub const ADMINISTRATOR_DECLARED: Self = Self(4);
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -103,6 +126,7 @@ impl StateMutationKind {
     pub const TERMINATE_EFFECT: Self = Self(2);
     pub const PURGE_EXPIRED_PAYLOAD: Self = Self(3);
     pub const CHECKPOINT_NAMESPACE: Self = Self(4);
+    pub const RECONCILE_EFFECT: Self = Self(5);
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -299,6 +323,50 @@ pub struct DispatcherSnapshot {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GetEffectRequest {
+    pub profile: Option<TransactionProfile>,
+    pub command: Option<CommandSelector>,
+    pub effect_id: String,
+    pub authorization_publication: Option<crate::management::PublicationRef>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PlanEffectMutationRequest {
+    pub effect: Option<GetEffectRequest>,
+    pub operation_id: String,
+    pub mutation: StateMutationKind,
+    pub expected_version: Vec<u8>,
+    pub expected_policy_digest: String,
+    pub reason: String,
+    pub retry_delay_millis: u64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct EffectManagementPlan {
+    pub original: Option<PlanEffectMutationRequest>,
+    pub plan_digest: Vec<u8>,
+    pub management_sequence: u32,
+    pub owner_epoch: u64,
+    pub claim_generation: u64,
+    pub dispatch_attempt: u32,
+    pub expires_at_unix_millis: u64,
+    pub prepared_at_unix_millis: u64,
+    pub before: EffectDisposition,
+    pub safety: EffectPlanSafety,
+    pub dedup_valid_until_unix_millis: Option<u64>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct EffectManagementReceiptDetails {
+    pub original_plan: Option<EffectManagementPlan>,
+    pub before: EffectDisposition,
+    pub after: EffectDisposition,
+    pub fact: EffectManagementFact,
+    pub provider_receipt: Option<String>,
+    pub provider_observed_at_unix_millis: Option<u64>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct EffectReceipt {
     pub effect_id: String,
     pub command_id: String,
@@ -311,6 +379,9 @@ pub struct EffectReceipt {
     pub retention: Option<LinkedRetention>,
     pub management_operation_receipt_id: Option<String>,
     pub provider_profile: String,
+    pub record_version: Vec<u8>,
+    pub owner_epoch: Option<u64>,
+    pub claim_generation: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -338,14 +409,6 @@ pub struct GetDispatcherOperationResponse {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct GetEffectRequest {
-    pub profile: Option<TransactionProfile>,
-    pub command: Option<CommandSelector>,
-    pub effect_id: String,
-    pub authorization_publication: Option<crate::management::PublicationRef>,
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct GetEffectResponse {
     pub effect: Option<EffectReceipt>,
 }
@@ -361,6 +424,7 @@ pub struct InspectNamespaceRequest {
 pub struct GetStateOperationReceiptRequest {
     pub namespace: Option<InspectNamespaceRequest>,
     pub operation_id: String,
+    pub original_effect_plan: Option<EffectManagementPlan>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -376,6 +440,7 @@ pub struct StateOperationReceipt {
     pub record_id: Option<String>,
     pub policy_digest: String,
     pub disposition: StateOperationDisposition,
+    pub effect: Option<EffectManagementReceiptDetails>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -396,6 +461,7 @@ pub struct NamespaceOperationReceipt {
 pub struct GetStateOperationReceiptResponse {
     pub receipt: Option<StateOperationReceipt>,
     pub namespace_receipt: Option<NamespaceOperationReceipt>,
+    pub audit_ack: Option<crate::management::AuditAck>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -441,6 +507,7 @@ pub struct NamespaceInspection {
     pub status: NamespaceStatus,
     pub quota: Option<NamespaceQuota>,
     pub generation: u64,
+    pub namespace_policy_digest: String,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -545,11 +612,20 @@ pub struct MutateStateRequest {
     pub expected_version: Vec<u8>,
     pub expected_policy_digest: String,
     pub reason: String,
+    pub effect_plan: Option<EffectManagementPlan>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct MutateStateResponse {
     pub receipt: Option<StateOperationReceipt>,
+    pub audit_ack: Option<crate::management::AuditAck>,
+    pub replayed: bool,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PlanEffectMutationResponse {
+    pub plan: Option<EffectManagementPlan>,
+    pub replayed: bool,
     pub audit_ack: Option<crate::management::AuditAck>,
 }
 

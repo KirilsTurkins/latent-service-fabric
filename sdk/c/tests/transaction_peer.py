@@ -19,6 +19,15 @@ DIGEST = "sha256:" + "1" * 64
 PUBLICATION = "publication:" + DIGEST
 
 
+def effect_management_receipt(plan):
+    original = plan.original
+    return state_pb2.StateOperationReceipt(operation_id=original.operation_id, receipt_id="effect-management-receipt",
+        mutation=original.mutation, namespace=original.effect.command.namespace, authenticated_operator="operator-a",
+        before_version=original.expected_version, after_version=b"\x03" * 32, completed_at_unix_millis=1500,
+        record_id=original.effect.effect_id, policy_digest=original.expected_policy_digest, disposition=1,
+        effect=state_pb2.EffectManagementReceiptDetails(original_plan=plan, before=4, after=9, fact=1))
+
+
 def source():
     return tx.SourceIdentity(publication_id=PUBLICATION, revision_id="revision-a", release_digest=DIGEST,
         route_generation=MAXIMUM, contract_digest=DIGEST, state_schema=DIGEST,
@@ -209,10 +218,26 @@ class Peer:
                 status=2, state_schema=DIGEST, disposition=1)
             self.reply(connection, pending, stream, state_pb2.MutateNamespaceResponse(receipt=row))
         elif method in {"MutateState", "GetStateOperationReceipt"}:
-            row = state_pb2.StateOperationReceipt(operation_id=request.operation_id, receipt_id="state-receipt", mutation=2,
+            plan_field = "effect_plan" if method == "MutateState" else "original_effect_plan"
+            if request.HasField(plan_field):
+                plan = getattr(request, plan_field)
+                if method == "GetStateOperationReceipt" and request.namespace.authorization_publication == plan.original.effect.authorization_publication:
+                    raise ValueError("effect recovery did not select fresh authority")
+                row = effect_management_receipt(plan)
+                if plan.original.reason == "forged-fact":
+                    row.effect.fact, row.effect.provider_receipt, row.effect.provider_observed_at_unix_millis = 2, "forged-provider", 1400
+            else:
+                row = state_pb2.StateOperationReceipt(operation_id=request.operation_id, receipt_id="state-receipt", mutation=4,
                 namespace=request.namespace.namespace, authenticated_operator="operator-a", before_version=b"v1", after_version=b"v2",
-                record_id="effect-a", policy_digest=DIGEST, disposition=1)
+                policy_digest=DIGEST, disposition=1)
             self.reply(connection, pending, stream, getattr(state_pb2, method + "Response")(receipt=row))
+        elif method == "PlanEffectMutation":
+            plan = state_pb2.EffectManagementPlan(original=request, plan_digest=b"\x02" * 32, management_sequence=1,
+                owner_epoch=MAXIMUM, claim_generation=1, dispatch_attempt=1, prepared_at_unix_millis=1000, expires_at_unix_millis=2000, before=4, safety=1)
+            if request.reason == "bad-window": plan.expires_at_unix_millis = 31001
+            value = state_pb2.PlanEffectMutationResponse(plan=plan)
+            if request.reason == "bad-audit": value.audit_ack.status = 91
+            self.reply(connection, pending, stream, value)
         elif method == "InspectDispatcher":
             value = dispatcher_pb2.InspectDispatcherResponse()
             value.dispatcher.generation.owner_epoch, value.dispatcher.generation.revision = MAXIMUM, MAXIMUM
@@ -243,7 +268,7 @@ async def main():
         if not peer.writers: break
         await asyncio.sleep(0.01)
     if peer.writers or peer.connections != peer.closed: raise ValueError("client left physical owners")
-    if len(peer.methods) != 15: raise ValueError("not all fifteen RPCs executed")
+    if len(peer.methods) != 16: raise ValueError("not all sixteen RPCs executed")
     if any(count != 1 for count in peer.invocations.values()): raise ValueError("mutation automatically retried")
     print(json.dumps({"connections": peer.connections, "closed": peer.closed, "requests": peer.requests,
         "methods": len(peer.methods), "invocations": peer.invocations}), flush=True)

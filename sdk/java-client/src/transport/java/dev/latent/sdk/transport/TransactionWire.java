@@ -387,6 +387,98 @@ final class TransactionWire {
                 value.getClockContinuityProven());
     }
 
+    static latent.transaction.v1.Transaction.GetEffectRequest toWire(Transactions.GetEffectRequest value) {
+        var result = latent.transaction.v1.Transaction.GetEffectRequest.newBuilder();
+        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
+        result.setEffectId(value.effectId());
+        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get()));
+        return result.build();
+    }
+
+    static Transactions.GetEffectRequest fromWire(latent.transaction.v1.Transaction.GetEffectRequest value) {
+        return new Transactions.GetEffectRequest(
+                value.hasProfile() ? Optional.of(fromWire(value.getProfile())) : Optional.empty(),
+                value.hasCommand() ? Optional.of(fromWire(value.getCommand())) : Optional.empty(),
+                value.getEffectId(),
+                value.hasAuthorizationPublication() ? Optional.of(Wire.fromWire(value.getAuthorizationPublication())) : Optional.empty());
+    }
+
+    static latent.control.v1.State.PlanEffectMutationRequest toWire(Transactions.PlanEffectMutationRequest value) {
+        var result = latent.control.v1.State.PlanEffectMutationRequest.newBuilder();
+        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get()));
+        result.setOperationId(value.operationId());
+        result.setMutationValue(value.mutation().value());
+        result.setExpectedVersion(ByteString.copyFrom(value.expectedVersion().asReadOnlyBuffer()));
+        result.setExpectedPolicyDigest(value.expectedPolicyDigest());
+        result.setReason(value.reason());
+        result.setRetryDelayMillis(value.retryDelayMillis());
+        return result.build();
+    }
+
+    static Transactions.PlanEffectMutationRequest fromWire(latent.control.v1.State.PlanEffectMutationRequest value) {
+        return new Transactions.PlanEffectMutationRequest(
+                value.hasEffect() ? Optional.of(fromWire(value.getEffect())) : Optional.empty(),
+                value.getOperationId(),
+                new Transactions.StateMutationKind(value.getMutationValue()),
+                value.getExpectedVersion().asReadOnlyByteBuffer(),
+                value.getExpectedPolicyDigest(),
+                value.getReason(),
+                value.getRetryDelayMillis());
+    }
+
+    static latent.control.v1.State.EffectManagementPlan toWire(Transactions.EffectManagementPlan value) {
+        var result = latent.control.v1.State.EffectManagementPlan.newBuilder();
+        if (value.original().isPresent()) result.setOriginal(toWire(value.original().get()));
+        result.setPlanDigest(ByteString.copyFrom(value.planDigest().asReadOnlyBuffer()));
+        result.setManagementSequence(value.managementSequence());
+        result.setOwnerEpoch(value.ownerEpoch());
+        result.setClaimGeneration(value.claimGeneration());
+        result.setDispatchAttempt(value.dispatchAttempt());
+        result.setExpiresAtUnixMillis(value.expiresAtUnixMillis());
+        result.setPreparedAtUnixMillis(value.preparedAtUnixMillis());
+        result.setBeforeValue(value.before().value());
+        result.setSafetyValue(value.safety().value());
+        if (value.dedupValidUntilUnixMillis().isPresent()) result.setDedupValidUntilUnixMillis(value.dedupValidUntilUnixMillis().get());
+        return result.build();
+    }
+
+    static Transactions.EffectManagementPlan fromWire(latent.control.v1.State.EffectManagementPlan value) {
+        return new Transactions.EffectManagementPlan(
+                value.hasOriginal() ? Optional.of(fromWire(value.getOriginal())) : Optional.empty(),
+                value.getPlanDigest().asReadOnlyByteBuffer(),
+                value.getManagementSequence(),
+                value.getOwnerEpoch(),
+                value.getClaimGeneration(),
+                value.getDispatchAttempt(),
+                value.getExpiresAtUnixMillis(),
+                value.getPreparedAtUnixMillis(),
+                new Transactions.EffectDisposition(value.getBeforeValue()),
+                new Transactions.EffectPlanSafety(value.getSafetyValue()),
+                value.hasDedupValidUntilUnixMillis() ? Optional.of(value.getDedupValidUntilUnixMillis()) : Optional.empty());
+    }
+
+    static latent.control.v1.State.EffectManagementReceiptDetails toWire(Transactions.EffectManagementReceiptDetails value) {
+        var result = latent.control.v1.State.EffectManagementReceiptDetails.newBuilder();
+        if (value.originalPlan().isPresent()) result.setOriginalPlan(toWire(value.originalPlan().get()));
+        result.setBeforeValue(value.before().value());
+        result.setAfterValue(value.after().value());
+        result.setFactValue(value.fact().value());
+        if (value.providerReceipt().isPresent()) result.setProviderReceipt(value.providerReceipt().get());
+        if (value.providerObservedAtUnixMillis().isPresent()) result.setProviderObservedAtUnixMillis(value.providerObservedAtUnixMillis().get());
+        return result.build();
+    }
+
+    static Transactions.EffectManagementReceiptDetails fromWire(latent.control.v1.State.EffectManagementReceiptDetails value) {
+        return new Transactions.EffectManagementReceiptDetails(
+                value.hasOriginalPlan() ? Optional.of(fromWire(value.getOriginalPlan())) : Optional.empty(),
+                new Transactions.EffectDisposition(value.getBeforeValue()),
+                new Transactions.EffectDisposition(value.getAfterValue()),
+                new Transactions.EffectManagementFact(value.getFactValue()),
+                value.hasProviderReceipt() ? Optional.of(value.getProviderReceipt()) : Optional.empty(),
+                value.hasProviderObservedAtUnixMillis() ? Optional.of(value.getProviderObservedAtUnixMillis()) : Optional.empty());
+    }
+
     static latent.transaction.v1.Transaction.EffectReceipt toWire(Transactions.EffectReceipt value) {
         var result = latent.transaction.v1.Transaction.EffectReceipt.newBuilder();
         result.setEffectId(value.effectId());
@@ -400,6 +492,9 @@ final class TransactionWire {
         if (value.retention().isPresent()) result.setRetention(toWire(value.retention().get()));
         if (value.managementOperationReceiptId().isPresent()) result.setManagementOperationReceiptId(value.managementOperationReceiptId().get());
         result.setProviderProfile(value.providerProfile());
+        result.setRecordVersion(ByteString.copyFrom(value.recordVersion().asReadOnlyBuffer()));
+        if (value.ownerEpoch().isPresent()) result.setOwnerEpoch(value.ownerEpoch().get());
+        if (value.claimGeneration().isPresent()) result.setClaimGeneration(value.claimGeneration().get());
         return result.build();
     }
 
@@ -415,7 +510,10 @@ final class TransactionWire {
                 value.getOccurredAtUnixMillis(),
                 value.hasRetention() ? Optional.of(fromWire(value.getRetention())) : Optional.empty(),
                 value.hasManagementOperationReceiptId() ? Optional.of(value.getManagementOperationReceiptId()) : Optional.empty(),
-                value.getProviderProfile());
+                value.getProviderProfile(),
+                value.getRecordVersion().asReadOnlyByteBuffer(),
+                value.hasOwnerEpoch() ? Optional.of(value.getOwnerEpoch()) : Optional.empty(),
+                value.hasClaimGeneration() ? Optional.of(value.getClaimGeneration()) : Optional.empty());
     }
 
     static latent.control.v1.State.EntityInspection toWire(Transactions.EntityInspection value) {
@@ -471,23 +569,6 @@ final class TransactionWire {
                 value.hasAuditAck() ? Optional.of(Wire.fromWire(value.getAuditAck())) : Optional.empty());
     }
 
-    static latent.transaction.v1.Transaction.GetEffectRequest toWire(Transactions.GetEffectRequest value) {
-        var result = latent.transaction.v1.Transaction.GetEffectRequest.newBuilder();
-        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
-        result.setEffectId(value.effectId());
-        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get()));
-        return result.build();
-    }
-
-    static Transactions.GetEffectRequest fromWire(latent.transaction.v1.Transaction.GetEffectRequest value) {
-        return new Transactions.GetEffectRequest(
-                value.hasProfile() ? Optional.of(fromWire(value.getProfile())) : Optional.empty(),
-                value.hasCommand() ? Optional.of(fromWire(value.getCommand())) : Optional.empty(),
-                value.getEffectId(),
-                value.hasAuthorizationPublication() ? Optional.of(Wire.fromWire(value.getAuthorizationPublication())) : Optional.empty());
-    }
-
     static latent.transaction.v1.Transaction.GetEffectResponse toWire(Transactions.GetEffectResponse value) {
         var result = latent.transaction.v1.Transaction.GetEffectResponse.newBuilder();
         if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get()));
@@ -518,13 +599,15 @@ final class TransactionWire {
         var result = latent.control.v1.State.GetStateOperationReceiptRequest.newBuilder();
         if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
         result.setOperationId(value.operationId());
+        if (value.originalEffectPlan().isPresent()) result.setOriginalEffectPlan(toWire(value.originalEffectPlan().get()));
         return result.build();
     }
 
     static Transactions.GetStateOperationReceiptRequest fromWire(latent.control.v1.State.GetStateOperationReceiptRequest value) {
         return new Transactions.GetStateOperationReceiptRequest(
                 value.hasNamespace() ? Optional.of(fromWire(value.getNamespace())) : Optional.empty(),
-                value.getOperationId());
+                value.getOperationId(),
+                value.hasOriginalEffectPlan() ? Optional.of(fromWire(value.getOriginalEffectPlan())) : Optional.empty());
     }
 
     static latent.control.v1.State.StateOperationReceipt toWire(Transactions.StateOperationReceipt value) {
@@ -540,6 +623,7 @@ final class TransactionWire {
         if (value.recordId().isPresent()) result.setRecordId(value.recordId().get());
         result.setPolicyDigest(value.policyDigest());
         result.setDispositionValue(value.disposition().value());
+        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get()));
         return result.build();
     }
 
@@ -555,7 +639,8 @@ final class TransactionWire {
                 value.getCompletedAtUnixMillis(),
                 value.hasRecordId() ? Optional.of(value.getRecordId()) : Optional.empty(),
                 value.getPolicyDigest(),
-                new Transactions.StateOperationDisposition(value.getDispositionValue()));
+                new Transactions.StateOperationDisposition(value.getDispositionValue()),
+                value.hasEffect() ? Optional.of(fromWire(value.getEffect())) : Optional.empty());
     }
 
     static latent.control.v1.State.NamespaceOperationReceipt toWire(Transactions.NamespaceOperationReceipt value) {
@@ -591,13 +676,15 @@ final class TransactionWire {
         var result = latent.control.v1.State.GetStateOperationReceiptResponse.newBuilder();
         if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get()));
         if (value.namespaceReceipt().isPresent()) result.setNamespaceReceipt(toWire(value.namespaceReceipt().get()));
+        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
         return result.build();
     }
 
     static Transactions.GetStateOperationReceiptResponse fromWire(latent.control.v1.State.GetStateOperationReceiptResponse value) {
         return new Transactions.GetStateOperationReceiptResponse(
                 value.hasReceipt() ? Optional.of(fromWire(value.getReceipt())) : Optional.empty(),
-                value.hasNamespaceReceipt() ? Optional.of(fromWire(value.getNamespaceReceipt())) : Optional.empty());
+                value.hasNamespaceReceipt() ? Optional.of(fromWire(value.getNamespaceReceipt())) : Optional.empty(),
+                value.hasAuditAck() ? Optional.of(Wire.fromWire(value.getAuditAck())) : Optional.empty());
     }
 
     static latent.control.v1.Dispatcher.InspectDispatcherRequest toWire(Transactions.InspectDispatcherRequest value) {
@@ -678,6 +765,7 @@ final class TransactionWire {
         result.setStatusValue(value.status().value());
         if (value.quota().isPresent()) result.setQuota(toWire(value.quota().get()));
         result.setGeneration(value.generation());
+        result.setNamespacePolicyDigest(value.namespacePolicyDigest());
         return result.build();
     }
 
@@ -692,7 +780,8 @@ final class TransactionWire {
                 value.getEngineProfileDigest(),
                 new Transactions.NamespaceStatus(value.getStatusValue()),
                 value.hasQuota() ? Optional.of(fromWire(value.getQuota())) : Optional.empty(),
-                value.getGeneration());
+                value.getGeneration(),
+                value.getNamespacePolicyDigest());
     }
 
     static latent.control.v1.State.InspectNamespaceResponse toWire(Transactions.InspectNamespaceResponse value) {
@@ -904,6 +993,7 @@ final class TransactionWire {
         result.setExpectedVersion(ByteString.copyFrom(value.expectedVersion().asReadOnlyBuffer()));
         result.setExpectedPolicyDigest(value.expectedPolicyDigest());
         result.setReason(value.reason());
+        if (value.effectPlan().isPresent()) result.setEffectPlan(toWire(value.effectPlan().get()));
         return result.build();
     }
 
@@ -915,19 +1005,37 @@ final class TransactionWire {
                 value.hasRecordId() ? Optional.of(value.getRecordId()) : Optional.empty(),
                 value.getExpectedVersion().asReadOnlyByteBuffer(),
                 value.getExpectedPolicyDigest(),
-                value.getReason());
+                value.getReason(),
+                value.hasEffectPlan() ? Optional.of(fromWire(value.getEffectPlan())) : Optional.empty());
     }
 
     static latent.control.v1.State.MutateStateResponse toWire(Transactions.MutateStateResponse value) {
         var result = latent.control.v1.State.MutateStateResponse.newBuilder();
         if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get()));
         if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
+        result.setReplayed(value.replayed());
         return result.build();
     }
 
     static Transactions.MutateStateResponse fromWire(latent.control.v1.State.MutateStateResponse value) {
         return new Transactions.MutateStateResponse(
                 value.hasReceipt() ? Optional.of(fromWire(value.getReceipt())) : Optional.empty(),
+                value.hasAuditAck() ? Optional.of(Wire.fromWire(value.getAuditAck())) : Optional.empty(),
+                value.getReplayed());
+    }
+
+    static latent.control.v1.State.PlanEffectMutationResponse toWire(Transactions.PlanEffectMutationResponse value) {
+        var result = latent.control.v1.State.PlanEffectMutationResponse.newBuilder();
+        if (value.plan().isPresent()) result.setPlan(toWire(value.plan().get()));
+        result.setReplayed(value.replayed());
+        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
+        return result.build();
+    }
+
+    static Transactions.PlanEffectMutationResponse fromWire(latent.control.v1.State.PlanEffectMutationResponse value) {
+        return new Transactions.PlanEffectMutationResponse(
+                value.hasPlan() ? Optional.of(fromWire(value.getPlan())) : Optional.empty(),
+                value.getReplayed(),
                 value.hasAuditAck() ? Optional.of(Wire.fromWire(value.getAuditAck())) : Optional.empty());
     }
 

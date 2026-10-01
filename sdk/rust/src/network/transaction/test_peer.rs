@@ -1,10 +1,147 @@
 //! Serialization/transport peer only; this is not a node transaction executor.
 use latent_rpc::{invocation::v1 as i, transaction::v1 as t};
 use std::sync::{
-    Arc,
     atomic::{AtomicUsize, Ordering},
+    Arc,
 };
 use tonic::{Request, Response, Status};
+
+pub(super) struct State {
+    pub calls: Arc<AtomicUsize>,
+}
+pub(super) fn effect_plan(
+    original: latent_rpc::control::v1::PlanEffectMutationRequest,
+) -> latent_rpc::control::v1::EffectManagementPlan {
+    latent_rpc::control::v1::EffectManagementPlan {
+        original: Some(original),
+        plan_digest: vec![2; 32],
+        management_sequence: 1,
+        owner_epoch: u64::MAX,
+        claim_generation: 1,
+        dispatch_attempt: 1,
+        prepared_at_unix_millis: 1000,
+        expires_at_unix_millis: 2000,
+        before: 4,
+        safety: 1,
+        dedup_valid_until_unix_millis: None,
+    }
+}
+fn effect_receipt(
+    plan: latent_rpc::control::v1::EffectManagementPlan,
+) -> latent_rpc::control::v1::StateOperationReceipt {
+    let original = plan.original.as_ref().unwrap();
+    let effect = original.effect.as_ref().unwrap();
+    latent_rpc::control::v1::StateOperationReceipt {
+        operation_id: original.operation_id.clone(),
+        receipt_id: "effect-management-receipt".into(),
+        mutation: original.mutation,
+        namespace: effect.command.as_ref().unwrap().namespace.clone(),
+        authenticated_operator: "operator".into(),
+        before_version: original.expected_version.clone(),
+        after_version: vec![3; 32],
+        completed_at_unix_millis: 1500,
+        record_id: Some(effect.effect_id.clone()),
+        policy_digest: original.expected_policy_digest.clone(),
+        disposition: 1,
+        effect: Some(latent_rpc::control::v1::EffectManagementReceiptDetails {
+            original_plan: Some(plan),
+            before: 4,
+            after: 9,
+            fact: 1,
+            provider_receipt: None,
+            provider_observed_at_unix_millis: None,
+        }),
+    }
+}
+#[tonic::async_trait]
+impl latent_rpc::control::v1::state_service_server::StateService for State {
+    async fn inspect_namespace(
+        &self,
+        _: Request<latent_rpc::control::v1::InspectNamespaceRequest>,
+    ) -> Result<Response<latent_rpc::control::v1::InspectNamespaceResponse>, Status> {
+        Err(Status::unimplemented("transport peer"))
+    }
+    async fn select_entity(
+        &self,
+        _: Request<latent_rpc::control::v1::SelectEntityRequest>,
+    ) -> Result<Response<latent_rpc::control::v1::SelectEntityResponse>, Status> {
+        Err(Status::unimplemented("transport peer"))
+    }
+    async fn mutate_namespace(
+        &self,
+        _: Request<latent_rpc::control::v1::MutateNamespaceRequest>,
+    ) -> Result<Response<latent_rpc::control::v1::MutateNamespaceResponse>, Status> {
+        Err(Status::unimplemented("transport peer"))
+    }
+    async fn plan_effect_mutation(
+        &self,
+        request: Request<latent_rpc::control::v1::PlanEffectMutationRequest>,
+    ) -> Result<Response<latent_rpc::control::v1::PlanEffectMutationResponse>, Status> {
+        self.calls.fetch_add(1, Ordering::AcqRel);
+        let original = request.into_inner();
+        let reason = original.reason.clone();
+        let mut plan = effect_plan(original);
+        if reason == "bad-window" {
+            plan.expires_at_unix_millis = 31001;
+        }
+        Ok(Response::new(
+            latent_rpc::control::v1::PlanEffectMutationResponse {
+                plan: Some(plan),
+                replayed: false,
+                audit_ack: (reason == "bad-audit").then_some(latent_rpc::control::v1::AuditAck {
+                    status: 91,
+                    attempt_sequence: None,
+                }),
+            },
+        ))
+    }
+    async fn mutate_state(
+        &self,
+        request: Request<latent_rpc::control::v1::MutateStateRequest>,
+    ) -> Result<Response<latent_rpc::control::v1::MutateStateResponse>, Status> {
+        self.calls.fetch_add(1, Ordering::AcqRel);
+        let original = request.into_inner();
+        let mut receipt = effect_receipt(original.effect_plan.unwrap());
+        if original.reason == "forged-fact" {
+            let details = receipt.effect.as_mut().unwrap();
+            details.fact = 2;
+            details.provider_receipt = Some("forged-provider".into());
+            details.provider_observed_at_unix_millis = Some(1400);
+        }
+        Ok(Response::new(
+            latent_rpc::control::v1::MutateStateResponse {
+                receipt: Some(receipt),
+                audit_ack: None,
+                replayed: false,
+            },
+        ))
+    }
+    async fn get_state_operation_receipt(
+        &self,
+        request: Request<latent_rpc::control::v1::GetStateOperationReceiptRequest>,
+    ) -> Result<Response<latent_rpc::control::v1::GetStateOperationReceiptResponse>, Status> {
+        self.calls.fetch_add(1, Ordering::AcqRel);
+        let original = request.into_inner();
+        let plan = original.original_effect_plan.unwrap();
+        assert_ne!(
+            original.namespace.unwrap().authorization_publication,
+            plan.original
+                .as_ref()
+                .unwrap()
+                .effect
+                .as_ref()
+                .unwrap()
+                .authorization_publication
+        );
+        Ok(Response::new(
+            latent_rpc::control::v1::GetStateOperationReceiptResponse {
+                receipt: Some(effect_receipt(plan)),
+                namespace_receipt: None,
+                audit_ack: None,
+            },
+        ))
+    }
+}
 
 pub(super) struct Service {
     pub calls: Arc<AtomicUsize>,

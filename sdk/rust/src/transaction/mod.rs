@@ -29,6 +29,8 @@ pub struct RecoveryIdentity {
     pub expected_policy_digest: Option<String>,
     pub dispatcher_action: Option<DispatcherAction>,
     pub dispatcher_expected_generation: Option<DispatcherGeneration>,
+    pub effect_mutation: Option<PlanEffectMutationRequest>,
+    pub effect_plan: Option<EffectManagementPlan>,
 }
 
 /// A validated durable observation survives a later local transport/cleanup error.
@@ -55,6 +57,8 @@ pub enum ObservedOutcome {
     Namespace(Box<NamespaceOperationReceipt>),
     Effect(Box<EffectReceipt>),
     Dispatcher(Box<DispatcherOperationReceipt>),
+    /// A checked preparation descriptor supplies no mutation or provider authority.
+    EffectPlan(Box<EffectManagementPlan>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -114,6 +118,11 @@ pub trait TransactionClient: Send + Sync {
     );
     operation!(select_entity, SelectEntityRequest, SelectEntityResponse);
     operation!(mutate_state, MutateStateRequest, MutateStateResponse);
+    operation!(
+        plan_effect_mutation,
+        PlanEffectMutationRequest,
+        PlanEffectMutationResponse
+    );
     operation!(
         get_state_operation_receipt,
         GetStateOperationReceiptRequest,

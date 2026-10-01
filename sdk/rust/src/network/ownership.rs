@@ -1,6 +1,6 @@
 use super::{ClientLimits, FailureKind, RpcFailure};
 use std::{future::Future, sync::Arc};
-use tokio::sync::{Notify, OwnedSemaphorePermit, Semaphore, watch};
+use tokio::sync::{watch, Notify, OwnedSemaphorePermit, Semaphore};
 
 pub(super) struct Resources {
     pub limits: ClientLimits,

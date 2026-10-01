@@ -106,7 +106,7 @@ func transactionFailureFixture(test *testing.T, failure error, category profile.
 }
 
 // Real HTTP/2 serialization peers, independent of the signed-node acceptance gate.
-func TestTransactionFifteenOperationsUseOneOwnedChannel(test *testing.T) {
+func TestTransactionSixteenOperationsUseOneOwnedChannel(test *testing.T) {
 	namespace, command, inspect := transactionFixtures()
 	digest := transactionSourceFixture().StateSchema
 	peer := newPeer(test, func(writer http.ResponseWriter, request *http.Request) {
@@ -146,6 +146,14 @@ func TestTransactionFifteenOperationsUseOneOwnedChannel(test *testing.T) {
 		case "SelectEntity":
 			decodePeerRequest(test, request, &statev1.SelectEntityRequest{})
 			peerReply(writer, transactionWireFixture(test, tx.SelectEntityResponse{Entities: []tx.EntityInspection{{Entity: "aggregate-a", Version: []byte{1}}}, Page: &tx.PageResponse{NextCursor: pointer([]byte{2}), ReturnedCount: 1, EncodedBytes: 32}}, &statev1.SelectEntityResponse{}))
+		case "PlanEffectMutation":
+			wire := &statev1.PlanEffectMutationRequest{}
+			decodePeerRequest(test, request, wire)
+			original := tx.PlanEffectMutationRequest{}
+			if failure := fromProto(wire, &original); failure != nil {
+				test.Error(failure)
+			}
+			peerReply(writer, transactionWireFixture(test, tx.PlanEffectMutationResponse{Plan: pointer(transactionEffectPlanFixture(original))}, &statev1.PlanEffectMutationResponse{}))
 		case "MutateState":
 			wire := &statev1.MutateStateRequest{}
 			decodePeerRequest(test, request, wire)
@@ -233,6 +241,10 @@ func TestTransactionFifteenOperationsUseOneOwnedChannel(test *testing.T) {
 	if _, failure = client.GetStateOperationReceipt(ctx, tx.GetStateOperationReceiptRequest{Namespace: &inspect, OperationId: "state-operation-a"}, options); failure != nil {
 		test.Fatal(failure)
 	}
+	prepared, invalid := client.PlanEffectMutation(ctx, transactionEffectMutationFixture(), options)
+	if invalid != nil || prepared.Metadata.Transport.Outcome != profile.OutcomeKnowledgeUnknown || prepared.Metadata.Observed.EffectPlan == nil {
+		test.Fatal("plan became known mutation or lost original CAS", invalid)
+	}
 	if result, invalid := client.InspectDispatcher(ctx, tx.InspectDispatcherRequest{Profile: pointer(tx.CurrentProfile()), Scope: tx.DispatcherScopeNode}, options); invalid != nil || result.Value.Dispatcher.PhysicalOwners != math.MaxUint64 {
 		test.Fatal("dispatcher counters narrowed", invalid)
 	}
@@ -243,8 +255,8 @@ func TestTransactionFifteenOperationsUseOneOwnedChannel(test *testing.T) {
 	if _, invalid := client.GetDispatcherOperation(ctx, tx.GetDispatcherOperationRequest{Original: &control}, options); invalid != nil {
 		test.Fatal("dispatcher receipt recovery failed", invalid)
 	}
-	if peer.requests.Load() != 15 || peer.accepted.Load() != 1 {
-		test.Fatal("fifteen calls resubmitted or replaced the owned connection")
+	if peer.requests.Load() != 16 || peer.accepted.Load() != 1 {
+		test.Fatal("sixteen calls resubmitted or replaced the owned connection")
 	}
 }
 

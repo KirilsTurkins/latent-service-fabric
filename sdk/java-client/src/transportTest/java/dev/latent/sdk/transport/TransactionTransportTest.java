@@ -144,7 +144,7 @@ public final class TransactionTransportTest {
                     TransactionServiceGrpc.getLookupCommandMethod(), TransactionServiceGrpc.getLookupCommitMethod(), TransactionServiceGrpc.getGetEffectMethod(),
                     TransactionServiceGrpc.getListEffectHistoryMethod(), TransactionServiceGrpc.getCancelCommandMethod(), StateServiceGrpc.getInspectNamespaceMethod(),
                     StateServiceGrpc.getSelectEntityMethod(), StateServiceGrpc.getMutateStateMethod(), StateServiceGrpc.getMutateNamespaceMethod(),
-                    StateServiceGrpc.getGetStateOperationReceiptMethod(), DispatcherServiceGrpc.getInspectDispatcherMethod(),
+                    StateServiceGrpc.getGetStateOperationReceiptMethod(), StateServiceGrpc.getPlanEffectMutationMethod(), DispatcherServiceGrpc.getInspectDispatcherMethod(),
                     DispatcherServiceGrpc.getControlDispatcherMethod(), DispatcherServiceGrpc.getGetDispatcherOperationMethod())) {
                 add(services.computeIfAbsent(method.getServiceName(), ServerServiceDefinition::builder), method);
             }
@@ -193,11 +193,29 @@ public final class TransactionTransportTest {
                                 .setStateBytes(4096).setResultRows(1).setResultBytes(4096).setEffectRows(1).setEffectBytes(4096).setPayloadBytes(4096).setRecoveryBytes(4096))).build();
                 case "SelectEntity" -> State.SelectEntityResponse.newBuilder().addEntities(State.EntityInspection.newBuilder().setEntity("aggregate-a").setVersion(ByteString.copyFrom(new byte[]{1})))
                         .setPage(Transaction.PageResponse.newBuilder().setReturnedCount(1).setEncodedBytes(32).setNextCursor(ByteString.copyFrom(new byte[]{2}))).build();
-                case "MutateState" -> State.MutateStateResponse.newBuilder().setReceipt(stateReceipt()).setAuditAck(Common.AuditAck.newBuilder().setStatusValue(1).setAttemptSequence(-1L)).build();
+                case "MutateState" -> {
+                    var mutation = (State.MutateStateRequest) request;
+                    var receipt = mutation.hasEffectPlan() ? effectManagementReceipt(mutation.getEffectPlan()) : stateReceipt();
+                    if (mutation.getReason().equals("forged-fact")) receipt = receipt.toBuilder().setEffect(receipt.getEffect().toBuilder().setFactValue(2)
+                            .setProviderReceipt("forged-provider").setProviderObservedAtUnixMillis(1400)).build();
+                    yield State.MutateStateResponse.newBuilder().setReceipt(receipt).setAuditAck(Common.AuditAck.newBuilder().setStatusValue(1).setAttemptSequence(-1L)).build();
+                }
+                case "PlanEffectMutation" -> {
+                    var original = (State.PlanEffectMutationRequest) request;
+                    var plan = effectPlan(original);
+                    if (original.getReason().equals("bad-window")) plan = plan.toBuilder().setExpiresAtUnixMillis(31001).build();
+                    var result = State.PlanEffectMutationResponse.newBuilder().setPlan(plan);
+                    if (original.getReason().equals("bad-audit")) result.setAuditAck(Common.AuditAck.newBuilder().setStatusValue(91));
+                    yield result.build();
+                }
                 case "MutateNamespace" -> State.MutateNamespaceResponse.newBuilder().setReceipt(State.NamespaceOperationReceipt.newBuilder().setOperationId("namespace-operation-a")
                         .setReceiptId("namespace-receipt-a").setMutationValue(2).setNamespace(namespace()).setAuthenticatedOperator("operator-a").setBeforeGeneration(-2L)
                         .setAfterGeneration(-1L).setStatusValue(2).setStateSchema(DIGEST).setDispositionValue(1)).build();
-                case "GetStateOperationReceipt" -> State.GetStateOperationReceiptResponse.newBuilder().setReceipt(stateReceipt()).build();
+                case "GetStateOperationReceipt" -> {
+                    var recovery = (State.GetStateOperationReceiptRequest) request;
+                    if (recovery.hasOriginalEffectPlan()) check(!recovery.getNamespace().getAuthorizationPublication().equals(recovery.getOriginalEffectPlan().getOriginal().getEffect().getAuthorizationPublication()), "fresh authorization changed original plan");
+                    yield State.GetStateOperationReceiptResponse.newBuilder().setReceipt(recovery.hasOriginalEffectPlan() ? effectManagementReceipt(recovery.getOriginalEffectPlan()) : stateReceipt()).build();
+                }
                 case "InspectDispatcher" -> Dispatcher.InspectDispatcherResponse.newBuilder().setDispatcher(Dispatcher.DispatcherSnapshot.newBuilder()
                         .setGeneration(Dispatcher.DispatcherGeneration.newBuilder().setOwnerEpoch(-1L).setRevision(-1L)).setPaused(true).setFailureValue(1)
                         .setPhysicalOwners(-1L).setCountsObservedAtUnixMillis(-1L)).build();
@@ -221,7 +239,7 @@ public final class TransactionTransportTest {
         }
     }
 
-    private static void fifteenOperationsAndOwnedSnapshots() throws Exception {
+    private static void sixteenOperationsAndOwnedSnapshots() throws Exception {
         try (var peer = new Peer(); var client = peer.client()) {
             check(client.snapshot().activeCalls() == 0 && peer.connections.isEmpty(), "lazy same transport");
             var original = TransactionWire.fromWire(invoke());
@@ -248,11 +266,57 @@ public final class TransactionTransportTest {
                     .setExpectedVersion(ByteString.copyFrom(new byte[]{1})).setExpectedPolicyDigest(DIGEST).setReason("explicit").build()), OPTIONS)).metadata().identity().expectedPolicyDigest().equals(Optional.of(DIGEST)), "captured management digest");
             check(get(client.mutateNamespace(TransactionWire.fromWire(State.MutateNamespaceRequest.newBuilder().setNamespace(inspect()).setOperationId("namespace-operation-a").setMutationValue(2).setExpectedGeneration(-2L).build()), OPTIONS)).value().receipt().orElseThrow().afterGeneration() == -1L, "unsigned generation successor");
             check(get(client.getStateOperationReceipt(TransactionWire.fromWire(State.GetStateOperationReceiptRequest.newBuilder().setNamespace(inspect()).setOperationId("state-operation-a").build()), OPTIONS)).value().receipt().orElseThrow().receiptId().equals("state-receipt-a"), "management recovery");
+            var prepared = get(client.planEffectMutation(TransactionWire.fromWire(effectMutation()), OPTIONS));
+            check(prepared.metadata().transport().outcome().equals(Management.OutcomeKnowledge.UNKNOWN) && prepared.metadata().identity().effectPlan().isPresent(), "plan became known mutation");
             check(get(client.inspectDispatcher(TransactionWire.fromWire(Dispatcher.InspectDispatcherRequest.newBuilder().setProfile(profile()).setScopeValue(1).build()), OPTIONS)).value().dispatcher().orElseThrow().physicalOwners() == -1L, "unsigned physical count");
             check(get(client.controlDispatcher(TransactionWire.fromWire(control()), OPTIONS)).value().receipt().orElseThrow().afterGeneration().orElseThrow().revision() == -1L, "dispatcher precondition");
             check(get(client.getDispatcherOperation(TransactionWire.fromWire(Dispatcher.GetDispatcherOperationRequest.newBuilder().setOriginal(control()).build()), OPTIONS)).metadata().identity().dispatcherExpectedGeneration().orElseThrow().revision() == -2L, "dispatcher original recovery");
-            check(peer.calls.get() == 15 && peer.connections.size() == 1, "all fifteen share one physical connection");
+            check(peer.calls.get() == 16 && peer.connections.size() == 1, "all sixteen share one physical connection");
             check(client.shutdown(Duration.ofSeconds(3)).clean(), "finite owner retirement");
+        }
+    }
+
+    private static State.PlanEffectMutationRequest effectMutation() {
+        return State.PlanEffectMutationRequest.newBuilder().setEffect(Transaction.GetEffectRequest.newBuilder().setProfile(profile()).setCommand(selector())
+                .setAuthorizationPublication(publication()).setEffectId("a".repeat(64))).setOperationId("effect-operation-a").setMutationValue(1)
+                .setExpectedVersion(repeatedByte(1))
+                .setExpectedPolicyDigest(DIGEST).setReason("explicit redrive").setRetryDelayMillis(100).build();
+    }
+    private static ByteString repeatedByte(int value) { byte[] result = new byte[32]; java.util.Arrays.fill(result, (byte)value); return ByteString.copyFrom(result); }
+    private static State.EffectManagementPlan effectPlan(State.PlanEffectMutationRequest original) {
+        return State.EffectManagementPlan.newBuilder().setOriginal(original).setPlanDigest(repeatedByte(2)).setManagementSequence(1).setOwnerEpoch(-1L).setClaimGeneration(1).setDispatchAttempt(1)
+                .setPreparedAtUnixMillis(1000).setExpiresAtUnixMillis(2000).setBeforeValue(4).setSafetyValue(1).build();
+    }
+    private static State.StateOperationReceipt effectManagementReceipt(State.EffectManagementPlan plan) {
+        var original = plan.getOriginal();
+        return State.StateOperationReceipt.newBuilder().setOperationId(original.getOperationId()).setReceiptId("effect-management-receipt").setMutationValue(original.getMutationValue())
+                .setNamespace(original.getEffect().getCommand().getNamespace()).setAuthenticatedOperator("operator-a").setBeforeVersion(original.getExpectedVersion()).setAfterVersion(repeatedByte(3))
+                .setCompletedAtUnixMillis(1500).setRecordId(original.getEffect().getEffectId()).setPolicyDigest(original.getExpectedPolicyDigest()).setDispositionValue(1)
+                .setEffect(State.EffectManagementReceiptDetails.newBuilder().setOriginalPlan(plan).setBeforeValue(4).setAfterValue(9).setFactValue(1)).build();
+    }
+    private static void effectPlansKeepOriginalCasAndIndependentFacts() throws Exception {
+        try (var peer = new Peer(); var client = peer.client()) {
+            var prepared = get(client.planEffectMutation(TransactionWire.fromWire(effectMutation()), OPTIONS));
+            check(prepared.metadata().transport().outcome().equals(Management.OutcomeKnowledge.UNKNOWN) && prepared.metadata().identity().effectPlan().isPresent(), "plan supplied accepted mutation knowledge");
+            var plan = TransactionWire.toWire(prepared.value().plan().orElseThrow());
+            var original = plan.getOriginal();
+            var mutation = State.MutateStateRequest.newBuilder().setNamespace(inspect()).setOperationId(original.getOperationId()).setMutationValue(original.getMutationValue())
+                    .setRecordId(original.getEffect().getEffectId()).setExpectedVersion(original.getExpectedVersion()).setExpectedPolicyDigest(original.getExpectedPolicyDigest()).setReason(original.getReason()).setEffectPlan(plan).build();
+            var accepted = get(client.mutateState(TransactionWire.fromWire(mutation), OPTIONS));
+            check(accepted.metadata().transport().outcome().equals(Management.OutcomeKnowledge.OBSERVED) && accepted.value().receipt().orElseThrow().effect().orElseThrow().fact().equals(Transactions.EffectManagementFact.REDRIVE_SCHEDULED), "redrive receipt became provider confirmation");
+            var current = inspect().toBuilder().setAuthorizationPublication(publication().toBuilder().setId("publication:sha256:" + "c".repeat(64))).build();
+            var recovered = get(client.getStateOperationReceipt(TransactionWire.fromWire(State.GetStateOperationReceiptRequest.newBuilder().setNamespace(current).setOperationId(original.getOperationId()).setOriginalEffectPlan(plan).build()), OPTIONS));
+            check(recovered.metadata().identity().authorizationPublication().orElseThrow().id().equals(current.getAuthorizationPublication().getId()) &&
+                    recovered.metadata().identity().effectMutation().orElseThrow().effect().orElseThrow().authorizationPublication().orElseThrow().id().equals(publication().getId()), "historical recovery changed original publication");
+            check(!failure(client.mutateState(TransactionWire.fromWire(mutation.toBuilder().clearEffectPlan().build()), OPTIONS)).transport().dispatched(), "naked effect mutation dispatched");
+            check(!failure(client.mutateState(TransactionWire.fromWire(mutation.toBuilder().setExpectedVersion(ByteString.copyFrom(new byte[32])).build()), OPTIONS)).transport().dispatched(), "substituted CAS dispatched");
+            var audit = failure(client.planEffectMutation(TransactionWire.fromWire(effectMutation().toBuilder().setReason("bad-audit").build()), OPTIONS));
+            check(audit.transport().outcome().equals(Management.OutcomeKnowledge.UNKNOWN) && audit.observed().orElseThrow() instanceof TransactionClient.ObservedOutcome.EffectPlan &&
+                    audit.identity().effectPlan().orElseThrow().original().orElseThrow().reason().equals("bad-audit"), "audit erased checked plan or made mutation known");
+            check(failure(client.planEffectMutation(TransactionWire.fromWire(effectMutation().toBuilder().setReason("bad-window").build()), OPTIONS)).observed().isEmpty(), "invalid plan supplied proof");
+            var forged = effectPlan(effectMutation().toBuilder().setReason("forged-fact").build());
+            check(failure(client.mutateState(TransactionWire.fromWire(mutation.toBuilder().setEffectPlan(forged).setReason("forged-fact").build()), OPTIONS)).observed().isEmpty(), "redrive became provider confirmation");
+            check(peer.calls.get() == 6 && peer.connections.size() == 1 && client.shutdown(Duration.ofSeconds(3)).clean(), "effect calls replayed or owners failed retirement");
         }
     }
 
@@ -359,7 +423,7 @@ public final class TransactionTransportTest {
     }
 
     public static void main(String[] args) throws Exception {
-        fifteenOperationsAndOwnedSnapshots(); durableFormatsAuditAndExplicitRecovery(); lostResponseAndCancellationNeverResubmit(); malformedAndUnknownResponses(); localProfilesPresenceAndBounds();
-        System.out.println("Java transactions: five bounded transport suites; " + checks + " checks passed");
+        sixteenOperationsAndOwnedSnapshots(); durableFormatsAuditAndExplicitRecovery(); lostResponseAndCancellationNeverResubmit(); malformedAndUnknownResponses(); localProfilesPresenceAndBounds(); effectPlansKeepOriginalCasAndIndependentFacts();
+        System.out.println("Java transactions: six bounded transport suites; " + checks + " checks passed");
     }
 }

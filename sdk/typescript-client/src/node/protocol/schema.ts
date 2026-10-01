@@ -26,6 +26,7 @@ const operations = {
   mutateNamespace: ["latent.control.v1.StateService", "MutateNamespace"],
   selectEntity: ["latent.control.v1.StateService", "SelectEntity"],
   mutateState: ["latent.control.v1.StateService", "MutateState"],
+  planEffectMutation: ["latent.control.v1.StateService", "PlanEffectMutation"],
   getStateOperationReceipt: ["latent.control.v1.StateService", "GetStateOperationReceipt"],
   inspectDispatcher: ["latent.control.v1.DispatcherService", "InspectDispatcher"],
   controlDispatcher: ["latent.control.v1.DispatcherService", "ControlDispatcher"],

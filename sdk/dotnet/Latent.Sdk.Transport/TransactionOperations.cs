@@ -9,6 +9,10 @@ namespace Latent.Sdk.Transport;
 
 public sealed partial class BoundedClient : Tx.ITransactionClient
 {
+    public ValueTask<Tx.TransactionResponse<Tx.PlanEffectMutationResponse>> PlanEffectMutationAsync(Tx.PlanEffectMutationRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
+        ExecuteTransactionAsync<Tx.PlanEffectMutationResponse, WireControl.PlanEffectMutationRequest, WireControl.PlanEffectMutationResponse>(request, options, cancellationToken,
+            (invoker, wire) => new WireControl.StateService.StateServiceClient(invoker).PlanEffectMutationAsync(wire, cancellationToken: invoker.Token).ResponseAsync);
+
     public ValueTask<Tx.TransactionResponse<Tx.InvokeCommandResponse>> InvokeCommandAsync(Tx.InvokeCommandRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default) =>
         ExecuteTransactionAsync<Tx.InvokeCommandResponse, WireTransaction.InvokeCommandRequest, WireTransaction.InvokeCommandResponse>(request, options, cancellationToken,
             (invoker, wire) => new WireTransaction.TransactionService.TransactionServiceClient(invoker).InvokeCommandAsync(wire, cancellationToken: invoker.Token).ResponseAsync);

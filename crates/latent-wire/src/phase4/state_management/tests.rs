@@ -63,6 +63,7 @@ async fn actual_authenticated_namespace_create_inspect_and_original_receipt() {
             context("alice").request(c::GetStateOperationReceiptRequest {
                 namespace: Some(fixture.target()),
                 operation_id: "create-original".into(),
+                original_effect_plan: None,
             }),
         )
         .await
@@ -115,6 +116,7 @@ async fn original_actor_operation_and_generation_survive_replay_without_refresh(
             c::GetStateOperationReceiptRequest {
                 namespace: Some(fixture.target()),
                 operation_id: "quiesce-original".into(),
+                original_effect_plan: None,
             }
             .into(),
         )
@@ -142,6 +144,7 @@ async fn postcommit_revocation_denies_retained_body_and_fresh_authorization_reco
     let request = c::GetStateOperationReceiptRequest {
         namespace: Some(fixture.target()),
         operation_id: "create-original".into(),
+        original_effect_plan: None,
     };
     assert_eq!(
         fixture

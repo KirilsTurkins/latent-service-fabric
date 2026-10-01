@@ -61,9 +61,17 @@ final class TransactionContext {
                 case Transactions.MutateStateRequest value -> {
                     inspected = value.namespace().orElse(null); result.operation = Optional.of(value.operationId());
                     result.version = Optional.of(copy(value.expectedVersion(), 256)); result.policy = Optional.of(value.expectedPolicyDigest());
+                    result.effectPlan = value.effectPlan();
                 }
                 case Transactions.GetStateOperationReceiptRequest value -> {
                     inspected = value.namespace().orElse(null); result.operation = Optional.of(value.operationId());
+                    result.effectPlan = value.originalEffectPlan();
+                }
+                case Transactions.PlanEffectMutationRequest value -> {
+                    result.effectMutation = Optional.of(value); var target = value.effect().orElseThrow();
+                    command = target.command().orElse(null); result.publication = target.authorizationPublication();
+                    result.operation = Optional.of(value.operationId()); result.effect = Optional.of(target.effectId());
+                    result.version = Optional.of(copy(value.expectedVersion(), 32)); result.policy = Optional.of(value.expectedPolicyDigest());
                 }
                 case Transactions.ControlDispatcherRequest value -> dispatcher(result, value);
                 case Transactions.GetDispatcherOperationRequest value -> dispatcher(result, value.original().orElseThrow());
@@ -72,6 +80,11 @@ final class TransactionContext {
             }
             if (inspected instanceof Transactions.InspectNamespaceRequest value) {
                 result.namespace = value.namespace(); result.publication = value.authorizationPublication();
+            }
+            if (result.effectPlan.isPresent()) {
+                var original = result.effectPlan.get().original().orElseThrow(); result.effectMutation = Optional.of(original);
+                result.effect = original.effect().map(Transactions.GetEffectRequest::effectId);
+                result.version = Optional.of(copy(original.expectedVersion(), 32)); result.policy = Optional.of(original.expectedPolicyDigest());
             }
             if (command instanceof Transactions.CommandSelector value) {
                 result.namespace = value.namespace(); result.command = Optional.of(value);
@@ -132,9 +145,12 @@ final class TransactionContext {
             case Transactions.GetEffectResponse result -> result.effect().map(TransactionClient.ObservedOutcome.Effect::new);
             case Transactions.ControlDispatcherResponse result -> result.receipt().map(TransactionClient.ObservedOutcome.Dispatcher::new);
             case Transactions.GetDispatcherOperationResponse result -> result.receipt().map(TransactionClient.ObservedOutcome.Dispatcher::new);
+            case Transactions.PlanEffectMutationResponse result -> result.plan().map(TransactionClient.ObservedOutcome.EffectPlan::new);
             default -> Optional.empty();
         };
-        if (observation.orElse(null) instanceof TransactionClient.ObservedOutcome.Command accepted) {
+        if (observation.orElse(null) instanceof TransactionClient.ObservedOutcome.EffectPlan accepted) {
+            next.effectPlan = Optional.of(accepted.plan());
+        } else if (observation.orElse(null) instanceof TransactionClient.ObservedOutcome.Command accepted) {
             var observed = accepted.command();
             if (observed.fingerprintSha256().hasRemaining()) next.fingerprint = Optional.of(observed.fingerprintSha256());
             if (next.attempt.isEmpty() && !observed.attemptId().isEmpty()) next.attempt = Optional.of(observed.attemptId());
@@ -200,16 +216,18 @@ final class TransactionContext {
         Optional<Management.PublicationRef> publication = Optional.empty(); List<Transactions.ExpectedVersion> versions = List.of();
         Optional<Long> generation = Optional.empty(); Optional<String> policy = Optional.empty(); Optional<Transactions.DispatcherAction> action = Optional.empty();
         Optional<Transactions.DispatcherGeneration> dispatcherGeneration = Optional.empty();
+        Optional<Transactions.PlanEffectMutationRequest> effectMutation = Optional.empty(); Optional<Transactions.EffectManagementPlan> effectPlan = Optional.empty();
         Builder() { }
         Builder(TransactionClient.RecoveryIdentity value) {
             namespace = value.namespace(); command = value.command(); activation = value.activationId(); operation = value.operationId();
             attempt = value.attemptId(); receipt = value.receiptId(); retry = value.retryRequestId(); effect = value.effectId(); fingerprint = value.fingerprintSha256();
             abort = value.expectedAbort(); publication = value.authorizationPublication(); versions = value.expectedVersions(); generation = value.expectedGeneration();
             version = value.expectedVersion(); policy = value.expectedPolicyDigest(); action = value.dispatcherAction(); dispatcherGeneration = value.dispatcherExpectedGeneration();
+            effectMutation = value.effectMutation(); effectPlan = value.effectPlan();
         }
         TransactionClient.RecoveryIdentity build() {
             return new TransactionClient.RecoveryIdentity(namespace, command, activation, operation, attempt, receipt, retry, effect, fingerprint, abort,
-                    publication, versions, generation, version, policy, action, dispatcherGeneration);
+                    publication, versions, generation, version, policy, action, dispatcherGeneration, effectMutation, effectPlan);
         }
     }
 }

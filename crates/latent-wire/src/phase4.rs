@@ -178,20 +178,27 @@ impl Phase4ServiceAdapter {
         if request.encoded_len() > self.limits.max_request_bytes {
             return Err(validation_status(contract::ValidationError::Capacity));
         }
-        self.services
-            .principals
-            .authorize_target(
-                context.principal(),
-                request
-                    .tenant()
-                    .ok_or_else(|| validation_status(contract::ValidationError::Shape))?,
-            )
-            .map_err(crate::invocation::platform_status)?;
-        if request.is_management() {
+        if request.is_node_management() {
             self.services
                 .management
-                .authorize(context.principal(), ManagementOperation::Tenant)
+                .authorize(context.principal(), ManagementOperation::NodeControl)
                 .map_err(crate::invocation::platform_status)?;
+        } else {
+            self.services
+                .principals
+                .authorize_target(
+                    context.principal(),
+                    request
+                        .tenant()
+                        .ok_or_else(|| validation_status(contract::ValidationError::Shape))?,
+                )
+                .map_err(crate::invocation::platform_status)?;
+            if request.is_management() {
+                self.services
+                    .management
+                    .authorize(context.principal(), ManagementOperation::Tenant)
+                    .map_err(crate::invocation::platform_status)?;
+            }
         }
         if context
             .transport_expires_at()
@@ -277,7 +284,12 @@ service!(c::state_service_server::StateService;
     (mutate_namespace,c::MutateNamespaceRequest,c::MutateNamespaceResponse,MutateNamespace),
     (select_entity,c::SelectEntityRequest,c::SelectEntityResponse,SelectEntity),
     (mutate_state,c::MutateStateRequest,c::MutateStateResponse,MutateState),
+    (plan_effect_mutation,c::PlanEffectMutationRequest,c::PlanEffectMutationResponse,PlanEffectMutation),
     (get_state_operation_receipt,c::GetStateOperationReceiptRequest,c::GetStateOperationReceiptResponse,GetStateOperationReceipt));
+service!(c::dispatcher_service_server::DispatcherService;
+    (inspect_dispatcher,c::InspectDispatcherRequest,c::InspectDispatcherResponse,InspectDispatcher),
+    (control_dispatcher,c::ControlDispatcherRequest,c::ControlDispatcherResponse,ControlDispatcher),
+    (get_dispatcher_operation,c::GetDispatcherOperationRequest,c::GetDispatcherOperationResponse,GetDispatcherOperation));
 service!(t::transaction_service_server::TransactionService;
     (invoke_command,t::InvokeCommandRequest,t::InvokeCommandResponse,InvokeCommand),
     (query,t::QueryRequest,t::QueryResponse,Query),

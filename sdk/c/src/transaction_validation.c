@@ -283,6 +283,8 @@ static bool graph(tx_value value, unsigned depth, size_t *nodes, size_t *total) 
     return *total <= 8388608;
 }
 
+#include "transaction_effects.h"
+
 bool lsf_transaction_request_valid(latent_profile_call *call, const void *request) {
     tx_value value = object(lsf_rpcs[call->operation].request, request);
     size_t nodes = LSF_MAX_ELEMENTS, total = 0;
@@ -327,13 +329,18 @@ bool lsf_transaction_request_valid(latent_profile_call *call, const void *reques
             if (has(field(value, "prefix"))) bytes(&v, field(value, "prefix"), 256, false);
             break;
         case LSF_TX_get_state_operation_receipt:
-            inspect(&v, field(value, "namespace")); id(&v, field(value, "operation_id")); break;
+            inspect(&v, field(value, "namespace")); id(&v, field(value, "operation_id"));
+            if (has(field(value, "original_effect_plan"))) effect_plan_association(&v, value, field(value, "original_effect_plan"), true);
+            break;
+        case LSF_TX_plan_effect_mutation: effect_mutation(&v, value); break;
         case LSF_TX_mutate_state: {
             inspect(&v, field(value, "namespace")); id(&v, field(value, "operation_id"));
             bytes(&v, field(value, "expected_version"), 256, true); digest(&v, field(value, "expected_policy_digest"));
             string_value(&v, field(value, "reason"), 1024, true, true);
-            int32_t mutation = enumeration(&v, field(value, "mutation"), 4, "state.mutation");
-            check(&v, (mutation == 4) == !has(field(value, "record_id"))); optional_id(&v, field(value, "record_id")); break;
+            int32_t mutation = enumeration(&v, field(value, "mutation"), 5, "state.mutation");
+            if (has(field(value, "effect_plan"))) effect_plan_association(&v, value, field(value, "effect_plan"), false);
+            else check(&v, (mutation == 3 || mutation == 4) && (mutation == 4) == !has(field(value, "record_id")));
+            optional_id(&v, field(value, "record_id")); break;
         }
         case LSF_TX_mutate_namespace: {
             tx_value target = field(value, "namespace"); inspect(&v, target); id(&v, field(value, "operation_id"));
@@ -441,7 +448,12 @@ static void command(tx_validator *v, tx_value value, tx_value selected) {
 static void effect(tx_validator *v, tx_value value, tx_value expected) {
     id(v, field(value, "effect_id")); id(v, field(value, "command_id")); id(v, field(value, "command_attempt_id")); id(v, field(value, "provider_profile"));
     optional_id(v, field(value, "provider_receipt")); optional_id(v, field(value, "failure_code")); optional_id(v, field(value, "management_operation_receipt_id"));
-    enumeration(v, field(value, "disposition"), 8, "effect.disposition"); check(v, equal(field(value, "effect_id"), expected));
+    enumeration(v, field(value, "disposition"), 10, "effect.disposition"); check(v, equal(field(value, "effect_id"), expected));
+    if (data(field(value, "record_version")).length != 0) effect_version(v, field(value, "record_version"));
+    tx_value owner = field(value, "owner_epoch"), claim = field(value, "claim_generation");
+    check(v, has(owner) == has(claim));
+    if (has(owner)) check(v, number(owner) != 0 && number(claim) != 0
+        && number(field(value, "dispatch_attempt")) >= 1 && number(field(value, "dispatch_attempt")) <= 128);
     retention(v, field(value, "retention"));
 }
 static void page_response(tx_validator *v, tx_value value, tx_value request, size_t count) {
@@ -477,7 +489,7 @@ static void receipt(tx_validator *v, tx_value value, tx_value request, bool life
         check(v, disposition != 1 || number(field(value, "after_generation")) != 0);
     } else {
         check(v, equal(actual, target)); bytes(v, field(value, "before_version"), 256, true); bytes(v, field(value, "after_version"), 256, true);
-        digest(v, field(value, "policy_digest")); enumeration(v, field(value, "mutation"), 4, "state.mutation"); optional_id(v, field(value, "record_id"));
+        digest(v, field(value, "policy_digest")); enumeration(v, field(value, "mutation"), 5, "state.mutation"); optional_id(v, field(value, "record_id"));
     }
 }
 static void dispatcher_receipt(tx_validator *v, tx_value value, tx_value original) {
@@ -536,6 +548,7 @@ bool lsf_transaction_response_valid(latent_profile_call *call) {
             tx_value inspected = field(value, "namespace"); view(&v, field(inspected, "view"), field(request, "namespace"));
             enumeration(&v, field(inspected, "status"), 4, "namespace.status"); check(&v, number(field(inspected, "generation")) != 0);
             quota(&v, field(inspected, "quota")); id(&v, field(inspected, "engine_profile")); digest(&v, field(inspected, "engine_profile_digest"));
+            if (text(field(inspected, "namespace_policy_digest")).length != 0) digest(&v, field(inspected, "namespace_policy_digest"));
             tx_value formats = field(inspected, "retained_formats");
             for (size_t index = 0; index < formats.count; ++index) retention(&v, item(formats, index));
             break;
@@ -553,8 +566,12 @@ bool lsf_transaction_response_valid(latent_profile_call *call) {
             tx_value observed = field(value, "receipt"); receipt(&v, observed, request, false);
             check(&v, equal(field(observed, "mutation"), field(request, "mutation")) && equal(field(observed, "record_id"), field(request, "record_id"))
                 && equal(field(observed, "before_version"), field(request, "expected_version")) && equal(field(observed, "policy_digest"), field(request, "expected_policy_digest")));
+            check(&v, has(field(observed, "effect")) == has(field(request, "effect_plan")));
+            if (has(field(request, "effect_plan"))) effect_plan_receipt(&v, observed, field(request, "effect_plan"));
             break;
         }
+        case LSF_TX_plan_effect_mutation:
+            effect_plan(&v, field(value, "plan")); check(&v, equal(field(field(value, "plan"), "original"), request)); break;
         case LSF_TX_mutate_namespace: {
             tx_value observed = field(value, "receipt"); receipt(&v, observed, request, true);
             int32_t mutation = enumeration(&v, field(request, "mutation"), 5, "namespace.mutation");
@@ -573,11 +590,15 @@ bool lsf_transaction_response_valid(latent_profile_call *call) {
             }
             break;
         }
-        case LSF_TX_get_state_operation_receipt:
+        case LSF_TX_get_state_operation_receipt: {
             check(&v, has(field(value, "receipt")) != has(field(value, "namespace_receipt")));
             if (has(field(value, "receipt"))) receipt(&v, field(value, "receipt"), request, false);
             else receipt(&v, field(value, "namespace_receipt"), request, true);
+            tx_value plan = field(request, "original_effect_plan"), details = field(field(value, "receipt"), "effect");
+            check(&v, has(plan) == has(details));
+            if (has(plan)) { check(&v, !has(field(value, "namespace_receipt"))); effect_plan_receipt(&v, field(value, "receipt"), plan); }
             break;
+        }
         case LSF_TX_inspect_dispatcher: {
             tx_value snapshot = field(value, "dispatcher"); generation(&v, field(snapshot, "generation"));
             enumeration(&v, field(snapshot, "failure"), 7, "dispatcher.failure");
@@ -621,6 +642,9 @@ bool lsf_transaction_response_valid(latent_profile_call *call) {
         call->transaction_identity.has_receipt_id = true; call->transaction_identity.receipt_id = text(field(lifecycle, "receipt_id")); }
     tx_value observed_effect = field(value, "effect");
     if (has(observed_effect)) { call->transaction_observed.effect = (const void *)observed_effect.data; call->transaction_known = true; }
+    tx_value prepared_plan = field(value, "plan");
+    if (has(prepared_plan)) { call->transaction_observed.effect_plan = (const void *)prepared_plan.data;
+        call->transaction_identity.effect_plan = (const void *)prepared_plan.data; }
     call->metadata.outcome = call->transaction_known ? LATENT_PROFILE_OUTCOME_KNOWLEDGE_OBSERVED : LATENT_PROFILE_OUTCOME_KNOWLEDGE_UNKNOWN;
     if (has(field(value, "audit_ack"))) enumeration(&v, field(field(value, "audit_ack"), "status"), 4, "audit.status");
     if (call->metadata.has_audit_ack && (call->metadata.audit_ack.status == 1 || call->metadata.audit_ack.status == 2))
@@ -637,6 +661,8 @@ static void recovery(latent_profile_call *call, tx_value request) {
         case LSF_TX_invoke_command: command_value = field(request, "command"); break;
         case LSF_TX_query: ns = field(request, "namespace"); break;
         case LSF_TX_lookup_command: case LSF_TX_lookup_commit: case LSF_TX_get_effect: command_value = field(request, "command"); break;
+        case LSF_TX_plan_effect_mutation: base = field(request, "effect"); command_value = field(base, "command");
+            out->effect_mutation = (const void *)request.data; break;
         case LSF_TX_list_effect_history: base = field(request, "effect"); command_value = field(base, "command"); break;
         case LSF_TX_cancel_command: base = field(request, "command"); command_value = field(base, "command"); break;
         case LSF_TX_inspect_namespace: inspect_request = request; break;
@@ -662,6 +688,8 @@ static void recovery(latent_profile_call *call, tx_value request) {
     out->has_expected_generation = has(field(request, "expected_generation")); out->expected_generation = number(field(request, "expected_generation"));
     out->has_expected_version = has(field(request, "expected_version")); out->expected_version = data(field(request, "expected_version"));
     out->has_expected_policy_digest = has(field(request, "expected_policy_digest")); out->expected_policy_digest = text(field(request, "expected_policy_digest"));
+    out->effect_plan = (const void *)field(request, "effect_plan").data;
+    if (out->effect_plan == NULL) out->effect_plan = (const void *)field(request, "original_effect_plan").data;
     if (has(original)) {
         out->has_dispatcher_action = has(field(original, "action"));
         out->dispatcher_action = out->has_dispatcher_action ? *(const int32_t *)field(original, "action").data : 0;

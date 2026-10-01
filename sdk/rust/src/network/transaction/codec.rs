@@ -2,10 +2,10 @@
 //! The original call lease reserves this graph allowance through retirement.
 
 use latent_rpc::phase4::ValidationError;
-use prost::Message;
 use prost::bytes::Buf;
-use tonic::Status;
+use prost::Message;
 use tonic::codec::{BufferSettings, Codec, DecodeBuf, Decoder};
+use tonic::Status;
 use tonic_prost::{ProstCodec, ProstDecoder, ProstEncoder};
 
 pub(super) const GRAPH_BYTES: usize = 8 * 1024 * 1024;

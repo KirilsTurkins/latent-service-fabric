@@ -31,6 +31,15 @@ const quota = { stateKeys: 1n, stateBytes: 1024n, resultRows: 1n, resultBytes: 1
 const token = "LSF-PUBLIC-NODE-CLIENT-FIXTURE-ONLY";
 const dispatcherControl = { profile: current, scope: 1, operationId: "dispatcher-original", action: 1,
   expectedGeneration: { ownerEpoch: 18446744073709551615n, revision: 18446744073709551614n } };
+const effectMutation = { effect: { ...lookup, effectId: "a".repeat(64) }, operationId: "effect-original", mutation: 1,
+  expectedVersion: new Uint8Array(32).fill(1), expectedPolicyDigest: digest, reason: "explicit redrive", retryDelayMillis: 100n };
+function effectPlan(original = effectMutation) { return { original, planDigest: new Uint8Array(32).fill(2), managementSequence: 1,
+  ownerEpoch: 18446744073709551615n, claimGeneration: 1n, dispatchAttempt: 1, preparedAtUnixMillis: 1000n, expiresAtUnixMillis: 2000n,
+  before: 4, safety: 1 }; }
+function effectReceipt(plan) { return { operationId: plan.original.operationId, receiptId: "effect-management-receipt", mutation: plan.original.mutation,
+  namespace, authenticatedOperator: "operator", recordId: plan.original.effect.effectId, beforeVersion: plan.original.expectedVersion,
+  afterVersion: new Uint8Array(32).fill(3), completedAtUnixMillis: 1500n, policyDigest: digest, disposition: 1,
+  effect: { originalPlan: plan, before: plan.before, after: 9, fact: 1 } }; }
 function dispatcherReceipt(original) { return { operationId: original.operationId, receiptId: "dispatcher-receipt", action: original.action,
   authenticatedOperator: "operator", actorTenant: "operator-tenant", beforeGeneration: original.expectedGeneration,
   afterGeneration: { ownerEpoch: original.expectedGeneration.ownerEpoch, revision: original.expectedGeneration.revision + 1n },
@@ -59,6 +68,51 @@ function wireInspection(value) {
 function stateReceipt(request) { return { operationId: request.operationId, receiptId: "state-receipt", mutation: 4,
   namespace, authenticatedOperator: "operator", beforeVersion: Uint8Array.of(1), afterVersion: Uint8Array.of(2),
   policyDigest: digest, disposition: 1 }; }
+
+test("effect preparation is unknown and historical recovery preserves the original CAS with current read authority", async () => {
+  const fixture = await peer();
+  try {
+    const prepared = await fixture.client.planEffectMutation(effectMutation);
+    const plan = prepared.value.plan;
+    assert.equal(prepared.metadata.outcome, OutcomeKnowledge.Unknown);
+    assert.deepEqual(prepared.metadata.transactionIdentity.effectMutation, effectMutation);
+    assert.deepEqual(prepared.metadata.transactionIdentity.effectPlan, plan);
+    const request = { namespace: inspect, operationId: effectMutation.operationId, mutation: 1, recordId: effectMutation.effect.effectId,
+      expectedVersion: effectMutation.expectedVersion, expectedPolicyDigest: digest, reason: effectMutation.reason, effectPlan: plan };
+    const applied = await fixture.client.mutateState(request);
+    assert.equal(applied.value.receipt.effect.fact, 1);
+    assert.equal(applied.metadata.outcome, OutcomeKnowledge.Observed);
+    const currentRead = { ...inspect, authorizationPublication: { ...publication, id: `publication:sha256:${"3".repeat(64)}` } };
+    const recovered = await fixture.client.getStateOperationReceipt({ namespace: currentRead, operationId: effectMutation.operationId, originalEffectPlan: plan });
+    assert.deepEqual(recovered.value.receipt.effect.originalPlan, plan);
+    assert.equal(recovered.metadata.transactionIdentity.authorizationPublication.id, currentRead.authorizationPublication.id);
+    assert.equal(recovered.metadata.transactionIdentity.effectMutation.effect.authorizationPublication.id, publication.id);
+    assert.deepEqual(fixture.state.calls.map(call => call.operation), ["planEffectMutation", "mutateState", "getStateOperationReceipt"]);
+    const before = fixture.state.calls.length;
+    await assert.rejects(fixture.client.mutateState({ ...request, effectPlan: undefined }), error => !error.failure.dispatched);
+    await assert.rejects(fixture.client.mutateState({ ...request, expectedVersion: new Uint8Array(32).fill(9) }), error => !error.failure.dispatched);
+    await assert.rejects(fixture.client.planEffectMutation({ ...effectMutation, expectedVersion: new Uint8Array(32) }), error => !error.failure.dispatched);
+    assert.equal(fixture.state.calls.length, before);
+  } finally { await fixture.stop(); }
+});
+
+test("effect plan audit uncertainty preserves checked data without supplying a provider-confirmed fact", async () => {
+  const fixture = await peer("effect-invalid");
+  try {
+    await assert.rejects(fixture.client.planEffectMutation({ ...effectMutation, reason: "bad-audit" }), error => {
+      assert.equal(error.failure.outcome, OutcomeKnowledge.Unknown);
+      assert.equal(error.failure.observedTransaction.kind, "effectPlan");
+      assert.equal(error.failure.transactionIdentity.effectPlan.original.reason, "bad-audit");
+      return true;
+    });
+    await assert.rejects(fixture.client.planEffectMutation({ ...effectMutation, reason: "bad-window" }), error => !error.failure.observedTransaction);
+    const plan = effectPlan();
+    await assert.rejects(fixture.client.mutateState({ namespace: inspect, operationId: effectMutation.operationId, mutation: 1,
+      recordId: effectMutation.effect.effectId, expectedVersion: effectMutation.expectedVersion, expectedPolicyDigest: digest,
+      reason: effectMutation.reason, effectPlan: plan }), error => !error.failure.observedTransaction);
+    assert.equal(fixture.state.calls.length, 3);
+  } finally { await fixture.stop(); }
+});
 function replyFor(operation, request) {
   const effect = { effectId: "effect-id", commandId: "command-id", commandAttemptId: "attempt-id", providerProfile: "approved-provider", disposition: 1 };
   const page = { returnedCount: 1, encodedBytes: 128n, nextCursor: Uint8Array.of(7) };
@@ -74,7 +128,9 @@ function replyFor(operation, request) {
     case "inspectNamespace": return { namespace: { view: { namespace, version: Uint8Array.of(3), stateSchema: "schema" },
       quota, status: 1, generation: 18446744073709551615n, engineProfile: "embedded-v1", engineProfileDigest: digest } };
     case "selectEntity": return { entities: [{ entity: "first", version: Uint8Array.of(3) }], page };
-    case "mutateState": case "getStateOperationReceipt": return { receipt: stateReceipt(request) };
+    case "planEffectMutation": return { plan: effectPlan(request) };
+    case "mutateState": case "getStateOperationReceipt": return { receipt: request.effectPlan || request.originalEffectPlan
+      ? effectReceipt(request.effectPlan ?? request.originalEffectPlan) : stateReceipt(request) };
     case "mutateNamespace": return { receipt: { operationId: request.operationId, receiptId: "namespace-receipt",
       namespace, mutation: 1, authenticatedOperator: "operator", afterGeneration: 1n, status: 1, stateSchema: "schema", disposition: 1 } };
     case "inspectDispatcher": return { dispatcher: { generation: { ownerEpoch: 18446744073709551615n, revision: 18446744073709551615n }, paused: true,
@@ -104,6 +160,11 @@ async function peer(mode = "normal") {
       }
       const value = replyFor(operation, request);
       if (mode === "substituted-activation") value.invocation.activationId = "different-activation";
+      if (mode === "effect-invalid") {
+        if (operation === "planEffectMutation" && request.reason === "bad-window") value.plan.expiresAtUnixMillis = 31001n;
+        if (operation === "planEffectMutation" && request.reason === "bad-audit") value.auditAck = { status: 91 };
+        if (operation === "mutateState") { value.receipt.effect.fact = 2; value.receipt.effect.providerReceipt = "forged-provider"; value.receipt.effect.providerObservedAtUnixMillis = 1400n; }
+      }
       if (mode === "dispatcher-invalid") {
         if (operation === "controlDispatcher") {
           if (request.operationId === "dispatcher-original" && request.action === 1) value.auditAck = { status: 91 };
@@ -127,7 +188,7 @@ async function peer(mode = "normal") {
   return { client, state, stop: async () => { await client.shutdown(); for (const session of state.sessions) session.destroy(); await new Promise((resolve) => server.close(resolve)); } };
 }
 
-test("fifteen transaction operations share the maintained connection and retain exact receipts/pages", async () => {
+test("sixteen transaction operations share the maintained connection and retain exact receipts/pages", async () => {
   const fixture = await peer();
   try {
     const requests = [ ["invokeCommand", command], ["query", { profile: current, invocation: invoke, namespace }],
@@ -138,6 +199,7 @@ test("fifteen transaction operations share the maintained connection and retain 
       ["selectEntity", { namespace: inspect, page: { limit: 8 } }],
       ["mutateState", { namespace: inspect, operationId: "state-original", mutation: 4, expectedVersion: Uint8Array.of(1), expectedPolicyDigest: digest, reason: "checkpoint" }],
       ["getStateOperationReceipt", { namespace: inspect, operationId: "state-original" }],
+      ["planEffectMutation", effectMutation],
       ["inspectDispatcher", { profile: current, scope: 1 }], ["controlDispatcher", dispatcherControl],
       ["getDispatcherOperation", { original: dispatcherControl }] ];
     for (const [operation, request] of requests) {
@@ -154,7 +216,7 @@ test("fifteen transaction operations share the maintained connection and retain 
         assert.equal(response.metadata.observedTransaction.kind, "dispatcher");
       }
     }
-    assert.equal(fixture.state.connections, 1); assert.equal(fixture.state.calls.length, 15);
+    assert.equal(fixture.state.connections, 1); assert.equal(fixture.state.calls.length, 16);
   } finally { await fixture.stop(); }
   assert.deepEqual(fixture.client.usage(), { activeCalls: 0, reservedMessageBytes: 0, sessions: 0, sockets: 0, closed: true });
 });

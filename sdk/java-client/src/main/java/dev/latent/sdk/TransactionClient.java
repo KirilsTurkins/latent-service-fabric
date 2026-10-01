@@ -26,7 +26,9 @@ public interface TransactionClient {
             Optional<ByteBuffer> expectedVersion,
             Optional<String> expectedPolicyDigest,
             Optional<Transactions.DispatcherAction> dispatcherAction,
-            Optional<Transactions.DispatcherGeneration> dispatcherExpectedGeneration) {
+            Optional<Transactions.DispatcherGeneration> dispatcherExpectedGeneration,
+            Optional<Transactions.PlanEffectMutationRequest> effectMutation,
+            Optional<Transactions.EffectManagementPlan> effectPlan) {
         public RecoveryIdentity {
             expectedVersions = List.copyOf(expectedVersions);
         }
@@ -35,7 +37,7 @@ public interface TransactionClient {
             return new RecoveryIdentity(Optional.empty(), Optional.empty(), Optional.empty(),
                     Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                     Optional.empty(), Optional.empty(), Optional.empty(), List.of(), Optional.empty(),
-                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
         }
     }
 
@@ -51,6 +53,8 @@ public interface TransactionClient {
         record Namespace(Transactions.NamespaceOperationReceipt receipt) implements ObservedOutcome { }
         record Effect(Transactions.EffectReceipt receipt) implements ObservedOutcome { }
         record Dispatcher(Transactions.DispatcherOperationReceipt receipt) implements ObservedOutcome { }
+        /** Prepared data supplies no authority, retirement proof or accepted mutation outcome. */
+        record EffectPlan(Transactions.EffectManagementPlan plan) implements ObservedOutcome { }
     }
 
     record ResponseMetadata(Management.ResponseMetadata transport, RecoveryIdentity identity) { }
@@ -108,6 +112,8 @@ public interface TransactionClient {
             Transactions.MutateNamespaceRequest request, Management.CallOptions options);
     CompletableFuture<ClientResponse<Transactions.MutateStateResponse>> mutateState(
             Transactions.MutateStateRequest request, Management.CallOptions options);
+    CompletableFuture<ClientResponse<Transactions.PlanEffectMutationResponse>> planEffectMutation(
+            Transactions.PlanEffectMutationRequest request, Management.CallOptions options);
     CompletableFuture<ClientResponse<Transactions.GetStateOperationReceiptResponse>> getStateOperationReceipt(
             Transactions.GetStateOperationReceiptRequest request, Management.CallOptions options);
     CompletableFuture<ClientResponse<Transactions.InspectDispatcherResponse>> inspectDispatcher(

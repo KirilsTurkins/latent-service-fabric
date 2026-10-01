@@ -19,6 +19,8 @@ export interface RecoveryIdentity extends profile.RequestIdentity {
   readonly authorizationPublication?: profile.PublicationRef;
   readonly dispatcherAction?: model.DispatcherAction;
   readonly dispatcherExpectedGeneration?: model.DispatcherGeneration;
+  readonly effectMutation?: model.PlanEffectMutationRequest;
+  readonly effectPlan?: model.EffectManagementPlan;
 }
 
 /** Retains bounded receipt data independently of an application result body. */
@@ -27,7 +29,8 @@ export type ObservedOutcome =
   | { readonly kind: "state"; readonly receipt: model.StateOperationReceipt }
   | { readonly kind: "namespace"; readonly receipt: model.NamespaceOperationReceipt }
   | { readonly kind: "effect"; readonly receipt: model.EffectReceipt }
-  | { readonly kind: "dispatcher"; readonly receipt: model.DispatcherOperationReceipt };
+  | { readonly kind: "dispatcher"; readonly receipt: model.DispatcherOperationReceipt }
+  | { readonly kind: "effectPlan"; readonly plan: model.EffectManagementPlan };
 
 export interface ResponseMetadata extends profile.ResponseMetadata {
   readonly transactionIdentity: RecoveryIdentity;
@@ -57,6 +60,7 @@ export interface TransactionClient {
   mutateNamespace(request: model.MutateNamespaceRequest, options?: profile.CallOptions): Promise<ClientResponse<model.MutateNamespaceResponse>>;
   selectEntity(request: model.SelectEntityRequest, options?: profile.CallOptions): Promise<ClientResponse<model.SelectEntityResponse>>;
   mutateState(request: model.MutateStateRequest, options?: profile.CallOptions): Promise<ClientResponse<model.MutateStateResponse>>;
+  planEffectMutation(request: model.PlanEffectMutationRequest, options?: profile.CallOptions): Promise<ClientResponse<model.PlanEffectMutationResponse>>;
   getStateOperationReceipt(request: model.GetStateOperationReceiptRequest, options?: profile.CallOptions): Promise<ClientResponse<model.GetStateOperationReceiptResponse>>;
   inspectDispatcher(request: model.InspectDispatcherRequest, options?: profile.CallOptions): Promise<ClientResponse<model.InspectDispatcherResponse>>;
   controlDispatcher(request: model.ControlDispatcherRequest, options?: profile.CallOptions): Promise<ClientResponse<model.ControlDispatcherResponse>>;

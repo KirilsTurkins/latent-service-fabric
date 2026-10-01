@@ -160,9 +160,11 @@ impl RpcClient {
         let lease = if additional_bytes == 0 {
             self.inner.resources.begin(input.encoded_len())
         } else {
-            self.inner.resources.begin_with_reservation(input.encoded_len(), additional_bytes)
+            self.inner
+                .resources
+                .begin_with_reservation(input.encoded_len(), additional_bytes)
         }
-            .map_err(|error| error.context(&recovery, false))?;
+        .map_err(|error| error.context(&recovery, false))?;
         let mut closed = self.inner.resources.closed.subscribe();
         let channel = tokio::select! {
             biased;

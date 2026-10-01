@@ -11,7 +11,7 @@ removed during alpha; there is no compatibility facade.
 | --- | --- |
 | `latent.dev/sdk/go/profile` | Shared, generated public DTOs and eight-operation interface; owned by #227 |
 | `latent.dev/sdk/go/transport` | Explicit connection ownership, admission, unary wire transport and conversions |
-| `latent.dev/sdk/go/transaction` | Additive owned StateService, TransactionService and DispatcherService DTOs, original recovery identity and fifteen-operation interface |
+| `latent.dev/sdk/go/transaction` | Additive owned StateService, TransactionService and DispatcherService DTOs, original recovery identity and sixteen-operation interface |
 | `internal/rpc` | Private generated Protobuf/gRPC bindings; reproducible, ignored build output |
 | `cmd/provider-workflow` | Executable native HTTP/blob guest example and separate-node qualification participant |
 

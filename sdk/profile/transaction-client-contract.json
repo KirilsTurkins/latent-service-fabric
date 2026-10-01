@@ -96,6 +96,14 @@
       "wireResponse": ".latent.control.v1.MutateStateResponse"
     },
     {
+      "name": "PlanEffectMutation",
+      "request": "PlanEffectMutationRequest",
+      "response": "PlanEffectMutationResponse",
+      "service": "latent.control.v1.StateService",
+      "wireRequest": ".latent.control.v1.PlanEffectMutationRequest",
+      "wireResponse": ".latent.control.v1.PlanEffectMutationResponse"
+    },
+    {
       "name": "GetStateOperationReceipt",
       "request": "GetStateOperationReceiptRequest",
       "response": "GetStateOperationReceiptResponse",
@@ -130,11 +138,11 @@
   ],
   "sources": {
     "latent/transaction/v1/transaction.proto": {
-      "sha256": "sha256:bd84dd30f70d9281d3ef067b61eece0a56d65f6494d3e6fcb599b79cf0011db3",
+      "sha256": "sha256:d6ec8c0bc77c032933a0d2bf01807f3bc91bed360197e371a739ecc90b8b4620",
       "service": "latent.transaction.v1.TransactionService"
     },
     "latent/control/v1/state.proto": {
-      "sha256": "sha256:ac9b979809980d040ebfd064bb33553b5662d842725225edacbb6d49d868c8c3",
+      "sha256": "sha256:f2f98d9974ef0afe014b30978eacee03310bb86f25d70cefb7e8591130e19901",
       "service": "latent.control.v1.StateService"
     },
     "latent/control/v1/dispatcher.proto": {
@@ -151,6 +159,10 @@
     "DispatcherOperationReceipt": ".latent.control.v1.DispatcherOperationReceipt",
     "DispatcherScope": ".latent.control.v1.DispatcherScope",
     "DispatcherSnapshot": ".latent.control.v1.DispatcherSnapshot",
+    "EffectManagementFact": ".latent.control.v1.EffectManagementFact",
+    "EffectManagementPlan": ".latent.control.v1.EffectManagementPlan",
+    "EffectManagementReceiptDetails": ".latent.control.v1.EffectManagementReceiptDetails",
+    "EffectPlanSafety": ".latent.control.v1.EffectPlanSafety",
     "EntityInspection": ".latent.control.v1.EntityInspection",
     "GetDispatcherOperationRequest": ".latent.control.v1.GetDispatcherOperationRequest",
     "GetDispatcherOperationResponse": ".latent.control.v1.GetDispatcherOperationResponse",
@@ -170,6 +182,8 @@
     "NamespaceOperationReceipt": ".latent.control.v1.NamespaceOperationReceipt",
     "NamespaceQuota": ".latent.control.v1.NamespaceQuota",
     "NamespaceStatus": ".latent.control.v1.NamespaceStatus",
+    "PlanEffectMutationRequest": ".latent.control.v1.PlanEffectMutationRequest",
+    "PlanEffectMutationResponse": ".latent.control.v1.PlanEffectMutationResponse",
     "SelectEntityRequest": ".latent.control.v1.SelectEntityRequest",
     "SelectEntityResponse": ".latent.control.v1.SelectEntityResponse",
     "StateMutationKind": ".latent.control.v1.StateMutationKind",
@@ -997,6 +1011,204 @@
         "type": "bool"
       }
     ],
+    "GetEffectRequest": [
+      {
+        "name": "profile",
+        "number": 1,
+        "jsonName": "profile",
+        "type": "TransactionProfile",
+        "wireType": ".latent.transaction.v1.TransactionProfile",
+        "optional": true
+      },
+      {
+        "name": "command",
+        "number": 2,
+        "jsonName": "command",
+        "type": "CommandSelector",
+        "wireType": ".latent.transaction.v1.CommandSelector",
+        "optional": true
+      },
+      {
+        "name": "effect_id",
+        "number": 3,
+        "jsonName": "effectId",
+        "type": "string"
+      },
+      {
+        "name": "authorization_publication",
+        "number": 4,
+        "jsonName": "authorizationPublication",
+        "type": "PublicationRef",
+        "wireType": ".latent.control.v1.PublicationRef",
+        "external": true,
+        "optional": true
+      }
+    ],
+    "PlanEffectMutationRequest": [
+      {
+        "name": "effect",
+        "number": 1,
+        "jsonName": "effect",
+        "type": "GetEffectRequest",
+        "wireType": ".latent.transaction.v1.GetEffectRequest",
+        "optional": true
+      },
+      {
+        "name": "operation_id",
+        "number": 2,
+        "jsonName": "operationId",
+        "type": "string"
+      },
+      {
+        "name": "mutation",
+        "number": 3,
+        "jsonName": "mutation",
+        "type": "StateMutationKind",
+        "wireType": ".latent.control.v1.StateMutationKind"
+      },
+      {
+        "name": "expected_version",
+        "number": 4,
+        "jsonName": "expectedVersion",
+        "type": "bytes"
+      },
+      {
+        "name": "expected_policy_digest",
+        "number": 5,
+        "jsonName": "expectedPolicyDigest",
+        "type": "string"
+      },
+      {
+        "name": "reason",
+        "number": 6,
+        "jsonName": "reason",
+        "type": "string"
+      },
+      {
+        "name": "retry_delay_millis",
+        "number": 7,
+        "jsonName": "retryDelayMillis",
+        "type": "uint64"
+      }
+    ],
+    "EffectManagementPlan": [
+      {
+        "name": "original",
+        "number": 1,
+        "jsonName": "original",
+        "type": "PlanEffectMutationRequest",
+        "wireType": ".latent.control.v1.PlanEffectMutationRequest",
+        "optional": true
+      },
+      {
+        "name": "plan_digest",
+        "number": 2,
+        "jsonName": "planDigest",
+        "type": "bytes"
+      },
+      {
+        "name": "management_sequence",
+        "number": 3,
+        "jsonName": "managementSequence",
+        "type": "uint32"
+      },
+      {
+        "name": "owner_epoch",
+        "number": 4,
+        "jsonName": "ownerEpoch",
+        "type": "uint64"
+      },
+      {
+        "name": "claim_generation",
+        "number": 5,
+        "jsonName": "claimGeneration",
+        "type": "uint64"
+      },
+      {
+        "name": "dispatch_attempt",
+        "number": 6,
+        "jsonName": "dispatchAttempt",
+        "type": "uint32"
+      },
+      {
+        "name": "expires_at_unix_millis",
+        "number": 7,
+        "jsonName": "expiresAtUnixMillis",
+        "type": "uint64"
+      },
+      {
+        "name": "prepared_at_unix_millis",
+        "number": 8,
+        "jsonName": "preparedAtUnixMillis",
+        "type": "uint64"
+      },
+      {
+        "name": "before",
+        "number": 9,
+        "jsonName": "before",
+        "type": "EffectDisposition",
+        "wireType": ".latent.transaction.v1.EffectDisposition"
+      },
+      {
+        "name": "safety",
+        "number": 10,
+        "jsonName": "safety",
+        "type": "EffectPlanSafety",
+        "wireType": ".latent.control.v1.EffectPlanSafety"
+      },
+      {
+        "name": "dedup_valid_until_unix_millis",
+        "number": 11,
+        "jsonName": "dedupValidUntilUnixMillis",
+        "type": "uint64",
+        "optional": true
+      }
+    ],
+    "EffectManagementReceiptDetails": [
+      {
+        "name": "original_plan",
+        "number": 1,
+        "jsonName": "originalPlan",
+        "type": "EffectManagementPlan",
+        "wireType": ".latent.control.v1.EffectManagementPlan",
+        "optional": true
+      },
+      {
+        "name": "before",
+        "number": 2,
+        "jsonName": "before",
+        "type": "EffectDisposition",
+        "wireType": ".latent.transaction.v1.EffectDisposition"
+      },
+      {
+        "name": "after",
+        "number": 3,
+        "jsonName": "after",
+        "type": "EffectDisposition",
+        "wireType": ".latent.transaction.v1.EffectDisposition"
+      },
+      {
+        "name": "fact",
+        "number": 4,
+        "jsonName": "fact",
+        "type": "EffectManagementFact",
+        "wireType": ".latent.control.v1.EffectManagementFact"
+      },
+      {
+        "name": "provider_receipt",
+        "number": 5,
+        "jsonName": "providerReceipt",
+        "type": "string",
+        "optional": true
+      },
+      {
+        "name": "provider_observed_at_unix_millis",
+        "number": 6,
+        "jsonName": "providerObservedAtUnixMillis",
+        "type": "uint64",
+        "optional": true
+      }
+    ],
     "EffectReceipt": [
       {
         "name": "effect_id",
@@ -1069,6 +1281,26 @@
         "number": 11,
         "jsonName": "providerProfile",
         "type": "string"
+      },
+      {
+        "name": "record_version",
+        "number": 12,
+        "jsonName": "recordVersion",
+        "type": "bytes"
+      },
+      {
+        "name": "owner_epoch",
+        "number": 13,
+        "jsonName": "ownerEpoch",
+        "type": "uint64",
+        "optional": true
+      },
+      {
+        "name": "claim_generation",
+        "number": 14,
+        "jsonName": "claimGeneration",
+        "type": "uint64",
+        "optional": true
       }
     ],
     "EntityInspection": [
@@ -1138,39 +1370,6 @@
         "optional": true
       }
     ],
-    "GetEffectRequest": [
-      {
-        "name": "profile",
-        "number": 1,
-        "jsonName": "profile",
-        "type": "TransactionProfile",
-        "wireType": ".latent.transaction.v1.TransactionProfile",
-        "optional": true
-      },
-      {
-        "name": "command",
-        "number": 2,
-        "jsonName": "command",
-        "type": "CommandSelector",
-        "wireType": ".latent.transaction.v1.CommandSelector",
-        "optional": true
-      },
-      {
-        "name": "effect_id",
-        "number": 3,
-        "jsonName": "effectId",
-        "type": "string"
-      },
-      {
-        "name": "authorization_publication",
-        "number": 4,
-        "jsonName": "authorizationPublication",
-        "type": "PublicationRef",
-        "wireType": ".latent.control.v1.PublicationRef",
-        "external": true,
-        "optional": true
-      }
-    ],
     "GetEffectResponse": [
       {
         "name": "effect",
@@ -1222,6 +1421,14 @@
         "number": 2,
         "jsonName": "operationId",
         "type": "string"
+      },
+      {
+        "name": "original_effect_plan",
+        "number": 3,
+        "jsonName": "originalEffectPlan",
+        "type": "EffectManagementPlan",
+        "wireType": ".latent.control.v1.EffectManagementPlan",
+        "optional": true
       }
     ],
     "StateOperationReceipt": [
@@ -1295,6 +1502,14 @@
         "jsonName": "disposition",
         "type": "StateOperationDisposition",
         "wireType": ".latent.control.v1.StateOperationDisposition"
+      },
+      {
+        "name": "effect",
+        "number": 12,
+        "jsonName": "effect",
+        "type": "EffectManagementReceiptDetails",
+        "wireType": ".latent.control.v1.EffectManagementReceiptDetails",
+        "optional": true
       }
     ],
     "NamespaceOperationReceipt": [
@@ -1380,6 +1595,15 @@
         "jsonName": "namespaceReceipt",
         "type": "NamespaceOperationReceipt",
         "wireType": ".latent.control.v1.NamespaceOperationReceipt",
+        "optional": true
+      },
+      {
+        "name": "audit_ack",
+        "number": 3,
+        "jsonName": "auditAck",
+        "type": "AuditAck",
+        "wireType": ".latent.control.v1.AuditAck",
+        "external": true,
         "optional": true
       }
     ],
@@ -1558,6 +1782,12 @@
         "number": 10,
         "jsonName": "generation",
         "type": "uint64"
+      },
+      {
+        "name": "namespace_policy_digest",
+        "number": 11,
+        "jsonName": "namespacePolicyDigest",
+        "type": "string"
       }
     ],
     "InspectNamespaceResponse": [
@@ -1910,6 +2140,14 @@
         "number": 7,
         "jsonName": "reason",
         "type": "string"
+      },
+      {
+        "name": "effect_plan",
+        "number": 8,
+        "jsonName": "effectPlan",
+        "type": "EffectManagementPlan",
+        "wireType": ".latent.control.v1.EffectManagementPlan",
+        "optional": true
       }
     ],
     "MutateStateResponse": [
@@ -1924,6 +2162,37 @@
       {
         "name": "audit_ack",
         "number": 2,
+        "jsonName": "auditAck",
+        "type": "AuditAck",
+        "wireType": ".latent.control.v1.AuditAck",
+        "external": true,
+        "optional": true
+      },
+      {
+        "name": "replayed",
+        "number": 3,
+        "jsonName": "replayed",
+        "type": "bool"
+      }
+    ],
+    "PlanEffectMutationResponse": [
+      {
+        "name": "plan",
+        "number": 1,
+        "jsonName": "plan",
+        "type": "EffectManagementPlan",
+        "wireType": ".latent.control.v1.EffectManagementPlan",
+        "optional": true
+      },
+      {
+        "name": "replayed",
+        "number": 2,
+        "jsonName": "replayed",
+        "type": "bool"
+      },
+      {
+        "name": "audit_ack",
+        "number": 3,
         "jsonName": "auditAck",
         "type": "AuditAck",
         "wireType": ".latent.control.v1.AuditAck",
@@ -2096,7 +2365,22 @@
       "UNCERTAIN_AFTER_DISPATCH": 5,
       "EXPIRED": 6,
       "POLICY_BLOCKED": 7,
-      "ADMINISTRATIVELY_TERMINATED": 8
+      "ADMINISTRATIVELY_TERMINATED": 8,
+      "RETRY_SCHEDULED": 9,
+      "DEAD_LETTERED": 10
+    },
+    "EffectManagementFact": {
+      "UNSPECIFIED": 0,
+      "REDRIVE_SCHEDULED": 1,
+      "PROVIDER_CONFIRMED": 2,
+      "ADMINISTRATOR_TERMINATED": 3
+    },
+    "EffectPlanSafety": {
+      "UNSPECIFIED": 0,
+      "KNOWN_NONEXECUTION": 1,
+      "QUALIFIED_DEDUPLICATION": 2,
+      "PROVIDER_RECEIPT_LOOKUP": 3,
+      "ADMINISTRATOR_DECLARED": 4
     },
     "NamespaceMutationKind": {
       "UNSPECIFIED": 0,
@@ -2118,7 +2402,8 @@
       "RETRY_KNOWN_FAILED_EFFECT": 1,
       "TERMINATE_EFFECT": 2,
       "PURGE_EXPIRED_PAYLOAD": 3,
-      "CHECKPOINT_NAMESPACE": 4
+      "CHECKPOINT_NAMESPACE": 4,
+      "RECONCILE_EFFECT": 5
     },
     "StateOperationDisposition": {
       "UNSPECIFIED": 0,

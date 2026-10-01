@@ -33,6 +33,10 @@ public sealed record RecoveryIdentity
     public DispatcherAction? DispatcherAction { get; init; }
     /// <summary>The original dispatcher owner epoch and revision.</summary>
     public DispatcherGeneration? DispatcherExpectedGeneration { get; init; }
+    /// <summary>The immutable original effect-planning request.</summary>
+    public PlanEffectMutationRequest? EffectMutation { get; init; }
+    /// <summary>A checked preparation descriptor; it supplies no mutation authority.</summary>
+    public EffectManagementPlan? EffectPlan { get; init; }
     /// <summary>The original record management precondition.</summary>
     public ReadOnlyMemory<byte>? ExpectedVersion { get; init; }
     /// <summary>The original policy precondition.</summary>
@@ -56,6 +60,8 @@ public sealed record ObservedOutcome
     public EffectReceipt? Effect { get; init; }
     /// <summary>The durable logical dispatcher operation; it does not prove physical retirement.</summary>
     public DispatcherOperationReceipt? Dispatcher { get; init; }
+    /// <summary>A checked preparation descriptor, independent of durable mutation outcome.</summary>
+    public EffectManagementPlan? EffectPlan { get; init; }
 }
 
 /// <summary>Independent transport, audit, identity and durable outcome observations.</summary>
@@ -119,6 +125,8 @@ public interface ITransactionClient
     ValueTask<TransactionResponse<SelectEntityResponse>> SelectEntityAsync(SelectEntityRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default);
     /// <summary>Submits a guarded state-management operation once.</summary>
     ValueTask<TransactionResponse<MutateStateResponse>> MutateStateAsync(MutateStateRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default);
+    /// <summary>Requests a bounded typed effect plan under current authority.</summary>
+    ValueTask<TransactionResponse<PlanEffectMutationResponse>> PlanEffectMutationAsync(PlanEffectMutationRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default);
     /// <summary>Recovers one state or namespace operation receipt.</summary>
     ValueTask<TransactionResponse<GetStateOperationReceiptResponse>> GetStateOperationReceiptAsync(GetStateOperationReceiptRequest request, Profile.CallOptions options, CancellationToken cancellationToken = default);
     /// <summary>Inspects the current node dispatcher using current operator authority.</summary>

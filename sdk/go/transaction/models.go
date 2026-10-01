@@ -67,6 +67,27 @@ const (
 	EffectDispositionExpired                    EffectDisposition = 6
 	EffectDispositionPolicyBlocked              EffectDisposition = 7
 	EffectDispositionAdministrativelyTerminated EffectDisposition = 8
+	EffectDispositionRetryScheduled             EffectDisposition = 9
+	EffectDispositionDeadLettered               EffectDisposition = 10
+)
+
+type EffectManagementFact int32
+
+const (
+	EffectManagementFactUnspecified             EffectManagementFact = 0
+	EffectManagementFactRedriveScheduled        EffectManagementFact = 1
+	EffectManagementFactProviderConfirmed       EffectManagementFact = 2
+	EffectManagementFactAdministratorTerminated EffectManagementFact = 3
+)
+
+type EffectPlanSafety int32
+
+const (
+	EffectPlanSafetyUnspecified            EffectPlanSafety = 0
+	EffectPlanSafetyKnownNonexecution      EffectPlanSafety = 1
+	EffectPlanSafetyQualifiedDeduplication EffectPlanSafety = 2
+	EffectPlanSafetyProviderReceiptLookup  EffectPlanSafety = 3
+	EffectPlanSafetyAdministratorDeclared  EffectPlanSafety = 4
 )
 
 type NamespaceMutationKind int32
@@ -98,6 +119,7 @@ const (
 	StateMutationKindTerminateEffect        StateMutationKind = 2
 	StateMutationKindPurgeExpiredPayload    StateMutationKind = 3
 	StateMutationKindCheckpointNamespace    StateMutationKind = 4
+	StateMutationKindReconcileEffect        StateMutationKind = 5
 )
 
 type StateOperationDisposition int32
@@ -274,6 +296,46 @@ type DispatcherSnapshot struct {
 	ClockContinuityProven      bool
 }
 
+type GetEffectRequest struct {
+	Profile                  *TransactionProfile
+	Command                  *CommandSelector
+	EffectId                 string
+	AuthorizationPublication *profile.PublicationRef
+}
+
+type PlanEffectMutationRequest struct {
+	Effect               *GetEffectRequest
+	OperationId          string
+	Mutation             StateMutationKind
+	ExpectedVersion      []byte
+	ExpectedPolicyDigest string
+	Reason               string
+	RetryDelayMillis     uint64
+}
+
+type EffectManagementPlan struct {
+	Original                  *PlanEffectMutationRequest
+	PlanDigest                []byte
+	ManagementSequence        uint32
+	OwnerEpoch                uint64
+	ClaimGeneration           uint64
+	DispatchAttempt           uint32
+	ExpiresAtUnixMillis       uint64
+	PreparedAtUnixMillis      uint64
+	Before                    EffectDisposition
+	Safety                    EffectPlanSafety
+	DedupValidUntilUnixMillis *uint64
+}
+
+type EffectManagementReceiptDetails struct {
+	OriginalPlan                 *EffectManagementPlan
+	Before                       EffectDisposition
+	After                        EffectDisposition
+	Fact                         EffectManagementFact
+	ProviderReceipt              *string
+	ProviderObservedAtUnixMillis *uint64
+}
+
 type EffectReceipt struct {
 	EffectId                     string
 	CommandId                    string
@@ -286,6 +348,9 @@ type EffectReceipt struct {
 	Retention                    *LinkedRetention
 	ManagementOperationReceiptId *string
 	ProviderProfile              string
+	RecordVersion                []byte
+	OwnerEpoch                   *uint64
+	ClaimGeneration              *uint64
 }
 
 type EntityInspection struct {
@@ -308,13 +373,6 @@ type GetDispatcherOperationResponse struct {
 	AuditAck *profile.AuditAck
 }
 
-type GetEffectRequest struct {
-	Profile                  *TransactionProfile
-	Command                  *CommandSelector
-	EffectId                 string
-	AuthorizationPublication *profile.PublicationRef
-}
-
 type GetEffectResponse struct {
 	Effect *EffectReceipt
 }
@@ -326,8 +384,9 @@ type InspectNamespaceRequest struct {
 }
 
 type GetStateOperationReceiptRequest struct {
-	Namespace   *InspectNamespaceRequest
-	OperationId string
+	Namespace          *InspectNamespaceRequest
+	OperationId        string
+	OriginalEffectPlan *EffectManagementPlan
 }
 
 type StateOperationReceipt struct {
@@ -342,6 +401,7 @@ type StateOperationReceipt struct {
 	RecordId              *string
 	PolicyDigest          string
 	Disposition           StateOperationDisposition
+	Effect                *EffectManagementReceiptDetails
 }
 
 type NamespaceOperationReceipt struct {
@@ -360,6 +420,7 @@ type NamespaceOperationReceipt struct {
 type GetStateOperationReceiptResponse struct {
 	Receipt          *StateOperationReceipt
 	NamespaceReceipt *NamespaceOperationReceipt
+	AuditAck         *profile.AuditAck
 }
 
 type InspectDispatcherRequest struct {
@@ -390,16 +451,17 @@ type NamespaceQuota struct {
 }
 
 type NamespaceInspection struct {
-	View                *ViewIdentity
-	EncodedStateBytes   uint64
-	CommandCount        uint64
-	PendingEffectCount  uint64
-	RetainedFormats     []LinkedRetention
-	EngineProfile       string
-	EngineProfileDigest string
-	Status              NamespaceStatus
-	Quota               *NamespaceQuota
-	Generation          uint64
+	View                  *ViewIdentity
+	EncodedStateBytes     uint64
+	CommandCount          uint64
+	PendingEffectCount    uint64
+	RetainedFormats       []LinkedRetention
+	EngineProfile         string
+	EngineProfileDigest   string
+	Status                NamespaceStatus
+	Quota                 *NamespaceQuota
+	Generation            uint64
+	NamespacePolicyDigest string
 }
 
 type InspectNamespaceResponse struct {
@@ -489,10 +551,18 @@ type MutateStateRequest struct {
 	ExpectedVersion      []byte
 	ExpectedPolicyDigest string
 	Reason               string
+	EffectPlan           *EffectManagementPlan
 }
 
 type MutateStateResponse struct {
 	Receipt  *StateOperationReceipt
+	AuditAck *profile.AuditAck
+	Replayed bool
+}
+
+type PlanEffectMutationResponse struct {
+	Plan     *EffectManagementPlan
+	Replayed bool
 	AuditAck *profile.AuditAck
 }
 

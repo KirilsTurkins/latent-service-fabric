@@ -61,6 +61,23 @@ public final class Transactions {
         public static final EffectDisposition EXPIRED = new EffectDisposition(6);
         public static final EffectDisposition POLICY_BLOCKED = new EffectDisposition(7);
         public static final EffectDisposition ADMINISTRATIVELY_TERMINATED = new EffectDisposition(8);
+        public static final EffectDisposition RETRY_SCHEDULED = new EffectDisposition(9);
+        public static final EffectDisposition DEAD_LETTERED = new EffectDisposition(10);
+    }
+
+    public record EffectManagementFact(int value) {
+        public static final EffectManagementFact UNSPECIFIED = new EffectManagementFact(0);
+        public static final EffectManagementFact REDRIVE_SCHEDULED = new EffectManagementFact(1);
+        public static final EffectManagementFact PROVIDER_CONFIRMED = new EffectManagementFact(2);
+        public static final EffectManagementFact ADMINISTRATOR_TERMINATED = new EffectManagementFact(3);
+    }
+
+    public record EffectPlanSafety(int value) {
+        public static final EffectPlanSafety UNSPECIFIED = new EffectPlanSafety(0);
+        public static final EffectPlanSafety KNOWN_NONEXECUTION = new EffectPlanSafety(1);
+        public static final EffectPlanSafety QUALIFIED_DEDUPLICATION = new EffectPlanSafety(2);
+        public static final EffectPlanSafety PROVIDER_RECEIPT_LOOKUP = new EffectPlanSafety(3);
+        public static final EffectPlanSafety ADMINISTRATOR_DECLARED = new EffectPlanSafety(4);
     }
 
     public record NamespaceMutationKind(int value) {
@@ -86,6 +103,7 @@ public final class Transactions {
         public static final StateMutationKind TERMINATE_EFFECT = new StateMutationKind(2);
         public static final StateMutationKind PURGE_EXPIRED_PAYLOAD = new StateMutationKind(3);
         public static final StateMutationKind CHECKPOINT_NAMESPACE = new StateMutationKind(4);
+        public static final StateMutationKind RECONCILE_EFFECT = new StateMutationKind(5);
     }
 
     public record StateOperationDisposition(int value) {
@@ -243,6 +261,42 @@ public final class Transactions {
             long countsObservedAtUnixMillis,
             boolean clockContinuityProven) { }
 
+    public record GetEffectRequest(
+            Optional<TransactionProfile> profile,
+            Optional<CommandSelector> command,
+            String effectId,
+            Optional<Management.PublicationRef> authorizationPublication) { }
+
+    public record PlanEffectMutationRequest(
+            Optional<GetEffectRequest> effect,
+            String operationId,
+            StateMutationKind mutation,
+            ByteBuffer expectedVersion,
+            String expectedPolicyDigest,
+            String reason,
+            long retryDelayMillis) { }
+
+    public record EffectManagementPlan(
+            Optional<PlanEffectMutationRequest> original,
+            ByteBuffer planDigest,
+            int managementSequence,
+            long ownerEpoch,
+            long claimGeneration,
+            int dispatchAttempt,
+            long expiresAtUnixMillis,
+            long preparedAtUnixMillis,
+            EffectDisposition before,
+            EffectPlanSafety safety,
+            Optional<Long> dedupValidUntilUnixMillis) { }
+
+    public record EffectManagementReceiptDetails(
+            Optional<EffectManagementPlan> originalPlan,
+            EffectDisposition before,
+            EffectDisposition after,
+            EffectManagementFact fact,
+            Optional<String> providerReceipt,
+            Optional<Long> providerObservedAtUnixMillis) { }
+
     public record EffectReceipt(
             String effectId,
             String commandId,
@@ -254,7 +308,10 @@ public final class Transactions {
             long occurredAtUnixMillis,
             Optional<LinkedRetention> retention,
             Optional<String> managementOperationReceiptId,
-            String providerProfile) { }
+            String providerProfile,
+            ByteBuffer recordVersion,
+            Optional<Long> ownerEpoch,
+            Optional<Long> claimGeneration) { }
 
     public record EntityInspection(
             String entity,
@@ -272,12 +329,6 @@ public final class Transactions {
             Optional<DispatcherOperationReceipt> receipt,
             Optional<Management.AuditAck> auditAck) { }
 
-    public record GetEffectRequest(
-            Optional<TransactionProfile> profile,
-            Optional<CommandSelector> command,
-            String effectId,
-            Optional<Management.PublicationRef> authorizationPublication) { }
-
     public record GetEffectResponse(
             Optional<EffectReceipt> effect) { }
 
@@ -288,7 +339,8 @@ public final class Transactions {
 
     public record GetStateOperationReceiptRequest(
             Optional<InspectNamespaceRequest> namespace,
-            String operationId) { }
+            String operationId,
+            Optional<EffectManagementPlan> originalEffectPlan) { }
 
     public record StateOperationReceipt(
             String operationId,
@@ -301,7 +353,8 @@ public final class Transactions {
             long completedAtUnixMillis,
             Optional<String> recordId,
             String policyDigest,
-            StateOperationDisposition disposition) { }
+            StateOperationDisposition disposition,
+            Optional<EffectManagementReceiptDetails> effect) { }
 
     public record NamespaceOperationReceipt(
             String operationId,
@@ -317,7 +370,8 @@ public final class Transactions {
 
     public record GetStateOperationReceiptResponse(
             Optional<StateOperationReceipt> receipt,
-            Optional<NamespaceOperationReceipt> namespaceReceipt) { }
+            Optional<NamespaceOperationReceipt> namespaceReceipt,
+            Optional<Management.AuditAck> auditAck) { }
 
     public record InspectDispatcherRequest(
             Optional<TransactionProfile> profile,
@@ -352,7 +406,8 @@ public final class Transactions {
             String engineProfileDigest,
             NamespaceStatus status,
             Optional<NamespaceQuota> quota,
-            long generation) { }
+            long generation,
+            String namespacePolicyDigest) { }
 
     public record InspectNamespaceResponse(
             Optional<NamespaceInspection> namespace) { }
@@ -426,10 +481,17 @@ public final class Transactions {
             Optional<String> recordId,
             ByteBuffer expectedVersion,
             String expectedPolicyDigest,
-            String reason) { }
+            String reason,
+            Optional<EffectManagementPlan> effectPlan) { }
 
     public record MutateStateResponse(
             Optional<StateOperationReceipt> receipt,
+            Optional<Management.AuditAck> auditAck,
+            boolean replayed) { }
+
+    public record PlanEffectMutationResponse(
+            Optional<EffectManagementPlan> plan,
+            boolean replayed,
             Optional<Management.AuditAck> auditAck) { }
 
     public record QueryRequest(

@@ -56,7 +56,7 @@ def main():
         if transaction_peer.returncode or errors or len(output) > 8192:
             raise RuntimeError(f"transaction peer failure: {errors[:2048]!r}")
         summary = json.loads(output)
-        if summary["methods"] != 15 or summary["connections"] != summary["closed"]:
+        if summary["methods"] != 16 or summary["connections"] != summary["closed"]:
             raise RuntimeError("transaction peer execution or physical retirement incomplete")
         print("C controlled transaction TCP peer: " + json.dumps(summary, sort_keys=True))
     finally:

@@ -107,6 +107,40 @@ public readonly record struct EffectDisposition(int Value)
     public static readonly EffectDisposition PolicyBlocked = new(7);
     /// <summary>The administratively terminated value.</summary>
     public static readonly EffectDisposition AdministrativelyTerminated = new(8);
+    /// <summary>The retry scheduled value.</summary>
+    public static readonly EffectDisposition RetryScheduled = new(9);
+    /// <summary>The dead lettered value.</summary>
+    public static readonly EffectDisposition DeadLettered = new(10);
+}
+
+/// <summary>Open numeric EffectManagementFact value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct EffectManagementFact(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly EffectManagementFact Unspecified = new(0);
+    /// <summary>The redrive scheduled value.</summary>
+    public static readonly EffectManagementFact RedriveScheduled = new(1);
+    /// <summary>The provider confirmed value.</summary>
+    public static readonly EffectManagementFact ProviderConfirmed = new(2);
+    /// <summary>The administrator terminated value.</summary>
+    public static readonly EffectManagementFact AdministratorTerminated = new(3);
+}
+
+/// <summary>Open numeric EffectPlanSafety value; unknown integers are retained.</summary>
+/// <param name="Value">The exact signed protobuf enum value.</param>
+public readonly record struct EffectPlanSafety(int Value)
+{
+    /// <summary>The unspecified value.</summary>
+    public static readonly EffectPlanSafety Unspecified = new(0);
+    /// <summary>The known nonexecution value.</summary>
+    public static readonly EffectPlanSafety KnownNonexecution = new(1);
+    /// <summary>The qualified deduplication value.</summary>
+    public static readonly EffectPlanSafety QualifiedDeduplication = new(2);
+    /// <summary>The provider receipt lookup value.</summary>
+    public static readonly EffectPlanSafety ProviderReceiptLookup = new(3);
+    /// <summary>The administrator declared value.</summary>
+    public static readonly EffectPlanSafety AdministratorDeclared = new(4);
 }
 
 /// <summary>Open numeric NamespaceMutationKind value; unknown integers are retained.</summary>
@@ -157,6 +191,8 @@ public readonly record struct StateMutationKind(int Value)
     public static readonly StateMutationKind PurgeExpiredPayload = new(3);
     /// <summary>The checkpoint namespace value.</summary>
     public static readonly StateMutationKind CheckpointNamespace = new(4);
+    /// <summary>The reconcile effect value.</summary>
+    public static readonly StateMutationKind ReconcileEffect = new(5);
 }
 
 /// <summary>Open numeric StateOperationDisposition value; unknown integers are retained.</summary>
@@ -452,6 +488,74 @@ public sealed record DispatcherSnapshot(
     ulong CountsObservedAtUnixMillis,
     bool ClockContinuityProven);
 
+/// <summary>Transport-neutral GetEffectRequest; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Profile">The exact profile value with preserved presence.</param>
+/// <param name="Command">The exact command value with preserved presence.</param>
+/// <param name="EffectId">The exact effect_id value with preserved presence.</param>
+/// <param name="AuthorizationPublication">The exact authorization_publication value with preserved presence.</param>
+public sealed record GetEffectRequest(
+    TransactionProfile? Profile,
+    CommandSelector? Command,
+    string EffectId,
+    global::Latent.Sdk.Profile.PublicationRef? AuthorizationPublication);
+
+/// <summary>Transport-neutral PlanEffectMutationRequest; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Effect">The exact effect value with preserved presence.</param>
+/// <param name="OperationId">The exact operation_id value with preserved presence.</param>
+/// <param name="Mutation">The exact mutation value with preserved presence.</param>
+/// <param name="ExpectedVersion">The exact expected_version value with preserved presence.</param>
+/// <param name="ExpectedPolicyDigest">The exact expected_policy_digest value with preserved presence.</param>
+/// <param name="Reason">The exact reason value with preserved presence.</param>
+/// <param name="RetryDelayMillis">The exact retry_delay_millis value with preserved presence.</param>
+public sealed record PlanEffectMutationRequest(
+    GetEffectRequest? Effect,
+    string OperationId,
+    StateMutationKind Mutation,
+    ReadOnlyMemory<byte> ExpectedVersion,
+    string ExpectedPolicyDigest,
+    string Reason,
+    ulong RetryDelayMillis);
+
+/// <summary>Transport-neutral EffectManagementPlan; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Original">The exact original value with preserved presence.</param>
+/// <param name="PlanDigest">The exact plan_digest value with preserved presence.</param>
+/// <param name="ManagementSequence">The exact management_sequence value with preserved presence.</param>
+/// <param name="OwnerEpoch">The exact owner_epoch value with preserved presence.</param>
+/// <param name="ClaimGeneration">The exact claim_generation value with preserved presence.</param>
+/// <param name="DispatchAttempt">The exact dispatch_attempt value with preserved presence.</param>
+/// <param name="ExpiresAtUnixMillis">The exact expires_at_unix_millis value with preserved presence.</param>
+/// <param name="PreparedAtUnixMillis">The exact prepared_at_unix_millis value with preserved presence.</param>
+/// <param name="Before">The exact before value with preserved presence.</param>
+/// <param name="Safety">The exact safety value with preserved presence.</param>
+/// <param name="DedupValidUntilUnixMillis">The exact dedup_valid_until_unix_millis value with preserved presence.</param>
+public sealed record EffectManagementPlan(
+    PlanEffectMutationRequest? Original,
+    ReadOnlyMemory<byte> PlanDigest,
+    uint ManagementSequence,
+    ulong OwnerEpoch,
+    ulong ClaimGeneration,
+    uint DispatchAttempt,
+    ulong ExpiresAtUnixMillis,
+    ulong PreparedAtUnixMillis,
+    EffectDisposition Before,
+    EffectPlanSafety Safety,
+    ulong? DedupValidUntilUnixMillis);
+
+/// <summary>Transport-neutral EffectManagementReceiptDetails; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="OriginalPlan">The exact original_plan value with preserved presence.</param>
+/// <param name="Before">The exact before value with preserved presence.</param>
+/// <param name="After">The exact after value with preserved presence.</param>
+/// <param name="Fact">The exact fact value with preserved presence.</param>
+/// <param name="ProviderReceipt">The exact provider_receipt value with preserved presence.</param>
+/// <param name="ProviderObservedAtUnixMillis">The exact provider_observed_at_unix_millis value with preserved presence.</param>
+public sealed record EffectManagementReceiptDetails(
+    EffectManagementPlan? OriginalPlan,
+    EffectDisposition Before,
+    EffectDisposition After,
+    EffectManagementFact Fact,
+    string? ProviderReceipt,
+    ulong? ProviderObservedAtUnixMillis);
+
 /// <summary>Transport-neutral EffectReceipt; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="EffectId">The exact effect_id value with preserved presence.</param>
 /// <param name="CommandId">The exact command_id value with preserved presence.</param>
@@ -464,6 +568,9 @@ public sealed record DispatcherSnapshot(
 /// <param name="Retention">The exact retention value with preserved presence.</param>
 /// <param name="ManagementOperationReceiptId">The exact management_operation_receipt_id value with preserved presence.</param>
 /// <param name="ProviderProfile">The exact provider_profile value with preserved presence.</param>
+/// <param name="RecordVersion">The exact record_version value with preserved presence.</param>
+/// <param name="OwnerEpoch">The exact owner_epoch value with preserved presence.</param>
+/// <param name="ClaimGeneration">The exact claim_generation value with preserved presence.</param>
 public sealed record EffectReceipt(
     string EffectId,
     string CommandId,
@@ -475,7 +582,10 @@ public sealed record EffectReceipt(
     ulong OccurredAtUnixMillis,
     LinkedRetention? Retention,
     string? ManagementOperationReceiptId,
-    string ProviderProfile);
+    string ProviderProfile,
+    ReadOnlyMemory<byte> RecordVersion,
+    ulong? OwnerEpoch,
+    ulong? ClaimGeneration);
 
 /// <summary>Transport-neutral EntityInspection; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Entity">The exact entity value with preserved presence.</param>
@@ -505,17 +615,6 @@ public sealed record GetDispatcherOperationResponse(
     DispatcherOperationReceipt? Receipt,
     global::Latent.Sdk.Profile.AuditAck? AuditAck);
 
-/// <summary>Transport-neutral GetEffectRequest; see the shared client profile for authority and lifetime rules.</summary>
-/// <param name="Profile">The exact profile value with preserved presence.</param>
-/// <param name="Command">The exact command value with preserved presence.</param>
-/// <param name="EffectId">The exact effect_id value with preserved presence.</param>
-/// <param name="AuthorizationPublication">The exact authorization_publication value with preserved presence.</param>
-public sealed record GetEffectRequest(
-    TransactionProfile? Profile,
-    CommandSelector? Command,
-    string EffectId,
-    global::Latent.Sdk.Profile.PublicationRef? AuthorizationPublication);
-
 /// <summary>Transport-neutral GetEffectResponse; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Effect">The exact effect value with preserved presence.</param>
 public sealed record GetEffectResponse(
@@ -533,9 +632,11 @@ public sealed record InspectNamespaceRequest(
 /// <summary>Transport-neutral GetStateOperationReceiptRequest; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Namespace">The exact namespace value with preserved presence.</param>
 /// <param name="OperationId">The exact operation_id value with preserved presence.</param>
+/// <param name="OriginalEffectPlan">The exact original_effect_plan value with preserved presence.</param>
 public sealed record GetStateOperationReceiptRequest(
     InspectNamespaceRequest? Namespace,
-    string OperationId);
+    string OperationId,
+    EffectManagementPlan? OriginalEffectPlan);
 
 /// <summary>Transport-neutral StateOperationReceipt; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="OperationId">The exact operation_id value with preserved presence.</param>
@@ -549,6 +650,7 @@ public sealed record GetStateOperationReceiptRequest(
 /// <param name="RecordId">The exact record_id value with preserved presence.</param>
 /// <param name="PolicyDigest">The exact policy_digest value with preserved presence.</param>
 /// <param name="Disposition">The exact disposition value with preserved presence.</param>
+/// <param name="Effect">The exact effect value with preserved presence.</param>
 public sealed record StateOperationReceipt(
     string OperationId,
     string ReceiptId,
@@ -560,7 +662,8 @@ public sealed record StateOperationReceipt(
     ulong CompletedAtUnixMillis,
     string? RecordId,
     string PolicyDigest,
-    StateOperationDisposition Disposition);
+    StateOperationDisposition Disposition,
+    EffectManagementReceiptDetails? Effect);
 
 /// <summary>Transport-neutral NamespaceOperationReceipt; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="OperationId">The exact operation_id value with preserved presence.</param>
@@ -588,9 +691,11 @@ public sealed record NamespaceOperationReceipt(
 /// <summary>Transport-neutral GetStateOperationReceiptResponse; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Receipt">The exact receipt value with preserved presence.</param>
 /// <param name="NamespaceReceipt">The exact namespace_receipt value with preserved presence.</param>
+/// <param name="AuditAck">The exact audit_ack value with preserved presence.</param>
 public sealed record GetStateOperationReceiptResponse(
     StateOperationReceipt? Receipt,
-    NamespaceOperationReceipt? NamespaceReceipt);
+    NamespaceOperationReceipt? NamespaceReceipt,
+    global::Latent.Sdk.Profile.AuditAck? AuditAck);
 
 /// <summary>Transport-neutral InspectDispatcherRequest; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Profile">The exact profile value with preserved presence.</param>
@@ -645,6 +750,7 @@ public sealed record NamespaceQuota(
 /// <param name="Status">The exact status value with preserved presence.</param>
 /// <param name="Quota">The exact quota value with preserved presence.</param>
 /// <param name="Generation">The exact generation value with preserved presence.</param>
+/// <param name="NamespacePolicyDigest">The exact namespace_policy_digest value with preserved presence.</param>
 public sealed record NamespaceInspection(
     ViewIdentity? View,
     ulong EncodedStateBytes,
@@ -655,7 +761,8 @@ public sealed record NamespaceInspection(
     string EngineProfileDigest,
     NamespaceStatus Status,
     NamespaceQuota? Quota,
-    ulong Generation);
+    ulong Generation,
+    string NamespacePolicyDigest);
 
 /// <summary>Transport-neutral InspectNamespaceResponse; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Namespace">The exact namespace value with preserved presence.</param>
@@ -781,6 +888,7 @@ public sealed record MutateNamespaceResponse(
 /// <param name="ExpectedVersion">The exact expected_version value with preserved presence.</param>
 /// <param name="ExpectedPolicyDigest">The exact expected_policy_digest value with preserved presence.</param>
 /// <param name="Reason">The exact reason value with preserved presence.</param>
+/// <param name="EffectPlan">The exact effect_plan value with preserved presence.</param>
 public sealed record MutateStateRequest(
     InspectNamespaceRequest? Namespace,
     string OperationId,
@@ -788,13 +896,25 @@ public sealed record MutateStateRequest(
     string? RecordId,
     ReadOnlyMemory<byte> ExpectedVersion,
     string ExpectedPolicyDigest,
-    string Reason);
+    string Reason,
+    EffectManagementPlan? EffectPlan);
 
 /// <summary>Transport-neutral MutateStateResponse; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Receipt">The exact receipt value with preserved presence.</param>
 /// <param name="AuditAck">The exact audit_ack value with preserved presence.</param>
+/// <param name="Replayed">The exact replayed value with preserved presence.</param>
 public sealed record MutateStateResponse(
     StateOperationReceipt? Receipt,
+    global::Latent.Sdk.Profile.AuditAck? AuditAck,
+    bool Replayed);
+
+/// <summary>Transport-neutral PlanEffectMutationResponse; see the shared client profile for authority and lifetime rules.</summary>
+/// <param name="Plan">The exact plan value with preserved presence.</param>
+/// <param name="Replayed">The exact replayed value with preserved presence.</param>
+/// <param name="AuditAck">The exact audit_ack value with preserved presence.</param>
+public sealed record PlanEffectMutationResponse(
+    EffectManagementPlan? Plan,
+    bool Replayed,
     global::Latent.Sdk.Profile.AuditAck? AuditAck);
 
 /// <summary>Transport-neutral QueryRequest; see the shared client profile for authority and lifetime rules.</summary>

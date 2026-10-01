@@ -4,7 +4,7 @@ The C11 client implements the eight-operation
 [common profile](../profile/README.md) over one reusable, bounded, numeric-loopback
 HTTP/2/protobuf connection per owner. All RPCs use `latent_profile_client_vtable`;
 the obsolete invocation-only vtable and compatibility header have been removed.
-The additive `latent_transaction_client_vtable` exposes the fifteen current
+The additive `latent_transaction_client_vtable` exposes the sixteen current
 Phase 4 transaction, query, recovery, namespace and dispatcher operations on
 that same connection and bounded owner.
 
@@ -15,7 +15,7 @@ that same connection and bounded owner.
 | `<latent/profile.h>` | Existing complete eight-operation DTOs and callback interface; unchanged by this transport |
 | `<latent/types.h>` | Shared length-delimited strings, bytes and key/value pairs |
 | `<latent/transport.h>` | Constructor, explicit configuration, event-loop polling, usage and physical stop/shutdown |
-| `<latent/transaction.h>` / `<latent/transaction_client.h>` | Descriptor-derived Phase 4 models, fifteen typed callbacks, original recovery identity and bounded durable observations |
+| `<latent/transaction.h>` / `<latent/transaction_client.h>` | Descriptor-derived Phase 4 models, sixteen typed callbacks, original recovery identity and bounded durable observations |
 | Invoke / Cancel / GetActivation | HTTP/2 unary RPCs, three invocation outcomes, three cancellation dispositions and original-ID recovery |
 | GetPolicy / ListPolicies / ListCapabilities | Policy and redacted provider inspection; bounded single-page requests |
 | ApplyPolicy / GetPolicyOperation | Explicit generation and operation identity, observed receipt and manual replay recovery |
@@ -128,7 +128,7 @@ Copy any needed recovery identity and observation inside the callback, since
 all nested pointers expire on callback return. A transport failure never
 resubmits a command or supplies a technical-abort proof.
 
-The native `transaction-tests` program exercises all fifteen methods against an
+The native `transaction-tests` program exercises all sixteen methods against an
 independent authenticated HTTP/2 peer during `validate.py`, including immutable
 caller input, UINT64_MAX generations, paired large results, lost-response
 recovery, audit failure, wire limits and physical shutdown. This focused source

@@ -85,6 +85,10 @@ fn observe(value: &phase4::Response) -> Option<model::ObservedOutcome> {
             .receipt
             .clone()
             .map(|value| model::ObservedOutcome::Dispatcher(Box::new(value.into()))),
+        Response::PlanEffectMutation(value) => value
+            .plan
+            .clone()
+            .map(|value| model::ObservedOutcome::EffectPlan(Box::new(value.into()))),
         _ => None,
     }
 }
@@ -113,7 +117,7 @@ pub(super) fn known(value: &model::ObservedOutcome) -> bool {
                 | model::StateOperationDisposition::REJECTED
         ),
         // A provider dispatch observation never establishes a command outcome.
-        model::ObservedOutcome::Effect(_) => false,
+        model::ObservedOutcome::Effect(_) | model::ObservedOutcome::EffectPlan(_) => false,
         model::ObservedOutcome::Dispatcher(receipt) => {
             receipt.disposition == model::StateOperationDisposition::COMMITTED
         }
@@ -154,6 +158,9 @@ pub(super) fn extend_identity(
                 identity.attempt_id = Some(receipt.command_attempt_id.clone());
             }
         }
+        Some(model::ObservedOutcome::EffectPlan(plan)) => {
+            identity.effect_plan = Some((**plan).clone());
+        }
         _ => {}
     }
 }
@@ -166,6 +173,8 @@ fn audit_slot(value: &mut phase4::Response) -> Option<&mut Option<control::Audit
         Response::InspectDispatcher(value) => Some(&mut value.audit_ack),
         Response::ControlDispatcher(value) => Some(&mut value.audit_ack),
         Response::GetDispatcherOperation(value) => Some(&mut value.audit_ack),
+        Response::GetStateOperationReceipt(value) => Some(&mut value.audit_ack),
+        Response::PlanEffectMutation(value) => Some(&mut value.audit_ack),
         _ => None,
     }
 }
@@ -199,6 +208,7 @@ reply!(
     (InspectNamespace, control::InspectNamespaceResponse),
     (SelectEntity, control::SelectEntityResponse),
     (MutateState, control::MutateStateResponse),
+    (PlanEffectMutation, control::PlanEffectMutationResponse),
     (
         GetStateOperationReceipt,
         control::GetStateOperationReceiptResponse

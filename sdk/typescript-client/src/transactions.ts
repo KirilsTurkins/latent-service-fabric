@@ -59,6 +59,25 @@ export const EffectDisposition = {
   Expired: 6,
   PolicyBlocked: 7,
   AdministrativelyTerminated: 8,
+  RetryScheduled: 9,
+  DeadLettered: 10,
+} as const;
+
+export type EffectManagementFact = number;
+export const EffectManagementFact = {
+  Unspecified: 0,
+  RedriveScheduled: 1,
+  ProviderConfirmed: 2,
+  AdministratorTerminated: 3,
+} as const;
+
+export type EffectPlanSafety = number;
+export const EffectPlanSafety = {
+  Unspecified: 0,
+  KnownNonexecution: 1,
+  QualifiedDeduplication: 2,
+  ProviderReceiptLookup: 3,
+  AdministratorDeclared: 4,
 } as const;
 
 export type NamespaceMutationKind = number;
@@ -87,6 +106,7 @@ export const StateMutationKind = {
   TerminateEffect: 2,
   PurgeExpiredPayload: 3,
   CheckpointNamespace: 4,
+  ReconcileEffect: 5,
 } as const;
 
 export type StateOperationDisposition = number;
@@ -262,6 +282,46 @@ export interface DispatcherSnapshot {
   readonly clockContinuityProven: boolean;
 }
 
+export interface GetEffectRequest {
+  readonly profile?: TransactionProfile;
+  readonly command?: CommandSelector;
+  readonly effectId: string;
+  readonly authorizationPublication?: profile.PublicationRef;
+}
+
+export interface PlanEffectMutationRequest {
+  readonly effect?: GetEffectRequest;
+  readonly operationId: string;
+  readonly mutation: StateMutationKind;
+  readonly expectedVersion: Uint8Array;
+  readonly expectedPolicyDigest: string;
+  readonly reason: string;
+  readonly retryDelayMillis: bigint;
+}
+
+export interface EffectManagementPlan {
+  readonly original?: PlanEffectMutationRequest;
+  readonly planDigest: Uint8Array;
+  readonly managementSequence: number;
+  readonly ownerEpoch: bigint;
+  readonly claimGeneration: bigint;
+  readonly dispatchAttempt: number;
+  readonly expiresAtUnixMillis: bigint;
+  readonly preparedAtUnixMillis: bigint;
+  readonly before: EffectDisposition;
+  readonly safety: EffectPlanSafety;
+  readonly dedupValidUntilUnixMillis?: bigint;
+}
+
+export interface EffectManagementReceiptDetails {
+  readonly originalPlan?: EffectManagementPlan;
+  readonly before: EffectDisposition;
+  readonly after: EffectDisposition;
+  readonly fact: EffectManagementFact;
+  readonly providerReceipt?: string;
+  readonly providerObservedAtUnixMillis?: bigint;
+}
+
 export interface EffectReceipt {
   readonly effectId: string;
   readonly commandId: string;
@@ -274,6 +334,9 @@ export interface EffectReceipt {
   readonly retention?: LinkedRetention;
   readonly managementOperationReceiptId?: string;
   readonly providerProfile: string;
+  readonly recordVersion: Uint8Array;
+  readonly ownerEpoch?: bigint;
+  readonly claimGeneration?: bigint;
 }
 
 export interface EntityInspection {
@@ -296,13 +359,6 @@ export interface GetDispatcherOperationResponse {
   readonly auditAck?: profile.AuditAck;
 }
 
-export interface GetEffectRequest {
-  readonly profile?: TransactionProfile;
-  readonly command?: CommandSelector;
-  readonly effectId: string;
-  readonly authorizationPublication?: profile.PublicationRef;
-}
-
 export interface GetEffectResponse {
   readonly effect?: EffectReceipt;
 }
@@ -316,6 +372,7 @@ export interface InspectNamespaceRequest {
 export interface GetStateOperationReceiptRequest {
   readonly namespace?: InspectNamespaceRequest;
   readonly operationId: string;
+  readonly originalEffectPlan?: EffectManagementPlan;
 }
 
 export interface StateOperationReceipt {
@@ -330,6 +387,7 @@ export interface StateOperationReceipt {
   readonly recordId?: string;
   readonly policyDigest: string;
   readonly disposition: StateOperationDisposition;
+  readonly effect?: EffectManagementReceiptDetails;
 }
 
 export interface NamespaceOperationReceipt {
@@ -348,6 +406,7 @@ export interface NamespaceOperationReceipt {
 export interface GetStateOperationReceiptResponse {
   readonly receipt?: StateOperationReceipt;
   readonly namespaceReceipt?: NamespaceOperationReceipt;
+  readonly auditAck?: profile.AuditAck;
 }
 
 export interface InspectDispatcherRequest {
@@ -388,6 +447,7 @@ export interface NamespaceInspection {
   readonly status: NamespaceStatus;
   readonly quota?: NamespaceQuota;
   readonly generation: bigint;
+  readonly namespacePolicyDigest: string;
 }
 
 export interface InspectNamespaceResponse {
@@ -477,10 +537,18 @@ export interface MutateStateRequest {
   readonly expectedVersion: Uint8Array;
   readonly expectedPolicyDigest: string;
   readonly reason: string;
+  readonly effectPlan?: EffectManagementPlan;
 }
 
 export interface MutateStateResponse {
   readonly receipt?: StateOperationReceipt;
+  readonly auditAck?: profile.AuditAck;
+  readonly replayed: boolean;
+}
+
+export interface PlanEffectMutationResponse {
+  readonly plan?: EffectManagementPlan;
+  readonly replayed: boolean;
   readonly auditAck?: profile.AuditAck;
 }
 

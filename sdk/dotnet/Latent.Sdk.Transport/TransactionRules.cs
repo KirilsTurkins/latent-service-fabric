@@ -11,7 +11,7 @@ internal sealed class TransactionWireValueException(string field, string value) 
     internal Profile.UnsupportedWireValue Value { get; } = new(field, value);
 }
 
-internal static class TransactionRules
+internal static partial class TransactionRules
 {
     private static readonly HashSet<string> PlatformCodes = new(StringComparer.Ordinal)
     {
@@ -155,10 +155,16 @@ internal static class TransactionRules
             case Tx.CancelCommandRequest value: Lookup(value.Command); Text(value.Reason, 1024); break;
             case Tx.InspectNamespaceRequest value: Inspect(value); break;
             case Tx.SelectEntityRequest value: Inspect(value.Namespace); Page(value.Page); if (value.Prefix is { } prefix) Bytes(prefix, 256, false); break;
-            case Tx.GetStateOperationReceiptRequest value: Inspect(value.Namespace); Text(value.OperationId); break;
+            case Tx.GetStateOperationReceiptRequest value:
+                Inspect(value.Namespace); Text(value.OperationId);
+                if (value.OriginalEffectPlan is { } plan) EffectPlanAssociation(value.Namespace, value.OperationId, plan);
+                break;
+            case Tx.PlanEffectMutationRequest value: EffectMutation(value); break;
             case Tx.MutateStateRequest value:
-                Inspect(value.Namespace); Text(value.OperationId); Bytes(value.ExpectedVersion); Digest(value.ExpectedPolicyDigest); Text(value.Reason, 1024); Enum(value.Mutation.Value, 4);
+                Inspect(value.Namespace); Text(value.OperationId); Bytes(value.ExpectedVersion); Digest(value.ExpectedPolicyDigest); Text(value.Reason, 1024); Enum(value.Mutation.Value, 5);
                 Require((value.Mutation.Value == 4) == (value.RecordId is null)); if (value.RecordId is not null) Text(value.RecordId);
+                if (value.Mutation.Value is 1 or 2 or 5) EffectPlanAssociation(value.Namespace, value.OperationId, Present(value.EffectPlan), value);
+                else Require(value.EffectPlan is null);
                 break;
             case Tx.MutateNamespaceRequest value:
                 var target = Inspect(value.Namespace); Text(value.OperationId); Enum(value.Mutation.Value, 5); Require(value.ExpectedGeneration.HasValue);
@@ -258,7 +264,10 @@ internal static class TransactionRules
     {
         var value = Present(raw); foreach (var id in new[] { value.EffectId, value.CommandId, value.CommandAttemptId, value.ProviderProfile }) Text(id);
         foreach (var id in new[] { value.ProviderReceipt, value.FailureCode, value.ManagementOperationReceiptId }) if (id is not null) Text(id);
-        Enum(value.Disposition.Value, 8); Require(value.EffectId == requested); Retention(value.Retention);
+        Enum(value.Disposition.Value, 10); Require(value.EffectId == requested); Retention(value.Retention);
+        if (!value.RecordVersion.IsEmpty) EffectVersion(value.RecordVersion);
+        Require(value.OwnerEpoch.HasValue == value.ClaimGeneration.HasValue);
+        if (value.OwnerEpoch.HasValue) Require(value.OwnerEpoch != 0 && value.ClaimGeneration != 0 && value.DispatchAttempt is >= 1 and <= 128);
     }
     private static void PageResponse(Tx.PageResponse? raw, Tx.PageRequest? requested, int count)
     {
@@ -281,7 +290,7 @@ internal static class TransactionRules
     {
         var value = Present(raw); Require(value.Namespace == target!.Namespace && value.OperationId == operation); Namespace(value.Namespace);
         foreach (var id in new[] { value.OperationId, value.ReceiptId, value.AuthenticatedOperator }) Text(id);
-        Bytes(value.BeforeVersion); Bytes(value.AfterVersion); Digest(value.PolicyDigest); Enum(value.Disposition.Value, 5); Enum(value.Mutation.Value, 4);
+        Bytes(value.BeforeVersion); Bytes(value.AfterVersion); Digest(value.PolicyDigest); Enum(value.Disposition.Value, 5); Enum(value.Mutation.Value, 5);
         if (value.RecordId is not null) Text(value.RecordId);
     }
     private static void Receipt(Tx.NamespaceOperationReceipt? raw, Tx.InspectNamespaceRequest? target, string operation)
@@ -319,14 +328,19 @@ internal static class TransactionRules
             case (Tx.QueryResponse value, Tx.QueryRequest requested): View(value.View, requested.Namespace); InvocationResponse(value.Invocation, value.Source, requested.Invocation?.ActivationId); break;
             case (Tx.InspectNamespaceResponse value, Tx.InspectNamespaceRequest requested):
                 var inspectedNs = Present(value.Namespace); View(inspectedNs.View, requested.Namespace); Enum(inspectedNs.Status.Value, 4); Require(inspectedNs.Generation != 0);
-                Quota(inspectedNs.Quota); Text(inspectedNs.EngineProfile); Digest(inspectedNs.EngineProfileDigest); foreach (var format in inspectedNs.RetainedFormats) Retention(format); break;
+                Quota(inspectedNs.Quota); Text(inspectedNs.EngineProfile); Digest(inspectedNs.EngineProfileDigest); foreach (var format in inspectedNs.RetainedFormats) Retention(format);
+                if (inspectedNs.NamespacePolicyDigest.Length != 0) Digest(inspectedNs.NamespacePolicyDigest); break;
             case (Tx.SelectEntityResponse value, Tx.SelectEntityRequest requested):
                 var names = new HashSet<string>(StringComparer.Ordinal); foreach (var entity in value.Entities) { Identity(entity.Entity); Bytes(entity.Version); Require(names.Add(entity.Entity)); }
                 PageResponse(value.Page, requested.Page, value.Entities.Count); break;
             case (Tx.MutateStateResponse value, Tx.MutateStateRequest requested):
                 Receipt(value.Receipt, requested.Namespace, requested.OperationId); var acceptedState = value.Receipt!;
                 Require(acceptedState.Mutation == requested.Mutation && acceptedState.RecordId == requested.RecordId && EqualBytes(acceptedState.BeforeVersion, requested.ExpectedVersion) && acceptedState.PolicyDigest == requested.ExpectedPolicyDigest);
+                Require((acceptedState.Effect is not null) == (requested.EffectPlan is not null));
+                if (requested.EffectPlan is { } plan) EffectPlanReceipt(acceptedState, plan);
                 break;
+            case (Tx.PlanEffectMutationResponse value, Tx.PlanEffectMutationRequest requested):
+                Require(EqualEffectMutation(EffectPlan(value.Plan).Original!, requested)); break;
             case (Tx.MutateNamespaceResponse value, Tx.MutateNamespaceRequest requested):
                 Receipt(value.Receipt, requested.Namespace, requested.OperationId); var accepted = value.Receipt!;
                 Require(accepted.Mutation == requested.Mutation && accepted.BeforeGeneration == (requested.Mutation.Value == 1 ? null : requested.ExpectedGeneration));
@@ -343,6 +357,8 @@ internal static class TransactionRules
                 Require((value.Receipt is null) != (value.NamespaceReceipt is null));
                 if (value.Receipt is not null) Receipt(value.Receipt, requested.Namespace, requested.OperationId);
                 else Receipt(value.NamespaceReceipt, requested.Namespace, requested.OperationId);
+                Require((value.Receipt?.Effect is not null) == (requested.OriginalEffectPlan is not null));
+                if (requested.OriginalEffectPlan is { } recoveryPlan) EffectPlanReceipt(Present(value.Receipt), recoveryPlan);
                 break;
             case (Tx.InspectDispatcherResponse value, Tx.InspectDispatcherRequest):
                 var snapshot = Present(value.Dispatcher); DispatcherGeneration(snapshot.Generation); Enum(snapshot.Failure.Value, 7);
@@ -364,6 +380,7 @@ internal static class TransactionRules
         Profile.AuditAck? audit = response switch
         {
             Tx.MutateStateResponse value => value.AuditAck, Tx.MutateNamespaceResponse value => value.AuditAck,
+            Tx.PlanEffectMutationResponse value => value.AuditAck, Tx.GetStateOperationReceiptResponse value => value.AuditAck,
             Tx.InspectDispatcherResponse value => value.AuditAck, Tx.ControlDispatcherResponse value => value.AuditAck,
             Tx.GetDispatcherOperationResponse value => value.AuditAck, _ => null
         };
@@ -381,6 +398,7 @@ internal static class TransactionRules
         return response switch
         {
             Tx.GetEffectResponse value => new() { Effect = value.Effect }, Tx.MutateStateResponse value => new() { State = value.Receipt },
+            Tx.PlanEffectMutationResponse value => new() { EffectPlan = value.Plan },
             Tx.MutateNamespaceResponse value => new() { Namespace = value.Receipt }, Tx.GetStateOperationReceiptResponse value => new() { State = value.Receipt, Namespace = value.NamespaceReceipt },
             Tx.ControlDispatcherResponse value => new() { Dispatcher = value.Receipt }, Tx.GetDispatcherOperationResponse value => new() { Dispatcher = value.Receipt }, _ => null
         };
@@ -396,7 +414,8 @@ internal static class TransactionRules
             ReceiptId = original.ReceiptId ?? command.Commit?.ReceiptId,
             FingerprintSha256 = command.FingerprintSha256.IsEmpty ? original.FingerprintSha256 : command.FingerprintSha256.ToArray()
         };
-        return original with { ReceiptId = observed?.State?.ReceiptId ?? observed?.Namespace?.ReceiptId ?? observed?.Dispatcher?.ReceiptId ?? original.ReceiptId };
+        return original with { ReceiptId = observed?.State?.ReceiptId ?? observed?.Namespace?.ReceiptId ?? observed?.Dispatcher?.ReceiptId ?? original.ReceiptId,
+            EffectPlan = observed?.EffectPlan ?? original.EffectPlan };
     }
 
     internal static Tx.RecoveryIdentity IdentitySnapshot(object original)
@@ -407,7 +426,8 @@ internal static class TransactionRules
             {
                 Tx.InvokeCommandRequest value => value.Command, Tx.LookupCommandRequest value => value.Command,
                 Tx.LookupCommitRequest value => value.Command, Tx.GetEffectRequest value => value.Command,
-                Tx.ListEffectHistoryRequest value => value.Effect?.Command, Tx.CancelCommandRequest value => value.Command?.Command, _ => null
+                Tx.ListEffectHistoryRequest value => value.Effect?.Command, Tx.CancelCommandRequest value => value.Command?.Command,
+                Tx.PlanEffectMutationRequest value => value.Effect?.Command, _ => null
             };
             Tx.InspectNamespaceRequest? inspect = original switch
             {
@@ -417,6 +437,8 @@ internal static class TransactionRules
             Tx.NamespaceSelector? ns = command?.Namespace ?? inspect?.Namespace ?? (original as Tx.QueryRequest)?.Namespace;
             if (ns is not null) Namespace(ns); if (command is not null) Selector(command);
             var invoke = original as Tx.InvokeCommandRequest; var state = original as Tx.MutateStateRequest; var lifecycle = original as Tx.MutateNamespaceRequest;
+            var effectMutation = original as Tx.PlanEffectMutationRequest;
+            var effectPlan = state?.EffectPlan ?? (original as Tx.GetStateOperationReceiptRequest)?.OriginalEffectPlan;
             var dispatcher = original as Tx.ControlDispatcherRequest ?? (original as Tx.GetDispatcherOperationRequest)?.Original;
             if (dispatcher is not null) { Text(dispatcher.OperationId); Enum(dispatcher.Action.Value, 2); DispatcherGeneration(dispatcher.ExpectedGeneration); }
             if (state is not null) Bytes(state.ExpectedVersion);
@@ -430,19 +452,22 @@ internal static class TransactionRules
             {
                 Tx.LookupCommandRequest value => value.AuthorizationPublication, Tx.LookupCommitRequest value => value.AuthorizationPublication,
                 Tx.GetEffectRequest value => value.AuthorizationPublication, Tx.ListEffectHistoryRequest value => value.Effect?.AuthorizationPublication,
-                Tx.CancelCommandRequest value => value.Command?.AuthorizationPublication, _ => inspect?.AuthorizationPublication
+                Tx.CancelCommandRequest value => value.Command?.AuthorizationPublication, Tx.PlanEffectMutationRequest value => value.Effect?.AuthorizationPublication,
+                _ => inspect?.AuthorizationPublication
             };
             var snapshot = new Tx.RecoveryIdentity
             {
                 Namespace = ns, Command = command,
                 ActivationId = invoke?.Invocation?.ActivationId ?? (original as Tx.QueryRequest)?.Invocation?.ActivationId,
-                OperationId = lifecycle?.OperationId ?? state?.OperationId ?? (original as Tx.GetStateOperationReceiptRequest)?.OperationId ?? dispatcher?.OperationId,
+                OperationId = lifecycle?.OperationId ?? state?.OperationId ?? (original as Tx.GetStateOperationReceiptRequest)?.OperationId ?? dispatcher?.OperationId ?? effectMutation?.OperationId,
                 AttemptId = (original as Tx.LookupCommandRequest)?.AttemptId ?? invoke?.RetryAttempt?.ExpectedAbort?.AttemptId ?? (original as Tx.CancelCommandRequest)?.Command?.AttemptId,
                 ReceiptId = (original as Tx.LookupCommitRequest)?.ReceiptId,
-                EffectId = (original as Tx.GetEffectRequest)?.EffectId ?? (original as Tx.ListEffectHistoryRequest)?.Effect?.EffectId,
+                EffectId = (original as Tx.GetEffectRequest)?.EffectId ?? (original as Tx.ListEffectHistoryRequest)?.Effect?.EffectId ?? effectMutation?.Effect?.EffectId ?? effectPlan?.Original?.Effect?.EffectId,
                 ExpectedGeneration = lifecycle?.ExpectedGeneration,
                 DispatcherAction = dispatcher?.Action, DispatcherExpectedGeneration = dispatcher?.ExpectedGeneration,
-                ExpectedVersion = state is null ? (ReadOnlyMemory<byte>?)null : new ReadOnlyMemory<byte>(state.ExpectedVersion.ToArray()), ExpectedPolicyDigest = state?.ExpectedPolicyDigest,
+                ExpectedVersion = state is not null ? new ReadOnlyMemory<byte>(state.ExpectedVersion.ToArray()) : effectMutation is not null ? new ReadOnlyMemory<byte>(effectMutation.ExpectedVersion.ToArray()) : effectPlan?.Original?.ExpectedVersion,
+                ExpectedPolicyDigest = state?.ExpectedPolicyDigest ?? effectMutation?.ExpectedPolicyDigest ?? effectPlan?.Original?.ExpectedPolicyDigest,
+                EffectMutation = effectMutation ?? effectPlan?.Original, EffectPlan = effectPlan,
                 AuthorizationPublication = publication, RetryRequestId = invoke?.RetryAttempt?.RequestId,
                 ExpectedAbort = invoke?.RetryAttempt?.ExpectedAbort is { } abort ? abort with { OwnerFence = abort.OwnerFence.ToArray() } : null,
                 ExpectedVersions = invoke?.ExpectedVersions.Count <= 128 ? invoke.ExpectedVersions.Select(v => v with

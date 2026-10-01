@@ -6,7 +6,7 @@ The owner uses the native nghttp2 C HTTP/2 library with nanopb C protobuf
 descriptors/runtime. It sends unary gRPC frames on one nonblocking TCP socket.
 There is no automatic retry, library retry layer, DNS lookup, proxy, redirect,
 HTTP/1 fallback, subprocess, background thread or connection per deployment.
-Generated paths select the eight common RPCs and the fifteen current Phase 4
+Generated paths select the eight common RPCs and the sixteen current Phase 4
 transaction, query, recovery, namespace and dispatcher RPCs. A new explicit request
 may open a replacement connection after failure; failed calls are never replayed.
 

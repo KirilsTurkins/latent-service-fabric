@@ -346,15 +346,24 @@ func validateTransactionRequest(request any) error {
 	case "GetStateOperationReceiptRequest":
 		v.inspect(transactionField(raw, "Namespace"))
 		v.id(transactionField(raw, "OperationId"))
+		if plan := transactionField(raw, "OriginalEffectPlan"); transactionHas(plan) {
+			v.effectPlanAssociation(raw, plan, true)
+		}
+	case "PlanEffectMutationRequest":
+		v.effectMutation(raw)
 	case "MutateStateRequest":
 		v.inspect(transactionField(raw, "Namespace"))
 		v.id(transactionField(raw, "OperationId"))
 		v.data(transactionField(raw, "ExpectedVersion"), 256, true)
 		v.digest(transactionField(raw, "ExpectedPolicyDigest"))
 		v.text(transactionField(raw, "Reason"), 1024, true, true)
-		mutation := v.enum(transactionField(raw, "Mutation"), 4, "state.mutation")
+		mutation := v.enum(transactionField(raw, "Mutation"), 5, "state.mutation")
 		record := transactionField(raw, "RecordId")
-		v.check((mutation == 4) == !transactionHas(record))
+		if plan := transactionField(raw, "EffectPlan"); transactionHas(plan) {
+			v.effectPlanAssociation(raw, plan, false)
+		} else {
+			v.check((mutation == 3 || mutation == 4) && (mutation == 4) == !transactionHas(record))
+		}
 		v.optionalID(record)
 	case "MutateNamespaceRequest":
 		target := transactionField(raw, "Namespace")
@@ -532,7 +541,16 @@ func (v *transactionValidator) effect(value reflect.Value, expected reflect.Valu
 	for _, name := range []string{"ProviderReceipt", "FailureCode", "ManagementOperationReceiptId"} {
 		v.optionalID(transactionField(value, name))
 	}
-	v.enum(transactionField(value, "Disposition"), 8, "effect.disposition")
+	v.enum(transactionField(value, "Disposition"), 10, "effect.disposition")
+	if version := v.data(transactionField(value, "RecordVersion"), 32, false); len(version) != 0 {
+		v.effectVersion(transactionField(value, "RecordVersion"))
+	}
+	owner, claim := transactionField(value, "OwnerEpoch"), transactionField(value, "ClaimGeneration")
+	v.check(transactionHas(owner) == transactionHas(claim))
+	if transactionHas(owner) {
+		attempt := v.uint(transactionField(value, "DispatchAttempt"))
+		v.check(v.uint(owner) != 0 && v.uint(claim) != 0 && attempt >= 1 && attempt <= 128)
+	}
 	v.check(transactionEqual(transactionField(value, "EffectId"), expected))
 	v.retention(transactionField(value, "Retention"))
 }
@@ -589,7 +607,7 @@ func (v *transactionValidator) receipt(value, request reflect.Value, lifecycle b
 		v.data(transactionField(value, "BeforeVersion"), 256, true)
 		v.data(transactionField(value, "AfterVersion"), 256, true)
 		v.digest(transactionField(value, "PolicyDigest"))
-		v.enum(transactionField(value, "Mutation"), 4, "state.mutation")
+		v.enum(transactionField(value, "Mutation"), 5, "state.mutation")
 		v.optionalID(transactionField(value, "RecordId"))
 	}
 }
@@ -646,6 +664,9 @@ func validateTransactionResponse(response, original any, state *callState) error
 		v.quota(transactionField(inspected, "Quota"))
 		v.id(transactionField(inspected, "EngineProfile"))
 		v.digest(transactionField(inspected, "EngineProfileDigest"))
+		if v.text(transactionField(inspected, "NamespacePolicyDigest"), 71, false, true) != "" {
+			v.digest(transactionField(inspected, "NamespacePolicyDigest"))
+		}
 		for _, format := range v.list(transactionField(inspected, "RetainedFormats"), 128) {
 			v.retention(format)
 		}
@@ -665,6 +686,15 @@ func validateTransactionResponse(response, original any, state *callState) error
 		for _, pair := range [][2]string{{"Mutation", "Mutation"}, {"RecordId", "RecordId"}, {"BeforeVersion", "ExpectedVersion"}, {"PolicyDigest", "ExpectedPolicyDigest"}} {
 			v.check(transactionEqual(transactionField(receipt, pair[0]), transactionField(request, pair[1])))
 		}
+		plan := transactionField(request, "EffectPlan")
+		v.check(transactionHas(transactionField(receipt, "Effect")) == transactionHas(plan))
+		if transactionHas(plan) {
+			v.effectPlanReceipt(receipt, plan)
+		}
+	case "PlanEffectMutationRequest":
+		plan := transactionField(value, "Plan")
+		v.effectPlan(plan)
+		v.check(transactionEqual(transactionField(plan, "Original"), request))
 	case "MutateNamespaceRequest":
 		receipt := transactionField(value, "Receipt")
 		v.receipt(receipt, request, true)
@@ -701,6 +731,12 @@ func validateTransactionResponse(response, original any, state *callState) error
 			v.receipt(stateReceipt, request, false)
 		} else {
 			v.receipt(namespaceReceipt, request, true)
+		}
+		plan := transactionField(request, "OriginalEffectPlan")
+		v.check(transactionHas(transactionField(stateReceipt, "Effect")) == transactionHas(plan))
+		if transactionHas(plan) {
+			v.check(!transactionHas(namespaceReceipt))
+			v.effectPlanReceipt(stateReceipt, plan)
 		}
 	case "InspectDispatcherRequest":
 		snapshot := transactionField(value, "Dispatcher")
@@ -777,7 +813,7 @@ func transactionCollections(value reflect.Value, depth int, field string) error 
 }
 func transactionRecovery(request any) bool {
 	switch request.(type) {
-	case tx.LookupCommandRequest, tx.LookupCommitRequest, tx.GetEffectRequest, tx.ListEffectHistoryRequest, tx.CancelCommandRequest, tx.GetStateOperationReceiptRequest, tx.InspectDispatcherRequest, tx.ControlDispatcherRequest, tx.GetDispatcherOperationRequest:
+	case tx.LookupCommandRequest, tx.LookupCommitRequest, tx.GetEffectRequest, tx.ListEffectHistoryRequest, tx.CancelCommandRequest, tx.GetStateOperationReceiptRequest, tx.PlanEffectMutationRequest, tx.InspectDispatcherRequest, tx.ControlDispatcherRequest, tx.GetDispatcherOperationRequest:
 		return true
 	}
 	return false
@@ -818,6 +854,8 @@ func transactionObserve(response any) *tx.ObservedOutcome {
 		return &tx.ObservedOutcome{Dispatcher: value.Receipt}
 	case tx.GetDispatcherOperationResponse:
 		return &tx.ObservedOutcome{Dispatcher: value.Receipt}
+	case tx.PlanEffectMutationResponse:
+		return &tx.ObservedOutcome{EffectPlan: value.Plan}
 	}
 	if command == nil {
 		return nil
@@ -851,6 +889,9 @@ func transactionKnown(observed *tx.ObservedOutcome) bool {
 func transactionExtendIdentity(identity tx.RecoveryIdentity, observed *tx.ObservedOutcome) tx.RecoveryIdentity {
 	if observed == nil {
 		return identity
+	}
+	if observed.EffectPlan != nil {
+		identity.EffectPlan = observed.EffectPlan
 	}
 	if observed.Command != nil {
 		command := observed.Command
@@ -941,6 +982,16 @@ func transactionIdentity(request any) tx.RecoveryIdentity {
 		command = value.Command
 		original.EffectId = &value.EffectId
 		original.AuthorizationPublication = value.AuthorizationPublication
+	case tx.PlanEffectMutationRequest:
+		original.OperationId = &value.OperationId
+		original.ExpectedVersion = &value.ExpectedVersion
+		original.ExpectedPolicyDigest = &value.ExpectedPolicyDigest
+		original.EffectMutation = &value
+		if value.Effect != nil {
+			command = value.Effect.Command
+			original.EffectId = &value.Effect.EffectId
+			original.AuthorizationPublication = value.Effect.AuthorizationPublication
+		}
 	case tx.ListEffectHistoryRequest:
 		if value.Effect != nil {
 			command = value.Effect.Command
@@ -966,9 +1017,11 @@ func transactionIdentity(request any) tx.RecoveryIdentity {
 		original.OperationId = &value.OperationId
 		original.ExpectedVersion = &value.ExpectedVersion
 		original.ExpectedPolicyDigest = &value.ExpectedPolicyDigest
+		original.EffectPlan = value.EffectPlan
 	case tx.GetStateOperationReceiptRequest:
 		inspect = value.Namespace
 		original.OperationId = &value.OperationId
+		original.EffectPlan = value.OriginalEffectPlan
 	case tx.ControlDispatcherRequest:
 		original.OperationId = &value.OperationId
 		original.DispatcherAction = &value.Action
@@ -987,6 +1040,15 @@ func transactionIdentity(request any) tx.RecoveryIdentity {
 	if inspect != nil {
 		original.Namespace = inspect.Namespace
 		original.AuthorizationPublication = inspect.AuthorizationPublication
+	}
+	if original.EffectPlan != nil && original.EffectPlan.Original != nil {
+		mutation := original.EffectPlan.Original
+		original.EffectMutation = mutation
+		original.ExpectedVersion = &mutation.ExpectedVersion
+		original.ExpectedPolicyDigest = &mutation.ExpectedPolicyDigest
+		if mutation.Effect != nil {
+			original.EffectId = &mutation.Effect.EffectId
+		}
 	}
 	value := reflect.ValueOf(original)
 	budget := graphBudget{bytes: 384 * 1024, nodes: 4096}

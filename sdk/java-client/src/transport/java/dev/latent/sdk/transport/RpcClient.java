@@ -438,6 +438,9 @@ public final class RpcClient implements Management.ClientProfile, TransactionCli
     @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.GetStateOperationReceiptResponse>> getStateOperationReceipt(Transactions.GetStateOperationReceiptRequest request, Management.CallOptions options) {
         return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, StateServiceGrpc.getGetStateOperationReceiptMethod(), State.GetStateOperationReceiptResponse.getDefaultInstance(), TransactionWire::fromWire);
     }
+    @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.PlanEffectMutationResponse>> planEffectMutation(Transactions.PlanEffectMutationRequest request, Management.CallOptions options) {
+        return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, StateServiceGrpc.getPlanEffectMutationMethod(), State.PlanEffectMutationResponse.getDefaultInstance(), TransactionWire::fromWire);
+    }
     @Override public CompletableFuture<TransactionClient.ClientResponse<Transactions.InspectDispatcherResponse>> inspectDispatcher(Transactions.InspectDispatcherRequest request, Management.CallOptions options) {
         return transactionCall(request, options, TransactionWire::toWire, TransactionWire::fromWire, DispatcherServiceGrpc.getInspectDispatcherMethod(), Dispatcher.InspectDispatcherResponse.getDefaultInstance(), TransactionWire::fromWire);
     }

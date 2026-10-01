@@ -27,6 +27,8 @@ type RecoveryIdentity struct {
 	AuthorizationPublication     *profile.PublicationRef
 	DispatcherAction             *DispatcherAction
 	DispatcherExpectedGeneration *DispatcherGeneration
+	EffectMutation               *PlanEffectMutationRequest
+	EffectPlan                   *EffectManagementPlan
 }
 
 // ObservedOutcome retains bounded validated receipts independently of application bytes.
@@ -36,6 +38,7 @@ type ObservedOutcome struct {
 	Namespace  *NamespaceOperationReceipt
 	Effect     *EffectReceipt
 	Dispatcher *DispatcherOperationReceipt
+	EffectPlan *EffectManagementPlan
 }
 
 // ResponseMetadata keeps transport/audit knowledge separate from a durable observation.
@@ -81,6 +84,7 @@ type Client interface {
 	MutateNamespace(context.Context, MutateNamespaceRequest, profile.CallOptions) (ClientResponse[MutateNamespaceResponse], error)
 	SelectEntity(context.Context, SelectEntityRequest, profile.CallOptions) (ClientResponse[SelectEntityResponse], error)
 	MutateState(context.Context, MutateStateRequest, profile.CallOptions) (ClientResponse[MutateStateResponse], error)
+	PlanEffectMutation(context.Context, PlanEffectMutationRequest, profile.CallOptions) (ClientResponse[PlanEffectMutationResponse], error)
 	GetStateOperationReceipt(context.Context, GetStateOperationReceiptRequest, profile.CallOptions) (ClientResponse[GetStateOperationReceiptResponse], error)
 	InspectDispatcher(context.Context, InspectDispatcherRequest, profile.CallOptions) (ClientResponse[InspectDispatcherResponse], error)
 	ControlDispatcher(context.Context, ControlDispatcherRequest, profile.CallOptions) (ClientResponse[ControlDispatcherResponse], error)

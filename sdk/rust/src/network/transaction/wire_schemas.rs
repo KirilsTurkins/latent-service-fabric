@@ -325,6 +325,138 @@ pub(super) static LATENT_CONTROL_V1_DISPATCHERSNAPSHOT: Schema = Schema {
     ],
 };
 
+pub(super) static LATENT_CONTROL_V1_EFFECTMANAGEMENTPLAN: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::EffectManagementPlan>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_CONTROL_V1_PLANEFFECTMUTATIONREQUEST),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::Bytes,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
+            kind: Kind::U32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 4,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 5,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 6,
+            kind: Kind::U32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 7,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 8,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 9,
+            kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 10,
+            kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 11,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 1,
+        },
+    ],
+};
+
+pub(super) static LATENT_CONTROL_V1_EFFECTMANAGEMENTRECEIPTDETAILS: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::EffectManagementReceiptDetails>()
+        + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_CONTROL_V1_EFFECTMANAGEMENTPLAN),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
+            kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 4,
+            kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 5,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 1,
+        },
+        Field {
+            number: 6,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 2,
+        },
+    ],
+};
+
 pub(super) static LATENT_CONTROL_V1_ENTITYINSPECTION: Schema = Schema {
     allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::EntityInspection>() + 64,
     fields: &[
@@ -424,6 +556,13 @@ pub(super) static LATENT_CONTROL_V1_GETSTATEOPERATIONRECEIPTRESPONSE: Schema = S
             maximum: 128,
             oneof: 0,
         },
+        Field {
+            number: 3,
+            kind: Kind::Message(&LATENT_CONTROL_V1_AUDITACK),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
     ],
 };
 
@@ -502,6 +641,13 @@ pub(super) static LATENT_CONTROL_V1_MUTATESTATERESPONSE: Schema = Schema {
             maximum: 128,
             oneof: 0,
         },
+        Field {
+            number: 3,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
     ],
 };
 
@@ -574,6 +720,13 @@ pub(super) static LATENT_CONTROL_V1_NAMESPACEINSPECTION: Schema = Schema {
         Field {
             number: 10,
             kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 11,
+            kind: Kind::String,
             repeated: false,
             maximum: 128,
             oneof: 0,
@@ -719,6 +872,88 @@ pub(super) static LATENT_CONTROL_V1_NAMESPACEQUOTA: Schema = Schema {
     ],
 };
 
+pub(super) static LATENT_CONTROL_V1_PLANEFFECTMUTATIONREQUEST: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::PlanEffectMutationRequest>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_TRANSACTION_V1_GETEFFECTREQUEST),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
+            kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 4,
+            kind: Kind::Bytes,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 5,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 6,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 7,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
+pub(super) static LATENT_CONTROL_V1_PLANEFFECTMUTATIONRESPONSE: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::PlanEffectMutationResponse>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_CONTROL_V1_EFFECTMANAGEMENTPLAN),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::Bool,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
+            kind: Kind::Message(&LATENT_CONTROL_V1_AUDITACK),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
 pub(super) static LATENT_CONTROL_V1_PLATFORMERROR: Schema = Schema {
     allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::PlatformError>() + 64,
     fields: &[
@@ -747,6 +982,26 @@ pub(super) static LATENT_CONTROL_V1_PLATFORMERROR: Schema = Schema {
             number: 5,
             kind: Kind::Message(&LATENT_CONTROL_V1_ERRORDETAIL),
             repeated: true,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
+pub(super) static LATENT_CONTROL_V1_PUBLICATIONREF: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::control::v1::PublicationRef>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::String,
+            repeated: false,
             maximum: 128,
             oneof: 0,
         },
@@ -849,6 +1104,13 @@ pub(super) static LATENT_CONTROL_V1_STATEOPERATIONRECEIPT: Schema = Schema {
         Field {
             number: 11,
             kind: Kind::I32,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 12,
+            kind: Kind::Message(&LATENT_CONTROL_V1_EFFECTMANAGEMENTRECEIPTDETAILS),
             repeated: false,
             maximum: 128,
             oneof: 0,
@@ -1410,6 +1672,47 @@ pub(super) static LATENT_TRANSACTION_V1_COMMANDKEY: Schema = Schema {
     ],
 };
 
+pub(super) static LATENT_TRANSACTION_V1_COMMANDSELECTOR: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::transaction::v1::CommandSelector>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_TRANSACTION_V1_NAMESPACESELECTOR),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 1,
+        },
+        Field {
+            number: 4,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 5,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 2,
+        },
+    ],
+};
+
 pub(super) static LATENT_TRANSACTION_V1_COMMITRECEIPT: Schema = Schema {
     allocation: 2 * std::mem::size_of::<latent_rpc::transaction::v1::CommitReceipt>() + 64,
     fields: &[
@@ -1548,6 +1851,61 @@ pub(super) static LATENT_TRANSACTION_V1_EFFECTRECEIPT: Schema = Schema {
         Field {
             number: 11,
             kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 12,
+            kind: Kind::Bytes,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 13,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 4,
+        },
+        Field {
+            number: 14,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 5,
+        },
+    ],
+};
+
+pub(super) static LATENT_TRANSACTION_V1_GETEFFECTREQUEST: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::transaction::v1::GetEffectRequest>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::Message(&LATENT_TRANSACTION_V1_TRANSACTIONPROFILE),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::Message(&LATENT_TRANSACTION_V1_COMMANDSELECTOR),
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 4,
+            kind: Kind::Message(&LATENT_CONTROL_V1_PUBLICATIONREF),
             repeated: false,
             maximum: 128,
             oneof: 0,
@@ -1840,6 +2198,33 @@ pub(super) static LATENT_TRANSACTION_V1_SOURCEIDENTITY: Schema = Schema {
         },
         Field {
             number: 9,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+    ],
+};
+
+pub(super) static LATENT_TRANSACTION_V1_TRANSACTIONPROFILE: Schema = Schema {
+    allocation: 2 * std::mem::size_of::<latent_rpc::transaction::v1::TransactionProfile>() + 64,
+    fields: &[
+        Field {
+            number: 1,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 2,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 0,
+        },
+        Field {
+            number: 3,
             kind: Kind::String,
             repeated: false,
             maximum: 128,

@@ -36,9 +36,10 @@ function bytes(value: unknown, maximum = 256, required = true): asserts value is
 function integer(value: unknown, maximum: bigint, positive = false): asserts value is bigint {
   if (typeof value !== "bigint" || value < (positive ? 1n : 0n) || value > maximum) throw new ShapeError();
 }
-function enumeration(value: unknown, maximum: number, field: string): void {
+function enumeration(value: unknown, maximum: number, field: string): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > maximum)
     throw new ShapeError(field, String(value));
+  return value;
 }
 function digest(value: unknown): void { if (typeof value !== "string" || !/^sha256:[0-9a-f]{64}$/.test(value)) throw new ShapeError(); }
 function array(value: unknown, maximum = 128): unknown[] {
@@ -132,6 +133,63 @@ function dispatcherReceipt(raw: unknown, original: RecordValue): void {
   same(after.ownerEpoch, before.ownerEpoch); same(after.revision, (before.revision as bigint) + 1n);
   if (value.disposition !== 1 || (value.action === 2 && (value.clockContinuityProven !== true || value.restoreReviewRequired !== false))) throw new ShapeError();
 }
+function effectVersion(raw: unknown): void {
+  bytes(raw, 32); const value = raw as Uint8Array;
+  if (value.length !== 32 || !value.some((byte) => byte !== 0)) throw new ShapeError();
+}
+function effectMutation(raw: unknown, tenant: string): RecordValue {
+  const value = object(raw), target = object(value.effect);
+  lookup(target, tenant);
+  if (typeof target.effectId !== "string" || !/^[0-9a-f]{64}$/.test(target.effectId)) throw new ShapeError();
+  id(value.operationId); effectVersion(value.expectedVersion); digest(value.expectedPolicyDigest); text(value.reason, 1024);
+  const mutation = enumeration(value.mutation, 5, "state.mutation"); integer(value.retryDelayMillis, 60000n);
+  if (mutation === 1 ? value.retryDelayMillis === 0n : ![2, 5].includes(mutation) || value.retryDelayMillis !== 0n) throw new ShapeError();
+  return value;
+}
+function effectPlan(raw: unknown, tenant: string): RecordValue {
+  const value = object(raw), original = effectMutation(value.original, tenant);
+  effectVersion(value.planDigest); integer(value.ownerEpoch, maxU64); integer(value.claimGeneration, maxU64);
+  integer(value.preparedAtUnixMillis, maxU64, true); integer(value.expiresAtUnixMillis, maxU64, true);
+  if (typeof value.managementSequence !== "number" || !Number.isInteger(value.managementSequence) || value.managementSequence < 1 || value.managementSequence > 128
+    || typeof value.dispatchAttempt !== "number" || !Number.isInteger(value.dispatchAttempt) || value.dispatchAttempt < 0 || value.dispatchAttempt > 128) throw new ShapeError();
+  const undispatched = value.ownerEpoch === 0n && value.claimGeneration === 0n && value.dispatchAttempt === 0;
+  const attempted = (value.ownerEpoch as bigint) > 0n && (value.claimGeneration as bigint) > 0n && value.dispatchAttempt > 0;
+  if ((!undispatched && !attempted) || (value.expiresAtUnixMillis as bigint) <= (value.preparedAtUnixMillis as bigint)
+    || (value.expiresAtUnixMillis as bigint) - (value.preparedAtUnixMillis as bigint) > 30000n) throw new ShapeError();
+  const before = enumeration(value.before, 10, "effect.disposition"), safety = enumeration(value.safety, 4, "effect.plan.safety");
+  const valid = original.mutation === 1 && attempted && (safety === 1 && before === 4 || safety === 2 && [4, 5].includes(before))
+    || original.mutation === 5 && attempted && safety === 3 && [4, 5].includes(before)
+    || original.mutation === 2 && safety === 4 && [1, 4, 5, 7, 9].includes(before);
+  if (!valid || (value.safety === 2) !== (value.dedupValidUntilUnixMillis !== undefined)) throw new ShapeError();
+  if (value.dedupValidUntilUnixMillis !== undefined) { integer(value.dedupValidUntilUnixMillis, maxU64, true); if ((value.dedupValidUntilUnixMillis as bigint) <= (value.expiresAtUnixMillis as bigint)) throw new ShapeError(); }
+  return value;
+}
+function effectPlanAssociation(value: RecordValue, raw: unknown, tenant: string, recovery: boolean): RecordValue {
+  const plan = effectPlan(raw, tenant), original = object(plan.original), target = object(original.effect), current = object(value.namespace);
+  same(current.namespace, object(target.command).namespace); same(current.profile, target.profile); same(value.operationId, original.operationId);
+  if (!recovery) {
+    same(current.authorizationPublication, target.authorizationPublication);
+    for (const key of ["mutation", "expectedVersion", "expectedPolicyDigest", "reason"]) same(value[key], original[key]);
+    same(value.recordId, target.effectId);
+  }
+  return plan;
+}
+function effectPlanReceipt(raw: unknown, expected: unknown, tenant: string): void {
+  const receipt = object(raw), details = object(receipt.effect), plan = effectPlan(details.originalPlan, tenant), original = object(plan.original);
+  same(plan, expected); same(details.before, plan.before);
+  for (const key of ["operationId", "mutation"]) same(receipt[key], original[key]);
+  same(receipt.recordId, object(original.effect).effectId); same(receipt.beforeVersion, original.expectedVersion); same(receipt.policyDigest, original.expectedPolicyDigest);
+  effectVersion(receipt.beforeVersion); effectVersion(receipt.afterVersion); same(receipt.disposition, 1);
+  integer(receipt.completedAtUnixMillis, maxU64, true);
+  if ((receipt.completedAtUnixMillis as bigint) < (plan.preparedAtUnixMillis as bigint) || (receipt.completedAtUnixMillis as bigint) >= (plan.expiresAtUnixMillis as bigint)) throw new ShapeError();
+  const fact = enumeration(details.fact, 3, "effect.management.fact"), after = enumeration(details.after, 10, "effect.disposition");
+  const valid = fact === 1 && original.mutation === 1 && after === 9
+    || fact === 2 && original.mutation === 5 && after === 3
+    || fact === 3 && original.mutation === 2 && [8, 10].includes(after);
+  if (!valid || (details.fact === 2) !== (details.providerReceipt !== undefined)
+    || (details.providerReceipt !== undefined) !== (details.providerObservedAtUnixMillis !== undefined)) throw new ShapeError();
+  if (details.providerReceipt !== undefined) { id(details.providerReceipt); integer(details.providerObservedAtUnixMillis, maxU64, true); if ((details.providerObservedAtUnixMillis as bigint) > (receipt.completedAtUnixMillis as bigint)) throw new ShapeError(); }
+}
 export function validateRequest(operation: Operation, raw: unknown, tenant: string): void {
   const value = object(raw);
   switch (operation) {
@@ -161,12 +219,14 @@ export function validateRequest(operation: Operation, raw: unknown, tenant: stri
     case "cancelCommand": lookup(value.command, tenant); text(value.reason, 1024); break;
     case "inspectNamespace": inspect(value, tenant); break;
     case "selectEntity": inspect(value.namespace, tenant); page(value.page); if (value.prefix !== undefined) bytes(value.prefix, 256, false); break;
-    case "getStateOperationReceipt": inspect(value.namespace, tenant); id(value.operationId); break;
+    case "planEffectMutation": effectMutation(value, tenant); break;
+    case "getStateOperationReceipt": inspect(value.namespace, tenant); id(value.operationId); if (value.originalEffectPlan !== undefined) effectPlanAssociation(value, value.originalEffectPlan, tenant, true); break;
     case "mutateState":
       inspect(value.namespace, tenant); id(value.operationId); bytes(value.expectedVersion); digest(value.expectedPolicyDigest); text(value.reason, 1024);
-      enumeration(value.mutation, 4, "state.mutation");
+      const mutation = enumeration(value.mutation, 5, "state.mutation");
       if (value.recordId !== undefined) id(value.recordId);
-      if ((value.mutation === 4) !== (value.recordId === undefined)) throw new ShapeError();
+      if (value.effectPlan !== undefined) effectPlanAssociation(value, value.effectPlan, tenant, false);
+      else if (![3, 4].includes(mutation) || (mutation === 4) !== (value.recordId === undefined)) throw new ShapeError();
       break;
     case "mutateNamespace": {
       const target = inspect(value.namespace, tenant);
@@ -252,7 +312,13 @@ function effect(raw: unknown, expectedId: unknown): void {
   const value = object(raw);
   for (const key of ["effectId", "commandId", "commandAttemptId", "providerProfile"]) id(value[key]);
   for (const key of ["providerReceipt", "failureCode", "managementOperationReceiptId"]) if (value[key] !== undefined) id(value[key]);
-  enumeration(value.disposition, 8, "effect.disposition"); same(value.effectId, expectedId);
+  enumeration(value.disposition, 10, "effect.disposition"); same(value.effectId, expectedId);
+  if (value.recordVersion !== undefined && (value.recordVersion as Uint8Array).length !== 0) effectVersion(value.recordVersion);
+  if ((value.ownerEpoch !== undefined) !== (value.claimGeneration !== undefined)) throw new ShapeError();
+  if (value.ownerEpoch !== undefined) {
+    integer(value.ownerEpoch, maxU64, true); integer(value.claimGeneration, maxU64, true);
+    if (typeof value.dispatchAttempt !== "number" || value.dispatchAttempt < 1 || value.dispatchAttempt > 128) throw new ShapeError();
+  }
   if (value.retention !== undefined) retention(value.retention);
 }
 function boundedPage(raw: unknown, request: unknown, count: number): void {
@@ -271,7 +337,7 @@ function receipt(raw: unknown, original: RecordValue, tenant: string, namespaceR
     id(value.stateSchema); enumeration(value.status, 4, "namespace.status"); enumeration(value.mutation, 5, "namespace.mutation");
     if (value.disposition === 1) integer(value.afterGeneration, maxU64, true);
   } else {
-    same(value.namespace, target); bytes(value.beforeVersion); bytes(value.afterVersion); digest(value.policyDigest); enumeration(value.mutation, 4, "state.mutation");
+    same(value.namespace, target); bytes(value.beforeVersion); bytes(value.afterVersion); digest(value.policyDigest); enumeration(value.mutation, 5, "state.mutation");
     if (value.recordId !== undefined) id(value.recordId);
   }
   return value;
@@ -313,6 +379,7 @@ export function validateResponse(operation: Operation, original: unknown, value:
     case "inspectNamespace": {
       const inspected = object(value.namespace); view(inspected.view, requested.namespace, tenant); enumeration(inspected.status, 4, "namespace.status");
       integer(inspected.generation, maxU64, true); quota(inspected.quota); id(inspected.engineProfile); digest(inspected.engineProfileDigest);
+      if (inspected.namespacePolicyDigest !== undefined && inspected.namespacePolicyDigest !== "") digest(inspected.namespacePolicyDigest);
       for (const format of array(inspected.retainedFormats)) retention(format);
       break;
     }
@@ -324,8 +391,11 @@ export function validateResponse(operation: Operation, original: unknown, value:
     case "mutateState": {
       const accepted = receipt(value.receipt, requested, tenant, false);
       for (const [result, expected] of [["mutation", "mutation"], ["recordId", "recordId"], ["beforeVersion", "expectedVersion"], ["policyDigest", "expectedPolicyDigest"]]) same(accepted[result!], requested[expected!]);
+      if ((accepted.effect !== undefined) !== (requested.effectPlan !== undefined)) throw new ShapeError();
+      if (requested.effectPlan !== undefined) effectPlanReceipt(accepted, requested.effectPlan, tenant);
       break;
     }
+    case "planEffectMutation": { const plan = effectPlan(value.plan, tenant); same(plan.original, requested); break; }
     case "mutateNamespace": {
       const accepted = receipt(value.receipt, requested, tenant, true); same(accepted.mutation, requested.mutation);
       same(accepted.beforeGeneration, requested.mutation === 1 ? undefined : requested.expectedGeneration);
@@ -339,9 +409,13 @@ export function validateResponse(operation: Operation, original: unknown, value:
       }
       break;
     }
-    case "getStateOperationReceipt":
+    case "getStateOperationReceipt": {
       if ((value.receipt !== undefined) === (value.namespaceReceipt !== undefined)) throw new ShapeError();
-      receipt(value.receipt ?? value.namespaceReceipt, requested, tenant, value.namespaceReceipt !== undefined); break;
+      const accepted = receipt(value.receipt ?? value.namespaceReceipt, requested, tenant, value.namespaceReceipt !== undefined);
+      if ((accepted.effect !== undefined) !== (requested.originalEffectPlan !== undefined)) throw new ShapeError();
+      if (requested.originalEffectPlan !== undefined) { if (value.namespaceReceipt !== undefined) throw new ShapeError(); effectPlanReceipt(accepted, requested.originalEffectPlan, tenant); }
+      break;
+    }
     case "inspectDispatcher": {
       const snapshot = object(value.dispatcher); dispatcherGeneration(snapshot.generation); enumeration(snapshot.failure, 7, "dispatcher.failure");
       if ((snapshot.pendingControl === true || snapshot.restoreReviewRequired === true) && snapshot.paused !== true) throw new ShapeError();
@@ -373,16 +447,23 @@ export function identity(operation: Operation, raw: unknown): RecoveryIdentity {
     if (["invokeCommand", "lookupCommand", "lookupCommit", "getEffect"].includes(operation)) selectedCommand = object(value.command);
     if (operation === "listEffectHistory") selectedCommand = object(object(value.effect).command);
     if (operation === "cancelCommand") selectedCommand = object(object(value.command).command);
+    if (operation === "planEffectMutation") selectedCommand = object(object(value.effect).command);
     const namespaceValue = inspected?.namespace ?? selectedCommand?.namespace ?? (operation === "query" ? value.namespace : undefined);
     if (namespaceValue !== undefined) { const selected = object(namespaceValue); namespace(selected, selected.tenant as string); assign("namespace", selected); }
     if (selectedCommand !== undefined) { commandSelector(selectedCommand, object(selectedCommand.namespace).tenant as string); assign("command", selectedCommand); }
     for (const key of ["operationId", "attemptId", "receiptId", "effectId"]) if (value[key] !== undefined) { id(value[key]); assign(key, value[key]); }
     if (operation === "listEffectHistory") assign("effectId", object(value.effect).effectId);
-    const current = operation === "cancelCommand" ? object(value.command) : operation === "listEffectHistory" ? object(value.effect) : inspected ?? value;
+    if (operation === "planEffectMutation") { assign("effectMutation", value); assign("effectId", object(value.effect).effectId); }
+    const current = operation === "cancelCommand" ? object(value.command) : operation === "listEffectHistory" || operation === "planEffectMutation" ? object(value.effect) : inspected ?? value;
     if (current.authorizationPublication !== undefined) { publication(current.authorizationPublication, object(current.authorizationPublication).tenant as string); assign("authorizationPublication", current.authorizationPublication); }
     if (operation === "mutateNamespace" && value.expectedGeneration !== undefined) { integer(value.expectedGeneration, maxU64); assign("expectedGeneration", value.expectedGeneration); }
     if (value.expectedVersion !== undefined) { bytes(value.expectedVersion); assign("expectedVersion", value.expectedVersion); }
     if (value.expectedPolicyDigest !== undefined) { digest(value.expectedPolicyDigest); assign("expectedPolicyDigest", value.expectedPolicyDigest); }
+    if (value.effectPlan !== undefined || value.originalEffectPlan !== undefined) {
+      const plan = object(value.effectPlan ?? value.originalEffectPlan), original = object(plan.original);
+      assign("effectPlan", plan); assign("effectMutation", original); assign("effectId", object(original.effect).effectId);
+      assign("expectedVersion", original.expectedVersion); assign("expectedPolicyDigest", original.expectedPolicyDigest);
+    }
     if (operation === "invokeCommand") {
       const entries = array(value.expectedVersions);
       for (const entry of entries) { const item = object(entry); bytes(item.key, 1024, false); if (item.version !== undefined) bytes(item.version); }
@@ -414,11 +495,12 @@ export function observe(operation: Operation, value: RecordValue): ObservedOutco
   if (operation === "mutateNamespace" || value.namespaceReceipt !== undefined) return { kind: "namespace", receipt: (value.receipt ?? value.namespaceReceipt) as model.NamespaceOperationReceipt };
   if (operation === "mutateState" || operation === "getStateOperationReceipt") return { kind: "state", receipt: value.receipt as model.StateOperationReceipt };
   if (operation === "controlDispatcher" || operation === "getDispatcherOperation") return { kind: "dispatcher", receipt: value.receipt as model.DispatcherOperationReceipt };
+  if (operation === "planEffectMutation") return { kind: "effectPlan", plan: value.plan as model.EffectManagementPlan };
   return undefined;
 }
 
 export function known(value: ObservedOutcome | undefined): boolean {
-  if (!value || value.kind === "effect") return false;
+  if (!value || value.kind === "effect" || value.kind === "effectPlan") return false;
   if (value.kind === "command") return value.command.metadataDurable && [2, 3, 4].includes(value.command.outcome);
   if (value.kind === "dispatcher") return value.receipt.disposition === 1;
   return [1, 2, 3].includes(value.receipt.disposition);
@@ -426,6 +508,7 @@ export function known(value: ObservedOutcome | undefined): boolean {
 
 export function extendIdentity(original: RecoveryIdentity, observed: ObservedOutcome | undefined): RecoveryIdentity {
   if (!observed || observed.kind === "effect") return original;
+  if (observed.kind === "effectPlan") return { ...original, effectPlan: observed.plan };
   if (observed.kind !== "command") return { ...original, receiptId: observed.receipt.receiptId };
   const value = observed.command;
   return { ...original,

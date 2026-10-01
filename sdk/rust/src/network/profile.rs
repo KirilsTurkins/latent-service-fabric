@@ -7,8 +7,8 @@ mod responses;
 mod vectors;
 
 use super::{
-    AuditAcknowledgement, FailureKind, RecoveryIdentity, RpcClient, RpcFailure,
-    channel::CallChannel,
+    channel::CallChannel, AuditAcknowledgement, FailureKind, RecoveryIdentity, RpcClient,
+    RpcFailure,
 };
 use crate::management as model;
 use latent_rpc::{control::v1 as control, invocation::v1 as invocation};

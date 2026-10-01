@@ -511,6 +511,122 @@ impl TryFrom<model::DispatcherSnapshot> for c::DispatcherSnapshot {
     }
 }
 
+impl From<t::GetEffectRequest> for model::GetEffectRequest {
+    fn from(value: t::GetEffectRequest) -> Self {
+        Self {
+            profile: value.profile.map(Into::into),
+            command: value.command.map(Into::into),
+            effect_id: value.effect_id,
+            authorization_publication: value.authorization_publication.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<model::GetEffectRequest> for t::GetEffectRequest {
+    type Error = ValidationError;
+    fn try_from(value: model::GetEffectRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            profile: value.profile.map(TryInto::try_into).transpose()?,
+            command: value.command.map(TryInto::try_into).transpose()?,
+            effect_id: value.effect_id,
+            authorization_publication: value.authorization_publication.map(Into::into),
+        })
+    }
+}
+
+impl From<c::PlanEffectMutationRequest> for model::PlanEffectMutationRequest {
+    fn from(value: c::PlanEffectMutationRequest) -> Self {
+        Self {
+            effect: value.effect.map(Into::into),
+            operation_id: value.operation_id,
+            mutation: model::StateMutationKind(value.mutation),
+            expected_version: value.expected_version,
+            expected_policy_digest: value.expected_policy_digest,
+            reason: value.reason,
+            retry_delay_millis: value.retry_delay_millis,
+        }
+    }
+}
+
+impl TryFrom<model::PlanEffectMutationRequest> for c::PlanEffectMutationRequest {
+    type Error = ValidationError;
+    fn try_from(value: model::PlanEffectMutationRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            effect: value.effect.map(TryInto::try_into).transpose()?,
+            operation_id: value.operation_id,
+            mutation: value.mutation.0,
+            expected_version: value.expected_version,
+            expected_policy_digest: value.expected_policy_digest,
+            reason: value.reason,
+            retry_delay_millis: value.retry_delay_millis,
+        })
+    }
+}
+
+impl From<c::EffectManagementPlan> for model::EffectManagementPlan {
+    fn from(value: c::EffectManagementPlan) -> Self {
+        Self {
+            original: value.original.map(Into::into),
+            plan_digest: value.plan_digest,
+            management_sequence: value.management_sequence,
+            owner_epoch: value.owner_epoch,
+            claim_generation: value.claim_generation,
+            dispatch_attempt: value.dispatch_attempt,
+            expires_at_unix_millis: value.expires_at_unix_millis,
+            prepared_at_unix_millis: value.prepared_at_unix_millis,
+            before: model::EffectDisposition(value.before),
+            safety: model::EffectPlanSafety(value.safety),
+            dedup_valid_until_unix_millis: value.dedup_valid_until_unix_millis,
+        }
+    }
+}
+
+impl TryFrom<model::EffectManagementPlan> for c::EffectManagementPlan {
+    type Error = ValidationError;
+    fn try_from(value: model::EffectManagementPlan) -> Result<Self, Self::Error> {
+        Ok(Self {
+            original: value.original.map(TryInto::try_into).transpose()?,
+            plan_digest: value.plan_digest,
+            management_sequence: value.management_sequence,
+            owner_epoch: value.owner_epoch,
+            claim_generation: value.claim_generation,
+            dispatch_attempt: value.dispatch_attempt,
+            expires_at_unix_millis: value.expires_at_unix_millis,
+            prepared_at_unix_millis: value.prepared_at_unix_millis,
+            before: value.before.0,
+            safety: value.safety.0,
+            dedup_valid_until_unix_millis: value.dedup_valid_until_unix_millis,
+        })
+    }
+}
+
+impl From<c::EffectManagementReceiptDetails> for model::EffectManagementReceiptDetails {
+    fn from(value: c::EffectManagementReceiptDetails) -> Self {
+        Self {
+            original_plan: value.original_plan.map(Into::into),
+            before: model::EffectDisposition(value.before),
+            after: model::EffectDisposition(value.after),
+            fact: model::EffectManagementFact(value.fact),
+            provider_receipt: value.provider_receipt,
+            provider_observed_at_unix_millis: value.provider_observed_at_unix_millis,
+        }
+    }
+}
+
+impl TryFrom<model::EffectManagementReceiptDetails> for c::EffectManagementReceiptDetails {
+    type Error = ValidationError;
+    fn try_from(value: model::EffectManagementReceiptDetails) -> Result<Self, Self::Error> {
+        Ok(Self {
+            original_plan: value.original_plan.map(TryInto::try_into).transpose()?,
+            before: value.before.0,
+            after: value.after.0,
+            fact: value.fact.0,
+            provider_receipt: value.provider_receipt,
+            provider_observed_at_unix_millis: value.provider_observed_at_unix_millis,
+        })
+    }
+}
+
 impl From<t::EffectReceipt> for model::EffectReceipt {
     fn from(value: t::EffectReceipt) -> Self {
         Self {
@@ -525,6 +641,9 @@ impl From<t::EffectReceipt> for model::EffectReceipt {
             retention: value.retention.map(Into::into),
             management_operation_receipt_id: value.management_operation_receipt_id,
             provider_profile: value.provider_profile,
+            record_version: value.record_version,
+            owner_epoch: value.owner_epoch,
+            claim_generation: value.claim_generation,
         }
     }
 }
@@ -544,6 +663,9 @@ impl TryFrom<model::EffectReceipt> for t::EffectReceipt {
             retention: value.retention.map(TryInto::try_into).transpose()?,
             management_operation_receipt_id: value.management_operation_receipt_id,
             provider_profile: value.provider_profile,
+            record_version: value.record_version,
+            owner_epoch: value.owner_epoch,
+            claim_generation: value.claim_generation,
         })
     }
 }
@@ -634,29 +756,6 @@ impl TryFrom<model::GetDispatcherOperationResponse> for c::GetDispatcherOperatio
     }
 }
 
-impl From<t::GetEffectRequest> for model::GetEffectRequest {
-    fn from(value: t::GetEffectRequest) -> Self {
-        Self {
-            profile: value.profile.map(Into::into),
-            command: value.command.map(Into::into),
-            effect_id: value.effect_id,
-            authorization_publication: value.authorization_publication.map(Into::into),
-        }
-    }
-}
-
-impl TryFrom<model::GetEffectRequest> for t::GetEffectRequest {
-    type Error = ValidationError;
-    fn try_from(value: model::GetEffectRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
-            profile: value.profile.map(TryInto::try_into).transpose()?,
-            command: value.command.map(TryInto::try_into).transpose()?,
-            effect_id: value.effect_id,
-            authorization_publication: value.authorization_publication.map(Into::into),
-        })
-    }
-}
-
 impl From<t::GetEffectResponse> for model::GetEffectResponse {
     fn from(value: t::GetEffectResponse) -> Self {
         Self {
@@ -700,6 +799,7 @@ impl From<c::GetStateOperationReceiptRequest> for model::GetStateOperationReceip
         Self {
             namespace: value.namespace.map(Into::into),
             operation_id: value.operation_id,
+            original_effect_plan: value.original_effect_plan.map(Into::into),
         }
     }
 }
@@ -710,6 +810,10 @@ impl TryFrom<model::GetStateOperationReceiptRequest> for c::GetStateOperationRec
         Ok(Self {
             namespace: value.namespace.map(TryInto::try_into).transpose()?,
             operation_id: value.operation_id,
+            original_effect_plan: value
+                .original_effect_plan
+                .map(TryInto::try_into)
+                .transpose()?,
         })
     }
 }
@@ -728,6 +832,7 @@ impl From<c::StateOperationReceipt> for model::StateOperationReceipt {
             record_id: value.record_id,
             policy_digest: value.policy_digest,
             disposition: model::StateOperationDisposition(value.disposition),
+            effect: value.effect.map(Into::into),
         }
     }
 }
@@ -747,6 +852,7 @@ impl TryFrom<model::StateOperationReceipt> for c::StateOperationReceipt {
             record_id: value.record_id,
             policy_digest: value.policy_digest,
             disposition: value.disposition.0,
+            effect: value.effect.map(TryInto::try_into).transpose()?,
         })
     }
 }
@@ -791,6 +897,7 @@ impl From<c::GetStateOperationReceiptResponse> for model::GetStateOperationRecei
         Self {
             receipt: value.receipt.map(Into::into),
             namespace_receipt: value.namespace_receipt.map(Into::into),
+            audit_ack: value.audit_ack.map(Into::into),
         }
     }
 }
@@ -801,6 +908,7 @@ impl TryFrom<model::GetStateOperationReceiptResponse> for c::GetStateOperationRe
         Ok(Self {
             receipt: value.receipt.map(TryInto::try_into).transpose()?,
             namespace_receipt: value.namespace_receipt.map(TryInto::try_into).transpose()?,
+            audit_ack: value.audit_ack.map(Into::into),
         })
     }
 }
@@ -908,6 +1016,7 @@ impl From<c::NamespaceInspection> for model::NamespaceInspection {
             status: model::NamespaceStatus(value.status),
             quota: value.quota.map(Into::into),
             generation: value.generation,
+            namespace_policy_digest: value.namespace_policy_digest,
         }
     }
 }
@@ -930,6 +1039,7 @@ impl TryFrom<model::NamespaceInspection> for c::NamespaceInspection {
             status: value.status.0,
             quota: value.quota.map(TryInto::try_into).transpose()?,
             generation: value.generation,
+            namespace_policy_digest: value.namespace_policy_digest,
         })
     }
 }
@@ -1244,6 +1354,7 @@ impl From<c::MutateStateRequest> for model::MutateStateRequest {
             expected_version: value.expected_version,
             expected_policy_digest: value.expected_policy_digest,
             reason: value.reason,
+            effect_plan: value.effect_plan.map(Into::into),
         }
     }
 }
@@ -1259,6 +1370,7 @@ impl TryFrom<model::MutateStateRequest> for c::MutateStateRequest {
             expected_version: value.expected_version,
             expected_policy_digest: value.expected_policy_digest,
             reason: value.reason,
+            effect_plan: value.effect_plan.map(TryInto::try_into).transpose()?,
         })
     }
 }
@@ -1268,6 +1380,7 @@ impl From<c::MutateStateResponse> for model::MutateStateResponse {
         Self {
             receipt: value.receipt.map(Into::into),
             audit_ack: value.audit_ack.map(Into::into),
+            replayed: value.replayed,
         }
     }
 }
@@ -1277,6 +1390,28 @@ impl TryFrom<model::MutateStateResponse> for c::MutateStateResponse {
     fn try_from(value: model::MutateStateResponse) -> Result<Self, Self::Error> {
         Ok(Self {
             receipt: value.receipt.map(TryInto::try_into).transpose()?,
+            audit_ack: value.audit_ack.map(Into::into),
+            replayed: value.replayed,
+        })
+    }
+}
+
+impl From<c::PlanEffectMutationResponse> for model::PlanEffectMutationResponse {
+    fn from(value: c::PlanEffectMutationResponse) -> Self {
+        Self {
+            plan: value.plan.map(Into::into),
+            replayed: value.replayed,
+            audit_ack: value.audit_ack.map(Into::into),
+        }
+    }
+}
+
+impl TryFrom<model::PlanEffectMutationResponse> for c::PlanEffectMutationResponse {
+    type Error = ValidationError;
+    fn try_from(value: model::PlanEffectMutationResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            plan: value.plan.map(TryInto::try_into).transpose()?,
+            replayed: value.replayed,
             audit_ack: value.audit_ack.map(Into::into),
         })
     }

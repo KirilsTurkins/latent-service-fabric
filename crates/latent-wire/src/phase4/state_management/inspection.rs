@@ -101,6 +101,7 @@ fn inspect_in(
         status: response::status(read.record().status) as i32,
         quota: Some(response::quota(read.record().quota)),
         generation: read.record().version.generation,
+        namespace_policy_digest: access.binding.state.configuration_digest.clone(),
     };
     Ok(Ok((read, value)))
 }
@@ -173,6 +174,7 @@ pub(super) async fn receipt(
         c::GetStateOperationReceiptResponse {
             receipt: None,
             namespace_receipt: Some(public),
+            audit_ack: None,
         }
         .into(),
     )

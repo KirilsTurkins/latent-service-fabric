@@ -1,17 +1,17 @@
 use super::{
-    RpcClient, codec, model, model_shapes::ModelShape, requests, responses::NativeReply,
-    wire_schemas,
+    codec, model, model_shapes::ModelShape, requests, responses::NativeReply, wire_schemas,
+    RpcClient,
 };
 use crate::network::{ClientConfig, ClientLimits};
 use latent_core::TenantId;
 use latent_rpc::{control::v1 as c, phase4, transaction::v1 as t};
 use prost::Message;
 use std::sync::{
-    Arc,
     atomic::{AtomicUsize, Ordering},
+    Arc,
 };
 use tokio::time::Instant;
-use tonic::codegen::tokio_stream::{StreamExt, wrappers::TcpListenerStream};
+use tonic::codegen::tokio_stream::{wrappers::TcpListenerStream, StreamExt};
 
 struct Peer {
     client: RpcClient,
@@ -38,6 +38,9 @@ async fn peer(fail_audit: bool) -> Peer {
     let dispatcher = super::test_peer::Dispatcher {
         calls: Arc::clone(&calls),
     };
+    let state = super::test_peer::State {
+        calls: Arc::clone(&calls),
+    };
     let (stop, stopped) = tokio::sync::oneshot::channel();
     let server = tokio::spawn(async move {
         tonic::transport::Server::builder()
@@ -46,6 +49,7 @@ async fn peer(fail_audit: bool) -> Peer {
             .add_service(c::dispatcher_service_server::DispatcherServiceServer::new(
                 dispatcher,
             ))
+            .add_service(c::state_service_server::StateServiceServer::new(state))
             .serve_with_incoming_shutdown(incoming, async {
                 let _ = stopped.await;
             })
@@ -90,6 +94,194 @@ fn namespace() -> t::NamespaceSelector {
         incarnation: "1".into(),
     }
 }
+
+#[tokio::test]
+async fn effect_plan_transport_keeps_original_cas_historical_receipt_and_independent_facts() {
+    use model::TransactionClient;
+    let peer = peer(false).await;
+    let original = c::PlanEffectMutationRequest {
+        effect: Some(t::GetEffectRequest {
+            profile: Some(phase4::current_profile()),
+            command: Some(t::CommandSelector {
+                namespace: Some(namespace()),
+                operation: "update".into(),
+                client_key: "effect-command".into(),
+                entity: None,
+                shared_recovery_scope: None,
+            }),
+            effect_id: "a".repeat(64),
+            authorization_publication: Some(publication()),
+        }),
+        operation_id: "effect-operation".into(),
+        mutation: 1,
+        expected_version: vec![1; 32],
+        expected_policy_digest: format!("sha256:{}", "a".repeat(64)),
+        reason: "explicit redrive".into(),
+        retry_delay_millis: 100,
+    };
+    let prepared = peer
+        .client
+        .plan_effect_mutation(
+            original.clone().into(),
+            crate::management::CallOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        prepared.metadata.transport.outcome,
+        crate::management::OutcomeKnowledge::UNKNOWN
+    );
+    assert!(prepared.metadata.identity.effect_plan.is_some());
+    let plan = prepared.value.plan.unwrap();
+    let request = c::MutateStateRequest {
+        namespace: Some(inspect()),
+        operation_id: original.operation_id.clone(),
+        mutation: original.mutation,
+        record_id: Some(original.effect.as_ref().unwrap().effect_id.clone()),
+        expected_version: original.expected_version.clone(),
+        expected_policy_digest: original.expected_policy_digest.clone(),
+        reason: original.reason.clone(),
+        effect_plan: Some(super::test_peer::effect_plan(original.clone())),
+    };
+    let accepted = peer
+        .client
+        .mutate_state(
+            request.clone().into(),
+            crate::management::CallOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(accepted.value.receipt.unwrap().effect.unwrap().fact.0, 1);
+    let mut current = inspect();
+    current.authorization_publication.as_mut().unwrap().id =
+        format!("publication:sha256:{}", "c".repeat(64));
+    let recovered = peer
+        .client
+        .get_state_operation_receipt(
+            model::GetStateOperationReceiptRequest {
+                namespace: Some(current.clone().into()),
+                operation_id: original.operation_id.clone(),
+                original_effect_plan: Some(plan),
+            },
+            crate::management::CallOptions::default(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        recovered
+            .metadata
+            .identity
+            .authorization_publication
+            .unwrap()
+            .id,
+        current.authorization_publication.unwrap().id
+    );
+    assert_eq!(
+        recovered
+            .metadata
+            .identity
+            .effect_mutation
+            .unwrap()
+            .effect
+            .unwrap()
+            .authorization_publication
+            .unwrap()
+            .id,
+        publication().id
+    );
+    effect_plan_local_rejections(&peer, &request).await;
+    effect_plan_response_facts(&peer, original, request).await;
+    assert_eq!(peer.calls.load(Ordering::Acquire), 6);
+    assert_eq!(peer.connections.load(Ordering::Acquire), 1);
+    peer.shutdown().await;
+}
+async fn effect_plan_local_rejections(peer: &Peer, request: &c::MutateStateRequest) {
+    use model::TransactionClient;
+    let mut naked = request.clone();
+    naked.effect_plan = None;
+    assert!(
+        !peer
+            .client
+            .mutate_state(naked.into(), crate::management::CallOptions::default())
+            .await
+            .unwrap_err()
+            .transport
+            .dispatched
+    );
+    let mut swapped = request.clone();
+    swapped.expected_version.fill(0);
+    assert!(
+        !peer
+            .client
+            .mutate_state(swapped.into(), crate::management::CallOptions::default())
+            .await
+            .unwrap_err()
+            .transport
+            .dispatched
+    );
+}
+
+async fn effect_plan_response_facts(
+    peer: &Peer,
+    original: c::PlanEffectMutationRequest,
+    request: c::MutateStateRequest,
+) {
+    use model::TransactionClient;
+    let mut audit = original.clone();
+    audit.reason = "bad-audit".into();
+    let failed = peer
+        .client
+        .plan_effect_mutation(
+            audit.clone().into(),
+            crate::management::CallOptions::default(),
+        )
+        .await
+        .unwrap_err();
+    assert_eq!(
+        failed.transport.outcome,
+        crate::management::OutcomeKnowledge::UNKNOWN
+    );
+    assert!(matches!(
+        failed.observed,
+        Some(model::ObservedOutcome::EffectPlan(_))
+    ));
+    assert_eq!(
+        failed
+            .identity
+            .effect_plan
+            .unwrap()
+            .original
+            .unwrap()
+            .reason,
+        "bad-audit"
+    );
+    audit.reason = "bad-window".into();
+    assert!(peer
+        .client
+        .plan_effect_mutation(audit.into(), crate::management::CallOptions::default())
+        .await
+        .unwrap_err()
+        .observed
+        .is_none());
+    let mut forged = request;
+    forged.reason = "forged-fact".into();
+    forged
+        .effect_plan
+        .as_mut()
+        .unwrap()
+        .original
+        .as_mut()
+        .unwrap()
+        .reason = forged.reason.clone();
+    assert!(peer
+        .client
+        .mutate_state(forged.into(), crate::management::CallOptions::default())
+        .await
+        .unwrap_err()
+        .observed
+        .is_none());
+}
+
 fn publication() -> c::PublicationRef {
     c::PublicationRef {
         tenant: "tests".into(),
@@ -158,14 +350,12 @@ fn full_width_generation_presence_and_qualified_pages_roundtrip() {
     };
     let native: t::ExpectedVersion = false_presence.clone().try_into().unwrap();
     assert_eq!(model::ExpectedVersion::from(native), false_presence);
-    assert!(
-        t::ExpectedVersion::try_from(model::ExpectedVersion {
-            absent: Some(true),
-            version: Some(vec![1]),
-            ..Default::default()
-        })
-        .is_err()
-    );
+    assert!(t::ExpectedVersion::try_from(model::ExpectedVersion {
+        absent: Some(true),
+        version: Some(vec![1]),
+        ..Default::default()
+    })
+    .is_err());
 }
 
 #[test]
@@ -178,6 +368,7 @@ fn original_preconditions_and_current_publication_are_retained_without_refresh()
         expected_policy_digest: format!("sha256:{}", "b".repeat(64)),
         reason: "explicit".into(),
         record_id: None,
+        effect_plan: None,
     });
     let context = requests::prepare(
         &request,
@@ -203,25 +394,21 @@ fn predecode_rejects_duplicate_oneof_utf8_and_empty_record_expansion() {
     assert!(codec::preflight(schema, &[82, 0, 90, 0], 1024).is_err());
     assert!(codec::preflight(schema, &[18, 1, 255], 1024).is_err());
     let expansion: Vec<u8> = [10, 0].repeat(129);
-    assert!(
-        codec::preflight(
-            &wire_schemas::LATENT_TRANSACTION_V1_LISTEFFECTHISTORYRESPONSE,
-            &expansion,
-            1024
-        )
-        .is_err()
-    );
+    assert!(codec::preflight(
+        &wire_schemas::LATENT_TRANSACTION_V1_LISTEFFECTHISTORYRESPONSE,
+        &expansion,
+        1024
+    )
+    .is_err());
     let duplicate = [18, 1, b'a', 18, 1, b'b'];
     assert!(codec::preflight(schema, &duplicate, 1024).is_err());
     let retained_ids: Vec<u8> = [50, 1, b'x'].repeat(256);
-    assert!(
-        codec::preflight(
-            &wire_schemas::LATENT_TRANSACTION_V1_LINKEDRETENTION,
-            &retained_ids,
-            1024
-        )
-        .is_ok()
-    );
+    assert!(codec::preflight(
+        &wire_schemas::LATENT_TRANSACTION_V1_LINKEDRETENTION,
+        &retained_ids,
+        1024
+    )
+    .is_ok());
 }
 
 #[test]
@@ -262,15 +449,13 @@ fn unknown_record_and_transport_abort_never_prove_an_explicit_attempt() {
     );
     let error = super::RpcFailure::status(&tonic::Status::aborted("transport abort"));
     assert_eq!(error.grpc_code, Some(10));
-    assert!(
-        model::ClientFailure {
-            transport: Box::new(error.into()),
-            identity: Box::new(requests::identity(&request)),
-            observed: None
-        }
-        .observed
-        .is_none()
-    );
+    assert!(model::ClientFailure {
+        transport: Box::new(error.into()),
+        identity: Box::new(requests::identity(&request)),
+        observed: None
+    }
+    .observed
+    .is_none());
 }
 
 #[tokio::test]

@@ -56,6 +56,21 @@ typedef int32_t latent_transaction_effect_disposition;
 #define LATENT_TRANSACTION_EFFECT_DISPOSITION_EXPIRED ((latent_transaction_effect_disposition)6)
 #define LATENT_TRANSACTION_EFFECT_DISPOSITION_POLICY_BLOCKED ((latent_transaction_effect_disposition)7)
 #define LATENT_TRANSACTION_EFFECT_DISPOSITION_ADMINISTRATIVELY_TERMINATED ((latent_transaction_effect_disposition)8)
+#define LATENT_TRANSACTION_EFFECT_DISPOSITION_RETRY_SCHEDULED ((latent_transaction_effect_disposition)9)
+#define LATENT_TRANSACTION_EFFECT_DISPOSITION_DEAD_LETTERED ((latent_transaction_effect_disposition)10)
+
+typedef int32_t latent_transaction_effect_management_fact;
+#define LATENT_TRANSACTION_EFFECT_MANAGEMENT_FACT_UNSPECIFIED ((latent_transaction_effect_management_fact)0)
+#define LATENT_TRANSACTION_EFFECT_MANAGEMENT_FACT_REDRIVE_SCHEDULED ((latent_transaction_effect_management_fact)1)
+#define LATENT_TRANSACTION_EFFECT_MANAGEMENT_FACT_PROVIDER_CONFIRMED ((latent_transaction_effect_management_fact)2)
+#define LATENT_TRANSACTION_EFFECT_MANAGEMENT_FACT_ADMINISTRATOR_TERMINATED ((latent_transaction_effect_management_fact)3)
+
+typedef int32_t latent_transaction_effect_plan_safety;
+#define LATENT_TRANSACTION_EFFECT_PLAN_SAFETY_UNSPECIFIED ((latent_transaction_effect_plan_safety)0)
+#define LATENT_TRANSACTION_EFFECT_PLAN_SAFETY_KNOWN_NONEXECUTION ((latent_transaction_effect_plan_safety)1)
+#define LATENT_TRANSACTION_EFFECT_PLAN_SAFETY_QUALIFIED_DEDUPLICATION ((latent_transaction_effect_plan_safety)2)
+#define LATENT_TRANSACTION_EFFECT_PLAN_SAFETY_PROVIDER_RECEIPT_LOOKUP ((latent_transaction_effect_plan_safety)3)
+#define LATENT_TRANSACTION_EFFECT_PLAN_SAFETY_ADMINISTRATOR_DECLARED ((latent_transaction_effect_plan_safety)4)
 
 typedef int32_t latent_transaction_namespace_mutation_kind;
 #define LATENT_TRANSACTION_NAMESPACE_MUTATION_KIND_UNSPECIFIED ((latent_transaction_namespace_mutation_kind)0)
@@ -78,6 +93,7 @@ typedef int32_t latent_transaction_state_mutation_kind;
 #define LATENT_TRANSACTION_STATE_MUTATION_KIND_TERMINATE_EFFECT ((latent_transaction_state_mutation_kind)2)
 #define LATENT_TRANSACTION_STATE_MUTATION_KIND_PURGE_EXPIRED_PAYLOAD ((latent_transaction_state_mutation_kind)3)
 #define LATENT_TRANSACTION_STATE_MUTATION_KIND_CHECKPOINT_NAMESPACE ((latent_transaction_state_mutation_kind)4)
+#define LATENT_TRANSACTION_STATE_MUTATION_KIND_RECONCILE_EFFECT ((latent_transaction_state_mutation_kind)5)
 
 typedef int32_t latent_transaction_state_operation_disposition;
 #define LATENT_TRANSACTION_STATE_OPERATION_DISPOSITION_UNSPECIFIED ((latent_transaction_state_operation_disposition)0)
@@ -283,6 +299,55 @@ typedef struct latent_transaction_dispatcher_snapshot {
     bool clock_continuity_proven;
 } latent_transaction_dispatcher_snapshot;
 
+typedef struct latent_transaction_get_effect_request {
+    bool has_profile;
+    latent_transaction_transaction_profile profile;
+    bool has_command;
+    latent_transaction_command_selector command;
+    latent_string effect_id;
+    bool has_authorization_publication;
+    latent_profile_publication_ref authorization_publication;
+} latent_transaction_get_effect_request;
+
+typedef struct latent_transaction_plan_effect_mutation_request {
+    bool has_effect;
+    latent_transaction_get_effect_request effect;
+    latent_string operation_id;
+    latent_transaction_state_mutation_kind mutation;
+    latent_bytes expected_version;
+    latent_string expected_policy_digest;
+    latent_string reason;
+    uint64_t retry_delay_millis;
+} latent_transaction_plan_effect_mutation_request;
+
+typedef struct latent_transaction_effect_management_plan {
+    bool has_original;
+    latent_transaction_plan_effect_mutation_request original;
+    latent_bytes plan_digest;
+    uint32_t management_sequence;
+    uint64_t owner_epoch;
+    uint64_t claim_generation;
+    uint32_t dispatch_attempt;
+    uint64_t expires_at_unix_millis;
+    uint64_t prepared_at_unix_millis;
+    latent_transaction_effect_disposition before;
+    latent_transaction_effect_plan_safety safety;
+    bool has_dedup_valid_until_unix_millis;
+    uint64_t dedup_valid_until_unix_millis;
+} latent_transaction_effect_management_plan;
+
+typedef struct latent_transaction_effect_management_receipt_details {
+    bool has_original_plan;
+    latent_transaction_effect_management_plan original_plan;
+    latent_transaction_effect_disposition before;
+    latent_transaction_effect_disposition after;
+    latent_transaction_effect_management_fact fact;
+    bool has_provider_receipt;
+    latent_string provider_receipt;
+    bool has_provider_observed_at_unix_millis;
+    uint64_t provider_observed_at_unix_millis;
+} latent_transaction_effect_management_receipt_details;
+
 typedef struct latent_transaction_effect_receipt {
     latent_string effect_id;
     latent_string command_id;
@@ -299,6 +364,11 @@ typedef struct latent_transaction_effect_receipt {
     bool has_management_operation_receipt_id;
     latent_string management_operation_receipt_id;
     latent_string provider_profile;
+    latent_bytes record_version;
+    bool has_owner_epoch;
+    uint64_t owner_epoch;
+    bool has_claim_generation;
+    uint64_t claim_generation;
 } latent_transaction_effect_receipt;
 
 typedef struct latent_transaction_entity_inspection {
@@ -326,16 +396,6 @@ typedef struct latent_transaction_get_dispatcher_operation_response {
     latent_profile_audit_ack audit_ack;
 } latent_transaction_get_dispatcher_operation_response;
 
-typedef struct latent_transaction_get_effect_request {
-    bool has_profile;
-    latent_transaction_transaction_profile profile;
-    bool has_command;
-    latent_transaction_command_selector command;
-    latent_string effect_id;
-    bool has_authorization_publication;
-    latent_profile_publication_ref authorization_publication;
-} latent_transaction_get_effect_request;
-
 typedef struct latent_transaction_get_effect_response {
     bool has_effect;
     latent_transaction_effect_receipt effect;
@@ -354,6 +414,8 @@ typedef struct latent_transaction_get_state_operation_receipt_request {
     bool has_namespace;
     latent_transaction_inspect_namespace_request namespace;
     latent_string operation_id;
+    bool has_original_effect_plan;
+    latent_transaction_effect_management_plan original_effect_plan;
 } latent_transaction_get_state_operation_receipt_request;
 
 typedef struct latent_transaction_state_operation_receipt {
@@ -370,6 +432,8 @@ typedef struct latent_transaction_state_operation_receipt {
     latent_string record_id;
     latent_string policy_digest;
     latent_transaction_state_operation_disposition disposition;
+    bool has_effect;
+    latent_transaction_effect_management_receipt_details effect;
 } latent_transaction_state_operation_receipt;
 
 typedef struct latent_transaction_namespace_operation_receipt {
@@ -392,6 +456,8 @@ typedef struct latent_transaction_get_state_operation_receipt_response {
     latent_transaction_state_operation_receipt receipt;
     bool has_namespace_receipt;
     latent_transaction_namespace_operation_receipt namespace_receipt;
+    bool has_audit_ack;
+    latent_profile_audit_ack audit_ack;
 } latent_transaction_get_state_operation_receipt_response;
 
 typedef struct latent_transaction_inspect_dispatcher_request {
@@ -439,6 +505,7 @@ typedef struct latent_transaction_namespace_inspection {
     bool has_quota;
     latent_transaction_namespace_quota quota;
     uint64_t generation;
+    latent_string namespace_policy_digest;
 } latent_transaction_namespace_inspection;
 
 typedef struct latent_transaction_inspect_namespace_response {
@@ -556,6 +623,8 @@ typedef struct latent_transaction_mutate_state_request {
     latent_bytes expected_version;
     latent_string expected_policy_digest;
     latent_string reason;
+    bool has_effect_plan;
+    latent_transaction_effect_management_plan effect_plan;
 } latent_transaction_mutate_state_request;
 
 typedef struct latent_transaction_mutate_state_response {
@@ -563,7 +632,16 @@ typedef struct latent_transaction_mutate_state_response {
     latent_transaction_state_operation_receipt receipt;
     bool has_audit_ack;
     latent_profile_audit_ack audit_ack;
+    bool replayed;
 } latent_transaction_mutate_state_response;
+
+typedef struct latent_transaction_plan_effect_mutation_response {
+    bool has_plan;
+    latent_transaction_effect_management_plan plan;
+    bool replayed;
+    bool has_audit_ack;
+    latent_profile_audit_ack audit_ack;
+} latent_transaction_plan_effect_mutation_response;
 
 typedef struct latent_transaction_query_request {
     bool has_profile;

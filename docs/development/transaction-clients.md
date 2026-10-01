@@ -7,7 +7,7 @@ existing control-plane paging types. Existing stateless models and operations
 remain supported.
 
 Rust exposes `latent_sdk::transaction::TransactionClient` on the existing
-`network::RpcClient`. TypeScript exposes the same fifteen current operations on
+`network::RpcClient`. TypeScript exposes the same sixteen current operations on
 `RpcClient` from `@latent/sdk/node`, with types under the pure `transaction` and
 `transactionClient` exports. .NET exposes `Latent.Sdk.Transactions.ITransactionClient`
 on the maintained `Latent.Sdk.Transport.BoundedClient`, returning owned
@@ -41,6 +41,17 @@ cleanup failure. Failure recovery metadata excludes the application payload;
 the caller can explicitly recover the original result using its preserved
 identity. Effects retain their separate dispatch disposition; a provider
 acknowledgement does not prove the command's outcome or ordered dispatch.
+
+Effect management is explicit: `PlanEffectMutation` prepares finite checked data;
+`MutateState` applies that exact plan and its original record version, policy
+digest, action, reason and operation ID; `GetStateOperationReceipt` recovers the
+original plan and receipt with a fresh current read publication. A prepared plan
+remains an unknown mutation outcome and supplies no authority or provider proof.
+The host rechecks current rights, the original row and physical attempt retirement.
+Recovery accepts an expired historical plan when the recorded completion belongs
+to its original finite window. Redrive scheduling, administrator declaration and
+provider confirmation remain distinct typed receipt facts. Missing historical
+record versions remain readable and cannot authorize a new plan.
 
 Rust and Node transaction calls use the existing connection, credential, monotonically
 decreasing deadline and physical request/response lease. The protocol ceiling is

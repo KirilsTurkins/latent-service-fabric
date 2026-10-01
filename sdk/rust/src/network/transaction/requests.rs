@@ -1,4 +1,4 @@
-use super::{FailureKind, RpcClient, RpcFailure, management, model, phase4};
+use super::{management, model, phase4, FailureKind, RpcClient, RpcFailure};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::time::Instant;
 
@@ -45,31 +45,7 @@ pub(super) fn identity(request: &phase4::Request) -> model::RecoveryIdentity {
         result.dispatcher_action = Some(model::DispatcherAction(value.action));
         result.dispatcher_expected_generation = value.expected_generation.map(Into::into);
     }
-    let inspect = match request {
-        Request::InspectNamespace(value) => Some(&**value),
-        Request::MutateNamespace(value) => {
-            result.operation_id = Some(value.operation_id.clone());
-            result.expected_generation = value.expected_generation;
-            value.namespace.as_ref()
-        }
-        Request::SelectEntity(value) => value.namespace.as_ref(),
-        Request::MutateState(value) => {
-            result.operation_id = Some(value.operation_id.clone());
-            result.expected_version = Some(value.expected_version.clone());
-            result.expected_policy_digest = Some(value.expected_policy_digest.clone());
-            value.namespace.as_ref()
-        }
-        Request::GetStateOperationReceipt(value) => {
-            result.operation_id = Some(value.operation_id.clone());
-            value.namespace.as_ref()
-        }
-        _ => None,
-    };
-    if let Some(inspect) = inspect {
-        result.namespace = inspect.namespace.clone().map(Into::into);
-        result.authorization_publication =
-            inspect.authorization_publication.clone().map(Into::into);
-    }
+    management_identity(request, &mut result);
     let command = match request {
         Request::InvokeCommand(value) => {
             result.activation_id = value
@@ -118,6 +94,18 @@ pub(super) fn identity(request: &phase4::Request) -> model::RecoveryIdentity {
                 value.authorization_publication.clone().map(Into::into);
             value.command.as_ref()
         }
+        Request::PlanEffectMutation(value) => {
+            result.operation_id = Some(value.operation_id.clone());
+            result.expected_version = Some(value.expected_version.clone());
+            result.expected_policy_digest = Some(value.expected_policy_digest.clone());
+            result.effect_mutation = Some((**value).clone().into());
+            value.effect.as_ref().and_then(|value| {
+                result.effect_id = Some(value.effect_id.clone());
+                result.authorization_publication =
+                    value.authorization_publication.clone().map(Into::into);
+                value.command.as_ref()
+            })
+        }
         Request::ListEffectHistory(value) => value.effect.as_ref().and_then(|value| {
             result.effect_id = Some(value.effect_id.clone());
             result.authorization_publication =
@@ -137,6 +125,50 @@ pub(super) fn identity(request: &phase4::Request) -> model::RecoveryIdentity {
         result.command = Some(command.clone().into());
     }
     result
+}
+
+fn management_identity(request: &phase4::Request, result: &mut model::RecoveryIdentity) {
+    use phase4::Request;
+    let inspect = match request {
+        Request::InspectNamespace(value) => Some(&**value),
+        Request::MutateNamespace(value) => {
+            result.operation_id = Some(value.operation_id.clone());
+            result.expected_generation = value.expected_generation;
+            value.namespace.as_ref()
+        }
+        Request::SelectEntity(value) => value.namespace.as_ref(),
+        Request::MutateState(value) => {
+            result.operation_id = Some(value.operation_id.clone());
+            result.expected_version = Some(value.expected_version.clone());
+            result.expected_policy_digest = Some(value.expected_policy_digest.clone());
+            result.effect_plan = value.effect_plan.clone().map(Into::into);
+            value.namespace.as_ref()
+        }
+        Request::GetStateOperationReceipt(value) => {
+            result.operation_id = Some(value.operation_id.clone());
+            result.effect_plan = value.original_effect_plan.clone().map(Into::into);
+            value.namespace.as_ref()
+        }
+        _ => None,
+    };
+    if let Some(inspect) = inspect {
+        result.namespace = inspect.namespace.clone().map(Into::into);
+        result.authorization_publication =
+            inspect.authorization_publication.clone().map(Into::into);
+    }
+    if let Some(original) = result
+        .effect_plan
+        .as_ref()
+        .and_then(|value| value.original.as_ref())
+    {
+        result.effect_mutation = Some(original.clone());
+        result.expected_version = Some(original.expected_version.clone());
+        result.expected_policy_digest = Some(original.expected_policy_digest.clone());
+        result.effect_id = original
+            .effect
+            .as_ref()
+            .map(|effect| effect.effect_id.clone());
+    }
 }
 
 fn dispatcher_original(

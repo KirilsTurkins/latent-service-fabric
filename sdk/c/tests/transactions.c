@@ -12,7 +12,7 @@
 
 typedef struct observed {
     unsigned calls;
-    bool failed, dispatched, command, dispatcher, effect, state, namespace_receipt;
+    bool failed, dispatched, command, dispatcher, effect, state, namespace_receipt, plan;
     int32_t category, outcome, command_outcome;
     size_t expected_count, payload_length;
     uint8_t expected_first;
@@ -42,6 +42,8 @@ static void capture(observed *out, const latent_transaction_response_metadata *m
     out->command = known->has_command;
     out->dispatcher = known->dispatcher != NULL; out->effect = known->effect != NULL;
     out->state = known->state != NULL; out->namespace_receipt = known->namespace != NULL;
+    out->plan = known->effect_plan != NULL;
+    if (out->plan) assert(identity->effect_plan != NULL && identity->effect_mutation != NULL);
     if (known->has_command) {
         out->command_outcome = known->command.outcome;
         assert(!known->command.has_success && !known->command.has_business_rejection
@@ -160,8 +162,8 @@ static void all_methods(latent_transport *owner) {
     latent_transaction_select_entity_request entities = {.has_namespace = true, .namespace = inspected, .has_page = true, .page = {.limit = 1}};
     out = (observed){0}; call = api->select_entity(client, &entities, NULL, select_entity, &out); finish(owner, call, &out, false);
     latent_transaction_mutate_state_request state = {.has_namespace = true, .namespace = inspected, .operation_id = TEXT("state-op"),
-        .mutation = LATENT_TRANSACTION_STATE_MUTATION_KIND_TERMINATE_EFFECT, .expected_version = BYTES("v1"), .expected_policy_digest = TEXT(DIGEST),
-        .has_record_id = true, .record_id = TEXT("effect-a"), .reason = TEXT("explicit operator decision")};
+        .mutation = LATENT_TRANSACTION_STATE_MUTATION_KIND_CHECKPOINT_NAMESPACE, .expected_version = BYTES("v1"), .expected_policy_digest = TEXT(DIGEST),
+        .reason = TEXT("explicit checkpoint")};
     out = (observed){0}; call = api->mutate_state(client, &state, NULL, mutate_state, &out); finish(owner, call, &out, false); assert(out.state);
     latent_transaction_get_state_operation_receipt_request state_lookup = {.has_namespace = true, .namespace = inspected, .operation_id = TEXT("state-op")};
     out = (observed){0}; call = api->get_state_operation_receipt(client, &state_lookup, NULL, get_state_operation_receipt, &out); finish(owner, call, &out, false);
@@ -214,6 +216,42 @@ static void bounded_recovery(latent_transport *owner) {
         .has_page = true, .page = {.limit = 128}};
     out = (observed){0}; call = api->list_effect_history(client, &page, NULL, list_effect_history, &out);
     finish(owner, call, &out, true); assert(out.category == LATENT_PROFILE_FAILURE_CATEGORY_LIMIT && !out.effect);
+}
+
+static void effect_plan_methods(latent_transport *owner) {
+    latent_transaction_client *client = latent_transport_transaction(owner);
+    uint8_t version[32], plan_digest[32]; memset(version, 1, sizeof(version)); memset(plan_digest, 2, sizeof(plan_digest));
+    latent_transaction_plan_effect_mutation_request original = {.has_effect = true,
+        .effect = get_effect_request(TEXT("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")),
+        .operation_id = TEXT("effect-op"), .mutation = LATENT_TRANSACTION_STATE_MUTATION_KIND_RETRY_KNOWN_FAILED_EFFECT,
+        .expected_version = {version, sizeof(version)}, .expected_policy_digest = TEXT(DIGEST), .reason = TEXT("explicit redrive"), .retry_delay_millis = 100};
+    observed out = {0}; latent_profile_call *call = api->plan_effect_mutation(client, &original, NULL, plan_effect_mutation, &out);
+    finish(owner, call, &out, false); assert(out.plan && out.outcome == LATENT_PROFILE_OUTCOME_KNOWLEDGE_UNKNOWN);
+    latent_transaction_effect_management_plan plan = {.has_original = true, .original = original, .plan_digest = {plan_digest, sizeof(plan_digest)},
+        .management_sequence = 1, .owner_epoch = UINT64_MAX, .claim_generation = 1, .dispatch_attempt = 1,
+        .prepared_at_unix_millis = 1000, .expires_at_unix_millis = 2000, .before = LATENT_TRANSACTION_EFFECT_DISPOSITION_KNOWN_FAILURE,
+        .safety = LATENT_TRANSACTION_EFFECT_PLAN_SAFETY_KNOWN_NONEXECUTION};
+    latent_transaction_mutate_state_request mutation = {.has_namespace = true, .namespace = inspect(), .operation_id = original.operation_id,
+        .mutation = original.mutation, .has_record_id = true, .record_id = original.effect.effect_id, .expected_version = original.expected_version,
+        .expected_policy_digest = original.expected_policy_digest, .reason = original.reason, .has_effect_plan = true, .effect_plan = plan};
+    out = (observed){0}; call = api->mutate_state(client, &mutation, NULL, mutate_state, &out); finish(owner, call, &out, false);
+    assert(out.state && out.outcome == LATENT_PROFILE_OUTCOME_KNOWLEDGE_OBSERVED);
+    latent_transaction_get_state_operation_receipt_request recovery = {.has_namespace = true, .namespace = inspect(), .operation_id = original.operation_id,
+        .has_original_effect_plan = true, .original_effect_plan = plan};
+    recovery.namespace.authorization_publication.id = TEXT("publication:sha256:2222222222222222222222222222222222222222222222222222222222222222");
+    out = (observed){0}; call = api->get_state_operation_receipt(client, &recovery, NULL, get_state_operation_receipt, &out); finish(owner, call, &out, false);
+    assert(out.state && out.outcome == LATENT_PROFILE_OUTCOME_KNOWLEDGE_OBSERVED);
+    mutation.has_effect_plan = false;
+    out = (observed){0}; call = api->mutate_state(client, &mutation, NULL, mutate_state, &out); finish(owner, call, &out, true); assert(!out.dispatched);
+    mutation.has_effect_plan = true; uint8_t zero[32] = {0}; mutation.expected_version = (latent_bytes){zero, sizeof(zero)};
+    out = (observed){0}; call = api->mutate_state(client, &mutation, NULL, mutate_state, &out); finish(owner, call, &out, true); assert(!out.dispatched);
+    original.reason = TEXT("bad-audit");
+    out = (observed){0}; call = api->plan_effect_mutation(client, &original, NULL, plan_effect_mutation, &out); finish(owner, call, &out, true);
+    assert(out.dispatched && out.plan && out.outcome == LATENT_PROFILE_OUTCOME_KNOWLEDGE_UNKNOWN);
+    original.reason = TEXT("bad-window");
+    out = (observed){0}; call = api->plan_effect_mutation(client, &original, NULL, plan_effect_mutation, &out); finish(owner, call, &out, true); assert(!out.plan);
+    original.reason = TEXT("forged-fact"); plan.original = original; mutation.expected_version = original.expected_version; mutation.reason = original.reason; mutation.effect_plan = plan;
+    out = (observed){0}; call = api->mutate_state(client, &mutation, NULL, mutate_state, &out); finish(owner, call, &out, true); assert(!out.state);
 }
 
 static void local_rejections(latent_transport *owner) {
@@ -298,12 +336,12 @@ int main(int argc, char **argv) {
     config.maximum_decoded_bytes = 8388608; config.maximum_owned_bytes = 33554432;
     latent_transport *owner = NULL; assert(latent_transport_create(&config, &owner, NULL));
     local_rejections(owner); assert(latent_transport_get_usage(owner).sockets == 0);
-    all_methods(owner); bounded_recovery(owner); reentrant_shutdown(owner);
+    all_methods(owner); bounded_recovery(owner); effect_plan_methods(owner); reentrant_shutdown(owner);
     assert(latent_transport_shutdown(owner, 1000));
     latent_transport_usage usage = latent_transport_get_usage(owner);
     assert(usage.sockets == 0 && usage.sessions == 0 && usage.retained_calls == 0 && usage.callbacks_pending == 0);
     assert(usage.peak_owned_bytes <= config.maximum_owned_bytes && usage.owned_bytes < 4096);
-    printf("C transactions: fifteen authenticated HTTP/2 methods, full u64 CAS, immutable preconditions, paired 750KiB result, independent audits, proven abort, lost-response recovery, limits and reentrant physical shutdown; peak=%zu\n", usage.peak_owned_bytes);
+    printf("C transactions: sixteen authenticated HTTP/2 methods, full u64 CAS, immutable effect plans, historical recovery, independent audit/provider facts, paired 750KiB result, proven abort, limits and reentrant physical shutdown; peak=%zu\n", usage.peak_owned_bytes);
     assert(latent_transport_destroy(owner));
     return 0;
 }

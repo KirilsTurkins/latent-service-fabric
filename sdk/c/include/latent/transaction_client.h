@@ -34,6 +34,8 @@ typedef struct latent_transaction_recovery_identity {
     const latent_profile_publication_ref *authorization_publication;
     bool has_dispatcher_action; latent_transaction_dispatcher_action dispatcher_action;
     const latent_transaction_dispatcher_generation *dispatcher_expected_generation;
+    const latent_transaction_plan_effect_mutation_request *effect_mutation;
+    const latent_transaction_effect_management_plan *effect_plan;
 } latent_transaction_recovery_identity;
 
 typedef struct latent_transaction_observed_outcome {
@@ -42,6 +44,7 @@ typedef struct latent_transaction_observed_outcome {
     const latent_transaction_namespace_operation_receipt *namespace;
     const latent_transaction_effect_receipt *effect;
     const latent_transaction_dispatcher_operation_receipt *dispatcher;
+    const latent_transaction_effect_management_plan *effect_plan;
 } latent_transaction_observed_outcome;
 
 typedef struct latent_transaction_response_metadata {
@@ -68,6 +71,7 @@ typedef struct latent_transaction_client_failure {
     M(inspect_namespace, inspect_namespace_request, inspect_namespace_response) \
     M(select_entity, select_entity_request, select_entity_response) \
     M(mutate_state, mutate_state_request, mutate_state_response) \
+    M(plan_effect_mutation, plan_effect_mutation_request, plan_effect_mutation_response) \
     M(get_state_operation_receipt, get_state_operation_receipt_request, get_state_operation_receipt_response) \
     M(inspect_dispatcher, inspect_dispatcher_request, inspect_dispatcher_response) \
     M(control_dispatcher, control_dispatcher_request, control_dispatcher_response) \

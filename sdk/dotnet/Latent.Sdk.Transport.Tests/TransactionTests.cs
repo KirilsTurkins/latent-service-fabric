@@ -72,7 +72,7 @@ internal static partial class Program
     }
 
     // A real HTTP/2 serialization peer; this does not claim signed-node execution.
-    private static async Task TransactionFifteenOperations()
+    private static async Task TransactionSixteenOperations()
     {
         await using Peer peer = await Peer.Start(async context =>
         {
@@ -99,14 +99,17 @@ internal static partial class Program
                 case "InspectNamespace":
                     await Peer.Read<WireControl.InspectNamespaceRequest>(context);
                     await Peer.Reply(context, (WireControl.InspectNamespaceResponse)ProfileCodec.ToWire(new Tx.InspectNamespaceResponse(new(new(TxNamespace, new byte[] { 1 }, TxDigest),
-                        1, 1, 1, Array.Empty<Tx.LinkedRetention>(), "redb-v1", TxDigest, Tx.NamespaceStatus.Active, new(1, 4096, 1, 4096, 1, 4096, 4096, 4096), ulong.MaxValue)), new WireControl.InspectNamespaceResponse())); break;
+                        1, 1, 1, Array.Empty<Tx.LinkedRetention>(), "redb-v1", TxDigest, Tx.NamespaceStatus.Active, new(1, 4096, 1, 4096, 1, 4096, 4096, 4096), ulong.MaxValue, TxDigest)), new WireControl.InspectNamespaceResponse())); break;
                 case "SelectEntity":
                     await Peer.Read<WireControl.SelectEntityRequest>(context);
                     await Peer.Reply(context, (WireControl.SelectEntityResponse)ProfileCodec.ToWire(new Tx.SelectEntityResponse(new[] { new Tx.EntityInspection("aggregate-a", new byte[] { 1 }) }, new(new byte[] { 2 }, 1, 32)), new WireControl.SelectEntityResponse())); break;
+                case "PlanEffectMutation":
+                    var originalPlan = await Peer.Read<WireControl.PlanEffectMutationRequest>(context);
+                    await Peer.Reply(context, (WireControl.PlanEffectMutationResponse)ProfileCodec.ToWire(new Tx.PlanEffectMutationResponse(TxEffectPlan((Tx.PlanEffectMutationRequest)ProfileCodec.FromWire(originalPlan, typeof(Tx.PlanEffectMutationRequest))), false, null), new WireControl.PlanEffectMutationResponse())); break;
                 case "MutateState":
                     var mutation = await Peer.Read<WireControl.MutateStateRequest>(context);
                     await Peer.Reply(context, (WireControl.MutateStateResponse)ProfileCodec.ToWire(new Tx.MutateStateResponse(new(mutation.OperationId, "state-receipt-a", Tx.StateMutationKind.CheckpointNamespace,
-                        TxNamespace, "operator-a", new byte[] { 1 }, new byte[] { 2 }, ulong.MaxValue, null, TxDigest, Tx.StateOperationDisposition.Committed), new(Profile.AuditAckStatus.Durable, ulong.MaxValue)), new WireControl.MutateStateResponse())); break;
+                        TxNamespace, "operator-a", new byte[] { 1 }, new byte[] { 2 }, ulong.MaxValue, null, TxDigest, Tx.StateOperationDisposition.Committed, null), new(Profile.AuditAckStatus.Durable, ulong.MaxValue), false), new WireControl.MutateStateResponse())); break;
                 case "MutateNamespace":
                     var lifecycle = await Peer.Read<WireControl.MutateNamespaceRequest>(context);
                     Check(lifecycle.HasExpectedGeneration && lifecycle.ExpectedGeneration == ulong.MaxValue - 1, "generation precondition lost full width or presence");
@@ -115,7 +118,7 @@ internal static partial class Program
                 case "GetStateOperationReceipt":
                     await Peer.Read<WireControl.GetStateOperationReceiptRequest>(context);
                     await Peer.Reply(context, (WireControl.GetStateOperationReceiptResponse)ProfileCodec.ToWire(new Tx.GetStateOperationReceiptResponse(new("state-operation-a", "state-receipt-a", Tx.StateMutationKind.CheckpointNamespace,
-                        TxNamespace, "operator-a", new byte[] { 1 }, new byte[] { 2 }, 0, null, TxDigest, Tx.StateOperationDisposition.Committed), null), new WireControl.GetStateOperationReceiptResponse())); break;
+                        TxNamespace, "operator-a", new byte[] { 1 }, new byte[] { 2 }, 0, null, TxDigest, Tx.StateOperationDisposition.Committed, null), null, null), new WireControl.GetStateOperationReceiptResponse())); break;
                 case "InspectDispatcher":
                     var inspect = await Peer.Read<WireControl.InspectDispatcherRequest>(context);
                     Check(inspect.Scope == WireControl.DispatcherScope.Node, "dispatcher scope became tenant or namespace scope");
@@ -152,12 +155,15 @@ internal static partial class Program
         Check((await client.CancelCommandAsync(new(TxLookup(), "logical cancellation"), Defaults)).Value.Disposition == Tx.CommandCancelDisposition.AlreadyCommitted, "cancellation disposition collapsed");
         Check((await client.InspectNamespaceAsync(TxInspect, Defaults)).Value.Namespace!.Generation == ulong.MaxValue, "namespace generation narrowed");
         Check((await client.SelectEntityAsync(new(TxInspect, null, new(16, null)), Defaults)).Value.Page!.NextCursor.HasValue, "entity selection drained or lost cursor");
-        var state = await client.MutateStateAsync(new(TxInspect, "state-operation-a", Tx.StateMutationKind.CheckpointNamespace, null, new byte[] { 1 }, TxDigest, "checkpoint"), Defaults);
+        var state = await client.MutateStateAsync(new(TxInspect, "state-operation-a", Tx.StateMutationKind.CheckpointNamespace, null, new byte[] { 1 }, TxDigest, "checkpoint", null), Defaults);
         Check(state.Value.AuditAck!.AttemptSequence == ulong.MaxValue && state.Metadata.Observed!.State!.ReceiptId == "state-receipt-a", "audit/receipt facts changed");
         var lifecycle = await client.MutateNamespaceAsync(new(TxInspect, "namespace-operation-a", Tx.NamespaceMutationKind.Quiesce, ulong.MaxValue - 1, null), Defaults);
         Check(lifecycle.Metadata.Identity.ExpectedGeneration == ulong.MaxValue - 1, "lifecycle precondition was refreshed: " + lifecycle.Metadata.Identity.ExpectedGeneration);
         Check(lifecycle.Value.Receipt!.AfterGeneration == ulong.MaxValue, "lifecycle receipt generation narrowed");
-        Check((await client.GetStateOperationReceiptAsync(new(TxInspect, "state-operation-a"), Defaults)).Metadata.Observed!.State!.OperationId == "state-operation-a", "management recovery identity changed");
+        Check((await client.GetStateOperationReceiptAsync(new(TxInspect, "state-operation-a", null), Defaults)).Metadata.Observed!.State!.OperationId == "state-operation-a", "management recovery identity changed");
+        var plan = await client.PlanEffectMutationAsync(TxEffectMutation(), Defaults);
+        Check(plan.Metadata.Transport.Outcome == Profile.OutcomeKnowledge.Unknown && plan.Metadata.Observed!.EffectPlan is not null &&
+            plan.Metadata.Identity.EffectMutation!.ExpectedVersion.Span.SequenceEqual(new byte[32].Select(_ => (byte)1).ToArray()), "prepared data became known mutation or lost original CAS");
         var dispatcher = await client.InspectDispatcherAsync(new(Tx.CurrentTransactionProfile.Create(), Tx.DispatcherScope.Node), Defaults);
         Check(dispatcher.Value.Dispatcher!.Generation!.OwnerEpoch == ulong.MaxValue && dispatcher.Value.Dispatcher.PhysicalOwners == ulong.MaxValue,
             "dispatcher full-width observations were narrowed or confused with retirement");
@@ -167,7 +173,7 @@ internal static partial class Program
         var recoveredDispatcher = await client.GetDispatcherOperationAsync(new(TxControl()), Defaults);
         Check(recoveredDispatcher.Metadata.Identity.OperationId == "dispatcher-operation-a" && recoveredDispatcher.Metadata.Identity.DispatcherAction == Tx.DispatcherAction.Pause,
             "dispatcher recovery changed logical identity");
-        Check(peer.Requests.Count == 15 && peer.Requests.Values.All(count => count == 1) && peer.Connections.Count == 1, "transaction operations replayed or replaced the existing connection");
+        Check(peer.Requests.Count == 16 && peer.Requests.Values.All(count => count == 1) && peer.Connections.Count == 1, "transaction operations replayed or replaced the existing connection");
         await client.DisposeAsync(); Check(client.Snapshot().Reaped, "transaction connection did not physically retire");
     }
 

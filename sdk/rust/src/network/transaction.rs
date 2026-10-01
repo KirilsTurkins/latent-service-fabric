@@ -12,7 +12,7 @@ mod test_peer;
 #[cfg(test)]
 mod tests;
 
-use super::{FailureKind, RpcClient, RpcFailure, channel::CallChannel, profile::response_audit};
+use super::{channel::CallChannel, profile::response_audit, FailureKind, RpcClient, RpcFailure};
 use crate::{management, transaction as model};
 use codec::{BoundedCodec, Schema};
 use latent_rpc::{control::v1 as control, phase4, transaction::v1 as transaction};
@@ -158,6 +158,15 @@ impl model::TransactionClient for RpcClient {
         control,
         "/latent.control.v1.StateService",
         LATENT_CONTROL_V1_MUTATESTATERESPONSE
+    );
+    operation!(
+        plan_effect_mutation,
+        PlanEffectMutation,
+        PlanEffectMutationRequest,
+        PlanEffectMutationResponse,
+        control,
+        "/latent.control.v1.StateService",
+        LATENT_CONTROL_V1_PLANEFFECTMUTATIONRESPONSE
     );
     operation!(
         get_state_operation_receipt,

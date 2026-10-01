@@ -307,7 +307,7 @@ qualification; parent-owned exact-head CI and acceptance review remain required.
 
 ## Phase 4 commands, queries and recovery
 
-`RpcClient` also implements `dev.latent.sdk.TransactionClient`. Its fifteen
+`RpcClient` also implements `dev.latent.sdk.TransactionClient`. Its sixteen
 current StateService, TransactionService and DispatcherService methods return
 typed `CompletableFuture<TransactionClient.ClientResponse<T>>` values using the
 same channel, authentication configuration, admission and bounded executor.

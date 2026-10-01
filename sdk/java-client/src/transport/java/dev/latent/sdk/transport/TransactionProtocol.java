@@ -93,6 +93,63 @@ final class TransactionProtocol {
         profile(part(value, "profile")); commandSelector(part(value, "command"), tenant);
         publication(part(value, "authorizationPublication"), tenant);
     }
+    private static void effectVersion(Object value) {
+        ByteBuffer data = bytes(value, 32, true); Protocol.require(data.remaining() == 32);
+        boolean nonzero = false;
+        for (int offset = data.position(); offset < data.limit(); offset++) nonzero |= data.get(offset) != 0;
+        Protocol.require(nonzero);
+    }
+    private static void effectMutation(Object value, String tenant) {
+        Object target = part(value, "effect"); lookup(target, tenant);
+        Protocol.require(id(part(target, "effectId")).matches("[0-9a-f]{64}")); id(part(value, "operationId"));
+        effectVersion(part(value, "expectedVersion")); digest(part(value, "expectedPolicyDigest")); text(part(value, "reason"), 1024, true);
+        int action = enumeration(part(value, "mutation"), 5, "state.mutation"); long delay = unsigned(part(value, "retryDelayMillis"));
+        Protocol.require(action == 1 && delay >= 1 && delay <= 60000 || (action == 2 || action == 5) && delay == 0);
+    }
+    private static void effectPlan(Object value, String tenant) {
+        Object original = part(value, "original"); effectMutation(original, tenant); effectVersion(part(value, "planDigest"));
+        int sequence = integer(part(value, "managementSequence")), attempt = integer(part(value, "dispatchAttempt"));
+        long owner = unsigned(part(value, "ownerEpoch")), claim = unsigned(part(value, "claimGeneration"));
+        long prepared = unsigned(part(value, "preparedAtUnixMillis")), expires = unsigned(part(value, "expiresAtUnixMillis"));
+        boolean attempted = owner != 0 && claim != 0 && attempt != 0;
+        Protocol.require(sequence >= 1 && sequence <= 128 && attempt >= 0 && attempt <= 128 &&
+                (attempted || owner == 0 && claim == 0 && attempt == 0) && prepared != 0 &&
+                Long.compareUnsigned(expires, prepared) > 0 && Long.compareUnsigned(expires - prepared, 30000) <= 0);
+        int before = enumeration(part(value, "before"), 10, "effect.disposition"), safety = enumeration(part(value, "safety"), 4, "effect.plan.safety");
+        int action = enumeration(part(original, "mutation"), 5, "state.mutation");
+        Protocol.require(action == 1 && attempted && (safety == 1 && before == 4 || safety == 2 && (before == 4 || before == 5)) ||
+                action == 5 && attempted && safety == 3 && (before == 4 || before == 5) ||
+                action == 2 && safety == 4 && (before == 1 || before == 4 || before == 5 || before == 7 || before == 9));
+        Object dedup = part(value, "dedupValidUntilUnixMillis"); Protocol.require((safety == 2) == (dedup != null));
+        if (dedup != null) Protocol.require(Long.compareUnsigned(unsigned(dedup), expires) > 0);
+        // Historical receipts use the original finite window, never the current clock.
+    }
+    private static void effectPlanAssociation(Object value, Object plan, String tenant, boolean recovery) {
+        effectPlan(plan, tenant); Object original = part(plan, "original"), target = part(original, "effect"), current = part(value, "namespace");
+        same(part(current, "namespace"), part(part(target, "command"), "namespace")); same(part(current, "profile"), part(target, "profile"));
+        same(part(value, "operationId"), part(original, "operationId"));
+        if (!recovery) {
+            same(part(current, "authorizationPublication"), part(target, "authorizationPublication")); same(part(value, "recordId"), part(target, "effectId"));
+            for (String field : List.of("mutation", "expectedVersion", "expectedPolicyDigest", "reason")) same(part(value, field), part(original, field));
+        }
+    }
+    private static void effectPlanReceipt(Object value, Object expected, String tenant) {
+        Object details = part(value, "effect"), plan = part(details, "originalPlan"), original = part(plan, "original");
+        effectPlan(plan, tenant); same(plan, expected); same(part(details, "before"), part(plan, "before"));
+        for (String field : List.of("operationId", "mutation")) same(part(value, field), part(original, field));
+        same(part(value, "recordId"), part(part(original, "effect"), "effectId")); same(part(value, "beforeVersion"), part(original, "expectedVersion"));
+        same(part(value, "policyDigest"), part(original, "expectedPolicyDigest")); effectVersion(part(value, "beforeVersion")); effectVersion(part(value, "afterVersion"));
+        long completed = unsigned(part(value, "completedAtUnixMillis"));
+        Protocol.require(enumeration(part(value, "disposition"), 5, "state.disposition") == 1 &&
+                Long.compareUnsigned(completed, unsigned(part(plan, "preparedAtUnixMillis"))) >= 0 &&
+                Long.compareUnsigned(completed, unsigned(part(plan, "expiresAtUnixMillis"))) < 0);
+        int fact = enumeration(part(details, "fact"), 3, "effect.management.fact"), action = enumeration(part(original, "mutation"), 5, "state.mutation");
+        int after = enumeration(part(details, "after"), 10, "effect.disposition");
+        Protocol.require(fact == 1 && action == 1 && after == 9 || fact == 2 && action == 5 && after == 3 || fact == 3 && action == 2 && (after == 8 || after == 10));
+        Object provider = part(details, "providerReceipt"), observed = part(details, "providerObservedAtUnixMillis");
+        Protocol.require((fact == 2) == (provider != null) && (provider != null) == (observed != null)); optionalId(provider);
+        if (observed != null) { positive(observed); Protocol.require(Long.compareUnsigned(unsigned(observed), completed) <= 0); }
+    }
     private static void fence(Object value) {
         for (String name : List.of("commandId", "attemptId", "transactionId")) id(part(value, name));
         bytes(part(value, "ownerFence"), 256, true);
@@ -169,12 +226,18 @@ final class TransactionProtocol {
                 inspect(part(value, "namespace"), tenant); page(part(value, "page"));
                 if (part(value, "prefix") != null) bytes(part(value, "prefix"), 256, false);
             }
-            case Transactions.GetStateOperationReceiptRequest request -> { inspect(part(value, "namespace"), tenant); id(part(value, "operationId")); }
+            case Transactions.GetStateOperationReceiptRequest request -> {
+                inspect(part(value, "namespace"), tenant); id(part(value, "operationId"));
+                if (part(value, "originalEffectPlan") != null) effectPlanAssociation(value, part(value, "originalEffectPlan"), tenant, true);
+            }
+            case Transactions.PlanEffectMutationRequest request -> effectMutation(value, tenant);
             case Transactions.MutateStateRequest request -> {
                 inspect(part(value, "namespace"), tenant); id(part(value, "operationId"));
                 bytes(part(value, "expectedVersion"), 256, true); digest(part(value, "expectedPolicyDigest")); text(part(value, "reason"), 1024, true);
-                int mutation = enumeration(part(value, "mutation"), 4, "state.mutation");
+                int mutation = enumeration(part(value, "mutation"), 5, "state.mutation");
                 optionalId(part(value, "recordId")); Protocol.require((mutation == 4) == (part(value, "recordId") == null));
+                if (mutation == 1 || mutation == 2 || mutation == 5) effectPlanAssociation(value, part(value, "effectPlan"), tenant, false);
+                else Protocol.require(part(value, "effectPlan") == null);
             }
             case Transactions.MutateNamespaceRequest request -> {
                 inspect(part(value, "namespace"), tenant); id(part(value, "operationId"));
@@ -262,7 +325,11 @@ final class TransactionProtocol {
     private static void effect(Object value, Object expected) {
         for (String name : List.of("effectId", "commandId", "commandAttemptId", "providerProfile")) id(part(value, name));
         for (String name : List.of("providerReceipt", "failureCode", "managementOperationReceiptId")) optionalId(part(value, name));
-        enumeration(part(value, "disposition"), 8, "effect.disposition"); same(part(value, "effectId"), expected);
+        enumeration(part(value, "disposition"), 10, "effect.disposition"); same(part(value, "effectId"), expected);
+        if (bytes(part(value, "recordVersion"), 32, false).hasRemaining()) effectVersion(part(value, "recordVersion"));
+        Object owner = part(value, "ownerEpoch"), claim = part(value, "claimGeneration");
+        Protocol.require((owner == null) == (claim == null));
+        if (owner != null) { positive(owner); positive(claim); int attempt = integer(part(value, "dispatchAttempt")); Protocol.require(attempt >= 1 && attempt <= 128); }
         if (part(value, "retention") != null) retention(part(value, "retention"));
     }
     private static void boundedPage(Object value, Object requested, int count) {
@@ -286,7 +353,7 @@ final class TransactionProtocol {
         } else {
             same(part(value, "namespace"), target); bytes(part(value, "beforeVersion"), 256, true);
             bytes(part(value, "afterVersion"), 256, true); digest(part(value, "policyDigest"));
-            enumeration(part(value, "mutation"), 4, "state.mutation"); optionalId(part(value, "recordId"));
+            enumeration(part(value, "mutation"), 5, "state.mutation"); optionalId(part(value, "recordId"));
         }
     }
     private static void view(Object value, Object target, String tenant) {
@@ -359,6 +426,7 @@ final class TransactionProtocol {
                 enumeration(part(inspected, "status"), 4, "namespace.status"); positive(part(inspected, "generation"));
                 quota(part(inspected, "quota")); id(part(inspected, "engineProfile")); digest(part(inspected, "engineProfileDigest"));
                 for (Object format : list(part(inspected, "retainedFormats"), 128)) retention(format);
+                if (!text(part(inspected, "namespacePolicyDigest"), 71, false).isEmpty()) digest(part(inspected, "namespacePolicyDigest"));
             }
             case Transactions.SelectEntityResponse result -> {
                 var entries = list(part(value, "entities"), 128); Set<Object> names = new HashSet<>();
@@ -371,7 +439,10 @@ final class TransactionProtocol {
                 Object accepted = part(value, "receipt"); receipt(accepted, original, tenant, false);
                 same(part(accepted, "mutation"), part(original, "mutation")); same(part(accepted, "recordId"), part(original, "recordId"));
                 same(part(accepted, "beforeVersion"), part(original, "expectedVersion")); same(part(accepted, "policyDigest"), part(original, "expectedPolicyDigest"));
+                Object plan = part(original, "effectPlan"); Protocol.require((part(accepted, "effect") != null) == (plan != null));
+                if (plan != null) effectPlanReceipt(accepted, plan, tenant);
             }
+            case Transactions.PlanEffectMutationResponse result -> { effectPlan(part(value, "plan"), tenant); same(part(part(value, "plan"), "original"), original); }
             case Transactions.MutateNamespaceResponse result -> {
                 Object accepted = part(value, "receipt"); receipt(accepted, original, tenant, true);
                 same(part(accepted, "mutation"), part(original, "mutation"));
@@ -390,6 +461,9 @@ final class TransactionProtocol {
             case Transactions.GetStateOperationReceiptResponse result -> {
                 Object state = part(value, "receipt"), namespace = part(value, "namespaceReceipt");
                 Protocol.require((state == null) != (namespace == null)); receipt(state == null ? namespace : state, original, tenant, state == null);
+                Object plan = part(original, "originalEffectPlan");
+                Protocol.require((state != null && part(state, "effect") != null) == (plan != null));
+                if (plan != null) effectPlanReceipt(state, plan, tenant);
             }
             case Transactions.InspectDispatcherResponse result -> {
                 Object snapshot = part(value, "dispatcher"); generation(part(snapshot, "generation")); enumeration(part(snapshot, "failure"), 7, "dispatcher.failure");
@@ -408,6 +482,8 @@ final class TransactionProtocol {
     static void independentAudit(Object value) {
         Object audit = switch (value) {
             case Transactions.MutateStateResponse result -> result.auditAck().orElse(null);
+            case Transactions.PlanEffectMutationResponse result -> result.auditAck().orElse(null);
+            case Transactions.GetStateOperationReceiptResponse result -> result.auditAck().orElse(null);
             case Transactions.MutateNamespaceResponse result -> result.auditAck().orElse(null);
             case Transactions.InspectDispatcherResponse result -> result.auditAck().orElse(null);
             case Transactions.ControlDispatcherResponse result -> result.auditAck().orElse(null);

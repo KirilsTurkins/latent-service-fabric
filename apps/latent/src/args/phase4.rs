@@ -1,5 +1,5 @@
 use crate::error::Failure;
-use clap::{Args, Subcommand};
+use clap::{Args, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 #[derive(Args)]
@@ -61,6 +61,46 @@ pub enum StateCommand {
     /// Look up one original operation ID, including after a lost response.
     Operation(NamespaceOperationArgs),
     Entities(EntityPageArgs),
+    /// Prepare one exact effect action with current operator authority.
+    PlanEffect(PlanEffectArgs),
+    /// Apply the original plan once. No automatic resend or precondition refresh.
+    ApplyEffect(EffectPlanArgs),
+    /// Recover the original action receipt with current inspection authority.
+    EffectOperation(EffectPlanArgs),
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+pub enum EffectMutationAction {
+    Redrive,
+    Reconcile,
+    Terminate,
+}
+#[derive(Args)]
+pub struct PlanEffectArgs {
+    #[command(flatten)]
+    pub effect: EffectArgs,
+    #[arg(long)]
+    pub operation_id: String,
+    #[arg(long, value_enum)]
+    pub action: EffectMutationAction,
+    /// Exact canonical base64 record version from effect inspection.
+    #[arg(long)]
+    pub expected_version: String,
+    #[arg(long)]
+    pub expected_policy_digest: String,
+    #[arg(long)]
+    pub reason: String,
+    /// Redrive only: finite original delay; never supplied for reconciliation/stop.
+    #[arg(long)]
+    pub retry_delay_millis: Option<u64>,
+}
+#[derive(Args)]
+pub struct EffectPlanArgs {
+    #[command(flatten)]
+    pub target: NamespaceArgs,
+    /// Exact bounded encodedPlan from the plan response, including original CAS.
+    #[arg(long)]
+    pub plan: String,
 }
 
 #[derive(Args)]
@@ -171,6 +211,9 @@ impl StateCommand {
             Self::Recreate(_) => "state recreate",
             Self::Operation(_) => "state operation",
             Self::Entities(_) => "state entities",
+            Self::PlanEffect(_) => "state plan-effect",
+            Self::ApplyEffect(_) => "state apply-effect",
+            Self::EffectOperation(_) => "state effect-operation",
         }
     }
     pub fn validate(&self) -> Result<(), Failure> {
@@ -188,6 +231,33 @@ impl StateCommand {
                 if v.cursor.as_ref().is_some_and(|v| v.len() > 344)
                     || v.prefix.as_ref().is_some_and(|v| v.len() > 344)
                 {
+                    return Err(invalid());
+                }
+                Ok(())
+            }
+            Self::PlanEffect(v) => {
+                v.effect.command.validate()?;
+                id(&v.effect.effect_id)?;
+                id(&v.operation_id)?;
+                if v.expected_version.len() != 44
+                    || v.expected_policy_digest.len() != 71
+                    || v.reason.is_empty()
+                    || v.reason.len() > 1024
+                    || v.reason.chars().any(char::is_control)
+                    || match v.action {
+                        EffectMutationAction::Redrive => !v
+                            .retry_delay_millis
+                            .is_some_and(|delay| (1..=60_000).contains(&delay)),
+                        _ => v.retry_delay_millis.is_some(),
+                    }
+                {
+                    return Err(invalid());
+                }
+                Ok(())
+            }
+            Self::ApplyEffect(v) | Self::EffectOperation(v) => {
+                v.target.validate()?;
+                if v.plan.is_empty() || v.plan.len() > 21_848 {
                     return Err(invalid());
                 }
                 Ok(())

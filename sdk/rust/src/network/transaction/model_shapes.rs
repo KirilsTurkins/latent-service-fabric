@@ -505,6 +505,55 @@ fn select_entity_request(
     Ok(())
 }
 
+fn plan_effect_mutation_request(
+    value: &model::PlanEffectMutationRequest,
+    depth: usize,
+    budget: &mut Budget,
+) -> Result<(), ValidationError> {
+    let _ = value;
+    budget.node(
+        std::mem::size_of::<model::PlanEffectMutationRequest>(),
+        depth,
+    )?;
+    if let Some(member) = &value.effect {
+        get_effect_request(member, depth + 1, budget)?;
+    }
+    {
+        let member = &value.operation_id;
+        budget.data(member.len())?;
+    }
+    {
+        let member = &value.expected_version;
+        budget.data(member.len())?;
+    }
+    {
+        let member = &value.expected_policy_digest;
+        budget.data(member.len())?;
+    }
+    {
+        let member = &value.reason;
+        budget.data(member.len())?;
+    }
+    Ok(())
+}
+
+fn effect_management_plan(
+    value: &model::EffectManagementPlan,
+    depth: usize,
+    budget: &mut Budget,
+) -> Result<(), ValidationError> {
+    let _ = value;
+    budget.node(std::mem::size_of::<model::EffectManagementPlan>(), depth)?;
+    if let Some(member) = &value.original {
+        plan_effect_mutation_request(member, depth + 1, budget)?;
+    }
+    {
+        let member = &value.plan_digest;
+        budget.data(member.len())?;
+    }
+    Ok(())
+}
+
 fn mutate_state_request(
     value: &model::MutateStateRequest,
     depth: usize,
@@ -534,6 +583,9 @@ fn mutate_state_request(
         let member = &value.reason;
         budget.data(member.len())?;
     }
+    if let Some(member) = &value.effect_plan {
+        effect_management_plan(member, depth + 1, budget)?;
+    }
     Ok(())
 }
 
@@ -553,6 +605,9 @@ fn get_state_operation_receipt_request(
     {
         let member = &value.operation_id;
         budget.data(member.len())?;
+    }
+    if let Some(member) = &value.original_effect_plan {
+        effect_management_plan(member, depth + 1, budget)?;
     }
     Ok(())
 }
@@ -679,6 +734,11 @@ impl ModelShape for model::SelectEntityRequest {
 impl ModelShape for model::MutateStateRequest {
     fn validate_shape(&self) -> Result<(), ValidationError> {
         mutate_state_request(self, 0, &mut Budget::new())
+    }
+}
+impl ModelShape for model::PlanEffectMutationRequest {
+    fn validate_shape(&self) -> Result<(), ValidationError> {
+        plan_effect_mutation_request(self, 0, &mut Budget::new())
     }
 }
 impl ModelShape for model::GetStateOperationReceiptRequest {
