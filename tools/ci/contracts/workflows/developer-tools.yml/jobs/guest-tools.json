@@ -40,6 +40,10 @@
         }
       },
       {
+        "name": "Select the runner-owned compiler archive cache",
+        "run": "printf 'LSF_DEV_COMPILER_CACHE=%s\\n' \"$RUNNER_TEMP/compiler-archives\" >> \"$GITHUB_ENV\""
+      },
+      {
         "id": "compiler-cache",
         "name": "Restore untrusted pinned compiler archives",
         "uses": "actions/cache/restore",
@@ -291,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain all compiler, signed-node, native resource and cleanup checks; scope runner.temp compiler cache to the build step and cache action inputs permitted by GitHub Actions",
+  "reviewReason": "Retain all compiler, signed-node, native resource and cleanup checks; combine reviewed runner-owned step cache selection with the explicit build-step environment and permitted cache action inputs, keeping runner context out of job env",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
