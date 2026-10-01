@@ -69,6 +69,14 @@ connection task. Cancellation during TLS or reply reading closes the actual
 socket before the slot is refunded. A shutdown cutoff reports live ownership and
 quarantine while a request remains physically owned.
 
+Accepted namespace closure disables every exact tenant/namespace/incarnation
+rule under the same metadata fence used by the held grant's prewrite check. The
+close is sticky for that incarnation, including across a later publication;
+rejected original management acceptance leaves the old rules current. Closure
+does not refund a live request or declare its physical cleanup. The provider's
+original request owner is the last attempt field destroyed, after its actual
+payload and attempt metadata.
+
 A possibly sent first POST can schedule one bounded recovery attempt, subject to
 the captured attempt ceiling and original horizon. That attempt sends GET to
 `lookupPrefix + idempotencyKey`, preserving the exact digest and incarnation. It
@@ -98,11 +106,11 @@ cover at least 22,528 bytes of bounded reply/header/container storage.
 
 ## Measured native evidence
 
-Pinned Rust 1.97.1 Linux ran all 55 HTTP library cases: 55 passed, zero failures,
+Pinned Rust 1.97.1 Linux ran all 56 HTTP library cases: 56 passed, zero failures,
 ignored or filtered cases. Strict all-target/all-feature HTTP Clippy, standalone
 all-feature compilation and strict standalone library Clippy passed. The shared
-effect library passed all 86 cases without ignored or filtered cases. The
-15 deferred cases use the actual protected host engine, captured intent writer,
+effect library passed all 89 cases without ignored or filtered cases. The
+16 deferred cases use the actual protected host engine, captured intent writer,
 state session, namespace/current effect fences, fixed dispatcher, protected
 credential store, bounded provider pools and real TCP/TLS transport.
 
@@ -120,6 +128,15 @@ revocation, cancellation and live shutdown. Rejected/positively aborted commands
 commit no HTTP intent or remote mutation. A lock-order case uses the actual
 protected command role and effect acceptance fence to reject clock observation
 inside synchronous adapter acceptance.
+
+The namespace-close schedule holds an accepted original grant at the actual
+second TLS handshake. Accepted metadata closure blocks the later business write
+and cannot re-enable the old incarnation through a new publication; rejected
+original acceptance permits the unchanged grant to complete. Both branches
+observe the actual request and physical context before closure and await their
+positive retirement afterward. This exercises the reviewed effect invalidation
+bridge directly; the authenticated Policy/Namespace/Native management acceptance
+has its separate maintained Wire schedules.
 
 The fixture contract is version 1, with a 10-second retention and 8192-byte body
 limit. Its endpoint source Git blob is

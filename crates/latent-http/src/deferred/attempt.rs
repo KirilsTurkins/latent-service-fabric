@@ -24,11 +24,12 @@ pub(super) struct AcceptedOperation {
     pub time: Arc<dyn EffectTimeSource>,
     pub value: Value,
     pub body_digest: String,
-    pub request: DeferredRequest,
     pub attempt: AttemptIdentity,
     pub horizon: u64,
     pub lookup: bool,
     pub retry_enabled: bool,
+    // Drop last: its grant may retain the original global management owner.
+    pub request: DeferredRequest,
 }
 
 impl AcceptedOperation {
