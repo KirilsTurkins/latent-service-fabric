@@ -44,6 +44,12 @@ the actual checkpoint digest and explicitly leaves production restore
 qualification false. It writes no continuity flag. Production
 `ProtectedCommandClock` derives continuity from its own actual samples.
 
+The real immediate-HTTP negative component remains one of the five preserved
+compiler inputs. The native strict-profile metadata validator must refuse its
+unsupported host import before signing. This refusal has a separate original
+diagnostic receipt; it is not signed node admission evidence. The other four
+components continue through the normal package and signing path.
+
 The fixture never overwrites an existing checkpoint, lowers a retained floor,
 or initializes an existing state store. Restart and restore tests preserve the
 original protected checkpoint and require the normal reviewed recovery paths.
@@ -65,3 +71,12 @@ profile closure and the historical result-read change described in
 A signed Java campaign must use new native binaries containing both changes.
 The older binaries cannot supply signed Java or positive schema/restore
 result-recovery evidence.
+
+The disposable external recipient implements the existing native
+`latent.http-effect.put-once.v1` HTTPS contract. Its bounded private records
+preserve original effect, payload digest, provider incarnation and retention
+horizon across restart. Reserved acceptance and applied receipt are distinct;
+the transition appends a record without overwriting the original acceptance.
+The fixture can disconnect after durable recipient acceptance and withhold
+lookup delivery until its fault mode changes. These are external observations,
+never evidence of platform commitment, a namespace grant or recipient delivery.
